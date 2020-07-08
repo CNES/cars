@@ -192,6 +192,14 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
     nb_data = ['data_valid', 'x', 'y', 'z']
 
+    for idx in range(len(cloud_list)):
+        values_list = [key for key, _ in cloud_list[idx].items()]
+        print(values_list)
+        if 'left_msk' in values_list:
+            print('poooooooooooooooooooooooow')
+            nb_data.append('left_msk')
+            break
+
     if color_list is not None:
         clr_im = color_list[0].im.values
         nb_band_clr = clr_im.shape[0]
@@ -202,7 +210,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
     if with_coords:
         nb_data.extend(['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
-
+    print(nb_data)
     # iterate trough input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
     nb_points = 0
