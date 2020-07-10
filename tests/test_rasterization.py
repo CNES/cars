@@ -389,3 +389,171 @@ def test_simple_rasterization_multiple_datasets():
         absolute_data_path("ref_output/rasterization_multiple_res_ref.nc")
     )
     assert_same_datasets(raster, raster_ref, atol=1.e-10, rtol=1.e-10)
+
+
+@pytest.mark.unit_tests
+def test_mask_interp():
+    import logging
+    worker_logger = logging.getLogger('distributed.worker')
+
+    row = 4
+    col = 5
+    data_valid = np.ones((row * col), dtype=np.bool)
+    resolution = 1.0
+    radius = 0
+    sigma = 1
+    undefined_val = -1
+
+    ######## case 1 - simple mask all 32767 and one 0 ########
+    x, y = np.meshgrid(np.linspace(0, col - 1, col), np.linspace(0, row - 1, row))
+
+    msk = np.full((row, col), fill_value=32767, dtype=np.float)
+    msk[0, 0] = 0
+
+    cloud = np.zeros((row*col, 3), dtype=np.float)
+    cloud[:, 0] = x.reshape((row*col))
+    cloud[:, 1] = y.reshape((row*col))
+    cloud[:, 2] = msk.reshape((row*col))
+    cloud_pd = pandas.DataFrame(cloud, columns = ['x', 'y', 'left_mask'])
+
+    grid_points = rasterization.compute_grid_points(-0.5, row-0.5, col, row, resolution)
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd, radius, resolution, worker_logger)
+
+    res = rasterization.mask_interp(cloud, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
+                                    grid_points, sigma, undefined_val)
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(msk, res)
+
+    ######## case 2 - add several points from a second class aiming the same terrain cell ########
+    tgt_terrain_cell_x_coord = 1
+    tgt_terrain_cell_y_coord = 1
+    row_additional_pts_nb = 3
+    col_additional_pts_nb = 3
+    additional_pts_x_coords, additional_pts_y_coords = np.meshgrid(
+        np.linspace(tgt_terrain_cell_x_coord-0.3, tgt_terrain_cell_x_coord+0.3, col_additional_pts_nb),
+        np.linspace(tgt_terrain_cell_y_coord-0.3, tgt_terrain_cell_y_coord+0.3, row_additional_pts_nb))
+
+    additional_pts_msk = np.full((row_additional_pts_nb * col_additional_pts_nb), fill_value=255, dtype=np.float)
+
+    cloud_case2 = np.zeros((row_additional_pts_nb * col_additional_pts_nb, 3), dtype=np.float)
+    cloud_case2[:, 0] = additional_pts_x_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case2[:, 1] = additional_pts_y_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case2[:, 2] = additional_pts_msk
+    cloud_case2 = np.concatenate((cloud, cloud_case2), axis=0)
+    cloud_pd_case2 = pandas.DataFrame(cloud_case2, columns=['x', 'y', 'left_mask'])
+
+    data_valid_case2 = \
+        np.concatenate((data_valid, np.ones((row_additional_pts_nb * col_additional_pts_nb), dtype=np.bool)), axis=0)
+
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case2, radius, resolution, worker_logger)
+
+    res = rasterization.mask_interp(cloud_case2, data_valid_case2,
+                                    neighbors_id, start_ids, n_count, grid_points, sigma, undefined_val)
+
+    ref_msk = np.copy(msk)
+    ref_msk[tgt_terrain_cell_y_coord, tgt_terrain_cell_x_coord] = 255
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(ref_msk, res)
+
+    ######## case 3 - only two points from different classes at the same position in a single cell ########
+    cloud_case3 = np.array([[2., 2., 255.]], dtype=np.float)
+    cloud_case3 = np.concatenate((cloud, cloud_case3), axis=0)
+
+    cloud_pd_case3 = pandas.DataFrame(cloud_case3, columns=['x', 'y', 'left_mask'])
+
+    data_valid_case3 = np.concatenate((data_valid,
+                                       np.ones((1), dtype=np.bool)), axis=0)
+
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case3, radius, resolution, worker_logger)
+    res = rasterization.mask_interp(cloud_case3, data_valid_case3,
+                                    neighbors_id, start_ids, n_count, grid_points, sigma, undefined_val)
+
+    ref_msk = np.copy(msk)
+    ref_msk[2, 2] = -1
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(ref_msk, res)
+
+    ######## case 4 - undefined cell ########
+    cloud_case4 = np.copy(cloud)
+    cloud_case4 = np.delete(cloud_case4, 1, 0)
+
+    data_valid_case4 = np.copy(data_valid)
+    data_valid_case4 = np.delete(data_valid_case4, 1, 0)
+
+    cloud_pd_case4 = pandas.DataFrame(cloud_case4, columns=['x', 'y', 'left_mask'])
+
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case4, radius, resolution, worker_logger)
+    res = rasterization.mask_interp(cloud_case4, data_valid_case4,
+                                    neighbors_id, start_ids, n_count, grid_points, sigma, undefined_val)
+
+    ref_msk = np.copy(msk)
+    ref_msk[int(cloud[1, 1]), int(cloud[1, 0])] = np.nan
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(ref_msk, res, equal_nan=True)
+
+    ######## case 5 - cell defined by np.nan ########
+    cloud_case5 = np.copy(cloud)
+    cloud_case5[1, 2] = np.nan
+
+    cloud_pd_case5 = pandas.DataFrame(cloud_case5, columns=['x', 'y', 'left_mask'])
+
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case5, radius, resolution, worker_logger)
+    res = rasterization.mask_interp(cloud_case5, data_valid,
+                                    neighbors_id, start_ids, n_count, grid_points, sigma, undefined_val)
+
+    ref_msk = np.copy(msk)
+    ref_msk[int(cloud[1, 1]), int(cloud[1, 0])] = np.nan
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(ref_msk, res, equal_nan=True)
+
+    ######## case 6 - add several points equal to 0 aiming the same terrain cell ########
+    tgt_terrain_cell_x_coord = 1
+    tgt_terrain_cell_y_coord = 1
+    row_additional_pts_nb = 3
+    col_additional_pts_nb = 3
+    additional_pts_x_coords, additional_pts_y_coords = np.meshgrid(
+        np.linspace(tgt_terrain_cell_x_coord - 0.3, tgt_terrain_cell_x_coord + 0.3, col_additional_pts_nb),
+        np.linspace(tgt_terrain_cell_y_coord - 0.3, tgt_terrain_cell_y_coord + 0.3, row_additional_pts_nb))
+
+    additional_pts_msk = np.full((row_additional_pts_nb * col_additional_pts_nb), fill_value=0, dtype=np.float)
+
+    cloud_case6 = np.zeros((row_additional_pts_nb * col_additional_pts_nb, 3), dtype=np.float)
+    cloud_case6[:, 0] = additional_pts_x_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case6[:, 1] = additional_pts_y_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case6[:, 2] = additional_pts_msk
+    cloud_case6 = np.concatenate((cloud, cloud_case6), axis=0)
+    cloud_pd_case6 = pandas.DataFrame(cloud_case6, columns=['x', 'y', 'left_mask'])
+
+    data_valid_case6 = \
+        np.concatenate((data_valid, np.ones((row_additional_pts_nb * col_additional_pts_nb), dtype=np.bool)), axis=0)
+
+    neighbors_id, start_ids, n_count = \
+        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case6, radius, resolution, worker_logger)
+
+    res = rasterization.mask_interp(cloud_case6, data_valid_case6,
+                                    neighbors_id, start_ids, n_count, grid_points, sigma, undefined_val)
+
+    res = res.reshape((row, col))
+    res = res[::-1, :]
+
+    assert np.allclose(msk, res)

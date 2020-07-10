@@ -192,12 +192,12 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
     nb_data = ['data_valid', 'x', 'y', 'z']
 
+    nb_data_msk = 0
     for idx in range(len(cloud_list)):
         values_list = [key for key, _ in cloud_list[idx].items()]
-        print(values_list)
         if 'left_msk' in values_list:
-            print('poooooooooooooooooooooooow')
             nb_data.append('left_msk')
+            nb_data_msk = 1
             break
 
     if color_list is not None:
@@ -263,6 +263,10 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
         c_cloud[2, :] = np.ravel(c_y)
         c_cloud[3, :] = np.ravel(c_z)
 
+        values_list = [key for key, _ in cloud_list[idx].items()]
+        if 'left_msk' in values_list:
+            c_cloud[4, :] = np.ravel(cloud_list[idx].left_msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1])
+
         # add data valid mask (points that are not in the border of the epipolar image)
         if epipolar_border_margin == 0:
             epipolar_margin_mask = \
@@ -281,7 +285,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
             c_color = color_list[idx].im.values[:, bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
 
             for band in range(nb_band_clr):
-                c_cloud[4+band, :] = np.ravel(c_color[band, :, :])
+                c_cloud[4+nb_data_msk+band, :] = np.ravel(c_color[band, :, :])
 
         # add the original image coordinates information to the current cloud
         if with_coords:
@@ -289,9 +293,9 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
             coords_col = np.linspace(bbox[1], bbox[3], bbox[3]-bbox[1]+1)
             coords_col, coords_line = np.meshgrid(coords_col, coords_line)
 
-            c_cloud[4 + nb_band_clr, :] = np.ravel(coords_line)
-            c_cloud[4 + nb_band_clr + 1, :] = np.ravel(coords_col)
-            c_cloud[4 + nb_band_clr + 2, :] = idx
+            c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
+            c_cloud[4 + nb_data_msk + nb_band_clr + 1, :] = np.ravel(coords_col)
+            c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
 
         # remove masked data
         c_msk = cloud_list[idx].msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
@@ -639,6 +643,107 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
     return out, mean, stdev, n_pts, n_in_cell
 
 
+@njit((float64[:, :], boolean[:], int64, int64[:], int64[:], int64[:]), nogil=True, cache=True)
+def get_neighbors(points: np.array, data_valid: np.array, i_grid: int, neighbors_id: np.array,
+                  neighbors_start: np.array, neighbors_count: np.array) -> Union[np.array, None]:
+    """
+    Use the outputs of the get_flatten_neighbors function to get the neighbors of the i_grid point in the points
+    numpy array.
+
+    :param points: points numpy array (one line = one point)
+    :param data_valid: valid data mask corresponding to the points
+    :param i_grid: the index of the outputs of the get_flatten_neighbors function are used
+    :param neighbors_id: the flattened neighbors ids list
+    :param neighbors_start: the flattened neighbors start indexes
+    :param neighbors_count: the flattened neighbors counts
+    :return: a numpy array containing only the i_grid point neighbors
+    or None if the point has no neighbors (or no valid neighbors)
+    """
+    n_neighbors = neighbors_count[i_grid]
+
+    if n_neighbors == 0:
+        return None
+
+    n_start = neighbors_start[i_grid]
+    neighbors = points[neighbors_id[n_start:n_start + n_neighbors]]
+    n_valid = np.sum(
+        data_valid[neighbors_id[n_start:n_start + n_neighbors]]
+    )
+
+    # discard if grid point has no valid neighbor in point cloud
+    if n_valid == 0:
+        return None
+
+    return neighbors
+
+
+@njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :], float64, int64), nogil=True, cache=True)
+def mask_interp(mask_points: np.array, data_valid: np.array, neighbors_id: np.array, neighbors_start: np.array,
+                neighbors_count: np.array, grid_points: np.array, sigma: float, undefined_val: int) -> np.array:
+    """
+    Interpolates mask data at grid point locations.
+
+    For a terrain cell each points contained into it have a weight depending on its distance to the cell center.
+    For each classes, the weights are accumulated.
+    The class which have the higher accumulated score is then used as the terrain cell's final value.
+
+    :param mask_points: mask data, one point per row (first column is the x position, second is the y position,
+    last column is the mask value).
+    :param data_valid: flattened validity mask.
+    :param neighbors_id: flattened neighboring cloud point indices.
+    :param neighbors_start: flattened grid point neighbors start indices.
+    :param neighbors_count: flattened grid point neighbor count.
+    :param grid_points: grid point location, one per row.
+    :param sigma: sigma parameter for weights computation.
+    :param undefined_val: value in case of score equality.
+    :return: The interpolated mask
+    """
+    # mask rasterization result
+    result = np.full((neighbors_count.size, 1), np.nan, dtype=np.float32)
+
+    for i_grid in range(neighbors_count.size):
+        p_sample = grid_points[i_grid]
+
+        neighbors = get_neighbors(mask_points, data_valid, i_grid, neighbors_id, neighbors_start, neighbors_count)
+        if neighbors is None:
+            continue
+
+        # grid point to neighbors distance
+        neighbors_vec = neighbors[:, :2] - p_sample
+        distances = np.sqrt(np.sum(neighbors_vec * neighbors_vec, axis=1))
+
+        # score computation
+        weights = np.exp(-distances ** 2 / (2 * sigma ** 2))
+
+        val = []
+        val_cum_weight = []
+        for idx in range(len(neighbors)):
+            msk_val = (neighbors[idx, 2:])
+
+            if msk_val != 0: # only masked points are taken into account
+                if msk_val in val:
+                    msk_val_index = val.index(msk_val)
+                    val_cum_weight[msk_val_index] += weights[idx]
+                else:
+                    val.append(msk_val)
+                    val_cum_weight.append(weights[idx])
+
+        # search for higher score
+        if len(val) != 0:
+            arr_val_cum_weight = np.asarray(val_cum_weight)
+            ind_max_weight = np.argmax(arr_val_cum_weight)
+
+            max_weight_values = [val[i] for i in range(len(val)) if val_cum_weight[i] == val_cum_weight[ind_max_weight]]
+            if len(max_weight_values) == 1:
+                result[i_grid] = val[ind_max_weight]
+            else:
+                result[i_grid] = undefined_val
+        else: # no masked points in the terrain cell
+            result[i_grid] = 0
+
+    return result
+
+
 @njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :],
        float64, float64), nogil=True, cache=True)
 def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
@@ -678,21 +783,11 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
     n_pts_in_cell = np.zeros(neighbors_count.size, np.uint16)
 
     for i_grid in range(neighbors_count.size):
-        n_neighbors = neighbors_count[i_grid]
-
-        if n_neighbors == 0:
-            continue
 
         p_sample = grid_points[i_grid]
 
-        n_start = neighbors_start[i_grid]
-        neighbors = cloud_points[neighbors_id[n_start:n_start + n_neighbors]]
-        n_valid = np.sum(
-            data_valid[neighbors_id[n_start:n_start + n_neighbors]]
-        )
-
-        # discard if grid point has no valid neighbor in point cloud
-        if n_valid == 0:
+        neighbors = get_neighbors(cloud_points, data_valid, i_grid, neighbors_id, neighbors_start, neighbors_count)
+        if neighbors is None:
             continue
 
         # grid point to neighbors distance

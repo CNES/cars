@@ -928,9 +928,7 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
 
     if left_dataset is not None:
         values_list = [key for key, _ in left_dataset.items()]
-        print(values_list)
         if 'msk' in values_list:
-            print('laaaaaaaaaaaaaaaaaaaa')
             ref_roi = [int(-left_dataset.attrs['margins'][0]),
                        int(-left_dataset.attrs['margins'][1]),
                        int(left_dataset.dims['col'] - left_dataset.attrs['margins'][2]),
