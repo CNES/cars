@@ -1,0 +1,73 @@
+{
+  "input": {
+    "img1": "./im1.tif",
+    "img2": "./im2.tif",
+    "srtm_dir": "../../phr_ventoux/srtm",
+    "nodata1": -1,
+    "nodata2": -1
+  },
+  "preprocessing": {
+    "version": "notebooks_test//c972",
+    "parameters": {
+      "epi_step": 30,
+      "disparity_margin": 0.02,
+      "epipolar_error_upper_bound": 10.0,
+      "epipolar_error_maximum_bias": 0.0,
+      "elevation_delta_lower_bound": -1000.0,
+      "elevation_delta_upper_bound": 1000.0
+    },
+    "static_parameters": {
+      "sift": {
+        "matching_threshold": 0.6,
+        "n_octave": 8,
+        "n_scale_per_octave": 3,
+        "dog_threshold": 20.0,
+        "edge_threshold": 5.0,
+        "magnification": 2.0,
+        "back_matching": true
+      },
+      "low_res_dsm": {
+        "low_res_dsm_resolution_in_degree": 0.000277777777778,
+        "lowres_dsm_min_sizex": 100,
+        "lowres_dsm_min_sizey": 100,
+        "low_res_dsm_ext": 3,
+        "low_res_dsm_order": 3
+      }
+    },
+    "output": {
+      "left_envelope": "left_envelope.shp",
+      "right_envelope": "right_envelope.shp",
+      "envelopes_intersection": "envelopes_intersection.gpkg",
+      "envelopes_intersection_bounding_box": [
+        5.225115648812992,
+        44.17547587554957,
+        5.272603241312758,
+        44.20835037641669
+      ],
+      "epipolar_size_x": 9186,
+      "epipolar_size_y": 9186,
+      "epipolar_origin_x": 0.0,
+      "epipolar_origin_y": 0.0,
+      "epipolar_spacing_x": 30.0,
+      "epipolar_spacing_y": 30.0,
+      "disp_to_alt_ratio": 2.0538147124788235,
+      "raw_matches": "raw_matches.npy",
+      "left_epipolar_grid": "left_epipolar_grid.tif",
+      "right_epipolar_grid": "right_epipolar_grid.tif",
+      "right_epipolar_uncorrected_grid": "right_epipolar_grid_uncorrected.tif",
+      "minimum_disparity": -22.642672428425907,
+      "maximum_disparity": 21.862673126289767,
+      "matches": "matches.npy",
+      "lowres_dsm": "lowres_dsm_from_matches.nc",
+      "lowres_initial_dem": "lowres_initial_dem.nc",
+      "lowres_elevation_difference": "lowres_elevation_diff.nc",
+      "time_direction_line_origin_x": 5.225254537701882,
+      "time_direction_line_origin_y": 44.2082114875278,
+      "time_direction_line_vector_x": -0.01627420255707739,
+      "time_direction_line_vector_y": 0.999810024153192,
+      "lowres_dem_splines_fit": "lowres_dem_splines_fit.pck",
+      "corrected_lowres_dsm": "corrected_lowres_dsm_from_matches.nc",
+      "corrected_lowres_elevation_difference": "corrected_lowres_elevation_diff.nc"
+    }
+  }
+}

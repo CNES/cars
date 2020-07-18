@@ -1,0 +1,34 @@
+{
+  "input": {
+    "img1": "../left_image.tif",
+    "nodata2": 0,
+    "nodata1": 0,
+    "img2": "../right_image.tif",
+    "color1": "../left_image.tif",
+    "srtm_dir": "../srtm"
+  },
+  "preprocessing": {
+    "version": "master//a621c",
+    "parameters": {
+      "epi_step": 30,
+      "disparity_margin": 0.25
+    },
+    "output": {
+      "epipolar_size_y": 612,
+      "epipolar_origin_y": 0.0,
+      "left_epipolar_grid": "left_epipolar_grid.tif",
+      "ground_positions_grid": "ground_positions_grid.tif",
+      "epipolar_spacing_x": 30.0,
+      "epipolar_origin_x": 0.0,
+      "minimum_disparity": -19.346296653747558,
+      "epipolar_size_x": 612,
+      "maximum_disparity": 14.615674247741712,
+      "right_envelope": "right_envelope.shp",
+      "left_envelope": "left_envelope.shp",
+      "disp_to_alt_ratio": 0.7039416432380676,
+      "epipolar_spacing_y": 30.0,
+      "right_epipolar_grid": "right_epipolar_grid.tif",
+      "matches": "matches.npy"
+    }
+  }
+}

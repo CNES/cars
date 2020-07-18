@@ -1,0 +1,13 @@
+band1.max_value:  2757
+band1.min_value:  32
+band1.null_value:  -32768
+byte_order:  big_endian
+decimal_degrees_per_pixel_lat:  0.000833333333333333
+decimal_degrees_per_pixel_lon:  0.000833333333333333
+filename:  N44E005.hgt
+number_bands:  1
+number_lines:  1201
+number_samples:  1201
+scalar_type:  ossim_sint16
+tie_point_lat:  45
+tie_point_lon:  5

@@ -1,0 +1,11 @@
+band1.null_value:  -32768
+byte_order:  big_endian
+decimal_degrees_per_pixel_lat:  0.000833333333333333
+decimal_degrees_per_pixel_lon:  0.000833333333333333
+filename:  /work/ADM/hpc/sarrazie/atelier3d/tests/reunion/srtm/S22E055.hgt
+number_bands:  1
+number_lines:  1201
+number_samples:  1201
+scalar_type:  ossim_sint16
+tie_point_lat:  -21
+tie_point_lon:  55

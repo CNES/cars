@@ -1,0 +1,56 @@
+{
+  "images_and_grids": {
+    "input": {
+      "img1": "input/phr_ventoux/left_image.tif",
+      "img2": "input/phr_ventoux/right_image.tif"
+    },
+    "preprocessing": {
+      "output": {
+        "left_epipolar_grid": "input/stereo_input/left_epipolar_grid.tif",
+        "right_epipolar_grid": "input/stereo_input/right_epipolar_grid.tif"
+      }
+    }
+  },
+  "color1": {
+    "input": {
+      "color1": "input/phr_ventoux/left_image.tif"
+    }
+  },
+  "color_pxs": {
+    "input": {
+      "color1": "input/phr_ventoux/lowres_color_image.tif"
+    }
+  },
+  "no_data": {
+    "input": {
+      "nodata2": 0,
+      "nodata1": 0
+    }
+  },
+  "epipolar_sizes":{
+    "preprocessing": {
+      "output": {
+        "epipolar_size_x": 612,
+        "epipolar_size_y": 612
+      }
+    }
+  },
+  "epipolar_origins_spacings":{
+    "preprocessing": {
+      "output": {
+        "epipolar_origin_y": 0.0,
+        "epipolar_spacing_x": 30.0,
+        "epipolar_origin_x": 0.0,
+        "epipolar_spacing_y": 30.0
+      }
+    }
+  },
+  "disparities":{
+    "preprocessing": {
+      "output": {
+        "minimum_disparity": -19.346296653747558,
+        "maximum_disparity": 14.615674247741712
+      }
+    }
+  }
+}

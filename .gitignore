@@ -1,0 +1,13 @@
+build/
+*~
+__pycache__/
+.cache/
+dask-worker-space/
+.coverage*
+coverage.xml
+pytest-report.xml
+pylint-report.xml
+*.swp
+.ipynb_checkpoints/
+*.pyc
+*.aux.xml

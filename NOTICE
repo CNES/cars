@@ -1,0 +1,167 @@
+CARS Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+
+This software is distributed under the Apache Software License (ASL) v2.0, see
+LICENSE file or http://www.apache.org/licenses/LICENSE-2.0 for details.
+
+GNU C Library (libc6)
+Copyright (C) 2009 Free Software Foundation, Inc.
+Website: https://www.gnu.org/software/libc/
+License: GNU LGPL v2.1.
+
+C++ Standard Library (libstdc++)
+Copyright (C) 2009 Free Software Foundation, Inc.
+Website: https://gcc.gnu.org/wiki/Libstdc++
+License: GNU GPL v3.0 + GCC Runtime Library Exception v3.1
+
+C++ Runtime Library (libgcc)
+Copyright (C) 2009 Free Software Foundation, Inc.
+Website: https://gcc.gnu.org/onlinedocs/gccint/Libgcc.html
+License: GNU GPL v3.0 + GCC Runtime Library Exception v3.1
+
+OpenMP: specification for parallel programming
+Copyright (c) 1997-2018 OpenMP ARB Corporation
+Website: https://www.openmp.org/
+License: "GNU GPL v3.0 + GNU GCC Runtime Library Exception" (GCC) and "NCSA Open Source License" (Clang)
+
+PANDORA: Stereo pipeline which produces disparity map from a pair of images. 
+Copyright (c) 2020, Centre National d'Etudes Spatiales (CNES).
+Website: https://github.com/CNES/Pandora
+Licence: Apache v2.0.
+
+Orfeo Toolbox (OTB): Open Source processing of remote sensing images
+Copyright (c) 2005-2020, Centre National d'Etudes Spatiales (CNES).
+Website: https://www.orfeo-toolbox.org/
+License: Apache v2.0.
+
+ITK: The Insight Toolkit
+Copyright 1999-2019 Insight Software Consortium
+Copyright 2020 NumFOCUS
+Website: https://itk.org/
+License: Apache v2.0.
+
+OSSIM: Advanced image processing and geospatial data fusion.
+Copyright (c) 2015-2016, OSSIM Contributors
+Website: http://www.ossim.org/
+License: MIT.
+
+Python: programming language that lets you work quickly and integrate systems more effectively.
+Copyright (c) 2001-2020 Python Software Foundation. All Rights reserved. 
+Website: http://python.org/
+License: Python Software License.
+
+NumPy: The fundamental package for scientific computing with Python. 
+Copyright (c) 2005-2020, NumPy Developers.
+Website: https://numpy.org/
+License: BSD 3 Clause.
+
+SciPy: open-source software for mathematics, science, and engineering.
+Copyright (c) 2001, 2002 Enthought, Inc. All rights reserved.
+Copyright (c) 2003-2019 SciPy Developers. All rights reserved.
+Website: https://www.scipy.org/scipylib/
+License: BSD 3 Clause.
+
+GDAL Python: open source X/MIT licensed translator library for raster and vector geospatial data formats.
+Copyright (c) 1998-2020 Frank Warmerdam, Even Rouault, and others
+Website: https://pypi.org/project/GDAL/
+License: MIT.
+
+Setuptools: build system
+Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
+Website: https://setuptools.readthedocs.io/
+License: MIT.
+
+Numba: NumPy aware dynamic Python compiler using LLVM
+Copyright (c) 2012, Anaconda, Inc.
+Website: https://numba.pydata.org/
+License: BSD 2 Clause.
+
+Xarray: N-D labeled arrays and datasets in Python
+Copyright 2014-2019, xarray Developers
+Website: http://xarray.pydata.org
+License: Apache v2.0.
+
+json_checker: Validate json data and etc...
+Copyright (c) 2018 Denis Korytkin
+Website: https://github.com/DKorytkin/json_checker
+Version : non définie
+License: MIT.
+
+Affine: Affine transformation matrices
+Copyright (c) 2014, Sean C. Gillies
+Website: https://github.com/sgillies/affine
+License: BSD 3 Clause.
+
+Fiona: reads and writes geographic data files 
+Copyright (c) 2007, Sean C. Gillies
+Website: https://github.com/Toblerity/Fiona
+Version : non définie
+License: BSD 3 Clause.
+
+Pandas: Flexible and powerful data analysis / manipulation library for Python
+Copyright (c) 2008-2011, AQR Capital Management, LLC, Lambda Foundry, Inc. and PyData Development Team. All rights reserved.
+Copyright (c) 2011-2020, Open source contributors.
+Website: https://pandas.pydata.org/
+License: BSD 3 Clause.
+
+Dask: Parallel computing with task scheduling
+Copyright (c) 2014-2018, Anaconda, Inc. and contributors
+Website: https://dask.org/
+License: BSD 3 Clause.
+
+Dask Jobqueue: Deploy Dask on job schedulers like PBS, SLURM, and SGE
+Copyright (c) 2018, Anaconda, Inc. and contributors
+Website: https://github.com/dask/dask-jobqueue
+License: BSD 3 Clause.
+
+Dask Distributed: A distributed task scheduler for Dask
+Copyright (c) 2015-2017, Anaconda, Inc. and contributors
+Website: http://distributed.dask.org/
+License: BSD 3 Clause.
+
+Shapely: Manipulation and analysis of geometric objects
+Copyright (c) 2007, Sean C. Gillies
+Website: https://github.com/Toblerity/Shapely
+Version : non définie
+License: BSD 3 Clause.
+
+tqdm: A Fast, Extensible Progress Bar for Python and CLI
+Copyright (c) 2013, noamraph.
+Website: https://tqdm.github.io/
+License: MIT.
+
+OTB Applications Python
+Copyright (c) 2005-2020, Centre National d'Etudes Spatiales (CNES).
+Website: https://www.orfeo-toolbox.org/
+License : Apache v2.0.
+   
+GitPython; python library used to interact with Git repositories
+Copyright (c) 2008, 2009 Michael Trier and contributors.
+Website: https://github.com/gitpython-developers/GitPython
+License: BSD 3 Clause.
+
+argcomplete: Python and tab completion, better together
+Copyright (c) 2012-2019, Andrey Kislyuk and argcomplete contributors.
+Website: https://github.com/kislyuk/argcomplete
+License: Apache v2.0.
+
+psutil: Cross-platform lib for process and system monitoring in Python
+Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola
+Website: https://github.com/giampaolo/psutil
+License: BSD 3 Clause.
+
+Python interface to PROJ
+Copyright (c) 2006-2018, Jeffrey Whitaker.
+Copyright (c) 2019-2020, Open source contributors.
+Website: https://github.com/pyproj4/pyproj
+Version : non définie
+License: MIT
+
+Rasterio: access to geospatial raster data
+Copyright (c) 2016, MapBox All rights reserved.
+Website: https://github.com/mapbox/rasterio
+License: BSD 3 Clause.
+
+pytest: helps to write better programs
+Copyright (c) 2004-2020 Holger Krekel and others.
+Website: https://pytest.org
+License: MIT

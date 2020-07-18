@@ -1,0 +1,67 @@
+{
+  "input": {
+    "img1": "./tests/data/input/phr_ventoux/left_image.tif",
+    "color1": "./tests/data/input/phr_ventoux/left_image.tif",
+    "img2": "./tests/data/input/phr_ventoux/right_image.tif",
+    "srtm_dir": "./tests/data/input/phr_ventoux/srtm",
+    "nodata1": 0,
+    "nodata2": 0
+  },
+  "preprocessing": {
+    "version": "notebooks_test//2ee0",
+    "parameters": {
+      "epi_step": 30,
+      "disparity_margin": 0.25,
+      "epipolar_error_upper_bound": 43.0,
+      "epipolar_error_maximum_bias": 0.0,
+      "elevation_delta_lower_bound": -20.0,
+      "elevation_delta_upper_bound": 20.0
+    },
+    "static_parameters": {
+      "sift": {
+        "matching_threshold": 0.6,
+        "n_octave": 8,
+        "n_scale_per_octave": 3,
+        "dog_threshold": 20.0,
+        "edge_threshold": 5.0,
+        "magnification": 2.0,
+        "back_matching": true
+      },
+      "low_res_dsm": {
+        "low_res_dsm_resolution_in_degree": 0.000277777777778,
+        "lowres_dsm_min_sizex": 100,
+        "lowres_dsm_min_sizey": 100,
+        "low_res_dsm_ext": 3,
+        "low_res_dsm_order": 3
+      }
+    },
+    "output": {
+      "left_envelope": "left_envelope.shp",
+      "right_envelope": "right_envelope.shp",
+      "envelopes_intersection": "envelopes_intersection.gpkg",
+      "envelopes_intersection_bounding_box": [
+        5.193458481212276,
+        44.205842790578764,
+        5.1960808063316835,
+        44.20667085592526
+      ],
+      "epipolar_size_x": 612,
+      "epipolar_size_y": 612,
+      "epipolar_origin_x": 0.0,
+      "epipolar_origin_y": 0.0,
+      "epipolar_spacing_x": 30.0,
+      "epipolar_spacing_y": 30.0,
+      "disp_to_alt_ratio": 1.4205723011357743,
+      "raw_matches": "raw_matches.npy",
+      "left_epipolar_grid": "left_epipolar_grid.tif",
+      "right_epipolar_grid": "right_epipolar_grid.tif",
+      "right_epipolar_uncorrected_grid": "right_epipolar_grid_uncorrected.tif",
+      "minimum_disparity": -19.035287224938536,
+      "maximum_disparity": 14.569060225726258,
+      "matches": "matches.npy",
+      "lowres_dsm": "lowres_dsm_from_matches.nc",
+      "lowres_initial_dem": "lowres_initial_dem.nc",
+      "lowres_elevation_difference": "lowres_elevation_diff.nc"
+    }
+  }
+}
