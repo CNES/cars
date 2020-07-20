@@ -84,7 +84,7 @@ def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_ste
                                                              1])},
                                    coords={'row': row,
                                            'col': col},
-                                   attrs={"epi_step": 30,
+                                   attrs={"epi_step": epi_step,
                                           "epipolar_size_x": epipolar_size_x,
                                           "epipolar_size_y": epipolar_size_y})
 
@@ -100,7 +100,7 @@ def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_ste
                                                                1])},
                                     coords={'row': row,
                                             'col': col},
-                                    attrs={"epi_step": 30,
+                                    attrs={"epi_step": epi_step,
                                            "epipolar_size_x": epipolar_size_x,
                                            "epipolar_size_y": epipolar_size_y})
     return left_grid_dataset, right_grid_dataset, epipolar_size_x, epipolar_size_y, baseline
