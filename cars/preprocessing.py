@@ -43,7 +43,7 @@ import otbApplication as otb
 from cars import pipelines
 
 
-def generate_epipolar_grids(img1, img2, srtm_dir, epi_step=30):
+def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_step=30):
     """
     Generate epipolar resampling grids as xarray.Dataset from a pair of images and srtm_dir
 
@@ -53,13 +53,15 @@ def generate_epipolar_grids(img1, img2, srtm_dir, epi_step=30):
     :type img2: string
     :param srtm_dir: Path to folder containing SRTM tiles
     :type srtm_dir: string
+    :param default_alt: Default altitude above geoid
+    :type default_alt: float
     :epi_step: Step of the resampling grid
     :epi_step: float
     :return: left_grid_dataset, right_grid_dataset containing the resampling grids
     :rtypes: (xarray.Dataset, xarray.Dataset)
     """
     grid1, grid2, epipolar_size_x, epipolar_size_y, baseline, stereogrid_pipeline = pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, srtm_dir, epi_step)
+        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
 
     # Export grids to numpy
     left_grid_as_array = np.copy(
@@ -459,7 +461,7 @@ def write_grid(grid, fname, origin, spacing):
         dst.write_band(2, grid[:, :, 1])
 
 
-def image_envelope(img, shp, dem):
+def image_envelope(img, shp, dem=None, default_alt=None):
     """
     Export the image footprint to a shapefile
 
@@ -469,6 +471,8 @@ def image_envelope(img, shp, dem):
     :type shp: string
     :param dem: Directory containing DEM tiles
     :type dem: string
+    :param default_alt: Default altitude above geoid
+    :type default_alt: float
     """
 
     app = otb.Registry.CreateApplication("ImageEnvelope")
@@ -477,7 +481,12 @@ def image_envelope(img, shp, dem):
         app.SetParameterString("in", img)
     else:
         app.SetParameterInputImage("in", img)
-    app.SetParameterString("elev.dem", dem)
+
+    if dem is not None:
+        app.SetParameterString("elev.dem", dem)
+
+    if default_alt is not None:
+        app.SetParameterFloat("elev.default", default_alt)
 
     app.SetParameterString("out", shp)
     app.ExecuteAndWriteOutput()

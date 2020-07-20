@@ -27,7 +27,7 @@ import numpy as np
 import otbApplication
 
 
-def build_stereorectification_grid_pipeline(img1, img2, dem, epi_step=30):
+def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=None, epi_step=30):
     """
     This function builds the stereo-rectification pipeline and return it along with grids and sizes
 
@@ -37,6 +37,8 @@ def build_stereorectification_grid_pipeline(img1, img2, dem, epi_step=30):
     :type img2: string
     :param dem: Path to DEM directory
     :type dem: string
+    :param default_alt: Default altitude above geoid
+    :type default_alt: float
     :param epi_step: Step of the stereo-rectification grid
     :type epi_step: int
     :returns: (left_grid, right_grid, epipolar_size_x, epipolar_size_y, pipeline) tuple
@@ -49,6 +51,8 @@ def build_stereorectification_grid_pipeline(img1, img2, dem, epi_step=30):
     stereo_app.SetParameterInt("epi.step", epi_step)
     if dem is not None:
         stereo_app.SetParameterString("epi.elevation.dem", dem)
+    if default_alt is not None:
+        stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
     stereo_app.Execute()
 
     pipeline = {"stereo_app": stereo_app}

@@ -192,6 +192,7 @@ mask1_tag = "mask1"
 mask2_tag = "mask2"
 nodata1_tag = "nodata1"
 nodata2_tag = "nodata2"
+default_alt_tag = "default_alt"
 
 # Tags for preprocessing output section in content.json of preprocessing step
 minimum_disparity_tag = "minimum_disparity"
@@ -267,10 +268,11 @@ stereo_version_tag = "version"
 input_configuration_schema = {
     img1_tag: And(str, rasterio_can_open),
     img2_tag: And(str, rasterio_can_open),
-    srtm_dir_tag: And(str, os.path.isdir),
+    OptionalKey(srtm_dir_tag): And(str, os.path.isdir),
     OptionalKey(color1_tag): And(str, rasterio_can_open),
     OptionalKey(mask1_tag): And(str, rasterio_can_open),
     OptionalKey(mask2_tag): And(str, rasterio_can_open),
+    OptionalKey(default_alt_tag): float,
     nodata1_tag: int,
     nodata2_tag: int
 }
