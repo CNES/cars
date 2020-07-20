@@ -107,12 +107,13 @@ The prepare input file (``preproc_input.json``) file is formatted as follows:
 The mandatory fields of the input json file are:
 
 * The ``img1`` and ``img2`` fields contain the paths to the images forming the pair.
-* The ``srtm_dir`` field contains the path to the folder in which are located the srtm tiles covering the production.
 * ``nodata1`` : no data value of the image 1.
 * ``nodata2`` : no data value of the image 2.
 
 The other optional fields of the input json file are:
 
+* The ``srtm_dir`` field contains the path to the folder in which are located the srtm tiles covering the production.
+* ``default_alt`` : this parameter allows to setting the default height when there is no DEM available, no coverage for some points or pixels with no_data in the DEM tiles.
 * ``mask1`` : external mask of the image 1 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``mask2`` : external mask of the image 2 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
