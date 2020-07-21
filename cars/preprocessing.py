@@ -53,7 +53,7 @@ def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_ste
     :type img2: string
     :param srtm_dir: Path to folder containing SRTM tiles
     :type srtm_dir: string
-    :param default_alt: Default altitude above geoid
+    :param default_alt: Default altitude above ellipsoid
     :type default_alt: float
     :epi_step: Step of the resampling grid
     :epi_step: float
@@ -471,7 +471,7 @@ def image_envelope(img, shp, dem=None, default_alt=None):
     :type shp: string
     :param dem: Directory containing DEM tiles
     :type dem: string
-    :param default_alt: Default altitude above geoid
+    :param default_alt: Default altitude above ellipsoid
     :type default_alt: float
     """
 

@@ -37,7 +37,7 @@ def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=No
     :type img2: string
     :param dem: Path to DEM directory
     :type dem: string
-    :param default_alt: Default altitude above geoid
+    :param default_alt: Default altitude above ellipsoid
     :type default_alt: float
     :param epi_step: Step of the stereo-rectification grid
     :type epi_step: int
