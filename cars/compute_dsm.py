@@ -104,7 +104,7 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
     return out_points, out_colors
 
 
-def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, nb_bands, color_dtype, output_stats, **kwargs):
+def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, nb_bands, color_dtype, output_stats, write_msk, **kwargs):
     '''
     Wraps the call to rasterization_wrapper and write the dsm tile on disk
 
@@ -128,6 +128,7 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
 
     dsm_nodata = kwargs.get('dsm_no_data')
     color_nodata = kwargs.get('color_no_data')
+    msk_nodata = kwargs.get('msk_no_data')
 
     hashed_region = region_hash_string([xstart,ystart,xsize,ysize])
 
@@ -139,7 +140,9 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
 
     # write DSM tile as geoTIFF
     readwrite.write_geotiff_dsm([dsm], tmp_dir, xsize, ysize, tile_bounds,
-                                resolution, epsg, nb_bands, dsm_nodata, color_nodata, color_dtype = color_dtype, write_color=True, write_stats=output_stats, prefix=hashed_region+'_')
+                                resolution, epsg, nb_bands, dsm_nodata, color_nodata, color_dtype = color_dtype,
+                                write_color=True, write_stats=output_stats, write_msk=write_msk, msk_no_data=msk_nodata,
+                                prefix=hashed_region+'_')
 
     return hashed_region
 
@@ -300,6 +303,8 @@ def run(
 
     ref_left_image = None
 
+    write_msk = False
+
     for in_json in in_jsons:
         # Build config id
         config_id = "config_{}".format(config_idx)
@@ -324,6 +329,9 @@ def run(
         else:
             if snap_to_img1 and ref_left_image != configuration[params.input_section_tag][params.img1_tag]:
                 logging.warning("--snap_to_left_image mode is used but input configurations have different images as their left image in pair. This may result in increasing registration discrepencies between pairs")
+
+        if configuration[params.input_section_tag].get(params.mask1_tag, None) is not None:
+            write_msk = True
 
         # Get largest epipolar regions from configuration file
         largest_epipolar_region = [0,
@@ -525,6 +533,7 @@ def run(
     optimal_terrain_tile_widths = []
 
     for config_id, conf in configurations_data.items():
+
         # Compute terrain area covered by a single epipolar tile
         terrain_area_covered_by_epipolar_tile = conf["terrain_area"] / len(
             epipolar_regions)
@@ -600,7 +609,7 @@ def run(
                     conf['configuration'], region, corr_config, disp_min=conf[
                         'disp_min'], disp_max=conf['disp_max'],
                     geoid_data=geoid_data_futures, out_epsg=stereo_out_epsg,
-                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align))
+                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align, write_msk=write_msk))
             logging.info(
                 "Submitted {} epipolar delayed tasks to dask for stereo configuration {}".format(
                 len(delayed_point_clouds), config_id))
@@ -623,7 +632,8 @@ def run(
                           'disp_max':conf['disp_max'],
                           'geoid_data':geoid_data,
                           'out_epsg':stereo_out_epsg,
-                          'use_sec_disp':use_sec_disp},
+                          'use_sec_disp':use_sec_disp,
+                          "write_msk": write_msk},
                     callback=update))
 
             # Wait computation results (timeout in seconds) and replace the
@@ -841,12 +851,13 @@ def run(
                 # Launch asynchrone job for write_dsm_by_tile()
                 delayed_dsm_tiles.append(pool.apply_async(write_dsm_by_tile,
                     args=(required_point_clouds,resolution,epsg,tmp_dir, nb_bands,
-                          static_cfg.get_color_image_encoding(), output_stats),
+                          static_cfg.get_color_image_encoding(), output_stats, write_msk),
                           kwds={'xstart':xstart, 'ystart':ystart, 'xsize': xsize, 'ysize': ysize, 'radius':dsm_radius,
                                 'sigma':sigma, 'dsm_no_data':dsm_no_data, 'color_no_data':color_no_data,
                                 'small_cpn_filter_params':small_cpn_filter_params,
                                 'statistical_filter_params': statistical_filter_params,
-                                'grid_points_division_factor': grid_points_division_factor},
+                                'grid_points_division_factor': grid_points_division_factor,
+                                'msk_no_data': 65535},
                     callback=update))
 
             number_of_epipolar_tiles_per_terrain_tiles.append(
@@ -868,12 +879,11 @@ def run(
     out_dsm_mean = os.path.join(out_dir, "dsm_mean.tif")
     out_dsm_std = os.path.join(out_dir, "dsm_std.tif")
     out_dsm_n_pts = os.path.join(out_dir, "dsm_n_pts.tif")
-    out_dsm_points_in_cell  = os.path.join(out_dir, "dsm_pts_in_cell.tif")
+    out_dsm_points_in_cell = os.path.join(out_dir, "dsm_pts_in_cell.tif")
 
     if use_dask[mode]:
         # Sort tiles according to rank
         delayed_dsm_tiles = [delayed for _, delayed in sorted(zip(rank,delayed_dsm_tiles), key=lambda pair: pair[0])]
-
 
         logging.info("Submitting {} tasks to dask".format(len(delayed_dsm_tiles)))
         # Transform all delayed raster tiles to futures (computation starts
@@ -885,7 +895,7 @@ def run(
         readwrite.write_geotiff_dsm(future_dsm_tiles, out_dir, xsize, ysize,
                                     bounds, resolution, epsg, nb_bands, dsm_no_data,
                                     color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
-                                    write_color=True, write_stats=output_stats)
+                                    write_color=True, write_stats=output_stats, write_msk=write_msk, msk_no_data=65535)
 
         # stop cluster
         stop_cluster(cluster, client)

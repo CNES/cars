@@ -24,6 +24,7 @@ This module contains all the reading/writing functions used in main.py
 """
 
 # Standard imports
+from typing import Tuple
 import logging
 from contextlib import contextmanager
 
@@ -81,7 +82,7 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     """
     file_handles = {}
     for name, f, p, nd, nb in zip(names, files, params, nodata_values, nb_bands):
-        file_handles[name] = rio.open(f, 'w',count=nb, nodata=nd, **p)
+        file_handles[name] = rio.open(f, 'w', count=nb, nodata=nd, **p)
     try:
         yield file_handles
     finally:
@@ -89,35 +90,33 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
             handle.close()
 
 
-def write_geotiff_dsm(future_dsm, output_dir, x_size, y_size, bounds,
-                      resolution, epsg, nb_bands, dsm_no_data, color_no_data, write_color = True, 
-                      color_dtype = np.float32, write_stats = False, prefix=''):
+def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bounds: Tuple[float, float, float, float],
+                      resolution: float, epsg: int, nb_bands: int, dsm_no_data: float, color_no_data: float,
+                      write_color: bool=True, color_dtype: np.dtype=np.float32, write_stats: bool=False,
+                      write_msk=False, msk_no_data: int=65535, prefix: str=''):
     """
     Writes result tiles to GTiff file(s).
 
     :param future_dsm: iterable containing future output tiles.
     :type future_dsm: list(dask.future)
-    :param dsm_file: dsm GeoTiff filename.
-    :type dsm_file: str
-    :param clr_file: color GeoTiff filename.
-    :type clr_file: str
+    :param output_dir:
     :param x_size: full output x size.
-    :type x_size: int
     :param y_size: full output y size.
-    :type y_size: int
     :param bounds: geographic bounds of the tile (xmin, ymin, xmax, ymax).
-    :type bounds: tuple(float, float, float, float)
     :param resolution: resolution of the tiles.
-    :type resolution: float
     :param epsg: epsg numeric code of the output tiles.
-    :type epsg: int
     :param nb_bands: number of band in the color layer.
-    :type nb_bands: int
     :param dsm_no_data: value to fill no data in height layer.
-    :type dsm_no_data: float
     :param color_no_data: value to fill no data in color layer(s).
-    :type color_no_data: float
+    :param write_color:
+    :param color_dtype:
+    :param write_stats:
+    :param write_msk:
+    :param msk_no_data:
+    :param prefix:
+
     """
+    print(write_msk)
     geotransform = (bounds[0], resolution, 0.0, bounds[3], 0.0, -resolution)
     transform = Affine.from_gdal(*geotransform)
 
@@ -135,7 +134,6 @@ def write_geotiff_dsm(future_dsm, output_dir, x_size, y_size, bounds,
         height=y_size, width=x_size, driver='GTiff', dtype=np.uint16,
         transform=transform, crs='EPSG:{}'.format(epsg), tiled=True
     )
-
 
     dsm_file = os.path.join(output_dir, prefix+'dsm.tif')
 
@@ -181,6 +179,14 @@ def write_geotiff_dsm(future_dsm, output_dir, x_size, y_size, bounds,
         nodata_values.append(0)
         nb_bands_to_write.append(1)
 
+    if write_msk:
+        names.append('msk')
+        msk_file = os.path.join(output_dir, prefix + 'msk.tif')
+        files.append(msk_file)
+        params.append(dsm_rio_params_uint16)
+        nodata_values.append(msk_no_data)
+        nb_bands_to_write.append(1)
+
     # detect if we deal with dask.future or plain datasets
     hasDatasets = True
     for tile in future_dsm:
@@ -220,6 +226,10 @@ def write_geotiff_dsm(future_dsm, output_dir, x_size, y_size, bounds,
                 rio_handles['dsm_std'].write_band(1, raster_tile['hgt_stdev'].values, window=window)
                 rio_handles['dsm_n_pts'].write_band(1, raster_tile['n_pts'].values, window=window)
                 rio_handles['dsm_pts_in_cell'].write_band(1, raster_tile['pts_in_cell'].values, window=window)
+
+            values_list = [key for key, _ in raster_tile.items()]
+            if 'msk' in values_list and write_msk:
+                rio_handles['msk'].write_band(1, raster_tile['msk'].values, window=window)
 
         # Multiprocessing mode
         if hasDatasets:
