@@ -259,6 +259,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
         c_z = full_z[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
 
         c_cloud = np.zeros((len(nb_data), (bbox[2] - bbox[0] + 1)*(bbox[3] - bbox[1] + 1)))
+
         c_cloud[1, :] = np.ravel(c_x)
         c_cloud[2, :] = np.ravel(c_y)
         c_cloud[3, :] = np.ravel(c_z)
@@ -266,37 +267,41 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
         values_list = [key for key, _ in cloud_list[idx].items()]
         print(values_list)
         if 'msk' in values_list:
-            c_cloud[4, :] = np.ravel(cloud_list[idx].msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1])
-
-        # add data valid mask (points that are not in the border of the epipolar image)
-        if epipolar_border_margin == 0:
-            epipolar_margin_mask = \
-                np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), True)
-        else:
-            epipolar_margin_mask = \
-                np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), False)
-            epipolar_margin_mask[epipolar_border_margin:-epipolar_border_margin,
-                                 epipolar_border_margin:-epipolar_border_margin] = True
-
-        c_epipolar_margin_mask = epipolar_margin_mask[bbox[0]:bbox[2] + 1, bbox[1]:bbox[3] + 1]
-        c_cloud[0, :] = np.ravel(c_epipolar_margin_mask)
+            c_msk = cloud_list[idx].msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
+            c_cloud[4, :] = np.ravel(c_msk)
+            print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+            print(np.min(c_cloud[4, :]), np.max(c_cloud[4, :]))
+            print('%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%')
+        #
+        # # add data valid mask (points that are not in the border of the epipolar image)
+        # if epipolar_border_margin == 0:
+        #     epipolar_margin_mask = \
+        #         np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), True)
+        # else:
+        #     epipolar_margin_mask = \
+        #         np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), False)
+        #     epipolar_margin_mask[epipolar_border_margin:-epipolar_border_margin,
+        #                          epipolar_border_margin:-epipolar_border_margin] = True
+        #
+        # c_epipolar_margin_mask = epipolar_margin_mask[bbox[0]:bbox[2] + 1, bbox[1]:bbox[3] + 1]
+        # c_cloud[0, :] = np.ravel(c_epipolar_margin_mask)
 
         # add the color information to the current cloud
-        if color_list is not None:
-            c_color = color_list[idx].im.values[:, bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
-
-            for band in range(nb_band_clr):
-                c_cloud[4+nb_data_msk+band, :] = np.ravel(c_color[band, :, :])
-
-        # add the original image coordinates information to the current cloud
-        if with_coords:
-            coords_line = np.linspace(bbox[0], bbox[2], bbox[2]-bbox[0]+1)
-            coords_col = np.linspace(bbox[1], bbox[3], bbox[3]-bbox[1]+1)
-            coords_col, coords_line = np.meshgrid(coords_col, coords_line)
-
-            c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
-            c_cloud[4 + nb_data_msk + nb_band_clr + 1, :] = np.ravel(coords_col)
-            c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
+        # if color_list is not None:
+        #     c_color = color_list[idx].im.values[:, bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
+        #
+        #     for band in range(nb_band_clr):
+        #         c_cloud[4 + nb_data_msk + band, :] = np.ravel(c_color[band, :, :])
+        #
+        # # add the original image coordinates information to the current cloud
+        # if with_coords:
+        #     coords_line = np.linspace(bbox[0], bbox[2], bbox[2]-bbox[0]+1)
+        #     coords_col = np.linspace(bbox[1], bbox[3], bbox[3]-bbox[1]+1)
+        #     coords_col, coords_line = np.meshgrid(coords_col, coords_line)
+        #
+        #     c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
+        #     c_cloud[4 + nb_data_msk + nb_band_clr + 1, :] = np.ravel(coords_col)
+        #     c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
 
         # remove masked data (pandora + out of the terrain tile points)
         c_terrain_tile_data_msk = cloud_list[idx].pandora_msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
@@ -310,7 +315,8 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
         nb_points += c_cloud.shape[1]
 
-        c_cloud = np.delete(c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0)
+        # c_cloud = np.delete(c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0)
+        c_cloud = c_cloud.transpose()
 
         # add current cloud to the combined one
         cloud = np.concatenate([cloud, c_cloud], axis=0)
@@ -326,7 +332,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 def simple_rasterization_dataset(cloud_list: List[xr.Dataset], resolution: float, epsg: int,
                                  color_list: List[xr.Dataset]=None, xstart: float=None, ystart: float=None,
                                  xsize: int=None, ysize: int=None, sigma: float=None, radius: int=1, margin: int=0,
-                                 dsm_no_data: int=np.nan, color_no_data: int=np.nan,
+                                 dsm_no_data: int=np.nan, color_no_data: int=np.nan, msk_no_data: int=np.nan,
                                  grid_points_division_factor: int=None,
                                  small_cpn_filter_params: Union[None, filtering.SmallComponentsFilterParams]=None,
                                  statistical_filter_params: Union[None, filtering.StatisticalFilterParams]=None,
@@ -349,6 +355,7 @@ def simple_rasterization_dataset(cloud_list: List[xr.Dataset], resolution: float
     Can only be used if input lists are of size 1.
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
+    :param msk_no_data:
     :param grid_points_division_factor: number of blocs to use to divide the grid points (memory optimization, reduce
      the highest memory peak). If it is not set, the factor is automatically set to construct 700000 points blocs.
     :param small_cpn_filter_params: small component filtering parameters
@@ -432,7 +439,7 @@ def simple_rasterization_dataset(cloud_list: List[xr.Dataset], resolution: float
     # rasterize clouds
     raster = rasterize(cloud, resolution, epsg, x_start=xstart, y_start=ystart, x_size=xsize,
                        y_size=ysize, sigma=sigma, radius=radius, hgt_no_data=dsm_no_data, color_no_data=color_no_data,
-                       grid_points_division_factor=grid_points_division_factor)
+                       msk_no_data=msk_no_data, grid_points_division_factor=grid_points_division_factor)
 
     if dump_filter_cloud:
         return raster, cloud
@@ -712,7 +719,9 @@ def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: n
     """
     # mask rasterization result
     result = np.full((neighbors_count.size, 1), np.nan, dtype=np.float32)
-
+    print('//////////////////////////////////:')
+    print(np.min(mask_points[:, 2]), np.max(mask_points[:, 2]))
+    print('//////////////////////////////////:')
     for i_grid in range(neighbors_count.size):
         p_sample = grid_points[i_grid]
 
@@ -733,6 +742,7 @@ def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: n
             msk_val = (neighbors[idx, 2:])
 
             if msk_val != 0: # only masked points are taken into account
+                print('deal with it !')
                 if msk_val in val:
                     msk_val_index = val.index(msk_val)
                     val_cum_weight[msk_val_index] += weights[idx]
@@ -830,7 +840,7 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
 
 
 def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_size: int, y_size: int,
-                          resolution: float, hgt_no_data: int, color_no_data: int, epsg: int, mean: np.ndarray,
+                          resolution: float, hgt_no_data: int, color_no_data: int, msk_no_data: int, epsg: int, mean: np.ndarray,
                           stdev: np.ndarray, n_pts: np.ndarray, n_in_cell: np.ndarray, msk:np.ndarray=None)\
         -> xr.Dataset:
     """
@@ -844,6 +854,7 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     :param resolution: Resolution of rasterized cells, expressed in cloud CRS units or None.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
+    :param msk_no_data:
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
     :param stdev: standard deviation of height and colors
@@ -891,7 +902,7 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     raster_out['pts_in_cell'] = xr.DataArray(n_in_cell, dims=raster_dims)
 
     if msk is not None:
-        msk = np.nan_to_num(msk, nan=color_no_data)
+        msk = np.nan_to_num(msk, nan=msk_no_data)
         raster_out['left_msk'] = xr.DataArray(msk.astype(np.uint16), dims=raster_dims)
 
     return raster_out
@@ -899,7 +910,7 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
 
 def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: float, y_start: float, x_size: int,
               y_size: int, sigma: float=None, radius: int=1, hgt_no_data: int=np.nan, color_no_data: int=np.nan,
-              grid_points_division_factor: int=None)\
+              msk_no_data: int=np.nan, grid_points_division_factor: int=None)\
         -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset that also contains quality statistics.
@@ -915,6 +926,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
     :param radius: Radius for hole filling.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
+    :param msk_no_data:
     :param grid_points_division_factor: number of blocs to use to divide the grid points (memory optimization, reduce
      the highest memory peak). If it is not set, the factor is automatically set to construct 700000 points blocs.
     :return: Rasterized cloud color and statistics.
@@ -959,7 +971,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
     # build output dataset
     tic = time.process_time()
     raster_out = create_raster_dataset(out, x_start, y_start, x_size, y_size, resolution, hgt_no_data, color_no_data,
-                                       epsg, mean, stdev, n_pts, n_in_cell, msk)
+                                       msk_no_data, epsg, mean, stdev, n_pts, n_in_cell, msk)
 
     toc = time.process_time()
     worker_logger.debug(

@@ -286,7 +286,7 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
 
     with open(path, 'w') as f:
         if isinstance(cloud, xr.Dataset):
-            nb_points = int(cloud.msk.where(cloud.msk != 0).count())
+            nb_points = int(cloud.pandora_msk.where(cloud.pandora_msk != 0).count())
         else:
             nb_points = cloud.shape[0]
 
@@ -302,7 +302,7 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
             for x, y, z, m in zip(np.nditer(cloud['x'].values),
                                   np.nditer(cloud['y'].values),
                                   np.nditer(cloud['z'].values),
-                                  np.nditer(cloud['msk'].values)):
+                                  np.nditer(cloud['pandora_msk'].values)):
                 if m != 0:
                     f.write("{} {} {}\n".format(x, y, z))
         else:

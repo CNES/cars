@@ -596,7 +596,7 @@ def test_triangulation_1(images_and_grids_conf):
     assert output['ref']['x'].shape == (120, 110)
 
     # Uncomment to update baseline
-    #output['ref'].to_netcdf(absolute_data_path("ref_output/triangulation1_ref.nc"))
+    output['ref'].to_netcdf(absolute_data_path("ref_output/triangulation1_ref.nc"))
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/triangulation1_ref.nc"))
@@ -615,7 +615,7 @@ def test_triangulate_matches(images_and_grids_conf):
     np.testing.assert_almost_equal(llh.x.values[0],5.1973629)
     np.testing.assert_almost_equal(llh.y.values[0],44.2079813)
     np.testing.assert_almost_equal(llh.z.values[0],511.4383088)
-    assert(llh.msk.values[0] == 255)
+    assert(llh.pandora_msk.values[0] == 255)
     assert('epsg' in llh.attrs)
     assert(llh.attrs['epsg'] == 4326)
 

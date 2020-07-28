@@ -107,6 +107,7 @@ def test_write_geotiff_dsm():
         dsm_no_data = -32768
         hgt_no_data = dsm_no_data
         color_no_data = 0
+        msk_no_data = 65535
         xstart, ystart, xsize, ysize = [0, 10, 10, 10]
 
         raster = np.ndarray(shape=(10, 10, 2), dtype=np.float32)
@@ -118,7 +119,7 @@ def test_write_geotiff_dsm():
         delayed_raster_datasets = list()
         delayed_raster_datasets.append(dask.delayed(rasterization.create_raster_dataset)(
             raster, xstart, ystart, xsize, ysize, resolution,
-            hgt_no_data, color_no_data, epsg, mean, stdev, n_pts, n_in_cell
+            hgt_no_data, color_no_data, msk_no_data, epsg, mean, stdev, n_pts, n_in_cell
         ))
 
         # Start cluster with a local cluster

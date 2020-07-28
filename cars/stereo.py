@@ -170,6 +170,7 @@ def resample_image(
 
     # Build mask pipeline for img needed
     img_has_mask = nodata is not None or mask is not None
+    print(mask)
     mask_otb = None
     mask_pipeline = None
     if img_has_mask:
@@ -934,7 +935,7 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
                        int(dataset_msk.dims['col'] - dataset_msk.attrs['margins'][2]),
                        int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
             im_msk = dataset_msk.msk.values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
-            values['msk'] = (['row', 'col'], im_msk)
+            # values['msk'] = (['row', 'col'], im_msk)
         else:
             worker_logger = logging.getLogger('distributed.worker')
             worker_logger.warning("No mask is present in the image dataset")

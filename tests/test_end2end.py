@@ -702,3 +702,56 @@ def test_end2end_ventoux_egm96_geoid():
             "ref_output/dsm_end2end_ventoux_egm96.tif"), atol=0.0001, rtol=1e-6)
         assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
             "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
+
+
+@pytest.mark.unit_tests
+def test_paca():
+    """
+    End to end processing
+    """
+    # Force max RAM to 1000 to get stable tiling in tests
+    os.environ['OTB_MAX_RAM_HINT'] = '1000'
+
+    input_json = read_input_parameters(
+        absolute_data_path("input/phr_paca/preproc_input.json"))
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        out_preproc = os.path.join('/work/OT/siaa/3D/Temporary/emiliena/cars/issues/147/paca_small', "out_preproc")
+        prepare.run(
+            input_json,
+            out_preproc,
+            epi_step=30,
+            region_size=250,
+            disparity_margin=0.25,
+            epipolar_error_upper_bound=43.,
+            elevation_delta_lower_bound=-20.,
+            elevation_delta_upper_bound=20.,
+            mode="local_dask",  # Run on a local cluster
+            nb_workers=4,
+            walltime="00:10:00",
+            check_inputs=True)
+
+        # Check preproc properties
+        preproc_json = os.path.join(out_preproc, "content.json")
+
+        out_stereo = os.path.join('/work/OT/siaa/3D/Temporary/emiliena/cars/issues/147/paca_small', "out_stereo")
+
+        corr_config = corr_cfg.configure_correlator()
+
+        compute_dsm.run(
+            [read_preprocessing_content_file(preproc_json)],
+            out_stereo,
+            resolution=0.5,
+            epsg=32631,
+            sigma=0.3,
+            dsm_radius=3,
+            dsm_no_data=-999,
+            color_no_data=0,
+            corr_config=corr_config,
+            mode="local_dask",  # Run on a local cluster,
+            output_stats=True,
+            nb_workers=4,
+            walltime="00:10:00",
+            use_sec_disp=True,
+            cloud_small_components_filter=False,
+            cloud_statistical_outliers_filter=False)
