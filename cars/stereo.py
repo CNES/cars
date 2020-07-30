@@ -170,7 +170,7 @@ def resample_image(
 
     # Build mask pipeline for img needed
     img_has_mask = nodata is not None or mask is not None
-    print(mask)
+
     mask_otb = None
     mask_pipeline = None
     if img_has_mask:
@@ -769,8 +769,8 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
     return (default_min, default_max)
 
 
-def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, dataset_msk: xr.Dataset=None,
-                snap_to_img1:bool = False, align:bool = False) -> Dict[str, xr.Dataset]:
+def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, im_ref_msk_ds: xr.Dataset=None,
+                im_sec_msk_ds: xr.Dataset=None, snap_to_img1:bool = False, align:bool = False) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
 
@@ -778,7 +778,8 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, d
     :type configuration: StereoConfiguration
     :param disp_ref: left to right disparity map dataset
     :param disp_sec: if available, the right to left disparity map dataset
-    :param dataset_msk:
+    :param im_ref_msk_ds:
+    :param im_sec_msk_ds:
     :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so as to cross those of img1
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
@@ -810,9 +811,10 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, d
 
     point_clouds = dict()
     point_clouds['ref'] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key='roi',
-                                               dataset_msk=dataset_msk)
+                                               dataset_msk=im_ref_msk_ds)
     if disp_sec is not None:
-        point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins')
+        point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins',
+                                                   dataset_msk=im_sec_msk_ds)
         
     # Handle alignment with lowres DEM
     if align and params.lowres_dem_splines_fit_tag in preprocessing_output_configuration:        
@@ -930,12 +932,19 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     if dataset_msk is not None:
         values_list = [key for key, _ in dataset_msk.items()]
         if 'msk' in values_list:
-            ref_roi = [int(-dataset_msk.attrs['margins'][0]),
-                       int(-dataset_msk.attrs['margins'][1]),
-                       int(dataset_msk.dims['col'] - dataset_msk.attrs['margins'][2]),
-                       int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
+            if roi_key == 'roi_with_margins':
+                ref_roi = [0,
+                           0,
+                           int(dataset_msk.dims['col']),
+                           int(dataset_msk.dims['row'])]
+            else:
+                ref_roi = [int(-dataset_msk.attrs['margins'][0]),
+                           int(-dataset_msk.attrs['margins'][1]),
+                           int(dataset_msk.dims['col'] - dataset_msk.attrs['margins'][2]),
+                           int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
+
             im_msk = dataset_msk.msk.values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
-            # values['msk'] = (['row', 'col'], im_msk)
+            values['msk'] = (['row', 'col'], im_msk)
         else:
             worker_logger = logging.getLogger('distributed.worker')
             worker_logger.warning("No mask is present in the image dataset")
@@ -1111,17 +1120,30 @@ def images_pair_to_3d_points(configuration,
         # compute right color image from right-left disparity map
         colors['sec'] = estimate_color_from_disparity(disp['sec'], left, color)
 
+    im_ref_msk = None
+    im_sec_msk = None
     if write_msk:
-        dataset_msk = None
-    else:
-        dataset_msk = left
+        ref_values_list = [key for key, _ in left.items()]
+        if 'msk' in ref_values_list:
+            im_ref_msk = left
+        else:
+            worker_logger = logging.getLogger('distributed.worker')
+            worker_logger.warning("Left image does not have a mask to rasterize")
+        if 'sec' in disp:
+            sec_values_list = [key for key, _ in right.items()]
+            if 'msk' in sec_values_list:
+                im_sec_msk = right
+            else:
+                worker_logger = logging.getLogger('distributed.worker')
+                worker_logger.warning("Right image does not have a mask to rasterize")
 
     # Triangulate
     if 'sec' in disp:
         points = triangulate(configuration, disp['ref'], disp['sec'], snap_to_img1 = snap_to_img1, align=align,
-                             dataset_msk=left)
+                             im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
     else:
-        points = triangulate(configuration, disp['ref'], snap_to_img1=snap_to_img1, align=align, dataset_msk=left)
+        points = triangulate(configuration, disp['ref'], snap_to_img1=snap_to_img1, align=align,
+                             im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
 
     if geoid_data is not None:  # if user pass a geoid, use it a alt reference
         for key in points:
@@ -1130,9 +1152,6 @@ def images_pair_to_3d_points(configuration,
     if out_epsg is not None:
         for key in points:
             points[key] = projection.points_cloud_conversion_dataset(points[key], out_epsg)
-
-    values_list = [key for key, _ in points['ref'].items()]
-    print(values_list)
 
     return points, colors
 

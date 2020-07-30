@@ -1,0 +1,11 @@
+band1.null_value:  -32768
+byte_order:  big_endian
+decimal_degrees_per_pixel_lat:  0.000833333333333333
+decimal_degrees_per_pixel_lon:  0.000833333333333333
+filename:  /work/OT/siaa/3D/Development/emiliena/cars-hal/cars/tests/data/input/phr_paca/srtm/N43E007.hgt
+number_bands:  1
+number_lines:  1201
+number_samples:  1201
+scalar_type:  ossim_sint16
+tie_point_lat:  44
+tie_point_lon:  7

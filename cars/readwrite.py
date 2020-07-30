@@ -116,7 +116,6 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
     :param prefix:
 
     """
-    print(write_msk)
     geotransform = (bounds[0], resolution, 0.0, bounds[3], 0.0, -resolution)
     transform = Affine.from_gdal(*geotransform)
 

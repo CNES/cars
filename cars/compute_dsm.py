@@ -190,6 +190,7 @@ def run(
         sigma: float=None,
         dsm_radius: int=1,
         dsm_no_data: int=-32768,
+        msk_no_data: int=65535,
         color_no_data: int=0,
         corr_config: Dict=None,
         output_stats: bool=False,
@@ -224,6 +225,7 @@ def run(
     :param dsm_radius: Radius around a cell for gathering points for rasterization
     :param dsm_no_data: No data value to use in the final DSM file
     :param color_no_data: No data value to use in the final colored image
+    :param msk_no_data: No data value to use in the final mask image
     :param corr_config: Correlator configuration
     :param output_stats: flag, if true, outputs dsm as a geotiff file with quality statistics.
     :param mode: Parallelization mode
@@ -838,7 +840,7 @@ def run(
                     required_point_clouds, resolution, epsg, xstart=xstart,
                     ystart=ystart, xsize=xsize, ysize=ysize,
                     radius=dsm_radius, sigma=sigma, dsm_no_data=dsm_no_data,
-                    color_no_data=color_no_data, small_cpn_filter_params=small_cpn_filter_params,
+                    color_no_data=color_no_data, msk_no_data=65535, small_cpn_filter_params=small_cpn_filter_params,
                     statistical_filter_params=statistical_filter_params,
                     grid_points_division_factor=grid_points_division_factor
                 )

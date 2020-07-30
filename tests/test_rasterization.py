@@ -51,14 +51,11 @@ def test_create_combined_cloud():
     z = y + 1
     pandora_msk = np.full((row, col), fill_value=255, dtype=np.int16)
     pandora_msk[4, 4] = 0
-    msk = np.full((row, col), fill_value=255, dtype=np.int16)
-    msk[3, 3] = 0
 
     cloud0 = xr.Dataset({'x': (['row', 'col'], x),
                          'y': (['row', 'col'], y),
                          'z': (['row', 'col'], z),
-                         'pandora_msk': (['row', 'col'], pandora_msk),
-                         'msk': (['row', 'col'], msk)},
+                         'pandora_msk': (['row', 'col'], pandora_msk)},
                         coords={'row': np.array(range(row)), 'col': np.array(range(col))})
     cloud0.attrs['epsg'] = epsg
 
@@ -120,6 +117,8 @@ def test_create_combined_cloud():
     ref_cloud = np.concatenate([ref_cloud0, ref_cloud2])
 
     assert np.allclose(cloud.values, ref_cloud)
+
+    #test with mask
 
     # test with color
     band = 3
