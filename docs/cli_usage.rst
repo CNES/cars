@@ -99,6 +99,7 @@ The prepare input file (``preproc_input.json``) file is formatted as follows:
         "mask1" : "/tmp/cars/tests/data/input/phr_reunion/left_mask.tif",
         "mask2" : "/tmp/cars/tests/data/input/phr_reunion/right_mask.tif",
         "srtm_dir" : "/tmp/cars/tests/data/input/phr_reunion/srtm",
+        "default_alt": 0,
         "nodata1": 0,
         "nodata2": 0
     }
@@ -113,7 +114,7 @@ The mandatory fields of the input json file are:
 The other optional fields of the input json file are:
 
 * The ``srtm_dir`` field contains the path to the folder in which are located the srtm tiles covering the production.
-* ``default_alt`` : this parameter allows to setting the default height above ellipsoid when there is no DEM available, no coverage for some points or pixels with no_data in the DEM tiles (default value: 0).
+* ``default_alt`` : this parameter allows to set the default height above ellipsoid when there is no DEM available, no coverage for some points or pixels with no_data in the DEM tiles (default value: 0).
 * ``mask1`` : external mask of the image 1 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``mask2`` : external mask of the image 2 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.

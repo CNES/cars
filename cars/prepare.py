@@ -207,7 +207,17 @@ def run(
     mask1 = config.get(params.mask1_tag, None)
     mask2 = config.get(params.mask2_tag, None)
     color1 = config.get(params.color1_tag, None)
-    default_alt = config.get(params.default_alt_tag, None)
+    default_alt = config.get(params.default_alt_tag, 0)
+
+    if srtm_dir is not None:
+        srtm_tiles = os.listdir(srtm_dir)
+        if len(srtm_tiles) == 0:
+            logging.warning('SRTM directory is empty, the default altitude will be used as reference altitude.')
+        else:
+            logging.info('Indicated SRTM tiles\' valid regions will be used as reference altitudes '
+                         '(the default altitude is used for undefined regions of the SRTM)')
+    else:
+        logging.info('The default altitude will be used as reference altitude.')
 
     if check_inputs:
         logging.info('Checking inputs consistency')
