@@ -59,6 +59,7 @@ def compute_dsm_default_args():
     args.min_elevation_offset = None
     args.max_elevation_offset = None
     args.roi = None
+    args.roi_file = None
     args.epsg = None
     args.injsons = [absolute_data_path(
         'input/cars_cli_input/content.json')]
@@ -210,12 +211,12 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         main_cli(compute_dsm_default_args, parser, check_inputs=True)
 
         # test image roi argument
-        compute_dsm_default_args.roi = [
+        compute_dsm_default_args.roi_file = [
             absolute_data_path('input/cars_cli_input/roi_image.tif')]
         main_cli(compute_dsm_default_args, parser, check_inputs=True)
 
         # test vector roi argument
-        compute_dsm_default_args.roi = [
+        compute_dsm_default_args.roi_file = [
             absolute_data_path('input/cars_cli_input/roi_vector.gpkg')]
         main_cli(compute_dsm_default_args, parser, check_inputs=True)
 
@@ -273,21 +274,30 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         assert e.type == SystemExit
         assert e.value.code == 1
 
+        # degraded cases input ROI file
+        args_bad_roi_file = copy(compute_dsm_default_args)
+        with pytest.raises(SystemExit) as e:
+            args_bad_roi_file.roi_file = [absolute_data_path('input/cars_cli_input/test.txt')]
+            main_cli(args_bad_roi_file, parser, check_inputs=True)
+        assert e.type == SystemExit
+        assert e.value.code == 1
+
+        with pytest.raises(SystemExit) as e:
+            args_bad_roi_file.roi_file = [absolute_data_path(
+                'input/phr_ventoux/preproc_output/content.json')]
+            main_cli(args_bad_roi_file, parser, check_inputs=True)
+        assert e.type == SystemExit
+        assert e.value.code == 1
+
+        with pytest.raises(SystemExit) as e:
+            args_bad_roi_file.roi_file = [absolute_data_path(
+                'input/phr_ventoux/left_image.tif')]
+            main_cli(args_bad_roi_file, parser, check_inputs=True)
+        assert e.type == SystemExit
+        assert e.value.code == 1
+
         # degraded cases input ROI
         args_bad_roi = copy(compute_dsm_default_args)
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = [absolute_data_path('input/cars_cli_input/test.txt')]
-            main_cli(args_bad_roi, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = [absolute_data_path(
-                'input/phr_ventoux/preproc_output/content.json')]
-            main_cli(args_bad_roi, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
         with pytest.raises(SystemExit) as e:
             args_bad_roi.roi = ['1.0', '2.0']
             main_cli(args_bad_roi, parser, check_inputs=True)
@@ -302,13 +312,6 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
 
         with pytest.raises(SystemExit) as e:
             args_bad_roi.roi = ['1.0', '2.0', '3.0', 'b']
-            main_cli(args_bad_roi, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = [absolute_data_path(
-                'input/phr_ventoux/left_image.tif')]
             main_cli(args_bad_roi, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
