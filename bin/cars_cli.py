@@ -139,11 +139,14 @@ def cars_cli_parser():
     compute_dsm_parser.add_argument(
         "--epsg", type=int, default=None,
         help="EPSG code (default: None, should be > 0)")
-    compute_dsm_parser.add_argument(
-        "--roi", default=None, nargs='*',
+    compute_dsm_roi_group = compute_dsm_parser.add_mutually_exclusive_group()
+    compute_dsm_roi_group.add_argument(
+        "--roi", type=float, default=None, nargs=4,
         help="DSM ROI in final projection [xmin ymin xmax ymax] "
-             "(it has to be in final projection) or DSM ROI file "
-             "(vector file or image which "
+             "(it has to be in final projection)")
+    compute_dsm_roi_group.add_argument(
+        "--roi-file", type=str,
+        help="DSM ROI file (vector file or image which "
              "footprint will be taken as ROI).")
     compute_dsm_parser.add_argument(
         "--dsm_no_data", type=int, default=-32768,
@@ -208,10 +211,9 @@ def cars_cli_parser():
 
     return parser
 
-
 def parse_roi_argument(roi_args, stop_now):
     """
-    Parse ROI argument
+    Parse ROI arguments : file or 4 floats
 
     :param roi_args: ROI argument
     :type region: str or array of four numbers
@@ -223,7 +225,6 @@ def parse_roi_argument(roi_args, stop_now):
     import logging
     import rasterio
     from cars import utils
-
     roi = None
     if roi_args is not None:
         if len(roi_args) == 1:
@@ -236,7 +237,6 @@ def parse_roi_argument(roi_args, stop_now):
                 if not os.path.exists(roi_file):
                     logging.warning('{} does not exist'.format(roi_file))
                     stop_now = True
-
                 # if it is a vector file
                 if extension in ['.gpkg', '.shp', '.kml']:
                     try:
@@ -432,7 +432,13 @@ def main_cli(args, parser, check_inputs=False):
             --max_elevation_offset = {}'.format(args.min_elevation_offset,
                                                 args.max_elevation_offset))
             stop_now = True
-        roi, stop_now = parse_roi_argument(args.roi, stop_now)
+        # ROI file or 4 floats ?
+        roi_args=[]
+        if args.roi_file is not None:
+            roi_args.append(args.roi_file)
+        else:
+            roi_args=args.roi
+        roi, stop_now = parse_roi_argument(roi_args, stop_now)
 
         # If there are invalid parameters, stop now
         if stop_now:
