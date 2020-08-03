@@ -46,8 +46,8 @@ def cars_cli_parser():
     # Prepare subparser creation
     prepare_parser = subparsers.add_parser(
         "prepare",
-        help="Preparation for compute_dsm"
-             "producing stereo-rectification grid as well"
+        help="Preparation for compute_dsm "
+             "producing stereo-rectification grid as well "
              "as an estimate of the disparity to explore.")
 
     ## Prepare arguments
@@ -62,47 +62,47 @@ def cars_cli_parser():
     prepare_parser.add_argument(
         "--loglevel", default="INFO",
        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-       help="Logger level (default: INFO. Should be one of"
-            "DEBUG, INFO, WARNING, ERROR, CRITICAL)")
+       help="Logger level (default: INFO. Should be one of "
+            "(DEBUG, INFO, WARNING, ERROR, CRITICAL)")
     prepare_parser.add_argument(
         "--epi_step", type=int, default=30,
-        help="Step of the deformation grid in nb. of pixels"
+        help="Step of the deformation grid in nb. of pixels "
              "(default: 30, should be > 1)")
     prepare_parser.add_argument(
         "--disparity_margin", type=float, default=0.02,
-        help="Add a margin to min and max disparity as percent"
-             "of the disparity range"
+        help="Add a margin to min and max disparity as percent "
+             "of the disparity range "
              "(default: 0.02, should be in range [0,1])")
     prepare_parser.add_argument(
         "--epipolar_error_upper_bound",
         type=float, default=10.,
-        help="Expected upper bound for epipolar error in pixels"
+        help="Expected upper bound for epipolar error in pixels "
              "(default: 10, should be > 0)")
     prepare_parser.add_argument(
         "--epipolar_error_maximum_bias",
         type=float, default=0.,
-        help="Maximum bias for epipolar error in pixels" 
+        help="Maximum bias for epipolar error in pixels " 
              "(default: 0, should be >= 0)")
     prepare_parser.add_argument(
         "--elevation_delta_lower_bound", type=float, default=-1000.,
-        help="Expected lower bound for elevation delta"
-             "with respect to input low resolution DTM in meters"
+        help="Expected lower bound for elevation delta "
+             "with respect to input low resolution DTM in meters "
              "(default: -1000)")
     prepare_parser.add_argument(
         "--elevation_delta_upper_bound", type=float, default=1000.,
-        help="Expected upper bound for elevation delta"
-             "with respect to input low resolution DTM in meters"
+        help="Expected upper bound for elevation delta "
+             "with respect to input low resolution DTM in meters "
              "(default: 1000)")
     prepare_parser.add_argument(
         "--mode", default="local_dask",
-        help="Parallelization mode (default : local_dask)",
-             choices=("pbs_dask", "local_dask"))
+        choices=("pbs_dask", "local_dask"),
+        help="Parallelization mode (default: local_dask)")
     prepare_parser.add_argument(
-        "--nb_workers", type=int, default=8, 
-        help="Number of workers (default:8, should be > 0)")
+        "--nb_workers", type=int, default=8,
+        help="Number of workers (default: 8, should be > 0)")
     prepare_parser.add_argument(
         "--walltime", default="00:59:00",
-        help="Walltime for one worker (default: 00:59:00)."
+        help="Walltime for one worker (default: 00:59:00). "
              "Should be formatted as HH:MM:SS)")
     prepare_parser.add_argument(
         "--check_inputs",action="store_true",
@@ -113,8 +113,8 @@ def cars_cli_parser():
     # Prepare subparser creation
     compute_dsm_parser = subparsers.add_parser(
         "compute_dsm",
-        help=" Tile-based, concurent resampling"
-             "in epipolar geometry, disparity"
+        help="Tile-based, concurent resampling "
+             "in epipolar geometry, disparity "
              "estimation, triangulation and rasterization")
 
     ## Compute_dsm arguments
@@ -129,28 +129,28 @@ def cars_cli_parser():
     compute_dsm_parser.add_argument(
         "--loglevel", default="INFO",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO)."
+        help="Logger level (default: INFO). "
              "Should be one of DEBUG, INFO, WARNING, ERROR, CRITICAL)")
     compute_dsm_parser.add_argument(
         "--sigma", type=float, default=None,
-        help="Sigma for rasterization in fraction of pixels"
+        help="Sigma for rasterization in fraction of pixels "
              "(default: None, should be >= 0)")
     compute_dsm_parser.add_argument(
         "--dsm_radius", type=int, default=1,
-        help="Radius for rasterization in pixels"
+        help="Radius for rasterization in pixels "
              "(default: 1, should be >= 0)")
     compute_dsm_parser.add_argument(
         "--resolution", type=float, default=0.5,
-        help="Digital Surface Model resolution"
+        help="Digital Surface Model resolution "
              "(default: 0.5, should be > 0)")
     compute_dsm_parser.add_argument(
         "--epsg", type=int, default=None,
         help="EPSG code (default: None, should be > 0)")
     compute_dsm_parser.add_argument(
         "--roi", default=None, nargs='*',
-        help="DSM ROI in final projection [xmin ymin xmax ymax]"
-             "(it has to be in final projection) or DSM ROI file"
-             " (vector file or image which"
+        help="DSM ROI in final projection [xmin ymin xmax ymax] "
+             "(it has to be in final projection) or DSM ROI file "
+             "(vector file or image which "
              "footprint will be taken as ROI).")
     compute_dsm_parser.add_argument(
         "--dsm_no_data", type=int, default=-32768,
@@ -163,12 +163,12 @@ def cars_cli_parser():
         help="Correlator config (json file)")
     compute_dsm_parser.add_argument(
         "--min_elevation_offset", type=float, default=None,
-        help="Override minimum disparity from prepare step"
+        help="Override minimum disparity from prepare step "
              "with this offset in meters")
     compute_dsm_parser.add_argument(
         "--max_elevation_offset", type=float, default=None,
-        help="Override maximum disparity from prepare step"
-        "with this offset in meters")
+        help="Override maximum disparity from prepare step "
+             "with this offset in meters")
     compute_dsm_parser.add_argument(
         "--output_stats", action="store_true",
         help="Outputs dsm as a netCDF file embedding quality statistics.")
@@ -178,36 +178,36 @@ def cars_cli_parser():
     compute_dsm_parser.add_argument(
         "--use_sec_disp", action="store_true",
         help="Use the points cloud"
-             "generated from the secondary disparity map.")
+             "Generated from the secondary disparity map.")
     compute_dsm_parser.add_argument(
         "--snap_to_left_image", action='store_true', default=False,
-        help="This mode can be used if all pairs share the same left image."
-             "It will then modify lines of sights of secondary images"
+        help="This mode can be used if all pairs share the same left image. "
+             "It will then modify lines of sights of secondary images "
              "so that they all cross those of the reference image.")
     compute_dsm_parser.add_argument(
         "--align_with_lowres_dem", action='store_true', default=False,
-        help="If this mode is used, during triangulation,"
-             "points will be corrected using the estimated correction"
-             "from the prepare step in order to align 3D points"
+        help="If this mode is used, during triangulation, "
+             "points will be corrected using the estimated correction "
+             "from the prepare step in order to align 3D points "
              "with the low resolution initial DEM.")
     compute_dsm_parser.add_argument(
         "--disable_cloud_small_components_filter", action="store_true",
-        help="This mode deactivates the points cloud"
+        help="This mode deactivates the points cloud "
              "filtering of small components.")
     compute_dsm_parser.add_argument(
         "--disable_cloud_statistical_outliers_filter", action='store_true',
-        help="This mode deactivates the points cloud"
+        help="This mode deactivates the points cloud "
              "filtering of statistical outliers.")
     compute_dsm_parser.add_argument(
         "--mode",default="local_dask",
         choices=("pbs_dask", "local_dask", "mp"),
-        help="Parallelization mode")
+        help="Parallelization mode (default: local_dask) ")
     compute_dsm_parser.add_argument(
         "--nb_workers", type=int, default=32, 
         help="Number of workers (default: 32, should be > 0)")
     compute_dsm_parser.add_argument(
         "--walltime", default="00:59:00",
-        help="Walltime for one worker (default: 00:59:00)."
+        help="Walltime for one worker (default: 00:59:00). "
              "Should be formatted as HH:MM:SS)")
 
     # autocomplete
