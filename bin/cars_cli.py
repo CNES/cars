@@ -36,7 +36,10 @@ def cars_cli_parser():
 
     # General arguments at first level
     parser.add_argument(
-        "--loglevel", default="INFO", help="Logger level")
+        "--loglevel", default="INFO",
+       choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+       help="Logger level (default: INFO. Should be one of "
+            "(DEBUG, INFO, WARNING, ERROR, CRITICAL)")
 
     # Create subcommand parser for prepare and compute_dsm
     subparsers = parser.add_subparsers(dest="command")
@@ -59,11 +62,6 @@ def cars_cli_parser():
         "-o", "--outdir", required=True, type=str,  help="Output directory")
 
     # Optionals
-    prepare_parser.add_argument(
-        "--loglevel", default="INFO",
-       choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-       help="Logger level (default: INFO. Should be one of "
-            "(DEBUG, INFO, WARNING, ERROR, CRITICAL)")
     prepare_parser.add_argument(
         "--epi_step", type=int, default=30,
         help="Step of the deformation grid in nb. of pixels "
@@ -126,11 +124,6 @@ def cars_cli_parser():
         "-o","--outdir", required=True, type=str, help="Output directory")
 
     # Optionals
-    compute_dsm_parser.add_argument(
-        "--loglevel", default="INFO",
-        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO). "
-             "Should be one of DEBUG, INFO, WARNING, ERROR, CRITICAL)")
     compute_dsm_parser.add_argument(
         "--sigma", type=float, default=None,
         help="Sigma for rasterization in fraction of pixels "
