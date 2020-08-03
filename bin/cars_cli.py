@@ -54,9 +54,9 @@ def cars_cli_parser():
 
     # Required
     prepare_parser.add_argument(
-        "injson", type=str,  help="Input json file")
+        "-i", "--injson", required=True, type=str,  help="Input json file")
     prepare_parser.add_argument(
-        "outdir", type=str,  help="Output directory")
+        "-o", "--outdir", required=True, type=str,  help="Output directory")
 
     # Optionals
     prepare_parser.add_argument(
@@ -121,9 +121,9 @@ def cars_cli_parser():
 
     # Required
     compute_dsm_parser.add_argument(
-        "injsons", help="Input json files", nargs='*')
+        "-i","--injsons", required=True, help="Input json files", nargs='*')
     compute_dsm_parser.add_argument(
-        "outdir", help="Output directory")
+        "-o","--outdir", required=True, type=str, help="Output directory")
 
     # Optionals
     compute_dsm_parser.add_argument(
@@ -489,7 +489,7 @@ def entry_point():
     parser = cars_cli_parser()
     args = parser.parse_args()
     main_cli(args, parser)
-    
+
 
 if __name__ == '__main__':
     entry_point()
