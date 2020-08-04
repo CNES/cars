@@ -205,7 +205,6 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         args_mode_mp=copy(compute_dsm_default_args)
         args_mode_mp.mode = "mp"
         main_cli(args_mode_mp, parser, check_inputs=True)
-#        compute_dsm_default_args.dask = "local_dask"
 
         # test [xmin, ymin, xmax, ymax] roi argument
         args_roi=copy(compute_dsm_default_args)
