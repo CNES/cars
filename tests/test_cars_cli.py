@@ -32,6 +32,7 @@ from bin.cars_cli import main_cli, cars_cli_parser
 @pytest.fixture(scope="module")
 def prepare_default_args():
     args = argparse.Namespace()
+    args.loglevel = 'INFO'
     args.command = 'prepare'
     args.disparity_margin = 0.25
     args.elevation_delta_lower_bound = -50.0
@@ -41,7 +42,6 @@ def prepare_default_args():
     args.epipolar_error_maximum_bias = 0.0
     args.injson = absolute_data_path('input/phr_ventoux/preproc_input.json')
     args.mode = 'local_dask'
-    args.loglevel = 'INFO'
     args.nb_workers = 4
     args.walltime = '00:59:00'
 
@@ -51,8 +51,11 @@ def prepare_default_args():
 @pytest.fixture(scope="module")
 def compute_dsm_default_args():
     args = argparse.Namespace()
-    args.color_no_data = 0
+    args.loglevel = 'INFO'
     args.command = 'compute_dsm'
+    args.sigma = None
+    args.resolution = 0.5
+    args.color_no_data = 0
     args.corr_config = None
     args.dsm_no_data = -32768
     args.dsm_radius = 1
@@ -64,10 +67,7 @@ def compute_dsm_default_args():
     args.injsons = [absolute_data_path(
         'input/cars_cli_input/content.json')]
     args.mode = 'local_dask'
-    args.loglevel = 'INFO'
     args.nb_workers = 4
-    args.resolution = 0.5
-    args.sigma = None
     args.walltime = '00:59:00'
 
     return args
@@ -83,8 +83,8 @@ def test_command():
     parser = cars_cli_parser()
 
     args = argparse.Namespace()
-    args.command = 'test'
     args.loglevel = 'INFO'
+    args.command = 'test'
 
     with pytest.raises(SystemExit) as e:
         main_cli(args, parser, check_inputs=True)
@@ -107,7 +107,7 @@ def test_prepare_args(prepare_default_args):
         # test default args
         main_cli(prepare_default_args, parser, check_inputs=True)
 
-        prepare_default_args.loglevel = 'info'
+        prepare_default_args.loglevel = 'INFO'
         main_cli(prepare_default_args, parser, check_inputs=True)
 
         # degraded cases injson
