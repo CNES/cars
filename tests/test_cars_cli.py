@@ -201,24 +201,27 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         # test with default args
         main_cli(compute_dsm_default_args, parser, check_inputs=True)
 
-        # test with mp (multiprocessing)
-        compute_dsm_default_args.mode = "mp"
-        main_cli(compute_dsm_default_args, parser, check_inputs=True)
-        compute_dsm_default_args.dask = "local_dask"
+        # test with mp mode (multiprocessing)
+        args_mode_mp=copy(compute_dsm_default_args)
+        args_mode_mp.mode = "mp"
+        main_cli(args_mode_mp, parser, check_inputs=True)
+#        compute_dsm_default_args.dask = "local_dask"
 
         # test [xmin, ymin, xmax, ymax] roi argument
-        compute_dsm_default_args.roi = ['1.0', '2.0', '3.0', '4.0']
-        main_cli(compute_dsm_default_args, parser, check_inputs=True)
+        args_roi=copy(compute_dsm_default_args)
+        args_roi.roi = ['1.0', '2.0', '3.0', '4.0']
+        main_cli(args_roi, parser, check_inputs=True)
 
         # test image roi argument
-        compute_dsm_default_args.roi_file = [
-            absolute_data_path('input/cars_cli_input/roi_image.tif')]
-        main_cli(compute_dsm_default_args, parser, check_inputs=True)
+        args_roi_file=copy(compute_dsm_default_args)
+        args_roi_file.roi_file = absolute_data_path(
+            'input/cars_cli_input/roi_image.tif')
+        main_cli(args_roi_file, parser, check_inputs=True)
 
         # test vector roi argument
-        compute_dsm_default_args.roi_file = [
-            absolute_data_path('input/cars_cli_input/roi_vector.gpkg')]
-        main_cli(compute_dsm_default_args, parser, check_inputs=True)
+        args_roi_file.roi_file = absolute_data_path(
+            'input/cars_cli_input/roi_vector.gpkg')
+        main_cli(args_roi_file, parser, check_inputs=True)
 
         # degraded cases input jsons
         args_bad_jsons = copy(compute_dsm_default_args)
@@ -277,27 +280,28 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         # degraded cases input ROI file
         args_bad_roi_file = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as e:
-            args_bad_roi_file.roi_file = [absolute_data_path('input/cars_cli_input/test.txt')]
+            args_bad_roi_file.roi_file = absolute_data_path('input/cars_cli_input/test.txt')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
         with pytest.raises(SystemExit) as e:
-            args_bad_roi_file.roi_file = [absolute_data_path(
-                'input/phr_ventoux/preproc_output/content.json')]
+            args_bad_roi_file.roi_file = absolute_data_path(
+                'input/phr_ventoux/preproc_output/content.json')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
         with pytest.raises(SystemExit) as e:
-            args_bad_roi_file.roi_file = [absolute_data_path(
-                'input/phr_ventoux/left_image.tif')]
+            args_bad_roi_file.roi_file = absolute_data_path(
+                'input/phr_ventoux/left_image.tif')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
         # degraded cases input ROI
         args_bad_roi = copy(compute_dsm_default_args)
+        args_bad_roi.roi_file=None
         with pytest.raises(SystemExit) as e:
             args_bad_roi.roi = ['1.0', '2.0']
             main_cli(args_bad_roi, parser, check_inputs=True)
