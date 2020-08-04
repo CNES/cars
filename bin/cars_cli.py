@@ -145,7 +145,7 @@ def cars_cli_parser():
         help="DSM ROI in final projection [xmin ymin xmax ymax] "
              "(it has to be in final projection)")
     compute_dsm_roi_group.add_argument(
-        "--roi-file", type=str,
+        "--roi_file", type=str, default=None,
         help="DSM ROI file (vector file or image which "
              "footprint will be taken as ROI).")
     compute_dsm_parser.add_argument(
