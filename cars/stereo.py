@@ -170,7 +170,6 @@ def resample_image(
 
     # Build mask pipeline for img needed
     img_has_mask = nodata is not None or mask is not None
-
     mask_otb = None
     mask_pipeline = None
     if img_has_mask:
@@ -438,11 +437,23 @@ def compute_disparity(left_dataset,
         entry_point.load()
 
     # Run the Pandora pipeline
+    msk = left_dataset.msk.values
+    right_msk = right_dataset.msk.values
+    print('avant:', np.min(left_dataset.msk.values), np.max(left_dataset.msk.values))
+    left_dataset.msk.values = np.where(left_dataset.msk.values == 1, 1, 0)+np.where(msk== 255, 255, 0)
+    right_dataset.msk.values = np.where(right_dataset.msk.values == 1, 1, 0)+np.where(msk== 255, 255, 0)
+    print('apres:', np.min(left_dataset.msk.values), np.max(left_dataset.msk.values))
+    from pprint import pprint
+    pprint(corr_cfg)
     ref, sec = pandora.run(left_dataset,
                            right_dataset,
                            int(disp_min),
                            int(disp_max),
                            corr_cfg)
+
+
+    left_dataset.msk.values = msk
+    right_dataset.msk.values = right_msk
 
     disp = dict()
     disp['ref'] = create_disp_dataset(ref, left_dataset, verbose=verbose)
