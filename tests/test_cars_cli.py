@@ -61,7 +61,7 @@ def compute_dsm_default_args():
     args.dsm_radius = 1
     args.min_elevation_offset = None
     args.max_elevation_offset = None
-    args.roi = None
+    args.roi_bbox = None
     args.roi_file = None
     args.epsg = None
     args.injsons = [absolute_data_path(
@@ -207,9 +207,9 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         main_cli(args_mode_mp, parser, check_inputs=True)
 
         # test [xmin, ymin, xmax, ymax] roi argument
-        args_roi=copy(compute_dsm_default_args)
-        args_roi.roi = ['1.0', '2.0', '3.0', '4.0']
-        main_cli(args_roi, parser, check_inputs=True)
+        args_roi_bbox=copy(compute_dsm_default_args)
+        args_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', '4.0']
+        main_cli(args_roi_bbox, parser, check_inputs=True)
 
         # test image roi argument
         args_roi_file=copy(compute_dsm_default_args)
@@ -299,23 +299,23 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
         assert e.value.code == 1
 
         # degraded cases input ROI
-        args_bad_roi = copy(compute_dsm_default_args)
-        args_bad_roi.roi_file=None
+        args_bad_roi_bbox = copy(compute_dsm_default_args)
+        args_bad_roi_bbox.roi_file=None
         with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = ['1.0', '2.0']
-            main_cli(args_bad_roi, parser, check_inputs=True)
+            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0']
+            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
         with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = ['1.0', '2.0', '3.0', '4.0', '5.0']
-            main_cli(args_bad_roi, parser, check_inputs=True)
+            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', '4.0', '5.0']
+            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
         with pytest.raises(SystemExit) as e:
-            args_bad_roi.roi = ['1.0', '2.0', '3.0', 'b']
-            main_cli(args_bad_roi, parser, check_inputs=True)
+            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', 'b']
+            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 

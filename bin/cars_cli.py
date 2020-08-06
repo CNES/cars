@@ -141,7 +141,7 @@ def cars_cli_parser():
         help="EPSG code (default: None, should be > 0)")
     compute_dsm_roi_group = compute_dsm_parser.add_mutually_exclusive_group()
     compute_dsm_roi_group.add_argument(
-        "--roi", type=float, default=None, nargs=4,
+        "--roi_bbox", type=float, default=None, nargs=4,
         help="DSM ROI in final projection [xmin ymin xmax ymax] "
              "(it has to be in final projection)")
     compute_dsm_roi_group.add_argument(
@@ -437,7 +437,7 @@ def main_cli(args, parser, check_inputs=False):
         if args.roi_file is not None:
             roi_args.append(args.roi_file)
         else:
-            roi_args=args.roi
+            roi_args=args.roi_bbox
         roi, stop_now = parse_roi_argument(roi_args, stop_now)
 
         # If there are invalid parameters, stop now
