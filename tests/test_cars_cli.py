@@ -202,17 +202,17 @@ def test_dsm_compute_arg(compute_dsm_default_args):
         main_cli(compute_dsm_default_args, parser, check_inputs=True)
 
         # test with mp mode (multiprocessing)
-        args_mode_mp=copy(compute_dsm_default_args)
+        args_mode_mp = copy(compute_dsm_default_args)
         args_mode_mp.mode = "mp"
         main_cli(args_mode_mp, parser, check_inputs=True)
 
         # test [xmin, ymin, xmax, ymax] roi argument
-        args_roi_bbox=copy(compute_dsm_default_args)
+        args_roi_bbox = copy(compute_dsm_default_args)
         args_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', '4.0']
         main_cli(args_roi_bbox, parser, check_inputs=True)
 
         # test image roi argument
-        args_roi_file=copy(compute_dsm_default_args)
+        args_roi_file = copy(compute_dsm_default_args)
         args_roi_file.roi_file = absolute_data_path(
             'input/cars_cli_input/roi_image.tif')
         main_cli(args_roi_file, parser, check_inputs=True)
