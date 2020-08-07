@@ -19,10 +19,13 @@
 # limitations under the License.
 #
 
+# Standard imports
 import os
 import argparse
 import warnings
 import argcomplete
+from typing import List, Tuple, Dict
+
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -199,7 +202,7 @@ def cars_cli_parser():
         choices=("pbs_dask", "local_dask", "mp"),
         help="Parallelization mode (default: local_dask) ")
     compute_dsm_parser.add_argument(
-        "--nb_workers", type=int, default=32, 
+        "--nb_workers", type=int, default=32,
         help="Number of workers (default: 32, should be > 0)")
     compute_dsm_parser.add_argument(
         "--walltime", default="00:59:00",
@@ -211,76 +214,61 @@ def cars_cli_parser():
 
     return parser
 
-def parse_roi_argument(roi_args, stop_now):
+def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
     """
-    Parse ROI arguments : file or 4 floats
+    Parse ROI file argument and generate bounding box
 
-    :param roi_args: ROI argument
-    :type region: str or array of four numbers
+    :param arg_roi_file : ROI file argument
     :param stop_now: Argument check
-    :type stop_now: Boolean
-    :return: ROI (Bounds, EPSG code)
+    :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
     :rtype: Tuple with array of 4 floats and int
     """
     import logging
     import rasterio
     from cars import utils
+
+    # Declare output
     roi = None
-    if roi_args is not None:
-        if len(roi_args) == 1:
-            # in case the input is a string
-            if isinstance(roi_args[0], str):
-                roi_file = roi_args[0]
-                name, extension = os.path.splitext(roi_file)
 
-                # test file existence
-                if not os.path.exists(roi_file):
-                    logging.warning('{} does not exist'.format(roi_file))
-                    stop_now = True
-                # if it is a vector file
-                if extension in ['.gpkg', '.shp', '.kml']:
-                    try:
-                        roi_poly, roi_epsg = utils.read_vector(roi_file)
-                        roi = (roi_poly.bounds, roi_epsg)
-                    except BaseException:
-                        logging.critical(
-                            'Impossible to read {} file'.format(roi_args))
-                        stop_now = True
+    name, extension = os.path.splitext(arg_roi_file)
 
-                # if not, it is an image
-                elif utils.rasterio_can_open(roi_file):
-                    data = rasterio.open(roi_file)
-                    xmin = min(data.bounds.left, data.bounds.right)
-                    ymin = min(data.bounds.bottom, data.bounds.top)
-                    xmax = max(data.bounds.left, data.bounds.right)
-                    ymax = max(data.bounds.bottom, data.bounds.top)
-
-                    try:
-                        roi_epsg = data.crs.to_epsg()
-                        roi = ([xmin, ymin, xmax, ymax], roi_epsg)
-                    except AttributeError as e:
-                        logging.critical(
-                            'Impossible to read the ROI image epsg code: {}'.format(e))
-                        stop_now = True
-
-                else:
-                    logging.critical(
-                        '{} has an unsupported file format'.format(roi_args))
-                    stop_now = True
-
-        elif len(roi_args) == 4:
-            # in case the input has a [xmin, ymin, xmax, ymax] ROI
+    # test file existence
+    if not os.path.exists(arg_roi_file):
+        logging.warning('{} does not exist'.format(arg_roi_file))
+        stop_now = True
+    else:
+        # if it is a vector file
+        if extension in ['.gpkg', '.shp', '.kml']:
             try:
-                roi = ([float(elt) for elt in roi_args], None)
+                roi_poly, roi_epsg = utils.read_vector(arg_roi_file)
+                roi = (roi_poly.bounds, roi_epsg)
             except BaseException:
-                logging.critical('Cannot parse {} argument'. format(roi_args))
+                logging.critical(
+                    'Impossible to read {} file'.format(arg_roi_file))
                 stop_now = True
-            logging.warning('Input ROI shall be in final projection')
-        else:
-            logging.critical('--roi is not set properly')
-            stop_now = True
-    return roi, stop_now
 
+        # if not, it is an image
+        elif utils.rasterio_can_open(arg_roi_file):
+            data = rasterio.open(arg_roi_file)
+            xmin = min(data.bounds.left, data.bounds.right)
+            ymin = min(data.bounds.bottom, data.bounds.top)
+            xmax = max(data.bounds.left, data.bounds.right)
+            ymax = max(data.bounds.bottom, data.bounds.top)
+
+            try:
+                roi_epsg = data.crs.to_epsg()
+                roi = ([xmin, ymin, xmax, ymax], roi_epsg)
+            except AttributeError as e:
+                logging.critical(
+                    'Impossible to read the ROI image epsg code: {}'.format(e))
+                stop_now = True
+
+        else:
+            logging.critical(
+                '{} has an unsupported file format'.format(arg_roi_file))
+            stop_now = True
+
+    return roi, stop_now
 
 def main_cli(args, parser, check_inputs=False):
     """
@@ -432,13 +420,12 @@ def main_cli(args, parser, check_inputs=False):
             --max_elevation_offset = {}'.format(args.min_elevation_offset,
                                                 args.max_elevation_offset))
             stop_now = True
-        # ROI file or 4 floats ?
-        roi_args=[]
+
+        # By default roi = arg of 4 floats bounding box list + EPSG code=None
+        roi=(args.roi_bbox, None)
         if args.roi_file is not None:
-            roi_args.append(args.roi_file)
-        else:
-            roi_args=args.roi_bbox
-        roi, stop_now = parse_roi_argument(roi_args, stop_now)
+            # If roi_file is defined, generate bouding box roi
+            roi, stop_now = parse_roi_file(args.roi_file, stop_now)
 
         # If there are invalid parameters, stop now
         if stop_now:

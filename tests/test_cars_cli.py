@@ -192,7 +192,7 @@ def test_prepare_args(prepare_default_args):
 # ----------------------------------
 
 @pytest.mark.unit_tests
-def test_dsm_compute_roi_arg(compute_dsm_default_args):
+def test_dsm_compute_arg(compute_dsm_default_args):
     parser = cars_cli_parser()
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -295,27 +295,6 @@ def test_dsm_compute_roi_arg(compute_dsm_default_args):
             args_bad_roi_file.roi_file = absolute_data_path(
                 'input/phr_ventoux/left_image.tif')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
-        # degraded cases input ROI
-        args_bad_roi_bbox = copy(compute_dsm_default_args)
-        args_bad_roi_bbox.roi_file=None
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0']
-            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', '4.0', '5.0']
-            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
-        assert e.type == SystemExit
-        assert e.value.code == 1
-
-        with pytest.raises(SystemExit) as e:
-            args_bad_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', 'b']
-            main_cli(args_bad_roi_bbox, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
 
