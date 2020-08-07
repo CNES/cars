@@ -200,13 +200,24 @@ def run(
     # Read input parameters
     img1 = config[params.img1_tag]
     img2 = config[params.img2_tag]
-    srtm_dir = config[params.srtm_dir_tag]
 
+    srtm_dir = config.get(params.srtm_dir_tag, None)
     nodata1 = config.get(params.nodata1_tag, None)
     nodata2 = config.get(params.nodata2_tag, None)
     mask1 = config.get(params.mask1_tag, None)
     mask2 = config.get(params.mask2_tag, None)
     color1 = config.get(params.color1_tag, None)
+    default_alt = config.get(params.default_alt_tag, 0)
+
+    if srtm_dir is not None:
+        srtm_tiles = os.listdir(srtm_dir)
+        if len(srtm_tiles) == 0:
+            logging.warning('SRTM directory is empty, the default altitude will be used as reference altitude.')
+        else:
+            logging.info('Indicated SRTM tiles\' valid regions will be used as reference altitudes '
+                         '(the default altitude is used for undefined regions of the SRTM)')
+    else:
+        logging.info('The default altitude will be used as reference altitude.')
 
     if check_inputs:
         logging.info('Checking inputs consistency')
@@ -252,8 +263,8 @@ def run(
     shp2 = os.path.join(out_dir, "right_envelope.shp")
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.left_envelope_tag] = shp1
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.right_envelope_tag] = shp2
-    preprocessing.image_envelope(img1, shp1, srtm_dir)
-    preprocessing.image_envelope(img2, shp2, srtm_dir)
+    preprocessing.image_envelope(img1, shp1, dem=srtm_dir, default_alt=default_alt)
+    preprocessing.image_envelope(img2, shp2, dem=srtm_dir, default_alt=default_alt)
 
     poly1, epsg1 = utils.read_vector(shp1)
     poly2, epsg2 = utils.read_vector(shp2)
@@ -283,7 +294,7 @@ def run(
     # Generate rectification grids
     logging.info("Generating epipolar rectification grid ...")
     grid1, grid2, epipolar_size_x, epipolar_size_y, alt_to_disp_ratio, stereogrid_pipeline = pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, srtm_dir, epi_step)
+        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
     # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
     disp_to_alt_ratio = 1 / alt_to_disp_ratio
 

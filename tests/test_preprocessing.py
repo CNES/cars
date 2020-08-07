@@ -66,6 +66,38 @@ def test_generate_epipolar_grids():
 
 
 @pytest.mark.unit_tests
+def test_generate_epipolar_grids_default_alt():
+    """
+    Test generate_epipolar_grids method
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = None
+    default_alt = 500
+
+    left_grid, right_grid, size_x, size_y, baseline = preprocessing.generate_epipolar_grids(
+        img1, img2, dem, default_alt)
+
+    assert size_x == 612
+    assert size_y == 612
+    assert baseline == 0.7039446234703064
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid_default_alt.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid_default_alt.nc"))
+    assert_same_datasets(left_grid, left_grid_ref)
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid_default_alt.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid_default_alt.nc"))
+    assert_same_datasets(right_grid, right_grid_ref)
+
+
+@pytest.mark.unit_tests
 def test_dataset_matching():
     """
     Test dataset_matching method
