@@ -82,7 +82,7 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     """
     file_handles = {}
     for name, f, p, nd, nb in zip(names, files, params, nodata_values, nb_bands):
-        file_handles[name] = rio.open(f, 'w', count=nb, nodata=nd, **p)
+        file_handles[name] = rio.open(f, 'w',count=nb, nodata=nd, **p)
     try:
         yield file_handles
     finally:
@@ -99,7 +99,7 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
 
     :param future_dsm: iterable containing future output tiles.
     :type future_dsm: list(dask.future)
-    :param output_dir:
+    :param output_dir: output directory path
     :param x_size: full output x size.
     :param y_size: full output y size.
     :param bounds: geographic bounds of the tile (xmin, ymin, xmax, ymax).
@@ -108,12 +108,12 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
     :param nb_bands: number of band in the color layer.
     :param dsm_no_data: value to fill no data in height layer.
     :param color_no_data: value to fill no data in color layer(s).
-    :param write_color:
-    :param color_dtype:
-    :param write_stats:
-    :param write_msk:
-    :param msk_no_data:
-    :param prefix:
+    :param write_color: bolean enabling the ortho-image's writting
+    :param color_dtype: type to use for the ortho-image
+    :param write_stats: bolean enabling the rasterization statistics' writting
+    :param write_msk: boolean enabling the rasterized mask's writting
+    :param msk_no_data: no data to use in for the rasterized mask
+    :param prefix: written filenames prefix
 
     """
     geotransform = (bounds[0], resolution, 0.0, bounds[3], 0.0, -resolution)
@@ -133,6 +133,7 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
         height=y_size, width=x_size, driver='GTiff', dtype=np.uint16,
         transform=transform, crs='EPSG:{}'.format(epsg), tiled=True
     )
+
 
     dsm_file = os.path.join(output_dir, prefix+'dsm.tif')
 
@@ -226,8 +227,8 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
                 rio_handles['dsm_n_pts'].write_band(1, raster_tile['n_pts'].values, window=window)
                 rio_handles['dsm_pts_in_cell'].write_band(1, raster_tile['pts_in_cell'].values, window=window)
 
-            values_list = [key for key, _ in raster_tile.items()]
-            if 'msk' in values_list and write_msk:
+            ds_values_list = [key for key, _ in raster_tile.items()]
+            if 'msk' in ds_values_list and write_msk:
                 rio_handles['msk'].write_band(1, raster_tile['msk'].values, window=window)
 
         # Multiprocessing mode

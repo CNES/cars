@@ -40,35 +40,49 @@ def test_get_utm_zone_as_epsg_code():
 
 @pytest.mark.unit_tests
 def test_create_combined_cloud():
+    epsg = 4326
 
     # test only color
-    epsg = 4326
+    def get_cloud0_ds(with_msk):
+        row = 10
+        col = 10
+        x = np.arange(row*col)
+        x = x.reshape((row, col))
+        y = x + 1
+        z = y + 1
+        pandora_msk = np.full((row, col), fill_value=255, dtype=np.int16)
+        pandora_msk[4, 4] = 0
+        if with_msk:
+            msk = np.full((row, col), fill_value=0, dtype=np.int16)
+            msk[4, 6] = 255
+
+        ds_values = {
+            'x': (['row', 'col'], x),
+            'y': (['row', 'col'], y),
+            'z': (['row', 'col'], z),
+            'pandora_msk': (['row', 'col'], pandora_msk)
+        }
+
+        if with_msk:
+            ds_values['msk'] = (['row', 'col'], msk)
+
+        cloud0 = xr.Dataset(ds_values, coords={'row': np.array(range(row)), 'col': np.array(range(col))})
+        cloud0.attrs['epsg'] = epsg
+
+        return cloud0
+
     row = 10
     col = 10
-    x = np.arange(row*col)
-    x = x.reshape((row, col))
-    y = x + 1
-    z = y + 1
-    pandora_msk = np.full((row, col), fill_value=255, dtype=np.int16)
-    pandora_msk[4, 4] = 0
-
-    cloud0 = xr.Dataset({'x': (['row', 'col'], x),
-                         'y': (['row', 'col'], y),
-                         'z': (['row', 'col'], z),
-                         'pandora_msk': (['row', 'col'], pandora_msk)},
-                        coords={'row': np.array(range(row)), 'col': np.array(range(col))})
-    cloud0.attrs['epsg'] = epsg
-
     x = np.full((row, col), fill_value=0, dtype=np.float)
     y = np.full((row, col), fill_value=1, dtype=np.float)
     z = np.full((row, col), fill_value=2, dtype=np.float)
-    msk = np.full((row, col), fill_value=255, dtype=np.int16)
-    msk[6, 6] = 0
+    pandora_msk = np.full((row, col), fill_value=255, dtype=np.int16)
+    pandora_msk[6, 6] = 0
 
     cloud1 = xr.Dataset({'x': (['row', 'col'], x),
                          'y': (['row', 'col'], y),
                          'z': (['row', 'col'], z),
-                         'pandora_msk': (['row', 'col'], msk)},
+                         'pandora_msk': (['row', 'col'], pandora_msk)},
                         coords={'row': np.array(range(row)), 'col': np.array(range(col))})
     cloud1.attrs['epsg'] = epsg
 
@@ -77,17 +91,17 @@ def test_create_combined_cloud():
     x = np.full((row, col), fill_value=45, dtype=np.float)
     y = np.full((row, col), fill_value=45, dtype=np.float)
     z = np.full((row, col), fill_value=50, dtype=np.float)
-    msk = np.full((row, col), fill_value=255, dtype=np.int16)
-    msk[2, 2] = 0
+    pandora_msk = np.full((row, col), fill_value=255, dtype=np.int16)
+    pandora_msk[2, 2] = 0
 
     cloud2 = xr.Dataset({'x': (['row', 'col'], x),
                          'y': (['row', 'col'], y),
                          'z': (['row', 'col'], z),
-                         'pandora_msk': (['row', 'col'], msk)},
+                         'pandora_msk': (['row', 'col'], pandora_msk)},
                         coords={'row': np.array(range(row)), 'col': np.array(range(col))})
     cloud2.attrs['epsg'] = epsg
 
-    cloud_list = [cloud0, cloud1, cloud2]
+    cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
 
     cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
                                                 ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
@@ -118,7 +132,27 @@ def test_create_combined_cloud():
 
     assert np.allclose(cloud.values, ref_cloud)
 
-    #test with mask
+    # test with mask
+    cloud_list = [get_cloud0_ds(with_msk=True), cloud2]
+
+    cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
+                                                      ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+                                                      epipolar_border_margin=1, radius=1, with_coords=False)
+
+    ref_cloud0_with_msk = np.array([[0., 39., 40., 41., 0.],
+                                    [0., 40., 41., 42., 0.],
+                                    [1., 41., 42., 43., 0.],
+                                    [1., 42., 43., 44., 0.],
+                                    [1., 43., 44., 45., 0.],
+                                    [1., 45., 46., 47., 0.],
+                                    [1., 46., 47., 48., 255.],
+                                    [1., 47., 48., 49., 0.],
+                                    [1., 48., 49., 50., 0.],
+                                    [0., 49., 50., 51., 0.],
+                                    [0., 50., 51., 52., 0.]])
+
+    ref_cloud = np.concatenate([ref_cloud0_with_msk, np.concatenate([ref_cloud2, np.zeros((row*col-1, 1))], axis=1)])
+    assert np.allclose(cloud.values, ref_cloud)
 
     # test with color
     band = 3
@@ -144,6 +178,7 @@ def test_create_combined_cloud():
     clr2 = xr.Dataset({'im': (['band', 'row', 'col'], clr2)},
                       coords={'band': np.array(range(band)), 'row': np.array(range(row)), 'col': np.array(range(col))})
 
+    cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
     clr_list = [clr0, clr1, clr2]
 
     cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=clr_list, resolution=0.5, xstart=40.0,
@@ -291,7 +326,6 @@ def test_simple_rasterization_dataset_1():
     cloud = xr.open_dataset(
         absolute_data_path("input/intermediate_results/cloud1_ref.nc")
     )
-
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
     )

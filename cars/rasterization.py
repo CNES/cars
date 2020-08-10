@@ -192,10 +192,11 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
     nb_data = ['data_valid', 'x', 'y', 'z']
 
+    # check if the input mask values are present in the dataset
     nb_data_msk = 0
     for idx in range(len(cloud_list)):
-        values_list = [key for key, _ in cloud_list[idx].items()]
-        if 'msk' in values_list:
+        ds_values_list = [key for key, _ in cloud_list[idx].items()]
+        if 'msk' in ds_values_list:
             nb_data.append('msk')
             nb_data_msk = 1
             break
@@ -259,14 +260,13 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
         c_z = full_z[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
 
         c_cloud = np.zeros((len(nb_data), (bbox[2] - bbox[0] + 1)*(bbox[3] - bbox[1] + 1)))
-
         c_cloud[1, :] = np.ravel(c_x)
         c_cloud[2, :] = np.ravel(c_y)
         c_cloud[3, :] = np.ravel(c_z)
 
-        values_list = [key for key, _ in cloud_list[idx].items()]
+        ds_values_list = [key for key, _ in cloud_list[idx].items()]
 
-        if 'msk' in values_list:
+        if 'msk' in ds_values_list:
             c_msk = cloud_list[idx].msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
             c_cloud[4, :] = np.ravel(c_msk)
 
@@ -351,7 +351,7 @@ def simple_rasterization_dataset(cloud_list: List[xr.Dataset], resolution: float
     Can only be used if input lists are of size 1.
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
-    :param msk_no_data: No data value to use in the final mask image
+    :param msk_no_data: no data value to use in the final mask image
     :param grid_points_division_factor: number of blocs to use to divide the grid points (memory optimization, reduce
      the highest memory peak). If it is not set, the factor is automatically set to construct 700000 points blocs.
     :param small_cpn_filter_params: small component filtering parameters
@@ -647,10 +647,10 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
         "Vectorized rasterization done in {} seconds".format(toc - tic))
 
     if 'msk' in cloud.columns:
+        undefined_mask_value = -1
         msk = mask_interp(
             cloud.loc[:, ['x', 'y', 'msk']].values, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
-            grid_points, sigma, -1
-        )
+            grid_points, sigma, undefined_mask_value)
     else:
         msk = None
 
@@ -658,7 +658,7 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
 
 
 @njit((float64[:, :], boolean[:], int64, int64[:], int64[:], int64[:]), nogil=True, cache=True)
-def get_neighbors(points: np.ndarray, data_valid: np.ndarray, i_grid: int, neighbors_id: np.ndarray,
+def get_neighbors_from_points_array(points: np.ndarray, data_valid: np.ndarray, i_grid: int, neighbors_id: np.ndarray,
                   neighbors_start: np.ndarray, neighbors_count: np.ndarray) -> Union[np.ndarray, None]:
     """
     Use the outputs of the get_flatten_neighbors function to get the neighbors of the i_grid point in the points
@@ -693,7 +693,8 @@ def get_neighbors(points: np.ndarray, data_valid: np.ndarray, i_grid: int, neigh
 
 @njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :], float64, int64), nogil=True, cache=True)
 def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: np.ndarray, neighbors_start: np.ndarray,
-                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, undefined_val: int) -> np.ndarray:
+                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, undefined_val: float=np.nan) \
+        -> np.ndarray:
     """
     Interpolates mask data at grid point locations.
 
@@ -717,7 +718,8 @@ def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: n
     for i_grid in range(neighbors_count.size):
         p_sample = grid_points[i_grid]
 
-        neighbors = get_neighbors(mask_points, data_valid, i_grid, neighbors_id, neighbors_start, neighbors_count)
+        neighbors = get_neighbors_from_points_array(mask_points, data_valid, i_grid, neighbors_id,
+                                                    neighbors_start, neighbors_count)
         if neighbors is None:
             continue
 
@@ -799,7 +801,8 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
 
         p_sample = grid_points[i_grid]
 
-        neighbors = get_neighbors(cloud_points, data_valid, i_grid, neighbors_id, neighbors_start, neighbors_count)
+        neighbors = get_neighbors_from_points_array(cloud_points, data_valid, i_grid, neighbors_id,
+                                                    neighbors_start, neighbors_count)
         if neighbors is None:
             continue
 
@@ -831,9 +834,9 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
 
 
 def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_size: int, y_size: int,
-                          resolution: float, hgt_no_data: int, color_no_data: int, msk_no_data: int, epsg: int, mean: np.ndarray,
-                          stdev: np.ndarray, n_pts: np.ndarray, n_in_cell: np.ndarray, msk:np.ndarray=None)\
-        -> xr.Dataset:
+                          resolution: float, hgt_no_data: int, color_no_data: int, msk_no_data: int, epsg: int,
+                          mean: np.ndarray, stdev: np.ndarray, n_pts: np.ndarray, n_in_cell: np.ndarray,
+                          msk:np.ndarray=None) -> xr.Dataset:
     """
     Create final raster xarray dataset
 
@@ -845,7 +848,7 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     :param resolution: Resolution of rasterized cells, expressed in cloud CRS units or None.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
-    :param msk_no_data: No data value to use in the final mask image
+    :param msk_no_data: no data value to use in the final mask image
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
     :param stdev: standard deviation of height and colors
@@ -917,7 +920,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
     :param radius: Radius for hole filling.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
-    :param msk_no_data: No data value to use in the final mask image
+    :param msk_no_data: no data value to use in the final mask image
     :param grid_points_division_factor: number of blocs to use to divide the grid points (memory optimization, reduce
      the highest memory peak). If it is not set, the factor is automatically set to construct 700000 points blocs.
     :return: Rasterized cloud color and statistics.

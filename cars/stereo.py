@@ -437,23 +437,11 @@ def compute_disparity(left_dataset,
         entry_point.load()
 
     # Run the Pandora pipeline
-    msk = left_dataset.msk.values
-    right_msk = right_dataset.msk.values
-    print('avant:', np.min(left_dataset.msk.values), np.max(left_dataset.msk.values))
-    left_dataset.msk.values = np.where(left_dataset.msk.values == 1, 1, 0)+np.where(msk== 255, 255, 0)
-    right_dataset.msk.values = np.where(right_dataset.msk.values == 1, 1, 0)+np.where(msk== 255, 255, 0)
-    print('apres:', np.min(left_dataset.msk.values), np.max(left_dataset.msk.values))
-    from pprint import pprint
-    pprint(corr_cfg)
     ref, sec = pandora.run(left_dataset,
                            right_dataset,
                            int(disp_min),
                            int(disp_max),
                            corr_cfg)
-
-
-    left_dataset.msk.values = msk
-    right_dataset.msk.values = right_msk
 
     disp = dict()
     disp['ref'] = create_disp_dataset(ref, left_dataset, verbose=verbose)
@@ -789,8 +777,8 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, i
     :type configuration: StereoConfiguration
     :param disp_ref: left to right disparity map dataset
     :param disp_sec: if available, the right to left disparity map dataset
-    :param im_ref_msk_ds:
-    :param im_sec_msk_ds:
+    :param im_ref_msk_ds: reference image dataset
+    :param im_sec_msk_ds: secondary image dataset
     :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so as to cross those of img1
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
@@ -893,7 +881,7 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     :param grid2: path to the secondary image grid file
     :param roi_key: roi of the disparity map key
     ('roi' if cropped while calling create_disp_dataset, otherwise 'roi_with_margins')
-    :param dataset_msk:
+    :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
     disp = pipelines.encode_to_otb(
@@ -941,8 +929,8 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     }
 
     if dataset_msk is not None:
-        values_list = [key for key, _ in dataset_msk.items()]
-        if 'msk' in values_list:
+        ds_values_list = [key for key, _ in dataset_msk.items()]
+        if 'msk' in ds_values_list:
             if roi_key == 'roi_with_margins':
                 ref_roi = [0,
                            0,
@@ -1053,7 +1041,7 @@ def images_pair_to_3d_points(configuration,
                              use_sec_disp=False,
                              snap_to_img1=False,
                              align=False,
-                             write_msk=False) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+                             add_msk_info=False) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     # Retrieve disp min and disp max if needed
     """
     This function will produce a 3D points cloud as an xarray.Dataset from the given stereo configuration (from both
@@ -1084,7 +1072,7 @@ def images_pair_to_3d_points(configuration,
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
     :param align: bool
-    :param write_msk:
+    :param add_msk_info: boolean enabling the addition of the masks' information in the point clouds final dataset
     :returns: Dictionary of tuple. The tuple are constructed with the dataset containing the 3D points +
     A dataset containing color of left image, or None
 
@@ -1133,7 +1121,7 @@ def images_pair_to_3d_points(configuration,
 
     im_ref_msk = None
     im_sec_msk = None
-    if write_msk:
+    if add_msk_info:
         ref_values_list = [key for key, _ in left.items()]
         if 'msk' in ref_values_list:
             im_ref_msk = left

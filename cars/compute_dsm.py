@@ -535,7 +535,6 @@ def run(
     optimal_terrain_tile_widths = []
 
     for config_id, conf in configurations_data.items():
-
         # Compute terrain area covered by a single epipolar tile
         terrain_area_covered_by_epipolar_tile = conf["terrain_area"] / len(
             epipolar_regions)
@@ -611,7 +610,7 @@ def run(
                     conf['configuration'], region, corr_config, disp_min=conf[
                         'disp_min'], disp_max=conf['disp_max'],
                     geoid_data=geoid_data_futures, out_epsg=stereo_out_epsg,
-                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align, write_msk=write_msk))
+                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align, add_msk_info=write_msk))
             logging.info(
                 "Submitted {} epipolar delayed tasks to dask for stereo configuration {}".format(
                 len(delayed_point_clouds), config_id))
@@ -635,7 +634,7 @@ def run(
                           'geoid_data':geoid_data,
                           'out_epsg':stereo_out_epsg,
                           'use_sec_disp':use_sec_disp,
-                          "write_msk": write_msk},
+                          "add_msk_info": write_msk},
                     callback=update))
 
             # Wait computation results (timeout in seconds) and replace the
@@ -840,7 +839,8 @@ def run(
                     required_point_clouds, resolution, epsg, xstart=xstart,
                     ystart=ystart, xsize=xsize, ysize=ysize,
                     radius=dsm_radius, sigma=sigma, dsm_no_data=dsm_no_data,
-                    color_no_data=color_no_data, msk_no_data=65535, small_cpn_filter_params=small_cpn_filter_params,
+                    color_no_data=color_no_data, msk_no_data=msk_no_data,
+                    small_cpn_filter_params=small_cpn_filter_params,
                     statistical_filter_params=statistical_filter_params,
                     grid_points_division_factor=grid_points_division_factor
                 )
@@ -859,7 +859,7 @@ def run(
                                 'small_cpn_filter_params':small_cpn_filter_params,
                                 'statistical_filter_params': statistical_filter_params,
                                 'grid_points_division_factor': grid_points_division_factor,
-                                'msk_no_data': 65535},
+                                'msk_no_data': msk_no_data},
                     callback=update))
 
             number_of_epipolar_tiles_per_terrain_tiles.append(
@@ -881,11 +881,12 @@ def run(
     out_dsm_mean = os.path.join(out_dir, "dsm_mean.tif")
     out_dsm_std = os.path.join(out_dir, "dsm_std.tif")
     out_dsm_n_pts = os.path.join(out_dir, "dsm_n_pts.tif")
-    out_dsm_points_in_cell = os.path.join(out_dir, "dsm_pts_in_cell.tif")
+    out_dsm_points_in_cell  = os.path.join(out_dir, "dsm_pts_in_cell.tif")
 
     if use_dask[mode]:
         # Sort tiles according to rank
         delayed_dsm_tiles = [delayed for _, delayed in sorted(zip(rank,delayed_dsm_tiles), key=lambda pair: pair[0])]
+
 
         logging.info("Submitting {} tasks to dask".format(len(delayed_dsm_tiles)))
         # Transform all delayed raster tiles to futures (computation starts
@@ -897,7 +898,8 @@ def run(
         readwrite.write_geotiff_dsm(future_dsm_tiles, out_dir, xsize, ysize,
                                     bounds, resolution, epsg, nb_bands, dsm_no_data,
                                     color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
-                                    write_color=True, write_stats=output_stats, write_msk=write_msk, msk_no_data=65535)
+                                    write_color=True, write_stats=output_stats, write_msk=write_msk,
+                                    msk_no_data=msk_no_data)
 
         # stop cluster
         stop_cluster(cluster, client)

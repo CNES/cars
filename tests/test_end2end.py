@@ -743,7 +743,7 @@ def test_end2end_paca_with_mask():
         # Check preproc properties
         preproc_json = os.path.join(out_preproc, "content.json")
 
-        out_stereo = os.path.join("/work/OT/siaa/3D/Temporary/emiliena/cars/issues/147/paca_small/", "out_stereo")
+        out_stereo = os.path.join(directory, "out_stereo")
 
         corr_config = corr_cfg.configure_correlator()
 

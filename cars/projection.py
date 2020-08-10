@@ -278,18 +278,18 @@ def points_cloud_conversion_dataset(cloud_in, epsg_out):
         xyz = points_cloud_conversion(xyz, int(cloud_in.attrs['epsg']), epsg_out)
         xyz = xyz.reshape(xyz_shape)
 
-        values = {
+        ds_values = {
             'x': (['row', 'col'], xyz[:, :, 0]),
             'y': (['row', 'col'], xyz[:, :, 1]),
             'z': (['row', 'col'], xyz[:, :, 2]),
             'pandora_msk': (['row', 'col'], cloud_in['pandora_msk'].values)
         }
-        values_list = [key for key, _ in cloud_in.items()]
-        if 'msk' in values_list:
-            values['msk'] = (['row', 'col'], cloud_in['msk'].values)
+        ds_values_list = [key for key, _ in cloud_in.items()]
+        if 'msk' in ds_values_list:
+            ds_values['msk'] = (['row', 'col'], cloud_in['msk'].values)
 
         # Copy attributes
-        cloud_out = xr.Dataset(values,
+        cloud_out = xr.Dataset(ds_values,
                                coords=cloud_in.coords)
 
         for k, v in cloud_in.attrs.items():
