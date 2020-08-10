@@ -2,18 +2,25 @@ Command line usage
 ==================
 
 `cars_cli.py  <../../bin/cars_cli.py>`_ is the unique entry point for CARS command line usage. 
+
 It enables two main steps : `prepare` and `compute_dsm` described in the following sections. 
 
 .. code-block:: bash
 
-    usage: cars_cli.py <command> [<args>]
+    usage: cars_cli.py [options] <command> [<args>]
 
     The cars_cli.py commands are:
-       prepare                  Preparation for compute_dsm producing stereo-rectification
-                                grid as well as an estimate of the disparity to explore.
-       compute_dsm              Tile-based, concurent resampling in epipolar geometry, disparity
-                                estimation, triangulation and rasterization
-
+        prepare             Preparation for compute_dsm producing stereo-
+                            rectification grid as well as an estimate of the
+                            disparity to explore.
+        compute_dsm         Tile-based, concurent resampling in epipolar geometry,
+                            disparity estimation, triangulation and rasterization
+    
+    The options are :
+      -h, --help            show this help message and exit
+      --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                            Logger level (default: INFO. Should be one of (DEBUG,
+                            INFO, WARNING, ERROR, CRITICAL)
 
 Prepare DSM production
 ======================
@@ -26,7 +33,6 @@ The prepare part will perform the following steps:
 4. Derive a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error
 5. Apply the estimated correction to the right grid
 6. Export the left and corrected right grids
-
 
 Command Description
 -------------------
@@ -76,8 +82,8 @@ Command Description
       --check_inputs        Check inputs consistency
 
 
-Command line usage:
--------------------
+Command line usage
+------------------
 
 .. code-block:: bash
 
@@ -364,7 +370,7 @@ Some optional parameters enable to modify the regular grid:
 * ``epsg``: epsg code used for the cloud projection. If not set by the user, the more appropriate UTM zone will be retrieved automatically
 * ``roi_bbox``: DSM ROI in final projection [xmin ymin xmax ymax].   
 
-    * example with a quadruplet: ``cars_cli.py compute_dsm content.json outdir/ --roi 0.1 0.2 0.3 0.4``
+    * example with a quadruplet: ``cars_cli.py compute_dsm content.json outdir/ --roi_bbox 0.1 0.2 0.3 0.4``
 * ``roi_file`` : DSM ROI file (vector file or image which footprint will be taken as ROI). The conversion to the final geometry ROI bounding box will be performed automatically. Mutually exclusive with ``roi_bbox`` option. 
 * ``dsm_no_data``: no data value of the final dsm
 * ``color_no_data``: no data value of the final color ortho-image
