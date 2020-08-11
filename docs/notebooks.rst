@@ -44,5 +44,6 @@ The ``step_by_step_compute_dsm.ipynb`` notebook explains how to run step by step
 The following parameters have to be set : 
     * ``cars_home`` : Path to the cars folder.
     * ``content_dir`` : Path to the directory containing the content.json file of the prepare step output.
-    * ``roi`` : ROI to process (path to a vector file, raster file or bounding box), as expected by cars_cli. 
+    * ``roi_file`` : ROI to process. path to a vector file or raster file as expected by cars_cli. Put roi_file=None to use roi_bbox (mutually exclusive and roi_file has precedence ).
+    * ``roi_bbox`` : ROI bounding box of 4 floats to process if roi_file is not defined (None). roi_bbox = [\"xmin\", \"ymin\", \"xmax\", \"ymax\"]. 
     * ``output_dir`` : Path to output dir where to save figures and data.

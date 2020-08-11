@@ -59,7 +59,7 @@ def test_step_by_step_compute_dsm():
             elif "content_dir = \"TODO\"" in line:
                 line = line.replace("TODO",
                                     absolute_data_path("input/notebooks_input/content_dir/"))
-            elif "roi = [\"TODO\"]" in line:
+            elif "roi_file = \"TODO\"" in line:
                 line = line.replace("TODO", absolute_data_path("input/notebooks_input/content_dir/"
                                                                "envelopes_intersection.gpkg"))
             elif "output_dir = \"TODO\"" in line:
