@@ -93,7 +93,7 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
 def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bounds: Tuple[float, float, float, float],
                       resolution: float, epsg: int, nb_bands: int, dsm_no_data: float, color_no_data: float,
                       write_color: bool=True, color_dtype: np.dtype=np.float32, write_stats: bool=False,
-                      write_msk=False, msk_no_data: int=65535, prefix: str=''):
+                      write_msk=False, msk_no_data: int=255, prefix: str=''):
     """
     Writes result tiles to GTiff file(s).
 
@@ -131,6 +131,11 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
 
     dsm_rio_params_uint16 = dict(
         height=y_size, width=x_size, driver='GTiff', dtype=np.uint16,
+        transform=transform, crs='EPSG:{}'.format(epsg), tiled=True
+    )
+
+    msk_rio_params_uint8 = dict(
+        height=y_size, width=x_size, driver='GTiff', dtype=np.uint8,
         transform=transform, crs='EPSG:{}'.format(epsg), tiled=True
     )
 
@@ -183,7 +188,7 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
         names.append('msk')
         msk_file = os.path.join(output_dir, prefix + 'msk.tif')
         files.append(msk_file)
-        params.append(dsm_rio_params_uint16)
+        params.append(msk_rio_params_uint8)
         nodata_values.append(msk_no_data)
         nb_bands_to_write.append(1)
 

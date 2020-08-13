@@ -756,7 +756,7 @@ def test_end2end_paca_with_mask():
             dsm_radius=3,
             dsm_no_data=-999,
             color_no_data=0,
-            msk_no_data=65534,
+            msk_no_data=254,
             corr_config=corr_config,
             mode="local_dask",  # Run on a local cluster,
             output_stats=True,

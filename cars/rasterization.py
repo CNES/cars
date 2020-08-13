@@ -596,7 +596,7 @@ def get_flatten_neighbors(grid_points: np.ndarray, cloud: pandas.DataFrame, radi
 
 def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndarray, x_start: float, y_start: float,
                                     x_size: int, y_size: int, resolution: float, sigma: float, radius: int,
-                                    worker_logger: logging.Logger, grid_points_division_factor: int) \
+                                    msk_no_data: int, worker_logger: logging.Logger, grid_points_division_factor: int) \
         -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray, Union[None, np.ndarray]]:
     """
     Compute vectorized raster and its statistics.
@@ -612,6 +612,7 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
     :param resolution: Resolution of rasterized cells, expressed in cloud CRS units or None.
     :param sigma: sigma for gaussian interpolation. If None, set to resolution
     :param radius: Radius for hole filling.
+    :param msk_no_data: no data value to use for the rasterized mask
     :param worker_logger: logger
     :param grid_points_division_factor: number of blocs to use to divide the grid points (memory optimization, reduce
      the highest memory peak). If it is not set, the factor is automatically set to construct 700000 points blocs.
@@ -647,10 +648,9 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
         "Vectorized rasterization done in {} seconds".format(toc - tic))
 
     if 'msk' in cloud.columns:
-        undefined_mask_value = -1
         msk = mask_interp(
             cloud.loc[:, ['x', 'y', 'msk']].values, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
-            grid_points, sigma, undefined_mask_value)
+            grid_points, sigma, no_data_val=msk_no_data, undefined_val=msk_no_data)
     else:
         msk = None
 
@@ -691,10 +691,11 @@ def get_neighbors_from_points_array(points: np.ndarray, data_valid: np.ndarray, 
     return neighbors
 
 
-@njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :], float64, int64), nogil=True, cache=True)
+@njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :], float64, int64, int64),
+      nogil=True, cache=True)
 def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: np.ndarray, neighbors_start: np.ndarray,
-                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, undefined_val: float=np.nan) \
-        -> np.ndarray:
+                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, no_data_val: int=255,
+                undefined_val: int=255) -> np.ndarray:
     """
     Interpolates mask data at grid point locations.
 
@@ -710,11 +711,12 @@ def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: n
     :param neighbors_count: flattened grid point neighbor count.
     :param grid_points: grid point location, one per row.
     :param sigma: sigma parameter for weights computation.
+    :param no_data_val: no data value.
     :param undefined_val: value in case of score equality.
     :return: The interpolated mask
     """
     # mask rasterization result
-    result = np.full((neighbors_count.size, 1), np.nan, dtype=np.float32)
+    result = np.full((neighbors_count.size, 1), no_data_val, dtype=np.uint8)
     for i_grid in range(neighbors_count.size):
         p_sample = grid_points[i_grid]
 
@@ -834,7 +836,7 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
 
 
 def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_size: int, y_size: int,
-                          resolution: float, hgt_no_data: int, color_no_data: int, msk_no_data: int, epsg: int,
+                          resolution: float, hgt_no_data: int, color_no_data: int, epsg: int,
                           mean: np.ndarray, stdev: np.ndarray, n_pts: np.ndarray, n_in_cell: np.ndarray,
                           msk:np.ndarray=None) -> xr.Dataset:
     """
@@ -848,7 +850,6 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     :param resolution: Resolution of rasterized cells, expressed in cloud CRS units or None.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
-    :param msk_no_data: no data value to use in the final mask image
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
     :param stdev: standard deviation of height and colors
@@ -896,8 +897,7 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     raster_out['pts_in_cell'] = xr.DataArray(n_in_cell, dims=raster_dims)
 
     if msk is not None:
-        msk = np.nan_to_num(msk, nan=msk_no_data)
-        raster_out['msk'] = xr.DataArray(msk.astype(np.uint16), dims=raster_dims)
+        raster_out['msk'] = xr.DataArray(msk, dims=raster_dims)
 
     return raster_out
 
@@ -944,7 +944,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
 
     out, mean, stdev, n_pts, n_in_cell, msk = \
         compute_vector_raster_and_stats(cloud, data_valid, x_start, y_start, x_size, y_size, resolution,
-                                        sigma, radius, worker_logger, grid_points_division_factor)
+                                        sigma, radius, msk_no_data, worker_logger, grid_points_division_factor)
 
     # reshape data as a 2d grid.
     tic = time.process_time()
@@ -965,7 +965,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
     # build output dataset
     tic = time.process_time()
     raster_out = create_raster_dataset(out, x_start, y_start, x_size, y_size, resolution, hgt_no_data, color_no_data,
-                                       msk_no_data, epsg, mean, stdev, n_pts, n_in_cell, msk)
+                                       epsg, mean, stdev, n_pts, n_in_cell, msk)
 
     toc = time.process_time()
     worker_logger.debug(

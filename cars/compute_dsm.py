@@ -190,7 +190,7 @@ def run(
         sigma: float=None,
         dsm_radius: int=1,
         dsm_no_data: int=-32768,
-        msk_no_data: int=65535,
+        msk_no_data: int=255,
         color_no_data: int=0,
         corr_config: Dict=None,
         output_stats: bool=False,
