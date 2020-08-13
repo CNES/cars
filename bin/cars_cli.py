@@ -421,8 +421,11 @@ def main_cli(args, parser, check_inputs=False):
                                                 args.max_elevation_offset))
             stop_now = True
 
-        # By default roi = arg of 4 floats bounding box list + EPSG code=None
-        roi=(args.roi_bbox, None)
+        # By default roi = None if no roi mutually exclusive options
+        roi = None
+        if args.roi_bbox is not None:
+            # if roi_bbox is defined, roi = 4 floats bounding box list + EPSG code=None
+            roi = (args.roi_bbox, None)
         if args.roi_file is not None:
             # If roi_file is defined, generate bouding box roi
             roi, stop_now = parse_roi_file(args.roi_file, stop_now)
