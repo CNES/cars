@@ -756,7 +756,7 @@ def test_end2end_paca_with_mask():
             dsm_radius=3,
             dsm_no_data=-999,
             color_no_data=0,
-            msk_no_data=254,
+            msk_no_data=65534,
             corr_config=corr_config,
             mode="local_dask",  # Run on a local cluster,
             output_stats=True,
@@ -778,3 +778,59 @@ def test_end2end_paca_with_mask():
             "ref_output/clr_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
         assert_same_images(os.path.join(out_stereo, "msk.tif"), absolute_data_path(
             "ref_output/msk_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
+
+        # Test we have the same results with multiprocessing
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+            out_preproc = os.path.join(directory, "out_preproc")
+            prepare.run(
+                input_json,
+                out_preproc,
+                epi_step=30,
+                region_size=250,
+                disparity_margin=0.25,
+                epipolar_error_upper_bound=43.,
+                elevation_delta_lower_bound=-20.,
+                elevation_delta_upper_bound=20.,
+                mode="local_dask",  # Run on a local cluster
+                nb_workers=4,
+                walltime="00:10:00",
+                check_inputs=True)
+
+            # Check preproc properties
+            preproc_json = os.path.join(out_preproc, "content.json")
+
+            out_stereo = os.path.join(directory, "out_stereo")
+
+            corr_config = corr_cfg.configure_correlator()
+
+            compute_dsm.run(
+                [read_preprocessing_content_file(preproc_json)],
+                out_stereo,
+                resolution=0.5,
+                epsg=32631,
+                sigma=0.3,
+                dsm_radius=3,
+                dsm_no_data=-999,
+                color_no_data=0,
+                msk_no_data=65534,
+                corr_config=corr_config,
+                mode="mp",
+                output_stats=True,
+                nb_workers=4,
+                walltime="00:10:00",
+                use_sec_disp=True)
+
+            # Uncomment the 2 following instructions to update reference data
+            # copy2(os.path.join(out_stereo, 'dsm.tif'),
+            #      absolute_data_path("ref_output/dsm_end2end_paca.tif"))
+            # copy2(os.path.join(out_stereo, 'clr.tif'),
+            #       absolute_data_path("ref_output/clr_end2end_paca.tif"))
+            # copy2(os.path.join(out_stereo, 'msk.tif'),
+            #      absolute_data_path("ref_output/msk_end2end_paca.tif"))
+
+            assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
+                "ref_output/dsm_end2end_paca.tif"), atol=0.0001, rtol=1e-6)
+            assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
+                "ref_output/clr_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
+            assert_same_images(os.path.join(out_stereo, "msk.tif"), absolute_data_path(
+                "ref_output/msk_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)

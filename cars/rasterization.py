@@ -41,7 +41,7 @@ import otbApplication
 from osgeo import osr
 
 # cars import
-from cars import filtering, projection
+from cars import filtering, projection, constants
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
 
@@ -133,19 +133,25 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
     """
     Combine a list of clouds (and their colors) into a pandas dataframe structured with the following labels:
 
-        * if no colors are set in input:
+        * if no colors are set in input and no mask data are present in the cloud_list datasets:
     >>> labels=['valid_data', 'x', 'y', 'z']
 
     The combined cloud has x, y, z columns along with 'valid data' one. The valid data is a mask set to True if the data
     are not on the epipolar image margin (epipolar_border_margin), otherwise it is set to False.
 
-        * if colors are set in input:
-    >>> labels=['valid_data', 'x', 'y', 'z', 'clr0', 'clr1', 'clr2']
+        * if no colors are set in input and mask data are present in the cloud_list datasets:
+    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK]
+
+    The mask values are added to the dataframe.
+
+        * if colors are set in input and mask data are present in the cloud_list datasets:
+    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK, 'clr0', 'clr1', 'clr2']
 
     Color channels information are added to the dataframe.
 
-        * if colors are set in input and the with_coords option is activated:
-    >>> labels=['valid_data', 'x', 'y', 'z', 'clr0', 'clr1', 'clr2',
+        * if colors are set in input,  mask data are present in the cloud_list datasets and
+        the with_coords option is activated:
+    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK, 'clr0', 'clr1', 'clr2',
     >>>         'coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi']
 
     The pixel position of the xyz point in the original epipolar image (coord_epi_geom_i, coord_epi_geom_j) are added
@@ -196,8 +202,8 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
     nb_data_msk = 0
     for idx in range(len(cloud_list)):
         ds_values_list = [key for key, _ in cloud_list[idx].items()]
-        if 'msk' in ds_values_list:
-            nb_data.append('msk')
+        if constants.POINTS_CLOUD_MSK in ds_values_list:
+            nb_data.append(constants.POINTS_CLOUD_MSK)
             nb_data_msk = 1
             break
 
@@ -266,8 +272,8 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
         ds_values_list = [key for key, _ in cloud_list[idx].items()]
 
-        if 'msk' in ds_values_list:
-            c_msk = cloud_list[idx].msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
+        if constants.POINTS_CLOUD_MSK in ds_values_list:
+            c_msk = cloud_list[idx][constants.POINTS_CLOUD_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
             c_cloud[4, :] = np.ravel(c_msk)
 
         # add data valid mask (points that are not in the border of the epipolar image)
@@ -301,7 +307,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
             c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
 
         # remove masked data (pandora + out of the terrain tile points)
-        c_terrain_tile_data_msk = cloud_list[idx].pandora_msk.values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
+        c_terrain_tile_data_msk = cloud_list[idx][constants.POINTS_CLOUD_CORR_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
 
         if roi:
             c_terrain_tile_data_msk = np.logical_and(c_terrain_tile_data_msk,
@@ -328,7 +334,7 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 def simple_rasterization_dataset(cloud_list: List[xr.Dataset], resolution: float, epsg: int,
                                  color_list: List[xr.Dataset]=None, xstart: float=None, ystart: float=None,
                                  xsize: int=None, ysize: int=None, sigma: float=None, radius: int=1, margin: int=0,
-                                 dsm_no_data: int=np.nan, color_no_data: int=np.nan, msk_no_data: int=np.nan,
+                                 dsm_no_data: int=np.nan, color_no_data: int=np.nan, msk_no_data: int=65535,
                                  grid_points_division_factor: int=None,
                                  small_cpn_filter_params: Union[None, filtering.SmallComponentsFilterParams]=None,
                                  statistical_filter_params: Union[None, filtering.StatisticalFilterParams]=None,
@@ -647,10 +653,10 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
     worker_logger.debug(
         "Vectorized rasterization done in {} seconds".format(toc - tic))
 
-    if 'msk' in cloud.columns:
+    if constants.POINTS_CLOUD_MSK in cloud.columns:
         msk = mask_interp(
-            cloud.loc[:, ['x', 'y', 'msk']].values, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
-            grid_points, sigma, no_data_val=msk_no_data, undefined_val=msk_no_data)
+            cloud.loc[:, ['x', 'y', constants.POINTS_CLOUD_MSK]].values, data_valid.astype(np.bool),
+            neighbors_id, start_ids, n_count, grid_points, sigma, no_data_val=msk_no_data, undefined_val=msk_no_data)
     else:
         msk = None
 
@@ -694,8 +700,8 @@ def get_neighbors_from_points_array(points: np.ndarray, data_valid: np.ndarray, 
 @njit((float64[:, :], boolean[:], int64[:], int64[:], int64[:], float64[:, :], float64, int64, int64),
       nogil=True, cache=True)
 def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: np.ndarray, neighbors_start: np.ndarray,
-                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, no_data_val: int=255,
-                undefined_val: int=255) -> np.ndarray:
+                neighbors_count: np.ndarray, grid_points: np.ndarray, sigma: float, no_data_val: int=65535,
+                undefined_val: int=65535) -> np.ndarray:
     """
     Interpolates mask data at grid point locations.
 
@@ -716,7 +722,7 @@ def mask_interp(mask_points: np.ndarray, data_valid: np.ndarray, neighbors_id: n
     :return: The interpolated mask
     """
     # mask rasterization result
-    result = np.full((neighbors_count.size, 1), no_data_val, dtype=np.uint8)
+    result = np.full((neighbors_count.size, 1), no_data_val, dtype=np.uint16)
     for i_grid in range(neighbors_count.size):
         p_sample = grid_points[i_grid]
 
@@ -897,14 +903,14 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     raster_out['pts_in_cell'] = xr.DataArray(n_in_cell, dims=raster_dims)
 
     if msk is not None:
-        raster_out['msk'] = xr.DataArray(msk, dims=raster_dims)
+        raster_out[constants.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
 
     return raster_out
 
 
 def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: float, y_start: float, x_size: int,
-              y_size: int, sigma: float=None, radius: int=1, hgt_no_data: int=np.nan, color_no_data: int=np.nan,
-              msk_no_data: int=np.nan, grid_points_division_factor: int=None)\
+              y_size: int, sigma: float=None, radius: int=1, hgt_no_data: int=-32768, color_no_data: int=0,
+              msk_no_data: int=65535, grid_points_division_factor: int=None)\
         -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset that also contains quality statistics.

@@ -212,9 +212,6 @@ def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     cloud_in = conversion.TransformPoints(cloud_in)
     cloud_in = np.array(cloud_in)
 
-    #if epsg_out!=4326:
-    #    cloud_out = [np.float32(p) for p in cloud_out]
-
     return cloud_in
 
 
@@ -257,48 +254,28 @@ def get_converted_xy_np_arrays_from_dataset(cloud_in: xr.Dataset, epsg_out: int)
     return proj_x, proj_y
 
 
-def points_cloud_conversion_dataset(cloud_in, epsg_out):
+def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     """
-    Convert a point cloud as an xarray.Dataset to another epsg
+    Convert a point cloud as an xarray.Dataset to another epsg (inplace)
 
     :param cloud_in: cloud to project
-    :type cloud_in: numpy array
     :param epsg_out: EPSG code of the ouptut SRS
-    :type epsg_out: int
-    :returns: Projected point cloud
-    :rtype: numpy array
     """
 
-    cloud_out = cloud_in
+    if cloud.attrs['epsg'] != epsg_out:
 
-    if cloud_in.attrs['epsg'] != epsg_out:
+        xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud)
 
-        xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud_in)
-
-        xyz = points_cloud_conversion(xyz, int(cloud_in.attrs['epsg']), epsg_out)
+        xyz = points_cloud_conversion(xyz, int(cloud.attrs['epsg']), epsg_out)
         xyz = xyz.reshape(xyz_shape)
 
-        ds_values = {
-            'x': (['row', 'col'], xyz[:, :, 0]),
-            'y': (['row', 'col'], xyz[:, :, 1]),
-            'z': (['row', 'col'], xyz[:, :, 2]),
-            'pandora_msk': (['row', 'col'], cloud_in['pandora_msk'].values)
-        }
-        ds_values_list = [key for key, _ in cloud_in.items()]
-        if 'msk' in ds_values_list:
-            ds_values['msk'] = (['row', 'col'], cloud_in['msk'].values)
-
-        # Copy attributes
-        cloud_out = xr.Dataset(ds_values,
-                               coords=cloud_in.coords)
-
-        for k, v in cloud_in.attrs.items():
-            cloud_out.attrs[k] = v
+        # Update cloud_in x, y and z values
+        cloud['x'].values = xyz[:, :, 0]
+        cloud['y'].values = xyz[:, :, 1]
+        cloud['z'].values = xyz[:, :, 2]
 
         # Update EPSG code
-        cloud_out.attrs['epsg'] = epsg_out
-
-    return cloud_out
+        cloud.attrs['epsg'] = epsg_out
 
 
 def points_cloud_conversion_dataframe(cloud: pandas.DataFrame, epsg_in: int, epsg_out: int):

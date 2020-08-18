@@ -159,7 +159,7 @@ def cars_cli_parser():
         help="No data value to use in the final color image (default: 0)")
     compute_dsm_parser.add_argument(
         "--msk_no_data", help="No data value to use in the final mask image (default: 65535)",
-        type=int, default=255)
+        type=int, default=65535)
     compute_dsm_parser.add_argument(
         "--corr_config", default=None, type=str,
         help="Correlator config (json file)")

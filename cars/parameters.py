@@ -246,6 +246,7 @@ dsm_radius_tag = "dsm_radius"
 # Tags for content.json stereo/output section of stereo step
 dsm_tag = "dsm"
 color_tag = "color"
+msk_tag = "msk"
 dsm_mean_tag = "dsm_mean"
 dsm_std_tag = "dsm_std"
 dsm_n_pts_tag = "dsm_n_pts"

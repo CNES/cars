@@ -52,6 +52,7 @@ from cars import parameters as params
 from cars import projection
 from cars import utils
 from cars.preprocessing import project_coordinates_on_line
+from cars import constants
 
 
 # Register sizeof for xarray
@@ -777,8 +778,8 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, i
     :type configuration: StereoConfiguration
     :param disp_ref: left to right disparity map dataset
     :param disp_sec: if available, the right to left disparity map dataset
-    :param im_ref_msk_ds: reference image dataset
-    :param im_sec_msk_ds: secondary image dataset
+    :param im_ref_msk_ds: reference image dataset (image and mask (if indicated by the user) in epipolar geometry)
+    :param im_sec_msk_ds: secondary image dataset (image and mask (if indicated by the user) in epipolar geometry)
     :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so as to cross those of img1
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
@@ -925,7 +926,7 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
         'x': (['row', 'col'], llh[:, :, 0]),  # longitudes
         'y': (['row', 'col'], llh[:, :, 1]),  # latitudes
         'z': (['row', 'col'], llh[:, :, 2]),
-        'pandora_msk': (['row', 'col'], data['msk'].values)
+        constants.POINTS_CLOUD_CORR_MSK: (['row', 'col'], data['msk'].values)
     }
 
     if dataset_msk is not None:
@@ -943,7 +944,7 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
                            int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
 
             im_msk = dataset_msk.msk.values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
-            values['msk'] = (['row', 'col'], im_msk)
+            values[constants.POINTS_CLOUD_MSK] = (['row', 'col'], im_msk)
         else:
             worker_logger = logging.getLogger('distributed.worker')
             worker_logger.warning("No mask is present in the image dataset")
@@ -1023,7 +1024,7 @@ def triangulate_matches(configuration, matches, snap_to_img1 = False):
     point_cloud = xr.Dataset({'x': (['row', 'col'], llh[:,:,0]),
                               'y': (['row', 'col'], llh[:,:,1]),
                               'z': (['row', 'col'], llh[:,:,2]),
-                              'pandora_msk' : (['row', 'col'], msk)},
+                              constants.POINTS_CLOUD_CORR_MSK : (['row', 'col'], msk)},
                              coords={'row':row,'col':col})
     point_cloud.attrs['epsg'] = int(4326)
 
@@ -1150,7 +1151,7 @@ def images_pair_to_3d_points(configuration,
 
     if out_epsg is not None:
         for key in points:
-            points[key] = projection.points_cloud_conversion_dataset(points[key], out_epsg)
+            projection.points_cloud_conversion_dataset(points[key], out_epsg)
 
     return points, colors
 
@@ -1238,12 +1239,12 @@ def compute_epipolar_grid_min_max(grid, epsg, conf, disp_min = None, disp_max = 
     pc_max = triangulate_matches(conf, matches_max)
 
     # Convert to correct EPSG
-    pc_min_epsg = projection.points_cloud_conversion_dataset(pc_min, epsg)
-    pc_max_epsg = projection.points_cloud_conversion_dataset(pc_max, epsg)
+    projection.points_cloud_conversion_dataset(pc_min, epsg)
+    projection.points_cloud_conversion_dataset(pc_max, epsg)
 
     # Form grid_min and grid_max
-    grid_min = np.concatenate((pc_min_epsg.x.values,pc_min_epsg.y.values), axis=1)
-    grid_max = np.concatenate((pc_max_epsg.x.values,pc_max_epsg.y.values), axis=1)
+    grid_min = np.concatenate((pc_min.x.values,pc_min.y.values), axis=1)
+    grid_max = np.concatenate((pc_max.x.values,pc_max.y.values), axis=1)
 
     return grid_min, grid_max
 

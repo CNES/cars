@@ -115,7 +115,7 @@ def test_write_geotiff_dsm():
         stdev = np.ndarray(shape=(10, 10, 2), dtype=np.float32)
         n_pts = np.ndarray(shape=(10, 10), dtype=np.uint16)
         n_in_cell = np.ndarray(shape=(10, 10), dtype=np.uint16)
-        msk = np.ndarray(shape=(10, 10), dtype=np.uint8)
+        msk = np.ndarray(shape=(10, 10), dtype=np.uint16)
 
         delayed_raster_datasets = list()
         delayed_raster_datasets.append(dask.delayed(rasterization.create_raster_dataset)(

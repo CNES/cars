@@ -104,8 +104,9 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
     return out_points, out_colors
 
 
-def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, nb_bands, color_dtype, output_stats, write_msk, **kwargs):
-    '''
+def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str], resolution: float, epsg: int, tmp_dir: str,
+                      nb_bands: int, color_dtype: np.dtype, output_stats: bool, write_msk: bool, **kwargs) -> str:
+    """
     Wraps the call to rasterization_wrapper and write the dsm tile on disk
 
     :param clouds_and_colors_as_str_list: paths to 3d points and colors to rasterize
@@ -113,8 +114,11 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
     :param epsg: EPSG code of output DSM
     :param tmp_dir: directory to store output DSM tiles
     :param nb_bands: number of bands in color image
+    :param color_dtype: type to use for the ortho-image
     :param output_stats: True if we save statistics with DSM tiles
-    '''
+    :param write_msk: boolean enabling the rasterized mask's writting
+    :return the region hash string
+    """
     # replace paths by opened Xarray datasets
     xr_open_dict = lambda x: dict([(name, xr.open_dataset(value)) for name, value in x.items()])
     clouds_and_colors_as_xr_list = [(xr_open_dict(k[0]), xr_open_dict(k[1])) for k in clouds_and_colors_as_str_list]
@@ -190,7 +194,7 @@ def run(
         sigma: float=None,
         dsm_radius: int=1,
         dsm_no_data: int=-32768,
-        msk_no_data: int=255,
+        msk_no_data: int=65535,
         color_no_data: int=0,
         corr_config: Dict=None,
         output_stats: bool=False,
@@ -332,6 +336,8 @@ def run(
             if snap_to_img1 and ref_left_image != configuration[params.input_section_tag][params.img1_tag]:
                 logging.warning("--snap_to_left_image mode is used but input configurations have different images as their left image in pair. This may result in increasing registration discrepencies between pairs")
 
+        # if the mask1 and/or mask2 fields are set in the prepare input configuration json
+        # then the DSM rasterized mask will be written alongside the DSM
         if configuration[params.input_section_tag].get(params.mask1_tag, None) is not None:
             write_msk = True
 
@@ -878,6 +884,9 @@ def run(
 
     out_dsm = os.path.join(out_dir, "dsm.tif")
     out_clr = os.path.join(out_dir, "clr.tif")
+    out_msk = None
+    if write_msk:
+        out_msk = os.path.join(out_dir, "msk.tif")
     out_dsm_mean = os.path.join(out_dir, "dsm_mean.tif")
     out_dsm_std = os.path.join(out_dir, "dsm_std.tif")
     out_dsm_n_pts = os.path.join(out_dir, "dsm_n_pts.tif")
@@ -930,6 +939,9 @@ def run(
         vrt_mosaic('*_dsm.tif', 'dsm.vrt', vrt_options, out_dsm)
         vrt_mosaic('*_clr.tif', 'clr.vrt', vrt_options, out_clr)
 
+        if write_msk:
+            vrt_mosaic('*_msk.tif', 'msk.vrt', vrt_options, out_msk)
+
         if output_stats:
             vrt_mosaic('*_dsm_mean.tif', 'dsm_mean.vrt', vrt_options, out_dsm_mean)
             vrt_mosaic('*_dsm_std.tif', 'dsm_std.vrt', vrt_options, out_dsm_std)
@@ -946,6 +958,10 @@ def run(
         params.color_no_data_tag] = float(color_no_data)
     out_json[params.stereo_section_tag][params.stereo_output_section_tag][
         params.color_tag] = out_clr
+
+    if write_msk:
+        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
+            params.msk_tag] = out_msk
 
     if output_stats:
         out_json[params.stereo_section_tag][params.stereo_output_section_tag][
