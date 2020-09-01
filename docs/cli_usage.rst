@@ -126,8 +126,8 @@ The other optional fields of the input json file are:
 * ``mask2`` : external mask of the image 2 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
 
-Input parameters
-----------------
+Input optional parameters
+-------------------------
 
 Some optional parameters of the command line impact the matching:
 
@@ -363,8 +363,8 @@ Command line usage:
 This program takes as input a json file or a list of N json files in the case of a N images pairs processing. This corresponds to the content.json files generated at the prepare step (cf. above). 
 Its output is the path to the folder which will contain the results of the stereo, that is to say the ``dsm.tif`` (regular grid of altitudes) and the ``clr.tif`` (corresponding color) files.
 
-Input parameters
-----------------
+Input optional parameters
+-------------------------
 
 Some optional parameters enable to modify the regular grid:
 
@@ -391,7 +391,7 @@ Some optional parameters enable to modify the regular grid:
 
 DASK parameters
 ---------------
-As the prepare part, During its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time.
+As the prepare part, during its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time.
 The following parameters can be used :
 * ``mode``: parallelisation mode (``pbs_dask``, ``local_dask`` or ``mp`` for multiprocessing)
 * ``nb_workers``: number of nodes to use for the computation
