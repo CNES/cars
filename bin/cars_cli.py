@@ -58,11 +58,11 @@ def cars_cli_parser():
 
     ## Prepare arguments
 
-    # Required (in a specific argparse group)
-    prepare_parser_required = prepare_parser.add_argument_group('mandatory arguments')
-    prepare_parser_required.add_argument(
+    # Mandatories (in a specific argparse group)
+    prepare_parser_mandatory = prepare_parser.add_argument_group('mandatory arguments')
+    prepare_parser_mandatory.add_argument(
         "-i", "--injson", required=True, type=str,  help="Input json file")
-    prepare_parser_required.add_argument(
+    prepare_parser_mandatory.add_argument(
         "-o", "--outdir", required=True, type=str,  help="Output directory")
 
     # Optionals
@@ -121,11 +121,11 @@ def cars_cli_parser():
 
     ## Compute_dsm arguments
 
-    # Required (in a specific argparse group)
-    compute_dsm_parser_required = compute_dsm_parser.add_argument_group('mandatory arguments')
-    compute_dsm_parser_required.add_argument(
+    # Mandatories (in a specific argparse group)
+    compute_dsm_parser_mandatory = compute_dsm_parser.add_argument_group('mandatory arguments')
+    compute_dsm_parser_mandatory.add_argument(
         "-i","--injsons", required=True, help="Input json files", nargs='*')
-    compute_dsm_parser_required.add_argument(
+    compute_dsm_parser_mandatory.add_argument(
         "-o","--outdir", required=True, type=str, help="Output directory")
 
     # Optionals
