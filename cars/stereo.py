@@ -52,6 +52,7 @@ from cars import parameters as params
 from cars import projection
 from cars import utils
 from cars.preprocessing import project_coordinates_on_line
+from cars import constants
 
 
 # Register sizeof for xarray
@@ -767,8 +768,9 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
     # If we are still here, return a default range:
     return (default_min, default_max)
 
-def triangulate(configuration, disp_ref: xr.Dataset,
-                disp_sec:xr.Dataset=None, snap_to_img1:bool = False, align:bool = False) -> Dict[str, xr.Dataset]:
+
+def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, im_ref_msk_ds: xr.Dataset=None,
+                im_sec_msk_ds: xr.Dataset=None, snap_to_img1:bool = False, align:bool = False) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
 
@@ -776,6 +778,8 @@ def triangulate(configuration, disp_ref: xr.Dataset,
     :type configuration: StereoConfiguration
     :param disp_ref: left to right disparity map dataset
     :param disp_sec: if available, the right to left disparity map dataset
+    :param im_ref_msk_ds: reference image dataset (image and mask (if indicated by the user) in epipolar geometry)
+    :param im_sec_msk_ds: secondary image dataset (image and mask (if indicated by the user) in epipolar geometry)
     :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so as to cross those of img1
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
@@ -806,9 +810,11 @@ def triangulate(configuration, disp_ref: xr.Dataset,
         grid2 = preprocessing_output_configuration[params.right_epipolar_uncorrected_grid_tag]
 
     point_clouds = dict()
-    point_clouds['ref'] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key='roi')
+    point_clouds['ref'] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key='roi',
+                                               dataset_msk=im_ref_msk_ds)
     if disp_sec is not None:
-        point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins')
+        point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins',
+                                                   dataset_msk=im_sec_msk_ds)
         
     # Handle alignment with lowres DEM
     if align and params.lowres_dem_splines_fit_tag in preprocessing_output_configuration:        
@@ -865,17 +871,18 @@ def triangulate(configuration, disp_ref: xr.Dataset,
 
 
 def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
-                         grid1:str, grid2:str, roi_key:str) -> xr.Dataset:
+                         grid1:str, grid2:str, roi_key:str, dataset_msk: xr.Dataset=None) -> xr.Dataset:
     """
     Compute points cloud
 
-    :param data: The reference to secondary disparity map dataset
+    :param data: The reference to disparity map dataset
     :param img1: reference image dataset
     :param img2: secondary image dataset
     :param grid1: path to the reference image grid file
     :param grid2: path to the secondary image grid file
     :param roi_key: roi of the disparity map key
     ('roi' if cropped while calling create_disp_dataset, otherwise 'roi_with_margins')
+    :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
     disp = pipelines.encode_to_otb(
@@ -915,10 +922,34 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
 
-    point_cloud = xr.Dataset({'x': (['row', 'col'], llh[:, :, 0]),  # longitudes
-                              'y': (['row', 'col'], llh[:, :, 1]),  # latitudes
-                              'z': (['row', 'col'], llh[:, :, 2]),
-                              'msk': (['row', 'col'], data['msk'].values)},
+    values = {
+        'x': (['row', 'col'], llh[:, :, 0]),  # longitudes
+        'y': (['row', 'col'], llh[:, :, 1]),  # latitudes
+        'z': (['row', 'col'], llh[:, :, 2]),
+        constants.POINTS_CLOUD_CORR_MSK: (['row', 'col'], data['msk'].values)
+    }
+
+    if dataset_msk is not None:
+        ds_values_list = [key for key, _ in dataset_msk.items()]
+        if 'msk' in ds_values_list:
+            if roi_key == 'roi_with_margins':
+                ref_roi = [0,
+                           0,
+                           int(dataset_msk.dims['col']),
+                           int(dataset_msk.dims['row'])]
+            else:
+                ref_roi = [int(-dataset_msk.attrs['margins'][0]),
+                           int(-dataset_msk.attrs['margins'][1]),
+                           int(dataset_msk.dims['col'] - dataset_msk.attrs['margins'][2]),
+                           int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
+
+            im_msk = dataset_msk.msk.values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
+            values[constants.POINTS_CLOUD_MSK] = (['row', 'col'], im_msk)
+        else:
+            worker_logger = logging.getLogger('distributed.worker')
+            worker_logger.warning("No mask is present in the image dataset")
+
+    point_cloud = xr.Dataset(values,
                              coords={'row': row, 'col': col})
 
     point_cloud.attrs['roi'] = data.attrs['roi']
@@ -993,7 +1024,7 @@ def triangulate_matches(configuration, matches, snap_to_img1 = False):
     point_cloud = xr.Dataset({'x': (['row', 'col'], llh[:,:,0]),
                               'y': (['row', 'col'], llh[:,:,1]),
                               'z': (['row', 'col'], llh[:,:,2]),
-                              'msk' : (['row', 'col'], msk)},
+                              constants.POINTS_CLOUD_CORR_MSK : (['row', 'col'], msk)},
                              coords={'row':row,'col':col})
     point_cloud.attrs['epsg'] = int(4326)
 
@@ -1010,7 +1041,8 @@ def images_pair_to_3d_points(configuration,
                              geoid_data=None,
                              use_sec_disp=False,
                              snap_to_img1=False,
-                             align=False) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+                             align=False,
+                             add_msk_info=False) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     # Retrieve disp min and disp max if needed
     """
     This function will produce a 3D points cloud as an xarray.Dataset from the given stereo configuration (from both
@@ -1041,6 +1073,7 @@ def images_pair_to_3d_points(configuration,
     :param snap_to_img1: bool
     :param align: If True, apply correction to point after triangulation to align with lowres DEM (if available. If not, no correction is applied)
     :param align: bool
+    :param add_msk_info: boolean enabling the addition of the masks' information in the point clouds final dataset
     :returns: Dictionary of tuple. The tuple are constructed with the dataset containing the 3D points +
     A dataset containing color of left image, or None
 
@@ -1087,11 +1120,30 @@ def images_pair_to_3d_points(configuration,
         # compute right color image from right-left disparity map
         colors['sec'] = estimate_color_from_disparity(disp['sec'], left, color)
 
+    im_ref_msk = None
+    im_sec_msk = None
+    if add_msk_info:
+        ref_values_list = [key for key, _ in left.items()]
+        if 'msk' in ref_values_list:
+            im_ref_msk = left
+        else:
+            worker_logger = logging.getLogger('distributed.worker')
+            worker_logger.warning("Left image does not have a mask to rasterize")
+        if 'sec' in disp:
+            sec_values_list = [key for key, _ in right.items()]
+            if 'msk' in sec_values_list:
+                im_sec_msk = right
+            else:
+                worker_logger = logging.getLogger('distributed.worker')
+                worker_logger.warning("Right image does not have a mask to rasterize")
+
     # Triangulate
     if 'sec' in disp:
-        points = triangulate(configuration, disp['ref'], disp['sec'], snap_to_img1 = snap_to_img1, align=align)
+        points = triangulate(configuration, disp['ref'], disp['sec'], snap_to_img1 = snap_to_img1, align=align,
+                             im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
     else:
-        points = triangulate(configuration, disp['ref'], snap_to_img1=snap_to_img1, align=align)
+        points = triangulate(configuration, disp['ref'], snap_to_img1=snap_to_img1, align=align,
+                             im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
 
     if geoid_data is not None:  # if user pass a geoid, use it a alt reference
         for key in points:
@@ -1099,7 +1151,7 @@ def images_pair_to_3d_points(configuration,
 
     if out_epsg is not None:
         for key in points:
-            points[key] = projection.points_cloud_conversion_dataset(points[key], out_epsg)
+            projection.points_cloud_conversion_dataset(points[key], out_epsg)
 
     return points, colors
 
@@ -1187,12 +1239,12 @@ def compute_epipolar_grid_min_max(grid, epsg, conf, disp_min = None, disp_max = 
     pc_max = triangulate_matches(conf, matches_max)
 
     # Convert to correct EPSG
-    pc_min_epsg = projection.points_cloud_conversion_dataset(pc_min, epsg)
-    pc_max_epsg = projection.points_cloud_conversion_dataset(pc_max, epsg)
+    projection.points_cloud_conversion_dataset(pc_min, epsg)
+    projection.points_cloud_conversion_dataset(pc_max, epsg)
 
     # Form grid_min and grid_max
-    grid_min = np.concatenate((pc_min_epsg.x.values,pc_min_epsg.y.values), axis=1)
-    grid_max = np.concatenate((pc_max_epsg.x.values,pc_max_epsg.y.values), axis=1)
+    grid_min = np.concatenate((pc_min.x.values,pc_min.y.values), axis=1)
+    grid_max = np.concatenate((pc_max.x.values,pc_max.y.values), axis=1)
 
     return grid_min, grid_max
 

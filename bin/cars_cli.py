@@ -82,7 +82,7 @@ def cars_cli_parser():
     prepare_parser.add_argument(
         "--epipolar_error_maximum_bias",
         type=float, default=0.,
-        help="Maximum bias for epipolar error in pixels " 
+        help="Maximum bias for epipolar error in pixels "
              "(default: 0, should be >= 0)")
     prepare_parser.add_argument(
         "--elevation_delta_lower_bound", type=float, default=-1000.,
@@ -157,6 +157,9 @@ def cars_cli_parser():
     compute_dsm_parser.add_argument(
         "--color_no_data", type=int, default=0,
         help="No data value to use in the final color image (default: 0)")
+    compute_dsm_parser.add_argument(
+        "--msk_no_data", help="No data value to use in the final mask image (default: 65535)",
+        type=int, default=65535)
     compute_dsm_parser.add_argument(
         "--corr_config", default=None, type=str,
         help="Correlator config (json file)")
@@ -455,6 +458,7 @@ def main_cli(args, parser, check_inputs=False):
                 dsm_radius=args.dsm_radius,
                 dsm_no_data=args.dsm_no_data,
                 color_no_data=args.color_no_data,
+                msk_no_data=args.msk_no_data,
                 corr_config=corr_config,
                 output_stats=args.output_stats,
                 mode=args.mode,

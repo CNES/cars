@@ -104,8 +104,9 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
     return out_points, out_colors
 
 
-def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, nb_bands, color_dtype, output_stats, **kwargs):
-    '''
+def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str], resolution: float, epsg: int, tmp_dir: str,
+                      nb_bands: int, color_dtype: np.dtype, output_stats: bool, write_msk: bool, **kwargs) -> str:
+    """
     Wraps the call to rasterization_wrapper and write the dsm tile on disk
 
     :param clouds_and_colors_as_str_list: paths to 3d points and colors to rasterize
@@ -113,8 +114,11 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
     :param epsg: EPSG code of output DSM
     :param tmp_dir: directory to store output DSM tiles
     :param nb_bands: number of bands in color image
+    :param color_dtype: type to use for the ortho-image
     :param output_stats: True if we save statistics with DSM tiles
-    '''
+    :param write_msk: boolean enabling the rasterized mask's writting
+    :return the region hash string
+    """
     # replace paths by opened Xarray datasets
     xr_open_dict = lambda x: dict([(name, xr.open_dataset(value)) for name, value in x.items()])
     clouds_and_colors_as_xr_list = [(xr_open_dict(k[0]), xr_open_dict(k[1])) for k in clouds_and_colors_as_str_list]
@@ -128,6 +132,7 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
 
     dsm_nodata = kwargs.get('dsm_no_data')
     color_nodata = kwargs.get('color_no_data')
+    msk_nodata = kwargs.get('msk_no_data')
 
     hashed_region = region_hash_string([xstart,ystart,xsize,ysize])
 
@@ -139,7 +144,9 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list, resolution, epsg, tmp_dir, 
 
     # write DSM tile as geoTIFF
     readwrite.write_geotiff_dsm([dsm], tmp_dir, xsize, ysize, tile_bounds,
-                                resolution, epsg, nb_bands, dsm_nodata, color_nodata, color_dtype = color_dtype, write_color=True, write_stats=output_stats, prefix=hashed_region+'_')
+                                resolution, epsg, nb_bands, dsm_nodata, color_nodata, color_dtype = color_dtype,
+                                write_color=True, write_stats=output_stats, write_msk=write_msk, msk_no_data=msk_nodata,
+                                prefix=hashed_region+'_')
 
     return hashed_region
 
@@ -187,6 +194,7 @@ def run(
         sigma: float=None,
         dsm_radius: int=1,
         dsm_no_data: int=-32768,
+        msk_no_data: int=65535,
         color_no_data: int=0,
         corr_config: Dict=None,
         output_stats: bool=False,
@@ -221,6 +229,7 @@ def run(
     :param dsm_radius: Radius around a cell for gathering points for rasterization
     :param dsm_no_data: No data value to use in the final DSM file
     :param color_no_data: No data value to use in the final colored image
+    :param msk_no_data: No data value to use in the final mask image
     :param corr_config: Correlator configuration
     :param output_stats: flag, if true, outputs dsm as a geotiff file with quality statistics.
     :param mode: Parallelization mode
@@ -300,6 +309,8 @@ def run(
 
     ref_left_image = None
 
+    write_msk = False
+
     for in_json in in_jsons:
         # Build config id
         config_id = "config_{}".format(config_idx)
@@ -324,6 +335,11 @@ def run(
         else:
             if snap_to_img1 and ref_left_image != configuration[params.input_section_tag][params.img1_tag]:
                 logging.warning("--snap_to_left_image mode is used but input configurations have different images as their left image in pair. This may result in increasing registration discrepencies between pairs")
+
+        # if the mask1 and/or mask2 fields are set in the prepare input configuration json
+        # then the DSM rasterized mask will be written alongside the DSM
+        if configuration[params.input_section_tag].get(params.mask1_tag, None) is not None:
+            write_msk = True
 
         # Get largest epipolar regions from configuration file
         largest_epipolar_region = [0,
@@ -600,7 +616,7 @@ def run(
                     conf['configuration'], region, corr_config, disp_min=conf[
                         'disp_min'], disp_max=conf['disp_max'],
                     geoid_data=geoid_data_futures, out_epsg=stereo_out_epsg,
-                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align))
+                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align, add_msk_info=write_msk))
             logging.info(
                 "Submitted {} epipolar delayed tasks to dask for stereo configuration {}".format(
                 len(delayed_point_clouds), config_id))
@@ -623,7 +639,8 @@ def run(
                           'disp_max':conf['disp_max'],
                           'geoid_data':geoid_data,
                           'out_epsg':stereo_out_epsg,
-                          'use_sec_disp':use_sec_disp},
+                          'use_sec_disp':use_sec_disp,
+                          "add_msk_info": write_msk},
                     callback=update))
 
             # Wait computation results (timeout in seconds) and replace the
@@ -828,7 +845,8 @@ def run(
                     required_point_clouds, resolution, epsg, xstart=xstart,
                     ystart=ystart, xsize=xsize, ysize=ysize,
                     radius=dsm_radius, sigma=sigma, dsm_no_data=dsm_no_data,
-                    color_no_data=color_no_data, small_cpn_filter_params=small_cpn_filter_params,
+                    color_no_data=color_no_data, msk_no_data=msk_no_data,
+                    small_cpn_filter_params=small_cpn_filter_params,
                     statistical_filter_params=statistical_filter_params,
                     grid_points_division_factor=grid_points_division_factor
                 )
@@ -841,12 +859,13 @@ def run(
                 # Launch asynchrone job for write_dsm_by_tile()
                 delayed_dsm_tiles.append(pool.apply_async(write_dsm_by_tile,
                     args=(required_point_clouds,resolution,epsg,tmp_dir, nb_bands,
-                          static_cfg.get_color_image_encoding(), output_stats),
+                          static_cfg.get_color_image_encoding(), output_stats, write_msk),
                           kwds={'xstart':xstart, 'ystart':ystart, 'xsize': xsize, 'ysize': ysize, 'radius':dsm_radius,
                                 'sigma':sigma, 'dsm_no_data':dsm_no_data, 'color_no_data':color_no_data,
                                 'small_cpn_filter_params':small_cpn_filter_params,
                                 'statistical_filter_params': statistical_filter_params,
-                                'grid_points_division_factor': grid_points_division_factor},
+                                'grid_points_division_factor': grid_points_division_factor,
+                                'msk_no_data': msk_no_data},
                     callback=update))
 
             number_of_epipolar_tiles_per_terrain_tiles.append(
@@ -865,6 +884,9 @@ def run(
 
     out_dsm = os.path.join(out_dir, "dsm.tif")
     out_clr = os.path.join(out_dir, "clr.tif")
+    out_msk = None
+    if write_msk:
+        out_msk = os.path.join(out_dir, "msk.tif")
     out_dsm_mean = os.path.join(out_dir, "dsm_mean.tif")
     out_dsm_std = os.path.join(out_dir, "dsm_std.tif")
     out_dsm_n_pts = os.path.join(out_dir, "dsm_n_pts.tif")
@@ -885,7 +907,8 @@ def run(
         readwrite.write_geotiff_dsm(future_dsm_tiles, out_dir, xsize, ysize,
                                     bounds, resolution, epsg, nb_bands, dsm_no_data,
                                     color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
-                                    write_color=True, write_stats=output_stats)
+                                    write_color=True, write_stats=output_stats, write_msk=write_msk,
+                                    msk_no_data=msk_no_data)
 
         # stop cluster
         stop_cluster(cluster, client)
@@ -916,6 +939,9 @@ def run(
         vrt_mosaic('*_dsm.tif', 'dsm.vrt', vrt_options, out_dsm)
         vrt_mosaic('*_clr.tif', 'clr.vrt', vrt_options, out_clr)
 
+        if write_msk:
+            vrt_mosaic('*_msk.tif', 'msk.vrt', vrt_options, out_msk)
+
         if output_stats:
             vrt_mosaic('*_dsm_mean.tif', 'dsm_mean.vrt', vrt_options, out_dsm_mean)
             vrt_mosaic('*_dsm_std.tif', 'dsm_std.vrt', vrt_options, out_dsm_std)
@@ -932,6 +958,10 @@ def run(
         params.color_no_data_tag] = float(color_no_data)
     out_json[params.stereo_section_tag][params.stereo_output_section_tag][
         params.color_tag] = out_clr
+
+    if write_msk:
+        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
+            params.msk_tag] = out_msk
 
     if output_stats:
         out_json[params.stereo_section_tag][params.stereo_output_section_tag][

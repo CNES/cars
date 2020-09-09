@@ -33,7 +33,7 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
 
 from utils import absolute_data_path, assert_same_datasets
 
-from cars import stereo
+from cars import stereo, constants
 from cars.utils import read_geoid_file
 
 
@@ -596,7 +596,7 @@ def test_triangulation_1(images_and_grids_conf):
     assert output['ref']['x'].shape == (120, 110)
 
     # Uncomment to update baseline
-    #output['ref'].to_netcdf(absolute_data_path("ref_output/triangulation1_ref.nc"))
+    output['ref'].to_netcdf(absolute_data_path("ref_output/triangulation1_ref.nc"))
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/triangulation1_ref.nc"))
@@ -615,7 +615,7 @@ def test_triangulate_matches(images_and_grids_conf):
     np.testing.assert_almost_equal(llh.x.values[0],5.1973629)
     np.testing.assert_almost_equal(llh.y.values[0],44.2079813)
     np.testing.assert_almost_equal(llh.z.values[0],511.4383088)
-    assert(llh.msk.values[0] == 255)
+    assert(llh[constants.POINTS_CLOUD_CORR_MSK].values[0] == 255)
     assert('epsg' in llh.attrs)
     assert(llh.attrs['epsg'] == 4326)
 
@@ -643,10 +643,11 @@ def test_images_pair_to_3d_points(images_and_grids_conf, color1_conf, no_data_co
                                                    region,
                                                    corr_cfg,
                                                    disp_min=-13,
-                                                   disp_max=14)
+                                                   disp_max=14,
+                                                   add_msk_info=True)
 
     # Uncomment to update baseline
-    #cloud['ref'].to_netcdf(absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
+    # cloud['ref'].to_netcdf(absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
     assert_same_datasets(cloud['ref'],ref,atol=1.e-3)

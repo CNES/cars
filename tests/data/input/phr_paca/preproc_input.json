@@ -1,0 +1,11 @@
+{
+"img1" : "left_image.tif",
+"mask1" : "left_multiclass_msk.tif",
+"nodata1" : 0,
+"img2" : "right_image.tif",
+"mask2" : "right_multiclass_msk.tif",
+"nodata2" : 0,
+"srtm_dir" : "srtm"
+}
+
+

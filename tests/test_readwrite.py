@@ -107,6 +107,7 @@ def test_write_geotiff_dsm():
         dsm_no_data = -32768
         hgt_no_data = dsm_no_data
         color_no_data = 0
+        msk_no_data = 255
         xstart, ystart, xsize, ysize = [0, 10, 10, 10]
 
         raster = np.ndarray(shape=(10, 10, 2), dtype=np.float32)
@@ -114,11 +115,12 @@ def test_write_geotiff_dsm():
         stdev = np.ndarray(shape=(10, 10, 2), dtype=np.float32)
         n_pts = np.ndarray(shape=(10, 10), dtype=np.uint16)
         n_in_cell = np.ndarray(shape=(10, 10), dtype=np.uint16)
+        msk = np.ndarray(shape=(10, 10), dtype=np.uint16)
 
         delayed_raster_datasets = list()
         delayed_raster_datasets.append(dask.delayed(rasterization.create_raster_dataset)(
             raster, xstart, ystart, xsize, ysize, resolution,
-            hgt_no_data, color_no_data, epsg, mean, stdev, n_pts, n_in_cell
+            hgt_no_data, color_no_data, epsg, mean, stdev, n_pts, n_in_cell, msk
         ))
 
         # Start cluster with a local cluster
@@ -132,7 +134,9 @@ def test_write_geotiff_dsm():
         nb_bands = 1
         dsm_file = os.path.join(directory, "dsm.tif")
         clr_file = os.path.join(directory, "clr.tif")
-        readwrite.write_geotiff_dsm(future_dsm, directory, xsize, ysize, bounds, resolution, epsg, nb_bands, dsm_no_data, color_no_data)
+        msk_file = os.path.join(directory, "msk.tif")
+        readwrite.write_geotiff_dsm(future_dsm, directory, xsize, ysize, bounds, resolution, epsg, nb_bands,
+                                    dsm_no_data, color_no_data, write_msk=True, msk_no_data=msk_no_data)
 
         # stop cluster
         stop_local_cluster(cluster, client)
@@ -174,3 +178,18 @@ def test_write_geotiff_dsm():
                         assert rio_actual.read()[0][i][j] == color_no_data
                     else:
                         assert rio_actual.read()[0][i][j] == raster[i][j][1]
+
+        # Compare MSK
+        with rio.open(msk_file) as rio_actual:
+            np.testing.assert_equal(rio_actual.width, width_ref)
+            np.testing.assert_equal(rio_actual.height, height_ref)
+            assert rio_actual.transform == transform_ref
+            assert rio_actual.crs == crs_ref
+            assert rio_actual.nodata == msk_no_data
+
+            for i in range(rio_actual.width):
+                for j in range(rio_actual.height):
+                    if np.isnan(raster[i][j][1]):
+                        assert rio_actual.read()[0][i][j] == msk_no_data
+                    else:
+                        assert rio_actual.read()[0][i][j] == msk[i][j]
