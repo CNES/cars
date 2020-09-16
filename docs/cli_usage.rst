@@ -39,47 +39,49 @@ Command Description
 
 .. code-block:: bash
 
-    usage: cars_cli.py prepare [-h] -i INJSON -o OUTDIR [--epi_step EPI_STEP]
-                           [--disparity_margin DISPARITY_MARGIN]
-                           [--epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND]
-                           [--epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS]
-                           [--elevation_delta_lower_bound ELEVATION_DELTA_LOWER_BOUND]
-                           [--elevation_delta_upper_bound ELEVATION_DELTA_UPPER_BOUND]
-                           [--mode {pbs_dask,local_dask}]
-                           [--nb_workers NB_WORKERS] [--walltime WALLTIME]
-                           [--check_inputs]
-    
-    optional arguments:
-      -h, --help            show this help message and exit
-      -i INJSON, --injson INJSON
-                            Input json file
-      -o OUTDIR, --outdir OUTDIR
-                            Output directory
-      --epi_step EPI_STEP   Step of the deformation grid in nb. of pixels
-                            (default: 30, should be > 1)
-      --disparity_margin DISPARITY_MARGIN
-                            Add a margin to min and max disparity as percent of
-                            the disparity range (default: 0.02, should be in range
-                            [0,1])
-      --epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND
-                            Expected upper bound for epipolar error in pixels
-                            (default: 10, should be > 0)
-      --epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS
-                            Maximum bias for epipolar error in pixels (default: 0,
-                            should be >= 0)
-      --elevation_delta_lower_bound ELEVATION_DELTA_LOWER_BOUND
-                            Expected lower bound for elevation delta with respect
-                            to input low resolution DTM in meters (default: -1000)
-      --elevation_delta_upper_bound ELEVATION_DELTA_UPPER_BOUND
-                            Expected upper bound for elevation delta with respect
-                            to input low resolution DTM in meters (default: 1000)
-      --mode {pbs_dask,local_dask}
-                            Parallelization mode (default: local_dask)
-      --nb_workers NB_WORKERS
-                            Number of workers (default: 8, should be > 0)
-      --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
-                            formatted as HH:MM:SS)
-      --check_inputs        Check inputs consistency
+        usage: cars_cli.py prepare [-h] -i INJSON -o OUTDIR [--epi_step EPI_STEP]
+                                   [--disparity_margin DISPARITY_MARGIN]
+                                   [--epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND]
+                                   [--epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS]
+                                   [--elevation_delta_lower_bound ELEVATION_DELTA_LOWER_BOUND]
+                                   [--elevation_delta_upper_bound ELEVATION_DELTA_UPPER_BOUND]
+                                   [--mode {pbs_dask,local_dask}]
+                                   [--nb_workers NB_WORKERS] [--walltime WALLTIME]
+                                   [--check_inputs]
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          --epi_step EPI_STEP   Step of the deformation grid in nb. of pixels
+                                (default: 30, should be > 1)
+          --disparity_margin DISPARITY_MARGIN
+                                Add a margin to min and max disparity as percent of
+                                the disparity range (default: 0.02, should be in range
+                                [0,1])
+          --epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND
+                                Expected upper bound for epipolar error in pixels
+                                (default: 10, should be > 0)
+          --epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS
+                                Maximum bias for epipolar error in pixels (default: 0,
+                                should be >= 0)
+          --elevation_delta_lower_bound ELEVATION_DELTA_LOWER_BOUND
+                                Expected lower bound for elevation delta with respect
+                                to input low resolution DTM in meters (default: -1000)
+          --elevation_delta_upper_bound ELEVATION_DELTA_UPPER_BOUND
+                                Expected upper bound for elevation delta with respect
+                                to input low resolution DTM in meters (default: 1000)
+          --mode {pbs_dask,local_dask}
+                                Parallelization mode (default: local_dask)
+          --nb_workers NB_WORKERS
+                                Number of workers (default: 8, should be > 0)
+          --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
+                                formatted as HH:MM:SS)
+          --check_inputs        Check inputs consistency
+
+        mandatory arguments:
+          -i INJSON, --injson INJSON
+                                Input json file
+          -o OUTDIR, --outdir OUTDIR
+                                Output directory
 
 
 Command line usage
@@ -89,7 +91,6 @@ Command line usage
 
     $ cars_cli.py prepare -i preproc_input.json -o outdir
     
-**Beware, the options "-i" and "-o" are mandatory** (even if python module argparse default mode show them as optionals)
 
 Input json file
 ---------------
@@ -125,8 +126,8 @@ The other optional fields of the input json file are:
 * ``mask2`` : external mask of the image 2 (convention: 0 is a valid pixel, other values indicate data to ignore)
 * ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
 
-Input parameters
-----------------
+Input optional parameters
+-------------------------
 
 Some optional parameters of the command line impact the matching:
 
@@ -270,83 +271,86 @@ Command Description
 
 .. code-block:: bash
 
-    usage: cars_cli.py compute_dsm [-h] -i [INJSONS [INJSONS ...]] -o OUTDIR
-                               [--sigma SIGMA] [--dsm_radius DSM_RADIUS]
-                               [--resolution RESOLUTION] [--epsg EPSG]
-                               [--roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX | --roi_file ROI_FILE]
-                               [--dsm_no_data DSM_NO_DATA]
-                               [--color_no_data COLOR_NO_DATA]
-                               [--corr_config CORR_CONFIG]
-                               [--min_elevation_offset MIN_ELEVATION_OFFSET]
-                               [--max_elevation_offset MAX_ELEVATION_OFFSET]
-                               [--output_stats] [--use_geoid_as_alt_ref]
-                               [--use_sec_disp] [--snap_to_left_image]
-                               [--align_with_lowres_dem]
-                               [--disable_cloud_small_components_filter]
-                               [--disable_cloud_statistical_outliers_filter]
-                               [--mode {pbs_dask,local_dask,mp}]
-                               [--nb_workers NB_WORKERS] [--walltime WALLTIME]
-    optional arguments:
-      -h, --help            show this help message and exit
-      -i [INJSONS [INJSONS ...]], --injsons [INJSONS [INJSONS ...]]
-                            Input json files
-      -o OUTDIR, --outdir OUTDIR
-                            Output directory
-      --sigma SIGMA         Sigma for rasterization in fraction of pixels
-                            (default: None, should be >= 0)
-      --dsm_radius DSM_RADIUS
-                            Radius for rasterization in pixels (default: 1, should
-                            be >= 0)
-      --resolution RESOLUTION
-                            Digital Surface Model resolution (default: 0.5, should
-                            be > 0)
-      --epsg EPSG           EPSG code (default: None, should be > 0)
-      --roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX
-                            DSM ROI in final projection [xmin ymin xmax ymax] (it
-                            has to be in final projection)
-      --roi_file ROI_FILE   DSM ROI file (vector file or image which footprint
-                            will be taken as ROI).
-      --dsm_no_data DSM_NO_DATA
-                            No data value to use in the final DSM file (default:
-                            -32768)
-      --color_no_data COLOR_NO_DATA
-                            No data value to use in the final color image
-                            (default: 0)
-      --corr_config CORR_CONFIG
-                            Correlator config (json file)
-      --min_elevation_offset MIN_ELEVATION_OFFSET
-                            Override minimum disparity from prepare step with this
-                            offset in meters
-      --max_elevation_offset MAX_ELEVATION_OFFSET
-                            Override maximum disparity from prepare step with this
-                            offset in meters
-      --output_stats        Outputs dsm as a netCDF file embedding quality
-                            statistics.
-      --use_geoid_as_alt_ref
-                            Use geoid grid as altimetric reference.
-      --use_sec_disp        Use the points cloudGenerated from the secondary
-                            disparity map.
-      --snap_to_left_image  This mode can be used if all pairs share the same left
-                            image. It will then modify lines of sights of
-                            secondary images so that they all cross those of the
-                            reference image.
-      --align_with_lowres_dem
-                            If this mode is used, during triangulation, points
-                            will be corrected using the estimated correction from
-                            the prepare step in order to align 3D points with the
-                            low resolution initial DEM.
-      --disable_cloud_small_components_filter
-                            This mode deactivates the points cloud filtering of
-                            small components.
-      --disable_cloud_statistical_outliers_filter
-                            This mode deactivates the points cloud filtering of
-                            statistical outliers.
-      --mode {pbs_dask,local_dask,mp}
-                            Parallelization mode (default: local_dask)
-      --nb_workers NB_WORKERS
-                            Number of workers (default: 32, should be > 0)
-      --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
-                            formatted as HH:MM:SS)
+        usage: cars_cli.py compute_dsm [-h] -i [INJSONS [INJSONS ...]] -o OUTDIR
+                                       [--sigma SIGMA] [--dsm_radius DSM_RADIUS]
+                                       [--resolution RESOLUTION] [--epsg EPSG]
+                                       [--roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX | --roi_file ROI_FILE]
+                                       [--dsm_no_data DSM_NO_DATA]
+                                       [--color_no_data COLOR_NO_DATA]
+                                       [--corr_config CORR_CONFIG]
+                                       [--min_elevation_offset MIN_ELEVATION_OFFSET]
+                                       [--max_elevation_offset MAX_ELEVATION_OFFSET]
+                                       [--output_stats] [--use_geoid_as_alt_ref]
+                                       [--use_sec_disp] [--snap_to_left_image]
+                                       [--align_with_lowres_dem]
+                                       [--disable_cloud_small_components_filter]
+                                       [--disable_cloud_statistical_outliers_filter]
+                                       [--mode {pbs_dask,local_dask,mp}]
+                                       [--nb_workers NB_WORKERS] [--walltime WALLTIME]
+
+        optional arguments:
+          -h, --help            show this help message and exit
+          --sigma SIGMA         Sigma for rasterization in fraction of pixels
+                                (default: None, should be >= 0)
+          --dsm_radius DSM_RADIUS
+                                Radius for rasterization in pixels (default: 1, should
+                                be >= 0)
+          --resolution RESOLUTION
+                                Digital Surface Model resolution (default: 0.5, should
+                                be > 0)
+          --epsg EPSG           EPSG code (default: None, should be > 0)
+          --roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX
+                                DSM ROI in final projection [xmin ymin xmax ymax] (it
+                                has to be in final projection)
+          --roi_file ROI_FILE   DSM ROI file (vector file or image which footprint
+                                will be taken as ROI).
+          --dsm_no_data DSM_NO_DATA
+                                No data value to use in the final DSM file (default:
+                                -32768)
+          --color_no_data COLOR_NO_DATA
+                                No data value to use in the final color image
+                                (default: 0)
+          --corr_config CORR_CONFIG
+                                Correlator config (json file)
+          --min_elevation_offset MIN_ELEVATION_OFFSET
+                                Override minimum disparity from prepare step with this
+                                offset in meters
+          --max_elevation_offset MAX_ELEVATION_OFFSET
+                                Override maximum disparity from prepare step with this
+                                offset in meters
+          --output_stats        Outputs dsm as a netCDF file embedding quality
+                                statistics.
+          --use_geoid_as_alt_ref
+                                Use geoid grid as altimetric reference.
+          --use_sec_disp        Use the points cloudGenerated from the secondary
+                                disparity map.
+          --snap_to_left_image  This mode can be used if all pairs share the same left
+                                image. It will then modify lines of sights of
+                                secondary images so that they all cross those of the
+                                reference image.
+          --align_with_lowres_dem
+                                If this mode is used, during triangulation, points
+                                will be corrected using the estimated correction from
+                                the prepare step in order to align 3D points with the
+                                low resolution initial DEM.
+          --disable_cloud_small_components_filter
+                                This mode deactivates the points cloud filtering of
+                                small components.
+          --disable_cloud_statistical_outliers_filter
+                                This mode deactivates the points cloud filtering of
+                                statistical outliers.
+          --mode {pbs_dask,local_dask,mp}
+                                Parallelization mode (default: local_dask)
+          --nb_workers NB_WORKERS
+                                Number of workers (default: 32, should be > 0)
+          --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
+                                formatted as HH:MM:SS)
+
+        mandatory arguments:
+          -i [INJSONS [INJSONS ...]], --injsons [INJSONS [INJSONS ...]]
+                                Input json files
+          -o OUTDIR, --outdir OUTDIR
+                                Output directory
 
 
 Command line usage:
@@ -355,14 +359,12 @@ Command line usage:
 .. code-block:: bash
 
     $ cars_cli.py compute_dsm -i content.json content2.json ... -o outdir
-    
-**Beware, the options "-i" and "-o" are mandatory** (even if python module argparse default mode show them as optionals)
 
 This program takes as input a json file or a list of N json files in the case of a N images pairs processing. This corresponds to the content.json files generated at the prepare step (cf. above). 
 Its output is the path to the folder which will contain the results of the stereo, that is to say the ``dsm.tif`` (regular grid of altitudes) and the ``clr.tif`` (corresponding color) files.
 
-Input parameters
-----------------
+Input optional parameters
+-------------------------
 
 Some optional parameters enable to modify the regular grid:
 
@@ -389,7 +391,7 @@ Some optional parameters enable to modify the regular grid:
 
 DASK parameters
 ---------------
-As the prepare part, During its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time.
+As the prepare part, during its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time.
 The following parameters can be used :
 * ``mode``: parallelisation mode (``pbs_dask``, ``local_dask`` or ``mp`` for multiprocessing)
 * ``nb_workers``: number of nodes to use for the computation
