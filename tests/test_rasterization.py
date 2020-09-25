@@ -25,7 +25,7 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from cars import rasterization, projection, constants
+from cars import rasterization, constants
 from utils import absolute_data_path, temporary_dir, assert_same_images, assert_same_datasets
 
 
@@ -325,13 +325,11 @@ def test_simple_rasterization_single():
 def test_simple_rasterization_dataset_1():
 
     cloud = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/cloud1_ref.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
     )
-
-    projection.points_cloud_conversion_dataset(cloud, 32630)
 
     xstart = 1154790
     ystart = 4927552
@@ -358,13 +356,11 @@ def test_simple_rasterization_dataset_1():
 def test_simple_rasterization_dataset_2():
 
     cloud = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/cloud1_ref.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
     )
-
-    projection.points_cloud_conversion_dataset(cloud, 32630)
 
     xstart = None
     ystart = None
@@ -393,13 +389,11 @@ def test_simple_rasterization_multiple_datasets():
     Test simple_rasterization_dataset with a list of datasets
     """
     cloud = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/cloud1_ref.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
     )
-
-    projection.points_cloud_conversion_dataset(cloud, 32630)
 
     utm1 = cloud.isel(row=range(0, 60))
     utm2 = cloud.isel(row=range(60, 120))
