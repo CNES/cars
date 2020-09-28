@@ -98,7 +98,7 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
 
     if otb_max_ram_hint is None:
         if "OTB_MAX_RAM_HINT" in os.environ:
-            otb_max_ram_hint = os.environ["OTB_MAX_RAM_HINT"]
+            otb_max_ram_hint = int(os.environ["OTB_MAX_RAM_HINT"])
         else:
             raise ValueError(
                 'otb_max_ram_hint is None and OTB_MAX_RAM_HINT envvar is not set')
