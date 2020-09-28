@@ -166,12 +166,17 @@ def test_optimal_tile_size():
     """
     Test optimal_tile_size function
     """
-    res = stereo.optimal_tile_size(-10, 10, 500)
-    assert res == 100
+    row = 450
+    col = 375
+    disp = 61  
+    mem = 313
+
+    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp, mem)
+    assert res == 411
 
     # Test case where default tile size is returned
-    assert stereo.optimal_tile_size(-1000, 1000,
-                                    500, tile_size_rounding=33) == 33
+    assert stereo.optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,
+                                                          100, tile_size_rounding=33) == 33
 
 
 @pytest.mark.unit_tests

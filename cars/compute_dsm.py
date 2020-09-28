@@ -484,7 +484,7 @@ def run(
         if epi_tile_size is not None:
             opt_epipolar_tile_size = epi_tile_size
         else:
-            opt_epipolar_tile_size = stereo.optimal_tile_size(
+            opt_epipolar_tile_size = stereo.optimal_tile_size_pandora_plugin_libsgm(
                 disp_min,
                 disp_max)
         logging.info(

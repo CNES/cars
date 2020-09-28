@@ -81,25 +81,19 @@ def register_xarray():
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 
 
-def optimal_tile_size(
-        disp_min,
-        disp_max,
-        otb_max_ram_hint=None,
-        tile_size_rounding=50):
+def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
+        disp_max: int,
+        otb_max_ram_hint: int=None,
+        tile_size_rounding: int=50) -> int:
     """
-    Compute optimal tile size according to estimated memory usage.
+    Compute optimal tile size according to estimated memory usage (pandora_plugin_libsgm)
     Returned optimal tile size will be at least equal to tile_size_rounding.
 
     :param disp_min: Minimum disparity to explore
-    :type disp_min: int
     :param disp_max: Maximum disparity to explore
-    :type disp_max: int
     :param otb_max_ram_hint: amount of RAM allocated to OTB (if None, will try to read it from environment variable)
-    :type otb_max_ram_hint: int
     :param tile_size_rounding: Optimal tile size will be aligned to multiples of tile_size_rounding
-    :type tile_size_rounding: int
     :returns: Optimal tile size according to benchmarked memory usage
-    :rtype: int
     """
 
     if otb_max_ram_hint is None:
@@ -109,22 +103,33 @@ def optimal_tile_size(
             raise ValueError(
                 'otb_max_ram_hint is None and OTB_MAX_RAM_HINT envvar is not set')
 
+    memory = otb_max_ram_hint
     disp = disp_max - disp_min
-    a = (0.02 * disp + 0.4)
-    b = (0.008 * disp * disp + 2 * disp + 300)
-    c = (0.9 * disp * disp - 250 * disp + 65000) - \
-        1000 * (int(otb_max_ram_hint) / 4)
-    delta = b * b - 4 * a * c
 
-    tile_size = (-b + np.sqrt(delta)) / (2 * a)
-    tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
+    image = 32 * 2
+    disp_ref = 32
+    validiti_mask_ref = 16
+    confidence = 32
+    cv_ = disp * 32
+    nan_ = disp * 8
+    cv_uint = disp * 8
+    penal = 8 * 32 * 2
+    img_crop = 32 * 2
 
-    if tile_size <= 0:
+    tot = image + disp_ref + validiti_mask_ref
+    tot += confidence + 2*cv_ + nan_ + cv_uint + penal + img_crop
+    import_ = 200 #MiB
+
+    row_or_col = float(((memory-import_)* 2**23)) / tot
+
+    if row_or_col <= 0:
         logging.warning(
             "Optimal tile size is null, forcing it to {} pixels".format(tile_size_rounding))
         tile_size = tile_size_rounding
+    else:
+        tile_size = np.sqrt(row_or_col)
 
-    return tile_size
+    return int(tile_size)
 
 
 def resample_image(
