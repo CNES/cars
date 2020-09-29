@@ -267,7 +267,7 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
     
-    srtm_ds = preprocessing.read_lowres_dem(dem, startx, starty, sizex, sizey)
+    srtm_ds = preprocessing.read_lowres_dem(startx, starty, sizex, sizey, dem=dem)
 
     # Uncomment to update baseline
     #srtm_ds.to_netcdf(absolute_data_path("ref_output/srtm_xt.nc"))
