@@ -325,7 +325,7 @@ def test_simple_rasterization_single():
 def test_simple_rasterization_dataset_1():
 
     cloud = xr.open_dataset(
-        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
@@ -356,7 +356,7 @@ def test_simple_rasterization_dataset_1():
 def test_simple_rasterization_dataset_2():
 
     cloud = xr.open_dataset(
-        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
@@ -389,7 +389,7 @@ def test_simple_rasterization_multiple_datasets():
     Test simple_rasterization_dataset with a list of datasets
     """
     cloud = xr.open_dataset(
-        absolute_data_path("input/rasterization_input/cloud1_ref_32630.nc")
+        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
