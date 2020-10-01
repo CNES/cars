@@ -609,7 +609,7 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_dsm_tag] = lowres_dsm_file
 
     # Now read the exact same grid on initial DEM
-    lowres_initial_dem = preprocessing.read_lowres_dem(srtm_dir, startx = inter_xmin, starty = inter_ymax, sizex = lowres_dsm_sizex, sizey = lowres_dsm_sizey, resolution = lowres_dsm_resolution)
+    lowres_initial_dem = preprocessing.read_lowres_dem(startx = inter_xmin, starty = inter_ymax, sizex = lowres_dsm_sizex, sizey = lowres_dsm_sizey, dem = srtm_dir, default_alt = default_alt, resolution = lowres_dsm_resolution)
     lowres_initial_dem_file = os.path.join(out_dir,"lowres_initial_dem.nc")
     lowres_initial_dem.to_netcdf(lowres_initial_dem_file)
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_initial_dem_tag] = lowres_initial_dem_file

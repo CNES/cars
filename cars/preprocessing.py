@@ -491,12 +491,10 @@ def image_envelope(img, shp, dem=None, default_alt=None):
     app.SetParameterString("out", shp)
     app.ExecuteAndWriteOutput()
 
-def read_lowres_dem(dem, startx, starty, sizex, sizey, resolution = 0.000277777777778):
+def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, resolution = 0.000277777777778):
     """
     Read an extract of the low resolution input DSM and return it as an Array
     
-    :param dem: DEM directory
-    :type dem: string
     :param startx: Upper left x coordinate for grid in WGS84
     :type startx: float
     :param starty: Upper left y coordinate for grid in WGS84 (remember that values are decreasing in y axis)
@@ -505,6 +503,10 @@ def read_lowres_dem(dem, startx, starty, sizex, sizey, resolution = 0.0002777777
     :type sizex: int
     :param sizey: Size of grid in y direction
     :type sizey: int
+    :param dem: DEM directory
+    :type dem: string
+    :param default_alt: Default altitude above ellipsoid
+    :type default_alt: float
     :param resolution: Resolution (in degrees) of output raster
     :type resolution: float
     :return: The extract of the lowres DEM as an xarray.Dataset
@@ -512,7 +514,13 @@ def read_lowres_dem(dem, startx, starty, sizex, sizey, resolution = 0.0002777777
     """
 
     app = otb.Registry.CreateApplication("DEMReader")
-    app.SetParameterString("elev.dem", dem)
+
+    if dem is not None:
+        app.SetParameterString("elev.dem", dem)
+
+    if default_alt is not None:
+        app.SetParameterFloat("elev.default", default_alt)
+
     app.SetParameterFloat("originx", startx)
     app.SetParameterFloat("originy", starty)
     app.SetParameterInt("sizex", sizex)
