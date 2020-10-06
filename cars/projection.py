@@ -37,6 +37,7 @@ from rasterio.features import shapes
 from shapely.geometry import shape, Polygon
 from shapely.ops import transform
 import pyproj
+import osgeo
 from osgeo import osr
 
 # cars import
@@ -208,6 +209,11 @@ def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     srs_in.ImportFromEPSG(epsg_in)
     srs_out = osr.SpatialReference()
     srs_out.ImportFromEPSG(epsg_out)
+    # GDAL 3.0 Coordinate transformation (backwards compatibility)
+    # https://github.com/OSGeo/gdal/issues/1546
+    if int(osgeo.__version__[0]) >= 3:
+        srs_in.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
+        srs_out.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
     conversion = osr.CoordinateTransformation(srs_in, srs_out)
     cloud_in = conversion.TransformPoints(cloud_in)
     cloud_in = np.array(cloud_in)
