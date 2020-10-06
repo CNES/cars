@@ -47,6 +47,7 @@ from cars import stereo
 from cars import rasterization
 from cars import parameters as params
 from cars import configuration as static_cfg
+from cars import constants as cst
 from cars import tiling
 from cars import utils
 from cars import projection
@@ -609,13 +610,16 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_dsm_tag] = lowres_dsm_file
 
     # Now read the exact same grid on initial DEM
-    lowres_initial_dem = preprocessing.read_lowres_dem(startx = inter_xmin, starty = inter_ymax, sizex = lowres_dsm_sizex, sizey = lowres_dsm_sizey, dem = srtm_dir, default_alt = default_alt, resolution = lowres_dsm_resolution)
-    lowres_initial_dem_file = os.path.join(out_dir,"lowres_initial_dem.nc")
+    lowres_initial_dem = preprocessing.read_lowres_dem(startx=inter_xmin, starty=inter_ymax, sizex=lowres_dsm_sizex,
+                                                       sizey=lowres_dsm_sizey, dem=srtm_dir, default_alt=default_alt,
+                                                       resolution=lowres_dsm_resolution)
+    lowres_initial_dem_file = os.path.join(out_dir, "lowres_initial_dem.nc")
     lowres_initial_dem.to_netcdf(lowres_initial_dem_file)
-    out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_initial_dem_tag] = lowres_initial_dem_file
+    out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_initial_dem_tag] \
+        = lowres_initial_dem_file
     
     # also write the difference
-    lowres_elevation_difference_file= os.path.join(out_dir,"lowres_elevation_diff.nc")
+    lowres_elevation_difference_file = os.path.join(out_dir, "lowres_elevation_diff.nc")
     lowres_dsm_diff = lowres_initial_dem - lowres_dsm
     (lowres_dsm_diff).to_netcdf(lowres_elevation_difference_file)
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_elevation_difference_tag] = lowres_elevation_difference_file
@@ -628,15 +632,15 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
         logging.info("Estimating correction between low resolution DSM and initial DEM")
 
         # First, we estimate direction of acquisition time for both images
-        vec1 = preprocessing.get_time_ground_direction(img1, dem = srtm_dir)
-        vec2 = preprocessing.get_time_ground_direction(img2, dem = srtm_dir)
+        vec1 = preprocessing.get_time_ground_direction(img1, dem=srtm_dir)
+        vec2 = preprocessing.get_time_ground_direction(img2, dem=srtm_dir)
         time_direction_vector = (vec1+vec2)/2
 
         display_angle = lambda x: 180*math.atan2(x[1], x[0])/math.pi
 
         logging.info("Time direction average azimuth: {}° (img1: {}°, img2: {}°)".format(display_angle(time_direction_vector), display_angle(vec1), display_angle(vec2)))
 
-        origin = [float(lowres_dsm_diff.x[0].values), float(lowres_dsm_diff.y[0].values)]
+        origin = [float(lowres_dsm_diff[cst.X][0].values), float(lowres_dsm_diff[cst.Y][0].values)]
         out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.time_direction_line_origin_x_tag] = origin[0]
         out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.time_direction_line_origin_y_tag] = origin[1]
         out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.time_direction_line_vector_x_tag] = time_direction_vector[0]
@@ -653,7 +657,8 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
                           static_cfg.low_res_dsm_ext_tag))
 
     else:
-        logging.warning("Low resolution DSM is not large enough (minimum size is 100x100) to estimate correction to fit initial DEM, skipping ...")
+        logging.warning("Low resolution DSM is not large enough (minimum size is 100x100) "
+                        "to estimate correction to fit initial DEM, skipping ...")
 
     if splines is not None:
         # Save model to file

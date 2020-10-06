@@ -52,7 +52,7 @@ from cars import parameters as params
 from cars import projection
 from cars import utils
 from cars.preprocessing import project_coordinates_on_line
-from cars import constants
+from cars import constants as cst
 
 
 # Register sizeof for xarray
@@ -200,8 +200,8 @@ def resample_image(
     return dataset
 
 
-def create_im_dataset(im:np.ndarray, region:List[int], largest_size:List[int], band_coords:bool=False,
-                      msk:np.ndarray=None) -> xr.Dataset:
+def create_im_dataset(im: np.ndarray, region: List[int], largest_size: List[int], band_coords: bool=False,
+                      msk: np.ndarray=None) -> xr.Dataset:
     """
     Create image dataset as used in cars.
 
@@ -219,23 +219,22 @@ def create_im_dataset(im:np.ndarray, region:List[int], largest_size:List[int], b
         bands = range(nb_bands)
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
-        dataset = xr.Dataset({'im': (['band', 'row', 'col'],
+        dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL],
                                      np.einsum('ijk->kij', im)
                                      )},
-                             coords={'band': bands,
-                                     'row': np.array(range(region[1], region[3])),
-                                     'col': np.array(range(region[0], region[2]))
+                             coords={cst.BAND: bands,
+                                     cst.ROW: np.array(range(region[1], region[3])),
+                                     cst.COL: np.array(range(region[0], region[2]))
                                      })
     else:
-        dataset = xr.Dataset({'im': (['row', 'col'], im[:, :, 0])},
-                             coords={'row': np.array(range(region[1], region[3])),
-                                     'col': np.array(range(region[0], region[2]))})
+        dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL], im[:, :, 0])},
+                             coords={cst.ROW: np.array(range(region[1], region[3])),
+                                     cst.COL: np.array(range(region[0], region[2]))})
 
     if msk is not None:
-        dataset['msk'] = xr.DataArray(
-            msk.astype(np.int16), dims=['row', 'col'])
+        dataset[cst.EPI_MSK] = xr.DataArray(msk.astype(np.int16), dims=[cst.ROW, cst.COL])
 
-    dataset.attrs['full_epipolar_size'] = largest_size
+    dataset.attrs[cst.EPI_FULL_SIZE] = largest_size
     dataset.attrs['region'] = np.array(region)
 
     return dataset
@@ -294,6 +293,7 @@ def epipolar_rectify_images(
 
     # Force region to be float
     region = [int(x) for x in region]
+
     # Apply margins to left image
     left_region = region.copy()
     left_margins = margins.loc[dict(image='ref_margin')].values
@@ -333,13 +333,13 @@ def epipolar_rectify_images(
                                   mask=mask1)
 
     # Update attributes
-    left_dataset.attrs['roi'] = np.array(left_roi)
-    left_dataset.attrs['roi_with_margins'] = np.array(left_region)
+    left_dataset.attrs[cst.ROI] = np.array(left_roi)
+    left_dataset.attrs[cst.ROI_WITH_MARGINS] = np.array(left_region)
     # Remove region key as it duplicates roi_with_margins key
-    left_dataset.attrs.pop("region", None)
-    left_dataset.attrs['margins'] = np.array(left_margins)
-    left_dataset.attrs['disp_min'] = margins.attrs['disp_min']
-    left_dataset.attrs['disp_max'] = margins.attrs['disp_max']
+    left_dataset.attrs.pop('region', None)
+    left_dataset.attrs[cst.EPI_MARGINS] = np.array(left_margins)
+    left_dataset.attrs[cst.EPI_DISP_MIN] = margins.attrs['disp_min']
+    left_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs['disp_max']
 
     # Resample right image
     right_dataset = resample_image(img2,
@@ -351,13 +351,13 @@ def epipolar_rectify_images(
                                    mask=mask2)
 
     # Update attributes
-    right_dataset.attrs['roi'] = np.array(right_roi)
-    right_dataset.attrs['roi_with_margins'] = np.array(right_region)
+    right_dataset.attrs[cst.ROI] = np.array(right_roi)
+    right_dataset.attrs[cst.ROI_WITH_MARGINS] = np.array(right_region)
     # Remove region key as it duplicates roi_with_margins key
-    right_dataset.attrs.pop("region", None)
-    right_dataset.attrs['margins'] = np.array(right_margins)
-    right_dataset.attrs['disp_min'] = margins.attrs['disp_min']
-    right_dataset.attrs['disp_max'] = margins.attrs['disp_max']
+    right_dataset.attrs.pop('region', None)
+    right_dataset.attrs[cst.EPI_MARGINS] = np.array(right_margins)
+    right_dataset.attrs[cst.EPI_DISP_MIN] = margins.attrs['disp_min']
+    right_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs['disp_max']
 
     # Build resampling pipeline for color image, and build datasets
     if color1 is None:
@@ -381,7 +381,7 @@ def epipolar_rectify_images(
                                             lowres_color=color1)
 
     # Remove region key as it duplicates coordinates span
-    left_color_dataset.attrs.pop("region", None)
+    left_color_dataset.attrs.pop('region', None)
 
     return left_dataset, right_dataset, left_color_dataset
 
@@ -418,17 +418,17 @@ def compute_disparity(left_dataset,
     # Check disp min and max bounds with respect to margin used for
     # rectification
     if disp_min is None:
-        disp_min = left_dataset.attrs['disp_min']
+        disp_min = left_dataset.attrs[cst.EPI_DISP_MIN]
     else:
-        if disp_min < left_dataset.attrs['disp_min']:
+        if disp_min < left_dataset.attrs[cst.EPI_DISP_MIN]:
             raise ValueError(
                 "disp_min ({}) is lower than disp_min used to determine margin during rectification ({})".format(
                     disp_min, left_dataset['disp_min']))
 
     if disp_max is None:
-        disp_max = left_dataset.attrs['disp_max']
+        disp_max = left_dataset.attrs[cst.EPI_DISP_MAX]
     else:
-        if disp_max > left_dataset.attrs['disp_max']:
+        if disp_max > left_dataset.attrs[cst.EPI_DISP_MAX]:
             raise ValueError(
                 "disp_max ({}) is greater than disp_max used to determine margin during rectification ({})".format(
                     disp_max, left_dataset['disp_max']))
@@ -445,12 +445,12 @@ def compute_disparity(left_dataset,
                            corr_cfg)
 
     disp = dict()
-    disp['ref'] = create_disp_dataset(ref, left_dataset, verbose=verbose)
+    disp[cst.STEREO_REF] = create_disp_dataset(ref, left_dataset, verbose=verbose)
 
     if bool(sec.dims) and use_sec_disp:
         # for the secondary disparity map, the reference is the right dataset and the secondary image is the left one
         logging.info('Secondary disparity map will be used to densify the points cloud')
-        disp['sec'] = create_disp_dataset(sec, right_dataset,
+        disp[cst.STEREO_SEC] = create_disp_dataset(sec, right_dataset,
                                           sec_dataset=left_dataset, check_roi_in_sec=True, verbose=verbose)
 
     return disp
@@ -480,10 +480,10 @@ def create_disp_dataset(disp: xr.Dataset, ref_dataset: xr.Dataset, sec_dataset:x
 
     # Crop disparity to ROI
     if not check_roi_in_sec:
-        ref_roi = [int(-ref_dataset.attrs['margins'][0]),
-                   int(-ref_dataset.attrs['margins'][1]),
-                   int(ref_dataset.dims['col'] - ref_dataset.attrs['margins'][2]),
-                   int(ref_dataset.dims['row'] - ref_dataset.attrs['margins'][3])]
+        ref_roi = [int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
+                   int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
+                   int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
+                   int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3])]
         disp_map = disp_map[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
         for key in masks:
             masks[key] = masks[key][ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
@@ -493,30 +493,35 @@ def create_disp_dataset(disp: xr.Dataset, ref_dataset: xr.Dataset, sec_dataset:x
 
     # Build output dataset
     if not check_roi_in_sec:
-        row = np.array(range(ref_dataset.attrs['roi'][1], ref_dataset.attrs['roi'][3]))
-        col = np.array(range(ref_dataset.attrs['roi'][0], ref_dataset.attrs['roi'][2]))
+        row = np.array(range(ref_dataset.attrs[cst.ROI][1], ref_dataset.attrs[cst.ROI][3]))
+        col = np.array(range(ref_dataset.attrs[cst.ROI][0], ref_dataset.attrs[cst.ROI][2]))
     else:
-        row = np.array(range(ref_dataset.attrs['roi_with_margins'][1], ref_dataset.attrs['roi_with_margins'][3]))
-        col = np.array(range(ref_dataset.attrs['roi_with_margins'][0], ref_dataset.attrs['roi_with_margins'][2]))
+        row = np.array(range(ref_dataset.attrs[cst.ROI_WITH_MARGINS][1],
+                             ref_dataset.attrs[cst.ROI_WITH_MARGINS][3]))
+        col = np.array(range(ref_dataset.attrs[cst.ROI_WITH_MARGINS][0],
+                             ref_dataset.attrs[cst.ROI_WITH_MARGINS][2]))
 
-    disp_ds = xr.Dataset({'disp': (['row', 'col'], np.copy(disp_map)),
-                          'msk': (['row', 'col'], np.copy(masks['mask']))},
-                         coords={'row': row, 'col': col})
+    disp_ds = xr.Dataset({cst.DISP_MAP: ([cst.ROW, cst.COL], np.copy(disp_map)),
+                          cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(masks['mask']))},
+                         coords={cst.ROW: row, cst.COL: col})
     if verbose:
-        disp_ds['msk_invalid_ref'] = xr.DataArray(np.copy(masks['invalid_ref']), dims=['row', 'col'])
-        disp_ds['msk_invalid_sec'] = xr.DataArray(np.copy(masks['invalid_sec']), dims=['row', 'col'])
-        disp_ds['msk_masked_ref'] = xr.DataArray(np.copy(masks['masked_ref']), dims=['row', 'col'])
-        disp_ds['msk_masked_sec'] = xr.DataArray(np.copy(masks['masked_sec']), dims=['row', 'col'])
-        disp_ds['msk_occlusion'] = xr.DataArray(np.copy(masks['occlusion']), dims=['row', 'col'])
-        disp_ds['msk_false_match'] = xr.DataArray(np.copy(masks['false_match']), dims=['row', 'col'])
+        disp_ds[cst.DISP_MSK_INVALID_REF] = xr.DataArray(np.copy(masks['invalid_ref']),
+                                                         dims=[cst.ROW, cst.COL])
+        disp_ds[cst.DISP_MSK_INVALID_SEC] = xr.DataArray(np.copy(masks['invalid_sec']),
+                                                         dims=[cst.ROW, cst.COL])
+        disp_ds[cst.DISP_MSK_MASKED_REF] = xr.DataArray(np.copy(masks['masked_ref']), dims=[cst.ROW, cst.COL])
+        disp_ds[cst.DISP_MSK_MASKED_SEC] = xr.DataArray(np.copy(masks['masked_sec']), dims=[cst.ROW, cst.COL])
+        disp_ds[cst.DISP_MSK_OCCLUSION] = xr.DataArray(np.copy(masks['occlusion']), dims=[cst.ROW, cst.COL])
+        disp_ds[cst.DISP_MSK_FALSE_MATCH] = xr.DataArray(np.copy(masks['false_match']), dims=[cst.ROW, cst.COL])
         if check_roi_in_sec:
-            disp_ds['msk_inside_sec_roi'] = xr.DataArray(np.copy(masks['inside_sec_roi']), dims=['row', 'col'])
+            disp_ds[cst.DISP_MSK_INSIDE_SEC_ROI] = xr.DataArray(np.copy(masks['inside_sec_roi']),
+                                                                dims=[cst.ROW, cst.COL])
 
     disp_ds.attrs = disp.attrs.copy()
-    disp_ds.attrs['roi'] = ref_dataset.attrs['roi']
+    disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
     if check_roi_in_sec:
-        disp_ds.attrs['roi_with_margins'] = ref_dataset.attrs['roi_with_margins']
-    disp_ds.attrs['full_epipolar_size'] = ref_dataset.attrs['full_epipolar_size']
+        disp_ds.attrs[cst.ROI_WITH_MARGINS] = ref_dataset.attrs[cst.ROI_WITH_MARGINS]
+    disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
     return disp_ds
 
@@ -531,10 +536,10 @@ def create_inside_sec_roi_mask(disp: np.ndarray, disp_msk: np.ndarray, sec_datas
     :return: mask of valid pixels that are in the secondary image roi
     """
     # create mask of secondary image roi
-    sec_up_margin = abs(sec_dataset.attrs['margins'][1])
-    sec_bottom_margin = abs(sec_dataset.attrs['margins'][3])
-    sec_right_margin = abs(sec_dataset.attrs['margins'][2])
-    sec_left_margin = abs(sec_dataset.attrs['margins'][0])
+    sec_up_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][1])
+    sec_bottom_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][3])
+    sec_right_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][2])
+    sec_left_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][0])
 
     # valid pixels that are inside the secondary image roi
     in_sec_roi_msk = np.zeros(disp.shape, dtype=np.int16)
@@ -643,6 +648,7 @@ def get_masks_from_pandora(disp:xr.Dataset, verbose: bool) -> Dict[str, np.ndarr
 
     return masks
 
+
 def estimate_color_from_disparity(disp_ref_to_sec: xr.Dataset, sec_ds: xr.Dataset,
                                   sec_color: xr.Dataset) -> xr.Dataset:
     """
@@ -654,17 +660,17 @@ def estimate_color_from_disparity(disp_ref_to_sec: xr.Dataset, sec_ds: xr.Datase
     :return: interpolated reference color image dataset
     """
     # retrieve numpy arrays from input datasets
-    disp_msk = disp_ref_to_sec['msk'].values
-    im_color = sec_color['im'].values
-    if 'msk' in sec_color.variables.keys():
-        im_msk = sec_color['msk'].values
+    disp_msk = disp_ref_to_sec[cst.DISP_MSK].values
+    im_color = sec_color[cst.EPI_IMAGE].values
+    if cst.EPI_MSK in sec_color.variables.keys():
+        im_msk = sec_color[cst.EPI_MSK].values
 
     # retrieve image sizes
     nb_bands, nb_row, nb_col = im_color.shape
-    nb_disp_row, nb_disp_col = disp_ref_to_sec['disp'].values.shape
+    nb_disp_row, nb_disp_col = disp_ref_to_sec[cst.DISP_MAP].values.shape
 
-    sec_up_margin = abs(sec_ds.attrs['margins'][1])
-    sec_left_margin = abs(sec_ds.attrs['margins'][0])
+    sec_up_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][1])
+    sec_left_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][0])
 
     # instantiate final image
     final_interp_color = np.zeros((nb_disp_row, nb_disp_col, nb_bands), dtype=np.float)
@@ -676,19 +682,19 @@ def estimate_color_from_disparity(disp_ref_to_sec: xr.Dataset, sec_ds: xr.Datase
 
     # construct the positions for which the interpolation has to be done
     interpolated_points = np.zeros((nb_disp_row * nb_disp_col, 2), dtype=np.float)
-    for i in range(0, disp_ref_to_sec['disp'].values.shape[0]):
-        for j in range(0, disp_ref_to_sec['disp'].values.shape[1]):
+    for i in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[0]):
+        for j in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[1]):
 
             # if the pixel is valid,
             # else the position is left to (0,0) and the final image pixel value will be set to np.nan
             if disp_msk[i, j] == 255:
-                idx = j + disp_ref_to_sec['disp'].values[i, j]
+                idx = j + disp_ref_to_sec[cst.DISP_MAP].values[i, j]
                 interpolated_points[i * nb_disp_col + j, 0] = idx - sec_left_margin
                 interpolated_points[i * nb_disp_col + j, 1] = i - sec_up_margin
 
     # construct final image mask
     final_msk = disp_msk
-    if 'msk' in sec_color.variables.keys():
+    if cst.EPI_MSK in sec_color.variables.keys():
         # interpolate the color image mask to the new image referential (nearest neighbor interpolation)
         msk_values = im_msk.reshape(nb_row * nb_col, 1)
         interp_msk_value = interpolate.griddata(clr_xy_positions, msk_values, interpolated_points, method='nearest')
@@ -711,14 +717,15 @@ def estimate_color_from_disparity(disp_ref_to_sec: xr.Dataset, sec_ds: xr.Datase
         final_interp_color[:, :, band][final_msk != 255] = np.nan
 
     # create interpolated color image dataset
-    region = list(disp_ref_to_sec.attrs['roi_with_margins'])
-    largest_size = disp_ref_to_sec.attrs['full_epipolar_size']
+    region = list(disp_ref_to_sec.attrs[cst.ROI_WITH_MARGINS])
+    largest_size = disp_ref_to_sec.attrs[cst.EPI_FULL_SIZE]
 
     interp_clr_ds = create_im_dataset(final_interp_color, region, largest_size, band_coords=True, msk=None)
-    interp_clr_ds.attrs['roi'] = disp_ref_to_sec.attrs['roi']
-    interp_clr_ds.attrs['roi_with_margins'] = disp_ref_to_sec.attrs['roi_with_margins']
+    interp_clr_ds.attrs[cst.ROI] = disp_ref_to_sec.attrs[cst.ROI]
+    interp_clr_ds.attrs[cst.ROI_WITH_MARGINS] = disp_ref_to_sec.attrs[cst.ROI_WITH_MARGINS]
 
     return interp_clr_ds
+
 
 def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:float=300) -> (float, float):
     """
@@ -810,15 +817,14 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, i
         grid2 = preprocessing_output_configuration[params.right_epipolar_uncorrected_grid_tag]
 
     point_clouds = dict()
-    point_clouds['ref'] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key='roi',
+    point_clouds[cst.STEREO_REF] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key=cst.ROI,
                                                dataset_msk=im_ref_msk_ds)
     if disp_sec is not None:
-        point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins',
-                                                   dataset_msk=im_sec_msk_ds)
+        point_clouds[cst.STEREO_SEC] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1,
+                                                            roi_key=cst.ROI_WITH_MARGINS, dataset_msk=im_sec_msk_ds)
         
     # Handle alignment with lowres DEM
     if align and params.lowres_dem_splines_fit_tag in preprocessing_output_configuration:        
-
         # Read splines file
         splines_file = preprocessing_output_configuration[params.lowres_dem_splines_fit_tag]
         splines_coefs = None
@@ -834,44 +840,47 @@ def triangulate(configuration, disp_ref: xr.Dataset, disp_sec:xr.Dataset=None, i
         disp_to_alt_ratio = preprocessing_output_configuration[params.disp_to_alt_ratio_tag]
 
         # Interpolate correction
-        point_cloud_z_correction = splines_coefs(project_coordinates_on_line(point_clouds['ref'].x.values.ravel(), 
-                                                                                 point_clouds['ref'].y.values.ravel(), 
-                                                                                 time_direction_origin, 
-                                                                                 time_direction_vector))
-        point_cloud_z_correction = np.reshape(point_cloud_z_correction, point_clouds['ref'].x.shape)
+        point_cloud_z_correction = \
+            splines_coefs(project_coordinates_on_line(point_clouds[cst.STEREO_REF][cst.X].values.ravel(),
+                                                      point_clouds[cst.STEREO_REF][cst.Y].values.ravel(),
+                                                      time_direction_origin,
+                                                      time_direction_vector))
+        point_cloud_z_correction = np.reshape(point_cloud_z_correction, point_clouds[cst.STEREO_REF][cst.X].shape)
 
         # Convert to disparity correction
         point_cloud_disp_correction = point_cloud_z_correction/disp_to_alt_ratio
 
         # Correct disparity
-        disp_ref['disp'] = disp_ref['disp'] - point_cloud_disp_correction
+        disp_ref[cst.DISP_MAP] = disp_ref[cst.DISP_MAP] - point_cloud_disp_correction
 
         # Triangulate again
-        point_clouds['ref'] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key='roi')
+        point_clouds[cst.STEREO_REF] = compute_points_cloud(disp_ref, img1, img2, grid1, grid2, roi_key=cst.ROI)
 
         # TODO handle sec case
         if disp_sec is not None:
             # Interpolate correction
-            point_cloud_z_correction = splines_coefs(project_coordinates_on_line(point_clouds['sec'].x.values.ravel(), 
-                                                                                 point_clouds['sec'].y.values.ravel(), 
-                                                                                 time_direction_origin, 
-                                                                                 time_direction_vector))
-            point_cloud_z_correction = np.reshape(point_cloud_z_correction, point_clouds['sec'].x.shape)
+            point_cloud_z_correction = \
+                splines_coefs(project_coordinates_on_line(point_clouds[cst.STEREO_SEC][cst.X].values.ravel(),
+                                                          point_clouds[cst.STEREO_SEC][cst.Y].values.ravel(),
+                                                          time_direction_origin,
+                                                          time_direction_vector))
+            point_cloud_z_correction = np.reshape(point_cloud_z_correction, point_clouds[cst.STEREO_SEC][cst.X].shape)
 
             # Convert to disparity correction
             point_cloud_disp_correction = point_cloud_z_correction/disp_to_alt_ratio
 
             # Correct disparity
-            disp_sec['disp'] = disp_sec['disp'] + point_cloud_disp_correction
+            disp_sec[cst.DISP_MAP] = disp_sec[cst.DISP_MAP] + point_cloud_disp_correction
 
             # Triangulate again
-            point_clouds['sec'] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1, roi_key='roi_with_margins')
+            point_clouds[cst.STEREO_SEC] = compute_points_cloud(disp_sec, img2, img1, grid2, grid1,
+                                                                roi_key=cst.ROI_WITH_MARGINS)
 
     return point_clouds
 
 
-def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
-                         grid1:str, grid2:str, roi_key:str, dataset_msk: xr.Dataset=None) -> xr.Dataset:
+def compute_points_cloud(data: xr.Dataset, img1: xr.Dataset, img2: xr.Dataset,
+                         grid1: str, grid2: str, roi_key: str, dataset_msk: xr.Dataset=None) -> xr.Dataset:
     """
     Compute points cloud
 
@@ -886,12 +895,12 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     :return: the points cloud dataset
     """
     disp = pipelines.encode_to_otb(
-        data['disp'].values,
-        data.attrs['full_epipolar_size'],
+        data[cst.DISP_MAP].values,
+        data.attrs[cst.EPI_FULL_SIZE],
         data.attrs[roi_key])
     msk = pipelines.encode_to_otb(
-        data['msk'].values,
-        data.attrs['full_epipolar_size'],
+        data[cst.DISP_MSK].values,
+        data.attrs[cst.EPI_FULL_SIZE],
         data.attrs[roi_key])
 
     # Retrieve elevation range from imgs
@@ -923,45 +932,45 @@ def compute_points_cloud(data: xr.Dataset, img1:xr.Dataset, img2: xr.Dataset,
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
 
     values = {
-        'x': (['row', 'col'], llh[:, :, 0]),  # longitudes
-        'y': (['row', 'col'], llh[:, :, 1]),  # latitudes
-        'z': (['row', 'col'], llh[:, :, 2]),
-        constants.POINTS_CLOUD_CORR_MSK: (['row', 'col'], data['msk'].values)
+        cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
+        cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),  # latitudes
+        cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
+        cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], data[cst.DISP_MSK].values)
     }
 
     if dataset_msk is not None:
         ds_values_list = [key for key, _ in dataset_msk.items()]
-        if 'msk' in ds_values_list:
-            if roi_key == 'roi_with_margins':
+
+        if cst.EPI_MSK in ds_values_list:
+            if roi_key == cst.ROI_WITH_MARGINS:
                 ref_roi = [0,
                            0,
-                           int(dataset_msk.dims['col']),
-                           int(dataset_msk.dims['row'])]
+                           int(dataset_msk.dims[cst.COL]),
+                           int(dataset_msk.dims[cst.ROW])]
             else:
-                ref_roi = [int(-dataset_msk.attrs['margins'][0]),
-                           int(-dataset_msk.attrs['margins'][1]),
-                           int(dataset_msk.dims['col'] - dataset_msk.attrs['margins'][2]),
-                           int(dataset_msk.dims['row'] - dataset_msk.attrs['margins'][3])]
-
-            im_msk = dataset_msk.msk.values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
-            values[constants.POINTS_CLOUD_MSK] = (['row', 'col'], im_msk)
+                ref_roi = [int(-dataset_msk.attrs[cst.EPI_MARGINS][0]),
+                           int(-dataset_msk.attrs[cst.EPI_MARGINS][1]),
+                           int(dataset_msk.dims[cst.COL] - dataset_msk.attrs[cst.EPI_MARGINS][2]),
+                           int(dataset_msk.dims[cst.ROW] - dataset_msk.attrs[cst.EPI_MARGINS][3])]
+            im_msk = dataset_msk[cst.EPI_MSK].values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
+            values[cst.POINTS_CLOUD_MSK] = ([cst.ROW, cst.COL], im_msk)
         else:
             worker_logger = logging.getLogger('distributed.worker')
             worker_logger.warning("No mask is present in the image dataset")
 
     point_cloud = xr.Dataset(values,
-                             coords={'row': row, 'col': col})
+                             coords={cst.ROW: row, cst.COL: col})
 
-    point_cloud.attrs['roi'] = data.attrs['roi']
-    if roi_key == 'roi_with_margins':
-        point_cloud.attrs['roi_with_margins'] = data.attrs['roi_with_margins']
-    point_cloud.attrs['full_epipolar_size'] = data.attrs['full_epipolar_size']
-    point_cloud.attrs['epsg'] = int(4326)
+    point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
+    if roi_key == cst.ROI_WITH_MARGINS:
+        point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[cst.ROI_WITH_MARGINS]
+    point_cloud.attrs[cst.EPI_FULL_SIZE] = data.attrs[cst.EPI_FULL_SIZE]
+    point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud
 
 
-def triangulate_matches(configuration, matches, snap_to_img1 = False):
+def triangulate_matches(configuration, matches, snap_to_img1=False):
     """
     This function will perform triangulation from sift matches
 
@@ -1021,12 +1030,12 @@ def triangulate_matches(configuration, matches, snap_to_img1 = False):
 
     msk = np.full(llh.shape[0:2],255, dtype=np.uint8)
 
-    point_cloud = xr.Dataset({'x': (['row', 'col'], llh[:,:,0]),
-                              'y': (['row', 'col'], llh[:,:,1]),
-                              'z': (['row', 'col'], llh[:,:,2]),
-                              constants.POINTS_CLOUD_CORR_MSK : (['row', 'col'], msk)},
-                             coords={'row':row,'col':col})
-    point_cloud.attrs['epsg'] = int(4326)
+    point_cloud = xr.Dataset({cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
+                              cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
+                              cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
+                              cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], msk)},
+                             coords={cst.ROW: row,cst.COL: col})
+    point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud
 
@@ -1115,34 +1124,34 @@ def images_pair_to_3d_points(configuration,
     disp = compute_disparity(left, right, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
 
     colors = dict()
-    colors['ref'] = color
-    if 'sec' in disp:
+    colors[cst.STEREO_REF] = color
+    if cst.STEREO_SEC in disp:
         # compute right color image from right-left disparity map
-        colors['sec'] = estimate_color_from_disparity(disp['sec'], left, color)
+        colors[cst.STEREO_SEC] = estimate_color_from_disparity(disp[cst.STEREO_SEC], left, color)
 
     im_ref_msk = None
     im_sec_msk = None
     if add_msk_info:
         ref_values_list = [key for key, _ in left.items()]
-        if 'msk' in ref_values_list:
+        if cst.EPI_MSK in ref_values_list:
             im_ref_msk = left
         else:
             worker_logger = logging.getLogger('distributed.worker')
             worker_logger.warning("Left image does not have a mask to rasterize")
-        if 'sec' in disp:
+        if cst.STEREO_SEC in disp:
             sec_values_list = [key for key, _ in right.items()]
-            if 'msk' in sec_values_list:
+            if cst.EPI_MSK in sec_values_list:
                 im_sec_msk = right
             else:
                 worker_logger = logging.getLogger('distributed.worker')
                 worker_logger.warning("Right image does not have a mask to rasterize")
 
     # Triangulate
-    if 'sec' in disp:
-        points = triangulate(configuration, disp['ref'], disp['sec'], snap_to_img1 = snap_to_img1, align=align,
-                             im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
+    if cst.STEREO_SEC in disp:
+        points = triangulate(configuration, disp[cst.STEREO_REF], disp[cst.STEREO_SEC], snap_to_img1=snap_to_img1,
+                             align=align, im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
     else:
-        points = triangulate(configuration, disp['ref'], snap_to_img1=snap_to_img1, align=align,
+        points = triangulate(configuration, disp[cst.STEREO_REF], snap_to_img1=snap_to_img1, align=align,
                              im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
 
     if geoid_data is not None:  # if user pass a geoid, use it a alt reference
@@ -1174,22 +1183,22 @@ def geoid_offset(points, geoid):
 
     # currently assumes that the OTB EGM96 geoid will be used with longitude
     # ranging from 0 to 360, so we must unwrap longitudes to this range.
-    longitudes = np.copy(out_pc.x.values)
+    longitudes = np.copy(out_pc[cst.X].values)
     longitudes[longitudes < 0] += 360
 
     # perform interpolation using point cloud coordinates.
-    if not geoid.lat_min <= out_pc.y.min() <= out_pc.y.max() <= geoid.lat_max \
+    if not geoid.lat_min <= out_pc[cst.Y].min() <= out_pc[cst.Y].max() <= geoid.lat_max \
             and geoid.lon_min <= np.min(longitudes) <= np.max(longitudes) <= \
             geoid.lat_max:
         raise RuntimeError('Geoid does not fully cover the area spanned by '
                            'the point cloud.')
 
     # interpolate data
-    ref_interp = geoid.interp({'lat': out_pc.y,
+    ref_interp = geoid.interp({'lat': out_pc[cst.Y],
                                'lon':xr.DataArray(longitudes,
-                                                  dims=('row', 'col'))})
+                                                  dims=(cst.ROW, cst.COL))})
     # offset using geoid height
-    out_pc['z'] = points.z - ref_interp.hgt
+    out_pc[cst.Z] = points[cst.Z] - ref_interp.hgt
 
     # remove coordinates lat & lon added by the interpolation
     out_pc = out_pc.reset_coords(['lat', 'lon'], drop=True)
@@ -1243,8 +1252,8 @@ def compute_epipolar_grid_min_max(grid, epsg, conf, disp_min = None, disp_max = 
     projection.points_cloud_conversion_dataset(pc_max, epsg)
 
     # Form grid_min and grid_max
-    grid_min = np.concatenate((pc_min.x.values,pc_min.y.values), axis=1)
-    grid_max = np.concatenate((pc_max.x.values,pc_max.y.values), axis=1)
+    grid_min = np.concatenate((pc_min[cst.X].values,pc_min[cst.Y].values), axis=1)
+    grid_max = np.concatenate((pc_max[cst.X].values,pc_max[cst.Y].values), axis=1)
 
     return grid_min, grid_max
 

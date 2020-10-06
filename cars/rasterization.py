@@ -41,7 +41,8 @@ import otbApplication
 from osgeo import osr
 
 # cars import
-from cars import filtering, projection, constants
+from cars import filtering, projection
+from cars import constants as cst
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
 
@@ -67,32 +68,6 @@ def get_utm_zone_as_epsg_code(lon, lat):
     return 32000 + ns + zone
 
 
-def point_cloud_from_arrays(coords, mask, color, epsg_out):
-    """
-
-    :param coords:
-    :param mask:
-    :param color:
-    :param epsg_out:
-    :return:
-    """
-    dims = ('row', 'col')
-    out_dset = xr.Dataset({
-        'x': (dims, coords[..., 0]),
-        'y': (dims, coords[..., 1]),
-        'z': (dims, coords[..., 2]),
-        'msk': (dims + ('i_mask',), mask)
-    })
-
-    if color is not None:
-        color_dset = xr.Dataset({'im': (dims + ('band',), color)})
-        out_dset = xr.merge((out_dset, color_dset))
-
-    out_dset.attrs['epsg'] = epsg_out
-
-    return out_dset
-
-
 def compute_xy_starts_and_sizes(resolution: float, cloud: pandas.DataFrame) -> Tuple[float, float, int, int]:
     """
     Compute xstart, ystart, xsize and ysize of the rasterization grid from a set of points
@@ -104,8 +79,8 @@ def compute_xy_starts_and_sizes(resolution: float, cloud: pandas.DataFrame) -> T
     worker_logger = logging.getLogger('distributed.worker')
 
     # Derive xstart
-    xmin = np.nanmin(cloud['x'].values)
-    xmax = np.nanmax(cloud['x'].values)
+    xmin = np.nanmin(cloud[cst.X].values)
+    xmax = np.nanmax(cloud[cst.X].values)
     worker_logger.debug(
         "Points x coordinate range: [{},{}]".format(xmin, xmax))
 
@@ -114,8 +89,8 @@ def compute_xy_starts_and_sizes(resolution: float, cloud: pandas.DataFrame) -> T
     x_size = int(1 + np.floor((xmax - x_start) / resolution))
 
     # Derive ystart
-    ymin = np.nanmin(cloud['y'].values)
-    ymax = np.nanmax(cloud['y'].values)
+    ymin = np.nanmin(cloud[cst.Y].values)
+    ymax = np.nanmax(cloud[cst.Y].values)
     worker_logger.debug(
         "Points y coordinate range: [{},{}]".format(ymin, ymax))
 
@@ -134,25 +109,27 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
     Combine a list of clouds (and their colors) into a pandas dataframe structured with the following labels:
 
         * if no colors are set in input and no mask data are present in the cloud_list datasets:
-    >>> labels=['valid_data', 'x', 'y', 'z']
+    >>> labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
 
     The combined cloud has x, y, z columns along with 'valid data' one. The valid data is a mask set to True if the data
     are not on the epipolar image margin (epipolar_border_margin), otherwise it is set to False.
 
         * if no colors are set in input and mask data are present in the cloud_list datasets:
-    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK]
+    >>> labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]
 
     The mask values are added to the dataframe.
 
         * if colors are set in input and mask data are present in the cloud_list datasets:
-    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK, 'clr0', 'clr1', 'clr2']
+    >>> labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,
+    >>>         cst.POINTS_CLOUD_CLR_KEY_ROOT+'0', cst.POINTS_CLOUD_CLR_KEY_ROOT+'1', cst.POINTS_CLOUD_CLR_KEY_ROOT+'2']
 
     Color channels information are added to the dataframe.
 
         * if colors are set in input,  mask data are present in the cloud_list datasets and
         the with_coords option is activated:
-    >>> labels=['valid_data', 'x', 'y', 'z', constants.POINTS_CLOUD_MSK, 'clr0', 'clr1', 'clr2',
-    >>>         'coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi']
+    >>> labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,
+    >>>         cst.POINTS_CLOUD_CLR_KEY_ROOT+'0', cst.POINTS_CLOUD_CLR_KEY_ROOT+'1', cst.POINTS_CLOUD_CLR_KEY_ROOT+'2'
+    >>>         cst.POINTS_CLOUD_COORD_EPI_GEOM_I, cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_IDX_IM_EPI]
 
     The pixel position of the xyz point in the original epipolar image (coord_epi_geom_i, coord_epi_geom_j) are added
     to the dataframe along with the index of its original cloud in the cloud_list input.
@@ -184,8 +161,8 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
     epsg = None
     for idx in range(len(cloud_list)):
         if epsg is None:
-            epsg = int(cloud_list[idx].attrs['epsg'])
-        elif int(cloud_list[idx].attrs['epsg']) != epsg:
+            epsg = int(cloud_list[idx].attrs[cst.EPSG])
+        elif int(cloud_list[idx].attrs[cst.EPSG]) != epsg:
             worker_logger.error('All points clouds do not have the same epsg code')
 
     # compute margin/roi and final number of data to add to the combined cloud
@@ -196,35 +173,37 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
         xend = xstart + (xsize + 1) * resolution
         yend = ystart - (ysize + 1) * resolution
 
-    nb_data = ['data_valid', 'x', 'y', 'z']
+    nb_data = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
 
     # check if the input mask values are present in the dataset
     nb_data_msk = 0
     for idx in range(len(cloud_list)):
         ds_values_list = [key for key, _ in cloud_list[idx].items()]
-        if constants.POINTS_CLOUD_MSK in ds_values_list:
-            nb_data.append(constants.POINTS_CLOUD_MSK)
+        if cst.POINTS_CLOUD_MSK in ds_values_list:
+            nb_data.append(cst.POINTS_CLOUD_MSK)
             nb_data_msk = 1
             break
 
     if color_list is not None:
         clr_im = color_list[0].im.values
         nb_band_clr = clr_im.shape[0]
-        list_clr = ['clr{}'.format(i) for i in range(nb_band_clr)]
+        list_clr = ['{}{}'.format(cst.POINTS_CLOUD_CLR_KEY_ROOT, i) for i in range(nb_band_clr)]
         nb_data.extend(list_clr)
     else:
         nb_band_clr = 0
 
     if with_coords:
-        nb_data.extend(['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+        nb_data.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
+                        cst.POINTS_CLOUD_IDX_IM_EPI])
 
     # iterate trough input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
     nb_points = 0
     for idx in range(len(cloud_list)):
-        full_x = cloud_list[idx].x.values
-        full_y = cloud_list[idx].y.values
-        full_z = cloud_list[idx].z.values
+        full_x = cloud_list[idx][cst.X].values
+        full_y = cloud_list[idx][cst.Y].values
+        full_z = cloud_list[idx][cst.Z].values
 
         # get mask of points inside the roi (plus margins)
         if roi:
@@ -242,8 +221,8 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
             # if the points clouds are not in the same referential as the roi, retreive the initial values
             if epsg != dsm_epsg:
-                full_x = cloud_list[idx].x.values
-                full_y = cloud_list[idx].y.values
+                full_x = cloud_list[idx][cst.X].values
+                full_y = cloud_list[idx][cst.Y].values
 
             # if no point is found, continue
             if terrain_tile_data_msk_pos[0].shape[0] == 0:
@@ -272,17 +251,17 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
 
         ds_values_list = [key for key, _ in cloud_list[idx].items()]
 
-        if constants.POINTS_CLOUD_MSK in ds_values_list:
-            c_msk = cloud_list[idx][constants.POINTS_CLOUD_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
+        if cst.POINTS_CLOUD_MSK in ds_values_list:
+            c_msk = cloud_list[idx][cst.POINTS_CLOUD_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
             c_cloud[4, :] = np.ravel(c_msk)
 
         # add data valid mask (points that are not in the border of the epipolar image)
         if epipolar_border_margin == 0:
             epipolar_margin_mask = \
-                np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), True)
+                np.full((cloud_list[idx][cst.X].values.shape[0], cloud_list[idx][cst.X].values.shape[1]), True)
         else:
             epipolar_margin_mask = \
-                np.full((cloud_list[idx].x.values.shape[0], cloud_list[idx].x.values.shape[1]), False)
+                np.full((cloud_list[idx][cst.X].values.shape[0], cloud_list[idx][cst.X].values.shape[1]), False)
             epipolar_margin_mask[epipolar_border_margin:-epipolar_border_margin,
                                  epipolar_border_margin:-epipolar_border_margin] = True
 
@@ -307,11 +286,11 @@ def create_combined_cloud(cloud_list: List[xr.Dataset], dsm_epsg: int, color_lis
             c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
 
         # remove masked data (pandora + out of the terrain tile points)
-        c_terrain_tile_data_msk = cloud_list[idx][constants.POINTS_CLOUD_CORR_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
+        c_terrain_tile_data_msk = cloud_list[idx][cst.POINTS_CLOUD_CORR_MSK].values[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1] == 255
 
         if roi:
             c_terrain_tile_data_msk = np.logical_and(c_terrain_tile_data_msk,
-                                                    terrain_tile_data_msk[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1])
+                                                     terrain_tile_data_msk[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1])
         c_terrain_tile_data_msk = np.ravel(c_terrain_tile_data_msk)
 
         c_terrain_tile_data_msk_pos = np.nonzero(~c_terrain_tile_data_msk)
@@ -555,7 +534,7 @@ def get_flatten_neighbors(grid_points: np.ndarray, cloud: pandas.DataFrame, radi
     """
     # Build a KDTree for with cloud points coordinates.
     tic = time.process_time()
-    cloud_tree = cKDTree(cloud.loc[:, ['x', 'y']].values)
+    cloud_tree = cKDTree(cloud.loc[:, [cst.X, cst.Y]].values)
     toc = time.process_time()
     worker_logger.debug("Neighbors search: Point cloud kD-tree built in {} seconds"
                         .format(toc - tic))
@@ -641,8 +620,8 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
 
     # perform rasterization with gaussian interpolation
     tic = time.process_time()
-    clr_bands = [band for band in cloud if str.find(band, 'clr') >= 0]
-    cloud_band = ['x', 'y', 'z']
+    clr_bands = [band for band in cloud if str.find(band, cst.POINTS_CLOUD_CLR_KEY_ROOT) >= 0]
+    cloud_band = [cst.X, cst.Y, cst.Z]
     cloud_band.extend(clr_bands)
 
     out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
@@ -653,9 +632,9 @@ def compute_vector_raster_and_stats(cloud: pandas.DataFrame, data_valid: np.ndar
     worker_logger.debug(
         "Vectorized rasterization done in {} seconds".format(toc - tic))
 
-    if constants.POINTS_CLOUD_MSK in cloud.columns:
+    if cst.POINTS_CLOUD_MSK in cloud.columns:
         msk = mask_interp(
-            cloud.loc[:, ['x', 'y', constants.POINTS_CLOUD_MSK]].values, data_valid.astype(np.bool),
+            cloud.loc[:, [cst.X, cst.Y, cst.POINTS_CLOUD_MSK]].values, data_valid.astype(np.bool),
             neighbors_id, start_ids, n_count, grid_points, sigma, no_data_val=msk_no_data, undefined_val=msk_no_data)
     else:
         msk = None
@@ -844,7 +823,7 @@ def gaussian_interp(cloud_points, data_valid, neighbors_id, neighbors_start,
 def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_size: int, y_size: int,
                           resolution: float, hgt_no_data: int, color_no_data: int, epsg: int,
                           mean: np.ndarray, stdev: np.ndarray, n_pts: np.ndarray, n_in_cell: np.ndarray,
-                          msk:np.ndarray=None) -> xr.Dataset:
+                          msk: np.ndarray=None) -> xr.Dataset:
     """
     Create final raster xarray dataset
 
@@ -864,12 +843,12 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
     :param msk: raster msk
     :return: the raster xarray dataset
     """
-    raster_dims = ('y', 'x')
+    raster_dims = (cst.Y, cst.X)
     n_layers = raster.shape[-1]
     x_values_1d, y_values_1d = compute_values_1d(x_start, y_start, x_size, y_size, resolution)
-    raster_coords = {'x': x_values_1d, 'y': y_values_1d}
+    raster_coords = {cst.X: x_values_1d, cst.Y: y_values_1d}
     hgt = np.nan_to_num(raster[..., 0], nan=hgt_no_data)
-    raster_out = xr.Dataset({'hgt': (['y', 'x'], hgt)},
+    raster_out = xr.Dataset({cst.RASTER_HGT: ([cst.Y, cst.X], hgt)},
                             coords=raster_coords)
 
     if raster.shape[-1] > 1:  # rasterizer produced color output
@@ -877,33 +856,33 @@ def create_raster_dataset(raster: np.ndarray, x_start: float, y_start: float, x_
         # CAUTION: band/channel is set as the first dimension.
         clr = np.nan_to_num(np.rollaxis(raster[:, :, 1:], 2), nan=color_no_data)
         color_out = xr.Dataset(
-            {'img': (['band', 'y', 'x'], clr)},
-            coords={**raster_coords, 'band': band})
+            {cst.RASTER_COLOR_IMG: ([cst.BAND, cst.Y, cst.X], clr)},
+            coords={**raster_coords, cst.BAND: band})
         # update raster output with color data
         raster_out = xr.merge((raster_out, color_out))
 
-    raster_out.attrs['epsg'] = epsg
-    raster_out.attrs['resolution'] = resolution
+    raster_out.attrs[cst.EPSG] = epsg
+    raster_out.attrs[cst.RESOLUTION] = resolution
 
     # statics layer for height output
-    raster_out['hgt_mean'] = xr.DataArray(mean[..., 0], coords=raster_coords,
-                                          dims=raster_dims)
-    raster_out['hgt_stdev'] = xr.DataArray(stdev[..., 0], coords=raster_coords,
-                                           dims=raster_dims)
+    raster_out[cst.RASTER_HGT_MEAN] = xr.DataArray(mean[..., 0], coords=raster_coords,
+                                                   dims=raster_dims)
+    raster_out[cst.RASTER_HGT_STD_DEV] = xr.DataArray(stdev[..., 0], coords=raster_coords,
+                                                      dims=raster_dims)
     # add each band statistics
     for i_layer in range(1, n_layers):
-        raster_out['band_{}_mean'.format(i_layer)] = xr.DataArray(
+        raster_out['{}{}'.format(cst.RASTER_BAND_MEAN, i_layer)] = xr.DataArray(
             mean[..., i_layer], coords=raster_coords, dims=raster_dims
         )
-        raster_out['band_{}_stdev'.format(i_layer)] = xr.DataArray(
+        raster_out['{}{}'.format(cst.RASTER_BAND_STD_DEV, i_layer)] = xr.DataArray(
             stdev[..., i_layer], coords=raster_coords, dims=raster_dims
         )
 
-    raster_out['n_pts'] = xr.DataArray(n_pts, dims=raster_dims)
-    raster_out['pts_in_cell'] = xr.DataArray(n_in_cell, dims=raster_dims)
+    raster_out[cst.RASTER_NB_PTS] = xr.DataArray(n_pts, dims=raster_dims)
+    raster_out[cst.RASTER_NB_PTS_IN_CELL] = xr.DataArray(n_in_cell, dims=raster_dims)
 
     if msk is not None:
-        raster_out[constants.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
+        raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
 
     return raster_out
 
@@ -937,7 +916,7 @@ def rasterize(cloud: pandas.DataFrame, resolution: float, epsg: int, x_start: fl
         sigma = resolution
 
     # generate validity mask from margins and all masks of cloud data.
-    data_valid = cloud['data_valid'].values
+    data_valid = cloud[cst.POINTS_CLOUD_VALID_DATA].values
 
     # If no valid points are found in cloud, return default values
     if np.size(data_valid) == 0:

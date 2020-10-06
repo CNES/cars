@@ -42,6 +42,7 @@ from osgeo import osr
 
 # cars import
 from cars import utils
+from cars import constants as cst
 
 
 def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
@@ -232,9 +233,9 @@ def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset) -> Tuple[np.array, List[
     :return: a tuple composed of the xyz numàpy array and its original shape
     """
     xyz = np.stack(
-        (cloud_in['x'].values,
-         cloud_in['y'].values,
-         cloud_in['z']),
+        (cloud_in[cst.X].values,
+         cloud_in[cst.Y].values,
+         cloud_in[cst.Z]),
         axis=-1)
     xyz_shape = xyz.shape
     xyz = np.reshape(xyz, (-1, 3))
@@ -252,7 +253,7 @@ def get_converted_xy_np_arrays_from_dataset(cloud_in: xr.Dataset, epsg_out: int)
     """
     xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud_in)
 
-    xyz = points_cloud_conversion(xyz, int(cloud_in.attrs['epsg']), epsg_out)
+    xyz = points_cloud_conversion(xyz, int(cloud_in.attrs[cst.EPSG]), epsg_out)
     xyz = xyz.reshape(xyz_shape)
     proj_x = xyz[:, :, 0]
     proj_y = xyz[:, :, 1]
@@ -264,24 +265,24 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     """
     Convert a point cloud as an xarray.Dataset to another epsg (inplace)
 
-    :param cloud_in: cloud to project
+    :param cloud: cloud to project
     :param epsg_out: EPSG code of the ouptut SRS
     """
 
-    if cloud.attrs['epsg'] != epsg_out:
+    if cloud.attrs[cst.EPSG] != epsg_out:
 
         xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud)
 
-        xyz = points_cloud_conversion(xyz, int(cloud.attrs['epsg']), epsg_out)
+        xyz = points_cloud_conversion(xyz, int(cloud.attrs[cst.EPSG]), epsg_out)
         xyz = xyz.reshape(xyz_shape)
 
         # Update cloud_in x, y and z values
-        cloud['x'].values = xyz[:, :, 0]
-        cloud['y'].values = xyz[:, :, 1]
-        cloud['z'].values = xyz[:, :, 2]
+        cloud[cst.X].values = xyz[:, :, 0]
+        cloud[cst.Y].values = xyz[:, :, 1]
+        cloud[cst.Z].values = xyz[:, :, 2]
 
         # Update EPSG code
-        cloud.attrs['epsg'] = epsg_out
+        cloud.attrs[cst.EPSG] = epsg_out
 
 
 def points_cloud_conversion_dataframe(cloud: pandas.DataFrame, epsg_in: int, epsg_out: int):
@@ -292,10 +293,10 @@ def points_cloud_conversion_dataframe(cloud: pandas.DataFrame, epsg_in: int, eps
     :param epsg_in: EPSG code of the input SRS
     :param epsg_out: EPSG code of the ouptut SRS
     """
-    xyz_in = cloud.loc[:, ['x', 'y', 'z']].values
+    xyz_in = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
 
     if xyz_in.shape[0] != 0:
         xyz_in = points_cloud_conversion(xyz_in, epsg_in, epsg_out)
-        cloud.x = xyz_in[:, 0]
-        cloud.y = xyz_in[:, 1]
-        cloud.z = xyz_in[:, 2]
+        cloud[cst.X] = xyz_in[:, 0]
+        cloud[cst.Y] = xyz_in[:, 1]
+        cloud[cst.Z] = xyz_in[:, 2]

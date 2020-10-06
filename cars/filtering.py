@@ -34,6 +34,9 @@ import pandas
 from scipy.spatial import cKDTree
 import xarray as xr
 
+# cars import
+from cars import constants as cst
+
 
 ###### Parameters structures ######
 
@@ -85,7 +88,7 @@ def small_components_filtering(cloud: pandas.DataFrame, connection_val: float, n
     epipolar images are returned, otherwise it is set to None
     :return: Tuple made of the filtered cloud and the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, ['x', 'y', 'z']].values
+    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
     index_elt_to_remove = \
         detect_small_components(cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold)
 
@@ -187,7 +190,7 @@ def statistical_outliers_filtering(cloud: pandas.DataFrame, k: int, std_factor: 
     epipolar images are returned, otherwise it is set to None
     :return: Tuple made of the filtered cloud and the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, ['x', 'y', 'z']].values
+    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
     index_elt_to_remove = detect_statistical_outliers(cloud_xyz, k, std_factor)
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
@@ -250,9 +253,9 @@ def filter_cloud(cloud:pandas.DataFrame, index_elt_to_remove: List[int], filtere
     with_coords option)
     """
     if filtered_elt_pos and \
-        not ('coord_epi_geom_i' in cloud.columns
-             and 'coord_epi_geom_j' in cloud.columns
-             and 'idx_im_epi' in cloud.columns):
+        not (cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
+             and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
+             and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns):
         worker_logger = logging.getLogger('distributed.worker')
         worker_logger.warning('In filter_cloud: the filtered_elt_pos has been activated but the cloud Datafram has not '
                               'been build with the option with_coords. The positions cannot be retrieved.')
@@ -260,7 +263,9 @@ def filter_cloud(cloud:pandas.DataFrame, index_elt_to_remove: List[int], filtere
 
     # retrieve removed points position in their original epipolar images
     if filtered_elt_pos:
-        labels = ['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi']
+        labels = [cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+                  cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
+                  cst.POINTS_CLOUD_IDX_IM_EPI]
         removed_elt_pos_infos = cloud.loc[cloud.index.values[index_elt_to_remove], labels].values
         removed_elt_pos_infos = pandas.DataFrame(removed_elt_pos_infos, columns=labels)
     else:
@@ -278,22 +283,22 @@ def add_cloud_filtering_msk(clouds_list: List[xr.Dataset], elt_pos_infos: pandas
     Add a uint16 mask labeled 'mask_label' to the clouds in clouds_list. (in-line function)
 
     :param clouds_list: Input list of clouds
-    :param elt_pos_infos: pandas dataframe composed of 'coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi' columns as
-     computed in the create_combined_cloud function. Those information are used to retrieve the point position in its
-     original epipolar image.
+    :param elt_pos_infos: pandas dataframe composed of cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+    cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_IDX_IM_EPI columns as computed in the create_combined_cloud
+    function. Those information are used to retrieve the point position in its original epipolar image.
     :param mask_label: label to give to the mask in the datasets
     :param mask_value: filtered elements value in the mask
     """
 
     # Verify that the elt_pos_infos is consistent
-    if elt_pos_infos is None or 'coord_epi_geom_i' not in elt_pos_infos.columns or \
-        'coord_epi_geom_j' not in elt_pos_infos.columns or \
-        'idx_im_epi' not in elt_pos_infos.columns:
+    if elt_pos_infos is None or cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns or \
+        cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns or \
+        cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns:
         worker_logger = logging.getLogger('distributed.worker')
         worker_logger.warning('Cannot generate filtered elements mask, no information about the point\'s'
                               ' original position in the epipolar image is given')
     else:
-        elt_index = elt_pos_infos.loc[:, 'idx_im_epi'].to_numpy()
+        elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_IDX_IM_EPI].to_numpy()
 
         min_elt_index = np.min(elt_index)
         max_elt_index = np.max(elt_index)
@@ -305,8 +310,8 @@ def add_cloud_filtering_msk(clouds_list: List[xr.Dataset], elt_pos_infos: pandas
         # create and add mask to each element of clouds_list
         for cloud_idx in range(len(clouds_list)):
             if mask_label not in clouds_list[cloud_idx]:
-                nb_row = clouds_list[cloud_idx].coords['row'].data.shape[0]
-                nb_col = clouds_list[cloud_idx].coords['col'].data.shape[0]
+                nb_row = clouds_list[cloud_idx].coords[cst.ROW].data.shape[0]
+                nb_col = clouds_list[cloud_idx].coords[cst.COL].data.shape[0]
                 msk = np.zeros((nb_row, nb_col), dtype=np.uint16)
             else:
                 msk = clouds_list[cloud_idx][mask_label].values
@@ -314,8 +319,8 @@ def add_cloud_filtering_msk(clouds_list: List[xr.Dataset], elt_pos_infos: pandas
             cur_elt_index = np.argwhere(elt_index == cloud_idx)
 
             for elt_pos in range(cur_elt_index.shape[0]):
-                i = int(elt_pos_infos.loc[cur_elt_index[elt_pos], 'coord_epi_geom_i'].iat[0])
-                j = int(elt_pos_infos.loc[cur_elt_index[elt_pos], 'coord_epi_geom_j'].iat[0])
+                i = int(elt_pos_infos.loc[cur_elt_index[elt_pos], cst.POINTS_CLOUD_COORD_EPI_GEOM_I].iat[0])
+                j = int(elt_pos_infos.loc[cur_elt_index[elt_pos], cst.POINTS_CLOUD_COORD_EPI_GEOM_J].iat[0])
 
                 try:
                     msk[i, j] = mask_value
@@ -323,4 +328,4 @@ def add_cloud_filtering_msk(clouds_list: List[xr.Dataset], elt_pos_infos: pandas
                     raise Exception('Point at location ({},{}) is not accessible in an image of size ({},{})'
                                     .format(i, j, msk.shape[0], msk.shape[1]))
 
-            clouds_list[cloud_idx][mask_label] = (['row', 'col'], msk)
+            clouds_list[cloud_idx][mask_label] = ([cst.ROW, cst.COL], msk)

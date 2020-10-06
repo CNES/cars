@@ -37,7 +37,7 @@ import rasterio as rio
 import xarray as xr
 from dask.distributed import as_completed
 
-from cars import constants
+from cars import constants as cst
 
 
 def compute_output_window(tile, full_bounds, resolution):
@@ -55,10 +55,10 @@ def compute_output_window(tile, full_bounds, resolution):
     :rtype: tuple(int, int, int, int)
     """
     x_min, y_min, x_max, y_max = full_bounds
-    x_0 = int((np.min(tile.coords["x"]) - x_min) / resolution - 0.5)
-    y_0 = int((y_max - np.max(tile.coords["y"])) / resolution - 0.5)
-    x_1 = int((np.max(tile.coords["x"]) - x_min) / resolution - 0.5)
-    y_1 = int((y_max - np.min(tile.coords["y"])) / resolution - 0.5)
+    x_0 = int((np.min(tile.coords[cst.X]) - x_min) / resolution - 0.5)
+    y_0 = int((y_max - np.max(tile.coords[cst.Y])) / resolution - 0.5)
+    x_1 = int((np.max(tile.coords[cst.X]) - x_min) / resolution - 0.5)
+    y_1 = int((y_max - np.min(tile.coords[cst.Y])) / resolution - 0.5)
 
     return (x_0, y_0, x_1, y_1)
 
@@ -223,20 +223,20 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
             # window is speficied as origin & size
             window = rio.windows.Window(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
 
-            rio_handles['dsm'].write_band(1, raster_tile['hgt'].values, window=window)
+            rio_handles['dsm'].write_band(1, raster_tile[cst.RASTER_HGT].values, window=window)
             
             if write_color:
-                rio_handles['clr'].write(raster_tile['img'].values.astype(color_dtype), window=window)
+                rio_handles['clr'].write(raster_tile[cst.RASTER_COLOR_IMG].values.astype(color_dtype), window=window)
 
             if write_stats:
-                rio_handles['dsm_mean'].write_band(1, raster_tile['hgt_mean'].values, window=window)
-                rio_handles['dsm_std'].write_band(1, raster_tile['hgt_stdev'].values, window=window)
-                rio_handles['dsm_n_pts'].write_band(1, raster_tile['n_pts'].values, window=window)
-                rio_handles['dsm_pts_in_cell'].write_band(1, raster_tile['pts_in_cell'].values, window=window)
+                rio_handles['dsm_mean'].write_band(1, raster_tile[cst.RASTER_HGT_MEAN].values, window=window)
+                rio_handles['dsm_std'].write_band(1, raster_tile[cst.RASTER_HGT_STD_DEV].values, window=window)
+                rio_handles['dsm_n_pts'].write_band(1, raster_tile[cst.RASTER_NB_PTS].values, window=window)
+                rio_handles['dsm_pts_in_cell'].write_band(1, raster_tile[cst.RASTER_NB_PTS_IN_CELL].values, window=window)
 
             ds_values_list = [key for key, _ in raster_tile.items()]
-            if constants.RASTER_MSK in ds_values_list and write_msk:
-                rio_handles['msk'].write_band(1, raster_tile[constants.RASTER_MSK].values, window=window)
+            if cst.RASTER_MSK in ds_values_list and write_msk:
+                rio_handles['msk'].write_band(1, raster_tile[cst.RASTER_MSK].values, window=window)
 
         # Multiprocessing mode
         if hasDatasets:
