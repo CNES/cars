@@ -43,7 +43,7 @@ from fiona.crs import from_epsg
 from shapely.geometry import mapping, shape
 import otbApplication
 
-from cars import constants
+from cars import constants as cst
 
 
 # Filter rasterio warning when image is not georeferenced
@@ -288,8 +288,8 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
 
     with open(path, 'w') as f:
         if isinstance(cloud, xr.Dataset):
-            nb_points = int(cloud[constants.POINTS_CLOUD_CORR_MSK]
-                            .where(cloud[constants.POINTS_CLOUD_CORR_MSK].values != 0).count())
+            nb_points = int(cloud[cst.POINTS_CLOUD_CORR_MSK]
+                            .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
         else:
             nb_points = cloud.shape[0]
 
@@ -302,15 +302,17 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
         f.write("end_header\n")
 
         if isinstance(cloud, xr.Dataset):
-            for x, y, z, m in zip(np.nditer(cloud['x'].values),
-                                  np.nditer(cloud['y'].values),
-                                  np.nditer(cloud['z'].values),
-                                  np.nditer(cloud[constants.POINTS_CLOUD_CORR_MSK].values)):
+            for x, y, z, m in zip(np.nditer(cloud[cst.X].values),
+                                  np.nditer(cloud[cst.Y].values),
+                                  np.nditer(cloud[cst.Z].values),
+                                  np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
                 if m != 0:
                     f.write("{} {} {}\n".format(x, y, z))
         else:
             for xyz in cloud.itertuples():
-                f.write("{} {} {}\n".format(xyz.x, xyz.y, xyz.z))
+                f.write("{} {} {}\n".format(getattr(xyz, cst.X),
+                                            getattr(xyz, cst.Y),
+                                            getattr(xyz, cst.Z)))
 
 
 def read_geoid_file():

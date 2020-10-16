@@ -56,6 +56,7 @@ from cars import utils
 from cars import projection
 from cars import readwrite
 from cars import preprocessing
+from cars import constants as cst
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster, ComputeDSMMemoryLogger
 
 
@@ -88,7 +89,7 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
     utils.safe_makedirs(points_dir)
     utils.safe_makedirs(color_dir)
 
-    # Write to netcdf the 3d points and color, for both 'ref' and 'sec' modes
+    # Write to netcdf the 3d points and color, for both cst.STEREO_REF and cst.STEREO_SEC modes
     # output paths end with '_ref.nc' or '_sec.nc' 
     out_points = {}
     out_colors = {}
@@ -167,17 +168,17 @@ def rasterization_wrapper(clouds_and_colors, resolution, epsg, **kwargs):
     """
     # Unpack list of clouds from tuple, and project them to correct EPSG if
     # needed
-    clouds = [v[0]['ref'] for v in clouds_and_colors]
+    clouds = [v[0][cst.STEREO_REF] for v in clouds_and_colors]
 
     # Unpack list of colors alike
-    colors = [v[1]['ref'] for v in clouds_and_colors]
+    colors = [v[1][cst.STEREO_REF] for v in clouds_and_colors]
 
     # Add clouds and colors computed from the secondary disparity map
-    if 'sec' in clouds_and_colors[0][0]:
-        cloud_sec = [v[0]['sec'] for v in clouds_and_colors]
+    if cst.STEREO_SEC in clouds_and_colors[0][0]:
+        cloud_sec = [v[0][cst.STEREO_SEC] for v in clouds_and_colors]
         clouds.extend(cloud_sec)
 
-        color_sec = [v[1]['sec'] for v in clouds_and_colors]
+        color_sec = [v[1][cst.STEREO_SEC] for v in clouds_and_colors]
         colors.extend(color_sec)
 
     # Call simple_rasterization

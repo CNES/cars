@@ -23,9 +23,57 @@
 This module contains the cars constants
 """
 
+# general
+ROW = 'row' # cannot be changed because of PANDORA input format
+COL = 'col' # cannot be changed because of PANDORA input format
+BAND = 'band'
+X = 'x'
+Y = 'y'
+Z = 'z'
+RESOLUTION = 'resolution'
+EPI_FULL_SIZE = 'full_epipolar_size'
+ROI = 'roi'
+ROI_WITH_MARGINS = 'roi_with_margins'
+EPSG = 'epsg'
+
+# stereo keys
+STEREO_REF = 'ref'
+STEREO_SEC = 'sec'
+
+# epipolar image dataset
+EPI_IMAGE = 'im' # has to be synchronized with the PANDORA input format
+EPI_MSK = 'msk' # has to be synchronized with the PANDORA input format
+EPI_MARGINS = 'margins'
+EPI_DISP_MIN = 'disp_min'
+EPI_DISP_MAX = 'disp_max'
+
+# disparity dataset
+DISP_MAP = 'disp'
+DISP_MSK = 'disp_msk'
+DISP_MSK_INVALID_REF = 'msk_invalid_ref'
+DISP_MSK_INVALID_SEC = 'msk_invalid_sec'
+DISP_MSK_MASKED_REF = 'msk_masked_ref'
+DISP_MSK_MASKED_SEC = 'msk_masked_sec'
+DISP_MSK_OCCLUSION = 'msk_occlusion'
+DISP_MSK_FALSE_MATCH = 'msk_false_match'
+DISP_MSK_INSIDE_SEC_ROI = 'msk_inside_sec_roi'
+
 # points cloud fields (xarray Dataset and pandas Dataframe)
 POINTS_CLOUD_CORR_MSK = 'corr_msk'
 POINTS_CLOUD_MSK = 'msk'
+POINTS_CLOUD_VALID_DATA = 'data_valid'
+POINTS_CLOUD_CLR_KEY_ROOT = 'clr'
+POINTS_CLOUD_COORD_EPI_GEOM_I = 'coord_epi_geom_i'
+POINTS_CLOUD_COORD_EPI_GEOM_J = 'coord_epi_geom_j'
+POINTS_CLOUD_IDX_IM_EPI = 'idx_im_epi'
 
 # raster fields (xarray Dataset)
-RASTER_MSK = 'msk'
+RASTER_HGT = 'hgt'
+RASTER_COLOR_IMG = 'img'
+RASTER_MSK = 'raster_msk'
+RASTER_NB_PTS = 'n_pts'
+RASTER_NB_PTS_IN_CELL = 'pts_in_cell'
+RASTER_HGT_MEAN = 'hgt_mean'
+RASTER_HGT_STD_DEV = 'hgt_stdev'
+RASTER_BAND_MEAN = 'band_mean'
+RASTER_BAND_STD_DEV = 'band_stdev'

@@ -41,6 +41,7 @@ import otbApplication as otb
 
 # Cars imports
 from cars import pipelines
+from cars import constants as cst
 
 
 def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_step=30):
@@ -72,34 +73,34 @@ def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_ste
     col = np.array(range(0, left_grid_as_array.shape[0] * epi_step, epi_step))
     row = np.array(range(0, left_grid_as_array.shape[1] * epi_step, epi_step))
 
-    left_grid_dataset = xr.Dataset({'x': (['row',
-                                           'col'],
+    left_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
+                                           cst.COL],
                                           left_grid_as_array[:,
                                                              :,
                                                              0]),
-                                    'y': (['row',
-                                           'col'],
+                                    cst.Y: ([cst.ROW,
+                                           cst.COL],
                                           left_grid_as_array[:,
                                                              :,
                                                              1])},
-                                   coords={'row': row,
-                                           'col': col},
+                                   coords={cst.ROW: row,
+                                           cst.COL: col},
                                    attrs={"epi_step": epi_step,
                                           "epipolar_size_x": epipolar_size_x,
                                           "epipolar_size_y": epipolar_size_y})
 
-    right_grid_dataset = xr.Dataset({'x': (['row',
-                                            'col'],
+    right_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
+                                            cst.COL],
                                            right_grid_as_array[:,
                                                                :,
                                                                0]),
-                                     'y': (['row',
-                                            'col'],
+                                     cst.Y: ([cst.ROW,
+                                            cst.COL],
                                            right_grid_as_array[:,
                                                                :,
                                                                1])},
-                                    coords={'row': row,
-                                            'col': col},
+                                    coords={cst.ROW: row,
+                                            cst.COL: col},
                                     attrs={"epi_step": epi_step,
                                            "epipolar_size_x": epipolar_size_x,
                                            "epipolar_size_y": epipolar_size_y})
@@ -135,13 +136,13 @@ def dataset_matching(ds1, ds2, matching_threshold=0.6, n_octave=8,
 
     # Encode images for OTB
     im1 = pipelines.encode_to_otb(
-        ds1['im'].values, size1, roi1, origin=origin1)
+        ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
     msk1 = pipelines.encode_to_otb(
-        ds1['msk'].values, size1, roi1, origin=origin1)
+        ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
     im2 = pipelines.encode_to_otb(
-        ds2['im'].values, size2, roi2, origin=origin2)
+        ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
     msk2 = pipelines.encode_to_otb(
-        ds2['msk'].values, size2, roi2, origin=origin2)
+        ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
 
     # Build sift matching app
     matching_app = otb.Registry.CreateApplication(
@@ -491,10 +492,11 @@ def image_envelope(img, shp, dem=None, default_alt=None):
     app.SetParameterString("out", shp)
     app.ExecuteAndWriteOutput()
 
+
 def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, resolution = 0.000277777777778):
     """
     Read an extract of the low resolution input DSM and return it as an Array
-    
+
     :param startx: Upper left x coordinate for grid in WGS84
     :type startx: float
     :param starty: Upper left y coordinate for grid in WGS84 (remember that values are decreasing in y axis)
@@ -537,13 +539,15 @@ def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, re
                               starty - resolution * (sizey + 0.5), sizey,
                               endpoint=False)
 
-    dims = ['y', 'x']
-    coords = {'x': x_values_1d, 'y': y_values_1d}
-    dsm_as_ds = xr.Dataset({'hgt' : (dims, dem_as_array)}, coords = coords)
-    dsm_as_ds['epsg'] = 4326
-    dsm_as_ds['resolution'] = resolution
+    dims = [cst.Y, cst.X]
+    coords = {cst.X: x_values_1d,
+              cst.Y: y_values_1d}
+    dsm_as_ds = xr.Dataset({cst.RASTER_HGT: (dims, dem_as_array)}, coords=coords)
+    dsm_as_ds[cst.EPSG] = 4326
+    dsm_as_ds[cst.RESOLUTION] = resolution
 
     return dsm_as_ds
+
 
 def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10000, y_offset:float=1000) -> np.ndarray:
     """
