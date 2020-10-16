@@ -108,7 +108,7 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
 
     image = 32 * 2
     disp_ref = 32
-    validiti_mask_ref = 16
+    validity_mask_ref = 16
     confidence = 32
     cv_ = disp * 32
     nan_ = disp * 8
@@ -116,7 +116,7 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
     penal = 8 * 32 * 2
     img_crop = 32 * 2
 
-    tot = image + disp_ref + validiti_mask_ref
+    tot = image + disp_ref + validity_mask_ref
     tot += confidence + 2*cv_ + nan_ + cv_uint + penal + img_crop
     import_ = 200 #MiB
 
