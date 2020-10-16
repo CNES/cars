@@ -128,8 +128,9 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
         tile_size = tile_size_rounding
     else:
         tile_size = np.sqrt(row_or_col)
+        tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
 
-    return int(tile_size)
+    return tile_size
 
 
 def resample_image(
