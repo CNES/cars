@@ -35,11 +35,13 @@ from json_checker import OptionalKey, And, Or
 
 # cars imports
 from cars import configuration as static_cfg
+from cars.mask import mask_classes_can_open
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
 
 static_params_tag = 'static_parameters'
+
 
 def read_input_parameters(filename):
     """
@@ -63,6 +65,8 @@ def read_input_parameters(filename):
                 img2_tag,
                 mask1_tag,
                 mask2_tag,
+                mask1_classes_tag,
+                mask2_classes_tag,
                 color1_tag,
                 srtm_dir_tag]:
             if tag in config:
@@ -190,6 +194,8 @@ srtm_dir_tag = "srtm_dir"
 color1_tag = "color1"
 mask1_tag = "mask1"
 mask2_tag = "mask2"
+mask1_classes_tag = "mask1_classes"
+mask2_classes_tag = "mask2_classes"
 nodata1_tag = "nodata1"
 nodata2_tag = "nodata2"
 default_alt_tag = "default_alt"
@@ -273,6 +279,8 @@ input_configuration_schema = {
     OptionalKey(color1_tag): And(str, rasterio_can_open),
     OptionalKey(mask1_tag): And(str, rasterio_can_open),
     OptionalKey(mask2_tag): And(str, rasterio_can_open),
+    OptionalKey(mask1_classes_tag): And(str, mask_classes_can_open),
+    OptionalKey(mask2_classes_tag): And(str, mask_classes_can_open),
     OptionalKey(default_alt_tag): float,
     nodata1_tag: int,
     nodata2_tag: int

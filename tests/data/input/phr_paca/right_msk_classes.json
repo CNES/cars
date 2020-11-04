@@ -1,0 +1,5 @@
+{
+  "ignored_by_correlation": [1],
+  "set_to_input_dem": [1, 150],
+  "ignored_by_sift_matching": [1, 100, 150]
+}
