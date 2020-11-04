@@ -116,3 +116,35 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
         return True
     else:
         return False
+
+
+def get_msk_from_classes(mc_msk: np.ndarray, classes_to_use: List[int], out_msk_pix_value: int=255,
+                         out_msk_dtype: np.dtype=np.uint16) -> np.ndarray:
+    """
+    Create a mask of type msk_dtype set to the msk_pix_value for pixels belonging to the required classes
+    (defined by the classes_to_use_tag from the CARS's parameters module) in the multi-classes mask in input.
+
+    :param mc_msk: multi-classes mask
+    :param classes_to_use: tag (from the CARS's parameters module) of the required classes or list of values to use
+    to create the output mask
+    :param out_msk_pix_value: pixel value to assign to the output mask in the locations of the required classes'
+    pixels. If the out_msk_dtype parameter is set to np.bool, this parameter will be automatically set to True.
+    :param out_msk_dtype: numpy dtype of the output mask
+    :return: the output mask
+    """
+    # initiate the required classes final mask
+    if out_msk_dtype == np.bool:
+        not_msk_pix_value = False
+    else:
+        not_msk_pix_value = 0
+    out_msk = np.full(mc_msk.shape, fill_value=not_msk_pix_value, dtype=out_msk_dtype)
+
+    # create boolean mask with the pixels of the required classes as True
+    msk_with_selected_classes = np.zeros(mc_msk.shape, dtype=np.bool)
+
+    for i in classes_to_use:
+        msk_with_selected_classes = np.logical_or(msk_with_selected_classes,
+                                                  np.where(mc_msk == i, True, False))
+    out_msk[msk_with_selected_classes] = out_msk_pix_value
+
+    return out_msk

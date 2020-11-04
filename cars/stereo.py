@@ -409,8 +409,9 @@ def epipolar_rectify_images(
     return left_dataset, right_dataset, left_color_dataset
 
 
-def compute_disparity(left_dataset, 
-                      right_dataset, 
+def compute_disparity(left_dataset,
+                      right_dataset,
+                      configuration,
                       corr_cfg, 
                       disp_min=None,
                       disp_max=None,
@@ -423,6 +424,8 @@ def compute_disparity(left_dataset,
     :type left_dataset: xarray.Dataset
     :param right_dataset: Dataset containing right image and mask
     :type right_dataset: xarray.Dataset
+    :param configuration: stereo configuration
+    :type configuration: dict
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
     :param disp_min: Minimum disparity (if None, value is taken from left dataset)
@@ -460,12 +463,44 @@ def compute_disparity(left_dataset,
     for entry_point in iter_entry_points(group='pandora.plugin'):
         entry_point.load()
 
+    if corr_cfg['image']['no_data'] != mask.NO_DATA_IN_EPIPOLAR_RECTIFICATION:
+        logging.warning('mask no data value defined in the correlation configuration file does not match the internal '
+                        'no data value used in the epipolar rectification.')
+
+    # Handle masks' classes if necessary
+    mask1_classes = configuration[params.input_section_tag].get(params.mask1_classes_tag, None)
+    mask2_classes = configuration[params.input_section_tag].get(params.mask2_classes_tag, None)
+    mask1_use_classes = False
+    mask2_use_classes = False
+
+    if mask1_classes is not None:
+        classes_dict = mask.read_mask_classes(mask1_classes)
+        if mask.ignored_by_corr_tag in classes_dict.keys():
+            left_msk = left_dataset[cst.EPI_MSK].values
+            left_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(corr_cfg, left_dataset, cst.EPI_MSK,
+                                                                              classes_dict[mask.ignored_by_corr_tag])
+            mask1_use_classes = True
+
+    if mask2_classes is not None:
+        classes_dict = mask.read_mask_classes(mask2_classes)
+        if mask.ignored_by_corr_tag in classes_dict.keys():
+            right_msk = right_dataset[cst.EPI_MSK].values
+            right_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(corr_cfg, right_dataset, cst.EPI_MSK,
+                                                                              classes_dict[mask.ignored_by_corr_tag])
+            mask2_use_classes = True
+
     # Run the Pandora pipeline
     ref, sec = pandora.run(left_dataset,
                            right_dataset,
                            int(disp_min),
                            int(disp_max),
                            corr_cfg)
+
+    # Set the datasets' cst.EPI_MSK values back to the original multi-classes masks
+    if mask1_use_classes:
+        left_dataset[cst.EPI_MSK].values = left_msk
+    if mask2_use_classes:
+        right_dataset[cst.EPI_MSK].values = right_msk
 
     disp = dict()
     disp[cst.STEREO_REF] = create_disp_dataset(ref, left_dataset, verbose=verbose)
@@ -477,6 +512,55 @@ def compute_disparity(left_dataset,
                                           sec_dataset=left_dataset, check_roi_in_sec=True, verbose=verbose)
 
     return disp
+
+
+def compute_mask_to_use_in_pandora(corr_cfg, dataset: xr.Dataset, msk_key: str, classes_to_ignore: List[int],
+                           out_msk_dtype: np.dtype=np.int16) -> np.ndarray:
+    """
+    Compute the mask to use in Pandora.
+    Valid pixels will be set to the value of the 'valid_pixels' field of the correlation configuration file.
+    No data pixels will be set to the value of the 'no_data' field of the correlation configuration file.
+    Nonvalid pixels will be set to a value automatically determined to be different from the 'valid_pixels' and the
+    'no_data' fields of the correlation configuration file.
+
+    :param corr_cfg: Correlator configuration
+    :type corr_cfg: dict
+    :param dataset: dataset containing the multi-classes mask from which the mask to used in Pandora will be computed
+    :param msk_key: key to use to access the multi-classes mask in the dataset
+    :param classes_to_ignore:
+    :param out_msk_dtype: numpy dtype of the returned mask
+    :return: the mask to use in Pandora
+    """
+
+    ds_values_list = [key for key, _ in dataset.items()]
+    if msk_key not in ds_values_list:
+        raise Exception('No value identified by {} is present in the dataset'.format(msk_key))
+
+    # retrieve specific values from the correlation configuration file
+    valid_pixels = corr_cfg['image']['valid_pixels']
+    nodata_pixels = corr_cfg['image']['no_data']
+
+    info_dtype = np.iinfo(out_msk_dtype)
+
+    # find a value to use for unvalid pixels
+    unvalid_pixels = None
+    for i in range(info_dtype.max):
+        if i != valid_pixels and i != nodata_pixels:
+            unvalid_pixels = i
+            break
+
+    # initialization of the mask to use in Pandora
+    final_msk = np.full(dataset[msk_key].values.shape, dtype=out_msk_dtype, fill_value=valid_pixels)
+
+    # retrieve the unvalid and nodata pixels locations
+    unvalid_pixels_mask = mask.get_msk_from_classes(dataset[msk_key].values, classes_to_ignore, out_msk_dtype=np.bool)
+    nodata_pixels_mask = mask.get_msk_from_classes(dataset[msk_key].values, [nodata_pixels], out_msk_dtype=np.bool)
+
+    # update the mask to use in pandora with the unvalid and nodata pixels values
+    final_msk = np.where(unvalid_pixels_mask, unvalid_pixels, final_msk)
+    final_msk = np.where(nodata_pixels_mask, nodata_pixels, final_msk)
+
+    return final_msk
 
 
 def create_disp_dataset(disp: xr.Dataset, ref_dataset: xr.Dataset, sec_dataset:xr.Dataset=None,
@@ -1094,7 +1178,7 @@ def images_pair_to_3d_points(configuration,
                                                  region,
                                                  margins)
     # Compute disparity
-    disp = compute_disparity(left, right, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
+    disp = compute_disparity(left, right, configuration, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
 
     colors = dict()
     colors[cst.STEREO_REF] = color

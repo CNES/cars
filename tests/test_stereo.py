@@ -24,6 +24,7 @@ import json
 import math
 import numpy as np
 import xarray as xr
+from copy import deepcopy
 
 import pandora
 from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
@@ -313,7 +314,7 @@ def test_epipolar_rectify_images_3(images_and_grids_conf, color_pxs_conf, epipol
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1():
+def test_compute_disparity_1(images_and_grids_conf):
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -329,6 +330,7 @@ def test_compute_disparity_1():
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
+                                      images_and_grids_conf,
                                       corr_cfg,
                                       disp_min,
                                       disp_max)
@@ -358,7 +360,7 @@ def test_compute_disparity_1():
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_3():
+def test_compute_disparity_3(images_and_grids_conf):
     """
     Test compute_disparity on paca dataset with pandora
     """
@@ -374,6 +376,7 @@ def test_compute_disparity_3():
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
+                                      images_and_grids_conf,
                                       corr_cfg,
                                       disp_min,
                                       disp_max)
@@ -403,7 +406,7 @@ def test_compute_disparity_3():
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_ref():
+def test_compute_disparity_1_msk_ref(images_and_grids_conf):
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -417,10 +420,11 @@ def test_compute_disparity_1_msk_ref():
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
+                                      images_and_grids_conf,
                                       corr_cfg,
                                       disp_min,
                                       disp_max,
-                                      verbose = True)
+                                      verbose=True)
 
     assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
     assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
@@ -438,14 +442,40 @@ def test_compute_disparity_1_msk_ref():
     sec = xr.open_dataset(absolute_data_path("ref_output/disp1_sec_pandora_msk_ref.nc"))
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.e-6)
 
+    # test multi-classes left mask
+    left_input[cst.EPI_MSK].values[10, 10] = 1 # valid class
+    left_input[cst.EPI_MSK].values[10, 140] = 2 # nonvalid class
+    conf = deepcopy(images_and_grids_conf)
+    conf['input']['mask1'] = absolute_data_path("input/intermediate_results/data1_ref_left_masked.tif")
+
+    output = stereo.compute_disparity(left_input,
+                                      right_input,
+                                      conf,
+                                      corr_cfg,
+                                      disp_min,
+                                      disp_max,
+                                      verbose=True)
+
+    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
+
+    np.testing.assert_allclose(output[cst.STEREO_REF].attrs[cst.ROI],
+                               np.array([420, 200, 530, 320]))
+
+    assert_same_datasets(output[cst.STEREO_REF],ref,atol=5.e-6)
+    assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.e-6)
+
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_sec():
+def test_compute_disparity_1_msk_sec(images_and_grids_conf):
     """
     Test compute_disparity on ventoux dataset with pandora
     """
     left_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_left.nc"))
     right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
+    conf = deepcopy(images_and_grids_conf)
+    conf['input']['mask2'] = absolute_data_path("input/intermediate_results/data1_ref_right_masked.tif")
+
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
@@ -454,10 +484,11 @@ def test_compute_disparity_1_msk_sec():
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
+                                      conf,
                                       corr_cfg,
                                       disp_min,
                                       disp_max,
-                                      verbose = True)
+                                      verbose=True)
 
     assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
     assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
@@ -480,6 +511,21 @@ def test_compute_disparity_1_msk_sec():
 
     sec = xr.open_dataset(absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc"))
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.e-6)
+
+
+@pytest.mark.unit_tests
+def test_compute_mask_to_use_in_pandora():
+    # Pandora configuration
+    corr_cfg = create_corr_conf()
+
+    right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
+
+    mask_image_path = absolute_data_path(absolute_data_path("input/intermediate_results/data1_ref_right_masked.json"))
+
+    out = stereo.compute_mask_to_use_in_pandora(corr_cfg, right_input, cst.EPI_MSK, mask_image_path)
+
+    from pprint import pprint
+    pprint(out)
 
 
 @pytest.mark.unit_tests
