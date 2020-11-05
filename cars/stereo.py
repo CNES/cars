@@ -463,9 +463,9 @@ def compute_disparity(left_dataset,
     for entry_point in iter_entry_points(group='pandora.plugin'):
         entry_point.load()
 
-    if corr_cfg['image']['no_data'] != mask.NO_DATA_IN_EPIPOLAR_RECTIFICATION:
+    if corr_cfg['image']['no_data'] != mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION:
         logging.warning('mask no data value defined in the correlation configuration file does not match the internal '
-                        'no data value used in the epipolar rectification.')
+                        'no data value used for epipolar rectification.')
 
     # Handle masks' classes if necessary
     mask1_classes = configuration[params.input_section_tag].get(params.mask1_classes_tag, None)
@@ -474,19 +474,21 @@ def compute_disparity(left_dataset,
     mask2_use_classes = False
 
     if mask1_classes is not None:
-        classes_dict = mask.read_mask_classes(mask1_classes)
-        if mask.ignored_by_corr_tag in classes_dict.keys():
+        classes_dict = mask_classes.read_mask_classes(mask1_classes)
+        if mask_classes.ignored_by_corr_tag in classes_dict.keys():
             left_msk = left_dataset[cst.EPI_MSK].values
-            left_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(corr_cfg, left_dataset, cst.EPI_MSK,
-                                                                              classes_dict[mask.ignored_by_corr_tag])
+            left_dataset[cst.EPI_MSK].values = \
+                compute_mask_to_use_in_pandora(corr_cfg, left_dataset, cst.EPI_MSK,
+                                               classes_dict[mask_classes.ignored_by_corr_tag])
             mask1_use_classes = True
 
     if mask2_classes is not None:
-        classes_dict = mask.read_mask_classes(mask2_classes)
-        if mask.ignored_by_corr_tag in classes_dict.keys():
+        classes_dict = mask_classes.read_mask_classes(mask2_classes)
+        if mask_classes.ignored_by_corr_tag in classes_dict.keys():
             right_msk = right_dataset[cst.EPI_MSK].values
-            right_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(corr_cfg, right_dataset, cst.EPI_MSK,
-                                                                              classes_dict[mask.ignored_by_corr_tag])
+            right_dataset[cst.EPI_MSK].values = \
+                compute_mask_to_use_in_pandora(corr_cfg, right_dataset, cst.EPI_MSK,
+                                               classes_dict[mask_classes.ignored_by_corr_tag])
             mask2_use_classes = True
 
     # Run the Pandora pipeline
@@ -553,8 +555,10 @@ def compute_mask_to_use_in_pandora(corr_cfg, dataset: xr.Dataset, msk_key: str, 
     final_msk = np.full(dataset[msk_key].values.shape, dtype=out_msk_dtype, fill_value=valid_pixels)
 
     # retrieve the unvalid and nodata pixels locations
-    unvalid_pixels_mask = mask.get_msk_from_classes(dataset[msk_key].values, classes_to_ignore, out_msk_dtype=np.bool)
-    nodata_pixels_mask = mask.get_msk_from_classes(dataset[msk_key].values, [nodata_pixels], out_msk_dtype=np.bool)
+    unvalid_pixels_mask = mask_classes.get_msk_from_classes(dataset[msk_key].values, classes_to_ignore,
+                                                            out_msk_dtype=np.bool)
+    nodata_pixels_mask = mask_classes.get_msk_from_classes(dataset[msk_key].values, [nodata_pixels],
+                                                           out_msk_dtype=np.bool)
 
     # update the mask to use in pandora with the unvalid and nodata pixels values
     final_msk = np.where(unvalid_pixels_mask, unvalid_pixels, final_msk)

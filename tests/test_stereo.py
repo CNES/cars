@@ -446,7 +446,7 @@ def test_compute_disparity_1_msk_ref(images_and_grids_conf):
     left_input[cst.EPI_MSK].values[10, 10] = 1 # valid class
     left_input[cst.EPI_MSK].values[10, 140] = 2 # nonvalid class
     conf = deepcopy(images_and_grids_conf)
-    conf['input']['mask1'] = absolute_data_path("input/intermediate_results/data1_ref_left_masked.tif")
+    conf['input']['mask1_classes'] = absolute_data_path("input/intermediate_results/data1_ref_left_mask_classes.json")
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
@@ -474,7 +474,7 @@ def test_compute_disparity_1_msk_sec(images_and_grids_conf):
     left_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_left.nc"))
     right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
     conf = deepcopy(images_and_grids_conf)
-    conf['input']['mask2'] = absolute_data_path("input/intermediate_results/data1_ref_right_masked.tif")
+    conf['input']['mask2_classes'] = absolute_data_path("input/intermediate_results/data1_ref_right_mask_classes.json")
 
     # Pandora configuration
     corr_cfg = create_corr_conf()
