@@ -23,32 +23,32 @@ import pytest
 import numpy as np
 
 from utils import absolute_data_path
-from cars import mask
+from cars import mask_classes
 
 
 @pytest.mark.unit_tests
 def test_mask_classes_can_open():
     mask_classes_path = absolute_data_path("input/phr_paca/left_msk_classes.json")
-    assert mask.mask_classes_can_open(mask_classes_path) is True
+    assert mask_classes.mask_classes_can_open(mask_classes_path) is True
 
     wrong_mask_classes_path = absolute_data_path("input/mask_input/msk_wrong_json.json")
-    assert mask.mask_classes_can_open(wrong_mask_classes_path) is False
+    assert mask_classes.mask_classes_can_open(wrong_mask_classes_path) is False
 
 
 @pytest.mark.unit_tests
 def test_carsmask_is_mc_mask():
-    mc_msk = np.array([[mask.VALID_VALUE, mask.VALID_VALUE, 2],
-                       [1,                mask.VALID_VALUE, 100],
-                       [mask.VALID_VALUE, 100,              200]])
+    mc_msk = np.array([[mask_classes.VALID_VALUE, mask_classes.VALID_VALUE, 2],
+                       [1,                        mask_classes.VALID_VALUE, 100],
+                       [mask_classes.VALID_VALUE, 100,                      200]])
 
-    is_mc_mask = mask.is_mc_mask(mc_msk)
+    is_mc_mask = mask_classes.is_mc_mask(mc_msk)
 
     assert is_mc_mask is True
 
-    not_mc_msk = np.array([[mask.VALID_VALUE, mask.VALID_VALUE, mask.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
-                           [1,                mask.VALID_VALUE, 1],
-                           [mask.VALID_VALUE, 1,                1]], dtype=np.uint16)
+    not_mc_msk = np.array([[mask_classes.VALID_VALUE, mask_classes.VALID_VALUE, mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
+                           [1,                        mask_classes.VALID_VALUE, 1],
+                           [mask_classes.VALID_VALUE, 1,                        1]], dtype=np.uint16)
 
-    is_mc_mask = mask.is_mc_mask(not_mc_msk)
+    is_mc_mask = mask_classes.is_mc_mask(not_mc_msk)
 
     assert is_mc_mask is False

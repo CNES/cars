@@ -26,7 +26,7 @@ This module contains functions that builds Orfeo ToolBox pipelines used by cars
 import numpy as np
 import otbApplication
 
-from cars import mask as mask_module
+from cars import mask_classes
 
 
 def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=None, epi_step=30):
@@ -127,8 +127,8 @@ def build_mask_pipeline(
     if mask is not None:
         mask_app.SetParameterString("inmask", mask)
         mask_app.EnableParameter("inmask")
-    mask_app.SetParameterFloat("outnodata", mask_module.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
-    mask_app.SetParameterFloat("outvalid", mask_module.VALID_VALUE)
+    mask_app.SetParameterFloat("outnodata", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    mask_app.SetParameterFloat("outvalid", mask_classes.VALID_VALUE)
     mask_app.Execute()
 
     resampling_app = otbApplication.Registry.CreateApplication(
@@ -145,7 +145,7 @@ def build_mask_pipeline(
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
     resampling_app.SetParameterString("interpolator", "nn")
-    resampling_app.SetParameterFloat("out.default", mask_module.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    resampling_app.SetParameterFloat("out.default", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
     resampling_app.Execute()
 
     ret = resampling_app.GetParameterOutputImage("io.out")
