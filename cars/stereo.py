@@ -51,6 +51,7 @@ from cars import tiling
 from cars import parameters as params
 from cars import projection
 from cars import utils
+from cars import mask
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
 
@@ -276,7 +277,9 @@ def epipolar_rectify_images(
     nodata1 = input_configuration.get(params.nodata1_tag, None)
     nodata2 = input_configuration.get(params.nodata2_tag, None)
     mask1 = input_configuration.get(params.mask1_tag, None)
+    mask1_classes = input_configuration.get(params.mask1_classes_tag, None)
     mask2 = input_configuration.get(params.mask2_tag, None)
+    mask2_classes = input_configuration.get(params.mask2_classes_tag, None)
     color1 = input_configuration.get(params.color1_tag, None)
 
     grid1 = preprocessing_output_configuration[params.left_epipolar_grid_tag]
@@ -332,6 +335,12 @@ def epipolar_rectify_images(
                                   nodata=nodata1,
                                   mask=mask1)
 
+    # Check masks' classes consistency
+    if mask1_classes is None and mask1 is not None:
+        if mask.is_mc_mask(left_dataset[cst.EPI_MSK].values):
+            logging.warning('Left mask seems to have several classes but no classes usage json file has been '
+                            'indicated in the configuration file. All classes will be considered as unvalid data.')
+
     # Update attributes
     left_dataset.attrs[cst.ROI] = np.array(left_roi)
     left_dataset.attrs[cst.ROI_WITH_MARGINS] = np.array(left_region)
@@ -349,6 +358,12 @@ def epipolar_rectify_images(
                                    region=left_region,
                                    nodata=nodata2,
                                    mask=mask2)
+
+    # Check masks' classes consistency
+    if mask2_classes is None and mask2 is not None:
+        if mask.is_mc_mask(right_dataset[cst.EPI_MSK].values):
+            logging.warning('Right mask seems to have several classes but no classes usage json file has been '
+                            'indicated in the configuration file. All classes will be considered as unvalid data.')
 
     # Update attributes
     right_dataset.attrs[cst.ROI] = np.array(right_roi)

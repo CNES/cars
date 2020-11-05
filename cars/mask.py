@@ -24,10 +24,14 @@ import logging
 import json
 from json_checker import OptionalKey
 
+import numpy as np
+
 from cars import utils
 
-# protected values
+# Specific values
+# 0 = valid pixels
 # 255 = value used as no data during the resampling in the epipolar geometry
+VALID_VALUE = 0
 NO_DATA_IN_EPIPOLAR_RECTIFICATION = 255
 PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]
 
@@ -85,3 +89,30 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
                             'it is reserved for CARS internal use'.format(i))
 
     return classes_usage_dict
+
+
+def is_mc_mask(msk: np.ndarray) -> bool:
+    """
+    Check if the mask has several classes.
+    The VALID_VALUE and all protected values defined in the PROTECTED_VALUES mask module global variable
+    are not taken into account.
+
+    :param msk: mask to test
+    :return: True if the mask has several classes, False otherwise
+    """
+    # search the locations of valid values in the mask
+    msk_classes = np.where(msk == VALID_VALUE, True, False)
+
+    # update with the locations of the protected values in the mask
+    for i in PROTECTED_VALUES:
+        msk_classes = np.logical_or(msk_classes, np.where(msk == i, True, False))
+
+    # set these location to nan in order to discard them
+    msk_only_classes = msk.astype(np.float)
+    msk_only_classes[msk_classes] = np.nan
+
+    # check if mask has several classes
+    if np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes):
+        return True
+    else:
+        return False
