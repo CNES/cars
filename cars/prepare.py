@@ -52,6 +52,7 @@ from cars import constants as cst
 from cars import tiling
 from cars import utils
 from cars import projection
+from cars import mask_classes
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
 
 
@@ -64,6 +65,8 @@ def matching_wrapper(
         grid2: str,
         mask1: str,
         mask2: str,
+        mask1_classes: str,
+        mask2_classes: str,
         nodata1: float,
         nodata2: float,
         epipolar_size_x: int,
@@ -82,6 +85,8 @@ def matching_wrapper(
     :param grid2: path to epipolar resampling grid for second image
     :param mask1: path to mask for first image, or None
     :param mask2: path to mask for second image, or None
+    :param mask1_classes: path to the mask1's classes usage json file
+    :param mask2_classes: path to the mask2's classes usage json file
     :param nodata1: nodata value for first image
     :param nodata2: nodata value for second image
     :param epipolar_size_x: size of epipolar images in x dimension
@@ -98,6 +103,15 @@ def matching_wrapper(
     left_ds = stereo.resample_image(
         img1, grid1, largest_size, region=left_region, nodata=nodata1, mask=mask1)
 
+    # handle multi classes mask if necessary
+    if mask1_classes is not None:
+        classes_dict = mask_classes.read_mask_classes(mask1_classes)
+        if mask_classes.ignored_by_sift_matching_tag in classes_dict.keys():
+            classes_to_ignore = classes_dict[mask_classes.ignored_by_sift_matching_tag]
+            classes_to_ignore.append(mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+            left_ds[cst.EPI_MSK].values = mask_classes.\
+                create_msk_from_classes(left_ds[cst.EPI_MSK].values, classes_to_ignore)
+
     # Resample right dataset
     right_ds = stereo.resample_image(
         img2,
@@ -106,6 +120,15 @@ def matching_wrapper(
         region=right_region,
         nodata=nodata2,
         mask=mask2)
+
+    # handle multi classes mask if necessary
+    if mask2_classes is not None:
+        classes_dict = mask_classes.read_mask_classes(mask2_classes)
+        if mask_classes.ignored_by_sift_matching_tag in classes_dict.keys():
+            classes_to_ignore = classes_dict[mask_classes.ignored_by_corr_tag]
+            classes_to_ignore.append(mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+            right_ds[cst.EPI_MSK].values = mask_classes.\
+                create_msk_from_classes(right_ds[cst.EPI_MSK].values, classes_to_ignore)
 
     # Perform matching
     sift_params = static_cfg.get_sift_params()
@@ -453,6 +476,8 @@ def run(
                     tmp2,
                     mask1,
                     mask2,
+                    mask1_classes,
+                    mask2_classes,
                     nodata1,
                     nodata2,
                     epipolar_size_x,
