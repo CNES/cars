@@ -172,7 +172,7 @@ def test_optimal_tile_size():
     mem = 313
 
     res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp, mem)
-    assert res == 411
+    assert res == 400
 
     # Test case where default tile size is returned
     assert stereo.optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,

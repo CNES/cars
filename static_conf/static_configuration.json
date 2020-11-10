@@ -21,6 +21,9 @@
       }
   },
   "compute_dsm":{
+    "tiling_configuration":{
+      "epipolar_tile_margin_in_percent": 20
+    },
     "rasterization":{
       "grid_points_division_factor": null
     },

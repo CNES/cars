@@ -84,7 +84,8 @@ warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
         disp_max: int,
         otb_max_ram_hint: int=None,
-        tile_size_rounding: int=50) -> int:
+        tile_size_rounding: int=50,
+        margin: int=0) -> int:
     """
     Compute optimal tile size according to estimated memory usage (pandora_plugin_libsgm)
     Returned optimal tile size will be at least equal to tile_size_rounding.
@@ -93,6 +94,7 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
     :param disp_max: Maximum disparity to explore
     :param otb_max_ram_hint: amount of RAM allocated to OTB (if None, will try to read it from environment variable)
     :param tile_size_rounding: Optimal tile size will be aligned to multiples of tile_size_rounding
+    :param margin: margin (as a percent of the computed tile size) to remove to the computed tile size
     :returns: Optimal tile size according to benchmarked memory usage
     """
 
@@ -127,7 +129,7 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
             "Optimal tile size is null, forcing it to {} pixels".format(tile_size_rounding))
         tile_size = tile_size_rounding
     else:
-        tile_size = np.sqrt(row_or_col)
+        tile_size = (1.-margin/100.)*np.sqrt(row_or_col)
         tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
 
     return tile_size

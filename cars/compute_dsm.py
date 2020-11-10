@@ -486,7 +486,8 @@ def run(
         else:
             opt_epipolar_tile_size = stereo.optimal_tile_size_pandora_plugin_libsgm(
                 disp_min,
-                disp_max)
+                disp_max,
+                margin=static_cfg.get_epi_tile_margin_percent())
         logging.info(
             "Optimal tile size for epipolar regions: {}x{} pixels".format(
                 opt_epipolar_tile_size,
