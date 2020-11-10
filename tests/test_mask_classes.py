@@ -36,12 +36,12 @@ def test_mask_classes_can_open():
 
 
 @pytest.mark.unit_tests
-def test_carsmask_is_mc_mask():
+def test_carsmask_is_multiclasses_mask():
     mc_msk = np.array([[mask_classes.VALID_VALUE, mask_classes.VALID_VALUE, 2],
                        [1,                        mask_classes.VALID_VALUE, 100],
                        [mask_classes.VALID_VALUE, 100,                      200]])
 
-    is_mc_mask = mask_classes.is_mc_mask(mc_msk)
+    is_mc_mask = mask_classes.is_multiclasses_mask(mc_msk)
 
     assert is_mc_mask is True
 
@@ -49,6 +49,6 @@ def test_carsmask_is_mc_mask():
                            [1,                        mask_classes.VALID_VALUE, 1],
                            [mask_classes.VALID_VALUE, 1,                        1]], dtype=np.uint16)
 
-    is_mc_mask = mask_classes.is_mc_mask(not_mc_msk)
+    is_mc_mask = mask_classes.is_multiclasses_mask(not_mc_msk)
 
     assert is_mc_mask is False

@@ -91,7 +91,7 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
     return classes_usage_dict
 
 
-def is_mc_mask(msk: np.ndarray) -> bool:
+def is_multiclasses_mask(msk: np.ndarray) -> bool:
     """
     Check if the mask has several classes.
     The VALID_VALUE and all protected values defined in the PROTECTED_VALUES mask module global variable

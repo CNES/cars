@@ -337,7 +337,7 @@ def epipolar_rectify_images(
 
     # Check masks' classes consistency
     if mask1_classes is None and mask1 is not None:
-        if mask_classes.is_mc_mask(left_dataset[cst.EPI_MSK].values):
+        if mask_classes.is_multiclasses_mask(left_dataset[cst.EPI_MSK].values):
             logging.warning('Left mask seems to have several classes but no classes usage json file has been '
                             'indicated in the configuration file. All classes will be considered as unvalid data.')
 
@@ -361,7 +361,7 @@ def epipolar_rectify_images(
 
     # Check masks' classes consistency
     if mask2_classes is None and mask2 is not None:
-        if mask_classes.is_mc_mask(right_dataset[cst.EPI_MSK].values):
+        if mask_classes.is_multiclasses_mask(right_dataset[cst.EPI_MSK].values):
             logging.warning('Right mask seems to have several classes but no classes usage json file has been '
                             'indicated in the configuration file. All classes will be considered as unvalid data.')
 
