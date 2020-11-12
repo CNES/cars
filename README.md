@@ -22,6 +22,10 @@ Contribution
 ============
 To do a bug report or a contribution, see the [**contribution guide**](CONTRIBUTING.md).
 
+Changelog
+=========
+To know project evolution, see the [**Changelog**](CHANGELOG.md)
+
 Licence
 =======
 See [the license](./LICENSE) for all legal issues concerning the use of CARS.
