@@ -193,6 +193,138 @@ def polygon_projection(poly, from_epsg, to_epsg):
     return poly
 
 
+def geo_to_ecef(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray)\
+                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Point transformation from Geodetic of ellipsoid WGS-84) to ECEF
+    ECEF : Earth-centered, Earth-fixed
+
+    Python code solution without calling OSR through points_cloud_conversion :
+
+    rad = np.float64(6378137.0)        # Radius of the Earth (in meters)
+    f = np.float64(1.0/298.257223563)  # Flattening factor WGS84 Model
+    cos_lat = np.cos(lat * np.pi / 180)
+    sin_lat = np.sin(lat * np.pi / 180)
+    cos_long = np.cos(lon * np.pi / 180)
+    sin_long = np.sin(lon * np.pi / 180)
+    c = 1 / np.sqrt(cos_lat * cos_lat + (1 - f) * (1 - f) * sin_lat * sin_lat)
+    s = (1 - f) * (1 - f) * c
+    x = (rad*c + altitude) * cos_lat * cos_long
+    y = (rad*c + altitude) * cos_lat * sin_long
+    z = (rad*s + altitude) * sin_lat
+    return x, y, z
+
+    :param lat : input geodetic latitude (angle in degree)
+    :param lon :  input geodetic longitude (angle in degree)
+    :param alt : input altitude above geodetic ellipsoid (meters)
+    :return:  ECEF (Earth centered, Earth fixed) x, y, z coordinates tuple (meters)
+    """
+    epsg_in=4979 # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
+    epsg_out=4978 # EPSG code for ECEF WGS84 in x, y, z (meters)
+    x, y, z = points_cloud_conversion([(lon, lat, alt)], epsg_in, epsg_out)[0]
+
+    return x, y, z
+
+def ecef_to_enu(x: np.ndarray, y: np.ndarray,  z: np.ndarray,\
+                lat0: np.ndarray, lon0: np.ndarray,  alt0: np.ndarray)\
+                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Coordinates conversion from ECEF Earth Centered to
+    East North Up Coordinate from a reference point (lat0, lon0, alt0)
+
+    TODO : Use OSR when ENU will be available.
+
+    See Wikipedia page for details :
+    https://en.wikipedia.org/wiki/Geographic_coordinate_conversion#From_ECEF_to_ENU
+
+    :param x : target x ECEF coordinate (meters)
+    :param y : target y ECEF coordinate (meters)
+    :param z : target z ECEF coordinate (meters)
+    :param lat0: Reference geodetic latitude
+    :param lon0: Reference geodetic longitude
+    :param alt0: Reference altitude above geodetic ellipsoid (meters)
+    :return: ENU (xEast, yNorth zUp) target coordinates tuple (meters)
+    """
+    rad = np.float64(6378137.0)        # Radius of the Earth (in meters)
+    f = np.float64(1.0/298.257223563)  # Flattening factor WGS84 Model
+    e = (1 - f) * (1 - f)
+    e2 = 1 - e
+
+    cos_lat0 = np.cos(np.radians(lat0))
+    sin_lat0 = np.sin(np.radians(lat0))
+
+    cos_long0 = np.cos(np.radians(lon0))
+    sin_long0 = np.sin(np.radians(lon0))
+
+    c0 = 1 / np.sqrt(cos_lat0 * cos_lat0  + e * sin_lat0 * sin_lat0)
+
+    # Determine ECEF coordinates from reference geodetic
+    x0, y0, z0 = geo_to_ecef(lat0, lon0, alt0)
+    # x0 = (rad*c0 + alt0) * cos_lat0 * cos_long0
+    # y0 = (rad*c0 + alt0) * cos_lat0 * sin_long0
+    # z0 = (rad*c0*(1-e2) + alt0) * sin_lat0
+
+    xEast = (-(x-x0) * sin_long0) + ((y-y0)*cos_long0)
+    yNorth = (-cos_long0*sin_lat0*(x-x0)) - (sin_lat0*sin_long0*(y-y0)) + (cos_lat0*(z-z0))
+    zUp = (cos_lat0*cos_long0*(x-x0)) + (cos_lat0*sin_long0*(y-y0)) + (sin_lat0*(z-z0))
+
+    return xEast, yNorth, zUp
+
+def geo_to_enu(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
+               lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
+               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    point transformation from WGS-84 Geodetic coordinates to to ENU
+    Use geo_to_ecef and ecef_to_enu functions
+
+    :param lat : input geodetic latitude (angle in degree)
+    :param lon :  input geodetic longitude (angle in degree)
+    :param alt : input altitude above geodetic ellipsoid (meters)
+    :param lat0: Reference geodetic latitude
+    :param lon0: Reference geodetic longitude
+    :param alt0: Reference altitude above geodetic ellipsoid (meters)
+    :return: ENU (xEast, yNorth zUp) target coordinates tuple (meters)
+    """
+    x, y, z = geo_to_ecef(lat, lon, alt)
+    return ecef_to_enu(x, y, z, lat0, lon0, alt0)
+
+def enu_to_aer(e: np.ndarray, n: np.ndarray, u: np.ndarray)\
+               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    ENU coordinates to Azimuth, Elevation angle, Range from ENU origin
+    Beware : Elevation angle is different from altitude.
+    :param e: ENU East coordinate (meters)
+    :param n: ENU North coordinate (meters)
+    :param u: ENU Up coordinate (meters)
+    :return: Azimuth, Elevation Angle, Slant Range tuple (degrees, degres, meters)
+    """
+
+    r = np.hypot(e, n)
+    slantRange = np.hypot(r, u) # Distance of e, n, u vector
+    elev = np.arctan2(u, r)
+    az = np.arctan2(e, n) % (2 * np.pi) # From [-pi,+pi] to [0,2pi]
+
+    az = np.degrees(az)
+    elev = np.degrees(elev)
+
+    return az, elev, slantRange
+
+def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
+               lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
+               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+    """
+    Gives Azimuth, Elevation angle and Slant Range from a Reference to a Point with geodetic coordinates.
+    :param lat : input geodetic latitude (angle in degree)
+    :param lon : input geodetic longitude (angle in degree)
+    :param alt : input altitude above geodetic ellipsoid (meters)
+    :param lat0: Reference geodetic latitude
+    :param lon0: Reference geodetic longitude
+    :param alt0: Reference altitude above geodetic ellipsoid (meters)
+    :return: Azimuth, Elevation Angle, Slant Range tuple (degrees, degres, meters)
+    """
+    e, n, u = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
+    return enu_to_aer(e, n, u)
+
 def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     """
     Convert a point cloud from a SRS to another one.

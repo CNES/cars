@@ -20,13 +20,13 @@
 #
 
 """
-This module contains functions used during preprocessing step of cars (sub-command dask-prepare)
+This module contains functions used during preprocessing step of cars (sub-command prepare)
 """
 
 # Standard imports
 import math
 import logging
-from typing import Union, List
+from typing import Union, List, Tuple
 
 # Third party imports
 import numpy as np
@@ -42,7 +42,8 @@ import otbApplication as otb
 # Cars imports
 from cars import pipelines
 from cars import constants as cst
-
+from cars import projection
+from cars import utils
 
 def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_step=30):
     """
@@ -548,11 +549,12 @@ def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, re
 
     return dsm_as_ds
 
-
 def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10000, y_offset:float=1000) -> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
     time on ground.
+
+    TODO : optimize code with new sensor_to_geo function
 
     :param img: Path to an image
     :type img: str
@@ -585,6 +587,143 @@ def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10
     vec = np.array([long1-long2, lat1-lat2])
     vec = vec/np.linalg.norm(vec)
     return vec
+
+def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:str=None,
+                  default_elevation:float=None) -> np.ndarray:
+    """
+    For a given image point, compute the latitude, longitude, altitude
+
+    Be careful : When SRTM is used, the default elevation (altitude)
+    doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
+    is called again. Check the values.
+
+    Advice : to be sure, use x,y,z inputs only
+
+    :param img: Path to an image
+    :param x: X Coordinate in input image sensor
+    :param y: Y Coordinate in input image sensor
+    :param z: Z Altitude coordinate to take the image
+    :param dem: if z not defined, take this DEM directory input
+    :param geoid: if z and dem not defined, take GEOID directory input
+    :param elevation: if z, dem, geoid not defined, take default elevation
+    :return: Latitude, Longitude, Altitude coordinates as a numpy array
+    """
+    s2c_app = otb.Registry.CreateApplication("ConvertSensorToGeoPointFast")
+
+    s2c_app.SetParameterString('in', img)
+    s2c_app.SetParameterFloat('input.idx', x)
+    s2c_app.SetParameterFloat('input.idy', y)
+
+    if z is not None:
+        s2c_app.SetParameterFloat("input.idz", z)
+    elif dem is not None:
+        s2c_app.SetParameterString("elevation.dem", dem)
+    elif geoid is not None:
+        s2c_app.SetParameterString("elevation.geoid", geoid)
+    elif default_elevation is not None:
+        s2c_app.SetParameterFloat("elevation.default", default_elevation)
+    #else the ConvertSensorToGeoPointFast will have only X, Y and OTB configured GEOID
+
+    s2c_app.Execute()
+
+    lon = s2c_app.GetParameterFloat("output.idx")
+    lat  = s2c_app.GetParameterFloat("output.idy")
+    alt = s2c_app.GetParameterFloat("output.idz")
+
+    return np.array([lat, lon , alt ])
+
+def get_ground_direction(img:str, x:float=None, y:float=None,
+                         z0:float=None, z:float=None )->np.ndarray:
+    """
+    For a given image (x,y) point, compute the direction vector to ground
+    The function use sensor_to_geo and make a z variation to get
+    a ground direction vector.
+    By default, (x,y) is put at image center and z0, z at RPC geometric model
+    limits.
+
+    :param img: Path to an image
+    :param x: X Coordinate in input image sensor
+    :param y: Y Coordinate in input image sensor
+    :param z0: Z altitude reference coordinate
+    :param z: Z Altitude coordinate to take the image
+    :return: (lat0,lon0,alt0, lat,lon,alt) origin and end vector coordinates
+    """
+    # Define x, y in image center if not defined
+    img_size_x, img_size_y = utils.rasterio_get_size(img)
+    if x is None : x = img_size_x/2
+    if y is None : y = img_size_y/2
+    # Check x, y to be in image
+    assert x >= 0 and x <= img_size_x
+    assert y >= 0 and y <= img_size_y
+
+    # Define z and z0 from img RPC constraints if not defined
+    (min_alt, max_alt) = utils.get_elevation_range_from_metadata(img)
+    if z0 is None: z0 = min_alt
+    if z is None: z = max_alt
+    # Check z0 and z to be in RPC constraints
+    assert z0 >= min_alt and z0 <= max_alt
+    assert z  >= min_alt and z  <= max_alt
+
+    # Get origin vector coordinate with z0 altitude
+    lat0, lon0, alt0 = sensor_to_geo(img, x, y ,z=z0)
+    # Get end vector coordinate with z altitude
+    lat, lon, alt = sensor_to_geo(img, x, y, z=z)
+
+    return np.array([lat0, lon0, alt0, lat, lon, alt])
+
+def get_ground_angles(img1:str, img2:str,
+                      x1:float=None, y1:float=None, z1_0:float=None, z1:float=None,
+                      x2:float=None, y2:float=None, z2_0:float=None, z2:float=None )\
+                   -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    For a given image (x,y) point, compute the Azimuth angle,
+    Elevation angle (not the altitude !) and Range from Ground z0 perspective
+    for both stereo image (img1 : left and img2: right)
+
+    Calculate also the convergence angle : Angle between the two satellites from ground.
+
+    The function use get_ground_direction function to have coordinates of
+    ground direction vector and compute angles and range.
+
+    Ref : Jeong, Jaehoon. (2017).
+    IMAGING GEOMETRY AND POSITIONING ACCURACY OF DUAL SATELLITE STEREO IMAGES: A REVIEW.
+    ISPRS Annals of Photogrammetry, Remote Sensing and Spatial Information Sciences.
+    IV-2/W4. 235-242. 10.5194/isprs-annals-IV-2-W4-235-2017.
+    https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/IV-2-W4/235/2017/isprs-annals-IV-2-W4-235-2017.pdf
+
+    Perspectives : get bisector  elevation (BIE), and asymmetry angle
+
+    :param img1: Path to left image1
+    :param img2: Path to right image2
+    :param x1: X Coordinate in input left image1  sensor
+    :param y1: Y Coordinate in input left image1 sensor
+    :param z1_0: Left image1 Z altitude origin coordinate for ground direction vector
+    :param z1:  Left image1 Z altitude end coordinate for ground direction vector
+    :param x2: X Coordinate in input right image2 sensor
+    :param y2: Y Coordinate in input right image2 sensor
+    :param z2_0: Right image2 Z altitude origin coordinate for ground direction vector
+    :param z2: Right image2 Z altitude end coordinate for ground direction vector
+    :return: Left Azimuth, Left Elevation Angle, Right Azimuth, Right Elevation Angle, Convergence Angle
+    """
+
+    # Get image1 <-> satellite vector from image2 metadata geometric model
+    lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(img1, x1, y1, z1_0, z1)
+    # Get East North Up vector for left image1
+    x1_e, y1_n, y1_u = enu1 = projection.geo_to_enu(lat1, lon1, alt1, lat1_0, lon1_0, alt1_0)
+    # Convert vector to Azimuth, Elevation, Range
+    az1, elev_angle1, range1 = projection.enu_to_aer(x1_e, y1_n, y1_u)
+
+    # Get image2 <-> satellite vector from image2 metadata geometric model
+    lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(img2, x2, y2, z2_0, z2)
+    # Get East North Up vector for right image2
+    x2_e, y2_n, y2_u = enu2 = projection.geo_to_enu(lat2, lon2, alt2, lat2_0, lon2_0, alt2_0)
+    # Convert ENU to Azimuth, Elevation, Range
+    az2, elev_angle2, range2 = projection.enu_to_aer(x2_e, y2_n, y2_u)
+
+    # Get convergence angle from two enu vectors.
+    convergence_angle=np.degrees(utils.angle_vectors(enu1, enu2))
+
+    return az1, elev_angle1, az2, elev_angle2, convergence_angle
 
 def project_coordinates_on_line(x:Union[float, np.ndarray], y:Union[float, np.ndarray], origin:np.ndarray, vec:np.ndarray) -> np.ndarray:
     """

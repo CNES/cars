@@ -294,6 +294,20 @@ def test_get_time_ground_direction():
     assert vec[0] == -0.004640789411624955
     assert vec[1] ==  0.999989231478838
 
+@pytest.mark.unit_tests
+def test_get_ground_angles():
+    """
+    Test the get_ground_angles function
+    """
+
+    left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
+
+    angles = preprocessing.get_ground_angles(left_img, right_img)
+    angles = np.asarray(angles) # transform tuple to array
+    
+    np.testing.assert_allclose(angles, [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114], rtol=1e-01)
+
 
 @pytest.mark.unit_tests
 def test_project_coordinates_on_line():

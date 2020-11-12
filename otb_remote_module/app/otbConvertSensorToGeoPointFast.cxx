@@ -20,6 +20,7 @@
 #include "otbWrapperApplication.h"
 #include "otbWrapperApplicationFactory.h"
 
+// Elevation handler
 #include "otbWrapperElevationParametersHandler.h"
 
 #include "otbForwardSensorModel.h"
@@ -44,9 +45,15 @@ public:
 
   itkTypeMacro(ConvertSensorToGeoPointFast, otb::Application);
 
-  /** Filters typedef */
-  typedef otb::ForwardSensorModel<double> ModelType;
-  typedef itk::Point<double, 2> PointType;
+  /** Filters typedef with 2 dimensions X, Y */
+  typedef otb::ForwardSensorModel<double, 2, 3> ModelTypeXY;
+  typedef itk::Point<double, 2> PointTypeXY;
+
+  /** Filters typedef for model, point, index with 3 dimensions X, Y, Z */
+  typedef otb::ForwardSensorModel<double, 3, 3> ModelTypeXYZ;
+  typedef itk::Point<double, 3> PointTypeXYZ;
+  typedef itk::ContinuousIndex<double, 3> IndexTypeXYZ;
+
 
 private:
   void DoInit() override
@@ -55,8 +62,13 @@ private:
     SetDescription("Sensor to geographic coordinates conversion.");
 
     // Documentation
-    SetDocLongDescription(
-        "This Application converts a sensor point of an input image to a geographic point using the Forward Sensor Model of the input image.");
+    std::ostringstream oss;
+    oss << "This Application converts a sensor point of an input image";
+    oss << "to a geographic point using the Forward Sensor Model of the input image.";
+    oss << "Works with (X,Y) or (X,Y,H) depending on H value.";
+    oss << "In Case in 2D, H is automatically set with OTB Elevation mechanisms";
+    SetDocLongDescription(oss.str());
+
     SetDocLimitations("None");
     SetDocAuthors("OTB-Team");
     SetDocSeeAlso("ConvertCartoToGeoPoint application, otbObtainUTMZoneFromGeoPoint");
@@ -73,6 +85,9 @@ private:
     AddParameter(ParameterType_Float, "input.idy", "Y value of desired point");
     SetParameterDescription("input.idy", "Y coordinate of the point to transform.");
     SetDefaultParameterFloat("input.idy", 0.0);
+    AddParameter(ParameterType_Float,"input.idz", "Z altitude value of desired point above geoid");
+    SetParameterDescription("input.idz", "Z altitude value of desired point above geoid");
+
 
     // Output with Output Role
     AddParameter(ParameterType_Group, "output", "Geographic Coordinates");
@@ -80,6 +95,8 @@ private:
     SetParameterDescription("output.idx", "Output point longitude coordinate.");
     AddParameter(ParameterType_Float, "output.idy", "Output Point Latitude");
     SetParameterDescription("output.idy", "Output point latitude coordinate.");
+    AddParameter(ParameterType_Float, "output.idz", "Output Point altitude");
+    SetParameterDescription("output.idz", "Output point altitude coordinate.");
 
     AddParameter(ParameterType_String, "output.town", "Main town near the coordinates computed");
     SetParameterDescription("output.town", "Nearest main town of the computed geographic point.");
@@ -89,7 +106,9 @@ private:
     // Set the parameter role for the output parameters
     SetParameterRole("output.idx", Role_Output);
     SetParameterRole("output.idy", Role_Output);
+    SetParameterRole("output.idz", Role_Output);
 
+    // Build the Output Elevation Parameter for XY option
     ElevationParametersHandler::AddElevationParameters(this, "elevation");
 
     // Doc example parameter settings
@@ -106,34 +125,82 @@ private:
 
   void DoExecute() override
   {
-    // Handle elevation
-    otb::Wrapper::ElevationParametersHandler::SetupDEMHandlerFromElevationParameters(this, "elevation");
-  
-    // Get input Image
-    FloatVectorImageType::Pointer inImage = GetParameterImage("in");
+    // Get Input image
+    FloatVectorImageType::Pointer inImage = GetParameterImage("in"); //Image
 
-    // Instantiate a ForwardSensor Model
-    ModelType::Pointer model = ModelType::New();
-    model->SetImageGeometry(inImage->GetImageKeywordlist());
-    if (model->IsValidSensorModel() == false)
-    {
-      itkGenericExceptionMacro(<< "Unable to create a model");
-    }
+    //Declare and Instantiate a 2D X,Y Point
+    PointTypeXY pointXY;
 
-    // Convert the desired point
+    // Declare and Instantiate a X,Y ContinuousIndex
     itk::ContinuousIndex<double, 2> inIndex;
-    PointType point;
-
     inIndex[0] = GetParameterFloat("input.idx");
     inIndex[1] = GetParameterFloat("input.idy");
-    inImage->TransformContinuousIndexToPhysicalPoint(inIndex, point);
 
-    ModelType::OutputPointType outputPoint;
-    outputPoint = model->TransformPoint(point);
+    // Convert X, Y coordinates with img origin and spacing information
+    inImage->TransformContinuousIndexToPhysicalPoint(inIndex, pointXY);
 
-    // Set the value computed
-    SetParameterFloat("output.idx", outputPoint[0]);
-    SetParameterFloat("output.idy", outputPoint[1]);
+    if ( HasValue("input.idz") )
+    {
+
+      otbAppLogINFO("ConvertSensorToGeoPointFast with X,Y,Z inputs");
+
+      // Instantiate a ForwardSensor XYZ Model
+      ModelTypeXYZ::Pointer model = ModelTypeXYZ::New();
+      model->SetImageGeometry(inImage->GetImageKeywordlist());
+      if (model->IsValidSensorModel() == false)
+      {
+        itkGenericExceptionMacro(<< "Unable to create a model");
+      }
+
+
+      // Declare a XYZ point and transform 2D point to 3D
+      PointTypeXYZ pointXYZ;
+      pointXYZ[0] = pointXY[0];
+      pointXYZ[1] = pointXY[1];
+      pointXYZ[2] = GetParameterFloat("input.idz");
+
+      // Declare OutputPoint
+      ModelTypeXYZ::OutputPointType outputPoint;
+
+      // Conversion of the desired point from Sensor to Geo Point
+      outputPoint = model->TransformPoint(pointXYZ);
+
+      // Set the value computed
+      SetParameterFloat("output.idx", outputPoint[0]);
+      SetParameterFloat("output.idy", outputPoint[1]);
+      SetParameterFloat("output.idz", outputPoint[2]);
+    }
+    else
+    {
+      otbAppLogINFO("ConvertSensorToGeoPointFast with X,Y inputs only");
+
+      // Declare and Instantiate a ForwardSensor XY Model
+      ModelTypeXY::Pointer model = ModelTypeXY::New();
+      model->SetImageGeometry(inImage->GetImageKeywordlist());
+
+      if (model->IsValidSensorModel() == false)
+      {
+        itkGenericExceptionMacro(<< "Unable to create a model");
+      }
+
+      // Handle elevation automatically with geoid, srtm or default elevation
+      // respectively : elevation.geoid, elevation.dem, elevation.default
+      otb::DEMHandler::Instance()->ClearDEMs();
+      otb::Wrapper::ElevationParametersHandler::\
+          SetupDEMHandlerFromElevationParameters(this,"elevation");
+
+      // Declare OutputPoint
+      ModelTypeXY::OutputPointType outputPoint;
+
+      // Conversion of the desired point from Sensor to Geo Point
+      outputPoint = model->TransformPoint(pointXY);
+
+      // Set the value computed
+      SetParameterFloat("output.idx", outputPoint[0]);
+      SetParameterFloat("output.idy", outputPoint[1]);
+      SetParameterFloat("output.idz", outputPoint[2]);
+
+    }
   }
 };
 }

@@ -321,6 +321,31 @@ def run(
     logging.info(
         "Disparity to altitude factor: {} m/pixel".format(disp_to_alt_ratio))
 
+    # Get satellites angles from ground : Azimuth to north, Elevation angle
+    angles = preprocessing.get_ground_angles(img1, img2)
+    left_az, left_elev_angle, right_az, right_elev_angle, convergence_angle = angles
+    logging.info("Left  satellite coverture : Azimuth angle : {:.1f}°, Elevation angle : {:.1f}°"\
+                 .format(left_az, left_elev_angle))
+    logging.info("Right satellite coverture : Azimuth angle : {:.1f}°, Elevation angle : {:.1f}°"\
+                 .format(right_az, right_elev_angle))
+    logging.info("Stereo satellite convergence angle from ground : {:.1f}°"\
+                 .format(convergence_angle))
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.left_azimuth_angle_tag] = left_az
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.left_elevation_angle_tag] = left_elev_angle
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.right_azimuth_angle_tag] = right_az
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.right_elevation_angle_tag] = right_elev_angle
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.convergence_angle_tag] = convergence_angle
+
     logging.info("Sparse matching ...")
     nb_threads = int(os.environ.get('OMP_NUM_THREADS', '1'))
 

@@ -144,6 +144,53 @@ def rasterio_get_size(f):
     with rio.open(f, 'r') as ds:
         return (ds.width, ds.height)
 
+def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:float=300) -> (float, float):
+    """
+    This function will try to derive a valid RPC altitude range from img metadata.
+    It will first try to read metadata with gdal.
+    If it fails, it will look for values in the geom file if it exists
+    If it fails, it will return the default range
+
+    :param img: Path to the img for which the elevation range is required
+    :param default_min: Default minimum value to return if everything else fails
+    :param default_max: Default minimum value to return if everything else fails
+    :returns: (elev_min, elev_max) float tuple
+    """
+    # First, try to get range from gdal metadata
+    with rio.open(img) as ds:
+        gdal_height_offset = ds.get_tag_item('HEIGHT_OFF','RPC')
+        gdal_height_scale  = ds.get_tag_item('HEIGHT_SCALE','RPC')
+
+        if gdal_height_scale is not None and gdal_height_offset is not None:
+            if isinstance(gdal_height_offset, str):
+                gdal_height_offset = float(gdal_height_offset)
+            if isinstance(gdal_height_scale, str):
+                gdal_height_scale = float(gdal_height_scale)
+            return (float(gdal_height_offset-gdal_height_scale/2.),
+                    float(gdal_height_offset+gdal_height_scale/2.))
+
+    # If we are still here, try to get range from OTB/OSSIM geom file if exists
+    geom_file, _ = os.path.splitext(img)
+    geom_file = geom_file+".geom"
+
+    # If geom file exists
+    if os.path.isfile(geom_file):
+        with open(geom_file,'r') as f:
+            geom_height_offset = None
+            geom_height_scale = None
+
+            for line in f:
+                if line.startswith("height_off:"):
+                    geom_height_offset = float(line.split(sep=':')[1])
+
+                if line.startswith("height_scale:"):
+                    geom_height_scale = float(line.split(sep=':')[1])
+            if geom_height_offset is not None and geom_height_scale is not None:
+                return (float(geom_height_offset-geom_height_scale/2),
+                        float(geom_height_offset+geom_height_scale/2))
+
+    # If we are still here, return a default range:
+    return (default_min, default_max)
 
 def otb_can_open(f):
     """
@@ -275,6 +322,22 @@ def write_vector(polys, path_to_file, epsg, driver='GPKG'):
                 }
             }
             f.write(poly_dict)
+
+def angle_vectors(v1:np.ndarray, v2:np.ndarray) -> float :
+    """
+    Compute the smallest angle in radians between two angle_vectors
+    Use arctan2 more precise than arcos2
+    Tan θ = |(axb)|/ (a.b)
+    (same : Cos θ = (a.b)/(|a||b|))
+    :param v1: Numpy first vector
+    :param v2: Numpy second vector
+    :return: Smallest angle in radians
+    """
+    import numpy.linalg as la
+
+    vec_dot = np.dot(v1, v2)
+    vec_norm = la.norm(np.cross(v1, v2))
+    return np.arctan2(vec_norm, vec_dot)
 
 
 def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
