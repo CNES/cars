@@ -61,8 +61,8 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
             utils.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
         except Exception as e:
-            logging.error("Exception caught while trying to read file {}: {}"
-                          .format(mask_classes_path, e))
+            logging.error("Exception caught while trying to read file %s: %s"
+                           % (mask_classes_path, e))
             return False
 
 
@@ -85,8 +85,8 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
 
     for i in PROTECTED_VALUES:
         if i in used_values:
-            logging.warning('{} value cannot be used as a mask class, '
-                            'it is reserved for CARS internal use'.format(i))
+            logging.warning('%s value cannot be used as a mask class, '
+                            'it is reserved for CARS internal use' % i)
 
     return classes_usage_dict
 
