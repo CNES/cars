@@ -328,7 +328,8 @@ def angle_vectors(v1:np.ndarray, v2:np.ndarray) -> float :
     Compute the smallest angle in radians between two angle_vectors
     Use arctan2 more precise than arcos2
     Tan θ = |(axb)|/ (a.b)
-    (same : Cos θ = (a.b)/(|a||b|))
+    (same: Cos θ = (a.b)/(|a||b|))
+
     :param v1: Numpy first vector
     :param v2: Numpy second vector
     :return: Smallest angle in radians

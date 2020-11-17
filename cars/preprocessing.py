@@ -554,7 +554,7 @@ def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10
     For a given image, compute the direction of increasing acquisition
     time on ground.
 
-    TODO : optimize code with new sensor_to_geo function
+    TODO: optimize code with new sensor_to_geo function
 
     :param img: Path to an image
     :type img: str
@@ -583,7 +583,7 @@ def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10
     s2c_app.Execute()
     long2 = s2c_app.GetParameterFloat("output.idx")
     lat2  = s2c_app.GetParameterFloat("output.idy")
-    
+
     vec = np.array([long1-long2, lat1-lat2])
     vec = vec/np.linalg.norm(vec)
     return vec
@@ -593,11 +593,11 @@ def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:s
     """
     For a given image point, compute the latitude, longitude, altitude
 
-    Be careful : When SRTM is used, the default elevation (altitude)
+    Be careful: When SRTM is used, the default elevation (altitude)
     doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
     is called again. Check the values.
 
-    Advice : to be sure, use x,y,z inputs only
+    Advice: to be sure, use x,y,z inputs only
 
     :param img: Path to an image
     :param x: X Coordinate in input image sensor
@@ -678,20 +678,20 @@ def get_ground_angles(img1:str, img2:str,
     """
     For a given image (x,y) point, compute the Azimuth angle,
     Elevation angle (not the altitude !) and Range from Ground z0 perspective
-    for both stereo image (img1 : left and img2: right)
+    for both stereo image (img1: left and img2: right)
 
-    Calculate also the convergence angle : Angle between the two satellites from ground.
+    Calculate also the convergence angle: Angle between the two satellites from ground.
 
     The function use get_ground_direction function to have coordinates of
     ground direction vector and compute angles and range.
 
-    Ref : Jeong, Jaehoon. (2017).
+    Ref: Jeong, Jaehoon. (2017).
     IMAGING GEOMETRY AND POSITIONING ACCURACY OF DUAL SATELLITE STEREO IMAGES: A REVIEW.
     ISPRS Annals of Photogrammetry, Remote Sensing and Spatial Information Sciences.
     IV-2/W4. 235-242. 10.5194/isprs-annals-IV-2-W4-235-2017.
     https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/IV-2-W4/235/2017/isprs-annals-IV-2-W4-235-2017.pdf
 
-    Perspectives : get bisector  elevation (BIE), and asymmetry angle
+    Perspectives: get bisector  elevation (BIE), and asymmetry angle
 
     :param img1: Path to left image1
     :param img2: Path to right image2
@@ -730,7 +730,7 @@ def project_coordinates_on_line(x:Union[float, np.ndarray], y:Union[float, np.nd
     Project coordinates (x,y) on a line starting from origin with a
     direction vector vec, and return the euclidean distances between
     projected points and origin.
-    
+
     :param x: scalar or vector of coordinates x
     :type x: float or np.array(float) of shape [n]
     :param y: scalar or vector of coordinates x
@@ -778,19 +778,19 @@ def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
     """
     # Initial DSM difference
     dsm_diff = lowres_initial_dem.hgt-lowres_dsm_from_matches.hgt
-    
+
     # Form arrays of coordinates
     x_values_2d, y_values_2d = np.meshgrid(dsm_diff.x, dsm_diff.y)
 
     # Project coordinates on the line of increasing acquisition time to form 1D coordinates
     # If there are sensor oscillations, they will occur in this direction
     linear_coords = project_coordinates_on_line(x_values_2d, y_values_2d, origin, time_direction_vector)
-    
+
     # Form a 1D array with diff values indexed with linear coords
     linear_diff_array = xr.DataArray(dsm_diff.values.ravel(), coords={"l" : linear_coords.ravel()}, dims = ("l"))
     linear_diff_array = linear_diff_array.dropna(dim='l')
     linear_diff_array = linear_diff_array.sortby('l')
-    
+
     # Apply median filtering within cell matching input dsm resolution
     min_l = np.min(linear_diff_array.l)
     max_l = np.max(linear_diff_array.l)
@@ -810,8 +810,8 @@ def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
         logging.warning('Insufficient amount of points along time direction after measurements filtering to estimate correction to fit initial DEM')
         return None
 
-    # Apply butterworth lowpass filter to retrieve only the low frequency 
-    # (from example of doc: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html#scipy.signal.butter ) 
+    # Apply butterworth lowpass filter to retrieve only the low frequency
+    # (from example of doc: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html#scipy.signal.butter )
     b, a = butter(3, 0.05)
     zi = lfilter_zi(b, a)
     z, _ = lfilter(b, a, median_linear_diff_array.values, zi=zi*median_linear_diff_array.values[0])
@@ -834,12 +834,12 @@ def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
 
         # Estimate splines
         splines = interpolate.UnivariateSpline(filtered_median_linear_diff_array.l,filtered_median_linear_diff_array.values, ext=ext, k=order, s=s)
-        
+
         # Compute RMSE
         estimated_correction = xr.DataArray(splines(filtered_median_linear_diff_array.l),coords=filtered_median_linear_diff_array.coords)
         rmse = (filtered_median_linear_diff_array-estimated_correction).std(dim='l')
-    
+
     logging.debug("Best smoothing factor for splines regression: {} (rmse={})".format(s,rmse))
-    
+
     # Return estimated spline
     return splines
