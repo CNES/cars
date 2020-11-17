@@ -35,11 +35,13 @@ from json_checker import OptionalKey, And, Or
 
 # cars imports
 from cars import configuration as static_cfg
+from cars import mask_classes
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
 
 static_params_tag = 'static_parameters'
+
 
 def read_input_parameters(filename):
     """
@@ -63,6 +65,8 @@ def read_input_parameters(filename):
                 img2_tag,
                 mask1_tag,
                 mask2_tag,
+                mask1_classes_tag,
+                mask2_classes_tag,
                 color1_tag,
                 srtm_dir_tag]:
             if tag in config:
@@ -190,6 +194,8 @@ srtm_dir_tag = "srtm_dir"
 color1_tag = "color1"
 mask1_tag = "mask1"
 mask2_tag = "mask2"
+mask1_classes_tag = "mask1_classes"
+mask2_classes_tag = "mask2_classes"
 nodata1_tag = "nodata1"
 nodata2_tag = "nodata2"
 default_alt_tag = "default_alt"
@@ -235,6 +241,9 @@ elevation_delta_lower_bound_tag = "elevation_delta_lower_bound"
 elevation_delta_upper_bound_tag = "elevation_delta_upper_bound"
 epipolar_error_upper_bound_tag = "epipolar_error_upper_bound"
 epipolar_error_maximum_bias_tag = "epipolar_error_maximum_bias"
+prepare_mask_classes_usage_tag = "mask_classes_usage_in_prepare"
+mask1_ignored_by_sift_matching_tag = '%s_%s' % (mask1_tag, mask_classes.ignored_by_sift_matching_tag)
+mask2_ignored_by_sift_matching_tag = '%s_%s' % (mask2_tag, mask_classes.ignored_by_sift_matching_tag)
 
 # Tags for content.json of preprocessing step
 input_section_tag = "input"
@@ -247,6 +256,11 @@ preprocessing_version_tag = "version"
 resolution_tag = "resolution"
 sigma_tag = "sigma"
 dsm_radius_tag = "dsm_radius"
+stereo_mask_classes_usage_tag = "mask_classes_usage_in_compute_dsm"
+mask1_ignored_by_corr_tag = '%s_%s' % (mask1_tag, mask_classes.ignored_by_corr_tag)
+mask2_ignored_by_corr_tag = '%s_%s' % (mask2_tag, mask_classes.ignored_by_corr_tag)
+mask1_set_to_input_dem_tag = '%s_%s' % (mask1_tag, mask_classes.set_to_input_dem_tag)
+mask2_set_to_input_dem_tag = '%s_%s' % (mask2_tag, mask_classes.set_to_input_dem_tag)
 
 # Tags for content.json stereo/output section of stereo step
 dsm_tag = "dsm"
@@ -264,6 +278,7 @@ envelopes_intersection_bb_tag = "envelopes_intersection_bounding_box"
 
 # tags from content.json of stereo step
 stereo_inputs_section_tag = "input_configurations"
+stereo_input_tag = "input_configuration"
 stereo_section_tag = "stereo"
 stereo_output_section_tag = "output"
 stereo_parameters_section_tag = "parameters"
@@ -278,6 +293,8 @@ input_configuration_schema = {
     OptionalKey(color1_tag): And(str, rasterio_can_open),
     OptionalKey(mask1_tag): And(str, rasterio_can_open),
     OptionalKey(mask2_tag): And(str, rasterio_can_open),
+    OptionalKey(mask1_classes_tag): And(str, mask_classes.mask_classes_can_open),
+    OptionalKey(mask2_classes_tag): And(str, mask_classes.mask_classes_can_open),
     OptionalKey(default_alt_tag): float,
     nodata1_tag: int,
     nodata2_tag: int
@@ -333,7 +350,11 @@ preprocessing_parameters_schema = {
     epipolar_error_upper_bound_tag: And(float, lambda x: x > 0),
     epipolar_error_maximum_bias_tag: And(float, lambda x: x >= 0),
     elevation_delta_lower_bound_tag: float,
-    elevation_delta_upper_bound_tag: float
+    elevation_delta_upper_bound_tag: float,
+    OptionalKey(prepare_mask_classes_usage_tag): {
+        mask1_ignored_by_sift_matching_tag: Or([int], None),
+        mask2_ignored_by_sift_matching_tag: Or([int], None)
+    }
 }
 
 # Type of the preprocessing/parameters section
@@ -363,10 +384,10 @@ stereo_output_schema = {
         And(str, rasterio_can_open),
     dsm_no_data_tag: float,
     OptionalKey(color_no_data_tag): float,
-    OptionalKey(dsm_mean_tag) : And(str, rasterio_can_open),
-    OptionalKey(dsm_std_tag) : And(str, rasterio_can_open),
-    OptionalKey(dsm_n_pts_tag) : And(str, rasterio_can_open),
-    OptionalKey(dsm_points_in_cell_tag) : And(str, rasterio_can_open),
+    OptionalKey(dsm_mean_tag): And(str, rasterio_can_open),
+    OptionalKey(dsm_std_tag): And(str, rasterio_can_open),
+    OptionalKey(dsm_n_pts_tag): And(str, rasterio_can_open),
+    OptionalKey(dsm_points_in_cell_tag): And(str, rasterio_can_open),
     epsg_tag: int,
     alt_reference_tag: str
 }
@@ -379,11 +400,21 @@ stereo_parameters_schema = {
     dsm_radius_tag: And(int, lambda x: x >= 0)
 }
 
+stereo_classes_usage_schema = {
+    mask1_ignored_by_corr_tag: Or([int], None),
+    mask2_ignored_by_corr_tag: Or([int], None),
+    mask1_set_to_input_dem_tag: Or([int], None),
+    mask2_set_to_input_dem_tag: Or([int], None)
+}
+
 # Schema of the full json for stereo output
 stereo_content_schema = {
     stereo_inputs_section_tag:
     [
-        preprocessing_content_schema
+        {
+            stereo_input_tag: preprocessing_content_schema,
+            OptionalKey(stereo_mask_classes_usage_tag): stereo_classes_usage_schema
+        }
     ],
     stereo_section_tag:
     {

@@ -47,6 +47,7 @@ from cars import stereo
 from cars import rasterization
 from cars import parameters as params
 from cars import configuration as static_cfg
+from cars import mask_classes
 from cars import constants as cst
 from cars import tiling
 from cars import utils
@@ -194,9 +195,12 @@ def run(
                 params.epipolar_error_upper_bound_tag: epipolar_error_upper_bound,
                 params.epipolar_error_maximum_bias_tag: epipolar_error_maximum_bias,
                 params.elevation_delta_lower_bound_tag: elevation_delta_lower_bound,
-                params.elevation_delta_upper_bound_tag: elevation_delta_upper_bound},
+                params.elevation_delta_upper_bound_tag: elevation_delta_upper_bound
+            },
             params.static_params_tag: static_params[static_cfg.prepare_tag],
-            params.preprocessing_output_section_tag: {}}}
+            params.preprocessing_output_section_tag: {}
+        }
+    }
 
     # Read input parameters
     img1 = config[params.img1_tag]
@@ -207,9 +211,28 @@ def run(
     nodata2 = config.get(params.nodata2_tag, None)
     mask1 = config.get(params.mask1_tag, None)
     mask2 = config.get(params.mask2_tag, None)
+    mask1_classes = config.get(params.mask1_classes_tag, None)
+    mask2_classes = config.get(params.mask2_classes_tag, None)
     color1 = config.get(params.color1_tag, None)
     default_alt = config.get(params.default_alt_tag, 0)
 
+    # retrieve masks classes usages
+    classes_usage = dict()
+    if mask1_classes is not None:
+        mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
+        classes_usage[params.mask1_ignored_by_sift_matching_tag] = \
+            mask1_classes_dict.get(mask_classes.ignored_by_sift_matching_tag, None)
+
+    if mask2_classes is not None:
+        mask2_classes_dict = mask_classes.read_mask_classes(mask2_classes)
+        classes_usage[params.mask2_ignored_by_sift_matching_tag] = \
+            mask2_classes_dict.get(mask_classes.ignored_by_sift_matching_tag, None)
+
+    if mask1_classes is not None or mask2_classes is not None:
+        out_json[params.preprocessing_section_tag][params.preprocessing_parameters_section_tag] \
+            [params.prepare_mask_classes_usage_tag] = classes_usage
+
+    # log information considering reference altitudes used
     if srtm_dir is not None:
         srtm_tiles = os.listdir(srtm_dir)
         if len(srtm_tiles) == 0:
