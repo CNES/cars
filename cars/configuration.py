@@ -84,6 +84,13 @@ prepare_params_schema = {
 
 #### Compute DSM ####
 
+# tiling configuration tags and schema
+tiling_conf_tag = 'tiling_configuration'
+epi_tile_margin_tag = 'epipolar_tile_margin_in_percent'
+tiling_conf_schema = {
+    epi_tile_margin_tag: Or(None, int)
+}
+
 # rasterization tags and schema
 rasterization_tag = 'rasterization'
 grid_points_division_factor_tag = 'grid_points_division_factor'
@@ -133,6 +140,7 @@ output_schema = {
 
 # compute dsm params schema
 compute_dsm_params_schema = {
+    tiling_conf_tag: tiling_conf_schema,
     rasterization_tag: rasterization_schema,
     cloud_filtering_tag: cloud_filtering_schema,
     output_tag: output_schema
@@ -220,6 +228,7 @@ def get_low_res_dsm_params() -> LowResDSMParams:
 
     return low_res_dsm_params
 
+
 def get_disparity_outliers_rejection_percent() -> float:
     """
     :return: The disparity outliers rejection percent from static configuration file
@@ -228,6 +237,17 @@ def get_disparity_outliers_rejection_percent() -> float:
         load_cfg()
 
     return cfg[prepare_tag][disparity_range_tag][disparity_outliers_rejection_percent_tag]
+
+
+def get_epi_tile_margin_percent() -> int:
+    """
+    :return: The epipolar tile margin to use as a percent of the estimated tile size from static configuration file
+    """
+    if cfg is None:
+        load_cfg()
+
+    return cfg[compute_dsm_tag][tiling_conf_tag][epi_tile_margin_tag]
+
 
 def get_rasterization_params() -> RasterizationParams:
     """
