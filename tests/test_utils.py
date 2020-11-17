@@ -23,6 +23,7 @@ import os
 import tempfile
 import pytest
 
+import numpy as np
 import xarray as xr
 import fiona
 from shapely.geometry import Polygon, shape
@@ -46,6 +47,17 @@ def test_rasterio_can_open():
     assert utils.rasterio_can_open(existing)
     assert not utils.rasterio_can_open(not_existing)
 
+@pytest.mark.unit_tests
+def test_get_elevation_range_from_metadata():
+    """
+    Test the get_elevation_range_from_metadata function
+    """
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+
+    (min_elev, max_elev) = utils.get_elevation_range_from_metadata(img)
+
+    assert(min_elev == 632.5)
+    assert(max_elev == 1517.5)
 
 @pytest.mark.unit_tests
 def test_otb_can_open():
@@ -115,6 +127,20 @@ def test_write_vector():
             assert poly in polys
 
         assert nb_feat == 2
+
+@pytest.mark.unit_tests
+def test_angle_vectors():
+    # Testing vectors and angle result reference
+    v1 = [1,1,1]
+    v2 = [-1,-1,-1]
+    angle_ref = np.pi
+
+    angle_result = utils.angle_vectors(v1, v2)
+
+    assert angle_result == angle_ref
+
+
+
 
 
 @pytest.mark.unit_tests

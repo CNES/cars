@@ -215,6 +215,11 @@ lowres_initial_dem_tag = "lowres_initial_dem"
 lowres_elevation_difference_tag = "lowres_elevation_difference"
 right_epipolar_uncorrected_grid_tag = "right_epipolar_uncorrected_grid"
 disp_to_alt_ratio_tag = "disp_to_alt_ratio"
+left_azimuth_angle_tag = "left_azimuth_angle"
+left_elevation_angle_tag = "left_elevation_angle"
+right_azimuth_angle_tag = "right_azimuth_angle"
+right_elevation_angle_tag = "right_elevation_angle"
+convergence_angle_tag = "convergence_angle"
 time_direction_line_origin_x_tag = "time_direction_line_origin_x"
 time_direction_line_origin_y_tag = "time_direction_line_origin_y"
 time_direction_line_vector_x_tag = "time_direction_line_vector_x"
@@ -297,6 +302,11 @@ preprocessing_output_schema = {
     epipolar_spacing_x_tag: float,
     epipolar_spacing_y_tag: float,
     disp_to_alt_ratio_tag: float,
+    left_azimuth_angle_tag: float,
+    left_elevation_angle_tag: float,
+    right_azimuth_angle_tag: float,
+    right_elevation_angle_tag: float,
+    convergence_angle_tag: float,
     OptionalKey(time_direction_line_origin_x_tag): float,
     OptionalKey(time_direction_line_origin_y_tag): float,
     OptionalKey(time_direction_line_vector_x_tag): float,

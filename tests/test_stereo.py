@@ -686,16 +686,3 @@ def test_transform_terrain_region_to_epipolar(images_and_grids_conf, disparities
     region = [5.1952, 44.205, 5.2, 44.208]
     out_region = stereo.transform_terrain_region_to_epipolar(region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
-
-
-@pytest.mark.unit_tests
-def test_get_elevation_range_from_metadata():
-    """
-    Test the get_elevation_range_from_metadata function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    
-    (min_elev, max_elev) = stereo.get_elevation_range_from_metadata(img)
-
-    assert(min_elev == 632.5)
-    assert(max_elev == 1517.5)

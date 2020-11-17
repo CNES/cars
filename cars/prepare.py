@@ -321,17 +321,42 @@ def run(
     logging.info(
         "Disparity to altitude factor: {} m/pixel".format(disp_to_alt_ratio))
 
+    # Get satellites angles from ground: Azimuth to north, Elevation angle
+    angles = preprocessing.get_ground_angles(img1, img2)
+    left_az, left_elev_angle, right_az, right_elev_angle, convergence_angle = angles
+    logging.info("Left  satellite coverture: Azimuth angle : {:.1f}°, Elevation angle: {:.1f}°"\
+                 .format(left_az, left_elev_angle))
+    logging.info("Right satellite coverture: Azimuth angle : {:.1f}°, Elevation angle: {:.1f}°"\
+                 .format(right_az, right_elev_angle))
+    logging.info("Stereo satellite convergence angle from ground: {:.1f}°"\
+                 .format(convergence_angle))
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.left_azimuth_angle_tag] = left_az
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.left_elevation_angle_tag] = left_elev_angle
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.right_azimuth_angle_tag] = right_az
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.right_elevation_angle_tag] = right_elev_angle
+    out_json[params.preprocessing_section_tag] \
+            [params.preprocessing_output_section_tag]\
+            [params.convergence_angle_tag] = convergence_angle
+
     logging.info("Sparse matching ...")
     nb_threads = int(os.environ.get('OMP_NUM_THREADS', '1'))
 
     # Compute the full range needed for sparse matching
     disp_lower_bound = elevation_delta_lower_bound/disp_to_alt_ratio
     disp_upper_bound = elevation_delta_upper_bound/disp_to_alt_ratio
-    
+
     disparity_range_width = disp_upper_bound - disp_lower_bound
     logging.info("Full disparity range width for sparse matching: {} pixels".format(disparity_range_width))
-    disparity_range_center = (elevation_delta_upper_bound + elevation_delta_lower_bound)/(2*disp_to_alt_ratio) 
-    
+    disparity_range_center = (elevation_delta_upper_bound + elevation_delta_lower_bound)/(2*disp_to_alt_ratio)
+
 
     # Compute the number of offsets to consider in order to explore the full range
     nb_splits = 1 + int(math.floor(float(disparity_range_width)/region_size))
@@ -409,7 +434,7 @@ def run(
                     nodata2,
                     epipolar_size_x,
                     epipolar_size_y))
-                
+
     # Transform delayed tasks to future
     logging.info("Submitting {} tasks to dask".format(len(delayed_matches)))
     future_matches = client.compute(delayed_matches)
@@ -604,7 +629,7 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
                                                             ystart=inter_ymax,
                                                             xsize=lowres_dsm_sizex,
                                                             ysize=lowres_dsm_sizey)
-    
+
     lowres_dsm_file = os.path.join(out_dir,"lowres_dsm_from_matches.nc") # TODO add propoer crs info
     lowres_dsm.to_netcdf(lowres_dsm_file)
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_dsm_tag] = lowres_dsm_file
@@ -617,7 +642,7 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
     lowres_initial_dem.to_netcdf(lowres_initial_dem_file)
     out_json[params.preprocessing_section_tag][params.preprocessing_output_section_tag][params.lowres_initial_dem_tag] \
         = lowres_initial_dem_file
-    
+
     # also write the difference
     lowres_elevation_difference_file = os.path.join(out_dir, "lowres_elevation_diff.nc")
     lowres_dsm_diff = lowres_initial_dem - lowres_dsm
@@ -708,5 +733,3 @@ than --epipolar_error_upper_bound = {} pix".format(raw_nb_matches -
 
     # stop cluster
     stop_cluster(cluster, client)
-
-
