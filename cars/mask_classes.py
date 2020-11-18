@@ -121,12 +121,11 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
 def get_msk_from_classes(mc_msk: np.ndarray, classes_to_use: List[int], out_msk_pix_value: int=255,
                          out_msk_dtype: np.dtype=np.uint16) -> np.ndarray:
     """
-    Create a mask of type msk_dtype set to the msk_pix_value for pixels belonging to the required classes
-    (defined by the classes_to_use_tag from the CARS's parameters module) in the multi-classes mask in input.
+    Create a mask of type msk_dtype set to the msk_pix_value for pixels belonging to the required classes (defined by
+    the classes_to_use parameter) in the multi-classes mask in input.
 
     :param mc_msk: multi-classes mask
-    :param classes_to_use: tag (from the CARS's parameters module) of the required classes or list of values to use
-    to create the output mask
+    :param classes_to_use: List of values to use to create the output mask
     :param out_msk_pix_value: pixel value to assign to the output mask in the locations of the required classes'
     pixels. If the out_msk_dtype parameter is set to np.bool, this parameter will be automatically set to True.
     :param out_msk_dtype: numpy dtype of the output mask
