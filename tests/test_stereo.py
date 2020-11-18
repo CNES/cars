@@ -522,10 +522,13 @@ def test_compute_mask_to_use_in_pandora():
 
     mask_image_path = absolute_data_path(absolute_data_path("input/intermediate_results/data1_ref_right_masked.json"))
 
-    out = stereo.compute_mask_to_use_in_pandora(corr_cfg, right_input, cst.EPI_MSK, mask_image_path)
+    out = stereo.compute_mask_to_use_in_pandora(corr_cfg, right_input, cst.EPI_MSK, [100])
 
-    from pprint import pprint
-    pprint(out)
+    ref_msk = np.copy(right_input[cst.EPI_MSK].values)
+    ref_msk.astype(np.int16)
+    ref_msk[np.where(right_input[cst.EPI_MSK].values == 100, True, False)] = 1
+
+    assert np.allclose(out, ref_msk)
 
 
 @pytest.mark.unit_tests
