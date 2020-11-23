@@ -549,43 +549,29 @@ def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, re
 
     return dsm_as_ds
 
-def get_time_ground_direction(img:str, dem:str = None, x:float=10000, y:float=10000, y_offset:float=1000) -> np.ndarray:
+def get_time_ground_direction(img:str, x:float=10000, y:float=10000,
+                              y_offset:float=1000, dem:str = None) -> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
     time on ground.
-
-    TODO: optimize code with new sensor_to_geo function
+    This is done by a two img localizations at "y" and "y+y_offset" values.
 
     :param img: Path to an image
-    :type img: str
-    :param dem: DEM for direct localisation function
-    :type dem: str
-    :param x: x location in image for estimation
-    :type x: float
-    :param y: y location in image for estimation
-    :type y: float
+    :param x: x location in image for estimation (default=center)
+    :param y: y location in image for estimation (default=center)
     :param y_offset: y location in image for estimation
-    :type y_offset: float
+    :param dem: DEM for direct localisation function
     :return: normalized direction vector as a numpy array
     """
-    s2c_app = otb.Registry.CreateApplication("ConvertSensorToGeoPointFast")
+    # Get first coordinates of time direction vector
+    lat1, lon1, alt1 = sensor_to_geo(img, x, y, dem=dem)
+    # Get second coordinates of time direction vector
+    lat2, lon2, alt2 = sensor_to_geo(img, x, y+y_offset, dem=dem)
 
-    if dem is not None:
-        s2c_app.SetParameterString("elevation.dem", dem)
-
-    s2c_app.SetParameterString('in', img)
-    s2c_app.SetParameterFloat('input.idx',x)
-    s2c_app.SetParameterFloat('input.idy',y)
-    s2c_app.Execute()
-    long1 = s2c_app.GetParameterFloat("output.idx")
-    lat1  = s2c_app.GetParameterFloat("output.idy")
-    s2c_app.SetParameterFloat('input.idy',y+y_offset)
-    s2c_app.Execute()
-    long2 = s2c_app.GetParameterFloat("output.idx")
-    lat2  = s2c_app.GetParameterFloat("output.idy")
-
-    vec = np.array([long1-long2, lat1-lat2])
+    # Create and normalize the time direction vector
+    vec = np.array([lon1-lon2, lat1-lat2])
     vec = vec/np.linalg.norm(vec)
+
     return vec
 
 def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:str=None,
