@@ -411,7 +411,7 @@ def epipolar_rectify_images(
 
 def compute_disparity(left_dataset,
                       right_dataset,
-                      configuration,
+                      input_stereo_cfg,
                       corr_cfg, 
                       disp_min=None,
                       disp_max=None,
@@ -424,8 +424,8 @@ def compute_disparity(left_dataset,
     :type left_dataset: xarray.Dataset
     :param right_dataset: Dataset containing right image and mask
     :type right_dataset: xarray.Dataset
-    :param configuration: stereo configuration
-    :type configuration: dict
+    :param input_stereo_cfg: input stereo configuration
+    :type input_stereo_cfg: dict
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
     :param disp_min: Minimum disparity (if None, value is taken from left dataset)
@@ -468,8 +468,8 @@ def compute_disparity(left_dataset,
                         'no data value used for epipolar rectification.')
 
     # Handle masks' classes if necessary
-    mask1_classes = configuration[params.input_section_tag].get(params.mask1_classes_tag, None)
-    mask2_classes = configuration[params.input_section_tag].get(params.mask2_classes_tag, None)
+    mask1_classes = input_stereo_cfg[params.input_section_tag].get(params.mask1_classes_tag, None)
+    mask2_classes = input_stereo_cfg[params.input_section_tag].get(params.mask2_classes_tag, None)
     mask1_use_classes = False
     mask2_use_classes = False
 
@@ -536,6 +536,8 @@ def compute_mask_to_use_in_pandora(corr_cfg, dataset: xr.Dataset, msk_key: str, 
 
     ds_values_list = [key for key, _ in dataset.items()]
     if msk_key not in ds_values_list:
+        worker_logger = logging.getLogger('distributed.worker')
+        worker_logger.fatal('No value identified by {} is present in the dataset'.format(msk_key))
         raise Exception('No value identified by {} is present in the dataset'.format(msk_key))
 
     # retrieve specific values from the correlation configuration file
@@ -555,9 +557,9 @@ def compute_mask_to_use_in_pandora(corr_cfg, dataset: xr.Dataset, msk_key: str, 
     final_msk = np.full(dataset[msk_key].values.shape, dtype=out_msk_dtype, fill_value=valid_pixels)
 
     # retrieve the unvalid and nodata pixels locations
-    unvalid_pixels_mask = mask_classes.get_msk_from_classes(dataset[msk_key].values, classes_to_ignore,
+    unvalid_pixels_mask = mask_classes.create_msk_from_classes(dataset[msk_key].values, classes_to_ignore,
                                                             out_msk_dtype=np.bool)
-    nodata_pixels_mask = mask_classes.get_msk_from_classes(dataset[msk_key].values, [nodata_pixels],
+    nodata_pixels_mask = mask_classes.create_msk_from_classes(dataset[msk_key].values, [nodata_pixels],
                                                            out_msk_dtype=np.bool)
 
     # update the mask to use in pandora with the unvalid and nodata pixels values
@@ -1101,7 +1103,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     return point_cloud
 
 
-def images_pair_to_3d_points(configuration,
+def images_pair_to_3d_points(input_stereo_cfg,
                              region,
                              corr_cfg,
                              epsg=None,
@@ -1118,7 +1120,7 @@ def images_pair_to_3d_points(configuration,
     This function will produce a 3D points cloud as an xarray.Dataset from the given stereo configuration (from both
     left to right disparity map and right to left disparity map if the latter is computed by Pandora).
     Clouds will be produced over the region with the specified EPSG, using disp_min and disp_max
-    :param configuration: Configuration for stereo processing
+    :param input_stereo_cfg: Configuration for stereo processing
     :type StereoConfiguration
     :param region: Array defining region.
 
@@ -1154,10 +1156,10 @@ def images_pair_to_3d_points(configuration,
 
 
     # Retrieve disp min and disp max if needed
-    preprocessing_output_configuration = configuration[
-        params.preprocessing_section_tag][params.preprocessing_output_section_tag]
-    minimum_disparity = preprocessing_output_configuration[params.minimum_disparity_tag]
-    maximum_disparity = preprocessing_output_configuration[params.maximum_disparity_tag]
+    preprocessing_output_cfg = input_stereo_cfg[params.preprocessing_section_tag]\
+        [params.preprocessing_output_section_tag]
+    minimum_disparity = preprocessing_output_cfg[params.minimum_disparity_tag]
+    maximum_disparity = preprocessing_output_cfg[params.maximum_disparity_tag]
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -1175,14 +1177,14 @@ def images_pair_to_3d_points(configuration,
 
     # Reproject region to epipolar geometry if necessary
     if epsg is not None:
-        region = transform_terrain_region_to_epipolar(region, conf, epsg,  disp_min, disp_max)
+        region = transform_terrain_region_to_epipolar(region, input_stereo_cfg, epsg,  disp_min, disp_max)
 
     # Rectify images
-    left, right, color = epipolar_rectify_images(configuration,
+    left, right, color = epipolar_rectify_images(input_stereo_cfg,
                                                  region,
                                                  margins)
     # Compute disparity
-    disp = compute_disparity(left, right, configuration, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
+    disp = compute_disparity(left, right, input_stereo_cfg, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
 
     colors = dict()
     colors[cst.STEREO_REF] = color
@@ -1209,10 +1211,10 @@ def images_pair_to_3d_points(configuration,
 
     # Triangulate
     if cst.STEREO_SEC in disp:
-        points = triangulate(configuration, disp[cst.STEREO_REF], disp[cst.STEREO_SEC], snap_to_img1=snap_to_img1,
+        points = triangulate(input_stereo_cfg, disp[cst.STEREO_REF], disp[cst.STEREO_SEC], snap_to_img1=snap_to_img1,
                              align=align, im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
     else:
-        points = triangulate(configuration, disp[cst.STEREO_REF], snap_to_img1=snap_to_img1, align=align,
+        points = triangulate(input_stereo_cfg, disp[cst.STEREO_REF], snap_to_img1=snap_to_img1, align=align,
                              im_ref_msk_ds=im_ref_msk, im_sec_msk_ds=im_sec_msk)
 
     if geoid_data is not None:  # if user pass a geoid, use it a alt reference

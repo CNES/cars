@@ -63,7 +63,7 @@ def test_get_msk_from_tag():
                        [0, 100, 200]])
 
     # test default mask creation
-    out_msk = mask_classes.get_msk_from_classes(mc_msk, classes_to_use_for_msk)
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk)
 
     ref_msk = np.array([[0, 0, 0],
                         [255, 0, 255],
@@ -72,7 +72,7 @@ def test_get_msk_from_tag():
     assert np.allclose(out_msk, ref_msk)
 
     # test out_msk_pix_value and out_msk_dtype parameters
-    out_msk = mask_classes.get_msk_from_classes(mc_msk, classes_to_use_for_msk,
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk,
                                                 out_msk_pix_value=1, out_msk_dtype=np.int8)
 
     ref_msk = np.array([[0, 0, 0],
@@ -82,7 +82,7 @@ def test_get_msk_from_tag():
     assert np.allclose(out_msk, ref_msk)
 
     # test boolean mask creation
-    out_msk = mask_classes.get_msk_from_classes(mc_msk, classes_to_use_for_msk, out_msk_dtype=np.bool)
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk, out_msk_dtype=np.bool)
 
     ref_msk = np.array([[False, False, False],
                         [True, False, True],
