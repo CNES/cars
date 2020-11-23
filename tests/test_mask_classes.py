@@ -52,3 +52,41 @@ def test_carsmask_is_multiclasses_mask():
     is_mc_mask = mask_classes.is_multiclasses_mask(not_mc_msk)
 
     assert is_mc_mask is False
+
+
+@pytest.mark.unit_tests
+def test_get_msk_from_tag():
+    classes_to_use_for_msk = [1, 100, 200]
+
+    mc_msk = np.array([[0, 0, 2],
+                       [1, 0, 100],
+                       [0, 100, 200]])
+
+    # test default mask creation
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk)
+
+    ref_msk = np.array([[0, 0, 0],
+                        [255, 0, 255],
+                        [0, 255, 255]], dtype=np.uint16)
+
+    assert np.allclose(out_msk, ref_msk)
+
+    # test out_msk_pix_value and out_msk_dtype parameters
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk,
+                                                out_msk_pix_value=1, out_msk_dtype=np.int8)
+
+    ref_msk = np.array([[0, 0, 0],
+                        [1, 0, 1],
+                        [0, 1, 1]], dtype=np.int8)
+
+    assert np.allclose(out_msk, ref_msk)
+
+    # test boolean mask creation
+    out_msk = mask_classes.create_msk_from_classes(mc_msk, classes_to_use_for_msk, out_msk_dtype=np.bool)
+
+    ref_msk = np.array([[False, False, False],
+                        [True, False, True],
+                        [False, True, True]], dtype=np.bool)
+
+    assert np.allclose(out_msk, ref_msk)
+

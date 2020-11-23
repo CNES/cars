@@ -380,8 +380,8 @@ preprocessing_content_type = Dict[str, Union[str,
 # Schema of the output section of stereo content.json
 stereo_output_schema = {
     dsm_tag: And(str, Or(rasterio_can_open, ncdf_can_open)),
-    OptionalKey(color_tag):
-        And(str, rasterio_can_open),
+    OptionalKey(color_tag): And(str, rasterio_can_open),
+    OptionalKey(msk_tag): And(str, rasterio_can_open),
     dsm_no_data_tag: float,
     OptionalKey(color_no_data_tag): float,
     OptionalKey(dsm_mean_tag): And(str, rasterio_can_open),
