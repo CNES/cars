@@ -57,6 +57,7 @@ DISP_MSK_MASKED_SEC = 'msk_masked_sec'
 DISP_MSK_OCCLUSION = 'msk_occlusion'
 DISP_MSK_FALSE_MATCH = 'msk_false_match'
 DISP_MSK_INSIDE_SEC_ROI = 'msk_inside_sec_roi'
+DISP_MSK_SET_TO_INPUT_DEM = 'msk_set_to_dem'
 
 # points cloud fields (xarray Dataset and pandas Dataframe)
 POINTS_CLOUD_CORR_MSK = 'corr_msk'
