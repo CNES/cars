@@ -558,21 +558,21 @@ def get_time_ground_direction(img:str, x:float=None, y:float=None,
 
     :param img: Path to an image
     :param x: x location in image for estimation (default=center)
-    :param y: y location in image for estimation (default=center)
-    :param y_offset: y location in image for estimation
+    :param y: y location in image for estimation (default=1/4)
+    :param y_offset: y location in image for estimation (default=1/2)
     :param dem: DEM for direct localisation function
     :return: normalized direction vector as a numpy array
     """
-    # Define x, y in image center if not defined
+    # Define x: image center, y: 1/4 of image, y_offset: 3/4 of image if not defined
     img_size_x, img_size_y = utils.rasterio_get_size(img)
     if x is None : x = img_size_x/2
-    if y is None : y = img_size_y/2
+    if y is None : y = img_size_y/4
     if y_offset is None : y_offset = img_size_y/2
 
-    # Check x, y to be in image
+    # Check x, y, y_offset to be in image
     assert x >= 0 and x <= img_size_x
     assert y >= 0 and y <= img_size_y
-    assert y_offset >=0 and y <= img_size_y
+    assert y_offset >0 and y <= img_size_y
 
     # Get first coordinates of time direction vector
     lat1, lon1, alt1 = sensor_to_geo(img, x, y, dem=dem)

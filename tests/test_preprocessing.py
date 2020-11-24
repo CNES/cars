@@ -291,8 +291,8 @@ def test_get_time_ground_direction():
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
     vec = preprocessing.get_time_ground_direction(img,dem=dem)
 
-    assert vec[0] == -0.03803474253058356
-    assert vec[1] == 0.9992764173944225
+    assert vec[0] == -0.03760314420222626
+    assert vec[1] == 0.9992927516729553
 
 @pytest.mark.unit_tests
 def test_get_ground_angles():
