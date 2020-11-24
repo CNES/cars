@@ -105,12 +105,9 @@ def matching_wrapper(
 
     # handle multi classes mask if necessary
     if mask1_classes is not None:
-        classes_dict = mask_classes.read_mask_classes(mask1_classes)
-        if mask_classes.ignored_by_sift_matching_tag in classes_dict.keys():
-            classes_to_ignore = classes_dict[mask_classes.ignored_by_sift_matching_tag]
-            classes_to_ignore.append(mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
-            left_ds[cst.EPI_MSK].values = mask_classes.\
-                create_msk_from_classes(left_ds[cst.EPI_MSK].values, classes_to_ignore)
+        left_ds[cst.EPI_MSK].values = mask_classes.create_msk_from_tag(left_ds[cst.EPI_MSK].values, mask1_classes,
+                                                                       mask_classes.ignored_by_sift_matching_tag,
+                                                                       mask_intern_no_data_val=True)
 
     # Resample right dataset
     right_ds = stereo.resample_image(
@@ -123,12 +120,9 @@ def matching_wrapper(
 
     # handle multi classes mask if necessary
     if mask2_classes is not None:
-        classes_dict = mask_classes.read_mask_classes(mask2_classes)
-        if mask_classes.ignored_by_sift_matching_tag in classes_dict.keys():
-            classes_to_ignore = classes_dict[mask_classes.ignored_by_corr_tag]
-            classes_to_ignore.append(mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
-            right_ds[cst.EPI_MSK].values = mask_classes.\
-                create_msk_from_classes(right_ds[cst.EPI_MSK].values, classes_to_ignore)
+        right_ds[cst.EPI_MSK].values = mask_classes.create_msk_from_tag(right_ds[cst.EPI_MSK].values, mask2_classes,
+                                                                        mask_classes.ignored_by_sift_matching_tag,
+                                                                        mask_intern_no_data_val=True)
 
     # Perform matching
     sift_params = static_cfg.get_sift_params()
