@@ -549,12 +549,12 @@ def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, re
 
     return dsm_as_ds
 
-def get_time_ground_direction(img:str, x:float=10000, y:float=10000,
-                              y_offset:float=1000, dem:str = None) -> np.ndarray:
+def get_time_ground_direction(img:str, x:float=None, y:float=None,
+                              y_offset:float=None, dem:str = None) -> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
     time on ground.
-    This is done by a two img localizations at "y" and "y+y_offset" values.
+    Done by two "img" localizations at "y" and "y+y_offset" values.
 
     :param img: Path to an image
     :param x: x location in image for estimation (default=center)
@@ -563,6 +563,17 @@ def get_time_ground_direction(img:str, x:float=10000, y:float=10000,
     :param dem: DEM for direct localisation function
     :return: normalized direction vector as a numpy array
     """
+    # Define x, y in image center if not defined
+    img_size_x, img_size_y = utils.rasterio_get_size(img)
+    if x is None : x = img_size_x/2
+    if y is None : y = img_size_y/2
+    if y_offset is None : y_offset = img_size_y/2
+
+    # Check x, y to be in image
+    assert x >= 0 and x <= img_size_x
+    assert y >= 0 and y <= img_size_y
+    assert y_offset >=0 and y <= img_size_y
+
     # Get first coordinates of time direction vector
     lat1, lon1, alt1 = sensor_to_geo(img, x, y, dem=dem)
     # Get second coordinates of time direction vector
