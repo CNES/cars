@@ -147,3 +147,44 @@ def create_msk_from_classes(mc_msk: np.ndarray, classes_to_use: List[int], out_m
     out_msk[msk_with_selected_classes] = out_msk_pix_value
 
     return out_msk
+
+
+def create_msk_from_tag(mc_msk: np.ndarray, msk_classes_path: str, classes_to_use_tag: str, out_msk_pix_value: int=255,
+                        out_msk_dtype: np.dtype=np.uint16, mask_intern_no_data_val: bool=False) -> np.ndarray:
+    """
+    Create a mask of type out_msk_dtype set to the out_msk_pix_value for pixels belonging to the required classes  in
+    the multi-classes mask in input. The classes are defined by the classes_to_use_tag field in the msk_classes_path
+    json.
+    The NO_DATA_IN_EPIPOLAR_RECTIFICATION value is added to the classes to mask if the add_intern_no_data_val parameter
+    is set to True.
+    If the classes_to_use_tag is not set in the input json, no class will be mask except if the add_intern_no_data_val
+    is set to True.
+
+    :param mc_msk: multi-classes mask
+    :param msk_classes_path: mask classes json path
+    :param classes_to_use_tag: tag of the field to use in the msk_classes_path json
+    :param out_msk_pix_value: pixel value to assign to the output mask in the locations of the required classes'
+    pixels. If the out_msk_dtype parameter is set to np.bool, this parameter will be automatically set to True.
+    :param out_msk_dtype: numpy dtype of the output mask
+    :param mask_intern_no_data_val: boolean activating the masking of all values equal to the
+    NO_DATA_IN_EPIPOLAR_RECTIFICATION variable in the output mask
+    :return: the output mask
+    """
+    classes_dict = read_mask_classes(msk_classes_path)
+    classes_to_mask = []
+
+    # retrieve the required classes to use
+    if classes_to_use_tag in classes_dict.keys():
+        classes_to_mask.extend(classes_dict[classes_to_use_tag])
+    else:
+        logging.warning('No class specified by the %s tag in %s. No class will be used to mask the image data in '
+                        'the corresponding step in cars' % (classes_to_use_tag, msk_classes_path))
+
+    # add specific values
+    if mask_intern_no_data_val:
+        classes_to_mask.append(NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+
+    # create final mask
+    out_msk = create_msk_from_classes(mc_msk, classes_to_mask, out_msk_pix_value, out_msk_dtype)
+
+    return out_msk
