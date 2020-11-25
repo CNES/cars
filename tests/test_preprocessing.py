@@ -229,10 +229,10 @@ def test_correct_right_grid():
         assert out_stats["rmsd_epipolar_error"] < in_stats["rmsd_epipolar_error"]
 
         # Assert absolute performances
-       
+
         assert abs(out_stats["median_epipolar_error"][0]) < 0.1
         assert abs(out_stats["median_epipolar_error"][1]) < 0.1
-        
+
         assert abs(out_stats["mean_epipolar_error"][0]) < 0.1
         assert abs(out_stats["mean_epipolar_error"][1]) < 0.1
         assert out_stats["rms_epipolar_error"] < 0.5
@@ -260,13 +260,13 @@ def test_image_envelope():
 def test_read_lowres_dem():
     """
     Test read_lowres_dem function
-    """    
+    """
     dem = absolute_data_path("input/phr_ventoux/srtm")
     startx = 5.193458
     starty = 44.206671
     sizex = 100
     sizey = 100
-    
+
     srtm_ds = preprocessing.read_lowres_dem(startx, starty, sizex, sizey, dem=dem)
 
     # Uncomment to update baseline
@@ -289,10 +289,10 @@ def test_get_time_ground_direction():
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    vec = preprocessing.get_time_ground_direction(img,dem)
+    vec = preprocessing.get_time_ground_direction(img,dem=dem)
 
-    assert vec[0] == -0.004640789411624955
-    assert vec[1] ==  0.999989231478838
+    assert vec[0] == -0.03760314420222626
+    assert vec[1] == 0.9992927516729553
 
 @pytest.mark.unit_tests
 def test_get_ground_angles():
@@ -305,7 +305,7 @@ def test_get_ground_angles():
 
     angles = preprocessing.get_ground_angles(left_img, right_img)
     angles = np.asarray(angles) # transform tuple to array
-    
+
     np.testing.assert_allclose(angles, [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114], rtol=1e-01)
 
 
