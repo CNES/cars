@@ -35,7 +35,6 @@ from utils import absolute_data_path, assert_same_datasets
 
 from cars import stereo
 from cars import constants as cst
-from cars import parameters as params
 from cars.utils import read_geoid_file
 
 
@@ -528,121 +527,6 @@ def test_compute_mask_to_use_in_pandora():
     ref_msk[np.where(right_input[cst.EPI_MSK].values == 100, True, False)] = 1
 
     assert np.allclose(out, ref_msk)
-
-
-@pytest.mark.unit_tests
-def test_update_disparity_to_set_output_alt_to_input_dem():
-
-    # ref
-    ref_row = 3
-    ref_col = 3
-
-    ref_mc_msk = np.array([[1, 2, 0],
-                           [0, 0, 3],
-                           [0, 0, 0]], dtype=np.uint16)
-
-    ref_ds = xr.Dataset({
-            cst.EPI_MSK: ([cst.ROW, cst.COL], ref_mc_msk)
-        }, coords={cst.ROW: np.array(range(ref_row)), cst.COL: np.array(range(ref_col))})
-
-    ref_disp = np.arange(ref_row*ref_col, dtype=np.int16)
-    ref_disp = ref_disp.reshape((ref_row, ref_col))
-
-    ref_disp_msk = np.full((ref_row, ref_col), fill_value=255, dtype=np.uint16)
-    ref_disp_msk[2, :] = 0 # last column set to unvalid data
-
-    ref_disp_ds = xr.Dataset({
-        cst.DISP_MAP: ([cst.ROW, cst.COL], ref_disp),
-        cst.DISP_MSK: ([cst.ROW, cst.COL], ref_disp_msk)
-    }, coords={cst.ROW: np.array(range(ref_row)), cst.COL: np.array(range(ref_col))})
-
-    # sec
-    sec_row = 4
-    sec_col = 4
-
-    sec_mc_msk = np.array([[0, 0, 0, 0],
-                           [3, 3, 0, 0],
-                           [0, 4, 4, 0],
-                           [0, 0, 5, 5]], dtype=np.uint16)
-
-    sec_ds = xr.Dataset({
-        cst.EPI_MSK: ([cst.ROW, cst.COL], sec_mc_msk)
-    }, coords={cst.ROW: np.array(range(sec_row)), cst.COL: np.array(range(sec_col))})
-
-    sec_disp = np.arange(sec_row * sec_col, dtype=np.int16)
-    sec_disp = sec_disp.reshape((sec_row, sec_col))
-
-    sec_disp_msk = np.full((sec_row, sec_col), fill_value=255, dtype=np.uint16)
-    sec_disp_msk[3, :] = 0  # last line set to unvalid data
-
-    sec_disp_ds = xr.Dataset({
-        cst.DISP_MAP: ([cst.ROW, cst.COL], sec_disp),
-        cst.DISP_MSK: ([cst.ROW, cst.COL], sec_disp_msk)
-    }, coords={cst.ROW: np.array(range(sec_row)), cst.COL: np.array(range(sec_col))})
-
-    # disp dictionary
-    disp = {
-        cst.STEREO_REF: ref_disp_ds,
-        cst.STEREO_SEC: sec_disp_ds
-    }
-
-    # test no tag in mask1 and mask2 jsons
-    cfg = {
-        params.input_section_tag: {
-            params.mask1_classes_tag: absolute_data_path("input/stereo_input/mask_no_set_to_input_dem_classes.json"),
-            params.mask2_classes_tag: absolute_data_path("input/stereo_input/mask_no_set_to_input_dem_classes.json")
-        }
-    }
-
-    disp_no_tags_in_json = deepcopy(disp)
-    stereo.update_disparity_to_set_output_alt_to_input_dem(disp_no_tags_in_json, ref_ds, sec_ds, cfg)
-
-    assert_same_datasets(disp_no_tags_in_json[cst.STEREO_REF], disp[cst.STEREO_REF])
-    assert_same_datasets(disp_no_tags_in_json[cst.STEREO_SEC], disp[cst.STEREO_SEC])
-
-    # test disparity updates
-    cfg = {
-        params.input_section_tag: {
-            params.mask1_classes_tag: absolute_data_path("input/stereo_input/mask1_set_to_input_dem_classes.json"),
-            params.mask2_classes_tag: absolute_data_path("input/stereo_input/mask2_set_to_input_dem_classes.json")
-        }
-    }
-
-    disp_tags_in_json = deepcopy(disp)
-    stereo.update_disparity_to_set_output_alt_to_input_dem(disp_tags_in_json, ref_ds, sec_ds, cfg)
-
-    up_ref_disp = deepcopy(ref_disp)
-    up_ref_disp_msk = deepcopy(ref_disp_msk)
-
-    ref_msk_set_to_input_dem = np.logical_or(np.where(ref_mc_msk == 1, True, False),
-                                             np.where(ref_mc_msk == 3, True, False))
-    up_ref_disp[ref_msk_set_to_input_dem] = 0
-    up_ref_disp_msk[np.where(ref_mc_msk == 3, True, False)] = 255
-
-    assert np.allclose(disp_tags_in_json[cst.STEREO_REF][cst.DISP_MAP].values, up_ref_disp)
-    assert np.allclose(disp_tags_in_json[cst.STEREO_REF][cst.DISP_MSK].values, up_ref_disp_msk)
-    assert np.allclose(disp_tags_in_json[cst.STEREO_REF][cst.DISP_MSK_SET_TO_INPUT_DEM].values,
-                       ref_msk_set_to_input_dem)
-
-    up_sec_disp = deepcopy(sec_disp)
-    up_sec_disp_msk = deepcopy(sec_disp_msk)
-
-    sec_msk_set_to_input_dem = np.logical_or(np.where(sec_mc_msk == 4, True, False),
-                                             np.where(sec_mc_msk == 5, True, False))
-    up_sec_disp[sec_msk_set_to_input_dem] = 0
-    up_sec_disp_msk[np.where(sec_mc_msk == 5, True, False)] = 255
-
-    assert np.allclose(disp_tags_in_json[cst.STEREO_SEC][cst.DISP_MAP].values, up_sec_disp)
-    assert np.allclose(disp_tags_in_json[cst.STEREO_SEC][cst.DISP_MSK].values, up_sec_disp_msk)
-    assert np.allclose(disp_tags_in_json[cst.STEREO_SEC][cst.DISP_MSK_SET_TO_INPUT_DEM].values,
-                       sec_msk_set_to_input_dem)
-
-    # test unknown method
-    disp_unknown_method = deepcopy(disp)
-    stereo.update_disparity_to_set_output_alt_to_input_dem(disp_unknown_method, ref_ds, sec_ds, cfg, method='test')
-
-    assert_same_datasets(disp_no_tags_in_json[cst.STEREO_REF], disp[cst.STEREO_REF])
-    assert_same_datasets(disp_no_tags_in_json[cst.STEREO_SEC], disp[cst.STEREO_SEC])
 
 
 @pytest.mark.unit_tests

@@ -54,6 +54,7 @@ from cars import utils
 from cars import mask_classes
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
+from cars import matching_regularisation
 
 
 # Register sizeof for xarray
@@ -567,54 +568,6 @@ def compute_mask_to_use_in_pandora(corr_cfg, dataset: xr.Dataset, msk_key: str, 
     final_msk = np.where(nodata_pixels_mask, nodata_pixels, final_msk)
 
     return final_msk
-
-
-def update_disparity_to_set_output_alt_to_input_dem(disp, ref_ds, sec_ds, input_stereo_cfg, method='set_to_0'):
-    """
-    Inplace function
-    Updates the disparity maps in order to set the final raster's output altitudes to the ones of the input dem ones.
-    The updates pixels belong to the classes specified by the mask_classes.set_to_input_dem_tag of the mask classes
-    json files of the stereo input configuration.
-
-    The method to use shall be specified by the 'method' parameter. For now, only the 'set_to_0' method is available.
-    *   set_to_0: selected classes will have their disparities set to 0
-
-    :param disp: disparity dictionary with the reference disparity map (cst.STEREO_REF key) and eventually the
-    secondary disparity map (cst.STEREO_SEC key)
-    :param ref_ds: reference image dataset containing and eventual multi-classes mask (cst.EPI_MSK key)
-    :param sec_ds: secondary image dataset containing and eventual multi-classes mask (cst.EPI_MSK key)
-    :param input_stereo_cfg: the input stereo images configuration dictionary
-    :param method: method to use to update the disparity maps
-    """
-    set_to_0_method = 'set_to_0'
-    if method not in [set_to_0_method]:
-        worker_logger = logging.getLogger('distributed.worker')
-        worker_logger.warning("Input method %s to update disparity maps so that the output altitude "
-                              "is set to the input dem does not exist." % method)
-    else:
-        mask1_classes = input_stereo_cfg[params.input_section_tag].get(params.mask1_classes_tag, None)
-        mask2_classes = input_stereo_cfg[params.input_section_tag].get(params.mask2_classes_tag, None)
-
-        mask_ref = None
-        if mask1_classes is not None:
-            mask_ref = mask_classes.create_msk_from_tag(ref_ds[cst.EPI_MSK].values, mask1_classes,
-                                                        mask_classes.set_to_input_dem_tag, out_msk_dtype=np.bool)
-
-        mask_sec = None
-        if mask2_classes is not None and cst.STEREO_SEC in disp:
-            mask_sec = mask_classes.create_msk_from_tag(sec_ds[cst.EPI_MSK].values, mask2_classes,
-                                                        mask_classes.set_to_input_dem_tag, out_msk_dtype=np.bool)
-
-        if method == set_to_0_method:
-            def update_disp(disp, mask):
-                disp[cst.DISP_MAP].values[mask] = 0
-                disp[cst.DISP_MSK].values[mask] = 255
-                disp[cst.DISP_MSK_SET_TO_INPUT_DEM] = xr.DataArray(mask, dims=[cst.ROW, cst.COL])
-
-        if mask_ref is not None:
-            update_disp(disp[cst.STEREO_REF], mask_ref)
-        if mask_sec is not None and cst.STEREO_SEC in disp:
-            update_disp(disp[cst.STEREO_SEC], mask_sec)
 
 
 def create_disp_dataset(disp: xr.Dataset, ref_dataset: xr.Dataset, sec_dataset:xr.Dataset=None,
@@ -1235,7 +1188,7 @@ def images_pair_to_3d_points(input_stereo_cfg,
     disp = compute_disparity(left, right, input_stereo_cfg, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
 
     # If necessary, set disparity to 0 for classes to be set to input dem
-    update_disparity_to_set_output_alt_to_input_dem(disp, left, right, input_stereo_cfg)
+    matching_regularisation.update_disp_to_set_output_alt_to_input_dem(disp, left, right, input_stereo_cfg)
 
     colors = dict()
     colors[cst.STEREO_REF] = color
