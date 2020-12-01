@@ -259,8 +259,8 @@ dsm_radius_tag = "dsm_radius"
 stereo_mask_classes_usage_tag = "mask_classes_usage_in_compute_dsm"
 mask1_ignored_by_corr_tag = '%s_%s' % (mask1_tag, mask_classes.ignored_by_corr_tag)
 mask2_ignored_by_corr_tag = '%s_%s' % (mask2_tag, mask_classes.ignored_by_corr_tag)
-mask1_set_to_input_dem_tag = '%s_%s' % (mask1_tag, mask_classes.set_to_input_dem_tag)
-mask2_set_to_input_dem_tag = '%s_%s' % (mask2_tag, mask_classes.set_to_input_dem_tag)
+mask1_set_to_ref_alt_tag = '%s_%s' % (mask1_tag, mask_classes.set_to_ref_alt_tag)
+mask2_set_to_ref_alt_tag = '%s_%s' % (mask2_tag, mask_classes.set_to_ref_alt_tag)
 
 # Tags for content.json stereo/output section of stereo step
 dsm_tag = "dsm"
@@ -403,8 +403,8 @@ stereo_parameters_schema = {
 stereo_classes_usage_schema = {
     mask1_ignored_by_corr_tag: Or([int], None),
     mask2_ignored_by_corr_tag: Or([int], None),
-    mask1_set_to_input_dem_tag: Or([int], None),
-    mask2_set_to_input_dem_tag: Or([int], None)
+    mask1_set_to_ref_alt_tag: Or([int], None),
+    mask2_set_to_ref_alt_tag: Or([int], None)
 }
 
 # Schema of the full json for stereo output

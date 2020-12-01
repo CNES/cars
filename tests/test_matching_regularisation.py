@@ -117,16 +117,16 @@ def cfg():
     cfg_dict = {
         params.input_section_tag: {
             params.mask1_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask1_set_to_input_dem_classes.json"),
+                absolute_data_path("input/matching_regularisation_input/mask1_set_to_ref_alt_classes.json"),
             params.mask2_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask2_set_to_input_dem_classes.json")
+                absolute_data_path("input/matching_regularisation_input/mask2_set_to_ref_alt_classes.json")
         }
     }
     return cfg_dict
 
 
 @pytest.mark.unit_tests
-def test_update_disp_to_set_output_alt_to_input_dem_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
+def test_update_disp_to_0_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
 
     # disp dictionary
     disp = {
@@ -138,22 +138,22 @@ def test_update_disp_to_set_output_alt_to_input_dem_no_tags_in_jsons(ref_ds, sec
     cfg = {
         params.input_section_tag: {
             params.mask1_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_input_dem_classes.json"),
+                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"),
             params.mask2_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_input_dem_classes.json")
+                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json")
         }
     }
 
     # test
     disp_no_tags_in_json = deepcopy(disp)
-    matching_regularisation.update_disp_to_set_output_alt_to_input_dem(disp_no_tags_in_json, ref_ds, sec_ds, cfg)
+    matching_regularisation.update_disp_to_0(disp_no_tags_in_json, ref_ds, sec_ds, cfg)
 
     assert_same_datasets(disp_no_tags_in_json[cst.STEREO_REF], disp[cst.STEREO_REF])
     assert_same_datasets(disp_no_tags_in_json[cst.STEREO_SEC], disp[cst.STEREO_SEC])
 
 
 @pytest.mark.unit_tests
-def test_update_disp_to_set_output_alt_to_input_dem(ref_ds, sec_ds, ref_disp, sec_disp, cfg):
+def test_update_disp_0(ref_ds, sec_ds, ref_disp, sec_disp, cfg):
 
     # disp dictionary
     disp = {
@@ -162,45 +162,30 @@ def test_update_disp_to_set_output_alt_to_input_dem(ref_ds, sec_ds, ref_disp, se
     }
 
     # test
-    matching_regularisation.update_disp_to_set_output_alt_to_input_dem(disp, ref_ds, sec_ds, cfg)
+    matching_regularisation.update_disp_to_0(disp, ref_ds, sec_ds, cfg)
 
     up_ref_disp = deepcopy(ref_disp[cst.DISP_MAP].values)
     up_ref_disp_msk = deepcopy(ref_disp[cst.DISP_MSK].values)
 
-    ref_msk_set_to_input_dem = np.logical_or(np.where(ref_ds[cst.EPI_MSK].values == 1, True, False),
+    ref_msk_set_to_ref_alt = np.logical_or(np.where(ref_ds[cst.EPI_MSK].values == 1, True, False),
                                              np.where(ref_ds[cst.EPI_MSK].values == 3, True, False))
-    up_ref_disp[ref_msk_set_to_input_dem] = 0
+    up_ref_disp[ref_msk_set_to_ref_alt] = 0
     up_ref_disp_msk[np.where(ref_ds[cst.EPI_MSK].values == 3, True, False)] = 255
 
     assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MAP].values, up_ref_disp)
     assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MSK].values, up_ref_disp_msk)
-    assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MSK_SET_TO_INPUT_DEM].values,
-                       ref_msk_set_to_input_dem)
+    assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MSK_DISP_TO_0].values,
+                       ref_msk_set_to_ref_alt)
 
     up_sec_disp = deepcopy(sec_disp[cst.DISP_MAP].values)
     up_sec_disp_msk = deepcopy(sec_disp[cst.DISP_MSK].values)
 
-    sec_msk_set_to_input_dem = np.logical_or(np.where(sec_ds[cst.EPI_MSK].values == 4, True, False),
+    sec_msk_set_to_ref_alt = np.logical_or(np.where(sec_ds[cst.EPI_MSK].values == 4, True, False),
                                              np.where(sec_ds[cst.EPI_MSK].values == 5, True, False))
-    up_sec_disp[sec_msk_set_to_input_dem] = 0
+    up_sec_disp[sec_msk_set_to_ref_alt] = 0
     up_sec_disp_msk[np.where(sec_ds[cst.EPI_MSK].values == 5, True, False)] = 255
 
     assert np.allclose(disp[cst.STEREO_SEC][cst.DISP_MAP].values, up_sec_disp)
     assert np.allclose(disp[cst.STEREO_SEC][cst.DISP_MSK].values, up_sec_disp_msk)
-    assert np.allclose(disp[cst.STEREO_SEC][cst.DISP_MSK_SET_TO_INPUT_DEM].values,
-                       sec_msk_set_to_input_dem)
-
-
-@pytest.mark.unit_tests
-def test_update_disp_to_set_output_alt_to_input_dem_unknown_method(ref_ds, sec_ds, ref_disp, sec_disp, cfg):
-    # disp dictionary
-    disp = {
-        cst.STEREO_REF: deepcopy(ref_disp),
-        cst.STEREO_SEC: deepcopy(sec_disp)
-    }
-
-    # test
-    matching_regularisation.update_disp_to_set_output_alt_to_input_dem(disp, ref_ds, sec_ds, cfg, method='test')
-
-    assert_same_datasets(disp[cst.STEREO_REF], disp[cst.STEREO_REF])
-    assert_same_datasets(disp[cst.STEREO_SEC], disp[cst.STEREO_SEC])
+    assert np.allclose(disp[cst.STEREO_SEC][cst.DISP_MSK_DISP_TO_0].values,
+                       sec_msk_set_to_ref_alt)

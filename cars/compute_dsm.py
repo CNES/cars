@@ -333,15 +333,15 @@ def run(
             mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
             classes_usage[params.mask1_ignored_by_corr_tag] =\
                 mask1_classes_dict.get(mask_classes.ignored_by_corr_tag, None)
-            classes_usage[params.mask1_set_to_input_dem_tag] = \
-                mask1_classes_dict.get(mask_classes.set_to_input_dem_tag, None)
+            classes_usage[params.mask1_set_to_ref_alt_tag] = \
+                mask1_classes_dict.get(mask_classes.set_to_ref_alt_tag, None)
 
         if mask2_classes is not None:
             mask2_classes_dict = mask_classes.read_mask_classes(mask2_classes)
             classes_usage[params.mask2_ignored_by_corr_tag] = \
                 mask2_classes_dict.get(mask_classes.ignored_by_corr_tag, None)
-            classes_usage[params.mask2_set_to_input_dem_tag] = \
-                mask2_classes_dict.get(mask_classes.set_to_input_dem_tag, None)
+            classes_usage[params.mask2_set_to_ref_alt_tag] = \
+                mask2_classes_dict.get(mask_classes.set_to_ref_alt_tag, None)
 
         # Append input configuration to output json
         out_json_config = {

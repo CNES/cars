@@ -520,6 +520,8 @@ def test_compute_mask_to_use_in_pandora():
 
     right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
 
+    mask_image_path = absolute_data_path(absolute_data_path("input/intermediate_results/data1_ref_right_masked.json"))
+
     out = stereo.compute_mask_to_use_in_pandora(corr_cfg, right_input, cst.EPI_MSK, [100])
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
