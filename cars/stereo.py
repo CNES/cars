@@ -54,6 +54,7 @@ from cars import utils
 from cars import mask_classes
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
+from cars import matching_regularisation
 
 
 # Register sizeof for xarray
@@ -1185,6 +1186,11 @@ def images_pair_to_3d_points(input_stereo_cfg,
                                                  margins)
     # Compute disparity
     disp = compute_disparity(left, right, input_stereo_cfg, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
+
+    # If necessary, set disparity to 0 for classes to be set to input dem
+    mask1_classes = input_stereo_cfg[params.input_section_tag].get(params.mask1_classes_tag, None)
+    mask2_classes = input_stereo_cfg[params.input_section_tag].get(params.mask2_classes_tag, None)
+    matching_regularisation.update_disp_to_0(disp, left, right, mask1_classes, mask2_classes)
 
     colors = dict()
     colors[cst.STEREO_REF] = color

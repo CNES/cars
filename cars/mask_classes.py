@@ -37,13 +37,13 @@ PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]
 
 # tags for mask classes json parameters
 ignored_by_corr_tag = "ignored_by_correlation"
-set_to_input_dem_tag = "set_to_input_dem"
+set_to_ref_alt_tag = "set_to_ref_alt"
 ignored_by_sift_matching_tag = "ignored_by_sift_matching"
 
 # Schema for mask json
 msk_classes_json_schema = {
     OptionalKey(ignored_by_corr_tag): [int],
-    OptionalKey(set_to_input_dem_tag): [int],
+    OptionalKey(set_to_ref_alt_tag): [int],
     OptionalKey(ignored_by_sift_matching_tag): [int]
 }
 
