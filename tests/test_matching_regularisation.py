@@ -112,19 +112,6 @@ def sec_disp(sec_row, sec_col):
     return disp_ds
 
 
-@pytest.fixture(scope="module")
-def cfg():
-    cfg_dict = {
-        params.input_section_tag: {
-            params.mask1_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask1_set_to_ref_alt_classes.json"),
-            params.mask2_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask2_set_to_ref_alt_classes.json")
-        }
-    }
-    return cfg_dict
-
-
 @pytest.mark.unit_tests
 def test_update_disp_to_0_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
 
@@ -134,26 +121,18 @@ def test_update_disp_to_0_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
         cst.STEREO_SEC: sec_disp
     }
 
-    # cfg without set_to_dem tags
-    cfg = {
-        params.input_section_tag: {
-            params.mask1_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"),
-            params.mask2_classes_tag:
-                absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json")
-        }
-    }
-
     # test
     disp_no_tags_in_json = deepcopy(disp)
-    matching_regularisation.update_disp_to_0(disp_no_tags_in_json, ref_ds, sec_ds, cfg)
+    matching_regularisation.update_disp_to_0(disp_no_tags_in_json, ref_ds, sec_ds,
+                         absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"),
+                         absolute_data_path("input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"))
 
     assert_same_datasets(disp_no_tags_in_json[cst.STEREO_REF], disp[cst.STEREO_REF])
     assert_same_datasets(disp_no_tags_in_json[cst.STEREO_SEC], disp[cst.STEREO_SEC])
 
 
 @pytest.mark.unit_tests
-def test_update_disp_0(ref_ds, sec_ds, ref_disp, sec_disp, cfg):
+def test_update_disp_0(ref_ds, sec_ds, ref_disp, sec_disp):
 
     # disp dictionary
     disp = {
@@ -162,7 +141,10 @@ def test_update_disp_0(ref_ds, sec_ds, ref_disp, sec_disp, cfg):
     }
 
     # test
-    matching_regularisation.update_disp_to_0(disp, ref_ds, sec_ds, cfg)
+    matching_regularisation.\
+        update_disp_to_0(disp, ref_ds, sec_ds,
+                         absolute_data_path("input/matching_regularisation_input/mask1_set_to_ref_alt_classes.json"),
+                         absolute_data_path("input/matching_regularisation_input/mask2_set_to_ref_alt_classes.json"))
 
     up_ref_disp = deepcopy(ref_disp[cst.DISP_MAP].values)
     up_ref_disp_msk = deepcopy(ref_disp[cst.DISP_MSK].values)

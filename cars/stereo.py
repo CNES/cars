@@ -1188,13 +1188,14 @@ def images_pair_to_3d_points(input_stereo_cfg,
     disp = compute_disparity(left, right, input_stereo_cfg, corr_cfg, disp_min, disp_max, use_sec_disp=use_sec_disp)
 
     # If necessary, set disparity to 0 for classes to be set to input dem
-    matching_regularisation.update_disp_to_0(disp, left, right, input_stereo_cfg)
+    mask1_classes = input_stereo_cfg[params.input_section_tag].get(params.mask1_classes_tag, None)
+    mask2_classes = input_stereo_cfg[params.input_section_tag].get(params.mask2_classes_tag, None)
+    matching_regularisation.update_disp_to_0(disp, left, right, mask1_classes, mask2_classes)
 
     colors = dict()
     colors[cst.STEREO_REF] = color
     if cst.STEREO_SEC in disp:
         # compute right color image from right-left disparity map
-
         colors[cst.STEREO_SEC] = estimate_color_from_disparity(disp[cst.STEREO_SEC], left, color)
 
     im_ref_msk = None
