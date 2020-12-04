@@ -20,7 +20,11 @@
 #
 
 """
-This module contains some general purpose functions that do not fit in other modules
+====================
+  Module "utils"
+====================
+This module contains some shared general purpose functions
+that do not fit in other modules
 """
 
 # Standard imports
@@ -67,13 +71,15 @@ def safe_makedirs(directory):
 
 def make_relative_path_absolute(path, directory):
     """
-    If path is a valid relative path with respect to directory, returns it as an absolute path
+    If path is a valid relative path with respect to directory,
+    returns it as an absolute path
 
     :param  path: The relative path
     :type path: string
     :param directory: The directory path should be relative to
     :type directory: string
-    :returns: os.path.join(directory,path) if path is a valid relative path form directory, else path
+    :returns: os.path.join(directory,path)
+        if path is a valid relative path form directory, else path
     :rtype: string
     """
     out = path
@@ -144,9 +150,12 @@ def rasterio_get_size(f):
     with rio.open(f, 'r') as ds:
         return (ds.width, ds.height)
 
-def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:float=300) -> (float, float):
+def get_elevation_range_from_metadata(img:str, default_min:float=0,
+                                default_max:float=300) -> (float, float):
     """
-    This function will try to derive a valid RPC altitude range from img metadata.
+    This function will try to derive a valid RPC altitude range
+    from img metadata.
+
     It will first try to read metadata with gdal.
     If it fails, it will look for values in the geom file if it exists
     If it fails, it will return the default range
@@ -194,7 +203,8 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
 
 def otb_can_open(f):
     """
-    Test if file f can be open by otb and that it has a correct geom file associated
+    Test if file f can be open by otb
+    and that it has a correct geom file associated
 
     :param f: filename
     :type f: str
@@ -214,13 +224,20 @@ def otb_can_open(f):
                     key, val = l.split(': ')
                     geom_dict[key] = val
 
-                if 'line_den_coeff_00' not in geom_dict or 'samp_den_coeff_00' not in geom_dict or \
-                        'line_num_coeff_00' not in geom_dict or 'samp_num_coeff_00' not in geom_dict or \
-                        'line_off' not in geom_dict or 'line_scale' not in geom_dict or \
-                        'samp_off' not in geom_dict or 'samp_scale' not in geom_dict or \
-                        'lat_off' not in geom_dict or 'lat_scale' not in geom_dict or \
-                        'long_off' not in geom_dict or 'long_scale' not in geom_dict or \
-                        'height_off' not in geom_dict or 'height_scale' not in geom_dict or \
+                if      'line_den_coeff_00' not in geom_dict or \
+                        'samp_den_coeff_00' not in geom_dict or \
+                        'line_num_coeff_00' not in geom_dict or \
+                        'samp_num_coeff_00' not in geom_dict or \
+                        'line_off' not in geom_dict or \
+                        'line_scale' not in geom_dict or \
+                        'samp_off' not in geom_dict or \
+                        'samp_scale' not in geom_dict or \
+                        'lat_off' not in geom_dict or \
+                        'lat_scale' not in geom_dict or \
+                        'long_off' not in geom_dict or \
+                        'long_scale' not in geom_dict or \
+                        'height_off' not in geom_dict or \
+                        'height_scale' not in geom_dict or \
                         'polynomial_format' not in geom_dict:
                     logging.error("No RPC model set for image {}".format(f))
                     return False
@@ -287,7 +304,8 @@ def read_vector(path_to_file):
     if len(polys) == 1:
         return polys[0], int(epsg)
     elif len(polys) > 1:
-        logging.info('Multi features files are not supported, the first feature of {} will be used'.
+        logging.info('Multi features files are not supported, '
+                     'the first feature of {} will be used'.
                      format(path_to_file))
         return polys[0], int(epsg)
     else:
@@ -346,14 +364,15 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     Write cloud to a ply file
 
     :param path: path to the ply file to write
-    :param cloud: cloud to write, it can be a xr.Dataset as the ones given in output of the triangulation
+    :param cloud: cloud to write,
+        it can be a xr.Dataset as the ones given in output of the triangulation
     or a pandas.DataFrame as used in the rasterization
     """
 
     with open(path, 'w') as f:
         if isinstance(cloud, xr.Dataset):
             nb_points = int(cloud[cst.POINTS_CLOUD_CORR_MSK]
-                            .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
+                .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
         else:
             nb_points = cloud.shape[0]
 
@@ -366,10 +385,11 @@ def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
         f.write("end_header\n")
 
         if isinstance(cloud, xr.Dataset):
-            for x, y, z, m in zip(np.nditer(cloud[cst.X].values),
-                                  np.nditer(cloud[cst.Y].values),
-                                  np.nditer(cloud[cst.Z].values),
-                                  np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
+            for x, y, z, m in zip(
+                            np.nditer(cloud[cst.X].values),
+                            np.nditer(cloud[cst.Y].values),
+                            np.nditer(cloud[cst.Z].values),
+                            np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
                 if m != 0:
                     f.write("{} {} {}\n".format(x, y, z))
         else:
@@ -431,10 +451,13 @@ def add_log_file(out_dir, command):
     # set file log handler
     now = datetime.now()
     h_log_file = logging.FileHandler(os.path.join(out_dir,
-                                                  '{}_{}.log'.format(now.strftime("%y-%m-%d_%Hh%Mm"), command)))
+                '{}_{}.log'.format(now.strftime("%y-%m-%d_%Hh%Mm"), command)))
     h_log_file.setLevel(logging.getLogger().getEffectiveLevel())
 
-    formatter = logging.Formatter(fmt='%(asctime)s :: %(levelname)s :: %(message)s', datefmt='%y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(
+        fmt='%(asctime)s :: %(levelname)s :: %(message)s',
+        datefmt='%y-%m-%d %H:%M:%S'
+    )
     h_log_file.setFormatter(formatter)
 
     # add it to the logger
