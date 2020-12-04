@@ -106,10 +106,15 @@ def write_preprocessing_content_file(config, filename, indent=2):
                 lowres_dem_splines_fit_tag,
                 corrected_lowres_dsm_tag,
                 corrected_lowres_elevation_difference_tag]:
-            if tag in config[preprocessing_section_tag][preprocessing_output_section_tag]:
-                v = config[preprocessing_section_tag][preprocessing_output_section_tag][tag]
-                config[preprocessing_section_tag][preprocessing_output_section_tag][tag] = os.path.basename(
-                    v)
+            if tag in config[
+                preprocessing_section_tag][preprocessing_output_section_tag]:
+
+                v = config[preprocessing_section_tag][
+                        preprocessing_output_section_tag][tag]
+
+                config[preprocessing_section_tag][
+                    preprocessing_output_section_tag][tag] = os.path.basename(v)
+
         json.dump(config, f, indent=indent)
 
 
@@ -138,8 +143,8 @@ def read_preprocessing_content_file(filename):
                 srtm_dir_tag]:
             if tag in config[input_section_tag]:
                 v = config[input_section_tag][tag]
-                config[input_section_tag][tag] = make_relative_path_absolute(
-                    v, json_dir)
+                config[input_section_tag][tag] =\
+                    make_relative_path_absolute(v, json_dir)
         for tag in [
                 left_epipolar_grid_tag,
                 right_epipolar_grid_tag,
@@ -158,10 +163,15 @@ def read_preprocessing_content_file(filename):
                 corrected_lowres_dsm_tag,
                 corrected_lowres_elevation_difference_tag
                 ]:
-            if tag in config[preprocessing_section_tag][preprocessing_output_section_tag]:
-                v = config[preprocessing_section_tag][preprocessing_output_section_tag][tag]
-                config[preprocessing_section_tag][preprocessing_output_section_tag][tag] = make_relative_path_absolute(
-                    v, json_dir)
+            if tag in config[preprocessing_section_tag][
+                    preprocessing_output_section_tag]:
+
+                v = config[preprocessing_section_tag][
+                        preprocessing_output_section_tag][tag]
+
+                config[preprocessing_section_tag][
+                        preprocessing_output_section_tag][tag] =\
+                            make_relative_path_absolute(v, json_dir)
     return config
 
 
@@ -179,11 +189,20 @@ def write_stereo_content_file(config, filename, indent=2):
     """
     with open(filename, 'w') as f:
         # Make absolute path relative
-        for tag in [dsm_tag, color_tag, dsm_mean_tag, dsm_std_tag, dsm_n_pts_tag, dsm_points_in_cell_tag]:
+        for tag in [
+            dsm_tag,
+            color_tag,
+            dsm_mean_tag,
+            dsm_std_tag,
+            dsm_n_pts_tag,
+            dsm_points_in_cell_tag]:
             if tag in config[stereo_section_tag][stereo_output_section_tag]:
+
                 v = config[stereo_section_tag][stereo_output_section_tag][tag]
-                config[stereo_section_tag][stereo_output_section_tag][tag] = os.path.basename(
-                    v)
+
+                config[stereo_section_tag][stereo_output_section_tag][tag] =\
+                    os.path.basename(v)
+
         json.dump(config, f, indent=indent)
 
 
@@ -232,7 +251,8 @@ time_direction_line_vector_x_tag = "time_direction_line_vector_x"
 time_direction_line_vector_y_tag = "time_direction_line_vector_y"
 lowres_dem_splines_fit_tag = "lowres_dem_splines_fit"
 corrected_lowres_dsm_tag = "corrected_lowres_dsm"
-corrected_lowres_elevation_difference_tag = "corrected_lowres_elevation_difference"
+corrected_lowres_elevation_difference_tag =\
+    "corrected_lowres_elevation_difference"
 
 # Tags for preprocessing parameters
 epi_step_tag = "epi_step"
@@ -242,8 +262,10 @@ elevation_delta_upper_bound_tag = "elevation_delta_upper_bound"
 epipolar_error_upper_bound_tag = "epipolar_error_upper_bound"
 epipolar_error_maximum_bias_tag = "epipolar_error_maximum_bias"
 prepare_mask_classes_usage_tag = "mask_classes_usage_in_prepare"
-mask1_ignored_by_sift_matching_tag = '%s_%s' % (mask1_tag, mask_classes.ignored_by_sift_matching_tag)
-mask2_ignored_by_sift_matching_tag = '%s_%s' % (mask2_tag, mask_classes.ignored_by_sift_matching_tag)
+mask1_ignored_by_sift_matching_tag =\
+    '%s_%s' % (mask1_tag, mask_classes.ignored_by_sift_matching_tag)
+mask2_ignored_by_sift_matching_tag =\
+    '%s_%s' % (mask2_tag, mask_classes.ignored_by_sift_matching_tag)
 
 # Tags for content.json of preprocessing step
 input_section_tag = "input"
@@ -257,10 +279,14 @@ resolution_tag = "resolution"
 sigma_tag = "sigma"
 dsm_radius_tag = "dsm_radius"
 stereo_mask_classes_usage_tag = "mask_classes_usage_in_compute_dsm"
-mask1_ignored_by_corr_tag = '%s_%s' % (mask1_tag, mask_classes.ignored_by_corr_tag)
-mask2_ignored_by_corr_tag = '%s_%s' % (mask2_tag, mask_classes.ignored_by_corr_tag)
-mask1_set_to_ref_alt_tag = '%s_%s' % (mask1_tag, mask_classes.set_to_ref_alt_tag)
-mask2_set_to_ref_alt_tag = '%s_%s' % (mask2_tag, mask_classes.set_to_ref_alt_tag)
+mask1_ignored_by_corr_tag =\
+    '%s_%s' % (mask1_tag, mask_classes.ignored_by_corr_tag)
+mask2_ignored_by_corr_tag =\
+    '%s_%s' % (mask2_tag, mask_classes.ignored_by_corr_tag)
+mask1_set_to_ref_alt_tag =\
+    '%s_%s' % (mask1_tag, mask_classes.set_to_ref_alt_tag)
+mask2_set_to_ref_alt_tag =\
+    '%s_%s' % (mask2_tag, mask_classes.set_to_ref_alt_tag)
 
 # Tags for content.json stereo/output section of stereo step
 dsm_tag = "dsm"
@@ -293,8 +319,10 @@ input_configuration_schema = {
     OptionalKey(color1_tag): And(str, rasterio_can_open),
     OptionalKey(mask1_tag): And(str, rasterio_can_open),
     OptionalKey(mask2_tag): And(str, rasterio_can_open),
-    OptionalKey(mask1_classes_tag): And(str, mask_classes.mask_classes_can_open),
-    OptionalKey(mask2_classes_tag): And(str, mask_classes.mask_classes_can_open),
+    OptionalKey(mask1_classes_tag): \
+        And(str, mask_classes.mask_classes_can_open),
+    OptionalKey(mask2_classes_tag): \
+        And(str, mask_classes.mask_classes_can_open),
     OptionalKey(default_alt_tag): float,
     nodata1_tag: int,
     nodata2_tag: int
@@ -333,7 +361,8 @@ preprocessing_output_schema = {
     lowres_elevation_difference_tag: And(str, os.path.isfile),
     OptionalKey(lowres_dem_splines_fit_tag): And(str, os.path.isfile),
     OptionalKey(corrected_lowres_dsm_tag): And(str, os.path.isfile),
-    OptionalKey(corrected_lowres_elevation_difference_tag): And(str, os.path.isfile),
+    OptionalKey(corrected_lowres_elevation_difference_tag): \
+                                        And(str, os.path.isfile),
     OptionalKey(matches_tag): And(str, os.path.isfile),
     OptionalKey(raw_matches_tag): And(str, os.path.isfile),
     OptionalKey(envelopes_intersection_tag): str,
@@ -413,7 +442,8 @@ stereo_content_schema = {
     [
         {
             stereo_input_tag: preprocessing_content_schema,
-            OptionalKey(stereo_mask_classes_usage_tag): stereo_classes_usage_schema
+            OptionalKey(stereo_mask_classes_usage_tag):\
+                                        stereo_classes_usage_schema
         }
     ],
     stereo_section_tag:
