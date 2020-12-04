@@ -279,7 +279,8 @@ def test_dsm_compute_arg(compute_dsm_default_args):
         # degraded cases input ROI file
         args_bad_roi_file = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as e:
-            args_bad_roi_file.roi_file = absolute_data_path('input/cars_cli_input/test.txt')
+            args_bad_roi_file.roi_file = \
+                absolute_data_path('input/cars_cli_input/test.txt')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
@@ -337,4 +338,3 @@ def test_dsm_compute_arg(compute_dsm_default_args):
             main_cli(args_bad_wall_time, parser, check_inputs=True)
         assert e.type == SystemExit
         assert e.value.code == 1
-
