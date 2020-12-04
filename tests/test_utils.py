@@ -74,7 +74,8 @@ def test_otb_can_open():
 
 @pytest.mark.unit_tests
 def test_fix_shapely():
-    poly, _ = utils.read_vector(absolute_data_path("input/utils_input/poly.gpkg"))
+    poly, _ = utils.read_vector(
+        absolute_data_path("input/utils_input/poly.gpkg"))
     assert poly.is_valid is False
     poly = poly.buffer(0)
     assert poly.is_valid is True
