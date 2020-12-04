@@ -46,11 +46,13 @@ def test_detect_small_components():
                             for x, y, z in zip(x, y, z)
                             ], axis=0)
 
-    indexes_to_filter = filtering.detect_small_components(cloud_arr, 0.5, 10, 2)
+    indexes_to_filter = filtering.detect_small_components(
+        cloud_arr, 0.5, 10, 2)
     assert sorted(indexes_to_filter ) == [3, 4, 24]
 
     # test without the second level of filtering
-    indexes_to_filter = filtering.detect_small_components(cloud_arr, 0.5, 10, None)
+    indexes_to_filter = filtering.detect_small_components(
+        cloud_arr, 0.5, 10, None)
     assert sorted(indexes_to_filter) == [0, 1, 3, 4, 5, 6, 24]
 
 
@@ -89,10 +91,15 @@ def test_detect_statistical_outliers():
 def test_filter_cloud():
     cloud_arr = np.arange(6*10)
     cloud_arr = cloud_arr.reshape((10, 6))
-    cloud = pandas.DataFrame(cloud_arr, columns=['x', 'y', 'z', 'coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+    cloud = pandas.DataFrame(cloud_arr,
+                             columns=['x', 'y', 'z',
+                             'coord_epi_geom_i',
+                             'coord_epi_geom_j',
+                             'idx_im_epi'])
 
     elt_to_remove = [0, 5]
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(cloud, elt_to_remove, filtered_elt_pos=True)
+    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+        cloud, elt_to_remove, filtered_elt_pos=True)
 
     # reference
     pos_arr = np.zeros((len(elt_to_remove), 3), dtype=np.int)
@@ -101,12 +108,16 @@ def test_filter_cloud():
             # 3 last elements of each lines
             pos_arr[i, j] = int(6*elt_to_remove[i]+3+j)
 
-    ref_removed_elt_pos = pandas.DataFrame(pos_arr, columns=['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+    ref_removed_elt_pos = pandas.DataFrame(pos_arr,
+                                           columns=['coord_epi_geom_i',
+                                                    'coord_epi_geom_j',
+                                                    'idx_im_epi'])
 
     assert ref_removed_elt_pos.equals(removed_elt_pos)
 
     # test cases where removed_elt_pos should be None
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(cloud, elt_to_remove, filtered_elt_pos=False)
+    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+        cloud, elt_to_remove, filtered_elt_pos=False)
 
     assert removed_elt_pos is None
 
@@ -114,7 +125,8 @@ def test_filter_cloud():
     cloud_arr = cloud_arr.reshape((10, 3))
 
     cloud = pandas.DataFrame(cloud_arr, columns=['x', 'y', 'z'])
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(cloud, elt_to_remove, filtered_elt_pos=True)
+    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+        cloud, elt_to_remove, filtered_elt_pos=True)
 
     assert removed_elt_pos is None
 
@@ -131,7 +143,10 @@ def test_add_cloud_filtering_msk():
 
     pos_arr = np.array([[1, 2, 0],
                        [2, 2, 1]])
-    elt_remove = pandas.DataFrame(pos_arr, columns=['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+    elt_remove = pandas.DataFrame(pos_arr,
+                                  columns=['coord_epi_geom_i',
+                                           'coord_epi_geom_j',
+                                           'idx_im_epi'])
 
     filtering.add_cloud_filtering_msk([ds0, ds1],elt_remove, 'mask', 255)
 
@@ -139,8 +154,10 @@ def test_add_cloud_filtering_msk():
     mask0[1, 2] = 255
     mask1 = np.zeros((nb_row, nb_col), dtype=np.uint16)
     mask1[2, 2] = 255
-    ds0_ref = xr.Dataset({'mask': (['row', 'col'], mask0)}, coords={'row': rows, 'col': cols})
-    ds1_ref = xr.Dataset({'mask': (['row', 'col'], mask1)}, coords={'row': rows, 'col': cols})
+    ds0_ref = xr.Dataset({'mask': (['row', 'col'], mask0)},
+                         coords={'row': rows, 'col': cols})
+    ds1_ref = xr.Dataset({'mask': (['row', 'col'], mask1)},
+                         coords={'row': rows, 'col': cols})
 
     assert_same_datasets(ds0_ref, ds0)
     assert_same_datasets(ds1_ref, ds1)
@@ -149,21 +166,33 @@ def test_add_cloud_filtering_msk():
     with pytest.raises(Exception) as e:
         np_pos = np.array([[1, 2, 2],
                            [2, 2, 1]])
-        elt_remove = pandas.DataFrame(np_pos, columns=['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+        elt_remove = pandas.DataFrame(np_pos,
+                                      columns=['coord_epi_geom_i',
+                                               'coord_epi_geom_j',
+                                               'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Index indicated in the elt_pos_infos pandas.DataFrame is not coherent ' \
-                         'with the clouds list given in input'
+        assert str(e) == 'Index indicated in the elt_pos_infos '\
+                         'pandas.DataFrame is not coherent with the clouds '\
+                         'list given in input'
 
     with pytest.raises(Exception) as e:
         np_pos = np.array([[1, 2, -1],
                            [2, 2, 1]])
-        elt_remove = pandas.DataFrame(np_pos, columns=['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+        elt_remove = pandas.DataFrame(np_pos,
+                                      columns=['coord_epi_geom_i',
+                                               'coord_epi_geom_j',
+                                               'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Index indicated in the elt_pos_infos pandas.DataFrame is not coherent ' \
+        assert str(e) == 'Index indicated in the elt_pos_infos '\
+                         'pandas.DataFrame is not coherent ' \
                          'with the clouds list given in input'
 
     with pytest.raises(Exception) as e:
         np_pos = np.array([[11, 2, 0]])
-        elt_remove = pandas.DataFrame(np_pos, columns=['coord_epi_geom_i', 'coord_epi_geom_j', 'idx_im_epi'])
+        elt_remove = pandas.DataFrame(np_pos,
+                                      columns=['coord_epi_geom_i',
+                                               'coord_epi_geom_j',
+                                               'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Point at location (11,2) is not accessible in an image of size (5,10)'
+        assert str(e) == 'Point at location (11,2) is not accessible in an '\
+                         'image of size (5,10)'
