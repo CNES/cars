@@ -46,7 +46,8 @@ def images_and_grids_conf():
         configuration = json_dict["images_and_grids"]
 
     for tag in ['img1', 'img2']:
-        configuration['input'][tag] = absolute_data_path(configuration['input'][tag])
+        configuration['input'][tag] = \
+            absolute_data_path(configuration['input'][tag])
 
     for tag in ['left_epipolar_grid', 'right_epipolar_grid']:
         configuration['preprocessing']['output'][tag] = \
@@ -62,7 +63,8 @@ def color1_conf():
         json_dict = json.load(f)
         configuration = json_dict["color1"]
 
-    configuration['input']['color1'] = absolute_data_path(configuration['input']['color1'])
+    configuration['input']['color1'] = \
+        absolute_data_path(configuration['input']['color1'])
 
     return configuration
 
@@ -74,7 +76,8 @@ def color_pxs_conf():
         json_dict = json.load(f)
         configuration = json_dict["color_pxs"]
 
-    configuration['input']['color1'] = absolute_data_path(configuration['input']['color1'])
+    configuration['input']['color1'] =  \
+        absolute_data_path(configuration['input']['color1'])
 
     return configuration
 
@@ -169,15 +172,16 @@ def test_optimal_tile_size():
     """
     row = 450
     col = 375
-    disp = 61  
+    disp = 61
     mem = 313
 
     res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp, mem)
     assert res == 400
 
     # Test case where default tile size is returned
-    assert stereo.optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,
-                                                          100, tile_size_rounding=33) == 33
+    assert stereo\
+        .optimal_tile_size_pandora_plugin_libsgm(-1000, 1000, 100,
+                                                 tile_size_rounding=33) == 33
 
 
 @pytest.mark.unit_tests
@@ -214,8 +218,9 @@ def test_resample_image():
 
 
 @pytest.mark.unit_tests
-def test_epipolar_rectify_images_1(images_and_grids_conf, color1_conf, epipolar_sizes_conf,
-                                   epipolar_origins_spacings_conf, no_data_conf):
+def test_epipolar_rectify_images_1(
+    images_and_grids_conf, color1_conf, epipolar_sizes_conf,
+    epipolar_origins_spacings_conf, no_data_conf):
     """
     Test epipolar_rectify_image on ventoux dataset (epipolar geometry)
     with nodata and color
@@ -223,11 +228,14 @@ def test_epipolar_rectify_images_1(images_and_grids_conf, color1_conf, epipolar_
     configuration = images_and_grids_conf
     configuration["input"].update(color1_conf["input"])
     configuration["input"].update(no_data_conf["input"])
-    configuration["preprocessing"]["output"].update(epipolar_sizes_conf["preprocessing"]["output"])
-    configuration["preprocessing"]["output"].update(epipolar_origins_spacings_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_sizes_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_origins_spacings_conf["preprocessing"]["output"])
 
     region = [420, 200, 530, 320]
-    margin = xr.DataArray(np.array([[33, 20, 34, 20], [33, 20, 34, 20]], dtype=int),
+    margin = xr.DataArray(np.array([[33, 20, 34, 20],
+                                    [33, 20, 34, 20]], dtype=int),
                           coords=[['ref_margin', 'sec_margin'],
                                   ['left', 'up', 'right', 'down']],
                           dims=['image', 'corner'])
@@ -267,8 +275,9 @@ def test_epipolar_rectify_images_1(images_and_grids_conf, color1_conf, epipolar_
 
 
 @pytest.mark.unit_tests
-def test_epipolar_rectify_images_3(images_and_grids_conf, color_pxs_conf, epipolar_sizes_conf,
-                                   epipolar_origins_spacings_conf, no_data_conf):
+def test_epipolar_rectify_images_3(
+    images_and_grids_conf, color_pxs_conf, epipolar_sizes_conf,
+    epipolar_origins_spacings_conf, no_data_conf):
     """
     Test epipolar_rectify_image on ventoux dataset (epipolar geometry)
     with nodata and color as a p+xs fusion
@@ -276,11 +285,14 @@ def test_epipolar_rectify_images_3(images_and_grids_conf, color_pxs_conf, epipol
     configuration = images_and_grids_conf
     configuration["input"].update(color_pxs_conf["input"])
     configuration["input"].update(no_data_conf["input"])
-    configuration["preprocessing"]["output"].update(epipolar_sizes_conf["preprocessing"]["output"])
-    configuration["preprocessing"]["output"].update(epipolar_origins_spacings_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_sizes_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_origins_spacings_conf["preprocessing"]["output"])
 
     region = [420, 200, 530, 320]
-    margin = xr.DataArray(np.array([[33, 20, 34, 20], [33, 20, 34, 20]], dtype=int),
+    margin = xr.DataArray(np.array([[33, 20, 34, 20],
+                                    [33, 20, 34, 20]], dtype=int),
                           coords=[['ref_margin', 'sec_margin'],
                                   ['left', 'up', 'right', 'down']],
                           dims=['image', 'corner'])
@@ -340,16 +352,21 @@ def test_compute_disparity_1(images_and_grids_conf):
     assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (160, 177)
     assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (160, 177)
 
-    np.testing.assert_allclose(output[cst.STEREO_REF].attrs[cst.ROI],
-                               np.array([420, 200, 530, 320]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI],
-                               np.array([420, 200, 530, 320]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-                               np.array([387, 180, 564, 340]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_REF].attrs[cst.ROI],
+        np.array([420, 200, 530, 320]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI],
+        np.array([420, 200, 530, 320]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
+        np.array([387, 180, 564, 340]))
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
-    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path("ref_output/disp1_sec_pandora.nc"))
+    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_ref_pandora.nc"))
+    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_sec_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/disp1_ref_pandora.nc"))
@@ -386,16 +403,21 @@ def test_compute_disparity_3(images_and_grids_conf):
     assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (170, 254)
     assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (170, 254)
 
-    np.testing.assert_allclose(output[cst.STEREO_REF].attrs[cst.ROI],
-                               np.array([16500, 23160, 16590, 23250]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI],
-                               np.array([16500, 23160, 16590, 23250]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-                               np.array([16417, 23120, 16671, 23290]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_REF].attrs[cst.ROI],
+        np.array([16500, 23160, 16590, 23250]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI],
+        np.array([16500, 23160, 16590, 23250]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
+        np.array([16417, 23120, 16671, 23290]))
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
-    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path("ref_output/disp3_sec_pandora.nc"))
+    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/disp3_ref_pandora.nc"))
+    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path(
+    # "ref_output/disp3_sec_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/disp3_ref_pandora.nc"))
@@ -410,8 +432,12 @@ def test_compute_disparity_1_msk_ref(images_and_grids_conf):
     """
     Test compute_disparity on ventoux dataset with pandora
     """
-    left_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_left_masked.nc"))
-    right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right.nc"))
+    left_input = xr.open_dataset(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_left_masked.nc"))
+    right_input = xr.open_dataset(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_right.nc"))
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
@@ -433,20 +459,27 @@ def test_compute_disparity_1_msk_ref(images_and_grids_conf):
                                np.array([420, 200, 530, 320]))
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc"))
-    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path("ref_output/disp1_sec_pandora_msk_ref.nc"))
+    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_ref_pandora_msk_ref.nc"))
+    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_sec_pandora_msk_ref.nc"))
 
-    ref = xr.open_dataset(absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path(
+            "ref_output/disp1_ref_pandora_msk_ref.nc"))
     assert_same_datasets(output[cst.STEREO_REF],ref,atol=5.e-6)
 
-    sec = xr.open_dataset(absolute_data_path("ref_output/disp1_sec_pandora_msk_ref.nc"))
+    sec = xr.open_dataset(
+        absolute_data_path(
+            "ref_output/disp1_sec_pandora_msk_ref.nc"))
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.e-6)
 
     # test multi-classes left mask
     left_input[cst.EPI_MSK].values[10, 10] = 1 # valid class
     left_input[cst.EPI_MSK].values[10, 140] = 2 # nonvalid class
     conf = deepcopy(images_and_grids_conf)
-    conf['input']['mask1_classes'] = absolute_data_path("input/intermediate_results/data1_ref_left_mask_classes.json")
+    conf['input']['mask1_classes'] = absolute_data_path(
+        "input/intermediate_results/data1_ref_left_mask_classes.json")
 
     output = stereo.compute_disparity(left_input,
                                       right_input,
@@ -471,10 +504,15 @@ def test_compute_disparity_1_msk_sec(images_and_grids_conf):
     """
     Test compute_disparity on ventoux dataset with pandora
     """
-    left_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_left.nc"))
-    right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
+    left_input = xr.open_dataset(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_left.nc"))
+    right_input = xr.open_dataset(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_right_masked.nc"))
     conf = deepcopy(images_and_grids_conf)
-    conf['input']['mask2_classes'] = absolute_data_path("input/intermediate_results/data1_ref_right_mask_classes.json")
+    conf['input']['mask2_classes'] = absolute_data_path(
+        "input/intermediate_results/data1_ref_right_mask_classes.json")
 
     # Pandora configuration
     corr_cfg = create_corr_conf()
@@ -495,21 +533,30 @@ def test_compute_disparity_1_msk_sec(images_and_grids_conf):
     assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (160, 177)
     assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (160, 177)
 
-    np.testing.assert_allclose(output[cst.STEREO_REF].attrs[cst.ROI],
-                               np.array([420, 200, 530, 320]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI],
-                               np.array([420, 200, 530, 320]))
-    np.testing.assert_allclose(output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-                               np.array([387, 180, 564, 340]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_REF].attrs[cst.ROI],
+        np.array([420, 200, 530, 320]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI],
+        np.array([420, 200, 530, 320]))
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
+        np.array([387, 180, 564, 340]))
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc"))
-    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc"))
+    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_ref_pandora_msk_sec.nc"))
+    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path(
+    # "ref_output/disp1_sec_pandora_msk_sec.nc"))
 
-    ref = xr.open_dataset(absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path(
+            "ref_output/disp1_ref_pandora_msk_sec.nc"))
     assert_same_datasets(output[cst.STEREO_REF],ref,atol=5.e-6)
 
-    sec = xr.open_dataset(absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc"))
+    sec = xr.open_dataset(
+        absolute_data_path(
+            "ref_output/disp1_sec_pandora_msk_sec.nc"))
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.e-6)
 
 
@@ -518,11 +565,16 @@ def test_compute_mask_to_use_in_pandora():
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
-    right_input = xr.open_dataset(absolute_data_path("input/intermediate_results/data1_ref_right_masked.nc"))
+    right_input = xr.open_dataset(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_right_masked.nc"))
 
-    mask_image_path = absolute_data_path(absolute_data_path("input/intermediate_results/data1_ref_right_masked.json"))
+    mask_image_path = absolute_data_path(
+        absolute_data_path(
+            "input/intermediate_results/data1_ref_right_masked.json"))
 
-    out = stereo.compute_mask_to_use_in_pandora(corr_cfg, right_input, cst.EPI_MSK, [100])
+    out = stereo.compute_mask_to_use_in_pandora(
+        corr_cfg, right_input, cst.EPI_MSK, [100])
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
     ref_msk.astype(np.int16)
@@ -543,8 +595,13 @@ def test_create_inside_sec_roi_mask():
     ds_bottom_margin = 1
     ds_nb_col = 6
     ds_nb_row = 5
-    ds = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL], np.ones((ds_nb_row, ds_nb_col), dtype=bool))})
-    ds.attrs[cst.EPI_MARGINS] = np.array([ds_left_margin, ds_top_margin, ds_right_margin, ds_bottom_margin])
+    ds = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL],
+                                     np.ones((ds_nb_row, ds_nb_col),
+                                     dtype=bool))})
+    ds.attrs[cst.EPI_MARGINS] = np.array([ds_left_margin,
+                                          ds_top_margin,
+                                          ds_right_margin,
+                                          ds_bottom_margin])
 
     # create fake disp map and mask
     disp_nb_col = 7
@@ -561,7 +618,8 @@ def test_create_inside_sec_roi_mask():
     # create reference data
     ref_msk = np.zeros((disp_nb_row, disp_nb_col), dtype=np.int16)
     ref_msk[math.ceil(disp_value):disp_nb_row-ds_bottom_margin,
-            math.ceil(disp_value):disp_nb_col-ds_right_margin-math.floor(disp_value)] = 255
+            math.ceil(disp_value):disp_nb_col-ds_right_margin \
+                                  -math.floor(disp_value)] = 255
     ref_msk[1, 1] = 0
 
     assert np.allclose(msk, ref_msk)
@@ -590,7 +648,10 @@ def test_estimate_color_from_disparity():
                           cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(mask))},
                          coords={cst.ROW: disp_row, cst.COL: disp_col})
 
-    disp_ds.attrs[cst.ROI] = [margins[0], margins[1], disp_nb_col-margins[2], disp_nb_row-margins[3]]
+    disp_ds.attrs[cst.ROI] = [margins[0],
+                              margins[1],
+                              disp_nb_col-margins[2],
+                              disp_nb_row-margins[3]]
     disp_ds.attrs[cst.ROI_WITH_MARGINS] = [0, 0, disp_nb_col, disp_nb_row]
     disp_ds.attrs[cst.EPI_FULL_SIZE] = [100, 100]
 
@@ -609,9 +670,12 @@ def test_estimate_color_from_disparity():
 
     clr_mask = np.full((clr_nb_row, clr_nb_col), 255, dtype=np.int16)
     clr_mask[4, 4] = 0
-    clr_ds = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL], np.copy(clr)),
+    clr_ds = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL],
+                                         np.copy(clr)),
                          cst.EPI_MSK: ([cst.ROW, cst.COL], np.copy(clr_mask))},
-                        coords={cst.BAND: range(clr_nb_band), cst.ROW: clr_row, cst.COL: clr_col})
+                        coords={cst.BAND: range(clr_nb_band),
+                                cst.ROW: clr_row,
+                                cst.COL: clr_col})
 
     # create fake secondary dataset
     sec_margins = [1, 1, 1, 1]
@@ -619,14 +683,16 @@ def test_estimate_color_from_disparity():
     sec_ds.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
 
     # interpolate color
-    interp_clr_ds = stereo.estimate_color_from_disparity(disp_ds, sec_ds, clr_ds)
+    interp_clr_ds = stereo.estimate_color_from_disparity(
+        disp_ds, sec_ds, clr_ds)
 
     # reference
     ref_mask = mask.astype(np.bool)
     ref_mask[margins[0] + 4, margins[2] + 4 - math.ceil(disp_value)] = False
     ref_mask=~ref_mask
 
-    assert np.allclose(ref_mask, np.isnan(interp_clr_ds[cst.EPI_IMAGE].values[0,:,:]))
+    assert np.allclose(
+        ref_mask, np.isnan(interp_clr_ds[cst.EPI_IMAGE].values[0,:,:]))
 
     ref_data = np.ceil(disp)
     ref_data[margins[1]:-margins[3], margins[0]:-margins[2]] += val
@@ -650,7 +716,8 @@ def test_triangulation_1(images_and_grids_conf):
     assert output[cst.STEREO_REF][cst.X].shape == (120, 110)
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/triangulation1_ref.nc"))
+    # output[cst.STEREO_REF].to_netcdf(
+    # absolute_data_path("ref_output/triangulation1_ref.nc"))
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/triangulation1_ref.nc"))
@@ -675,8 +742,9 @@ def test_triangulate_matches(images_and_grids_conf):
 
 
 @pytest.mark.unit_tests
-def test_images_pair_to_3d_points(images_and_grids_conf, color1_conf, no_data_conf, disparities_conf,
-                                  epipolar_origins_spacings_conf, epipolar_sizes_conf):
+def test_images_pair_to_3d_points(
+    images_and_grids_conf, color1_conf, no_data_conf, disparities_conf,
+    epipolar_origins_spacings_conf, epipolar_sizes_conf):
     """
     Test images_pair_to_3d_points on ventoux dataset (epipolar geometry)
     with Pandora
@@ -685,9 +753,12 @@ def test_images_pair_to_3d_points(images_and_grids_conf, color1_conf, no_data_co
     configuration = images_and_grids_conf
     configuration["input"].update(color1_conf["input"])
     configuration["input"].update(no_data_conf["input"])
-    configuration["preprocessing"]["output"].update(epipolar_sizes_conf["preprocessing"]["output"])
-    configuration["preprocessing"]["output"].update(epipolar_origins_spacings_conf["preprocessing"]["output"])
-    configuration["preprocessing"]["output"].update(disparities_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_sizes_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_origins_spacings_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(disparities_conf["preprocessing"]["output"])
 
     region = [420, 200, 530, 320]
     # Pandora configuration
@@ -701,9 +772,12 @@ def test_images_pair_to_3d_points(images_and_grids_conf, color1_conf, no_data_co
                                                    add_msk_info=True)
 
     # Uncomment to update baseline
-    # cloud[cst.STEREO_REF].to_netcdf(absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
+    # cloud[cst.STEREO_REF].to_netcdf(
+    # absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
 
-    ref = xr.open_dataset(absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path(
+            "ref_output/cloud1_ref_pandora.nc"))
     assert_same_datasets(cloud[cst.STEREO_REF],ref,atol=1.e-3)
 
 
@@ -729,14 +803,18 @@ def test_geoid_offset():
 
 
 @pytest.mark.unit_tests
-def test_transform_terrain_region_to_epipolar(images_and_grids_conf, disparities_conf, epipolar_sizes_conf):
+def test_transform_terrain_region_to_epipolar(
+    images_and_grids_conf, disparities_conf, epipolar_sizes_conf):
     """
     Test transform to epipolar method
     """
     configuration = images_and_grids_conf
-    configuration["preprocessing"]["output"].update(disparities_conf["preprocessing"]["output"])
-    configuration["preprocessing"]["output"].update(epipolar_sizes_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(disparities_conf["preprocessing"]["output"])
+    configuration["preprocessing"]["output"]\
+        .update(epipolar_sizes_conf["preprocessing"]["output"])
 
     region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = stereo.transform_terrain_region_to_epipolar(region, configuration)
+    out_region = stereo.transform_terrain_region_to_epipolar(
+        region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
