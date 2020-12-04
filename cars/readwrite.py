@@ -20,7 +20,11 @@
 #
 
 """
-This module contains all the reading/writing functions used in main.py
+====================
+  Module "readwrite"
+====================
+This module contains all the main pipeline reading/writing functions
+used in compute_dsm.py
 """
 
 # Standard imports
@@ -79,11 +83,13 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     :type nodata_values: List
     :param nb_bands: List of number of bands
     :type nb_bands: List
-    :return: A dicionary of rasterio handles that can be used as a context manager, indexed by names
+    :return: A dicionary of rasterio handles
+        that can be used as a context manager, indexed by names
     :rtype: Dict
     """
     file_handles = {}
-    for name, f, p, nd, nb in zip(names, files, params, nodata_values, nb_bands):
+    for name, f, p, nd, nb in zip(names, files, params,
+                                  nodata_values, nb_bands):
         file_handles[name] = rio.open(f, 'w',count=nb, nodata=nd, **p)
     try:
         yield file_handles
@@ -92,10 +98,22 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
             handle.close()
 
 
-def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bounds: Tuple[float, float, float, float],
-                      resolution: float, epsg: int, nb_bands: int, dsm_no_data: float, color_no_data: float,
-                      write_color: bool=True, color_dtype: np.dtype=np.float32, write_stats: bool=False,
-                      write_msk=False, msk_no_data: int=65535, prefix: str=''):
+def write_geotiff_dsm(future_dsm,
+        output_dir: str,
+        x_size: int,
+        y_size: int,
+        bounds: Tuple[float, float, float, float],
+        resolution: float,
+        epsg: int,
+        nb_bands: int,
+        dsm_no_data: float,
+        color_no_data: float,
+        write_color: bool = True,
+        color_dtype: np.dtype=np.float32,
+        write_stats: bool = False,
+        write_msk = False,
+        msk_no_data: int = 65535,
+        prefix: str=""):
     """
     Writes result tiles to GTiff file(s).
 
@@ -153,7 +171,7 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
 
     if write_color:
         names.append('clr')
-        clr_file = os.path.join(output_dir, prefix+'clr.tif')
+        clr_file = os.path.join(output_dir, prefix + 'clr.tif')
         files.append(clr_file)
         params.append(clr_rio_params)
         nodata_values.append(color_no_data)
@@ -161,26 +179,27 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
 
     if write_stats:
         names.append('dsm_mean')
-        dsm_mean_file = os.path.join(output_dir, prefix+'dsm_mean.tif')
+        dsm_mean_file = os.path.join(output_dir, prefix + 'dsm_mean.tif')
         files.append(dsm_mean_file)
         params.append(dsm_rio_params)
         nodata_values.append(dsm_no_data)
         nb_bands_to_write.append(1)
         names.append('dsm_std')
-        dsm_std_file = os.path.join(output_dir, prefix+'dsm_std.tif')
+        dsm_std_file = os.path.join(output_dir, prefix + 'dsm_std.tif')
         files.append(dsm_std_file)
         params.append(dsm_rio_params)
         nodata_values.append(dsm_no_data)
         nb_bands_to_write.append(1)
 
         names.append('dsm_n_pts')
-        dsm_n_pts_file = os.path.join(output_dir, prefix+'dsm_n_pts.tif')
+        dsm_n_pts_file = os.path.join(output_dir, prefix + 'dsm_n_pts.tif')
         files.append(dsm_n_pts_file)
         params.append(dsm_rio_params_uint16)
         nodata_values.append(0)
         nb_bands_to_write.append(1)
         names.append('dsm_pts_in_cell')
-        dsm_pts_in_cell_file = os.path.join(output_dir, prefix+'dsm_pts_in_cell.tif')
+        dsm_pts_in_cell_file = \
+            os.path.join(output_dir, prefix + 'dsm_pts_in_cell.tif')
         files.append(dsm_pts_in_cell_file)
         params.append(dsm_rio_params_uint16)
         nodata_values.append(0)
@@ -202,7 +221,8 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
         hasDatasets = hasDatasets and isinstance(tile, xr.Dataset)
 
     # get file handle(s) with optional color file.
-    with rasterio_handles(names, files, params, nodata_values, nb_bands_to_write) as rio_handles:
+    with rasterio_handles(names, files, params,
+                            nodata_values, nb_bands_to_write) as rio_handles:
 
         # Use inner function for the writing of tiles
         def write(raster_tile):
@@ -223,20 +243,33 @@ def write_geotiff_dsm(future_dsm, output_dir: str, x_size: int, y_size: int, bou
             # window is speficied as origin & size
             window = rio.windows.Window(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
 
-            rio_handles['dsm'].write_band(1, raster_tile[cst.RASTER_HGT].values, window=window)
-            
+            rio_handles['dsm'].write_band(1,
+                            raster_tile[cst.RASTER_HGT].values, window=window)
+
             if write_color:
-                rio_handles['clr'].write(raster_tile[cst.RASTER_COLOR_IMG].values.astype(color_dtype), window=window)
+                rio_handles['clr'].write(raster_tile[
+                            cst.RASTER_COLOR_IMG].values.astype(color_dtype),
+                                window=window)
 
             if write_stats:
-                rio_handles['dsm_mean'].write_band(1, raster_tile[cst.RASTER_HGT_MEAN].values, window=window)
-                rio_handles['dsm_std'].write_band(1, raster_tile[cst.RASTER_HGT_STD_DEV].values, window=window)
-                rio_handles['dsm_n_pts'].write_band(1, raster_tile[cst.RASTER_NB_PTS].values, window=window)
-                rio_handles['dsm_pts_in_cell'].write_band(1, raster_tile[cst.RASTER_NB_PTS_IN_CELL].values, window=window)
+                rio_handles['dsm_mean'].write_band(1,
+                                raster_tile[cst.RASTER_HGT_MEAN].values,
+                                window=window)
+                rio_handles['dsm_std'].write_band(1,
+                                raster_tile[cst.RASTER_HGT_STD_DEV].values,
+                                window=window)
+                rio_handles['dsm_n_pts'].write_band(1,
+                                raster_tile[cst.RASTER_NB_PTS].values,
+                                window=window)
+                rio_handles['dsm_pts_in_cell'].write_band(1,
+                                raster_tile[cst.RASTER_NB_PTS_IN_CELL].values,
+                                window=window)
 
             ds_values_list = [key for key, _ in raster_tile.items()]
             if cst.RASTER_MSK in ds_values_list and write_msk:
-                rio_handles['msk'].write_band(1, raster_tile[cst.RASTER_MSK].values, window=window)
+                rio_handles['msk'].write_band(1,
+                                raster_tile[cst.RASTER_MSK].values,
+                                window=window)
 
         # Multiprocessing mode
         if hasDatasets:
