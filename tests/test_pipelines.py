@@ -34,7 +34,9 @@ def test_build_stereorectification_grid_pipeline():
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
-    left_grid, right_grid, epipolar_size_x, epipolar_size_y, disp_to_alt_ratio, pipeline = pipelines.build_stereorectification_grid_pipeline(
+    left_grid, right_grid, epipolar_size_x, \
+        epipolar_size_y, disp_to_alt_ratio, pipeline \
+            = pipelines.build_stereorectification_grid_pipeline(
         img1, img2, dem, epi_step=step)
     assert epipolar_size_x == 612
     assert epipolar_size_y == 612
@@ -78,7 +80,8 @@ def test_build_stereorectification_grid_pipeline():
 @pytest.mark.unit_tests
 def test_build_extract_roi_application():
     """
-    Test that input region is correctly use to build the roi extraction application
+    Test that input region is correctly use to build the roi extraction
+    application
     """
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
     region = [100, 200, 300, 400]
@@ -100,7 +103,8 @@ def test_build_mask_pipeline():
     grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
     nodata = 0
     mask = absolute_data_path("input/phr_reunion/left_mask.tif")
-    out_ptr, pipeline = pipelines.build_mask_pipeline(img, grid, nodata, mask, 2387, 2387)
+    out_ptr, pipeline = pipelines.build_mask_pipeline(
+        img, grid, nodata, mask, 2387, 2387)
 
     assert "mask_app" in pipeline
     assert "resampling_app" in pipeline
@@ -149,7 +153,8 @@ def test_build_mask_pipeline_with_roi():
 @pytest.mark.unit_tests
 def test_build_image_resampling_pipeline():
     """
-    Test that the image resampling pipeline is correctly built (case with no input roi)
+    Test that the image resampling pipeline is correctly built
+    (case with no input roi)
     """
     img = absolute_data_path("input/phr_reunion/left_image.tif")
     grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
