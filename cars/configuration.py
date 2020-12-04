@@ -17,6 +17,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+======================
+  Module "configuration"
+======================
+This module is the main CARS configuration python file.
+It contains all the functions associated with CARS configuration.
+"""
+
 import json
 from json_checker import Or
 import os
@@ -26,7 +34,6 @@ from numpy import dtype
 
 from cars import utils
 from cars import filtering
-
 
 cfg = None
 
@@ -68,7 +75,8 @@ low_res_dsm_parameters_schema = {
 
 # disparity range estimation
 disparity_range_tag = "disparity_range"
-disparity_outliers_rejection_percent_tag = "disparity_outliers_rejection_percent"
+disparity_outliers_rejection_percent_tag =\
+    "disparity_outliers_rejection_percent"
 
 disparity_range_parameters_schema = {
     disparity_outliers_rejection_percent_tag : float
@@ -158,26 +166,32 @@ static_conf_schema = {
 
 #### namedTuple for parameters ####
 SiftParams = namedtuple('SiftParams', sift_parameters_schema.keys())
-LowResDSMParams = namedtuple('LowResDSMParams', low_res_dsm_parameters_schema.keys())
-RasterizationParams = namedtuple('RasterizationParams', rasterization_schema.keys())
+LowResDSMParams = namedtuple(
+    'LowResDSMParams', low_res_dsm_parameters_schema.keys())
+RasterizationParams = namedtuple(
+    'RasterizationParams', rasterization_schema.keys())
 
 
 def load_cfg():
     """
     Load the static configuration file.
-    It shall be automatically installed as $CARS_STATIC_CONFIGURATION/static_conf/static_configuration.json.
+    It shall be automatically installed
+    as $CARS_STATIC_CONFIGURATION/static_conf/static_configuration.json.
     """
     path = os.environ.get('CARS_STATIC_CONFIGURATION')
 
     if path is None:
         logger = logging.getLogger()
-        logger.critical('CARS_STATIC_CONFIGURATION environment variable is not set')
+        logger.critical(
+            'CARS_STATIC_CONFIGURATION environment variable is not set')
 
     # Read the static configuration file
-    conf_file_path = os.path.join(path, 'static_conf', 'static_configuration.json')
+    conf_file_path = os.path.join(path,
+                    'static_conf', 'static_configuration.json')
     if not os.path.exists(conf_file_path):
         logger = logging.getLogger()
-        logger.critical('The file indicated {} does not exist'.format(conf_file_path))
+        logger.critical(
+            'The file indicated {} does not exist'.format(conf_file_path))
 
     with open(conf_file_path, 'r') as f:
         global cfg
@@ -231,17 +245,19 @@ def get_low_res_dsm_params() -> LowResDSMParams:
 
 def get_disparity_outliers_rejection_percent() -> float:
     """
-    :return: The disparity outliers rejection percent from static configuration file
+    :return: Disparity outliers rejection percent from static configuration file
     """
     if cfg is None:
         load_cfg()
 
-    return cfg[prepare_tag][disparity_range_tag][disparity_outliers_rejection_percent_tag]
+    return cfg[prepare_tag][disparity_range_tag][
+                disparity_outliers_rejection_percent_tag]
 
 
 def get_epi_tile_margin_percent() -> int:
     """
-    :return: The epipolar tile margin to use as a percent of the estimated tile size from static configuration file
+    :return: The epipolar tile margin to use as a percent
+        of the estimated tile size from static configuration file
     """
     if cfg is None:
         load_cfg()
@@ -251,7 +267,8 @@ def get_epi_tile_margin_percent() -> int:
 
 def get_rasterization_params() -> RasterizationParams:
     """
-    Construct the RasterizationParams namedtuple from the static configuration file
+    Construct the RasterizationParams namedtuple
+    from the static configuration file
 
     :return: the rasterization parameters
     """
@@ -265,9 +282,10 @@ def get_rasterization_params() -> RasterizationParams:
     return rasterization_params
 
 
-def get_small_components_filter_params() -> filtering.SmallComponentsFilterParams:
+def get_small_components_filter_params()->filtering.SmallComponentsFilterParams:
     """
-    Construct the filtering.SmallComponentParams namedtuple from the static configuration file
+    Construct the filtering.SmallComponentParams namedtuple
+    from the static configuration file
 
     :return: the small components filter parameters
     """
@@ -275,17 +293,20 @@ def get_small_components_filter_params() -> filtering.SmallComponentsFilterParam
         load_cfg()
 
     # get small components filter section
-    small_cpn_filter_dict = cfg[compute_dsm_tag][cloud_filtering_tag][small_cpnts_filter_tag]
+    small_cpn_filter_dict = cfg[compute_dsm_tag][cloud_filtering_tag][
+                                small_cpnts_filter_tag]
     if small_cpn_filter_dict is None:
         return None
     else:
-        small_cpn_filter_params = filtering.SmallComponentsFilterParams(*small_cpn_filter_dict.values())
+        small_cpn_filter_params = filtering.SmallComponentsFilterParams(
+                                            *small_cpn_filter_dict.values())
         return small_cpn_filter_params
 
 
-def get_statistical_outliers_filter_params() -> filtering.StatisticalFilterParams:
+def get_statistical_outliers_filter_params()->filtering.StatisticalFilterParams:
     """
-    Construct the filtering.StatisticalFilterParams namedtuple from the static configuration file
+    Construct the filtering.StatisticalFilterParams namedtuple
+    from the static configuration file
 
     :return: the statistical outliers filter parameters
     """
@@ -293,11 +314,13 @@ def get_statistical_outliers_filter_params() -> filtering.StatisticalFilterParam
         load_cfg()
 
     # get statistical filter section
-    stat_filter_dict = cfg[compute_dsm_tag][cloud_filtering_tag][stat_outliers_filter_tag]
+    stat_filter_dict =\
+        cfg[compute_dsm_tag][cloud_filtering_tag][stat_outliers_filter_tag]
     if stat_filter_dict is None:
         return None
     else:
-        stat_filter_params = filtering.StatisticalFilterParams(*stat_filter_dict.values())
+        stat_filter_params = filtering.StatisticalFilterParams(
+                                            *stat_filter_dict.values())
         return stat_filter_params
 
 def get_color_image_encoding() -> dtype:
@@ -309,6 +332,7 @@ def get_color_image_encoding() -> dtype:
     if cfg is None:
         load_cfg()
 
-    color_image_encoding = cfg[compute_dsm_tag][output_tag][color_image_encoding_tag]
+    color_image_encoding = cfg[compute_dsm_tag][output_tag][
+                                        color_image_encoding_tag]
 
     return dtype(color_image_encoding)
