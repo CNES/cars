@@ -20,7 +20,11 @@
 #
 
 """
-This module contains some purpose functions using polygons and data projections that do not fit in other modules
+=====================
+  Module "projection"
+=====================
+It contains some purpose functions using polygons and data projections
+that do not fit in other modules
 """
 
 # Standard imports
@@ -48,8 +52,11 @@ from cars import constants as cst
 def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
                                min_elev: float, max_elev: float) -> List[int]:
     """
-    Get the maximum bounding box of the projected polygon considering an elevation range.
-    To do so the polygon is projected two times using the min and max elevations. The bounding box containing the two
+    Get the maximum bounding box of the projected polygon
+    considering an elevation range.
+
+    To do so the polygon is projected two times using the min and
+    max elevations. The bounding box containing the two
     projected polygons is then returned.
 
     :param poly: polygon to project
@@ -57,9 +64,11 @@ def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
     :param target_epsg:  epsg code of the target referential
     :param min_elev: minimum elevation in the considering polygon
     :param max_elev: maximum elevation in the considering polygon
-    :return: the maximum bounding box in the target epsg code referential as a list [xmin, ymin, xmax, ymax]
+    :return: the maximum bounding box in the target epsg code referential
+        as a list [xmin, ymin, xmax, ymax]
     """
-    # construct two polygons from the initial one and add min and max elevations in each of them
+    # construct two polygons from the initial one
+    # and add min and max elevations in each of them
     poly_pts_with_min_alt = []
     poly_pts_with_max_alt = []
     for pt in list(poly.exterior.coords):
@@ -74,8 +83,10 @@ def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
     poly_elev_max = polygon_projection(poly_elev_max, poly_epsg, target_epsg)
 
     # retrieve the largest bounding box
-    (xmin_poly_elev_min, ymin_poly_elev_min, xmax_poly_elev_min, ymax_poly_elev_min) = poly_elev_min.bounds
-    (xmin_poly_elev_max, ymin_poly_elev_max, xmax_poly_elev_max, ymax_poly_elev_max) = poly_elev_max.bounds
+    (xmin_poly_elev_min, ymin_poly_elev_min,\
+        xmax_poly_elev_min, ymax_poly_elev_min) = poly_elev_min.bounds
+    (xmin_poly_elev_max, ymin_poly_elev_max,\
+        xmax_poly_elev_max, ymax_poly_elev_max) = poly_elev_max.bounds
 
     xmin = min(xmin_poly_elev_min, xmin_poly_elev_max)
     ymin = min(ymin_poly_elev_min, ymin_poly_elev_max)
@@ -87,7 +98,8 @@ def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
 
 def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     """
-    Compute the intersection polygon between the defined dem regions and the reference polygon in input
+    Compute the intersection polygon between the defined dem regions
+    and the reference polygon in input
 
     :raise Exception when the input dem does not intersect the reference polygon
 
@@ -97,7 +109,8 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     :type ref_poly: Polygon
     :param ref_epsg: reference epsg code
     :type ref_epsg: int
-    :return: The intersection polygon between the defined dem regions and the reference polygon in input
+    :return: The intersection polygon between the defined dem regions
+        and the reference polygon in input
     :rtype Polygon
     """
     dem_poly = None
@@ -120,7 +133,11 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
                         try:
                             file_epsg = data.crs.to_epsg()
                             file_bb = Polygon(
-                                [(xmin, ymin), (xmin, ymax), (xmax, ymax), (xmax, ymin), (xmin, ymin)])
+                                [(xmin, ymin),
+                                 (xmin, ymax),
+                                 (xmax, ymax),
+                                 (xmax, ymin),
+                                 (xmin, ymin)])
 
                             # transform polygon if needed
                             if ref_epsg != file_epsg:
@@ -133,7 +150,8 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
 
                                 # retrieve valid polygons
                                 for poly, val in shapes(
-                                        data.dataset_mask(), transform=data.transform):
+                                        data.dataset_mask(),
+                                        transform=data.transform):
                                     if val != 0:
                                         poly = shape(poly)
                                         poly = poly.buffer(0)
@@ -157,7 +175,9 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
 
                         except AttributeError as e:
                             logging.error(
-                                'Impossible to read the SRTM tile epsg code: {}'.format(e))
+                                'Impossible to read the SRTM'
+                                'tile epsg code: {}'.format(e)
+                            )
 
     # compute dem coverage polygon over the reference polygon
     if dem_poly is None or not dem_poly.intersects(ref_poly):
@@ -202,7 +222,8 @@ def geo_to_ecef(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray)\
     :param lat: input geodetic latitude (angle in degree)
     :param lon:  input geodetic longitude (angle in degree)
     :param alt: input altitude above geodetic ellipsoid (meters)
-    :return:  ECEF (Earth centered, Earth fixed) x, y, z coordinates tuple (meters)
+    :return:  ECEF (Earth centered, Earth fixed) x, y, z coordinates tuple
+                                                    (in meters)
     """
     epsg_in=4979 # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
     epsg_out=4978 # EPSG code for ECEF WGS84 in x, y, z (meters)
@@ -220,7 +241,7 @@ def ecef_to_enu(x: np.ndarray, y: np.ndarray,  z: np.ndarray,\
     Reminder: Use OSR lib if ENU conversion is available in next OSR versions.
 
     See Wikipedia page for details:
-    https://en.wikipedia.org/wiki/Geographic_coordinate_conversion#From_ECEF_to_ENU
+    https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 
     :param x: target x ECEF coordinate (meters)
     :param y: target y ECEF coordinate (meters)
@@ -250,8 +271,14 @@ def ecef_to_enu(x: np.ndarray, y: np.ndarray,  z: np.ndarray,\
     # z0 = (rad*c0*(1-e2) + alt0) * sin_lat0
 
     xEast = (-(x-x0) * sin_long0) + ((y-y0)*cos_long0)
-    yNorth = (-cos_long0*sin_lat0*(x-x0)) - (sin_lat0*sin_long0*(y-y0)) + (cos_lat0*(z-z0))
-    zUp = (cos_lat0*cos_long0*(x-x0)) + (cos_lat0*sin_long0*(y-y0)) + (sin_lat0*(z-z0))
+    yNorth =\
+        (-cos_long0*sin_lat0*(x-x0)) -\
+        (sin_lat0*sin_long0*(y-y0)) +\
+        (cos_lat0*(z-z0))
+    zUp =\
+        (cos_lat0*cos_long0*(x-x0)) +\
+        (cos_lat0*sin_long0*(y-y0)) +\
+        (sin_lat0*(z-z0))
 
     return xEast, yNorth, zUp
 
@@ -282,7 +309,7 @@ def enu_to_aer(e: np.ndarray, n: np.ndarray, u: np.ndarray)\
     :param e: ENU East coordinate (meters)
     :param n: ENU North coordinate (meters)
     :param u: ENU Up coordinate (meters)
-    :return: Azimuth, Elevation Angle, Slant Range tuple (degrees, degres, meters)
+    :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
     """
 
     r = np.hypot(e, n)
@@ -299,7 +326,8 @@ def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
                lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
-    Gives Azimuth, Elevation angle and Slant Range from a Reference to a Point with geodetic coordinates.
+    Gives Azimuth, Elevation angle and Slant Range
+    from a Reference to a Point with geodetic coordinates.
 
     :param lat: input geodetic latitude (angle in degree)
     :param lon: input geodetic longitude (angle in degree)
@@ -307,7 +335,7 @@ def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
     :param lat0: Reference geodetic latitude
     :param lon0: Reference geodetic longitude
     :param alt0: Reference altitude above geodetic ellipsoid (meters)
-    :return: Azimuth, Elevation Angle, Slant Range tuple (degrees, degres, meters)
+    :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
     """
     e, n, u = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
     return enu_to_aer(e, n, u)
@@ -341,11 +369,15 @@ def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     return cloud_in
 
 
-def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset) -> Tuple[np.array, List[int]]:
+def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset)\
+                                  -> Tuple[np.array, List[int]]:
     """
-    Get a numpy array of size (nb_points, 3) with the columns being the x, y and z coordinates from a dataset as given
+    Get a numpy array of size (nb_points, 3) with the columns
+    being the x, y and z coordinates from a dataset as given
     in output of the triangulation.
-    The original epipolar geometry shape is also given in output in order to reshape the output numpy array in its
+
+    The original epipolar geometry shape is also given in output
+    in order to reshape the output numpy array in its
     original geometry if necessary.
 
     :param cloud_in: input xarray dataset
@@ -362,9 +394,13 @@ def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset) -> Tuple[np.array, List[
     return xyz, xyz_shape
 
 
-def get_converted_xy_np_arrays_from_dataset(cloud_in: xr.Dataset, epsg_out: int) -> Tuple[np.array, np.array]:
+def get_converted_xy_np_arrays_from_dataset(
+        cloud_in: xr.Dataset,
+        epsg_out: int)\
+    -> Tuple[np.array, np.array]:
     """
-    Get the x and y coordinates as numpy array in the new referential indicated by epsg_out.
+    Get the x and y coordinates as numpy array
+    in the new referential indicated by epsg_out.
 
     :param cloud_in: input xarray dataset
     :param epsg_out: target epsg code
@@ -404,7 +440,9 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
         cloud.attrs[cst.EPSG] = epsg_out
 
 
-def points_cloud_conversion_dataframe(cloud: pandas.DataFrame, epsg_in: int, epsg_out: int):
+def points_cloud_conversion_dataframe(
+        cloud: pandas.DataFrame,
+        epsg_in: int, epsg_out: int):
     """
     Convert a point cloud as a panda.DataFrame to another epsg (inplace)
 
