@@ -20,6 +20,9 @@
 #
 
 """
+====================
+  Module "tiling"
+====================
 This module contains functions related to regions and tiles management
 """
 
@@ -32,7 +35,8 @@ from cars import utils, projection
 
 def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
     """
-    Generate grid of positions by splitting [xmin, xmax]x[ymin,ymax] in splits of xsplit x ysplit size
+    Generate grid of positions by splitting [xmin, xmax]x[ymin, ymax]
+        in splits of xsplit x ysplit size
 
     :param xmin : xmin of the bounding box of the region to split
     :type xmin: float
@@ -46,7 +50,8 @@ def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
     :type xsplit: int
     :param ysplit: height of splits
     :type ysplit: int
-    :returns: A tuple with output grid, number of splits if first direction (n), number of splits in second direction (m)
+    :returns: A tuple with output grid, number of splits if first direction (n),
+        number of splits in second direction (m)
     :type ndarray of shape (n+1,m+1,2)
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
@@ -64,7 +69,8 @@ def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
 
 def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
     """
-    Split a region defined by [xmin, xmax]x[ymin,ymax] in splits of xsplit x ysplit size
+    Split a region defined by [xmin, xmax] x [ymin, ymax]
+        in splits of xsplit x ysplit size
 
     :param xmin : xmin of the bounding box of the region to split
     :type xmin: float
@@ -78,7 +84,8 @@ def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
     :type xsplit: int
     :param ysplit: height of splits
     :type ysplit: int
-    :returns: A list of splits represented by arrays of 4 elements [xmin, ymin, xmax, ymax]
+    :returns: A list of splits represented
+        by arrays of 4 elements [xmin, ymin, xmax, ymax]
     :type list of 4 float
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
@@ -107,9 +114,11 @@ def crop(region1, region2):
 
     :param region1: The region to crop as an array [xmin, ymin, xmax, ymax]
     :type region1: list of four float
-    :param region2: The region used for cropping as an array [xmin, ymin, xmax, ymax]
+    :param region2: The region used for cropping
+        as an array [xmin, ymin, xmax, ymax]
     :type region2: list of four float
-    :returns: The cropped regiona as an array [xmin, ymin, xmax, ymax]. If region1 is outside region2, might result in inconsistent region
+    :returns: The cropped regiona as an array [xmin, ymin, xmax, ymax].
+        If region1 is outside region2, might result in inconsistent region
     :rtype: list of four float
     """
     out = region1[:]
@@ -147,7 +156,8 @@ def empty(region):
 
     :param region: region as an array [xmin, ymin, xmax, ymax]
     :type region: list of four float
-    :returns: True if the region is considered empty (no pixels inside), False otherwise
+    :returns: True if the region is considered empty (no pixels inside),
+        False otherwise
     :rtype: bool
 """
     return region[0] >= region[2] or region[1] >= region[3]
@@ -221,9 +231,11 @@ def list_tiles(region, largest_region, tile_size, margin=1):
 
 def roi_to_start_and_size(region, resolution):
     """
-    Convert roi as array of [xmin, ymin, xmax, ymax] to xmin, ymin, xsize, ysize given a resolution
+    Convert roi as array of [xmin, ymin, xmax, ymax]
+    to xmin, ymin, xsize, ysize given a resolution
 
-    Beware that a negative spacing is considered for y axis, and thus returned ystart is in fact ymax
+    Beware that a negative spacing is considered for y axis,
+    and thus returned ystart is in fact ymax
 
     :param region: The region to convert
     :type region: list of four float
@@ -259,10 +271,12 @@ def ground_polygon_from_envelopes(
     :type epsg1: int
     :param epsg2: EPSG code of poly_envelope2
     :type epsg2: int
-    :param tgt_epsg: EPSG code of the new projection (default value is set to 4326)
+    :param tgt_epsg: EPSG code of the new projection
+        (default value is set to 4326)
     :type tgt_epsg: int
-    :return: a tuple with the shapely polygon of the intersection and the intersection's bounding box (described by a
-    tuple (minx, miny, maxx, maxy))
+    :return: a tuple with the shapely polygon of the intersection
+        and the intersection's bounding box
+        (described by a tuple (minx, miny, maxx, maxy))
     :rtype: Tuple[polygon, Tuple[int, int, int, int]]
     """
     # project to the correct epsg if necessary
