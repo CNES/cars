@@ -20,9 +20,12 @@
 #
 
 """
-This module contains the functions associated to the compute_dsm cars_cli sub-command
+======================
+  Module "compute_dsm"
+======================
+This module is the main CARS compute 3D pipeline.
+It contains all the functions associated with its cars_cli subcommand.
 """
-
 
 # Standard imports
 from __future__ import print_function
@@ -58,18 +61,23 @@ from cars import projection
 from cars import readwrite
 from cars import preprocessing
 from cars import constants as cst
-from cars.cluster import start_local_cluster, start_cluster, stop_cluster, ComputeDSMMemoryLogger
+from cars.cluster import start_local_cluster, start_cluster,\
+                         stop_cluster, ComputeDSMMemoryLogger
 
 
 def region_hash_string(region):
-    '''This lambda will allow to derive a key to index region in the previous dictionnary'''
-    return "{}_{}_{}_{}".format(region[0],region[1],region[2],region[3])
-
-
-def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kwargs):
     '''
-    Wraps the call to stereo.images_pair_to_3d_points and write down the output
-    points and colors
+    This lambda will allow to derive a key
+    to index region in the previous dictionnary
+    '''
+    return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
+
+
+def write_3d_points(configuration, region, corr_config,
+                    tmp_dir, config_id, **kwargs):
+    '''
+    Wraps the call to stereo.images_pair_to_3d_points
+    and write down the output points and colors
 
     :param configuration: configuration values
     :param region: region to process
@@ -83,15 +91,18 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
     points_file = os.path.join(points_dir, "{}.nc".format(hashed_region))
     color_dir = os.path.join(config_id_dir, "color")
     color_file = os.path.join(color_dir, "{}.nc".format(hashed_region))
+
     # Compute 3d points and colors
-    points, colors = stereo.images_pair_to_3d_points(configuration, region, corr_config, **kwargs)
+    points, colors = stereo.images_pair_to_3d_points(configuration, region,
+                                                     corr_config, **kwargs)
 
     # Create output directories
     utils.safe_makedirs(points_dir)
     utils.safe_makedirs(color_dir)
 
-    # Write to netcdf the 3d points and color, for both cst.STEREO_REF and cst.STEREO_SEC modes
-    # output paths end with '_ref.nc' or '_sec.nc' 
+    # Write to netcdf the 3D points and color,
+    ## for both cst.STEREO_REF and cst.STEREO_SEC modes
+    ## output paths end with '_ref.nc' or '_sec.nc'
     out_points = {}
     out_colors = {}
     for key in points:
@@ -102,16 +113,19 @@ def write_3d_points(configuration, region, corr_config, tmp_dir, config_id, **kw
         outPath = os.path.join(color_dir, "{}_{}.nc".format(hashed_region,key))
         colors[key].to_netcdf(outPath)
         out_colors[key] = outPath
+
     # outputs are the temporary files paths
     return out_points, out_colors
 
 
-def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str], resolution: float, epsg: int, tmp_dir: str,
-                      nb_bands: int, color_dtype: np.dtype, output_stats: bool, write_msk: bool, **kwargs) -> str:
+def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str],
+                      resolution: float, epsg: int, tmp_dir: str,
+                      nb_bands: int, color_dtype: np.dtype, output_stats: bool,
+                      write_msk: bool, **kwargs) -> str:
     """
     Wraps the call to rasterization_wrapper and write the dsm tile on disk
 
-    :param clouds_and_colors_as_str_list: paths to 3d points and colors to rasterize
+    :param clouds_and_colors_as_str_list:  3D points & colors paths to rasterize
     :param resolution: output DSM resolution
     :param epsg: EPSG code of output DSM
     :param tmp_dir: directory to store output DSM tiles
@@ -119,14 +133,16 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str], resolution: floa
     :param color_dtype: type to use for the ortho-image
     :param output_stats: True if we save statistics with DSM tiles
     :param write_msk: boolean enabling the rasterized mask's writting
+    :param kwargs: all the keyword arguments passed to rasterization_wrapper
     :return the region hash string
     """
     # replace paths by opened Xarray datasets
-    xr_open_dict = lambda x: dict([(name, xr.open_dataset(value)) for name, value in x.items()])
-    clouds_and_colors_as_xr_list = [(xr_open_dict(k[0]), xr_open_dict(k[1])) for k in clouds_and_colors_as_str_list]
+    xr_open_dict = lambda x: dict([(name,
+                    xr.open_dataset(value)) for name, value in x.items()])
+    clouds_and_colors_as_xr_list = [(xr_open_dict(k[0]),
+                    xr_open_dict(k[1])) for k in clouds_and_colors_as_str_list]
 
-    # kwargs contains all the keyword arguments that will be passed to rasterization_wrapper
-    # we need to extract a few of them
+    # Extract some kwargs keyword arguments from rasterization_wrapper
     xstart = kwargs.get('xstart')
     ystart = kwargs.get('ystart')
     xsize = kwargs.get('xsize')
@@ -139,28 +155,32 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str], resolution: floa
     hashed_region = region_hash_string([xstart,ystart,xsize,ysize])
 
     # call to rasterization_wrapper
-    dsm = rasterization_wrapper(clouds_and_colors_as_xr_list, resolution, epsg, **kwargs)
+    dsm = rasterization_wrapper(clouds_and_colors_as_xr_list,
+                                resolution, epsg, **kwargs)
 
     # compute tile bounds
-    tile_bounds = [xstart, ystart - resolution*ysize,xstart +resolution*xsize , ystart]
+    tile_bounds = [xstart, ystart - resolution*ysize,
+                   xstart +resolution*xsize, ystart]
 
     # write DSM tile as geoTIFF
     readwrite.write_geotiff_dsm([dsm], tmp_dir, xsize, ysize, tile_bounds,
-                                resolution, epsg, nb_bands, dsm_nodata, color_nodata, color_dtype = color_dtype,
-                                write_color=True, write_stats=output_stats, write_msk=write_msk, msk_no_data=msk_nodata,
+                                resolution, epsg, nb_bands, dsm_nodata,
+                                color_nodata, color_dtype = color_dtype,
+                                write_color=True, write_stats=output_stats,
+                                write_msk=write_msk, msk_no_data=msk_nodata,
                                 prefix=hashed_region+'_')
 
     return hashed_region
 
 def rasterization_wrapper(clouds_and_colors, resolution, epsg, **kwargs):
     """
-    Wrapper for rasterization step.
-
-    This function allow to convert a list of cloud to correct EPSG and rasterize it with associated colors.
+    Wrapper for rasterization step :
+    - Convert a list of clouds to correct epsg
+    - Rasterize it with associated colors
 
     :param clouds_and_colors: list of tuple (cloud, colors)
     :type clouds_and_colors: list of pair of xarray
-    :param resolution: resolution of DSM to produce (in meter, degree... [depends on epsg code])
+    :param resolution: Produced DSM resolution (meter, degree [EPSG dependent])
     :type resolution: float
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
@@ -183,7 +203,8 @@ def rasterization_wrapper(clouds_and_colors, resolution, epsg, **kwargs):
         colors.extend(color_sec)
 
     # Call simple_rasterization
-    return rasterization.simple_rasterization_dataset(clouds, resolution, epsg, colors, **kwargs)
+    return rasterization.simple_rasterization_dataset(clouds, resolution, epsg,
+                                                      colors, **kwargs)
 
 
 def run(
@@ -212,41 +233,47 @@ def run(
         cloud_statistical_outliers_filter:bool=True,
         epi_tile_size: int=None):
     """
-    Main function for the compute_dsm subcommand
+    Main function for the compute_dsm pipeline subcommand
 
-    This function will compute independent tiles of the final DSM, with the following steps:
+    It computes independent tiles of the final DSM, with the following steps:
 
     1. Epipolar resampling (including mask)
     2. Disparity map estimation
     3. Triangulation of disparity map
     4. Rasterization to DSM
 
-    :param in_jsons: dictionaries describing the input pair (as produced by cars_preproc tool)
-    :param out_dir: directory where output raster and color images will be written
-    :param resolution: resolution of DSM to produce
-    :param min_elevation_offset: Override minimum disparity from prepare step with this offset in meters
-    :param max_elevation_offset: Override maximum disparity from prepare step with this offset in meters
-    :param epsg: epsg code for the CRS of the output DSM
-    :param sigma: width of gaussian weight for rasterization
-    :param dsm_radius: Radius around a cell for gathering points for rasterization
+    :param in_jsons: Input pair dictionaries (as produced by cars prepare step)
+    :param out_dir: Computed raster and color image output directory
+    :param resolution: DSM resolution to produce
+    :param min_elevation_offset: Override minimum disparity
+                                 from prepare step with this offset in meters
+    :param max_elevation_offset: Override maximum disparity
+                                 from prepare step with this offset in meters
+    :param epsg: Output DSM Coordinate Reference System EPSG code
+    :param sigma: Rasterization width of gaussian weight
+    :param dsm_radius: Rasterization radius around a cell for gathering points
     :param dsm_no_data: No data value to use in the final DSM file
     :param color_no_data: No data value to use in the final colored image
     :param msk_no_data: No data value to use in the final mask image
     :param corr_config: Correlator configuration
-    :param output_stats: flag, if true, outputs dsm as a geotiff file with quality statistics.
+    :param output_stats: Ouput DSM associated quality statistics flag boolean
     :param mode: Parallelization mode
     :param nb_workers: Number of dask workers to use for the sift matching step
     :param walltime: Walltime of the dask workers
-    :param roi: DSM ROI in final projection with the corresponding epsg code ([xmin, ymin, xmax, ymax], roi_epsg))
-    (roi_epsg can be set to None if the ROI is in final projection)
-    :param use_geoid_alt: Wheter altitude should be computed wrt geoid height or not.
-    :param use_sec_disp: Boolean activating the use of the secondary disparity map
-    :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so as to cross those of img1
-    :param align: If this is True, use the correction estimated during prepare to align to lowres DEM (if available)
-    :param cloud_small_components_filter: Boolean activating the points cloud small components filtering. The filter's
-    parameters are set in the static configuration json.
-    :param cloud_statistical_outliers_filter: Boolean activating the points cloud statistical outliers filtering.
-    The filter's parameters are set in the static configuration json.
+    :param roi: DSM Region Of Interest in final projection with EPSG reference
+                ([xmin, ymin, xmax, ymax], roi_epsg))
+                (roi_epsg can be set to None if the ROI is in final projection)
+    :param use_geoid_alt: Geoid height reference for DSM altitude flag.
+    :param use_sec_disp: Secondary disparity map activation flag.
+    :param snap_to_img1: Force Img2 / Img1 Lines of Sight crossing flag.
+    :param align: If this is True, use the correction estimated during prepare
+                  to align to lowres DEM (if available)
+    :param cloud_small_components_filter:
+                Activating the points cloud small components filtering.
+                The filter's parameters are set in static configuration json.
+    :param cloud_statistical_outliers_filter:
+                Activating the points cloud statistical outliers filtering.
+                The filter's parameters are set in static configuration json.
     :param epi_tile_size: Force the size of epipolar tiles (None by default)
     """
     out_dir = os.path.abspath(out_dir)
@@ -286,7 +313,8 @@ def run(
 
     if use_geoid_alt:
         geoid_data = utils.read_geoid_file()
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][params.alt_reference_tag] = 'geoid'
+        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
+            params.alt_reference_tag] = 'geoid'
     else:
         geoid_data = None
         out_json[params.stereo_section_tag][params.stereo_output_section_tag][
@@ -294,13 +322,15 @@ def run(
 
 
     if epsg is not None:
-        out_json[params.stereo_section_tag][params.stereo_parameters_section_tag][params.epsg_tag] = epsg
+        out_json[params.stereo_section_tag][
+            params.stereo_parameters_section_tag][params.epsg_tag] = epsg
 
     roi_epsg = None
     if roi is not None:
         (roi_xmin, roi_ymin, roi_xmax, roi_ymax), roi_epsg = roi
         roi_poly = Polygon([(roi_xmin, roi_ymin), (roi_xmax, roi_ymin),
-                            (roi_xmax, roi_ymax), (roi_xmin, roi_ymax), (roi_xmin, roi_ymin)])
+                            (roi_xmax, roi_ymax), (roi_xmin, roi_ymax),
+                            (roi_xmin, roi_ymin)])
 
     # set the timeout for each job in multiprocessing mode (in seconds)
     perJobTimeout = 600
@@ -309,7 +339,7 @@ def run(
 
     config_idx = 1
 
-    ref_left_image = None
+    ref_left_img = None
 
     write_msk = False
 
@@ -321,12 +351,11 @@ def run(
         configuration = utils.check_json(
             in_json, params.preprocessing_content_schema)
 
-        preprocessing_output_config = configuration[
-            params.preprocessing_section_tag][params.preprocessing_output_section_tag]
-
         # retrieve masks classes usages
-        mask1_classes = configuration[params.input_section_tag].get(params.mask1_classes_tag, None)
-        mask2_classes = configuration[params.input_section_tag].get(params.mask2_classes_tag, None)
+        mask1_classes = configuration[
+            params.input_section_tag].get(params.mask1_classes_tag, None)
+        mask2_classes = configuration[
+            params.input_section_tag].get(params.mask2_classes_tag, None)
 
         classes_usage = dict()
         if mask1_classes is not None:
@@ -349,50 +378,67 @@ def run(
         }
 
         if mask1_classes is not None or mask2_classes is not None:
-            out_json_config[params.stereo_mask_classes_usage_tag] = classes_usage
+            out_json_config[
+                params.stereo_mask_classes_usage_tag] = classes_usage
 
         out_json[params.stereo_inputs_section_tag].append(out_json_config)
 
         configurations_data[config_id] = {}
 
         configurations_data[config_id]['configuration'] = configuration
-        
-        # Check left image and raise a warning if different left images are used along with snap_to_img1 mpode
-        if ref_left_image is None:
-            ref_left_image = configuration[params.input_section_tag][params.img1_tag]
-        else:
-            if snap_to_img1 and ref_left_image != configuration[params.input_section_tag][params.img1_tag]:
-                logging.warning("--snap_to_left_image mode is used but input configurations have different images as their left image in pair. This may result in increasing registration discrepencies between pairs")
 
-        # if the mask1 and/or mask2 fields are set in the prepare input configuration json
+        # Get local conf left image for this in_json iteration
+        conf_left_img = configuration[params.input_section_tag][params.img1_tag]
+
+        # Check left image and raise a warning
+        # if different left images are used along with snap_to_img1 mode
+        if ref_left_img is None:
+            ref_left_img = conf_left_img
+        else:
+            if snap_to_img1 and ref_left_img != conf_left_img:
+                logging.warning(
+                    "--snap_to_left_image mode is used but input "
+                    "configurations have different images as their "
+                    "left image in pair. This may result in "
+                    "increasing registration discrepencies between pairs")
+
+        # If mask1 and/or mask2 are set in the prepare input configuration json
         # then the DSM rasterized mask will be written alongside the DSM
-        if configuration[params.input_section_tag].get(params.mask1_tag, None) is not None:
+        # TODO : Mask 2 ?
+        mask1 = \
+            configuration[params.input_section_tag].get(params.mask1_tag, None)
+        if mask1 is not None:
             write_msk = True
 
-        # Get largest epipolar regions from configuration file
-        largest_epipolar_region = [0,
-                                   0,
-                                   preprocessing_output_config[params.epipolar_size_x_tag],
-                                   preprocessing_output_config[params.epipolar_size_y_tag]]
+        # Get Preprocessing output config
+        preprocessing_output_config = configuration[
+            params.preprocessing_section_tag][
+            params.preprocessing_output_section_tag]
 
-        configurations_data[config_id]['largest_epipolar_region'] = largest_epipolar_region
+        # Get largest epipolar regions from configuration file
+        largest_epipolar_region =\
+            [0, 0, preprocessing_output_config[params.epipolar_size_x_tag],
+                   preprocessing_output_config[params.epipolar_size_y_tag]]
+
+        configurations_data[config_id]['largest_epipolar_region'] =\
+                                                        largest_epipolar_region
 
         disp_min = preprocessing_output_config[params.minimum_disparity_tag]
         disp_max = preprocessing_output_config[params.maximum_disparity_tag]
-        disp_to_alt_ratio = preprocessing_output_config[params.disp_to_alt_ratio_tag]
+        disp_to_alt_ratio = preprocessing_output_config[
+                                               params.disp_to_alt_ratio_tag]
 
         # Check if we need to override disp_min
         if min_elevation_offset is not None:
             user_disp_min = min_elevation_offset / disp_to_alt_ratio
             if user_disp_min > disp_min:
                 logging.warning(
-                    ('Overriden disparity minimum = {:.3f} pix. (or {:.3f} m.) is greater '
-                     'than disparity minimum estimated in prepare step = {:.3f} pix. (or '
-                     '{:.3f} m.) for configuration {}').format(
-                        user_disp_min,
-                        min_elevation_offset,
-                        disp_min,
-                        disp_min * disp_to_alt_ratio,
+                    ('Overriden disparity minimum = {:.3f} pix. (= {:.3f} m.) '
+                     'is greater than disparity minimum estimated '
+                     'in prepare step = {:.3f} pix. (or {:.3f} m.) '
+                     'for configuration {}').format(
+                        user_disp_min, min_elevation_offset,
+                        disp_min, disp_min * disp_to_alt_ratio,
                         config_id))
                 disp_min = user_disp_min
 
@@ -401,25 +447,20 @@ def run(
             user_disp_max = max_elevation_offset / disp_to_alt_ratio
             if user_disp_max < disp_max:
                 logging.warning(
-                    ('Overriden disparity maximum = {:.3f} pix. (or {:.3f} m.) is lower '
-                     'than disparity maximum estimated in prepare step = {:.3f} pix. (or '
-                     '{:.3f} m.) for configuration {}').format(
-                        user_disp_max,
-                        max_elevation_offset,
-                        disp_max,
-                        disp_max * disp_to_alt_ratio,
+                    ('Overriden disparity maximum = {:.3f} pix. (or {:.3f} m.) '
+                     'is lower than disparity maximum estimated '
+                     'in prepare step = {:.3f} pix. (or {:.3f} m.) '
+                     'for configuration {}').format(
+                        user_disp_max, max_elevation_offset,
+                        disp_max, disp_max * disp_to_alt_ratio,
                         config_id))
             disp_max = user_disp_max
 
         logging.info(
-            'Disparity range for config {}: [{:.3f} pix., {:.3f} pix.] (or [{:.3f} m., {:.3f} m.])'.format(
-                config_id,
-                disp_min,
-                disp_max,
-                disp_min *
-                disp_to_alt_ratio,
-                disp_max *
-                disp_to_alt_ratio))
+            'Disparity range for config {}: [{:.3f} pix., {:.3f} pix.] '
+            '(or [{:.3f} m., {:.3f} m.])'.format(
+                config_id, disp_min, disp_max,
+                disp_min * disp_to_alt_ratio, disp_max * disp_to_alt_ratio))
 
         configurations_data[config_id]['disp_min'] = disp_min
         configurations_data[config_id]['disp_max'] = disp_max
@@ -438,53 +479,69 @@ def run(
         logging.debug("Spacing of epipolar grid: {}".format(spacing))
 
         # Warning if align is set but correction is missing
-        if align and params.lowres_dem_splines_fit_tag not in preprocessing_output_config:
-            logging.warning(('Align with low resolution DSM option is set but splines correction file '
-                            'is not available for configuration {}. Correction '
-                            'will not be applied for this configuration').format(config_id))
+        param_lowres_tag = params.lowres_dem_splines_fit_tag
+        if align and param_lowres_tag not in preprocessing_output_config:
+            logging.warning(
+                ('Align with low resolution DSM option is set but splines '
+                 'correction file is not available for configuration {}. '
+                 'Correction will not be applied for this configuration')
+                 .format(config_id))
 
-        # Numpy array with corners of largest epipolar region. Order
-        # does not matter here, since it will be passed to stereo.compute_epipolar_grid_min_max
-        corners = np.array([[[largest_epipolar_region[0],largest_epipolar_region[1]],
-                             [largest_epipolar_region[0], largest_epipolar_region[3]]], 
-                            [[largest_epipolar_region[2], largest_epipolar_region[3]], 
-                             [largest_epipolar_region[2], largest_epipolar_region[1]]]], dtype=np.float64)
+        # Numpy array with corners of largest epipolar region.
+        # Order does not matter here,
+        # since it will be passed to stereo.compute_epipolar_grid_min_max
+        corners = np.array(
+            [[[largest_epipolar_region[0],largest_epipolar_region[1]],
+            [largest_epipolar_region[0], largest_epipolar_region[3]]],
+            [[largest_epipolar_region[2], largest_epipolar_region[3]],
+            [largest_epipolar_region[2], largest_epipolar_region[1]]]],
+            dtype=np.float64)
 
-        # get utm zone with the middle point of terrain_min if epsg is
-        # None
+        # get UTM zone with the middle point of terrain_min if epsg is None
         if epsg is None:
-            # Compute terrain position of epipolar image corners for min and max disparity
-            terrain_dispmin, terrain_dispmax = stereo.compute_epipolar_grid_min_max(corners, 4326, configuration, disp_min, disp_max)
+            # Compute epipolar image terrain position corners
+            # for min and max disparity
+            terrain_dispmin, terrain_dispmax =\
+                stereo.compute_epipolar_grid_min_max(
+                    corners, 4326, configuration, disp_min, disp_max)
+
             epsg = rasterization.get_utm_zone_as_epsg_code(
-                *np.mean(terrain_dispmin, axis=0))
+                                            *np.mean(terrain_dispmin, axis=0))
+
             logging.info("EPSG code: {}".format(epsg))
 
         # Compute terrain min and max again, this time using estimated epsg code
-        terrain_dispmin, terrain_dispmax = stereo.compute_epipolar_grid_min_max(corners, epsg, configuration, disp_min, disp_max)
+        terrain_dispmin, terrain_dispmax =\
+            stereo.compute_epipolar_grid_min_max(
+                corners, epsg, configuration, disp_min, disp_max)
 
 
         if roi_epsg is not None:
             if roi_epsg != epsg:
-                roi_poly = projection.polygon_projection(roi_poly, roi_epsg, epsg)
+                roi_poly =\
+                    projection.polygon_projection(roi_poly, roi_epsg, epsg)
 
         # Compute bounds from epipolar image corners and dispmin/dispmax
         terrain_bounds = np.stack((terrain_dispmin, terrain_dispmax), axis=0)
         terrain_min = np.amin(terrain_bounds, axis=(0,1))
-        terrain_max = np.amax(terrain_bounds, axis=(0,1))        
+        terrain_max = np.amax(terrain_bounds, axis=(0,1))
 
-        terrain_area = (terrain_max[0]-terrain_min[0])*(terrain_max[1]-terrain_min[1])
+        terrain_area =\
+            (terrain_max[0]-terrain_min[0])*(terrain_max[1]-terrain_min[1])
 
         configurations_data[config_id]['terrain_area'] = terrain_area
 
         logging.info(
-            "Terrain area covered: {} square meters (or square degrees)".format(terrain_area))
+            "Terrain area covered: {} square meters (or square degrees)".format(
+                            terrain_area))
 
         # Retrieve bounding box of the ground intersection of the envelopes
         inter_poly, inter_epsg = utils.read_vector(
             preprocessing_output_config[params.envelopes_intersection_tag])
 
         if epsg != inter_epsg:
-            inter_poly = projection.polygon_projection(inter_poly, inter_epsg, epsg)
+            inter_poly =\
+                projection.polygon_projection(inter_poly, inter_epsg, epsg)
 
         (inter_xmin, inter_ymin, inter_xmax, inter_ymax) = inter_poly.bounds
 
@@ -502,7 +559,9 @@ def run(
 
         if roi is not None:
             if not roi_poly.intersects(inter_poly):
-                logging.warning("The pair composed of {} and {} does not intersect the requested ROI".format(
+                logging.warning(
+                    "The pair composed of {} and {} "
+                    "does not intersect the requested ROI".format(
                     configuration[params.input_section_tag][params.img1_tag],
                     configuration[params.input_section_tag][params.img2_tag]
                 ))
@@ -511,47 +570,51 @@ def run(
         if epi_tile_size is not None:
             opt_epipolar_tile_size = epi_tile_size
         else:
-            opt_epipolar_tile_size = stereo.optimal_tile_size_pandora_plugin_libsgm(
-                disp_min,
-                disp_max,
-                margin=static_cfg.get_epi_tile_margin_percent())
+            opt_epipolar_tile_size =\
+                stereo.optimal_tile_size_pandora_plugin_libsgm(
+                    disp_min, disp_max,
+                    margin=static_cfg.get_epi_tile_margin_percent())
+
         logging.info(
             "Optimal tile size for epipolar regions: {}x{} pixels".format(
                 opt_epipolar_tile_size,
                 opt_epipolar_tile_size))
 
-        configurations_data[config_id]['opt_epipolar_tile_size'] = opt_epipolar_tile_size
+        configurations_data[config_id]['opt_epipolar_tile_size'] =\
+                                                        opt_epipolar_tile_size
 
         # Split epipolar image in pieces
-        epipolar_regions = tiling.split(0,
-                                        0,
-                                        preprocessing_output_config[params.epipolar_size_x_tag],
-                                        preprocessing_output_config[params.epipolar_size_y_tag],
-                                        opt_epipolar_tile_size,
-                                        opt_epipolar_tile_size)
-        epipolar_regions_grid = tiling.grid(0,
-                                            0,
-                                            preprocessing_output_config[params.epipolar_size_x_tag],
-                                            preprocessing_output_config[params.epipolar_size_y_tag],
-                                            opt_epipolar_tile_size,
-                                            opt_epipolar_tile_size)
-        
+        epipolar_regions = tiling.split(
+            0, 0,
+            preprocessing_output_config[params.epipolar_size_x_tag],
+            preprocessing_output_config[params.epipolar_size_y_tag],
+            opt_epipolar_tile_size, opt_epipolar_tile_size)
+
+        epipolar_regions_grid = tiling.grid(
+            0, 0,
+            preprocessing_output_config[params.epipolar_size_x_tag],
+            preprocessing_output_config[params.epipolar_size_y_tag],
+            opt_epipolar_tile_size, opt_epipolar_tile_size)
+
         configurations_data[config_id]['epipolar_regions'] = epipolar_regions
-        configurations_data[config_id]['epipolar_regions_grid'] = epipolar_regions_grid
+        configurations_data[config_id]['epipolar_regions_grid'] =\
+                                                        epipolar_regions_grid
 
         logging.info("Epipolar image will be processed in {} splits".format(
-            len(epipolar_regions)))
+                                            len(epipolar_regions)))
 
         # Increment config index
         config_idx += 1
 
     xmin, ymin, xmax, ymax = tiling.union(
-        [conf['terrain_bounding_box'] for config_id, conf in configurations_data.items()])
+        [conf['terrain_bounding_box']
+        for config_id, conf in configurations_data.items()])
 
     if roi is not None:
         # terrain bounding box polygon
         terrain_poly = Polygon(
-            [(xmin, ymin), (xmax, ymin), (xmax, ymax), (xmin, ymax), (xmin, ymin)])
+            [(xmin, ymin), (xmax, ymin),
+             (xmax, ymax), (xmin, ymax), (xmin, ymin)])
 
         if not roi_poly.intersects(terrain_poly):
             raise Exception(
@@ -584,7 +647,8 @@ def run(
         np.mean(optimal_terrain_tile_widths) / resolution)) * resolution
 
     logging.info("Optimal terrain tile size: {}x{} pixels".format(int(
-        optimal_terrain_tile_width / resolution), int(optimal_terrain_tile_width / resolution)))
+                        optimal_terrain_tile_width / resolution),
+                        int(optimal_terrain_tile_width / resolution)))
 
     # Split terrain bounding box in pieces
     terrain_grid = tiling.grid(
@@ -624,7 +688,8 @@ def run(
             # Broadcast geoid data to all dask workers
             geoid_data_futures = client.scatter(geoid_data,broadcast=True)
 
-    # Retrieve the epsg code which will be used for the triangulation's output points clouds
+    # Retrieve the epsg code which will be used
+    # for the triangulation's output points clouds
     # (ecef if filters are activated)
     if cloud_small_components_filter or cloud_statistical_outliers_filter:
         stereo_out_epsg = 4978
@@ -641,13 +706,21 @@ def run(
         if use_dask[mode]:
             # Use Dask delayed
             for region in conf['epipolar_regions']:
-                delayed_point_clouds.append(dask.delayed(stereo.images_pair_to_3d_points)(
-                    conf['configuration'], region, corr_config, disp_min=conf[
-                        'disp_min'], disp_max=conf['disp_max'],
-                    geoid_data=geoid_data_futures, out_epsg=stereo_out_epsg,
-                    use_sec_disp=use_sec_disp, snap_to_img1 = snap_to_img1, align=align, add_msk_info=write_msk))
+                delayed_point_clouds.append(
+                    dask.delayed(stereo.images_pair_to_3d_points)(
+                        conf['configuration'], region, corr_config,
+                        disp_min = conf['disp_min'],
+                        disp_max = conf['disp_max'],
+                        geoid_data = geoid_data_futures,
+                        out_epsg = stereo_out_epsg,
+                        use_sec_disp = use_sec_disp,
+                        snap_to_img1 = snap_to_img1,
+                        align = align,
+                        add_msk_info = write_msk))
+
             logging.info(
-                "Submitted {} epipolar delayed tasks to dask for stereo configuration {}".format(
+                "Submitted {} epipolar delayed tasks to dask "
+                "for stereo configuration {}".format(
                 len(delayed_point_clouds), config_id))
         else:
             # Use multiprocessing module
@@ -656,7 +729,7 @@ def run(
             pbar = tqdm(total=len(conf['epipolar_regions']))
             def update(args): pbar.update()
 
-            # create a thread pool 
+            # create a thread pool
             pool = multiprocessing.Pool(nb_workers)
 
             # launch several 'write_3d_points()' to process each epipolar region
@@ -675,22 +748,30 @@ def run(
             # Wait computation results (timeout in seconds) and replace the
             # async objects by the actual output of write_3d_points(), meaning
             # the paths to cloud files
-            delayed_point_clouds = [delayed_pc.get(timeout=perJobTimeout) for delayed_pc in delayed_point_clouds]
+            delayed_point_clouds =\
+                [delayed_pc.get(timeout=perJobTimeout)
+                for delayed_pc in delayed_point_clouds]
 
             # closing thread pool when computation is done
             pool.close()
             pool.join()
 
-        configurations_data[config_id]['delayed_point_clouds'] = delayed_point_clouds
+        configurations_data[config_id]['delayed_point_clouds'] =\
+                                                        delayed_point_clouds
 
         # build list of epipolar region hashes
         configurations_data[config_id]['epipolar_regions_hash'] = [
             region_hash_string(k) for k in conf['epipolar_regions']]
 
         # Compute disp_min and disp_max location for epipolar grid
-        epipolar_grid_min, epipolar_grid_max = stereo.compute_epipolar_grid_min_max(conf['epipolar_regions_grid'], epsg, conf["configuration"],conf['disp_min'], conf['disp_max'])
+        epipolar_grid_min, epipolar_grid_max = \
+            stereo.compute_epipolar_grid_min_max(
+                conf['epipolar_regions_grid'],
+                epsg, conf["configuration"],
+                conf['disp_min'], conf['disp_max'])
 
-        epipolar_regions_grid_flat = conf['epipolar_regions_grid'].reshape(-1, conf['epipolar_regions_grid'].shape[-1])
+        epipolar_regions_grid_flat = conf['epipolar_regions_grid'].reshape(
+            -1, conf['epipolar_regions_grid'].shape[-1])
 
         # in the following code a factor is used to increase the precision
         spatial_ref = osr.SpatialReference()
@@ -707,30 +788,59 @@ def run(
         # Build kdtrees
         tree_min = cKDTree(epipolar_grid_min*precision_factor)
         tree_max = cKDTree(epipolar_grid_max*precision_factor)
-        
+
         # Look-up terrain_grid with Delaunay
         s_min = tsearch(delaunay_min, terrain_grid*precision_factor)
         s_max = tsearch(delaunay_max, terrain_grid*precision_factor)
 
-        points_disp_min = epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
-        points_disp_max = epipolar_regions_grid_flat[delaunay_max.simplices[s_max]]
-        nn_disp_min = epipolar_regions_grid_flat[tree_min.query(terrain_grid*precision_factor)[1]]
-        nn_disp_max = epipolar_regions_grid_flat[tree_max.query(terrain_grid*precision_factor)[1]]
+        points_disp_min =\
+            epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
+
+        points_disp_max =\
+            epipolar_regions_grid_flat[delaunay_max.simplices[s_max]]
+
+        nn_disp_min =\
+            epipolar_regions_grid_flat[
+                tree_min.query(terrain_grid*precision_factor)[1]]
+
+        nn_disp_max =\
+            epipolar_regions_grid_flat[
+                tree_max.query(terrain_grid*precision_factor)[1]]
 
         points_disp_min_min = np.min(points_disp_min, axis=2)
         points_disp_min_max = np.max(points_disp_min, axis=2)
         points_disp_max_min = np.min(points_disp_max, axis=2)
         points_disp_max_max = np.max(points_disp_max, axis=2)
 
-        # Use either Delaunay search or NN search if delaunay search fails (point outside triangles)
-        points_disp_min_min = np.where(np.stack((s_min, s_min), axis=-1) != -1, points_disp_min_min, nn_disp_min)
-        points_disp_min_max = np.where(np.stack((s_min, s_min), axis=-1) != -1, points_disp_min_max, nn_disp_min)
-        points_disp_max_min = np.where(np.stack((s_max, s_max), axis=-1) != -1, points_disp_max_min, nn_disp_max)
-        points_disp_max_max = np.where(np.stack((s_max, s_max), axis=-1) != -1, points_disp_max_max, nn_disp_max)
-        
+        # Use either Delaunay search or NN search
+        # if delaunay search fails (point outside triangles)
+        points_disp_min_min = np.where(
+            np.stack(
+                (s_min, s_min), axis=-1) != -1,
+                points_disp_min_min,
+                nn_disp_min)
+
+        points_disp_min_max = np.where(
+            np.stack(
+                (s_min, s_min), axis=-1) != -1,
+                points_disp_min_max,
+                nn_disp_min)
+
+        points_disp_max_min = np.where(
+            np.stack(
+                (s_max, s_max), axis=-1) != -1,
+                points_disp_max_min,
+                nn_disp_max)
+
+        points_disp_max_max = np.where(
+            np.stack(
+                (s_max, s_max), axis=-1) != -1,
+                points_disp_max_max,
+                nn_disp_max)
+
         points = np.stack((points_disp_min_min, points_disp_min_max,
-                                 points_disp_max_min, points_disp_max_max), axis=0)
-        
+                             points_disp_max_min, points_disp_max_max), axis=0)
+
         points_min = np.min(points, axis=0)
         points_max = np.max(points, axis=0)
 
@@ -742,10 +852,13 @@ def run(
         nb_bands = utils.rasterio_get_nb_bands(
             configuration[params.input_section_tag][params.color1_tag])
     else:
-        logging.info('No color image has been given in input, {} will be used as the color image'.
-                     format(configuration[params.input_section_tag][params.img1_tag]))
+        logging.info('No color image has been given in input, '
+                     '{} will be used as the color image'.format(
+                     configuration[params.input_section_tag][params.img1_tag]))
+
         nb_bands = utils.rasterio_get_nb_bands(
             configuration[params.input_section_tag][params.img1_tag])
+
     logging.info("Number of bands in color image: {}".format(nb_bands))
 
     rank = []
@@ -774,8 +887,9 @@ def run(
         logging.debug(
             "Processing tile located at {},{} in tile grid".format(i, j))
 
-        terrain_region = [terrain_grid[j, i, 0], terrain_grid[j, i, 1],
-                          terrain_grid[j + 1, i + 1, 0], terrain_grid[j + 1, i + 1, 1]]
+        terrain_region = [
+            terrain_grid[j, i, 0], terrain_grid[j, i, 1],
+            terrain_grid[j + 1, i + 1, 0], terrain_grid[j + 1, i + 1, 1] ]
 
         logging.debug(
             "Corresponding terrain region: {}".format(terrain_region))
@@ -789,15 +903,23 @@ def run(
             epipolar_points_min = conf['epipolar_points_min']
             epipolar_points_max = conf['epipolar_points_max']
 
-            tile_min = np.minimum(np.minimum(np.minimum(epipolar_points_min[j,i], epipolar_points_min[j+1 ,i]),
-                                             np.minimum(epipolar_points_min[j+1,i+1], epipolar_points_min[j ,i+1])),
-                                  np.minimum(np.minimum(epipolar_points_max[j,i], epipolar_points_max[j+1 ,i]),
-                                             np.minimum(epipolar_points_max[j+1,i+1], epipolar_points_max[j ,i+1])))
+            tile_min = np.minimum(np.minimum(np.minimum(
+                epipolar_points_min[j,i], epipolar_points_min[j+1 ,i]),
+                np.minimum(
+                epipolar_points_min[j+1,i+1], epipolar_points_min[j ,i+1])),
+                np.minimum(np.minimum(
+                epipolar_points_max[j,i], epipolar_points_max[j+1 ,i]),
+                np.minimum(
+                epipolar_points_max[j+1,i+1], epipolar_points_max[j ,i+1])))
 
-            tile_max = np.maximum(np.maximum(np.maximum(epipolar_points_min[j,i], epipolar_points_min[j+1 ,i]),
-                                             np.maximum(epipolar_points_min[j+1,i+1], epipolar_points_min[j ,i+1])),
-                                  np.maximum(np.maximum(epipolar_points_max[j,i], epipolar_points_max[j+1 ,i]),
-                                             np.maximum(epipolar_points_max[j+1,i+1], epipolar_points_max[j ,i+1])))
+            tile_max = np.maximum(np.maximum(np.maximum(
+                epipolar_points_min[j,i], epipolar_points_min[j+1 ,i]),
+                np.maximum(
+                epipolar_points_min[j+1,i+1], epipolar_points_min[j ,i+1])),
+                np.maximum(np.maximum(
+                epipolar_points_max[j,i], epipolar_points_max[j+1 ,i]),
+                np.maximum(
+                epipolar_points_max[j+1,i+1], epipolar_points_max[j ,i+1])))
 
 
             # Bouding region of corresponding cell
@@ -821,9 +943,9 @@ def run(
             # Check if the epipolar region contains any pixels to process
             if tiling.empty(epipolar_region):
                 logging.debug(
-                    "Skipping terrain region because corresponding epipolar region is empty")
+                    "Skipping terrain region "
+                    "because corresponding epipolar region is empty")
             else:
-
                 # Loop on all epipolar tiles covered by epipolar region
                 for epipolar_tile in tiling.list_tiles(
                         epipolar_region,
@@ -849,18 +971,22 @@ def run(
 
         # cloud filtering params
         if cloud_small_components_filter:
-            small_cpn_filter_params = static_cfg.get_small_components_filter_params()
+            small_cpn_filter_params =\
+                static_cfg.get_small_components_filter_params()
         else:
             small_cpn_filter_params = None
 
         if cloud_statistical_outliers_filter:
-            statistical_filter_params = static_cfg.get_statistical_outliers_filter_params()
+            statistical_filter_params =\
+                static_cfg.get_statistical_outliers_filter_params()
         else:
             statistical_filter_params = None
 
         # rasterization grid division factor
         rasterization_params = static_cfg.get_rasterization_params()
-        grid_points_division_factor = getattr(rasterization_params, static_cfg.grid_points_division_factor_tag)
+        grid_points_division_factor =\
+            getattr(
+            rasterization_params, static_cfg.grid_points_division_factor_tag)
 
         if len(required_point_clouds) > 0:
             logging.debug(
@@ -886,24 +1012,38 @@ def run(
 
             else:
                 # Launch asynchrone job for write_dsm_by_tile()
-                delayed_dsm_tiles.append(pool.apply_async(write_dsm_by_tile,
-                    args=(required_point_clouds,resolution,epsg,tmp_dir, nb_bands,
-                          static_cfg.get_color_image_encoding(), output_stats, write_msk),
-                          kwds={'xstart':xstart, 'ystart':ystart, 'xsize': xsize, 'ysize': ysize, 'radius':dsm_radius,
-                                'sigma':sigma, 'dsm_no_data':dsm_no_data, 'color_no_data':color_no_data,
-                                'small_cpn_filter_params':small_cpn_filter_params,
-                                'statistical_filter_params': statistical_filter_params,
-                                'grid_points_division_factor': grid_points_division_factor,
-                                'msk_no_data': msk_no_data},
-                    callback=update))
+                delayed_dsm_tiles.append(
+                    pool.apply_async(
+                        write_dsm_by_tile,
+                        args = (
+                    required_point_clouds, resolution, epsg, tmp_dir,
+                    nb_bands, static_cfg.get_color_image_encoding(),
+                    output_stats, write_msk
+                        ),
+                        kwds = {
+                    'xstart':xstart, 'ystart':ystart, 'xsize': xsize,
+                    'ysize': ysize, 'radius':dsm_radius, 'sigma':sigma,
+                    'dsm_no_data':dsm_no_data,
+                    'color_no_data':color_no_data,
+                    'small_cpn_filter_params':small_cpn_filter_params,
+                    'statistical_filter_params': statistical_filter_params,
+                    'grid_points_division_factor': grid_points_division_factor,
+                    'msk_no_data': msk_no_data
+                        },
+                        callback = update
+                    )
+                )
 
             number_of_epipolar_tiles_per_terrain_tiles.append(
                 len(required_point_clouds))
 
 
-    logging.info("Average number of epipolar tiles for each terrain tile: {}".format(
+    logging.info("Average number of epipolar tiles "
+                 "for each terrain tile: {}".format(
         int(np.round(np.mean(number_of_epipolar_tiles_per_terrain_tiles)))))
-    logging.info("Max number of epipolar tiles for each terrain tile: {}".format(
+
+    logging.info("Max number of epipolar tiles "
+                 "for each terrain tile: {}".format(
         np.max(number_of_epipolar_tiles_per_terrain_tiles)))
 
     bounds = (xmin, ymin, xmax, ymax)
@@ -923,21 +1063,27 @@ def run(
 
     if use_dask[mode]:
         # Sort tiles according to rank
-        delayed_dsm_tiles = [delayed for _, delayed in sorted(zip(rank,delayed_dsm_tiles), key=lambda pair: pair[0])]
+        delayed_dsm_tiles = [
+            delayed for _,
+            delayed in sorted(zip(rank,delayed_dsm_tiles),
+            key=lambda pair: pair[0])]
 
 
-        logging.info("Submitting {} tasks to dask".format(len(delayed_dsm_tiles)))
+        logging.info("Submitting {} tasks to dask".format(
+                                            len(delayed_dsm_tiles)))
+
         # Transform all delayed raster tiles to futures (computation starts
         # immediatly on workers, assynchronously)
         future_dsm_tiles = client.compute(delayed_dsm_tiles)
-    
+
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        readwrite.write_geotiff_dsm(future_dsm_tiles, out_dir, xsize, ysize,
-                                    bounds, resolution, epsg, nb_bands, dsm_no_data,
-                                    color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
-                                    write_color=True, write_stats=output_stats, write_msk=write_msk,
-                                    msk_no_data=msk_no_data)
+        readwrite.write_geotiff_dsm(
+            future_dsm_tiles, out_dir, xsize, ysize,
+            bounds, resolution, epsg, nb_bands, dsm_no_data,
+            color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
+            write_color=True, write_stats=output_stats, write_msk=write_msk,
+            msk_no_data=msk_no_data)
 
         # stop cluster
         stop_cluster(cluster, client)
@@ -946,7 +1092,9 @@ def run(
         logging.info("Computing DSM tiles ...")
         # Wait for asynchrone jobs (timeout in seconds) and replace them by
         # write_dsm_by_tile() output
-        delayed_dsm_tiles = [delayed_tile.get(timeout=perJobTimeout) for delayed_tile in delayed_dsm_tiles]
+        delayed_dsm_tiles = [
+            delayed_tile.get(timeout=perJobTimeout)
+            for delayed_tile in delayed_dsm_tiles]
 
         # closing the tread pool after computation
         pool.close()
@@ -972,15 +1120,20 @@ def run(
             vrt_mosaic('*_msk.tif', 'msk.vrt', vrt_options, out_msk)
 
         if output_stats:
-            vrt_mosaic('*_dsm_mean.tif', 'dsm_mean.vrt', vrt_options, out_dsm_mean)
-            vrt_mosaic('*_dsm_std.tif', 'dsm_std.vrt', vrt_options, out_dsm_std)
-            vrt_mosaic('*_dsm_n_pts.tif', 'dsm_n_pts.vrt', vrt_options, out_dsm_n_pts)
-            vrt_mosaic('*_pts_in_cell.tif', 'dsm_pts_in_cell.vrt', vrt_options, out_dsm_points_in_cell)
+            vrt_mosaic('*_dsm_mean.tif', 'dsm_mean.vrt',
+                vrt_options, out_dsm_mean)
+            vrt_mosaic('*_dsm_std.tif', 'dsm_std.vrt',
+                vrt_options, out_dsm_std)
+            vrt_mosaic('*_dsm_n_pts.tif', 'dsm_n_pts.vrt',
+                vrt_options, out_dsm_n_pts)
+            vrt_mosaic('*_pts_in_cell.tif', 'dsm_pts_in_cell.vrt',
+                vrt_options, out_dsm_points_in_cell)
 
     # Fill output json file
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][params.epsg_tag] = epsg
     out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-    params.dsm_tag] = out_dsm
+        params.epsg_tag] = epsg
+    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
+        params.dsm_tag] = out_dsm
     out_json[params.stereo_section_tag][params.stereo_output_section_tag][
         params.dsm_no_data_tag] = float(dsm_no_data)
     out_json[params.stereo_section_tag][params.stereo_output_section_tag][
