@@ -18,9 +18,9 @@
 # limitations under the License.
 #
 """
-======================
+========================
   Module "configuration"
-======================
+========================
 This module is the main CARS configuration python file.
 It contains all the functions associated with CARS configuration.
 """
@@ -282,7 +282,8 @@ def get_rasterization_params() -> RasterizationParams:
     return rasterization_params
 
 
-def get_small_components_filter_params()->filtering.SmallComponentsFilterParams:
+def get_small_components_filter_params()\
+    -> filtering.SmallComponentsFilterParams:
     """
     Construct the filtering.SmallComponentParams namedtuple
     from the static configuration file
@@ -303,7 +304,8 @@ def get_small_components_filter_params()->filtering.SmallComponentsFilterParams:
         return small_cpn_filter_params
 
 
-def get_statistical_outliers_filter_params()->filtering.StatisticalFilterParams:
+def get_statistical_outliers_filter_params()\
+    -> filtering.StatisticalFilterParams:
     """
     Construct the filtering.StatisticalFilterParams namedtuple
     from the static configuration file
