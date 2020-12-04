@@ -29,9 +29,15 @@ import otbApplication
 from cars import mask_classes
 
 
-def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=None, epi_step=30):
+def build_stereorectification_grid_pipeline(
+        img1,
+        img2,
+        dem = None,
+        default_alt = None,
+        epi_step = 30):
     """
-    This function builds the stereo-rectification pipeline and return it along with grids and sizes
+    This function builds the stereo-rectification pipeline and
+    return it along with grids and sizes
 
     :param img1: Path to the left image
     :type img1: string
@@ -43,11 +49,17 @@ def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=No
     :type default_alt: float
     :param epi_step: Step of the stereo-rectification grid
     :type epi_step: int
-    :returns: (left_grid, right_grid, epipolar_size_x, epipolar_size_y, pipeline) tuple
-    :rtype: left grid and right_grid as otb::Image pointers, epipolar_size_xy  as int, baseline_ratio (resolution * B/H) as float, pipeline as a dictionnary containing applications composing the pipeline
+    :returns: (left_grid, right_grid,
+            epipolar_size_x, epipolar_size_y, pipeline) tuple
+    :rtype: left grid and right_grid as otb::Image pointers,
+            epipolar_size_xy  as int,
+            baseline_ratio (resolution * B/H) as float,
+            pipeline as a dictionary
+            containing applications composing the pipeline
     """
     stereo_app = otbApplication.Registry.CreateApplication(
         "StereoRectificationGridGenerator")
+
     stereo_app.SetParameterString("io.inleft", img1)
     stereo_app.SetParameterString("io.inright", img2)
     stereo_app.SetParameterInt("epi.step", epi_step)
@@ -55,9 +67,11 @@ def build_stereorectification_grid_pipeline(img1, img2, dem=None, default_alt=No
         stereo_app.SetParameterString("epi.elevation.dem", dem)
     if default_alt is not None:
         stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
+
     stereo_app.Execute()
 
     pipeline = {"stereo_app": stereo_app}
+
     return stereo_app.GetParameterOutputImage("io.outleft"), \
         stereo_app.GetParameterOutputImage("io.outright"), \
         stereo_app.GetParameterInt("epi.rectsizex"), \
@@ -74,7 +88,8 @@ def build_extract_roi_application(img, region):
     :param region: Extraction region
     :type region: list of 4 int (xmin, ymin, xmax, ymax)
     :returns: (extracted image, roi application) tuple
-    :rtype: extracted image as otb::Image pointer and ready to use instance of the ExtractROI application
+    :rtype: extracted image as otb::Image pointer and
+        ready to use instance of the ExtractROI application
     """
     extract_app = otbApplication.Registry.CreateApplication("ExtractROI")
     if isinstance(img, str):
@@ -101,7 +116,8 @@ def build_mask_pipeline(
         epipolar_size_y,
         roi=None):
     """
-    This function builds the a pipeline that computes and resampled image mask in epipolar geometry
+    This function builds a pipeline that computes and
+    resampled image mask in epipolar geometry
 
     :param img: Path to the left image
     :type img: string
@@ -118,17 +134,21 @@ def build_mask_pipeline(
     :param roi: Region over which to compute epipolar mask or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
     :returns: (mask, pipeline) tuple
-    :rtype: resampled mask as an otb::Image pointer and pipeline as a dictionnary containing applications composing the pipeline
+    :rtype: resampled mask as an otb::Image pointer and
+        pipeline as a dictionary containing applications composing the pipeline
     """
     mask_app = otbApplication.Registry.CreateApplication("BuildMask")
+
     mask_app.SetParameterString("in", img)
     if nodata is not None:
         mask_app.SetParameterFloat("innodata", nodata)
     if mask is not None:
         mask_app.SetParameterString("inmask", mask)
         mask_app.EnableParameter("inmask")
-    mask_app.SetParameterFloat("outnodata", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    mask_app.SetParameterFloat("outnodata",
+        mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
     mask_app.SetParameterFloat("outvalid", mask_classes.VALID_VALUE)
+
     mask_app.Execute()
 
     resampling_app = otbApplication.Registry.CreateApplication(
@@ -145,7 +165,8 @@ def build_mask_pipeline(
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
     resampling_app.SetParameterString("interpolator", "nn")
-    resampling_app.SetParameterFloat("out.default", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    resampling_app.SetParameterFloat("out.default",
+        mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
     resampling_app.Execute()
 
     ret = resampling_app.GetParameterOutputImage("io.out")
@@ -172,12 +193,15 @@ def build_bundletoperfectsensor_pipeline(
     :param ms: Path to the multispectral image
     :type ms: string
     :returns: (img, pipeline) tuple
-    :rtype: pansharpened image as an otb::Image pointer and pipeline as a dictionnary containing applications composing the pipeline
+    :rtype: pansharpened image as an otb::Image pointer and
+        pipeline as a dictionary containing applications composing the pipeline
     """
     pansharpening_app = otbApplication.Registry.CreateApplication(
         "BundleToPerfectSensor")
+
     pansharpening_app.SetParameterString("inp", pan)
     pansharpening_app.SetParameterString("inxs", ms)
+
     pansharpening_app.Execute()
 
     pipeline = {"pansharpening_app": pansharpening_app}
@@ -193,7 +217,7 @@ def build_image_resampling_pipeline(
         epipolar_size_y,
         roi=None):
     """
-    This function builds the a pipeline that resamples images in epipolar geometry
+    This function builds a pipeline that resamples images in epipolar geometry
 
     :param img: Path to the left image
     :type img: string
@@ -206,10 +230,12 @@ def build_image_resampling_pipeline(
     :param roi: Region over which to compute epipolar images, or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
     :returns: (img, pipeline) tuple
-    :rtype: resampled image as an otb::Image pointer and pipeline as a dictionnary containing applications composing the pipeline
+    :rtype: resampled image as an otb::Image pointer and
+        pipeline as a dictionary containing applications composing the pipeline
     """
     resampling_app = otbApplication.Registry.CreateApplication(
         "GridBasedImageResampling")
+
     if isinstance(img, str):
         resampling_app.SetParameterString("io.in", img)
     else:
@@ -242,11 +268,13 @@ def encode_to_otb(
         0, 0], spacing=[
             1, 1]):
     """
-    This function encodes a numpy array with metadata so that it can be used by the ImportImage method of otb applications
+    This function encodes a numpy array with metadata
+    so that it can be used by the ImportImage method of otb applications
 
     :param data_array: The numpy data array to encode
     :type data_array: numpy array
-    :param largest_size: The size of the full image (data_array can be a part of a bigger image)
+    :param largest_size: The size of the full image
+        (data_array can be a part of a bigger image)
     :type largest_size: list of two int
     :param roi: Region encoded in data array ([x_min,y_min,x_max,y_max])
     :type roi: list of four int
@@ -254,7 +282,7 @@ def encode_to_otb(
     :type origin: list of two int
     :param spacing: Spacing of full image
     :type spacing: list of two int
-    :returns: A dictionnary of attributes ready to be imported by ImportImage
+    :returns: A dictionary of attributes ready to be imported by ImportImage
     :rtype: dict
     """
 
