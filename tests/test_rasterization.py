@@ -27,7 +27,8 @@ import xarray as xr
 
 from cars import rasterization
 from cars import constants as cst
-from utils import absolute_data_path, temporary_dir, assert_same_images, assert_same_datasets
+from utils import absolute_data_path, temporary_dir
+from utils import assert_same_images, assert_same_datasets
 
 
 @pytest.mark.unit_tests
@@ -67,7 +68,8 @@ def test_create_combined_cloud():
         if with_msk:
             ds_values[cst.EPI_MSK] = ([cst.ROW, cst.COL], msk)
 
-        cloud0 = xr.Dataset(ds_values, coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))})
+        cloud0 = xr.Dataset(ds_values, coords={cst.ROW: np.array(range(row)),
+                                               cst.COL: np.array(range(col))})
         cloud0.attrs[cst.EPSG] = epsg
 
         return cloud0
@@ -83,8 +85,10 @@ def test_create_combined_cloud():
     cloud1 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x),
                          cst.Y: ([cst.ROW, cst.COL], y),
                          cst.Z: ([cst.ROW, cst.COL], z),
-                         cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk)},
-                        coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))})
+                         cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
+                                                     corr_msk)},
+                        coords={cst.ROW: np.array(range(row)),
+                                cst.COL: np.array(range(col))})
     cloud1.attrs[cst.EPSG] = epsg
 
     row = 5
@@ -98,15 +102,18 @@ def test_create_combined_cloud():
     cloud2 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x),
                          cst.Y: ([cst.ROW, cst.COL], y),
                          cst.Z: ([cst.ROW, cst.COL], z),
-                         cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk)},
-                        coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))})
+                         cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
+                                                     corr_msk)},
+                        coords={cst.ROW: np.array(range(row)),
+                                cst.COL: np.array(range(col))})
     cloud2.attrs[cst.EPSG] = epsg
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
 
-    cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
-                                                ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                                                epipolar_border_margin=1, radius=1, with_coords=False)
+    cloud, epsg = rasterization.create_combined_cloud(
+        cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
+        ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+        epipolar_border_margin=1, radius=1, with_coords=False)
 
     ref_cloud0 = np.array([[0., 39., 40., 41.],
                            [0., 40., 41., 42.],
@@ -136,9 +143,10 @@ def test_create_combined_cloud():
     # test with mask
     cloud_list = [get_cloud0_ds(with_msk=True), cloud2]
 
-    cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
-                                                      ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                                                      epipolar_border_margin=1, radius=1, with_coords=False)
+    cloud, epsg = rasterization.create_combined_cloud(
+        cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
+        ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+        epipolar_border_margin=1, radius=1, with_coords=False)
 
     ref_cloud0_with_msk = np.array([[0., 39., 40., 41., 0.],
                                     [0., 40., 41., 42., 0.],
@@ -152,7 +160,10 @@ def test_create_combined_cloud():
                                     [0., 49., 50., 51., 0.],
                                     [0., 50., 51., 52., 0.]])
 
-    ref_cloud = np.concatenate([ref_cloud0_with_msk, np.concatenate([ref_cloud2, np.zeros((row*col-1, 1))], axis=1)])
+    ref_cloud = np.concatenate([ref_cloud0_with_msk,
+                                np.concatenate(
+                                    [ref_cloud2, np.zeros((row*col-1, 1))],
+                                    axis=1)])
     assert np.allclose(cloud.values, ref_cloud)
 
     # test with color
@@ -191,9 +202,10 @@ def test_create_combined_cloud():
     clr_list = [clr0, clr1, clr2]
 
     cloud, epsg = rasterization.\
-        create_combined_cloud(cloud_list, epsg, color_list=clr_list, resolution=0.5, xstart=40.0,
-                              ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                              epipolar_border_margin=1, radius=1, with_coords=False)
+        create_combined_cloud(
+            cloud_list, epsg, color_list=clr_list, resolution=0.5, xstart=40.0,
+            ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+            epipolar_border_margin=1, radius=1, with_coords=False)
 
     ref_clr0 = np.zeros((11, 3))
     ref_clr0[:, 0] = 10
@@ -214,9 +226,11 @@ def test_create_combined_cloud():
 
     # test with coords and colors
     cloud, epsg = rasterization.\
-        create_combined_cloud(cloud_list, epsg, color_list=clr_list, resolution=0.5, xstart=40.0,
-                              ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                              epipolar_border_margin=1, radius=1, with_coords=True)
+        create_combined_cloud(
+            cloud_list, epsg,
+            color_list=clr_list, resolution=0.5, xstart=40.0,
+            ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+            epipolar_border_margin=1, radius=1, with_coords=True)
 
     ref_coords0 = np.array([[3.,  9., 0.],
                             [4.,  0., 0.],
@@ -229,7 +243,8 @@ def test_create_combined_cloud():
                             [4.,  8., 0.],
                             [4.,  9., 0.],
                             [5.,  0., 0.]])
-    ref_cloud_clr_coords0 = np.concatenate([ref_cloud0, ref_clr0, ref_coords0], axis=1)
+    ref_cloud_clr_coords0 = np.concatenate(
+        [ref_cloud0, ref_clr0, ref_coords0], axis=1)
 
     ref_coords2 = np.zeros((row*col, 3))
     ref_coords2[:, 2] = 2
@@ -238,16 +253,19 @@ def test_create_combined_cloud():
             ref_coords2[i*col+j, 0] = i
             ref_coords2[i*col+j, 1] = j
     ref_coords2 = np.delete(ref_coords2, 2 * col + 2, 0)
-    ref_cloud_clr_coords2 = np.concatenate([ref_cloud2, ref_clr2, ref_coords2], axis=1)
+    ref_cloud_clr_coords2 = np.concatenate(
+        [ref_cloud2, ref_clr2, ref_coords2], axis=1)
 
-    ref_cloud_clr_coords = np.concatenate([ref_cloud_clr_coords0, ref_cloud_clr_coords2])
+    ref_cloud_clr_coords = np.concatenate(
+        [ref_cloud_clr_coords0, ref_cloud_clr_coords2])
 
     assert np.allclose(cloud, ref_cloud_clr_coords)
 
     # test with coords (no colors)
-    cloud, epsg = rasterization.create_combined_cloud(cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
-                                                ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                                                epipolar_border_margin=1, radius=1, with_coords=True)
+    cloud, epsg = rasterization.create_combined_cloud(
+        cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
+        ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+        epipolar_border_margin=1, radius=1, with_coords=True)
 
     ref_cloud_coords0 = np.concatenate([ref_cloud0, ref_coords0], axis=1)
     ref_cloud_coords2 = np.concatenate([ref_cloud2, ref_coords2], axis=1)
@@ -257,9 +275,10 @@ def test_create_combined_cloud():
 
     # test exception
     with pytest.raises(Exception) as e:
-        rasterization.create_combined_cloud(cloud_list, epsg, color_list=[clr0], resolution=0.5, xstart=40.0,
-                                            ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
-                                            epipolar_border_margin=1, radius=1, with_coords=True)
+        rasterization.create_combined_cloud(
+            cloud_list, epsg, color_list=[clr0], resolution=0.5, xstart=40.0,
+            ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
+            epipolar_border_margin=1, radius=1, with_coords=True)
         assert str(e) == 'There shall be as many cloud elements as color ones'
 
 
@@ -275,22 +294,32 @@ def test_simple_rasterization_synthetic_case():
                       [1., 1.5, 11.5, 4],
                       [1., 2.5, 11.5, 5]])
 
-    pd_cloud = pandas.DataFrame(cloud, columns=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z])
+    pd_cloud = pandas.DataFrame(
+        cloud, columns=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z])
     raster = rasterization.rasterize(pd_cloud, 1, None, 0, 12, 3, 2, 0.3, 0)
 
     # Test with radius = 0 and fixed grid
-    np.testing.assert_equal(raster[cst.RASTER_HGT].values[..., None],
-                            [[[3], [4], [5]], [[0], [1], [2]]])
-    np.testing.assert_array_equal(raster[cst.RASTER_NB_PTS].values, np.ones((2, 3)))
-    np.testing.assert_array_equal(raster[cst.RASTER_NB_PTS_IN_CELL].values, np.ones((2, 3)))
-    np.testing.assert_array_equal(np.ravel(np.flipud(raster[cst.RASTER_HGT_MEAN].values)),
-                                  pd_cloud[cst.Z])
-    np.testing.assert_array_equal(raster[cst.RASTER_HGT_STD_DEV].values,
-                                  np.zeros((2, 3)))
+    np.testing.assert_equal(
+        raster[cst.RASTER_HGT].values[..., None],
+        [[[3], [4], [5]], [[0], [1], [2]]])
+    np.testing.assert_array_equal(
+        raster[cst.RASTER_NB_PTS].values,
+        np.ones((2, 3)))
+    np.testing.assert_array_equal(
+        raster[cst.RASTER_NB_PTS_IN_CELL].values,
+        np.ones((2, 3)))
+    np.testing.assert_array_equal(
+        np.ravel(np.flipud(raster[cst.RASTER_HGT_MEAN].values)),
+        pd_cloud[cst.Z])
+    np.testing.assert_array_equal(
+        raster[cst.RASTER_HGT_STD_DEV].values,
+        np.zeros((2, 3)))
 
     # Test with grid evaluated by function
-    xstart, ystart, xsize, ysize = rasterization.compute_xy_starts_and_sizes(1, pd_cloud)
-    raster = rasterization.rasterize(pd_cloud, 1, None, xstart, ystart, xsize, ysize, 0.3, 0)
+    xstart, ystart, xsize, ysize = \
+        rasterization.compute_xy_starts_and_sizes(1, pd_cloud)
+    raster = rasterization.rasterize(
+        pd_cloud, 1, None, xstart, ystart, xsize, ysize, 0.3, 0)
     np.testing.assert_equal(raster[cst.RASTER_HGT].values[..., None],
                             [[[3], [4], [5]], [[0], [1], [2]]])
 
@@ -312,14 +341,17 @@ def test_simple_rasterization_single():
     resolution = 0.5
 
     cloud_xr = xr.open_dataset(
-        absolute_data_path('input/rasterization_input/ref_single_cloud_in_df.nc')
+        absolute_data_path(
+            'input/rasterization_input/ref_single_cloud_in_df.nc')
     )
     cloud_df = cloud_xr.to_dataframe()
 
-    xstart, ystart, xsize, ysize = rasterization.compute_xy_starts_and_sizes(resolution, cloud_df)
+    xstart, ystart, xsize, ysize = \
+        rasterization.compute_xy_starts_and_sizes(resolution, cloud_df)
     raster = rasterization.\
-        rasterize(cloud_df, resolution, 32630, xstart, ystart, xsize, ysize, 0.3, 3, hgt_no_data=np.nan,
-                  color_no_data=np.nan)
+        rasterize(
+            cloud_df, resolution, 32630, xstart, ystart, xsize, ysize, 0.3, 3,
+            hgt_no_data=np.nan, color_no_data=np.nan)
 
     # Uncomment to update references
     # raster.to_netcdf(
@@ -350,7 +382,8 @@ def test_simple_rasterization_dataset_1():
     resolution = 0.5
 
     raster = rasterization.simple_rasterization_dataset(
-        [cloud], resolution, 32630, [color], xstart, ystart, xsize, ysize, 0.3, 3
+        [cloud], resolution, 32630, [color],
+        xstart, ystart, xsize, ysize, 0.3, 3
     )
 
     # Uncomment to update references
@@ -381,7 +414,8 @@ def test_simple_rasterization_dataset_2():
     resolution = 0.5
 
     raster = rasterization.simple_rasterization_dataset(
-        [cloud], resolution, 32630, [color], xstart, ystart, xsize, ysize, 0.3, 3
+        [cloud], resolution, 32630, [color],
+        xstart, ystart, xsize, ysize, 0.3, 3
     )
 
     # Uncomment to update references
@@ -420,8 +454,8 @@ def test_simple_rasterization_multiple_datasets():
     resolution = 0.5
 
     raster = rasterization.simple_rasterization_dataset(
-        [utm1, utm2], resolution, 32630, [color1, color2], xstart, ystart, xsize,
-        ysize, 0.3, 3
+        [utm1, utm2], resolution, 32630, [color1, color2],
+        xstart, ystart, xsize, ysize, 0.3, 3
     )
 
     # Uncomment to update reference
@@ -444,7 +478,8 @@ def mask_interp_inputs():
     resolution = 1.0
 
     # simple mask all 100 and one 0
-    x, y = np.meshgrid(np.linspace(0, col - 1, col), np.linspace(0, row - 1, row))
+    x, y = np.meshgrid(np.linspace(0, col - 1, col),
+                       np.linspace(0, row - 1, row))
 
     msk = np.full((row, col), fill_value=100, dtype=np.float)
     msk[0, 0] = 0
@@ -456,7 +491,8 @@ def mask_interp_inputs():
 
     data_valid = np.ones((row * col), dtype=np.bool)
 
-    grid_points = rasterization.compute_grid_points(-0.5, row - 0.5, col, row, resolution)
+    grid_points = \
+        rasterization.compute_grid_points(-0.5, row - 0.5, col, row, resolution)
 
     mask_interp_cloud = {
         cst.ROW: row,
@@ -493,14 +529,18 @@ def test_mask_interp_case1(mask_interp_inputs):
     nodata_val = 255
 
     # create panda dataframe and search for neighbors
-    cloud_pd = pandas.DataFrame(cloud, columns = [cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
+    cloud_pd = pandas.DataFrame(cloud,
+                                columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
 
     neighbors_id, start_ids, n_count = \
-        rasterization.get_flatten_neighbors(grid_points, cloud_pd, radius, resolution, worker_logger)
+        rasterization.get_flatten_neighbors(
+            grid_points, cloud_pd,
+            radius, resolution, worker_logger)
 
     # test mask_interp function
-    res = rasterization.mask_interp(cloud, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
-                                    grid_points, sigma, nodata_val, undefined_val)
+    res = rasterization.mask_interp(
+        cloud, data_valid.astype(np.bool), neighbors_id, start_ids, n_count,
+        grid_points, sigma, nodata_val, undefined_val)
 
     res = res.reshape((row, col))
     res = res[::-1, :]
@@ -535,29 +575,46 @@ def test_mask_interp_case2(mask_interp_inputs):
     row_additional_pts_nb = 3
     col_additional_pts_nb = 3
     additional_pts_x_coords, additional_pts_y_coords = np.meshgrid(
-        np.linspace(tgt_terrain_cell_x_coord-0.3, tgt_terrain_cell_x_coord+0.3, col_additional_pts_nb),
-        np.linspace(tgt_terrain_cell_y_coord-0.3, tgt_terrain_cell_y_coord+0.3, row_additional_pts_nb))
+        np.linspace(tgt_terrain_cell_x_coord-0.3,
+                    tgt_terrain_cell_x_coord+0.3,
+                    col_additional_pts_nb),
+        np.linspace(tgt_terrain_cell_y_coord-0.3,
+                    tgt_terrain_cell_y_coord+0.3,
+                    row_additional_pts_nb))
 
-    additional_pts_msk = np.full((row_additional_pts_nb * col_additional_pts_nb), fill_value=200, dtype=np.float)
+    additional_pts_msk = np.full(
+        (row_additional_pts_nb * col_additional_pts_nb),
+        fill_value=200, dtype=np.float)
 
-    cloud_case2 = np.zeros((row_additional_pts_nb * col_additional_pts_nb, 3), dtype=np.float)
-    cloud_case2[:, 0] = additional_pts_x_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
-    cloud_case2[:, 1] = additional_pts_y_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case2 = np.zeros(
+        (row_additional_pts_nb * col_additional_pts_nb, 3),
+        dtype=np.float)
+    cloud_case2[:, 0] = additional_pts_x_coords.reshape(
+        (row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case2[:, 1] = additional_pts_y_coords.reshape(
+        (row_additional_pts_nb * col_additional_pts_nb))
     cloud_case2[:, 2] = additional_pts_msk
     cloud_case2 = np.concatenate((cloud, cloud_case2), axis=0)
 
     data_valid_case2 = \
-        np.concatenate((data_valid, np.ones((row_additional_pts_nb * col_additional_pts_nb), dtype=np.bool)), axis=0)
+        np.concatenate((data_valid,
+                        np.ones(
+                            (row_additional_pts_nb * col_additional_pts_nb),
+                            dtype=np.bool)), axis=0)
 
     # create panda dataframe and search for neighbors
-    cloud_pd_case2 = pandas.DataFrame(cloud_case2, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
+    cloud_pd_case2 = pandas.DataFrame(
+        cloud_case2, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
 
     neighbors_id, start_ids, n_count = \
-        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case2, radius, resolution, worker_logger)
+        rasterization.get_flatten_neighbors(
+            grid_points, cloud_pd_case2, radius, resolution, worker_logger)
 
     # test mask_interp function
-    res = rasterization.mask_interp(cloud_case2, data_valid_case2,
-                                    neighbors_id, start_ids, n_count, grid_points, sigma, nodata_val, undefined_val)
+    res = rasterization.mask_interp(
+        cloud_case2, data_valid_case2,
+        neighbors_id, start_ids, n_count,
+        grid_points, sigma, nodata_val, undefined_val)
 
     ref_msk = np.copy(msk)
     ref_msk[tgt_terrain_cell_y_coord, tgt_terrain_cell_x_coord] = 200
@@ -570,7 +627,8 @@ def test_mask_interp_case2(mask_interp_inputs):
 @pytest.mark.unit_tests
 def test_mask_interp_case3(mask_interp_inputs):
     """
-    case 3 - only two points from different classes at the same position in a single cell
+    case 3 - only two points from different classes at the same position in a
+    single cell
     """
     import logging
     worker_logger = logging.getLogger('distributed.worker')
@@ -588,21 +646,28 @@ def test_mask_interp_case3(mask_interp_inputs):
     undefined_val = 254
     nodata_val = 255
 
-    # only two points from different classes at the same position in a single cell
+    # only two points from different classes at the same position
+    # in a single cell
     cloud_case3 = np.array([[2., 2., 200.]], dtype=np.float)
     cloud_case3 = np.concatenate((cloud, cloud_case3), axis=0)
 
-    cloud_pd_case3 = pandas.DataFrame(cloud_case3, columns=[cst.X, cst.Y, 'left_mask'])
+    cloud_pd_case3 = pandas.DataFrame(
+        cloud_case3, columns=[cst.X, cst.Y, 'left_mask'])
 
     data_valid_case3 = np.concatenate((data_valid,
-                                       np.ones((1), dtype=np.bool)), axis=0)
+                                       np.ones((1),
+                                       dtype=np.bool)), axis=0)
 
     neighbors_id, start_ids, n_count = \
-        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case3, radius, resolution, worker_logger)
+        rasterization.get_flatten_neighbors(
+            grid_points, cloud_pd_case3,
+            radius, resolution, worker_logger)
 
     # test mask_interp function
-    res = rasterization.mask_interp(cloud_case3, data_valid_case3,
-                                    neighbors_id, start_ids, n_count, grid_points, sigma, nodata_val, undefined_val)
+    res = rasterization.mask_interp(
+        cloud_case3, data_valid_case3,
+        neighbors_id, start_ids, n_count,
+        grid_points, sigma, nodata_val, undefined_val)
 
     ref_msk = np.copy(msk)
     ref_msk[2, 2] = undefined_val
@@ -642,14 +707,18 @@ def test_mask_interp_case4(mask_interp_inputs):
     data_valid_case4 = np.delete(data_valid_case4, 1, 0)
 
     # create panda dataframe and search for neighbors
-    cloud_pd_case4 = pandas.DataFrame(cloud_case4, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
+    cloud_pd_case4 = pandas.DataFrame(
+        cloud_case4, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
 
     neighbors_id, start_ids, n_count = \
-        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case4, radius, resolution, worker_logger)
+        rasterization.get_flatten_neighbors(
+            grid_points, cloud_pd_case4, radius, resolution, worker_logger)
 
     # test mask_interp function
-    res = rasterization.mask_interp(cloud_case4, data_valid_case4,
-                                    neighbors_id, start_ids, n_count, grid_points, sigma, nodata_val, undefined_val)
+    res = rasterization.mask_interp(
+        cloud_case4, data_valid_case4,
+        neighbors_id, start_ids, n_count,
+        grid_points, sigma, nodata_val, undefined_val)
 
     ref_msk = np.copy(msk)
     ref_msk[int(cloud[1, 1]), int(cloud[1, 0])] = nodata_val
@@ -687,29 +756,45 @@ def test_mask_interp_case5(mask_interp_inputs):
     row_additional_pts_nb = 3
     col_additional_pts_nb = 3
     additional_pts_x_coords, additional_pts_y_coords = np.meshgrid(
-        np.linspace(tgt_terrain_cell_x_coord - 0.3, tgt_terrain_cell_x_coord + 0.3, col_additional_pts_nb),
-        np.linspace(tgt_terrain_cell_y_coord - 0.3, tgt_terrain_cell_y_coord + 0.3, row_additional_pts_nb))
+        np.linspace(tgt_terrain_cell_x_coord - 0.3,
+                    tgt_terrain_cell_x_coord + 0.3,
+                    col_additional_pts_nb),
+        np.linspace(tgt_terrain_cell_y_coord - 0.3,
+                    tgt_terrain_cell_y_coord + 0.3,
+                    row_additional_pts_nb))
 
-    additional_pts_msk = np.full((row_additional_pts_nb * col_additional_pts_nb), fill_value=0, dtype=np.float)
+    additional_pts_msk = np.full(
+        (row_additional_pts_nb * col_additional_pts_nb),
+        fill_value=0, dtype=np.float)
 
-    cloud_case5 = np.zeros((row_additional_pts_nb * col_additional_pts_nb, 3), dtype=np.float)
-    cloud_case5[:, 0] = additional_pts_x_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
-    cloud_case5[:, 1] = additional_pts_y_coords.reshape((row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case5 = np.zeros(
+        (row_additional_pts_nb * col_additional_pts_nb, 3), dtype=np.float)
+    cloud_case5[:, 0] = additional_pts_x_coords.reshape(
+        (row_additional_pts_nb * col_additional_pts_nb))
+    cloud_case5[:, 1] = additional_pts_y_coords.reshape(
+        (row_additional_pts_nb * col_additional_pts_nb))
     cloud_case5[:, 2] = additional_pts_msk
     cloud_case5 = np.concatenate((cloud, cloud_case5), axis=0)
 
     data_valid_case5 = \
-        np.concatenate((data_valid, np.ones((row_additional_pts_nb * col_additional_pts_nb), dtype=np.bool)), axis=0)
+        np.concatenate((data_valid,
+                        np.ones(
+                            (row_additional_pts_nb * col_additional_pts_nb),
+                            dtype=np.bool)), axis=0)
 
     # create panda dataframe and search for neighbors
-    cloud_pd_case5 = pandas.DataFrame(cloud_case5, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
+    cloud_pd_case5 = pandas.DataFrame(
+        cloud_case5, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK])
 
     neighbors_id, start_ids, n_count = \
-        rasterization.get_flatten_neighbors(grid_points, cloud_pd_case5, radius, resolution, worker_logger)
+        rasterization.get_flatten_neighbors(
+            grid_points, cloud_pd_case5, radius, resolution, worker_logger)
 
     # test mask_interp function
-    res = rasterization.mask_interp(cloud_case5, data_valid_case5,
-                                    neighbors_id, start_ids, n_count, grid_points, sigma, nodata_val, undefined_val)
+    res = rasterization.mask_interp(
+        cloud_case5, data_valid_case5,
+        neighbors_id, start_ids, n_count,
+        grid_points, sigma, nodata_val, undefined_val)
 
     res = res.reshape((row, col))
     res = res[::-1, :]
