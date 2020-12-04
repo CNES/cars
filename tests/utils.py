@@ -26,7 +26,8 @@ import numpy as np
 
 def absolute_data_path(data_path):
     """
-    Return a full absolute path to test data using the CARS_TEST_DATA environment variable.
+    Return a full absolute path to test data using the CARS_TEST_DATA
+    environment variable.
     """
     data_folder = os.path.join(os.path.dirname(__file__), "data")
     return os.path.join(data_folder, data_path)
@@ -34,7 +35,8 @@ def absolute_data_path(data_path):
 
 def temporary_dir():
     """
-    Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment variable. Defaults to /tmp
+    Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment
+    variable. Defaults to /tmp
     """
     if "CARS_TEST_TEMPORARY_DIR" not in os.environ:
         return "/tmp"
