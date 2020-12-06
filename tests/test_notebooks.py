@@ -17,6 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
+from __future__ import absolute_import
+
 import subprocess
 import tempfile
 import os
@@ -24,9 +27,6 @@ import fileinput
 import pytest
 
 from utils import temporary_dir, absolute_data_path
-from cars import prepare
-from cars.parameters import read_input_parameters
-
 
 @pytest.mark.notebook_tests
 def test_step_by_step_compute_dsm():
