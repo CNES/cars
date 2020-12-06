@@ -19,6 +19,7 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
 import pytest
 import pandas
 
@@ -98,7 +99,7 @@ def test_filter_cloud():
                              'idx_im_epi'])
 
     elt_to_remove = [0, 5]
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = filtering.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True)
 
     # reference
@@ -116,7 +117,7 @@ def test_filter_cloud():
     assert ref_removed_elt_pos.equals(removed_elt_pos)
 
     # test cases where removed_elt_pos should be None
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = filtering.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=False)
 
     assert removed_elt_pos is None
@@ -125,7 +126,7 @@ def test_filter_cloud():
     cloud_arr = cloud_arr.reshape((10, 3))
 
     cloud = pandas.DataFrame(cloud_arr, columns=['x', 'y', 'z'])
-    filtered_cloud, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = filtering.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True)
 
     assert removed_elt_pos is None
