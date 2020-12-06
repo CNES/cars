@@ -19,10 +19,12 @@
 # limitations under the License.
 #
 
-import pytest
+from __future__ import absolute_import
 import tempfile
-from cars import cluster
 from utils import temporary_dir
+
+import pytest
+from cars import cluster
 
 
 @pytest.mark.unit_tests
@@ -40,5 +42,5 @@ def test_cluster():
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         clus, client = cluster.start_cluster(2, "00:01:00", directory)
-        link = cluster.get_dashboard_link(clus)
+        __ = cluster.get_dashboard_link(clus)
         cluster.stop_cluster(clus, client)
