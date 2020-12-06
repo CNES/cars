@@ -19,12 +19,15 @@
 # limitations under the License.
 #
 
-import pytest
+from __future__ import absolute_import
+
 import tempfile
 import os
 import json
 import math
-from shutil import copy2
+
+import pytest
+
 import pyproj
 
 import rasterio
