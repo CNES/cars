@@ -23,6 +23,7 @@
 This module contains functions that builds Orfeo ToolBox pipelines used by cars
 """
 
+from __future__ import absolute_import
 import numpy as np
 import otbApplication
 
@@ -51,11 +52,11 @@ def build_stereorectification_grid_pipeline(
     :type epi_step: int
     :returns: (left_grid, right_grid,
             epipolar_size_x, epipolar_size_y, pipeline) tuple
-    :rtype: left grid and right_grid as otb::Image pointers,
+    :rtype: left grid and right_grid as numpy arrays,
+            origin as two float,
+            spacing as two float,
             epipolar_size_xy  as int,
             baseline_ratio (resolution * B/H) as float,
-            pipeline as a dictionary
-            containing applications composing the pipeline
     """
     stereo_app = otbApplication.Registry.CreateApplication(
         "StereoRectificationGridGenerator")
@@ -70,13 +71,25 @@ def build_stereorectification_grid_pipeline(
 
     stereo_app.Execute()
 
-    pipeline = {"stereo_app": stereo_app}
+    # Export grids to numpy
+    left_grid_as_array = np.copy(
+        stereo_app.GetVectorImageAsNumpyArray("io.outleft"))
+    right_grid_as_array = np.copy(
+        stereo_app.GetVectorImageAsNumpyArray("io.outright"))
 
-    return stereo_app.GetParameterOutputImage("io.outleft"), \
-        stereo_app.GetParameterOutputImage("io.outright"), \
+    epipolar_size_x, epipolar_size_y, baseline = \
         stereo_app.GetParameterInt("epi.rectsizex"), \
         stereo_app.GetParameterInt("epi.rectsizey"), \
-        stereo_app.GetParameterFloat("epi.baseline"), pipeline
+        stereo_app.GetParameterFloat("epi.baseline")
+
+    origin = stereo_app.GetImageOrigin(
+        "io.outleft")
+    spacing = stereo_app.GetImageSpacing(
+        "io.outleft")
+
+
+    return left_grid_as_array, right_grid_as_array, \
+        origin, spacing, epipolar_size_x, epipolar_size_y, baseline
 
 
 def build_extract_roi_application(img, region):
@@ -88,8 +101,7 @@ def build_extract_roi_application(img, region):
     :param region: Extraction region
     :type region: list of 4 int (xmin, ymin, xmax, ymax)
     :returns: (extracted image, roi application) tuple
-    :rtype: extracted image as otb::Image pointer and
-        ready to use instance of the ExtractROI application
+    :rtype: ready to use instance of the ExtractROI application
     """
     extract_app = otbApplication.Registry.CreateApplication("ExtractROI")
     if isinstance(img, str):
@@ -104,7 +116,7 @@ def build_extract_roi_application(img, region):
     extract_app.SetParameterInt("sizey", int(region[3]) - int(region[1]))
     extract_app.Execute()
 
-    return extract_app.GetParameterOutputImage("out"), extract_app
+    return extract_app
 
 
 def build_mask_pipeline(
@@ -114,7 +126,7 @@ def build_mask_pipeline(
         mask,
         epipolar_size_x,
         epipolar_size_y,
-        roi=None):
+        roi):
     """
     This function builds a pipeline that computes and
     resampled image mask in epipolar geometry
@@ -133,9 +145,8 @@ def build_mask_pipeline(
     :type epipolar_size_y: int
     :param roi: Region over which to compute epipolar mask or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
-    :returns: (mask, pipeline) tuple
-    :rtype: resampled mask as an otb::Image pointer and
-        pipeline as a dictionary containing applications composing the pipeline
+    :returns: mask
+    :rtype: resampled mask as numpy array
     """
     mask_app = otbApplication.Registry.CreateApplication("BuildMask")
 
@@ -169,18 +180,13 @@ def build_mask_pipeline(
         mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
     resampling_app.Execute()
 
-    ret = resampling_app.GetParameterOutputImage("io.out")
-    pipeline = {"mask_app": mask_app, "resampling_app": resampling_app}
-
     # TODO: Dilate nodata mask to ensure that interpolated pixels are not
     # contaminated
-    if roi is not None:
-        ret, extract_app = build_extract_roi_application(
-            resampling_app.GetParameterOutputImage("io.out"), roi)
-        pipeline["extract_app"] = extract_app
+    extract_app = build_extract_roi_application(
+        resampling_app.GetParameterOutputImage("io.out"), roi)
+    msk = np.copy(extract_app.GetImageAsNumpyArray("out"))
 
-    return ret, pipeline
-
+    return msk
 
 def build_bundletoperfectsensor_pipeline(
         pan,
@@ -192,9 +198,8 @@ def build_bundletoperfectsensor_pipeline(
     :type pan: string
     :param ms: Path to the multispectral image
     :type ms: string
-    :returns: (img, pipeline) tuple
-    :rtype: pansharpened image as an otb::Image pointer and
-        pipeline as a dictionary containing applications composing the pipeline
+    :returns: resample_image
+    :rtype: otb application
     """
     pansharpening_app = otbApplication.Registry.CreateApplication(
         "BundleToPerfectSensor")
@@ -204,10 +209,7 @@ def build_bundletoperfectsensor_pipeline(
 
     pansharpening_app.Execute()
 
-    pipeline = {"pansharpening_app": pansharpening_app}
-    ret = pansharpening_app.GetParameterOutputImage("out")
-
-    return ret, pipeline
+    return pansharpening_app
 
 
 def build_image_resampling_pipeline(
@@ -215,7 +217,8 @@ def build_image_resampling_pipeline(
         grid,
         epipolar_size_x,
         epipolar_size_y,
-        roi=None):
+        roi,
+        lowres_color=None):
     """
     This function builds a pipeline that resamples images in epipolar geometry
 
@@ -229,10 +232,18 @@ def build_image_resampling_pipeline(
     :type epipolar_size_y: int
     :param roi: Region over which to compute epipolar images, or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
-    :returns: (img, pipeline) tuple
-    :rtype: resampled image as an otb::Image pointer and
-        pipeline as a dictionary containing applications composing the pipeline
+    :param lowres_color: Path to the low resolution color image
+    ;type lowres_color: string
+    :returns: resampled image
+    :rtype: resampled image as numpy array
     """
+
+    # Build bundletoperfectsensor (p+xs fusion) for images
+    if lowres_color is not None:
+        pansharpening_app = build_bundletoperfectsensor_pipeline(
+            img, lowres_color)
+        img = pansharpening_app.GetParameterOutputImage("out")
+
     resampling_app = otbApplication.Registry.CreateApplication(
         "GridBasedImageResampling")
 
@@ -249,24 +260,19 @@ def build_image_resampling_pipeline(
     resampling_app.SetParameterString("grid.type", "def")
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
-
     resampling_app.Execute()
 
-    pipeline = {"resampling_app": resampling_app}
-    ret = resampling_app.GetParameterOutputImage("io.out")
+    extract_app = build_extract_roi_application(
+        resampling_app.GetParameterOutputImage("io.out"), roi)
 
-    if roi is not None:
-        ret, extract_app = build_extract_roi_application(
-            resampling_app.GetParameterOutputImage("io.out"), roi)
-        pipeline["extract_app"] = extract_app
+    # Retrieve data and build left dataset
+    resampled = np.copy(extract_app.GetVectorImageAsNumpyArray("out"))
 
-    return ret, pipeline
+    return resampled
 
 
 def encode_to_otb(
-    data_array, largest_size, roi, origin=[
-        0, 0], spacing=[
-            1, 1]):
+    data_array, largest_size, roi, origin=None, spacing=None):
     """
     This function encodes a numpy array with metadata
     so that it can be used by the ImportImage method of otb applications
@@ -278,21 +284,21 @@ def encode_to_otb(
     :type largest_size: list of two int
     :param roi: Region encoded in data array ([x_min,y_min,x_max,y_max])
     :type roi: list of four int
-    :param origin: Origin of full image
+    :param origin: Origin of full image (default origin: (0, 0))
     :type origin: list of two int
-    :param spacing: Spacing of full image
+    :param spacing: Spacing of full image (default spacing: (1,1))
     :type spacing: list of two int
     :returns: A dictionary of attributes ready to be imported by ImportImage
     :rtype: dict
     """
 
     otb_origin = otbApplication.itkPoint()
-    otb_origin[0] = origin[0]
-    otb_origin[1] = origin[1]
+    otb_origin[0] = origin[0] if origin is not None else 0
+    otb_origin[1] = origin[1] if origin is not None else 0
 
     otb_spacing = otbApplication.itkVector()
-    otb_spacing[0] = spacing[0]
-    otb_spacing[1] = spacing[1]
+    otb_spacing[0] = spacing[0] if spacing is not None else 1
+    otb_spacing[1] = spacing[1] if spacing is not None else 1
 
     otb_largest_size = otbApplication.itkSize()
     otb_largest_size[0] = int(largest_size[0])

@@ -28,15 +28,15 @@ This module contains functions used during preprocessing step of cars
 """
 
 # Standard imports
+from __future__ import absolute_import
 import math
 import logging
-from typing import Union, List, Tuple
+from typing import Union, Tuple
 
 # Third party imports
 import numpy as np
 import rasterio as rio
 from affine import Affine
-from scipy import stats
 from scipy import interpolate
 from scipy.signal import butter, lfilter, filtfilt, lfilter_zi
 import xarray as xr
@@ -48,80 +48,6 @@ from cars import pipelines
 from cars import constants as cst
 from cars import projection
 from cars import utils
-
-def generate_epipolar_grids(
-        img1: str,
-        img2: str,
-        srtm_dir: str=None,
-        default_alt: float=None,
-        epi_step: float=30)\
-    -> Tuple[xr.Dataset, xr.Dataset, int, int, float]:
-    """
-    Generate epipolar resampling grids
-    as xarray.Dataset from a pair of images and srtm_dir
-
-    :param img1: Path to the left image
-    :param img2: Path to right image
-    :param srtm_dir: Path to folder containing SRTM tiles
-    :param default_alt: Default altitude above ellipsoid
-    :epi_step: Step of the resampling grid
-    :return: Tuple containing :
-        left_grid_dataset, right_grid_dataset containing the resampling grids
-        epipolar_size_x, epipolar_size_y epipolar grids size
-        baseline  : (resolution * B/H)
-    """
-    # Launch OTB pipeline to get stero grids
-    grid1, grid2, epipolar_size_x, epipolar_size_y,\
-        baseline, stereogrid_pipeline\
-        = pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
-
-    # Export grids to numpy
-    left_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray(
-                                            "io.outleft"))
-    right_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray(
-                                            "io.outright"))
-
-    col = np.array(range(0, left_grid_as_array.shape[0] * epi_step, epi_step))
-    row = np.array(range(0, left_grid_as_array.shape[1] * epi_step, epi_step))
-
-    left_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
-                                           cst.COL],
-                                          left_grid_as_array[:,
-                                                             :,
-                                                             0]),
-                                    cst.Y: ([cst.ROW,
-                                           cst.COL],
-                                          left_grid_as_array[:,
-                                                             :,
-                                                             1])},
-                                   coords={cst.ROW: row,
-                                           cst.COL: col},
-                                   attrs={"epi_step": epi_step,
-                                          "epipolar_size_x": epipolar_size_x,
-                                          "epipolar_size_y": epipolar_size_y})
-
-    right_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
-                                            cst.COL],
-                                           right_grid_as_array[:,
-                                                               :,
-                                                               0]),
-                                     cst.Y: ([cst.ROW,
-                                            cst.COL],
-                                           right_grid_as_array[:,
-                                                               :,
-                                                               1])},
-                                    coords={cst.ROW: row,
-                                            cst.COL: col},
-                                    attrs={"epi_step": epi_step,
-                                           "epipolar_size_x": epipolar_size_x,
-                                           "epipolar_size_y": epipolar_size_y})
-    return left_grid_dataset, right_grid_dataset,\
-           epipolar_size_x, epipolar_size_y,\
-           baseline
-
 
 def dataset_matching(ds1, ds2, matching_threshold = 0.6, n_octave = 8,
                      n_scale_per_octave = 3, dog_threshold = 20,
@@ -281,7 +207,6 @@ def correct_right_grid(matches, grid, origin, spacing):
     source_points[:, :, 1] += y_values_2d
 
     # Extract matches for convenience
-    x1 = matches[:, 0]
     y1 = matches[:, 1]
     x2 = matches[:, 2]
     y2 = matches[:, 3]
@@ -313,7 +238,7 @@ def correct_right_grid(matches, grid, origin, spacing):
     epipolar_error_x = sensor_matches_perfect_x - sensor_matches_raw_x
     epipolar_error_y = sensor_matches_perfect_y - sensor_matches_raw_y
 
-    # Ouptut epipolar error stats for monitoring
+    # Output epipolar error stats for monitoring
     mean_epipolar_error = [
         np.mean(epipolar_error_x),
         np.mean(epipolar_error_y)]
@@ -359,9 +284,9 @@ def correct_right_grid(matches, grid, origin, spacing):
 
     # Perform bilinear regression for both component of epipolar error
     lstsq_input = np.array([x2 * 0 + 1, x2, y2]).T
-    coefsx, rx, rankx, sx = np.linalg.lstsq(
+    coefsx, rx, __, __ = np.linalg.lstsq(
         lstsq_input, epipolar_error_x, rcond=None)
-    coefsy, ry, ranky, sy = np.linalg.lstsq(
+    coefsy, ry, __, __ = np.linalg.lstsq(
         lstsq_input, epipolar_error_y, rcond=None)
 
     # Normalize residuals by number of matches
@@ -630,9 +555,9 @@ def get_time_ground_direction(img:str, x:float=None, y:float=None,
     assert y_offset >0 and y <= img_size_y
 
     # Get first coordinates of time direction vector
-    lat1, lon1, alt1 = sensor_to_geo(img, x, y, dem=dem)
+    lat1, lon1, __ = sensor_to_geo(img, x, y, dem=dem)
     # Get second coordinates of time direction vector
-    lat2, lon2, alt2 = sensor_to_geo(img, x, y+y_offset, dem=dem)
+    lat2, lon2, __ = sensor_to_geo(img, x, y+y_offset, dem=dem)
 
     # Create and normalize the time direction vector
     vec = np.array([lon1-lon2, lat1-lat2])
@@ -770,8 +695,8 @@ def get_ground_angles(
     # Get East North Up vector for left image1
     x1_e, y1_n, y1_u = enu1 =\
         projection.geo_to_enu(lat1, lon1, alt1, lat1_0, lon1_0, alt1_0)
-    # Convert vector to Azimuth, Elevation, Range
-    az1, elev_angle1, range1 =\
+    # Convert vector to Azimuth, Elevation, Range (unused)
+    az1, elev_angle1, __ =\
         projection.enu_to_aer(x1_e, y1_n, y1_u)
 
     # Get image2 <-> satellite vector from image2 metadata geometric model
@@ -780,8 +705,8 @@ def get_ground_angles(
     # Get East North Up vector for right image2
     x2_e, y2_n, y2_u = enu2 =\
         projection.geo_to_enu(lat2, lon2, alt2, lat2_0, lon2_0, alt2_0)
-    # Convert ENU to Azimuth, Elevation, Range
-    az2, elev_angle2, range2 = projection.enu_to_aer(x2_e, y2_n, y2_u)
+    # Convert ENU to Azimuth, Elevation, Range (unused)
+    az2, elev_angle2, __ = projection.enu_to_aer(x2_e, y2_n, y2_u)
 
     # Get convergence angle from two enu vectors.
     convergence_angle=np.degrees(utils.angle_vectors(enu1, enu2))
@@ -900,7 +825,7 @@ def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
     z, _ = lfilter(b, a,
         median_linear_diff_array.values,
         zi=zi*median_linear_diff_array.values[0])
-    z2, _ = lfilter(b, a, z, zi = zi*z[0])
+    lfilter(b, a, z, zi = zi*z[0])
     filtered_median_linear_diff_array = xr.DataArray(
         filtfilt(b, a,median_linear_diff_array.values),
         coords=median_linear_diff_array.coords

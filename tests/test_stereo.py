@@ -170,8 +170,6 @@ def test_optimal_tile_size():
     """
     Test optimal_tile_size function
     """
-    row = 450
-    col = 375
     disp = 61
     mem = 313
 
@@ -569,10 +567,6 @@ def test_compute_mask_to_use_in_pandora():
         absolute_data_path(
             "input/intermediate_results/data1_ref_right_masked.nc"))
 
-    mask_image_path = absolute_data_path(
-        absolute_data_path(
-            "input/intermediate_results/data1_ref_right_masked.json"))
-
     out = stereo.compute_mask_to_use_in_pandora(
         corr_cfg, right_input, cst.EPI_MSK, [100])
 
@@ -764,7 +758,7 @@ def test_images_pair_to_3d_points(
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
-    cloud, color = stereo.images_pair_to_3d_points(configuration,
+    cloud, __ = stereo.images_pair_to_3d_points(configuration,
                                                    region,
                                                    corr_cfg,
                                                    disp_min=-13,

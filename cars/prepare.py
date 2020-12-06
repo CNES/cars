@@ -27,6 +27,7 @@ This module contains functions associated to the prepare cars_cli sub-command
 """
 
 # Standard imports
+from __future__ import absolute_import
 from __future__ import print_function
 from typing import List
 import os
@@ -55,7 +56,6 @@ from cars import constants as cst
 from cars import tiling
 from cars import utils
 from cars import projection
-from cars import mask_classes
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
 
 
@@ -73,8 +73,7 @@ def matching_wrapper(
         nodata1: float,
         nodata2: float,
         epipolar_size_x: int,
-        epipolar_size_y: int,
-        offset: int = 0) -> np.ndarray :
+        epipolar_size_y: int) -> np.ndarray :
     """
     Wrapper for matching step in prepare
 
@@ -94,7 +93,6 @@ def matching_wrapper(
     :param nodata2: nodata value for second image
     :param epipolar_size_x: size of epipolar images in x dimension
     :param epipolar_size_y: size of epipolar images in x dimension
-    :param offset: Horizontal offset for region in img2
     :rtype: matches as a np.array of shape (nb_matches,4)
     """
     worker_logger = logging.getLogger('distributed.worker')
@@ -261,7 +259,6 @@ def run(
     mask2 = config.get(params.mask2_tag, None)
     mask1_classes = config.get(params.mask1_classes_tag, None)
     mask2_classes = config.get(params.mask2_classes_tag, None)
-    color1 = config.get(params.color1_tag, None)
     default_alt = config.get(params.default_alt_tag, 0)
 
     # retrieve masks classes usages
@@ -378,7 +375,7 @@ def run(
 
     if check_inputs:
         logging.info('Checking DEM coverage')
-        dem_useful_polygon, dem_coverage = \
+        __, dem_coverage = \
             projection.compute_dem_intersection_with_poly(
                 srtm_dir, inter_poly, epsg1)
 
@@ -389,8 +386,8 @@ def run(
 
     # Generate rectification grids
     logging.info("Generating epipolar rectification grid ...")
-    grid1, grid2, epipolar_size_x, epipolar_size_y,\
-        alt_to_disp_ratio, stereogrid_pipeline =\
+    grid1, grid2, grid_origin, grid_spacing, epipolar_size_x, epipolar_size_y,\
+        alt_to_disp_ratio =\
             pipelines.build_stereorectification_grid_pipeline(
                 img1,
                 img2,
@@ -401,18 +398,6 @@ def run(
 
     # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
     disp_to_alt_ratio = 1 / alt_to_disp_ratio
-
-    # Export grids to numpy
-    left_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray(
-                                                            "io.outleft"))
-    right_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray(
-                                                            "io.outright"))
-    grid_origin = stereogrid_pipeline["stereo_app"].GetImageOrigin(
-        "io.outleft")
-    grid_spacing = stereogrid_pipeline["stereo_app"].GetImageSpacing(
-        "io.outleft")
 
     out_json[params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]\
@@ -433,7 +418,6 @@ def run(
     out_json[params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]\
         [params.epipolar_spacing_x_tag] = grid_spacing[0]
-
 
     out_json[params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]\
@@ -481,7 +465,6 @@ def run(
             [params.convergence_angle_tag] = convergence_angle
 
     logging.info("Sparse matching ...")
-    nb_threads = int(os.environ.get('OMP_NUM_THREADS', '1'))
 
     # Compute the full range needed for sparse matching
     disp_lower_bound = elevation_delta_lower_bound/disp_to_alt_ratio
@@ -532,11 +515,9 @@ def run(
 
     # Write temporary grid
     tmp1 = os.path.join(out_dir, "tmp1.tif")
-    preprocessing.write_grid(left_grid_as_array, tmp1,
-                             grid_origin, grid_spacing)
+    preprocessing.write_grid(grid1, tmp1, grid_origin, grid_spacing)
     tmp2 = os.path.join(out_dir, "tmp2.tif")
-    preprocessing.write_grid(right_grid_as_array, tmp2,
-                             grid_origin, grid_spacing)
+    preprocessing.write_grid(grid2, tmp2, grid_origin, grid_spacing)
 
     # Compute margins for right region
     margins = [
@@ -595,7 +576,7 @@ def run(
     matches = np.empty((0, 4))
 
     # Wait for all matching tasks to be completed
-    for future, result in tqdm(as_completed(future_matches, with_results=True),
+    for __, result in tqdm(as_completed(future_matches, with_results=True),
             total=len(future_matches), desc="Performing matching ..."):
         matches = np.concatenate((matches, result))
 
@@ -685,9 +666,9 @@ than --epipolar_error_upper_bound = {} pix".format(
 
     # Commpute correction for right grid
     logging.info("Generating correction for right epipolar grid ...")
-    corrected_right_grid, corrected_matches, in_stats, out_stats =\
+    corrected_right_grid, corrected_matches, __, __ =\
         preprocessing.correct_right_grid(
-            matches, right_grid_as_array, grid_origin, grid_spacing)
+            matches, grid2, grid_origin, grid_spacing)
 
     corrected_epipolar_error = corrected_matches[:,
                                                  1] - corrected_matches[:, 3]
@@ -705,7 +686,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         [params.preprocessing_output_section_tag]\
         [params.left_epipolar_grid_tag] = out_left_grid
     preprocessing.write_grid(
-        left_grid_as_array,
+        grid1,
         out_left_grid,
         grid_origin,
         grid_spacing)
@@ -730,7 +711,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         [params.right_epipolar_uncorrected_grid_tag] =\
             out_right_grid_uncorrected
     preprocessing.write_grid(
-        right_grid_as_array,
+        grid2,
         out_right_grid_uncorrected,
         grid_origin,
         grid_spacing)

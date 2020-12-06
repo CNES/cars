@@ -25,6 +25,7 @@ estimation and triangulation
 """
 
 # Standard imports
+from __future__ import absolute_import
 from typing import Dict, List, Tuple
 import warnings
 import os
@@ -36,15 +37,15 @@ from pkg_resources import iter_entry_points
 # Third party imports
 import numpy as np
 from scipy import interpolate
+#pylint: disable=no-name-in-module
 from scipy.spatial import Delaunay, tsearch, cKDTree
 import rasterio as rio
 import xarray as xr
 import otbApplication
-from osgeo import osr
 from dask import sizeof
 import pandora
 import pandora.marge
-from pandora.constants import *
+from pandora import constants as pcst
 
 # Cars imports
 from cars import pipelines
@@ -61,21 +62,26 @@ from cars import matching_regularisation
 # Register sizeof for xarray
 @sizeof.sizeof.register_lazy("xarray")
 def register_xarray():
+    """
+    Add hook to dask so it correctly estimates memory used by xarray
+    """
     @sizeof.sizeof.register(xr.DataArray)
-    def sizeof_xarray_dataarray(x):
-        total_size = sizeof.sizeof(x.values)
-        for cname, carray in x.coords.items():
+    #pylint: disable=unused-variable
+    def sizeof_xarray_dataarray(xarr):
+        total_size = sizeof.sizeof(xarr.values)
+        for __, carray in xarr.coords.items():
             total_size += sizeof.sizeof(carray.values)
-        total_size += sizeof.sizeof(x.attrs)
+        total_size += sizeof.sizeof(xarr.attrs)
         return total_size
     @sizeof.sizeof.register(xr.Dataset)
-    def sizeof_xarray_dataset(x):
+    #pylint: disable=unused-variable
+    def sizeof_xarray_dataset(xdat):
         total_size = 0
-        for vname, varray in x.data_vars.items():
+        for __, varray in xdat.data_vars.items():
             total_size += sizeof.sizeof(varray.values)
-        for cname, carray in x.coords.items():
+        for __, carray in xdat.coords.items():
             total_size += sizeof.sizeof(carray)
-        total_size += sizeof.sizeof(x.attrs)
+        total_size += sizeof.sizeof(xdat.attrs)
         return total_size
 
 # Filter rasterio warning when image is not georeferenced
@@ -188,29 +194,14 @@ def resample_image(
 
     # Build mask pipeline for img needed
     img_has_mask = nodata is not None or mask is not None
-    mask_otb = None
-    mask_pipeline = None
+    msk = None
     if img_has_mask:
-        mask_otb, mask_pipeline = pipelines.build_mask_pipeline(
+        msk = pipelines.build_mask_pipeline(
             img, grid, nodata, mask, largest_size[0], largest_size[1], region)
 
-    # Build bundletoperfectsensor (p+xs fusion) for images
-    if lowres_color is not None:
-        img, img_pxs_pipeline = pipelines.build_bundletoperfectsensor_pipeline(
-            img, lowres_color)
-
     # Build resampling pipelines for images
-    img_epi_otb, img_epi_pipeline = pipelines.build_image_resampling_pipeline(
-        img, grid, largest_size[0], largest_size[1], region)
-
-    # Retrieve data and build left dataset
-    im = np.copy(
-        img_epi_pipeline["extract_app"].GetVectorImageAsNumpyArray("out"))
-
-    if img_has_mask:
-        msk = np.copy(mask_pipeline["extract_app"].GetImageAsNumpyArray("out"))
-    else:
-        msk = None
+    im = pipelines.build_image_resampling_pipeline(
+        img, grid, largest_size[0], largest_size[1], region, lowres_color)
 
     dataset = create_im_dataset(im, region, largest_size, band_coords, msk)
 
@@ -315,14 +306,6 @@ def epipolar_rectify_images(
 
     epipolar_size_x = preprocessing_output_conf[params.epipolar_size_x_tag]
     epipolar_size_y = preprocessing_output_conf[params.epipolar_size_y_tag]
-
-    epipolar_origin = [preprocessing_output_conf[params.epipolar_origin_x_tag],
-                       preprocessing_output_conf[params.epipolar_origin_y_tag]]
-
-    epipolar_spacing = [preprocessing_output_conf\
-                        [params.epipolar_spacing_x_tag],
-                        preprocessing_output_conf\
-                        [params.epipolar_spacing_y_tag]]
 
     # Force region to be float
     region = [int(x) for x in region]
@@ -793,7 +776,7 @@ def get_masks_from_pandora(disp:xr.Dataset,
     msk = np.full(validity_mask_cropped.shape, False)
     # Identify valid points
     msk[np.where((validity_mask_cropped & \
-                  PANDORA_MSK_PIXEL_INVALID) == 0)] = True
+                  pcst.PANDORA_MSK_PIXEL_INVALID) == 0)] = True
 
     masks['mask'] = msk
 
@@ -802,54 +785,57 @@ def get_masks_from_pandora(disp:xr.Dataset,
         # Bit 9: False match bit 9
         msk_false_match = np.full(validity_mask_cropped.shape, False)
         msk_false_match[np.where(
-            (validity_mask_cropped & PANDORA_MSK_PIXEL_MISMATCH) == 0)] = True
+            (validity_mask_cropped & \
+             pcst.PANDORA_MSK_PIXEL_MISMATCH) == 0)] = True
         # Bit 8: Occlusion
         msk_occlusion = np.full(validity_mask_cropped.shape, False)
         msk_occlusion[np.where(
-            (validity_mask_cropped & PANDORA_MSK_PIXEL_OCCLUSION) == 0)] = True
+            (validity_mask_cropped & \
+             pcst.PANDORA_MSK_PIXEL_OCCLUSION) == 0)] = True
         # Bit 7: Masked in secondary image
         msk_masked_sec = np.full(validity_mask_cropped.shape, False)
         msk_masked_sec[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC) == 0)] = True
         # Bit 6: Masked in reference image
         msk_masked_ref = np.full(validity_mask_cropped.shape, False)
         msk_masked_ref[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF) == 0)] = True
         # Bit 5: Filled false match
         msk_filled_false_match = np.full(validity_mask_cropped.shape, False)
         msk_filled_false_match[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_FILLED_MISMATCH) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_FILLED_MISMATCH) == 0)] = True
         # Bit 4: Filled occlusion
         msk_filled_occlusion = np.full(validity_mask_cropped.shape, False)
         msk_filled_occlusion[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_FILLED_OCCLUSION) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION) == 0)] = True
         # Bit 3: Computation stopped during pixelic step, under pixelic
         # interpolation never ended
         msk_stopped_interp = np.full(validity_mask_cropped.shape, False)
         msk_stopped_interp[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION) == 0)] = True
         # Bit 2: Disparity range to explore is incomplete (borders reached in
         # secondary image)
         msk_incomplete_disp = np.full(validity_mask_cropped.shape, False)
         msk_incomplete_disp[np.where(
             (validity_mask_cropped & \
-            PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE) == 0)] \
+                 = True
         # Bit 1: Invalid in secondary image
         msk_invalid_sec = np.full(validity_mask_cropped.shape, False)
         msk_invalid_sec[np.where(
             (validity_mask_cropped & \
-            PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING) == 0)] \
+        pcst.PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING) == 0)] \
             = True
         # Bit 0: Invalid in reference image
         msk_invalid_ref = np.full(validity_mask_cropped.shape, False)
         msk_invalid_ref[np.where(
             (validity_mask_cropped & \
-             PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER) == 0)] = True
+             pcst.PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER) == 0)] = True
 
         masks['masked_ref'] = msk_masked_ref
         masks['masked_sec'] = msk_masked_sec
@@ -1150,10 +1136,6 @@ def compute_points_cloud(data: xr.Dataset,
     """
     disp = pipelines.encode_to_otb(
         data[cst.DISP_MAP].values,
-        data.attrs[cst.EPI_FULL_SIZE],
-        data.attrs[roi_key])
-    msk = pipelines.encode_to_otb(
-        data[cst.DISP_MSK].values,
         data.attrs[cst.EPI_FULL_SIZE],
         data.attrs[roi_key])
 
@@ -1651,16 +1633,16 @@ def transform_terrain_region_to_epipolar(
                 points.append(p)
         else:
             # else add nearest neighbor
-            di,pi = tree_min.query(region_grid[i,:])
+            __, pi = tree_min.query(region_grid[i,:])
             points.append(epipolar_grid_flat[pi])
         # If we are inside triangulation of s_min
             if s_max[i] != -1:
                 # Add points from surrounding triangle
-                for p in  epipolar_grid_flat[delaunay_max.simplices[s_max[i]]]:
+                for p in epipolar_grid_flat[delaunay_max.simplices[s_max[i]]]:
                     points.append(p)
             else:
                 # else add nearest neighbor
-                di,pi = tree_max.query(region_grid[i,:])
+                __, pi = tree_max.query(region_grid[i,:])
                 points.append(epipolar_grid_flat[pi])
 
     points_min = np.min(points, axis=0)

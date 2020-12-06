@@ -19,9 +19,12 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
 import tempfile
 import os
 import pickle
+from typing import Tuple
+
 import pytest
 
 import numpy as np
@@ -31,7 +34,61 @@ import xarray as xr
 from utils import absolute_data_path, temporary_dir, assert_same_datasets
 from cars import preprocessing
 from cars import stereo
-from cars import parameters as params
+from cars import pipelines
+from cars import constants as cst
+
+
+def generate_epipolar_grids(
+        img1: str,
+        img2: str,
+        srtm_dir: str=None,
+        default_alt: float=None,
+        epi_step: float=30)\
+    -> Tuple[xr.Dataset, xr.Dataset, int, int, float]:
+    """
+    Generate epipolar resampling grids
+    as xarray.Dataset from a pair of images and srtm_dir
+
+    :param img1: Path to the left image
+    :param img2: Path to right image
+    :param srtm_dir: Path to folder containing SRTM tiles
+    :param default_alt: Default altitude above ellipsoid
+    :epi_step: Step of the resampling grid
+    :return: Tuple containing :
+        left_grid_dataset, right_grid_dataset containing the resampling grids
+        epipolar_size_x, epipolar_size_y epipolar grids size
+        baseline  : (resolution * B/H)
+    """
+    # Launch OTB pipeline to get stero grids
+    grid1, grid2, __, __, epipolar_size_x, epipolar_size_y, baseline = \
+        pipelines.build_stereorectification_grid_pipeline(
+        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
+
+    col = np.array(range(0, grid1.shape[0] * epi_step, epi_step))
+    row = np.array(range(0, grid1.shape[1] * epi_step, epi_step))
+
+    left_grid_dataset = xr.Dataset({cst.X: ([cst.ROW, cst.COL],
+                                             grid1[:, :, 0]),
+                                    cst.Y: ([cst.ROW, cst.COL],
+                                             grid1[:, :, 1])},
+                                   coords={cst.ROW: row,
+                                           cst.COL: col},
+                                   attrs={"epi_step": epi_step,
+                                          "epipolar_size_x": epipolar_size_x,
+                                          "epipolar_size_y": epipolar_size_y})
+
+    right_grid_dataset = xr.Dataset({cst.X: ([cst.ROW, cst.COL],
+                                              grid2[:, :, 0]),
+                                     cst.Y: ([cst.ROW, cst.COL],
+                                              grid2[:, :, 1])},
+                                    coords={cst.ROW: row,
+                                            cst.COL: col},
+                                    attrs={"epi_step": epi_step,
+                                           "epipolar_size_x": epipolar_size_x,
+                                           "epipolar_size_y": epipolar_size_y})
+    return left_grid_dataset, right_grid_dataset,\
+           epipolar_size_x, epipolar_size_y,\
+           baseline
 
 
 @pytest.mark.unit_tests
@@ -44,7 +101,7 @@ def test_generate_epipolar_grids():
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     left_grid, right_grid, size_x, size_y, baseline = \
-        preprocessing.generate_epipolar_grids(
+        generate_epipolar_grids(
             img1, img2, dem)
 
     assert size_x == 612
@@ -77,7 +134,7 @@ def test_generate_epipolar_grids_default_alt():
     default_alt = 500
 
     left_grid, right_grid, size_x, size_y, baseline = \
-        preprocessing.generate_epipolar_grids(
+        generate_epipolar_grids(
             img1, img2, dem, default_alt)
 
     assert size_x == 612
