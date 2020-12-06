@@ -19,16 +19,16 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
+from copy import deepcopy
 
 import pytest
 import numpy as np
 import xarray as xr
-from copy import deepcopy
 
 from utils import absolute_data_path, assert_same_datasets
 
 from cars import constants as cst
-from cars import parameters as params
 from cars import matching_regularisation
 
 
