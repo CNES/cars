@@ -19,15 +19,15 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
 import pytest
 
 from shapely.geometry import Polygon
 import numpy as np
 import pandas
 
+from utils import absolute_data_path
 from cars import projection, utils
-from utils import absolute_data_path, temporary_dir
-
 
 @pytest.mark.unit_tests
 def test_point_cloud_conversion():
