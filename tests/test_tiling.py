@@ -19,15 +19,14 @@
 # limitations under the License.
 #
 
+from __future__ import absolute_import
+
 import pytest
-import numpy as np
-import rasterio as rio
+
 from shapely.geometry import Polygon
 from shapely.affinity import translate
 
-from cars import tiling, configuration as cfg
-from utils import absolute_data_path
-
+from cars import tiling
 
 @pytest.mark.unit_tests
 def test_grid():
