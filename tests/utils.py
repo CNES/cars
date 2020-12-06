@@ -86,4 +86,3 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
                                    expected[key].values,
                                    rtol=rtol,
                                    atol=atol)
-
