@@ -18,23 +18,25 @@
 # limitations under the License.
 #
 """
-========================
+=========================
   Module "configuration"
-========================
+=========================
 This module is the main CARS configuration python file.
 It contains all the functions associated with CARS configuration.
 """
-
-import json
-from json_checker import Or
 import os
 import logging
 from collections import namedtuple
+import json
+from json_checker import Or
 from numpy import dtype
 
 from cars import utils
 from cars import filtering
 
+# TODO : not use a global cfg variable ?
+# TODO : with refactoring : constants in UPPER_CASE
+#pylint: disable=invalid-name
 cfg = None
 
 #### Prepare ####
@@ -193,9 +195,9 @@ def load_cfg():
         logger.critical(
             'The file indicated {} does not exist'.format(conf_file_path))
 
-    with open(conf_file_path, 'r') as f:
+    with open(conf_file_path, 'r') as conf_file:
         global cfg
-        cfg = json.load(f)
+        cfg = json.load(conf_file)
         utils.check_json(cfg, static_conf_schema)
 
 
@@ -298,10 +300,10 @@ def get_small_components_filter_params()\
                                 small_cpnts_filter_tag]
     if small_cpn_filter_dict is None:
         return None
-    else:
-        small_cpn_filter_params = filtering.SmallComponentsFilterParams(
+
+    small_cpn_filter_params = filtering.SmallComponentsFilterParams(
                                             *small_cpn_filter_dict.values())
-        return small_cpn_filter_params
+    return small_cpn_filter_params
 
 
 def get_statistical_outliers_filter_params()\
@@ -320,10 +322,10 @@ def get_statistical_outliers_filter_params()\
         cfg[compute_dsm_tag][cloud_filtering_tag][stat_outliers_filter_tag]
     if stat_filter_dict is None:
         return None
-    else:
-        stat_filter_params = filtering.StatisticalFilterParams(
-                                            *stat_filter_dict.values())
-        return stat_filter_params
+
+    stat_filter_params = filtering.StatisticalFilterParams(
+                                        *stat_filter_dict.values())
+    return stat_filter_params
 
 def get_color_image_encoding() -> dtype:
     """
