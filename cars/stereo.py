@@ -37,8 +37,11 @@ from pkg_resources import iter_entry_points
 # Third party imports
 import numpy as np
 from scipy import interpolate
-#pylint: disable=no-name-in-module
-from scipy.spatial import Delaunay, tsearch, cKDTree
+
+from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
+from scipy.spatial import tsearch #pylint: disable=no-name-in-module
+from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
+
 import rasterio as rio
 import xarray as xr
 import otbApplication
@@ -200,15 +203,15 @@ def resample_image(
             img, grid, nodata, mask, largest_size[0], largest_size[1], region)
 
     # Build resampling pipelines for images
-    im = pipelines.build_image_resampling_pipeline(
+    resamp = pipelines.build_image_resampling_pipeline(
         img, grid, largest_size[0], largest_size[1], region, lowres_color)
 
-    dataset = create_im_dataset(im, region, largest_size, band_coords, msk)
+    dataset = create_im_dataset(resamp, region, largest_size, band_coords, msk)
 
     return dataset
 
 
-def create_im_dataset(im: np.ndarray,
+def create_im_dataset(img: np.ndarray,
                       region: List[int],
                       largest_size: List[int],
                       band_coords: bool=False,
@@ -216,14 +219,14 @@ def create_im_dataset(im: np.ndarray,
     """
     Create image dataset as used in cars.
 
-    :param im: image as a numpy array
+    :param img: image as a numpy array
     :param region: region as list [xmin ymin xmax ymax]
     :param largest_size: whole image size
     :param band_coords: set to true to add the coords 'band' to the dataset
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
-    nb_bands = im.shape[-1]
+    nb_bands = img.shape[-1]
 
     # Add band dimension if needed
     if band_coords or nb_bands > 1:
@@ -231,7 +234,7 @@ def create_im_dataset(im: np.ndarray,
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
         dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL],
-                                     np.einsum('ijk->kij', im)
+                                     np.einsum('ijk->kij', img)
                                      )},
                              coords={cst.BAND: bands,
                                      cst.ROW: np.array(range(region[1],
@@ -240,7 +243,8 @@ def create_im_dataset(im: np.ndarray,
                                                              region[2]))
                                      })
     else:
-        dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL], im[:, :, 0])},
+        dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL],
+                             img[:, :, 0])},
                              coords={cst.ROW: np.array(range(region[1],
                                                              region[3])),
                                      cst.COL: np.array(range(region[0],
@@ -592,7 +596,7 @@ def compute_mask_to_use_in_pandora(
     # find a value to use for unvalid pixels
     unvalid_pixels = None
     for i in range(info_dtype.max):
-        if i != valid_pixels and i != nodata_pixels:
+        if i not in (valid_pixels, nodata_pixels):
             unvalid_pixels = i
             break
 
@@ -853,7 +857,7 @@ def get_masks_from_pandora(disp:xr.Dataset,
     for key in masks:
         final_msk = np.ndarray(masks[key].shape, dtype=np.int16)
         final_msk[masks[key]] = 255
-        final_msk[masks[key] == False] = 0
+        final_msk[np.equal(masks[key], False)] = 0
         masks[key] = final_msk
 
     return masks
@@ -1045,8 +1049,8 @@ def triangulate(configuration,
         splines_file = preprocessing_output_conf[
             params.lowres_dem_splines_fit_tag]
         splines_coefs = None
-        with open(splines_file,'rb') as f:
-            splines_coefs = pickle.load(f)
+        with open(splines_file,'rb') as splines_file_reader:
+            splines_coefs = pickle.load(splines_file_reader)
 
         # Read time direction line parameters
         time_direction_origin = [preprocessing_output_conf[
@@ -1606,7 +1610,7 @@ def transform_terrain_region_to_epipolar(
                          step,
                          step)
 
-    epipolar_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
+    epi_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
 
     epipolar_grid_min, epipolar_grid_max = compute_epipolar_grid_min_max(
         epipolar_grid, epsg, conf,disp_min, disp_max)
@@ -1623,30 +1627,30 @@ def transform_terrain_region_to_epipolar(
     s_min = tsearch(delaunay_min, region_grid)
     s_max = tsearch(delaunay_max, region_grid)
 
-    points = []
-    # For ecah corner
+    points_list = []
+    # For each corner
     for i in range(0,4):
         # If we are inside triangulation of s_min
         if s_min[i] != -1:
             # Add points from surrounding triangle
-            for p in  epipolar_grid_flat[delaunay_min.simplices[s_min[i]]]:
-                points.append(p)
+            for point in epi_grid_flat[delaunay_min.simplices[s_min[i]]]:
+                points_list.append(point)
         else:
             # else add nearest neighbor
-            __, pi = tree_min.query(region_grid[i,:])
-            points.append(epipolar_grid_flat[pi])
+            __, point_idx = tree_min.query(region_grid[i,:])
+            points_list.append(epi_grid_flat[point_idx])
         # If we are inside triangulation of s_min
             if s_max[i] != -1:
                 # Add points from surrounding triangle
-                for p in epipolar_grid_flat[delaunay_max.simplices[s_max[i]]]:
-                    points.append(p)
+                for point in epi_grid_flat[delaunay_max.simplices[s_max[i]]]:
+                    points_list.append(point)
             else:
                 # else add nearest neighbor
-                __, pi = tree_max.query(region_grid[i,:])
-                points.append(epipolar_grid_flat[pi])
+                __, point_nn_idx = tree_max.query(region_grid[i,:])
+                points_list.append(epi_grid_flat[point_nn_idx])
 
-    points_min = np.min(points, axis=0)
-    points_max = np.max(points, axis=0)
+    points_min = np.min(points_list, axis=0)
+    points_max = np.max(points_list, axis=0)
 
     # Bouding region of corresponding cell
     epipolar_region_minx = points_min[0]
