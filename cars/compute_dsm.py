@@ -35,13 +35,14 @@ import os
 import logging
 import errno
 import math
-import time
 from glob import glob
 import multiprocessing
 
 # Third party imports
 import numpy as np
-from scipy.spatial import Delaunay, tsearch, cKDTree
+from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
+from scipy.spatial import tsearch #pylint: disable=no-name-in-module
+from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 from tqdm import tqdm
 from json_checker import CheckerError
 import dask
@@ -59,7 +60,6 @@ from cars import tiling
 from cars import utils
 from cars import projection
 from cars import readwrite
-from cars import preprocessing
 from cars import constants as cst
 from cars.cluster import start_local_cluster, start_cluster,\
                          stop_cluster, ComputeDSMMemoryLogger
@@ -88,9 +88,7 @@ def write_3d_points(configuration, region, corr_config,
     config_id_dir = os.path.join(tmp_dir, config_id)
     hashed_region = region_hash_string(region)
     points_dir = os.path.join(config_id_dir, "points")
-    points_file = os.path.join(points_dir, "{}.nc".format(hashed_region))
     color_dir = os.path.join(config_id_dir, "color")
-    color_file = os.path.join(color_dir, "{}.nc".format(hashed_region))
 
     # Compute 3d points and colors
     points, colors = stereo.images_pair_to_3d_points(configuration, region,
@@ -106,13 +104,16 @@ def write_3d_points(configuration, region, corr_config,
     out_points = {}
     out_colors = {}
     for key in points:
-        outPath = os.path.join(points_dir, "{}_{}.nc".format(hashed_region,key))
-        points[key].to_netcdf(outPath)
-        out_points[key] = outPath
+        out_path = os.path.join(points_dir,
+                                "{}_{}.nc".format(hashed_region, key))
+        points[key].to_netcdf(out_path)
+        out_points[key] = out_path
+
     for key in colors:
-        outPath = os.path.join(color_dir, "{}_{}.nc".format(hashed_region,key))
-        colors[key].to_netcdf(outPath)
-        out_colors[key] = outPath
+        out_path = os.path.join(color_dir,
+                                "{}_{}.nc".format(hashed_region, key))
+        colors[key].to_netcdf(out_path)
+        out_colors[key] = out_path
 
     # outputs are the temporary files paths
     return out_points, out_colors
@@ -333,7 +334,7 @@ def run(
                             (roi_xmin, roi_ymin)])
 
     # set the timeout for each job in multiprocessing mode (in seconds)
-    perJobTimeout = 600
+    per_job_timeout = 600
 
     configurations_data = {}
 
@@ -576,9 +577,9 @@ def run(
                     margin=static_cfg.get_epi_tile_margin_percent())
 
         logging.info(
-            "Optimal tile size for epipolar regions: {}x{} pixels".format(
-                opt_epipolar_tile_size,
-                opt_epipolar_tile_size))
+            "Optimal tile size for epipolar regions: "
+            "{size}x{size} pixels".format(
+            size=opt_epipolar_tile_size))
 
         configurations_data[config_id]['opt_epipolar_tile_size'] =\
                                                         opt_epipolar_tile_size
@@ -619,11 +620,11 @@ def run(
         if not roi_poly.intersects(terrain_poly):
             raise Exception(
                 'None of the input pairs intersect the requested ROI')
-        else:
-            logging.info('Setting terrain bounding box to the requested ROI')
-            xmin, ymin, xmax, ymax = roi_poly.bounds
-            xmin, ymin, xmax, ymax = tiling.snap_to_grid(
-                xmin, ymin, xmax, ymax, resolution)
+        # Show ROI if valid (no exception raised) :
+        logging.info('Setting terrain bounding box to the requested ROI')
+        xmin, ymin, xmax, ymax = roi_poly.bounds
+        xmin, ymin, xmax, ymax = tiling.snap_to_grid(
+                                        xmin, ymin, xmax, ymax, resolution)
 
     logging.info(
         "Total terrain bounding box : [{}, {}] x [{}, {}]".format(
@@ -727,7 +728,8 @@ def run(
 
             # create progress bar with an update callback
             pbar = tqdm(total=len(conf['epipolar_regions']))
-            def update(args): pbar.update()
+            def update(args): #pylint: disable=unused-argument
+                pbar.update()
 
             # create a thread pool
             pool = multiprocessing.Pool(nb_workers)
@@ -749,7 +751,7 @@ def run(
             # async objects by the actual output of write_3d_points(), meaning
             # the paths to cloud files
             delayed_point_clouds =\
-                [delayed_pc.get(timeout=perJobTimeout)
+                [delayed_pc.get(timeout=per_job_timeout)
                 for delayed_pc in delayed_point_clouds]
 
             # closing thread pool when computation is done
@@ -872,7 +874,8 @@ def run(
         pbar = tqdm(
             total=number_of_terrain_splits,
             desc="Finding correspondences between terrain and epipolar tiles")
-        def update(args): pbar.update()
+        def update(args): #pylint: disable=unused-argument
+            pbar.update()
         # initialize a thread pool for multiprocessing mode
         pool = multiprocessing.Pool(nb_workers)
 
@@ -1093,7 +1096,7 @@ def run(
         # Wait for asynchrone jobs (timeout in seconds) and replace them by
         # write_dsm_by_tile() output
         delayed_dsm_tiles = [
-            delayed_tile.get(timeout=perJobTimeout)
+            delayed_tile.get(timeout=per_job_timeout)
             for delayed_tile in delayed_dsm_tiles]
 
         # closing the tread pool after computation
@@ -1107,11 +1110,10 @@ def run(
         def vrt_mosaic(tiles_glob, vrt_name, vrt_options, output):
             vrt_file = os.path.join(out_dir, vrt_name)
             tiles_list = glob(os.path.join(out_dir, 'tmp', tiles_glob))
-            vrt = gdal.BuildVRT(vrt_file, tiles_list, options=vrt_options)
-            vrt = None
-            ds = gdal.Open(vrt_file)
-            ds = gdal.Translate(output, ds)
-            ds = None
+            gdal.BuildVRT(vrt_file, tiles_list, options=vrt_options)
+            vrt_file_descriptor = gdal.Open(vrt_file)
+            vrt_file_descriptor = gdal.Translate(output, vrt_file_descriptor)
+            vrt_file_descriptor = None
 
         vrt_mosaic('*_dsm.tif', 'dsm.vrt', vrt_options, out_dsm)
         vrt_mosaic('*_clr.tif', 'clr.vrt', vrt_options, out_clr)
@@ -1160,8 +1162,8 @@ def run(
 
     try:
         utils.check_json(out_json, params.stereo_content_schema)
-    except CheckerError as e:
+    except CheckerError as check_error:
         logging.warning(
-            "content.json does not comply with schema: {}".format(e))
+            "content.json does not comply with schema: {}".format(check_error))
 
     params.write_stereo_content_file(out_json, out_json_path)
