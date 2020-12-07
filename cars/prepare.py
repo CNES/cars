@@ -324,15 +324,15 @@ def run(
             raise Exception(
                 'Problem while opening image {} with the otb'.format(img1))
 
-        with rio.open(img1) as im:
-            trans = im.transform
+        with rio.open(img1) as img1_reader:
+            trans = img1_reader.transform
             if trans.e < 0:
                 logging.warning(
                     '{} seems to have an incoherent pixel size. '
                     'Input images has to be in sensor geometry.'.format(img1))
 
-        with rio.open(img2) as im:
-            trans = im.transform
+        with rio.open(img2) as img2_reader:
+            trans = img2_reader.transform
             if trans.e < 0:
                 logging.warning(
                     '{} seems to have an incoherent pixel size. '
@@ -899,8 +899,8 @@ than --epipolar_error_upper_bound = {} pix".format(
         lowres_dem_splines_fit_file =\
             os.path.join(out_dir, "lowres_dem_splines_fit.pck")
 
-        with open(lowres_dem_splines_fit_file,'wb') as f:
-            pickle.dump(splines, f)
+        with open(lowres_dem_splines_fit_file,'wb') as splines_fit_file_reader:
+            pickle.dump(splines, splines_fit_file_reader)
             out_json[params.preprocessing_section_tag]\
                 [params.preprocessing_output_section_tag]\
                 [params.lowres_dem_splines_fit_tag]\
@@ -967,9 +967,9 @@ than --epipolar_error_upper_bound = {} pix".format(
     # Write the output json
     try:
         utils.check_json(out_json, params.preprocessing_content_schema)
-    except CheckerError as e:
+    except CheckerError as check_error:
         logging.warning(
-            "content.json does not comply with schema: {}".format(e))
+            "content.json does not comply with schema: {}".format(check_error))
 
     out_json_path = os.path.join(out_dir, "content.json")
     params.write_preprocessing_content_file(out_json, out_json_path)
