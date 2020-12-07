@@ -20,7 +20,10 @@
 #
 
 """
-This module provides functions to start and stop a local or PBS cluster
+======================
+   Module "cluster"
+======================
+This module provides functions to start and stop a local or PBS cluster.
 """
 
 # Standard imports
@@ -59,6 +62,8 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         Associate plugin with a worker
         :param worker: The worker to associate the plugin with
         """
+        # Pylint Exception : Inherited attributes outside __init__
+        #pylint: disable=attribute-defined-outside-init
         self.worker = worker
         self.name = worker.name
         # Measure plugin registration time
@@ -67,10 +72,13 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         self.data=([[0, 0, 0, 0, 0, 0]])
 
 
-    def transition(self, key, start, finish, *args, **kwargs):
+    def transition(self, key, start, finish, **kwargs):
         """
         Callback when worker changes internal state
         """
+        # TODO Pylint Exception : Inherited attributes outside __init__
+        #pylint: disable=attribute-defined-outside-init
+
         # Setup logging
         worker_logger = logging.getLogger('distributed.worker')
 
@@ -84,14 +92,14 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         elapsed_time = time.time()-self.start_time
 
         # Walk the worker known memory
-        for k,v in self.worker.nbytes.items():
+        for task, task_size in self.worker.nbytes.items():
 
             # Sort between point clouds and rasters
-            if k.startswith("images_pair_to_3d_points"):
-                total_point_clouds_nbytes += v
+            if task.startswith("images_pair_to_3d_points"):
+                total_point_clouds_nbytes += task_size
                 total_point_clouds_in_memory += 1
             else:
-                total_rasters_nbytes += v
+                total_rasters_nbytes += task_size
                 total_rasters_in_memory += 1
 
         # Use psutil to capture python process memory as well
