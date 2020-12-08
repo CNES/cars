@@ -20,10 +20,14 @@
 #
 
 """
+=====================
+ Module "parameters"
+ ====================
 This module contains schema for all json files manipulated by cars,
 string tags associated with fields as well as function to read, write
 and check json parameters files.
 """
+
 
 # Standard imports
 import os
@@ -39,7 +43,9 @@ from cars import mask_classes
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
-
+# TODO : with refactoring : constants in UPPER_CASE
+# TODO : not use a global parameters variable ?
+#pylint: disable=invalid-name
 static_params_tag = 'static_parameters'
 
 
@@ -375,7 +381,7 @@ preprocessing_output_type = Dict[str, Union[float, str, int]]
 # schema of the preprocessing/parameters section
 preprocessing_parameters_schema = {
     epi_step_tag: And(int, lambda x: x > 0),
-    disparity_margin_tag: And(float, lambda x: x >= 0. and x <= 1.),
+    disparity_margin_tag: And(float, lambda x: 0. <= x <= 1.),
     epipolar_error_upper_bound_tag: And(float, lambda x: x > 0),
     epipolar_error_maximum_bias_tag: And(float, lambda x: x >= 0),
     elevation_delta_lower_bound_tag: float,
