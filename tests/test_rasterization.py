@@ -18,9 +18,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/rasterization.py
+"""
 
 from __future__ import absolute_import
 
+import logging
 import pytest
 import pandas
 
@@ -44,16 +48,26 @@ def test_get_utm_zone_as_epsg_code():
 
 @pytest.mark.unit_tests
 def test_create_combined_cloud():
+    """
+    Tests several configurations of create_combined_cloud function :
+    - test only color
+    - test with mask
+    - test with color
+    - test with coords and colors
+    - test with coords (no colors)
+    - test exception
+    """
     epsg = 4326
 
     # test only color
     def get_cloud0_ds(with_msk):
+        """ Return local test point cloud 10x10 dataset """
         row = 10
         col = 10
-        x = np.arange(row*col)
-        x = x.reshape((row, col))
-        y = x + 1
-        z = y + 1
+        x_coord = np.arange(row * col)
+        x_coord = x_coord.reshape((row, col))
+        y_coord = x_coord + 1
+        z_coord = y_coord + 1
         corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
         corr_msk[4, 4] = 0
         if with_msk:
@@ -61,9 +75,9 @@ def test_create_combined_cloud():
             msk[4, 6] = 255
 
         ds_values = {
-            cst.X: ([cst.ROW, cst.COL], x),
-            cst.Y: ([cst.ROW, cst.COL], y),
-            cst.Z: ([cst.ROW, cst.COL], z),
+            cst.X: ([cst.ROW, cst.COL], x_coord),
+            cst.Y: ([cst.ROW, cst.COL], y_coord),
+            cst.Z: ([cst.ROW, cst.COL], z_coord),
             cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk)
         }
 
@@ -78,15 +92,15 @@ def test_create_combined_cloud():
 
     row = 10
     col = 10
-    x = np.full((row, col), fill_value=0, dtype=np.float)
-    y = np.full((row, col), fill_value=1, dtype=np.float)
-    z = np.full((row, col), fill_value=2, dtype=np.float)
+    x_coord = np.full((row, col), fill_value=0, dtype=np.float)
+    y_coord = np.full((row, col), fill_value=1, dtype=np.float)
+    z_coord = np.full((row, col), fill_value=2, dtype=np.float)
     corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
     corr_msk[6, 6] = 0
 
-    cloud1 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x),
-                         cst.Y: ([cst.ROW, cst.COL], y),
-                         cst.Z: ([cst.ROW, cst.COL], z),
+    cloud1 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x_coord),
+                         cst.Y: ([cst.ROW, cst.COL], y_coord),
+                         cst.Z: ([cst.ROW, cst.COL], z_coord),
                          cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
                                                      corr_msk)},
                         coords={cst.ROW: np.array(range(row)),
@@ -95,15 +109,15 @@ def test_create_combined_cloud():
 
     row = 5
     col = 5
-    x = np.full((row, col), fill_value=45, dtype=np.float)
-    y = np.full((row, col), fill_value=45, dtype=np.float)
-    z = np.full((row, col), fill_value=50, dtype=np.float)
+    x_coord = np.full((row, col), fill_value=45, dtype=np.float)
+    y_coord = np.full((row, col), fill_value=45, dtype=np.float)
+    z_coord = np.full((row, col), fill_value=50, dtype=np.float)
     corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
     corr_msk[2, 2] = 0
 
-    cloud2 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x),
-                         cst.Y: ([cst.ROW, cst.COL], y),
-                         cst.Z: ([cst.ROW, cst.COL], z),
+    cloud2 = xr.Dataset({cst.X: ([cst.ROW, cst.COL], x_coord),
+                         cst.Y: ([cst.ROW, cst.COL], y_coord),
+                         cst.Z: ([cst.ROW, cst.COL], z_coord),
                          cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
                                                      corr_msk)},
                         coords={cst.ROW: np.array(range(row)),
@@ -135,7 +149,7 @@ def test_create_combined_cloud():
     ref_cloud2[:, 3] = 50
 
     for i in range(1, col - 1):
-        ref_cloud2[i*row+1:i*row+4, 0] = 1
+        ref_cloud2[i * row + 1 : i * row + 4, 0] = 1
     ref_cloud2 = np.delete(ref_cloud2, 2 * col + 2, 0)
 
     ref_cloud = np.concatenate([ref_cloud0, ref_cloud2])
@@ -164,7 +178,7 @@ def test_create_combined_cloud():
 
     ref_cloud = np.concatenate([ref_cloud0_with_msk,
                                 np.concatenate(
-                                    [ref_cloud2, np.zeros((row*col-1, 1))],
+                                    [ref_cloud2, np.zeros((row * col - 1, 1))],
                                     axis=1)])
     assert np.allclose(cloud.values, ref_cloud)
 
@@ -276,13 +290,13 @@ def test_create_combined_cloud():
     assert np.allclose(cloud, ref_cloud_coords)
 
     # test exception
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as test_error:
         rasterization.create_combined_cloud(
             cloud_list, epsg, color_list=[clr0], resolution=0.5, xstart=40.0,
             ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
             epipolar_border_margin=1, radius=1, with_coords=True)
-        assert str(e) == 'There shall be as many cloud elements as color ones'
-
+        assert str(test_error) == 'There shall be as many cloud elements '\
+                                        'as color ones'
 
 @pytest.mark.unit_tests
 def test_simple_rasterization_synthetic_case():
@@ -339,6 +353,9 @@ def test_simple_rasterization_synthetic_case():
 
 @pytest.mark.unit_tests
 def test_simple_rasterization_single():
+    """
+    Test simple rasterization from test cloud ref_single_cloud_in_df.nc
+    """
 
     resolution = 0.5
 
@@ -369,6 +386,10 @@ def test_simple_rasterization_single():
 
 @pytest.mark.unit_tests
 def test_simple_rasterization_dataset_1():
+    """
+    Test simple rasterization dataset from test cloud cloud1_ref_epsg_32630.nc
+    Configuration 1 : random xstart, ystart, xsize, ysize values
+    """
 
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
@@ -401,6 +422,10 @@ def test_simple_rasterization_dataset_1():
 
 @pytest.mark.unit_tests
 def test_simple_rasterization_dataset_2():
+    """
+    Test simple rasterization dataset from test cloud cloud1_ref_epsg_32630.nc
+    Configuration 2 : no xstart, ystart, xsize, ysize values
+    """
 
     cloud = xr.open_dataset(
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
@@ -474,21 +499,25 @@ def test_simple_rasterization_multiple_datasets():
 # Mask interpolation tests
 
 @pytest.fixture(scope='module')
-def mask_interp_inputs():
+def mask_interp_inputs(): #pylint: disable=redefined-outer-name
+    """
+    pytest fixture local function to ease rasterization tests readibility:
+    Returns a mask interpolated cloud.
+    """
     row = 4
     col = 5
     resolution = 1.0
 
     # simple mask all 100 and one 0
-    x, y = np.meshgrid(np.linspace(0, col - 1, col),
+    x_coord, y_coord = np.meshgrid(np.linspace(0, col - 1, col),
                        np.linspace(0, row - 1, row))
 
     msk = np.full((row, col), fill_value=100, dtype=np.float)
     msk[0, 0] = 0
 
     cloud = np.zeros((row * col, 3), dtype=np.float)
-    cloud[:, 0] = x.reshape((row * col))
-    cloud[:, 1] = y.reshape((row * col))
+    cloud[:, 0] = x_coord.reshape((row * col))
+    cloud[:, 1] = y_coord.reshape((row * col))
     cloud[:, 2] = msk.reshape((row * col))
 
     data_valid = np.ones((row * col), dtype=np.bool)
@@ -510,11 +539,11 @@ def mask_interp_inputs():
 
 
 @pytest.mark.unit_tests
-def test_mask_interp_case1(mask_interp_inputs):
+def test_mask_interp_case1(
+                mask_interp_inputs): #pylint: disable=redefined-outer-name
     """
     case 1 - simple mask all 100 and one 0
     """
-    import logging
     worker_logger = logging.getLogger('distributed.worker')
 
     # read fixture inputs and set parameters
@@ -551,11 +580,11 @@ def test_mask_interp_case1(mask_interp_inputs):
 
 
 @pytest.mark.unit_tests
-def test_mask_interp_case2(mask_interp_inputs):
+def test_mask_interp_case2(
+                mask_interp_inputs): #pylint: disable=redefined-outer-name
     """
     case 2 - add several points from a second class aiming the same terrain cell
     """
-    import logging
     worker_logger = logging.getLogger('distributed.worker')
 
     # read fixture inputs and set parameters
@@ -627,12 +656,12 @@ def test_mask_interp_case2(mask_interp_inputs):
     assert np.allclose(ref_msk, res)
 
 @pytest.mark.unit_tests
-def test_mask_interp_case3(mask_interp_inputs):
+def test_mask_interp_case3(
+                mask_interp_inputs): #pylint: disable=redefined-outer-name
     """
     case 3 - only two points from different classes at the same position in a
     single cell
     """
-    import logging
     worker_logger = logging.getLogger('distributed.worker')
 
     # read fixture inputs and set parameters
@@ -681,11 +710,11 @@ def test_mask_interp_case3(mask_interp_inputs):
 
 
 @pytest.mark.unit_tests
-def test_mask_interp_case4(mask_interp_inputs):
+def test_mask_interp_case4(
+                    mask_interp_inputs): #pylint: disable=redefined-outer-name
     """
     case 4 - no data cell
     """
-    import logging
     worker_logger = logging.getLogger('distributed.worker')
 
     # read fixture inputs and set parameters
@@ -732,11 +761,11 @@ def test_mask_interp_case4(mask_interp_inputs):
 
 
 @pytest.mark.unit_tests
-def test_mask_interp_case5(mask_interp_inputs):
+def test_mask_interp_case5(
+                mask_interp_inputs): #pylint: disable=redefined-outer-name
     """
     case 5 - add several points equal to 0 aiming the same terrain cell
     """
-    import logging
     worker_logger = logging.getLogger('distributed.worker')
 
     # read fixture inputs and set parameters
