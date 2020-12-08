@@ -17,6 +17,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for notebooks/*
+"""
 
 from __future__ import absolute_import
 
@@ -30,6 +33,11 @@ from utils import temporary_dir, absolute_data_path
 
 @pytest.mark.notebook_tests
 def test_step_by_step_compute_dsm():
+    """
+    Step by step compute dsm notebook test:
+    notebook conversion (.ipynb->.py), replace default TODO values,
+    run the notebook with ipython and check return code
+    """
     cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
@@ -54,7 +62,7 @@ def test_step_by_step_compute_dsm():
                         '--to script '
                         '{}/notebooks/step_by_step_compute_dsm.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True)
+                       .format(cars_path, directory)], shell=True, check=True)
 
         for line in fileinput.input(
             '{}/step_by_step_compute_dsm.py'.format(directory), inplace=True):
@@ -73,13 +81,18 @@ def test_step_by_step_compute_dsm():
             print(line) # keep this print
 
         out = subprocess.run(['ipython {}/step_by_step_compute_dsm.py'
-        .format(directory)], shell=True)
+        .format(directory)], shell=True, check=True)
 
         out.check_returncode()
 
 
 @pytest.mark.notebook_tests
 def test_epipolar_distributions():
+    """
+    Epipolar distributions notebook test:
+    notebook conversion (.ipynb->.py), replace default TODO values,
+    run the notebook with ipython and check return code
+    """
     cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
@@ -103,7 +116,7 @@ def test_epipolar_distributions():
         subprocess.run(['jupyter nbconvert '
                         '--to script {}/notebooks/epipolar_distributions.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True)
+                       .format(cars_path, directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/epipolar_distributions.py'
         .format(directory), inplace=True):
@@ -116,20 +129,25 @@ def test_epipolar_distributions():
             print(line)  # keep this print
 
         out = subprocess.run(['ipython {}/epipolar_distributions.py'
-        .format(directory)], shell=True)
+        .format(directory)], shell=True, check=True)
 
         out.check_returncode()
 
 
 @pytest.mark.notebook_tests
 def test_lowres_dem_fit():
+    """
+    Low resolution notebook test:
+    notebook conversion (.ipynb->.py), replace default TODO values,
+    run the notebook with ipython and check return code
+    """
     cars_path = os.environ.get('CARSPATH')
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         subprocess.run(['jupyter nbconvert '
                         '--to script {}/notebooks/lowres_dem_fit.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True)
+                       .format(cars_path, directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/lowres_dem_fit.py'.format(directory),
                                     inplace=True):
@@ -142,13 +160,17 @@ def test_lowres_dem_fit():
             print(line)  # keep this print
 
         out = subprocess.run(['ipython {}/lowres_dem_fit.py'.format(directory)],
-                             shell=True)
+                             shell=True, check=True)
 
         out.check_returncode()
 
-
 @pytest.mark.notebook_tests
 def test_compute_dsm_memory_monitoring():
+    """
+    Compute DSM memory monitoring notebook test:
+    notebook conversion (.ipynb->.py), replace default TODO values,
+    run the notebook with ipython and check return code
+    """
     cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
@@ -173,7 +195,7 @@ def test_compute_dsm_memory_monitoring():
                         '--to script '
                         '{}/notebooks/compute_dsm_memory_monitoring.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True)
+                       .format(cars_path, directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/compute_dsm_memory_monitoring.py'
         .format(directory), inplace=True):
@@ -184,6 +206,6 @@ def test_compute_dsm_memory_monitoring():
             print(line)  # keep this print
 
         out = subprocess.run(['ipython {}/compute_dsm_memory_monitoring.py'
-        .format(directory)], shell=True)
+        .format(directory)], shell=True, check=True)
 
         out.check_returncode()
