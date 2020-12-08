@@ -18,13 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/configuration_correlator.py
+"""
 
-import pytest
-import tempfile
 import os
+import tempfile
+import pytest
 
-from cars import configuration_correlator as corr_cfg
 from utils import temporary_dir
+from cars import configuration_correlator as corr_cfg
 
 
 @pytest.mark.unit_tests
@@ -76,12 +79,12 @@ def test_configure_pandora_with_file():
         "interpolated_disparity": "none"
     },
     "invalid_disparity": "np.nan"
-    } 
+    }
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         json_path = os.path.join(directory, "corr.json")
-        with open(json_path, "w") as f:
-            f.write(json_content)
+        with open(json_path, "w") as json_file:
+            json_file.write(json_content)
 
         corr_config = corr_cfg.configure_correlator(json_path)
         assert corr_config["optimization"]["P2"] == 24
