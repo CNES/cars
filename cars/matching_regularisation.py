@@ -20,8 +20,8 @@
 #
 
 """
-This module contains functions
-related to the regularisation of the matching outputs
+Matching regularisation module:
+contains matching outputs regularisation functions
 """
 
 # Standard imports

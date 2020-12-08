@@ -20,8 +20,8 @@
 #
 
 """
-This module contains functions related to stereo-rectification, disparity map
-estimation and triangulation
+Stereo module:
+contains stereo-rectification, disparity map estimation, triangulation functions
 """
 
 # Standard imports

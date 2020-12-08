@@ -20,7 +20,7 @@
 #
 
 """
-This module contains the cars constants
+Cars Constants module
 """
 
 # general

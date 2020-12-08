@@ -20,7 +20,8 @@
 #
 
 """
-This module contains functions that builds Orfeo ToolBox pipelines used by cars
+Pipelines module:
+contains functions that builds Orfeo ToolBox pipelines used by cars
 """
 
 from __future__ import absolute_import

@@ -20,10 +20,8 @@
 #
 
 """
-==================
-  Module "prepare"
-==================
-This module contains functions associated to the prepare cars_cli sub-command
+Main cars prepare pipeline module:
+contains functions associated to prepare cars_cli sub-command
 """
 
 # Standard imports

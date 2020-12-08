@@ -20,11 +20,8 @@
 #
 
 """
-========================
-  Module "preprocessing"
-========================
-This module contains functions used during preprocessing step of cars
-(sub-command prepare step)
+Preprocessing module:
+contains functions used during cars prepare pipeline step of cars
 """
 
 # Standard imports

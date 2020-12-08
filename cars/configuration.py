@@ -18,11 +18,8 @@
 # limitations under the License.
 #
 """
-=========================
-  Module "configuration"
-=========================
-This module is the main CARS configuration python file.
-It contains all the functions associated with CARS configuration.
+Main cars Configuration module:
+contains all the functions associated with cars configuration.
 """
 import os
 import logging

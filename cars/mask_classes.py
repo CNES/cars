@@ -19,10 +19,7 @@
 # limitations under the License.
 #
 """
-========================
-  Module "mask_classes"
-========================
-This module contains the functions defining CARS mask classes
+cars mask classes module
 """
 
 from typing import Dict, List

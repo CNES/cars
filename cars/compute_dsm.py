@@ -20,11 +20,8 @@
 #
 
 """
-======================
-  Module "compute_dsm"
-======================
-This module is the main CARS compute 3D pipeline.
-It contains all the functions associated with its cars_cli subcommand.
+Main 3D Compute DSM pipeline module:
+contains all the functions associated with its cars_cli subcommand.
 """
 
 # Standard imports

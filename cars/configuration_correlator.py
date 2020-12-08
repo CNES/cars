@@ -20,10 +20,8 @@
 #
 
 """
-================================
-  Module "configure_correlator"
-================================
-This module contains functions to retrieve the correlator configuration
+Configure correlator module:
+contains functions to retrieve the correlator configuration
 """
 
 import pandora

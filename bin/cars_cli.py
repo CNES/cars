@@ -19,13 +19,7 @@
 # limitations under the License.
 #
 """
-  ======================
-       "cars_cli"
-  ======================
-
- Main CARS Command Line Interface
-
-It corresponds to the program "cars_cli.py",
+Main cars Command Line Interface: program "cars_cli.py",
 user main argparse wrapper to CARS 3D pipelines submodules
 """
 

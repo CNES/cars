@@ -20,10 +20,8 @@
 #
 
 """
-======================
-   Module "cluster"
-======================
-This module provides functions to start and stop a local or PBS cluster.
+Cluster module:
+provides functions to start and stop a local or PBS cluster.
 """
 
 # Standard imports

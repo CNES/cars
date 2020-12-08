@@ -20,11 +20,8 @@
 #
 
 """
-====================
-  Module "utils"
-====================
-This module contains some shared general purpose functions
-that do not fit in other modules
+Utils module:
+contains some cars global shared general purpose functions
 """
 
 # Standard imports

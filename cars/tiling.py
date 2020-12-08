@@ -20,10 +20,8 @@
 #
 
 """
-====================
-  Module "tiling"
-====================
-This module contains functions related to regions and tiles management
+Tiling module:
+contains functions related to regions and tiles management
 """
 
 import math

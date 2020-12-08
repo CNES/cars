@@ -20,11 +20,8 @@
 #
 
 """
-====================
-  Module "readwrite"
-====================
-This module contains all the main pipeline reading/writing functions
-used in compute_dsm.py
+Readwrite module:
+contains all compute_dsm.py main pipeline reading/writing functions
 """
 
 # Standard imports

@@ -20,10 +20,8 @@
 #
 
 """
-=====================
- Module "parameters"
- ====================
-This module contains schema for all json files manipulated by cars,
+Parameters module:
+contains schema for all json cars files,
 string tags associated with fields as well as function to read, write
 and check json parameters files.
 """

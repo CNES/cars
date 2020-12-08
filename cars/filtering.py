@@ -20,10 +20,8 @@
 #
 
 """
-=====================
-  Module "filtering"
-=====================
-This module contains all functions related to points clouds filtering
+Filtering module:
+contains all functions related to points clouds filtering
 """
 
 # Standard imports

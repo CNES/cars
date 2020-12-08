@@ -20,10 +20,8 @@
 #
 
 """
-========================
-  Module "rasterization"
-========================
-This module contains all functions related to rasterization
+Rasterization module:
+contains all functions related to 3D representation on a 2D raster grid
 """
 
 # Standard imports

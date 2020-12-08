@@ -20,11 +20,8 @@
 #
 
 """
-=====================
-  Module "projection"
-=====================
-It contains some purpose functions using polygons and data projections
-that do not fit in other modules
+Projection module:
+contains some general purpose functions using polygons and data projections
 """
 
 # Standard imports
