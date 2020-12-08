@@ -28,9 +28,7 @@ This module contains functions related to regions and tiles management
 
 import math
 import numpy as np
-from osgeo import osr
-from scipy import interpolate
-from cars import utils, projection
+from cars import projection
 
 
 def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
@@ -52,7 +50,7 @@ def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
     :type ysplit: int
     :returns: A tuple with output grid, number of splits if first direction (n),
         number of splits in second direction (m)
-    :type ndarray of shape (n+1,m+1,2)
+    :type ndarray of shape (n+1, m+1, 2)
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
     nb_ysplits = math.ceil((ymax - ymin) / ysplit)
@@ -212,12 +210,12 @@ def list_tiles(region, largest_region, tile_size, margin=1):
     out = []
 
     # Loop on tile idx
-    for x in range(min_tile_idx_x, max_tile_idx_x):
-        for y in range(min_tile_idx_y, max_tile_idx_y):
+    for tile_idx_x in range(min_tile_idx_x, max_tile_idx_x):
+        for tile_idx_y in range(min_tile_idx_y, max_tile_idx_y):
 
             # Derive tile coordinates
-            tile = [x * tile_size, y * tile_size,
-                    (x + 1) * tile_size, (y + 1) * tile_size]
+            tile = [tile_idx_x * tile_size, tile_idx_y  * tile_size,
+                    (tile_idx_x + 1) * tile_size, (tile_idx_y  + 1) * tile_size]
 
             # Crop to largest region
             tile = crop(tile, largest_region)
