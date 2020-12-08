@@ -18,10 +18,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/readwrite.py
+"""
 
-import pytest
-import tempfile
 import os
+import tempfile
+import pytest
 import numpy as np
 from affine import Affine
 
@@ -30,10 +33,10 @@ from osgeo import osr
 import rasterio as rio
 import xarray as xr
 
+from utils import temporary_dir
 from cars import readwrite
 from cars import rasterization
 from cars.cluster import start_local_cluster, stop_local_cluster
-from utils import temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -93,9 +96,9 @@ def test_rasterio_handles():
             [1, nb_bands])
 
         with file_handles as rio_handles:
-            assert isinstance(rio_handles, dict) == True
+            assert isinstance(rio_handles, dict)
             assert 'hgt' in rio_handles.keys() and 'clr' in rio_handles.keys()
-            for key in rio_handles.keys():
+            for key in rio_handles:
                 assert isinstance(rio_handles[key], rio.io.DatasetWriter)
 
 
