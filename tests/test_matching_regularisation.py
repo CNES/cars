@@ -18,7 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+"""
+Test module for cars/matching_regularisation.py
+"""
 from __future__ import absolute_import
 from copy import deepcopy
 
@@ -53,48 +55,50 @@ def sec_col():
 
 
 @pytest.fixture(scope="module")
-def ref_ds(ref_row, ref_col):
-
+def ref_ds(ref_row, ref_col): #pylint: disable=redefined-outer-name
+    """Returns a small reference dataset"""
     ref_mc_msk = np.array([[1, 2, 0],
                            [0, 0, 3],
                            [0, 0, 0]], dtype=np.uint16)
 
-    ds = xr.Dataset({
+    out_ds = xr.Dataset({
         cst.EPI_MSK: ([cst.ROW, cst.COL], ref_mc_msk)
     }, coords={cst.ROW: np.array(range(ref_row)),
                cst.COL: np.array(range(ref_col))})
 
-    return ds
+    return out_ds
 
 
 @pytest.fixture(scope="module")
-def sec_ds(sec_row, sec_col):
+def sec_ds(sec_row, sec_col): #pylint: disable=redefined-outer-name
+    """Returns a secondary dataset"""
     sec_mc_msk = np.array([[0, 0, 0, 0],
                            [3, 3, 0, 0],
                            [0, 4, 4, 0],
                            [0, 0, 5, 5]], dtype=np.uint16)
 
-    ds = xr.Dataset({
+    out_ds = xr.Dataset({
         cst.EPI_MSK: ([cst.ROW, cst.COL], sec_mc_msk)
     }, coords={cst.ROW: np.array(range(sec_row)),
                cst.COL: np.array(range(sec_col))})
 
-    return ds
+    return out_ds
 
 
 @pytest.fixture(scope="module")
-def ref_disp(ref_row, ref_col):
-    ref_disp = np.arange(ref_row * ref_col, dtype=np.int16)
-    ref_disp = ref_disp.reshape((ref_row, ref_col))
+def ref_disp(ref_row, ref_col): #pylint: disable=redefined-outer-name
+    """Returns a reference disparity map"""
+    np_ref_disp = np.arange(ref_row * ref_col, dtype=np.int16)
+    np_ref_disp = np_ref_disp.reshape((ref_row, ref_col))
 
-    ref_disp_msk = np.full((ref_row, ref_col),
-                           fill_value=255,
-                           dtype=np.uint16)
-    ref_disp_msk[2, :] = 0  # last column set to unvalid data
+    np_ref_disp_msk = np.full((ref_row, ref_col),
+                                  fill_value=255,
+                                  dtype=np.uint16)
+    np_ref_disp_msk[2, :] = 0  # last column set to unvalid data
 
     disp_ds = xr.Dataset({
-        cst.DISP_MAP: ([cst.ROW, cst.COL], ref_disp),
-        cst.DISP_MSK: ([cst.ROW, cst.COL], ref_disp_msk)
+        cst.DISP_MAP: ([cst.ROW, cst.COL], np_ref_disp),
+        cst.DISP_MSK: ([cst.ROW, cst.COL], np_ref_disp_msk)
     }, coords={cst.ROW: np.array(range(ref_row)),
                cst.COL: np.array(range(ref_col))})
 
@@ -102,16 +106,19 @@ def ref_disp(ref_row, ref_col):
 
 
 @pytest.fixture(scope="module")
-def sec_disp(sec_row, sec_col):
-    sec_disp = np.arange(sec_row * sec_col, dtype=np.int16)
-    sec_disp = sec_disp.reshape((sec_row, sec_col))
+def sec_disp(sec_row, sec_col): #pylint: disable=redefined-outer-name
+    """Returns a secondary disparity map"""
+    np_sec_disp = np.arange(sec_row * sec_col, dtype=np.int16)
+    np_sec_disp = np_sec_disp.reshape((sec_row, sec_col))
 
-    sec_disp_msk = np.full((sec_row, sec_col), fill_value=255, dtype=np.uint16)
-    sec_disp_msk[3, :] = 0  # last line set to unvalid data
+    np_sec_disp_msk = np.full((sec_row, sec_col),
+                              fill_value=255,
+                              dtype=np.uint16)
+    np_sec_disp_msk[3, :] = 0  # last line set to unvalid data
 
     disp_ds = xr.Dataset({
-        cst.DISP_MAP: ([cst.ROW, cst.COL], sec_disp),
-        cst.DISP_MSK: ([cst.ROW, cst.COL], sec_disp_msk)
+        cst.DISP_MAP: ([cst.ROW, cst.COL], np_sec_disp),
+        cst.DISP_MSK: ([cst.ROW, cst.COL], np_sec_disp_msk)
     }, coords={cst.ROW: np.array(range(sec_row)),
                cst.COL: np.array(range(sec_col))})
 
@@ -119,8 +126,9 @@ def sec_disp(sec_row, sec_col):
 
 
 @pytest.mark.unit_tests
-def test_update_disp_to_0_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
-
+def test_update_disp_to_0_no_tags_in_jsons(
+    ref_ds, sec_ds, ref_disp, sec_disp): #pylint: disable=redefined-outer-name
+    """Tests update disp to 0 with an empty dict"""
     # disp dictionary
     disp = {
         cst.STEREO_REF: ref_disp,
@@ -143,8 +151,9 @@ def test_update_disp_to_0_no_tags_in_jsons(ref_ds, sec_ds, ref_disp, sec_disp):
 
 
 @pytest.mark.unit_tests
-def test_update_disp_0(ref_ds, sec_ds, ref_disp, sec_disp):
-
+def test_update_disp_0(
+    ref_ds, sec_ds, ref_disp, sec_disp): #pylint: disable=redefined-outer-name
+    """ Tests update disp to 0 with a filled dict"""
     # disp dictionary
     disp = {
         cst.STEREO_REF: deepcopy(ref_disp),
