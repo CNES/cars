@@ -289,7 +289,7 @@ def run(
         else:
             logging.info('Indicated SRTM tiles valid regions '
                          'will be used as reference altitudes '
-                         '(the default altitude is used'
+                         '(the default altitude is used '
                          'for undefined regions of the SRTM)')
     else:
         logging.info('The default altitude will be used as reference altitude.')
