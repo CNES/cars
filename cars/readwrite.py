@@ -58,7 +58,7 @@ def compute_output_window(tile, full_bounds, resolution):
     :return: slices indices as i_xmin, i_ymin, i_xmax, i_ymax.
     :rtype: tuple(int, int, int, int)
     """
-    x_min, y_min, x_max, y_max = full_bounds
+    x_min, _, _, y_max = full_bounds
     x_0 = int((np.min(tile.coords[cst.X]) - x_min) / resolution - 0.5)
     y_0 = int((y_max - np.max(tile.coords[cst.Y])) / resolution - 0.5)
     x_1 = int((np.max(tile.coords[cst.X]) - x_min) / resolution - 0.5)
@@ -88,9 +88,13 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     :rtype: Dict
     """
     file_handles = {}
-    for name, f, p, nd, nb in zip(names, files, params,
-                                  nodata_values, nb_bands):
-        file_handles[name] = rio.open(f, 'w',count=nb, nodata=nd, **p)
+    for name_item, file_item, params_item, nodata_item, nb_bands_item in zip(
+            names, files, params, nodata_values, nb_bands):
+
+        file_handles[name_item] = rio.open(file_item, 'w',
+                                            count=nb_bands_item,
+                                            nodata=nodata_item,
+                                            **params_item)
     try:
         yield file_handles
     finally:
@@ -214,11 +218,11 @@ def write_geotiff_dsm(future_dsm,
         nb_bands_to_write.append(1)
 
     # detect if we deal with dask.future or plain datasets
-    hasDatasets = True
+    has_datasets = True
     for tile in future_dsm:
         if tile is None:
             continue
-        hasDatasets = hasDatasets and isinstance(tile, xr.Dataset)
+        has_datasets = has_datasets and isinstance(tile, xr.Dataset)
 
     # get file handle(s) with optional color file.
     with rasterio_handles(names, files, params,
@@ -232,16 +236,16 @@ def write_geotiff_dsm(future_dsm,
                 logging.debug('Ignoring empty tile')
                 return
 
-            x0, y0, x1, y1 = compute_output_window(raster_tile, bounds,
+            x_0, y_0, x_1, y_1 = compute_output_window(raster_tile, bounds,
                                                    resolution)
 
             logging.debug(
                 "Writing tile of size [{}, {}] at index [{}, {}]"
-                    .format(x1 - x0 + 1, y1 - y0 + 1, x0, y0)
+                    .format(x_1 - x_0 + 1, y_1 - y_0 + 1, x_0, y_0)
             )
 
             # window is speficied as origin & size
-            window = rio.windows.Window(x0, y0, x1 - x0 + 1, y1 - y0 + 1)
+            window = rio.windows.Window(x_0, y_0, x_1 - x_0 + 1, y_1 - y_0 + 1)
 
             rio_handles['dsm'].write_band(1,
                             raster_tile[cst.RASTER_HGT].values, window=window)
@@ -272,7 +276,7 @@ def write_geotiff_dsm(future_dsm,
                                 window=window)
 
         # Multiprocessing mode
-        if hasDatasets:
+        if has_datasets:
             for raster_tile in future_dsm:
                 write(raster_tile)
 
