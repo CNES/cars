@@ -18,6 +18,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+========================
+  Module "mask_classes"
+========================
+This module contains the functions defining CARS mask classes
+"""
 
 from typing import Dict, List
 import logging
@@ -36,9 +42,10 @@ NO_DATA_IN_EPIPOLAR_RECTIFICATION = 255
 PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]
 
 # tags for mask classes json parameters
-ignored_by_corr_tag = "ignored_by_correlation"
-set_to_ref_alt_tag = "set_to_ref_alt"
-ignored_by_sift_matching_tag = "ignored_by_sift_matching"
+ignored_by_corr_tag = "ignored_by_correlation" #pylint: disable=invalid-name
+set_to_ref_alt_tag = "set_to_ref_alt" #pylint: disable=invalid-name
+ignored_by_sift_matching_tag = \
+                    "ignored_by_sift_matching" #pylint: disable=invalid-name
 
 # Schema for mask json
 msk_classes_json_schema = {
@@ -57,14 +64,14 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
     :return: True if the json file validates the msk_classes_json_schema,
         False otherwise
     """
-    with open(mask_classes_path, 'r') as f:
-        classes_usage_dict = json.load(f)
+    with open(mask_classes_path, 'r') as mask_classes_file:
+        classes_usage_dict = json.load(mask_classes_file)
         try:
             utils.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
-        except Exception as e:
-            logging.error("Exception caught while trying to read file %s: %s"
-                           % (mask_classes_path, e))
+        except Exception as read_error:
+            logging.error("Exception caught while trying to read file {}: {}"
+                           .format(mask_classes_path, read_error))
             return False
 
 
@@ -78,8 +85,8 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
     """
     classes_usage_dict = dict()
 
-    with open(mask_classes_path, 'r') as f:
-        classes_usage_dict = json.load(f)
+    with open(mask_classes_path, 'r') as mask_classes_file:
+        classes_usage_dict = json.load(mask_classes_file)
 
     # check that required values are not protected for CARS internal usage
     used_values = []
@@ -88,8 +95,8 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
 
     for i in PROTECTED_VALUES:
         if i in used_values:
-            logging.warning('%s value cannot be used as a mask class, '
-                            'it is reserved for CARS internal use' % i)
+            logging.warning("{} value cannot be used as a mask class, "
+                            "it is reserved for CARS internal use".format(i))
 
     return classes_usage_dict
 
@@ -117,11 +124,7 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
     msk_only_classes[msk_classes] = np.nan
 
     # check if mask has several classes
-    if np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes):
-        return True
-    else:
-        return False
-
+    return bool(np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes))
 
 def create_msk_from_classes(
         mc_msk: np.ndarray,
