@@ -189,23 +189,23 @@ def build_mask_pipeline(
     return msk
 
 def build_bundletoperfectsensor_pipeline(
-        pan,
-        ms):
+        pan_img,
+        ms_img):
     """
     This function builds the a pipeline that performs P+XS pansharpening
 
-    :param pan: Path to the panchromatic image
-    :type pan: string
-    :param ms: Path to the multispectral image
-    :type ms: string
+    :param pan_img: Path to the panchromatic image
+    :type pan_img: string
+    :param ms_img: Path to the multispectral image
+    :type ms_img: string
     :returns: resample_image
     :rtype: otb application
     """
     pansharpening_app = otbApplication.Registry.CreateApplication(
         "BundleToPerfectSensor")
 
-    pansharpening_app.SetParameterString("inp", pan)
-    pansharpening_app.SetParameterString("inxs", ms)
+    pansharpening_app.SetParameterString("inp", pan_img)
+    pansharpening_app.SetParameterString("inxs", ms_img)
 
     pansharpening_app.Execute()
 
