@@ -71,9 +71,9 @@ def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
     # and add min and max elevations in each of them
     poly_pts_with_min_alt = []
     poly_pts_with_max_alt = []
-    for pt in list(poly.exterior.coords):
-        poly_pts_with_min_alt.append((pt[0], pt[1], min_elev))
-        poly_pts_with_max_alt.append((pt[0], pt[1], max_elev))
+    for point in list(poly.exterior.coords):
+        poly_pts_with_min_alt.append((point[0], point[1], min_elev))
+        poly_pts_with_max_alt.append((point[0], point[1], max_elev))
 
     poly_elev_min = Polygon(poly_pts_with_min_alt)
     poly_elev_max = Polygon(poly_pts_with_max_alt)
@@ -114,11 +114,11 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     :rtype Polygon
     """
     dem_poly = None
-    for r, d, f in os.walk(srtm_dir):
+    for _, _, srtm_files in os.walk(srtm_dir):
         logging.info(
             'Browsing all files of the srtm dir. '
             'Some files might be unreadable by rasterio (non blocking matter).')
-        for file in f:
+        for file in srtm_files:
             unsupported_formats = ['.omd']
             _, ext = os.path.splitext(file)
             if ext not in unsupported_formats:
@@ -173,10 +173,10 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
                                 else:
                                     dem_poly = dem_poly.union(local_dem_poly)
 
-                        except AttributeError as e:
+                        except AttributeError as attribute_error:
                             logging.error(
                                 'Impossible to read the SRTM'
-                                'tile epsg code: {}'.format(e)
+                                'tile epsg code: {}'.format(attribute_error)
                             )
 
     # compute dem coverage polygon over the reference polygon
@@ -227,11 +227,10 @@ def geo_to_ecef(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray)\
     """
     epsg_in=4979 # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
     epsg_out=4978 # EPSG code for ECEF WGS84 in x, y, z (meters)
-    x, y, z = points_cloud_conversion([(lon, lat, alt)], epsg_in, epsg_out)[0]
 
-    return x, y, z
+    return points_cloud_conversion([(lon, lat, alt)], epsg_in, epsg_out)[0]
 
-def ecef_to_enu(x: np.ndarray, y: np.ndarray,  z: np.ndarray,\
+def ecef_to_enu(x_ecef: np.ndarray, y_ecef: np.ndarray,  z_ecef: np.ndarray,\
                 lat0: np.ndarray, lon0: np.ndarray,  alt0: np.ndarray)\
                 -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
@@ -243,44 +242,37 @@ def ecef_to_enu(x: np.ndarray, y: np.ndarray,  z: np.ndarray,\
     See Wikipedia page for details:
     https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
 
-    :param x: target x ECEF coordinate (meters)
-    :param y: target y ECEF coordinate (meters)
-    :param z: target z ECEF coordinate (meters)
+    :param x_ecef: target x ECEF coordinate (meters)
+    :param y_ecef: target y ECEF coordinate (meters)
+    :param z_ecef: target z ECEF coordinate (meters)
     :param lat0: Reference geodetic latitude
     :param lon0: Reference geodetic longitude
     :param alt0: Reference altitude above geodetic ellipsoid (meters)
     :return: ENU (xEast, yNorth zUp) target coordinates tuple (meters)
     """
-    rad = np.float64(6378137.0)        # Radius of the Earth (in meters)
-    f = np.float64(1.0/298.257223563)  # Flattening factor WGS84 Model
-    e = (1 - f) * (1 - f)
-    e2 = 1 - e
-
+    # Intermediate computing for ENU conversion
     cos_lat0 = np.cos(np.radians(lat0))
     sin_lat0 = np.sin(np.radians(lat0))
 
     cos_long0 = np.cos(np.radians(lon0))
     sin_long0 = np.sin(np.radians(lon0))
 
-    c0 = 1 / np.sqrt(cos_lat0 * cos_lat0  + e * sin_lat0 * sin_lat0)
-
     # Determine ECEF coordinates from reference geodetic
-    x0, y0, z0 = geo_to_ecef(lat0, lon0, alt0)
-    # x0 = (rad*c0 + alt0) * cos_lat0 * cos_long0
-    # y0 = (rad*c0 + alt0) * cos_lat0 * sin_long0
-    # z0 = (rad*c0*(1-e2) + alt0) * sin_lat0
+    x0_ecef, y0_ecef, z0_ecef = geo_to_ecef(lat0, lon0, alt0)
 
-    xEast = (-(x-x0) * sin_long0) + ((y-y0)*cos_long0)
-    yNorth =\
-        (-cos_long0*sin_lat0*(x-x0)) -\
-        (sin_lat0*sin_long0*(y-y0)) +\
-        (cos_lat0*(z-z0))
-    zUp =\
-        (cos_lat0*cos_long0*(x-x0)) +\
-        (cos_lat0*sin_long0*(y-y0)) +\
-        (sin_lat0*(z-z0))
+    x_east = \
+        (-(x_ecef-x0_ecef) * sin_long0) +\
+        ((y_ecef-y0_ecef)*cos_long0)
+    y_north = \
+        (-cos_long0*sin_lat0*(x_ecef-x0_ecef)) -\
+        (sin_lat0*sin_long0*(y_ecef-y0_ecef)) +\
+        (cos_lat0*(z_ecef-z0_ecef))
+    z_up = \
+        (cos_lat0*cos_long0*(x_ecef-x0_ecef)) +\
+        (cos_lat0*sin_long0*(y_ecef-y0_ecef)) +\
+        (sin_lat0*(z_ecef-z0_ecef))
 
-    return xEast, yNorth, zUp
+    return x_east, y_north, z_up
 
 def geo_to_enu(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
                lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
@@ -297,30 +289,31 @@ def geo_to_enu(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
     :param alt0: Reference altitude above geodetic ellipsoid (meters)
     :return: ENU (xEast, yNorth zUp) target coordinates tuple (meters)
     """
-    x, y, z = geo_to_ecef(lat, lon, alt)
-    return ecef_to_enu(x, y, z, lat0, lon0, alt0)
+    x_ecef, y_ecef, z_ecef = geo_to_ecef(lat, lon, alt)
+    return ecef_to_enu(x_ecef, y_ecef, z_ecef, lat0, lon0, alt0)
 
-def enu_to_aer(e: np.ndarray, n: np.ndarray, u: np.ndarray)\
+def enu_to_aer(x_east: np.ndarray, y_north: np.ndarray, z_up: np.ndarray)\
                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     ENU coordinates to Azimuth, Elevation angle, Range from ENU origin
     Beware: Elevation angle is not the altitude.
 
-    :param e: ENU East coordinate (meters)
-    :param n: ENU North coordinate (meters)
-    :param u: ENU Up coordinate (meters)
+    :param x_east: ENU East coordinate (meters)
+    :param y_north: ENU North coordinate (meters)
+    :param z_up: ENU Up coordinate (meters)
     :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
     """
 
-    r = np.hypot(e, n)
-    slantRange = np.hypot(r, u) # Distance of e, n, u vector
-    elev = np.arctan2(u, r)
-    az = np.arctan2(e, n) % (2 * np.pi) # From [-pi,+pi] to [0,2pi]
+    xy_range = np.hypot(x_east, y_north) # Distance of e, n vector
+    xyz_range = np.hypot(xy_range, z_up) # Distance of e, n, u vector
+    elevation = np.arctan2(z_up, xy_range)
+    azimuth = np.arctan2(x_east, y_north) % (2 * np.pi)
+                                        # From [-pi,+pi] to [0,2pi]
 
-    az = np.degrees(az)
-    elev = np.degrees(elev)
+    azimuth = np.degrees(azimuth)
+    elevation = np.degrees(elevation)
 
-    return az, elev, slantRange
+    return azimuth, elevation, xyz_range
 
 def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
                lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
@@ -337,8 +330,8 @@ def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
     :param alt0: Reference altitude above geodetic ellipsoid (meters)
     :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
     """
-    e, n, u = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
-    return enu_to_aer(e, n, u)
+    x_east, y_north, z_up = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
+    return enu_to_aer(x_east, y_north, z_up)
 
 def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     """
