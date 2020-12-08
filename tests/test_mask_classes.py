@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/mask_classes.py
+"""
 
 import pytest
 import numpy as np
@@ -28,6 +31,9 @@ from cars import mask_classes
 
 @pytest.mark.unit_tests
 def test_mask_classes_can_open():
+    """
+    Test mask_classes_can_open function with right and wrong input files
+    """
     mask_classes_path = absolute_data_path(
         "input/phr_paca/left_msk_classes.json")
     assert mask_classes.mask_classes_can_open(mask_classes_path) is True
@@ -39,6 +45,9 @@ def test_mask_classes_can_open():
 
 @pytest.mark.unit_tests
 def test_carsmask_is_multiclasses_mask():
+    """
+    Create fake msk class and test carsmask_is_multiclasses_mask function
+    """
     mc_msk = np.array([[mask_classes.VALID_VALUE,
                         mask_classes.VALID_VALUE, 2],
                        [1, mask_classes.VALID_VALUE, 100],
@@ -62,6 +71,10 @@ def test_carsmask_is_multiclasses_mask():
 
 @pytest.mark.unit_tests
 def test_get_msk_from_classes():
+    """
+    Create fake mask classes and test create_msk_from_classes function in
+    different configurations
+    """
     classes_to_use_for_msk = [1, 100, 200]
 
     mc_msk = np.array([[0, 0, 2],
@@ -104,6 +117,10 @@ def test_get_msk_from_classes():
 
 @pytest.mark.unit_tests
 def test_get_msk_from_tag():
+    """
+    Create fake masks and test create_msk_from_tag function in
+    different configurations
+    """
 
     mc_msk = np.array([[0, 0, mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
                        [1, 0, 100],
