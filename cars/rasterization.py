@@ -36,7 +36,7 @@ import math
 # Third party imports
 import numpy as np
 import pandas
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 import xarray as xr
 from numba import njit, float64, int64, boolean
 from numba.core.errors import NumbaPerformanceWarning
@@ -52,7 +52,7 @@ warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
 
 def get_utm_zone_as_epsg_code(lon, lat):
     """
-    Returns the EPSG code of the UTM zone where the lat,lon point falls in
+    Returns the EPSG code of the UTM zone where the lat, lon point falls in
 
     :param lon: longitude of the point
     :type lon: float
@@ -67,8 +67,8 @@ def get_utm_zone_as_epsg_code(lon, lat):
     utm_app.SetParameterFloat("lat", float(lat))
     utm_app.Execute()
     zone = utm_app.GetParameterInt("utm")
-    ns = 600 if lat >= 0 else 700
-    return 32000 + ns + zone
+    north_south = 600 if lat >= 0 else 700
+    return 32000 + north_south + zone
 
 
 def compute_xy_starts_and_sizes(resolution: float, cloud: pandas.DataFrame)\
@@ -201,10 +201,10 @@ def create_combined_cloud(
         raise Exception("There shall be as many cloud elements as color ones")
 
     epsg = None
-    for idx in range(len(cloud_list)):
+    for cloud_list_item in cloud_list:
         if epsg is None:
-            epsg = int(cloud_list[idx].attrs[cst.EPSG])
-        elif int(cloud_list[idx].attrs[cst.EPSG]) != epsg:
+            epsg = int(cloud_list_item.attrs[cst.EPSG])
+        elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
             worker_logger.error(
                 "All points clouds do not have the same epsg code")
 
@@ -220,8 +220,8 @@ def create_combined_cloud(
 
     # check if the input mask values are present in the dataset
     nb_data_msk = 0
-    for idx in range(len(cloud_list)):
-        ds_values_list = [key for key, _ in cloud_list[idx].items()]
+    for cloud_list_item in cloud_list:
+        ds_values_list = [key for key, _ in cloud_list_item.items()]
         if cst.POINTS_CLOUD_MSK in ds_values_list:
             nb_data.append(cst.POINTS_CLOUD_MSK)
             nb_data_msk = 1
@@ -244,10 +244,10 @@ def create_combined_cloud(
     # iterate trough input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
     nb_points = 0
-    for idx in range(len(cloud_list)):
-        full_x = cloud_list[idx][cst.X].values
-        full_y = cloud_list[idx][cst.Y].values
-        full_z = cloud_list[idx][cst.Z].values
+    for cloud_list_idx, cloud_list_item in enumerate(cloud_list):
+        full_x = cloud_list_item[cst.X].values
+        full_y = cloud_list_item[cst.Y].values
+        full_z = cloud_list_item[cst.Z].values
 
         # get mask of points inside the roi (plus margins)
         if roi:
@@ -257,7 +257,7 @@ def create_combined_cloud(
             if epsg != dsm_epsg:
                 full_x, full_y =\
                     projection.get_converted_xy_np_arrays_from_dataset(
-                        cloud_list[idx], dsm_epsg)
+                        cloud_list_item, dsm_epsg)
 
             msk_xstart = np.where(full_x > xstart - total_margin, True, False)
             msk_xend = np.where(full_x < xend + total_margin, True, False)
@@ -273,8 +273,8 @@ def create_combined_cloud(
             # if the points clouds are not in the same referential as the roi,
             # retrieve the initial values
             if epsg != dsm_epsg:
-                full_x = cloud_list[idx][cst.X].values
-                full_y = cloud_list[idx][cst.Y].values
+                full_x = cloud_list_item[cst.X].values
+                full_y = cloud_list_item[cst.Y].values
 
             # if no point is found, continue
             if terrain_tile_data_msk_pos[0].shape[0] == 0:
@@ -303,10 +303,10 @@ def create_combined_cloud(
         c_cloud[2, :] = np.ravel(c_y)
         c_cloud[3, :] = np.ravel(c_z)
 
-        ds_values_list = [key for key, _ in cloud_list[idx].items()]
+        ds_values_list = [key for key, _ in cloud_list_item.items()]
 
         if cst.POINTS_CLOUD_MSK in ds_values_list:
-            c_msk = cloud_list[idx]\
+            c_msk = cloud_list_item\
                 [cst.POINTS_CLOUD_MSK].values[bbox[0]:bbox[2]+1,
                                               bbox[1]:bbox[3]+1]
             c_cloud[4, :] = np.ravel(c_msk)
@@ -316,15 +316,15 @@ def create_combined_cloud(
         if epipolar_border_margin == 0:
             epipolar_margin_mask = \
                 np.full(
-                    (cloud_list[idx][cst.X].values.shape[0],
-                     cloud_list[idx][cst.X].values.shape[1]),
+                    (cloud_list_item[cst.X].values.shape[0],
+                     cloud_list_item[cst.X].values.shape[1]),
                      True
                 )
         else:
             epipolar_margin_mask = \
                 np.full(
-                    (cloud_list[idx][cst.X].values.shape[0],
-                     cloud_list[idx][cst.X].values.shape[1]),
+                    (cloud_list_item[cst.X].values.shape[0],
+                     cloud_list_item[cst.X].values.shape[1]),
                      False
                 )
             epipolar_margin_mask[
@@ -337,7 +337,7 @@ def create_combined_cloud(
 
         # add the color information to the current cloud
         if color_list is not None:
-            c_color = color_list[idx].im.values[:,
+            c_color = color_list[cloud_list_idx].im.values[:,
                                                 bbox[0]:bbox[2]+1,
                                                 bbox[1]:bbox[3]+1]
 
@@ -353,11 +353,11 @@ def create_combined_cloud(
 
             c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
             c_cloud[4 + nb_data_msk + nb_band_clr + 1, :] = np.ravel(coords_col)
-            c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = idx
+            c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = cloud_list_idx
 
         # remove masked data (pandora + out of the terrain tile points)
         c_terrain_tile_data_msk = \
-            cloud_list[idx][cst.POINTS_CLOUD_CORR_MSK].values[
+            cloud_list_item[cst.POINTS_CLOUD_CORR_MSK].values[
                     bbox[0]:bbox[2]+1,
                     bbox[1]:bbox[3]+1
                 ] == 255
@@ -918,16 +918,16 @@ def mask_interp(
 
         val = []
         val_cum_weight = []
-        for idx in range(len(neighbors)):
-            msk_val = (neighbors[idx, 2:])
+        for neighbor_idx in range(len(neighbors)):
+            msk_val = (neighbors[neighbor_idx, 2:])
 
             if msk_val != 0: # only masked points are taken into account
                 if msk_val in val:
                     msk_val_index = val.index(msk_val)
-                    val_cum_weight[msk_val_index] += weights[idx]
+                    val_cum_weight[msk_val_index] += weights[neighbor_idx]
                 else:
                     val.append(msk_val)
-                    val_cum_weight.append(weights[idx])
+                    val_cum_weight.append(weights[neighbor_idx])
 
         # search for higher score
         if len(val) != 0:
