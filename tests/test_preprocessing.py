@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/preprocessing.py
+"""
 
 from __future__ import absolute_import
 import tempfile
@@ -394,10 +397,11 @@ def test_project_coordinates_on_line():
     origin=[0,0]
     vec = [0.5, 0.5]
 
-    x = np.array([1,2,3])
-    y = np.array([1,2,3])
+    x_coord = np.array([1,2,3])
+    y_coord = np.array([1,2,3])
 
-    coords = preprocessing.project_coordinates_on_line(x,y, origin, vec)
+    coords = preprocessing.project_coordinates_on_line(x_coord, y_coord,
+                                                                origin, vec)
 
     np.testing.assert_allclose(coords, [1.41421356, 2.82842712, 4.24264069])
 
@@ -421,11 +425,13 @@ def test_lowres_initial_dem_splines_fit():
 
 
     # Uncomment to update reference
-    # with open(absolute_data_path("ref_output/splines_ref.pck"),'wb') as f:
-    #     pickle.dump(splines,f)
+    # with open(absolute_data_path(
+    #                   "ref_output/splines_ref.pck"),'wb') as splines_files:
+    #     pickle.dump(splines, splines_file)
 
-    with open(absolute_data_path("ref_output/splines_ref.pck"),'rb') as f:
-        ref_splines = pickle.load(f)
+    with open(absolute_data_path(
+                        "ref_output/splines_ref.pck"),'rb') as splines_file:
+        ref_splines = pickle.load(splines_file)
         np.testing.assert_allclose(splines.get_coeffs(),
                                    ref_splines.get_coeffs())
         np.testing.assert_allclose(splines.get_knots(),
