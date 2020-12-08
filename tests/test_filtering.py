@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/filtering.py
+"""
 
 from __future__ import absolute_import
 import pytest
@@ -26,26 +29,30 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from cars import filtering
 from utils import assert_same_datasets
+from cars import filtering
+
 
 
 @pytest.mark.unit_tests
 def test_detect_small_components():
-    # create fake cloud to process
-    x = np.zeros((5, 5))
-    x[4, 4] = 20
-    x[0, 4] = 19.55
-    x[0, 3] = 19.10
-    y = np.zeros((5, 5))
+    """
+    Create fake cloud to process and test detect_small_components
+    """
+    x_coord = np.zeros((5, 5))
+    x_coord[4, 4] = 20
+    x_coord[0, 4] = 19.55
+    x_coord[0, 3] = 19.10
+    y_coord = np.zeros((5, 5))
 
-    z = np.zeros((5, 5))
-    z[0:2, 0:2] = 10
-    z[1, 1] = 12
+    z_coord = np.zeros((5, 5))
+    z_coord[0:2, 0:2] = 10
+    z_coord[1, 1] = 12
 
-    cloud_arr = np.concatenate([np.stack((x, y, z), axis=-1).reshape(-1, 3)
-                            for x, y, z in zip(x, y, z)
-                            ], axis=0)
+    cloud_arr = np.concatenate(
+                [np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
+                for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+                ], axis=0)
 
     indexes_to_filter = filtering.detect_small_components(
         cloud_arr, 0.5, 10, 2)
@@ -59,24 +66,27 @@ def test_detect_small_components():
 
 @pytest.mark.unit_tests
 def test_detect_statistical_outliers():
-    # create fake cloud to process
-    x = np.zeros((5,6))
+    """
+    Create fake cloud to process and test detect_statistical_outliers
+    """
+    x_coord = np.zeros((5,6))
     off = 0
     for line in range(5):
         #x[line,:] = np.arange(off, off+(line+1)*5, line+1)
         last_val = off+5
-        x[line,:5] = np.arange(off, last_val)
+        x_coord[line,:5] = np.arange(off, last_val)
         off += (line + 2+1) * 5
 
         # outlier
-        x[line, 5] = (off+last_val-1)/2
+        x_coord[line, 5] = (off+last_val-1)/2
 
-    y = np.zeros((5,6))
-    z = np.zeros((5,6))
+    y_coord = np.zeros((5,6))
+    z_coord = np.zeros((5,6))
 
-    ref_cloud = np.concatenate([np.stack((x, y, z), axis=-1).reshape(-1, 3)
-                                for x, y, z in zip(x, y, z)
-                                ], axis=0)
+    ref_cloud = np.concatenate(
+                [np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
+                for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+                ], axis=0)
 
     removed_elt_pos = filtering.detect_statistical_outliers(ref_cloud, 4, 0.0)
     assert sorted(removed_elt_pos) == [5, 11, 17, 23, 29]
@@ -90,6 +100,9 @@ def test_detect_statistical_outliers():
 
 @pytest.mark.unit_tests
 def test_filter_cloud():
+    """
+    Create fake cloud and test filter_cloud function
+    """
     cloud_arr = np.arange(6*10)
     cloud_arr = cloud_arr.reshape((10, 6))
     cloud = pandas.DataFrame(cloud_arr,
@@ -104,10 +117,11 @@ def test_filter_cloud():
 
     # reference
     pos_arr = np.zeros((len(elt_to_remove), 3), dtype=np.int)
-    for i in range(len(elt_to_remove)):
-        for j in range(3):
+    for elt_idx, elt_to_remove_item in enumerate(elt_to_remove):
+        for last_column_idx in range(3):
             # 3 last elements of each lines
-            pos_arr[i, j] = int(6*elt_to_remove[i]+3+j)
+            pos_arr[elt_idx, last_column_idx] = \
+                                    int(6*elt_to_remove_item+3+last_column_idx)
 
     ref_removed_elt_pos = pandas.DataFrame(pos_arr,
                                            columns=['coord_epi_geom_i',
@@ -134,6 +148,9 @@ def test_filter_cloud():
 
 @pytest.mark.unit_tests
 def test_add_cloud_filtering_msk():
+    """
+    Create fake cloud, msk, cfg to test add_cloud_filtering_msk function
+    """
     nb_row = 5
     nb_col = 10
     rows = np.array(range(nb_row))
@@ -164,7 +181,7 @@ def test_add_cloud_filtering_msk():
     assert_same_datasets(ds1_ref, ds1)
 
     # test exceptions
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as index_error:
         np_pos = np.array([[1, 2, 2],
                            [2, 2, 1]])
         elt_remove = pandas.DataFrame(np_pos,
@@ -172,11 +189,11 @@ def test_add_cloud_filtering_msk():
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Index indicated in the elt_pos_infos '\
+        assert str(index_error) == 'Index indicated in the elt_pos_infos '\
                          'pandas.DataFrame is not coherent with the clouds '\
                          'list given in input'
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as index_error:
         np_pos = np.array([[1, 2, -1],
                            [2, 2, 1]])
         elt_remove = pandas.DataFrame(np_pos,
@@ -184,16 +201,16 @@ def test_add_cloud_filtering_msk():
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Index indicated in the elt_pos_infos '\
+        assert str(index_error) == 'Index indicated in the elt_pos_infos '\
                          'pandas.DataFrame is not coherent ' \
                          'with the clouds list given in input'
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as index_error:
         np_pos = np.array([[11, 2, 0]])
         elt_remove = pandas.DataFrame(np_pos,
                                       columns=['coord_epi_geom_i',
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
         filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
-        assert str(e) == 'Point at location (11,2) is not accessible in an '\
-                         'image of size (5,10)'
+        assert str(index_error) == 'Point at location (11,2) is not '\
+                                    'accessible in an image of size (5,10)'
