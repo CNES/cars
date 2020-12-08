@@ -20,9 +20,9 @@
 #
 
 """
-====================
+=====================
   Module "filtering"
-====================
+=====================
 This module contains all functions related to points clouds filtering
 """
 
@@ -34,7 +34,7 @@ import logging
 # Third party imports
 import numpy as np
 import pandas
-from scipy.spatial import cKDTree
+from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 import xarray as xr
 
 # cars import
@@ -180,7 +180,7 @@ def detect_small_components(
     # extract connected components
     processed = [False] * len(cloud_xyz)
     connected_components = []
-    for idx in range(len(cloud_xyz)):
+    for idx, _ in enumerate(cloud_xyz):
 
         # if point has already been added to a cluster
         if processed[idx]:
@@ -205,8 +205,8 @@ def detect_small_components(
 
             # flatten neighbors
             new_neighbors = []
-            for i in range(len(all_neighbors)):
-                new_neighbors.extend(all_neighbors[i])
+            for neighbor_item in all_neighbors:
+                new_neighbors.extend(neighbor_item)
 
             # retrieve only new neighbors
             neighbors_list = list(set(new_neighbors) - set(seed))
@@ -214,38 +214,38 @@ def detect_small_components(
             # add them to the current cluster
             seed.extend(neighbors_list)
             for neigh_idx in neighbors_list:
-                    processed[neigh_idx] = True
+                processed[neigh_idx] = True
 
         connected_components.append(seed)
 
     # determine clusters to remove
     cluster_to_remove = []
-    for idx in range(len(connected_components)):
-        if len(connected_components[idx]) < nb_pts_threshold:
+    for connected_components_idx, connected_components_item \
+                                    in enumerate(connected_components):
+        if len(connected_components_item) < nb_pts_threshold:
             if clusters_distance_threshold is not None:
                 # search if the current cluster has any neighbors
                 # in the clusters_distance_threshold radius
                 all_neighbors = cloud_tree.query_ball_point(
-                    cloud_xyz[connected_components[idx]],
+                    cloud_xyz[connected_components[connected_components_idx]],
                     clusters_distance_threshold)
 
                 # flatten neighbors
                 new_neighbors = []
-                for i in range(len(all_neighbors)):
-                    new_neighbors.extend(all_neighbors[i])
+                for neighbor_item in all_neighbors:
+                    new_neighbors.extend(neighbor_item)
 
                 # retrieve only new neighbors
                 neighbors_list =\
-                    list(set(new_neighbors) - set(connected_components[idx]))
+                    list(set(new_neighbors) - set(connected_components_item))
 
                 # if there are no new neighbors, the cluster will be removed
                 if len(neighbors_list) == 0:
-                    cluster_to_remove.extend(connected_components[idx])
+                    cluster_to_remove.extend(connected_components_item)
             else:
-                cluster_to_remove.extend(connected_components[idx])
+                cluster_to_remove.extend(connected_components_item)
 
     return cluster_to_remove
-
 
 ###### statistical filtering ######
 
@@ -300,7 +300,7 @@ def detect_statistical_outliers(
     """
     # compute for each points, all the distances to their k neighbors
     cloud_tree = cKDTree(cloud_xyz)
-    neighbors_distances, neighbors_loc = cloud_tree.query(cloud_xyz, k+1)
+    neighbors_distances, _ = cloud_tree.query(cloud_xyz, k+1)
 
     # Compute the mean of those distances for each point
     # Mean is not used directly as each line
@@ -321,8 +321,8 @@ def detect_statistical_outliers(
 
     # flatten points_to_remove
     detected_points = []
-    for i in range(len(points_to_remove)):
-        detected_points.extend(points_to_remove[i])
+    for removed_point in points_to_remove:
+        detected_points.extend(removed_point)
 
     return detected_points
 
@@ -431,13 +431,13 @@ def add_cloud_filtering_msk(
             'DataFrame is not coherent with the clouds list given in input')
 
         # create and add mask to each element of clouds_list
-        for cloud_idx in range(len(clouds_list)):
-            if mask_label not in clouds_list[cloud_idx]:
-                nb_row = clouds_list[cloud_idx].coords[cst.ROW].data.shape[0]
-                nb_col = clouds_list[cloud_idx].coords[cst.COL].data.shape[0]
+        for cloud_idx, cloud_item in enumerate(clouds_list):
+            if mask_label not in cloud_item:
+                nb_row = cloud_item.coords[cst.ROW].data.shape[0]
+                nb_col = cloud_item.coords[cst.COL].data.shape[0]
                 msk = np.zeros((nb_row, nb_col), dtype=np.uint16)
             else:
-                msk = clouds_list[cloud_idx][mask_label].values
+                msk = cloud_item[mask_label].values
 
             cur_elt_index = np.argwhere(elt_index == cloud_idx)
 
@@ -449,11 +449,11 @@ def add_cloud_filtering_msk(
 
                 try:
                     msk[i, j] = mask_value
-                except:
+                except Exception as index_error:
                     raise Exception(
                         'Point at location ({},{}) is not accessible '
                         'in an image of size ({},{})'.format(
                         i, j,
-                        msk.shape[0], msk.shape[1]))
+                        msk.shape[0], msk.shape[1])) from index_error
 
-            clouds_list[cloud_idx][mask_label] = ([cst.ROW, cst.COL], msk)
+            cloud_item[mask_label] = ([cst.ROW, cst.COL], msk)
