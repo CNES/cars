@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/projection.py
+"""
 
 from __future__ import absolute_import
 import pytest
@@ -32,6 +35,7 @@ from cars import projection, utils
 @pytest.mark.unit_tests
 def test_point_cloud_conversion():
     """
+    Create fake and right cloud and test points_cloud_conversion function
     """
     llh = np.load(absolute_data_path(
         "input/rasterization_input/llh.npy"))
@@ -46,10 +50,10 @@ def test_point_cloud_conversion():
     np.testing.assert_allclose(utm, utm_ref)
 
 
-
 @pytest.mark.unit_tests
 def test_point_cloud_conversion_dataframe():
     """
+    Create fake and right point cloud and test points_cloud_conversion_dataframe
     """
     llh = np.load(absolute_data_path(
         "input/rasterization_input/llh.npy"))
@@ -67,7 +71,9 @@ def test_point_cloud_conversion_dataframe():
 
 @pytest.mark.unit_tests
 def test_compute_dem_intersection_with_poly():
-
+    """
+    Test compute_dem_intersection_with_poly with right and fake configs
+    """
     # test 100% coverage
     inter_poly, inter_epsg = utils.read_vector(absolute_data_path(
         "input/utils_input/envelopes_intersection.gpkg"))
@@ -98,8 +104,9 @@ def test_compute_dem_intersection_with_poly():
     inter_poly = Polygon(
         [(1.5, 2.0), (1.5, 2.1), (1.8, 2.1), (1.8, 2.0), (1.5, 2.0)])
 
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as intersect_error:
         dem_inter_poly, cover = projection.compute_dem_intersection_with_poly(
             absolute_data_path("input/phr_ventoux/srtm"),
             inter_poly, inter_epsg)
-    assert str(e.value) == 'The input DEM does not intersect the useful zone'
+    assert str(intersect_error.value) == 'The input DEM does not intersect '\
+                                            'the useful zone'
