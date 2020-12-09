@@ -18,13 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/stereo.py
+"""
 
-import pytest
 import json
 import math
+from copy import deepcopy
+import pytest
 import numpy as np
 import xarray as xr
-from copy import deepcopy
 
 import pandora
 from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
@@ -32,17 +35,22 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  concat_conf
 
 from utils import absolute_data_path, assert_same_datasets
-
+from cars.utils import read_geoid_file
 from cars import stereo
 from cars import constants as cst
-from cars.utils import read_geoid_file
 
+
+# Local testing stereo function pytest fixtures
+# Ease following stereo tests readibility
 
 @pytest.fixture(scope="module")
-def images_and_grids_conf():
+def images_and_grids_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns images (img1 and img2) and grids (left, right) configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["images_and_grids"]
 
     for tag in ['img1', 'img2']:
@@ -57,10 +65,13 @@ def images_and_grids_conf():
 
 
 @pytest.fixture(scope="module")
-def color1_conf():
+def color1_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns color1 configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["color1"]
 
     configuration['input']['color1'] = \
@@ -70,10 +81,13 @@ def color1_conf():
 
 
 @pytest.fixture(scope="module")
-def color_pxs_conf():
+def color_pxs_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns color_pxs configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["color_pxs"]
 
     configuration['input']['color1'] =  \
@@ -83,46 +97,61 @@ def color_pxs_conf():
 
 
 @pytest.fixture(scope="module")
-def no_data_conf():
+def no_data_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns no data configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["no_data"]
 
     return configuration
 
 
 @pytest.fixture(scope="module")
-def epipolar_sizes_conf():
+def epipolar_sizes_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns epipolar size configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["epipolar_sizes"]
 
     return configuration
 
 
 @pytest.fixture(scope="module")
-def epipolar_origins_spacings_conf():
+def epipolar_origins_spacings_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns epipolar spacing configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["epipolar_origins_spacings"]
 
     return configuration
 
 
 @pytest.fixture(scope="module")
-def disparities_conf():
+def disparities_conf(): #pylint: disable=redefined-outer-name
+    """
+    Returns disparities configuration
+    """
     json_path = 'input/stereo_input/tests_configurations.json'
-    with open(absolute_data_path(json_path), 'r') as f:
-        json_dict = json.load(f)
+    with open(absolute_data_path(json_path), 'r') as json_file:
+        json_dict = json.load(json_file)
         configuration = json_dict["disparities"]
 
     return configuration
 
 
 def create_corr_conf():
+    """
+    Create correlator configuration for stereo testing
+    """
     user_cfg = dict()
     user_cfg['image'] = {}
     user_cfg['image']['valid_pixels'] = 0
@@ -151,7 +180,7 @@ def create_corr_conf():
     user_cfg["validation"]["cross_checking_threshold"] = 1.0
     user_cfg["validation"]["right_left_mode"] = "accurate"
     user_cfg["validation"]["interpolated_disparity"] = "none"
-    # Import plugins before checking confifuration
+    # Import plugins before checking configuration
     pandora.import_plugin()
     # Check configuration and update the configuration with default values
     # check pipeline
@@ -195,30 +224,32 @@ def test_resample_image():
     epipolar_size_x = 612
     epipolar_size_y = 612
 
-    ds = stereo.resample_image(
+    test_dataset = stereo.resample_image(
         img, grid, [
             epipolar_size_x, epipolar_size_y], region=region, nodata=nodata)
 
     # For convenience we use same reference as test_epipolar_rectify_images_1
-    ref_ds = xr.open_dataset(absolute_data_path(
+    ref_dataset = xr.open_dataset(absolute_data_path(
         "ref_output/data1_ref_left.nc"))
 
     # We need to remove attributes that are not generated by resample_image
     # method
-    ref_ds.attrs.pop(cst.ROI, None)
-    ref_ds.attrs.pop(cst.EPI_MARGINS, None)
-    ref_ds.attrs.pop(cst.EPI_DISP_MIN, None)
-    ref_ds.attrs.pop(cst.EPI_DISP_MAX, None)
-    ref_ds.attrs['region'] = ref_ds.attrs[cst.ROI_WITH_MARGINS]
-    ref_ds.attrs.pop(cst.ROI_WITH_MARGINS, None)
+    ref_dataset.attrs.pop(cst.ROI, None)
+    ref_dataset.attrs.pop(cst.EPI_MARGINS, None)
+    ref_dataset.attrs.pop(cst.EPI_DISP_MIN, None)
+    ref_dataset.attrs.pop(cst.EPI_DISP_MAX, None)
+    ref_dataset.attrs['region'] = ref_dataset.attrs[cst.ROI_WITH_MARGINS]
+    ref_dataset.attrs.pop(cst.ROI_WITH_MARGINS, None)
 
-    assert_same_datasets(ds, ref_ds)
+    assert_same_datasets(test_dataset, ref_dataset)
 
 
 @pytest.mark.unit_tests
 def test_epipolar_rectify_images_1(
-    images_and_grids_conf, color1_conf, epipolar_sizes_conf,
-    epipolar_origins_spacings_conf, no_data_conf):
+    images_and_grids_conf, color1_conf, #pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,                #pylint: disable=redefined-outer-name
+    epipolar_origins_spacings_conf,     #pylint: disable=redefined-outer-name
+    no_data_conf):                      #pylint: disable=redefined-outer-name
     """
     Test epipolar_rectify_image on ventoux dataset (epipolar geometry)
     with nodata and color
@@ -274,8 +305,11 @@ def test_epipolar_rectify_images_1(
 
 @pytest.mark.unit_tests
 def test_epipolar_rectify_images_3(
-    images_and_grids_conf, color_pxs_conf, epipolar_sizes_conf,
-    epipolar_origins_spacings_conf, no_data_conf):
+    images_and_grids_conf,              #pylint: disable=redefined-outer-name
+    color_pxs_conf,                     #pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,                #pylint: disable=redefined-outer-name
+    epipolar_origins_spacings_conf,     #pylint: disable=redefined-outer-name
+    no_data_conf):                      #pylint: disable=redefined-outer-name
     """
     Test epipolar_rectify_image on ventoux dataset (epipolar geometry)
     with nodata and color as a p+xs fusion
@@ -324,7 +358,8 @@ def test_epipolar_rectify_images_3(
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1(images_and_grids_conf):
+def test_compute_disparity_1(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -375,7 +410,8 @@ def test_compute_disparity_1(images_and_grids_conf):
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_3(images_and_grids_conf):
+def test_compute_disparity_3(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
     """
     Test compute_disparity on paca dataset with pandora
     """
@@ -426,7 +462,8 @@ def test_compute_disparity_3(images_and_grids_conf):
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_ref(images_and_grids_conf):
+def test_compute_disparity_1_msk_ref(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -498,7 +535,8 @@ def test_compute_disparity_1_msk_ref(images_and_grids_conf):
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_sec(images_and_grids_conf):
+def test_compute_disparity_1_msk_sec(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -560,21 +598,23 @@ def test_compute_disparity_1_msk_sec(images_and_grids_conf):
 
 @pytest.mark.unit_tests
 def test_compute_mask_to_use_in_pandora():
-    # Pandora configuration
+    """
+    Test compute_mask_to_use_in_pandora with a cloud "data1_ref_right_masked.nc"
+    """
     corr_cfg = create_corr_conf()
 
     right_input = xr.open_dataset(
         absolute_data_path(
             "input/intermediate_results/data1_ref_right_masked.nc"))
 
-    out = stereo.compute_mask_to_use_in_pandora(
+    test_mask = stereo.compute_mask_to_use_in_pandora(
         corr_cfg, right_input, cst.EPI_MSK, [100])
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
     ref_msk.astype(np.int16)
     ref_msk[np.where(right_input[cst.EPI_MSK].values == 100, True, False)] = 1
 
-    assert np.allclose(out, ref_msk)
+    assert np.allclose(test_mask, ref_msk)
 
 
 @pytest.mark.unit_tests
@@ -583,19 +623,19 @@ def test_create_inside_sec_roi_mask():
     Test create_inside_sec_roi_mask fonction
     """
     # create fake dataset with margins values and image dimension
-    ds_left_margin = 1
-    ds_right_margin = 2
-    ds_top_margin = 1
-    ds_bottom_margin = 1
-    ds_nb_col = 6
-    ds_nb_row = 5
-    ds = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL],
-                                     np.ones((ds_nb_row, ds_nb_col),
+    dataset_left_margin = 1
+    dataset_right_margin = 2
+    dataset_top_margin = 1
+    dataset_bottom_margin = 1
+    dataset_nb_col = 6
+    dataset_nb_row = 5
+    test_dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.ROW, cst.COL],
+                                     np.ones((dataset_nb_row, dataset_nb_col),
                                      dtype=bool))})
-    ds.attrs[cst.EPI_MARGINS] = np.array([ds_left_margin,
-                                          ds_top_margin,
-                                          ds_right_margin,
-                                          ds_bottom_margin])
+    test_dataset.attrs[cst.EPI_MARGINS] = np.array([dataset_left_margin,
+                                          dataset_top_margin,
+                                          dataset_right_margin,
+                                          dataset_bottom_margin])
 
     # create fake disp map and mask
     disp_nb_col = 7
@@ -607,12 +647,12 @@ def test_create_inside_sec_roi_mask():
     # add an invalid pixel in the useful zone
     mask[1, 1] = 0
 
-    msk = stereo.create_inside_sec_roi_mask(disp, mask, ds)
+    msk = stereo.create_inside_sec_roi_mask(disp, mask, test_dataset)
 
     # create reference data
     ref_msk = np.zeros((disp_nb_row, disp_nb_col), dtype=np.int16)
-    ref_msk[math.ceil(disp_value):disp_nb_row-ds_bottom_margin,
-            math.ceil(disp_value):disp_nb_col-ds_right_margin \
+    ref_msk[math.ceil(disp_value):disp_nb_row - dataset_bottom_margin,
+            math.ceil(disp_value):disp_nb_col - dataset_right_margin \
                                   -math.floor(disp_value)] = 255
     ref_msk[1, 1] = 0
 
@@ -638,16 +678,17 @@ def test_estimate_color_from_disparity():
     mask = np.pad(mask, ((1, 1), (1, 2)), constant_values=0)
     mask[2,2] = 0
 
-    disp_ds = xr.Dataset({cst.DISP_MAP: ([cst.ROW, cst.COL], np.copy(disp)),
-                          cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(mask))},
-                         coords={cst.ROW: disp_row, cst.COL: disp_col})
+    disp_dataset = xr.Dataset(
+                        {cst.DISP_MAP: ([cst.ROW, cst.COL], np.copy(disp)),
+                        cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(mask))},
+                        coords={cst.ROW: disp_row, cst.COL: disp_col})
 
-    disp_ds.attrs[cst.ROI] = [margins[0],
+    disp_dataset.attrs[cst.ROI] = [margins[0],
                               margins[1],
                               disp_nb_col-margins[2],
                               disp_nb_row-margins[3]]
-    disp_ds.attrs[cst.ROI_WITH_MARGINS] = [0, 0, disp_nb_col, disp_nb_row]
-    disp_ds.attrs[cst.EPI_FULL_SIZE] = [100, 100]
+    disp_dataset.attrs[cst.ROI_WITH_MARGINS] = [0, 0, disp_nb_col, disp_nb_row]
+    disp_dataset.attrs[cst.EPI_FULL_SIZE] = [100, 100]
 
     # create fake color image
     clr_nb_col = 10
@@ -664,7 +705,7 @@ def test_estimate_color_from_disparity():
 
     clr_mask = np.full((clr_nb_row, clr_nb_col), 255, dtype=np.int16)
     clr_mask[4, 4] = 0
-    clr_ds = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL],
+    clr_dataset = xr.Dataset({cst.EPI_IMAGE: ([cst.BAND, cst.ROW, cst.COL],
                                          np.copy(clr)),
                          cst.EPI_MSK: ([cst.ROW, cst.COL], np.copy(clr_mask))},
                         coords={cst.BAND: range(clr_nb_band),
@@ -673,12 +714,12 @@ def test_estimate_color_from_disparity():
 
     # create fake secondary dataset
     sec_margins = [1, 1, 1, 1]
-    sec_ds = xr.Dataset()
-    sec_ds.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
+    sec_dataset = xr.Dataset()
+    sec_dataset.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
 
     # interpolate color
-    interp_clr_ds = stereo.estimate_color_from_disparity(
-        disp_ds, sec_ds, clr_ds)
+    interp_clr_dataset = stereo.estimate_color_from_disparity(
+        disp_dataset, sec_dataset, clr_dataset)
 
     # reference
     ref_mask = mask.astype(np.bool)
@@ -686,28 +727,31 @@ def test_estimate_color_from_disparity():
     ref_mask=~ref_mask
 
     assert np.allclose(
-        ref_mask, np.isnan(interp_clr_ds[cst.EPI_IMAGE].values[0,:,:]))
+        ref_mask, np.isnan(interp_clr_dataset[cst.EPI_IMAGE].values[0,:,:]))
 
     ref_data = np.ceil(disp)
     ref_data[margins[1]:-margins[3], margins[0]:-margins[2]] += val
     ref_data[ref_mask] = 0
 
-    interp_clr_msk = np.isnan(interp_clr_ds[cst.EPI_IMAGE].values[0, :, :])
-    interp_clr_ds[cst.EPI_IMAGE].values[0, :, :][interp_clr_msk] = 0
+    interp_clr_msk = np.isnan(interp_clr_dataset[cst.EPI_IMAGE].values[0, :, :])
+    interp_clr_dataset[cst.EPI_IMAGE].values[0, :, :][interp_clr_msk] = 0
 
-    assert np.allclose(ref_data, interp_clr_ds[cst.EPI_IMAGE].values[0,:,:])
+    assert np.allclose(ref_data,
+                        interp_clr_dataset[cst.EPI_IMAGE].values[0,:,:])
 
 
 @pytest.mark.unit_tests
-def test_triangulation_1(images_and_grids_conf):
+def test_triangulation_1(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
     """
     Test triangulation ventoux dataset
     """
-    input = xr.open_dataset(absolute_data_path(
+    disp1_ref = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/disp1_ref.nc"))
-    output = stereo.triangulate(images_and_grids_conf, input, None)
+    point_cloud_dict = stereo.triangulate(
+                    images_and_grids_conf, disp1_ref, None)
 
-    assert output[cst.STEREO_REF][cst.X].shape == (120, 110)
+    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
 
     # Uncomment to update baseline
     # output[cst.STEREO_REF].to_netcdf(
@@ -715,11 +759,15 @@ def test_triangulation_1(images_and_grids_conf):
 
     ref = xr.open_dataset(absolute_data_path(
         "ref_output/triangulation1_ref.nc"))
-    assert_same_datasets(output[cst.STEREO_REF], ref, atol=1.e-3)
+    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.e-3)
 
 
 @pytest.mark.unit_tests
-def test_triangulate_matches(images_and_grids_conf):
+def test_triangulate_matches(
+                images_and_grids_conf): #pylint: disable=redefined-outer-name
+    """
+    Test triangulate_matches function from images_and_grids_conf
+    """
 
     matches = np.array([[0.,0.,0.,0.]])
 
@@ -730,15 +778,17 @@ def test_triangulate_matches(images_and_grids_conf):
     np.testing.assert_almost_equal(llh.x.values[0],5.1973629)
     np.testing.assert_almost_equal(llh.y.values[0],44.2079813)
     np.testing.assert_almost_equal(llh.z.values[0],511.4383088)
-    assert(llh[cst.POINTS_CLOUD_CORR_MSK].values[0] == 255)
-    assert(cst.EPSG in llh.attrs)
-    assert(llh.attrs[cst.EPSG] == 4326)
+    assert llh[cst.POINTS_CLOUD_CORR_MSK].values[0] == 255
+    assert cst.EPSG in llh.attrs
+    assert llh.attrs[cst.EPSG] == 4326
 
 
 @pytest.mark.unit_tests
 def test_images_pair_to_3d_points(
-    images_and_grids_conf, color1_conf, no_data_conf, disparities_conf,
-    epipolar_origins_spacings_conf, epipolar_sizes_conf):
+    images_and_grids_conf, color1_conf, #pylint: disable=redefined-outer-name
+    no_data_conf, disparities_conf,     #pylint: disable=redefined-outer-name
+    epipolar_origins_spacings_conf,     #pylint: disable=redefined-outer-name
+    epipolar_sizes_conf):               #pylint: disable=redefined-outer-name
     """
     Test images_pair_to_3d_points on ventoux dataset (epipolar geometry)
     with Pandora
@@ -777,6 +827,9 @@ def test_images_pair_to_3d_points(
 
 @pytest.mark.unit_tests
 def test_geoid_offset():
+    """
+    Returns test result of reference and computed geoid comparison
+    """
     # ref file contains 32x32 points issued from proj 6.2
     ref_file = absolute_data_path('ref_output/egm96_15_ref_hgt.nc')
 
@@ -798,7 +851,9 @@ def test_geoid_offset():
 
 @pytest.mark.unit_tests
 def test_transform_terrain_region_to_epipolar(
-    images_and_grids_conf, disparities_conf, epipolar_sizes_conf):
+    images_and_grids_conf,  #pylint: disable=redefined-outer-name
+    disparities_conf,       #pylint: disable=redefined-outer-name
+    epipolar_sizes_conf):   #pylint: disable=redefined-outer-name
     """
     Test transform to epipolar method
     """
