@@ -18,6 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/tiling.py
+"""
+
 
 from __future__ import absolute_import
 
@@ -144,6 +148,10 @@ def test_snap_to_grid():
 
 @pytest.mark.unit_tests
 def test_ground_positions_from_envelopes():
+    """
+    Test ground_polygon_from_envelopes tiling function.
+    Create two non intersected envelopes and check exception raised
+    """
     envelope = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)])
     envelope_intersection = translate(envelope, xoff=0.5, yoff=0.5)
     envelope_no_intersection = translate(envelope, xoff=2.0, yoff=2.0)
@@ -159,5 +167,6 @@ def test_ground_positions_from_envelopes():
     try:
         tiling.ground_polygon_from_envelopes(
             envelope, envelope_no_intersection, 4326, 4326, 4326)
-    except Exception as e:
-        assert str(e) == 'The two envelopes do not intersect one another'
+    except Exception as intersect_error:
+        assert str(intersect_error) == \
+                        'The two envelopes do not intersect one another'
