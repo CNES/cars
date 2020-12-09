@@ -18,6 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Utils testing generic module:
+contains global shared generic functions for tests/*.py
+"""
 
 import os
 import rasterio as rio
@@ -39,9 +43,10 @@ def temporary_dir():
     variable. Defaults to /tmp
     """
     if "CARS_TEST_TEMPORARY_DIR" not in os.environ:
+        # return default tmp dir
         return "/tmp"
-    else:
-        return os.environ["CARS_TEST_TEMPORARY_DIR"]
+    # return env defined tmp dir
+    return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
 
 def assert_same_images(actual, expected, rtol=0, atol=0):
