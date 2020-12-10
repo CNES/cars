@@ -83,12 +83,12 @@ Look at examples in code.
 # Merge request acceptation process
 
 The Merge Request will be merged into master after being review by a CARS steering committee (core committers) composed of:
-* David Youssefi (CNES DNO/OT/IS)
-* Emmanuelle Sarrazin (CNES DSO/SI/2A)
+* David Youssefi (CNES)
+* Emmanuelle Sarrazin (CNES)
 * Julien Michel (CNES CESBIO)
-* Fabrice Buffe (CNES DSO/SI/QI)
+* Fabrice Buffe (CNES)
 * Aurélie Emilien (CS Group)
-* Emmanuel Dubois (CNES/DSO/SI/2A)
+* Emmanuel Dubois (CNES)
 
 Only the members of this committee can merge into master.
 
