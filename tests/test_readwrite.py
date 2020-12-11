@@ -18,10 +18,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/readwrite.py
+"""
 
-import pytest
-import tempfile
 import os
+import tempfile
+import pytest
 import numpy as np
 from affine import Affine
 
@@ -30,10 +33,10 @@ from osgeo import osr
 import rasterio as rio
 import xarray as xr
 
+from utils import temporary_dir
 from cars import readwrite
 from cars import rasterization
 from cars.cluster import start_local_cluster, stop_local_cluster
-from utils import temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -48,13 +51,13 @@ def test_compute_output_window():
     x_size = 300
     y_size = 250
     x_values_1d = np.linspace(x_start + 0.5 * resolution,
-                              x_start + resolution * (x_size + 0.5), x_size, 
+                              x_start + resolution * (x_size + 0.5), x_size,
                               endpoint=False)
     y_values_1d = np.linspace(y_start - 0.5 * resolution,
-                              y_start - resolution * (y_size + 0.5), y_size, 
+                              y_start - resolution * (y_size + 0.5), y_size,
                               endpoint=False)
     raster_coords = {'x': x_values_1d, 'y': y_values_1d}
-    tile = xr.Dataset({}, 
+    tile = xr.Dataset({},
                       coords=raster_coords)
     bounds = (120, 150, 412, 512)
 
@@ -65,7 +68,8 @@ def test_compute_output_window():
 @pytest.mark.unit_tests
 def test_rasterio_handles():
     """
-    Test to create a file handle(s) depending on whether the output data has a color layer or not.
+    Test to create a file handle(s) depending on whether the output data has a
+    color layer or not.
     """
 
     bounds = (675248.0, 4897075.0, 675460.5, 4897173.0)
@@ -84,12 +88,17 @@ def test_rasterio_handles():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         dsm_file = os.path.join(directory, 'dsm.tif')
         clr_file = os.path.join(directory, 'clr.tif')
-        file_handles = readwrite.rasterio_handles(['hgt', 'clr'], [dsm_file, clr_file], [rio_params, rio_params], [dsm_no_data, color_no_data], [1, nb_bands])
+        file_handles = readwrite.rasterio_handles(
+            ['hgt', 'clr'],
+            [dsm_file, clr_file],
+            [rio_params, rio_params],
+            [dsm_no_data, color_no_data],
+            [1, nb_bands])
 
         with file_handles as rio_handles:
-            assert isinstance(rio_handles, dict) == True
+            assert isinstance(rio_handles, dict)
             assert 'hgt' in rio_handles.keys() and 'clr' in rio_handles.keys()
-            for key in rio_handles.keys():
+            for key in rio_handles:
                 assert isinstance(rio_handles[key], rio.io.DatasetWriter)
 
 
@@ -118,9 +127,11 @@ def test_write_geotiff_dsm():
         msk = np.ndarray(shape=(10, 10), dtype=np.uint16)
 
         delayed_raster_datasets = list()
-        delayed_raster_datasets.append(dask.delayed(rasterization.create_raster_dataset)(
+        delayed_raster_datasets.append(
+            dask.delayed(rasterization.create_raster_dataset)(
             raster, xstart, ystart, xsize, ysize, resolution,
-            hgt_no_data, color_no_data, epsg, mean, stdev, n_pts, n_in_cell, msk
+            hgt_no_data, color_no_data, epsg, mean, stdev,
+            n_pts, n_in_cell, msk
         ))
 
         # Start cluster with a local cluster
@@ -135,8 +146,10 @@ def test_write_geotiff_dsm():
         dsm_file = os.path.join(directory, "dsm.tif")
         clr_file = os.path.join(directory, "clr.tif")
         msk_file = os.path.join(directory, "msk.tif")
-        readwrite.write_geotiff_dsm(future_dsm, directory, xsize, ysize, bounds, resolution, epsg, nb_bands,
-                                    dsm_no_data, color_no_data, write_msk=True, msk_no_data=msk_no_data)
+        readwrite.write_geotiff_dsm(
+            future_dsm, directory, xsize, ysize, bounds, resolution,
+            epsg, nb_bands, dsm_no_data, color_no_data,
+            write_msk=True, msk_no_data=msk_no_data)
 
         # stop cluster
         stop_local_cluster(cluster, client)

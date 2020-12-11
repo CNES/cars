@@ -18,20 +18,31 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Main cars Command Line Interface: program "cars_cli.py",
+user main argparse wrapper to CARS 3D pipelines submodules
+"""
 
-# Standard imports
+# Standard imports (but keep local functions for performance : TODO refactor )
+# pylint: disable=import-outside-toplevel
 import os
 import argparse
 import warnings
+from typing import List, Tuple
 import argcomplete
-from typing import List, Tuple, Dict
 
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def cars_cli_parser():
+def cars_cli_parser() -> argparse.ArgumentParser:
+    """
+    Main CLI argparse parser function
+    It builds argparse objects and constructs CLI interfaces parameters.
+
+    :return: CARS arparse CLI interface object
+    """
     # Create cars cli parser fril argparse
     parser = argparse.ArgumentParser(
         os.path.basename(__file__),
@@ -59,7 +70,8 @@ def cars_cli_parser():
     ## Prepare arguments
 
     # Mandatories (in a specific argparse group)
-    prepare_parser_mandatory = prepare_parser.add_argument_group('mandatory arguments')
+    prepare_parser_mandatory = \
+        prepare_parser.add_argument_group('mandatory arguments')
     prepare_parser_mandatory.add_argument(
         "-i", "--injson", required=True, type=str,  help="Input json file")
     prepare_parser_mandatory.add_argument(
@@ -122,7 +134,8 @@ def cars_cli_parser():
     ## Compute_dsm arguments
 
     # Mandatories (in a specific argparse group)
-    compute_dsm_parser_mandatory = compute_dsm_parser.add_argument_group('mandatory arguments')
+    compute_dsm_parser_mandatory = \
+        compute_dsm_parser.add_argument_group('mandatory arguments')
     compute_dsm_parser_mandatory.add_argument(
         "-i","--injsons", required=True, help="Input json files", nargs='*')
     compute_dsm_parser_mandatory.add_argument(
@@ -160,7 +173,8 @@ def cars_cli_parser():
         "--color_no_data", type=int, default=0,
         help="No data value to use in the final color image (default: 0)")
     compute_dsm_parser.add_argument(
-        "--msk_no_data", help="No data value to use in the final mask image (default: 65535)",
+        "--msk_no_data", help=  "No data value to use "
+                                "in the final mask image (default: 65535)",
         type=int, default=65535)
     compute_dsm_parser.add_argument(
         "--corr_config", default=None, type=str,
@@ -223,19 +237,24 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
     """
     Parse ROI file argument and generate bounding box
 
+
     :param arg_roi_file : ROI file argument
     :param stop_now: Argument check
     :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
     :rtype: Tuple with array of 4 floats and int
     """
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
+
     import logging
     import rasterio
     from cars import utils
 
+
     # Declare output
     roi = None
 
-    name, extension = os.path.splitext(arg_roi_file)
+    _, extension = os.path.splitext(arg_roi_file)
 
     # test file existence
     if not os.path.exists(arg_roi_file):
@@ -263,9 +282,10 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
             try:
                 roi_epsg = data.crs.to_epsg()
                 roi = ([xmin, ymin, xmax, ymax], roi_epsg)
-            except AttributeError as e:
+            except AttributeError as error:
                 logging.critical(
-                    'Impossible to read the ROI image epsg code: {}'.format(e))
+                    'Impossible to read the ROI '
+                    'image epsg code: {}'.format(error))
                 stop_now = True
 
         else:
@@ -281,14 +301,14 @@ def main_cli(args, parser, check_inputs=False):
 
     :param check_inputs: activate only arguments checking
     """
-
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
     import re
     import sys
     import logging
 
     from cars import prepare
     from cars import compute_dsm
-    from cars import utils
     from cars import parameters as params
     from cars import configuration_correlator as corr_cfg
 
@@ -381,9 +401,9 @@ def main_cli(args, parser, check_inputs=False):
         if len(args.injsons) == 0:
             logging.critical('At least one input json file is required')
             stop_now = True
-        for f in args.injsons:
-            if not os.path.exists(f):
-                logging.critical('{} does not exist'.format(f))
+        for json_file in args.injsons:
+            if not os.path.exists(json_file):
+                logging.critical('{} does not exist'.format(json_file))
                 stop_now = True
         if args.sigma is not None and args.sigma < 0:
             logging.critical('{} is an invalid value for --sigma parameter \
@@ -419,8 +439,9 @@ def main_cli(args, parser, check_inputs=False):
             logging.critical('{} is an invalid value for --walltime parameter \
             (should match HH:MM:SS)'.format(args.walltime))
             stop_now = True
-        if args.max_elevation_offset is not None and args.min_elevation_offset is not None \
-           and args.max_elevation_offset <= args.min_elevation_offset:
+        if args.max_elevation_offset is not None \
+                and args.min_elevation_offset is not None \
+                and args.max_elevation_offset <= args.min_elevation_offset:
             logging.critical('--min_elevation_offset = {} is greater than \
             --max_elevation_offset = {}'.format(args.min_elevation_offset,
                                                 args.max_elevation_offset))
@@ -429,7 +450,7 @@ def main_cli(args, parser, check_inputs=False):
         # By default roi = None if no roi mutually exclusive options
         roi = None
         if args.roi_bbox is not None:
-            # if roi_bbox is defined, roi = 4 floats bounding box list + EPSG code=None
+            # if roi_bbox defined, roi = 4 floats bounding box + EPSG code=None
             roi = (args.roi_bbox, None)
         if args.roi_file is not None:
             # If roi_file is defined, generate bouding box roi
@@ -452,27 +473,29 @@ def main_cli(args, parser, check_inputs=False):
             compute_dsm.run(
                 in_jsons,
                 args.outdir,
-                resolution=args.resolution,
-                min_elevation_offset=args.min_elevation_offset,
-                max_elevation_offset=args.max_elevation_offset,
-                epsg=args.epsg,
-                sigma=args.sigma,
-                dsm_radius=args.dsm_radius,
-                dsm_no_data=args.dsm_no_data,
-                color_no_data=args.color_no_data,
-                msk_no_data=args.msk_no_data,
-                corr_config=corr_config,
-                output_stats=args.output_stats,
-                mode=args.mode,
-                nb_workers=args.nb_workers,
-                walltime=args.walltime,
-                roi=roi,
-                use_geoid_alt=args.use_geoid_as_alt_ref,
+                resolution = args.resolution,
+                min_elevation_offset = args.min_elevation_offset,
+                max_elevation_offset = args.max_elevation_offset,
+                epsg = args.epsg,
+                sigma = args.sigma,
+                dsm_radius = args.dsm_radius,
+                dsm_no_data = args.dsm_no_data,
+                color_no_data = args.color_no_data,
+                msk_no_data = args.msk_no_data,
+                corr_config = corr_config,
+                output_stats = args.output_stats,
+                mode = args.mode,
+                nb_workers = args.nb_workers,
+                walltime = args.walltime,
+                roi = roi,
+                use_geoid_alt = args.use_geoid_as_alt_ref,
                 snap_to_img1 = args.snap_to_left_image,
                 align = args.align_with_lowres_dem,
-                cloud_small_components_filter=not args.disable_cloud_small_components_filter,
-                cloud_statistical_outliers_filter=not args.disable_cloud_statistical_outliers_filter,
-                use_sec_disp=args.use_sec_disp
+                cloud_small_components_filter = \
+                    not args.disable_cloud_small_components_filter,
+                cloud_statistical_outliers_filter = \
+                    not args.disable_cloud_statistical_outliers_filter,
+                use_sec_disp = args.use_sec_disp
             )
 
     else:

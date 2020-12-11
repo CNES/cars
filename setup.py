@@ -23,21 +23,27 @@
 #      ``python setup.py install``
 #    or
 #      ``pip install cars``
+"""
+This file is the package main program.
+"""
 
 import os
-from setuptools import setup, find_packages
-from setuptools.command.build_py import build_py
-from setuptools.command.install import install
-
 import sys
 from distutils.spawn import find_executable, spawn
 import re
 from pathlib import Path
+from codecs import open as copen
+
+from setuptools import setup, find_packages
+from setuptools.command.build_py import build_py
+from setuptools.command.install import install
 
 
 # Meta-data.
-NAME = 'cars'
-DESCRIPTION = 'CARS is a multi-view stereovision pipeline for satellite images. It produces Digital Surface Model in raster format.'
+NAME = "cars"
+DESCRIPTION =  ("CARS is a multi-view stereovision pipeline "
+                "for satellite images. It produces Digital Surface Model "
+                "in raster format.")
 URL = 'https://github.com/CNES/cars'
 AUTHOR = 'CNES'
 REQUIRES_PYTHON = '>=3.6.0'
@@ -59,7 +65,6 @@ REQUIREMENTS = ['numpy>=1.17.0',
                 'pytest-cov',
                 'json-checker',
                 'xarray',
-                'k3d',
                 'tqdm',
                 'sphinx-rtd-theme',
                 'netCDF4==1.5.3',
@@ -71,14 +76,21 @@ REQUIREMENTS = ['numpy>=1.17.0',
                 'numba',
                 'pandas',
                 'tbb',
-                'pandora-plugin-libsgm==0.2.2']
+                'pandora-plugin-libsgm==0.2.2',
+                'pylint',
+                'pre-commit']
+
+def readme():
+    with copen('README.md', 'r', 'utf-8') as fstream:
+        return fstream.read()
+
 
 class CustomBuildPyCommand(build_py):
     """
        Add custom step for CARS installation
     """
 
-    def check(self):
+    def check(self): #pylint: disable=no-self-use
         """
            Check environment
            Test if Geoid file is provided
@@ -86,25 +98,27 @@ class CustomBuildPyCommand(build_py):
         if os.environ.get("OTB_GEOID_FILE") is None:
             raise Exception("OTB_GEOID_FILE not set")
 
-    def create_env_script(self):
+    def create_env_script(self): #pylint: disable=no-self-use
         """
            Create environment file to set CARS environment
         """
-        GEOID_FILE_TO_REPLACE = os.environ.get("OTB_GEOID_FILE")
-        template = None 
-        with open('template_env_cars.sh') as src: 
-             template = src.readlines()
-        with open('env_cars.sh','w') as dest: 
-             for line in template: 
-                 if "GEOID_FILE_TO_REPLACE" in line: 
-                     dest.write(re.sub(r'GEOID_FILE_TO_REPLACE', GEOID_FILE_TO_REPLACE, line)) 
-                 else: 
-                     dest.write(line)
+        geoid_file_to_replace = os.environ.get("OTB_GEOID_FILE")
+        template = None
+        with open('template_env_cars.sh') as src:
+            template = src.readlines()
+        with open('env_cars.sh','w') as dest:
+            for line in template:
+                if "GEOID_FILE_TO_REPLACE" in line:
+                    dest.write(re.sub(r'GEOID_FILE_TO_REPLACE',
+                                geoid_file_to_replace, line))
+                else:
+                    dest.write(line)
 
-    def run(self):
+    def run(self): #pylint: disable=no-self-use
         self.check()
         self.create_env_script()
-        super(CustomBuildPyCommand,self).run()
+        super(CustomBuildPyCommand,     #pylint: disable=super-with-arguments
+                            self).run() #pylint: disable=super-with-arguments
 
 
 class CompileInstallCommand(install):
@@ -112,7 +126,7 @@ class CompileInstallCommand(install):
        Add custom step for CARS installation
     """
 
-    def check(self):
+    def check(self): #pylint: disable=no-self-use
         """
            Check environment
            Test requirements for build : cmake, OTB, vlfeat
@@ -128,9 +142,9 @@ class CompileInstallCommand(install):
             raise Exception("VLFEAT_INCLUDE_DIR not set")
 
 
-    def compile_and_install_cars(self):
+    def compile_and_install_cars(self): #pylint: disable=no-self-use
         """
-           Run external script to comile et install OTB remote modules
+           Run external script to compile et install OTB remote modules
         """
         if sys.prefix is None:
             sys.prefix = "/usr/local"
@@ -149,10 +163,11 @@ class CompileInstallCommand(install):
         os.chdir(current_dir)
 
 
-    def run(self):
+    def run(self): #pylint: disable=no-self-use
         self.check()
         self.compile_and_install_cars()
-        super(CompileInstallCommand,self).run()
+        super(CompileInstallCommand,    #pylint: disable=super-with-arguments
+                            self).run() #pylint: disable=super-with-arguments
 
 
 # Setup
@@ -166,7 +181,7 @@ setup(
     license=LICENSE,
     packages=find_packages(),
     data_files=[('static_conf', ['static_conf/static_configuration.json'])],
-    long_description=DESCRIPTION,
+    long_description=readme(),
     install_requires=REQUIREMENTS,
     python_requires=REQUIRES_PYTHON,
     entry_points={

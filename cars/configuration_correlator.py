@@ -20,11 +20,10 @@
 #
 
 """
-This module contains functions to retrieve the correlator configuration
+Configure correlator module:
+contains functions to retrieve the correlator configuration
 """
 
-import logging
-import copy
 import pandora
 from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\

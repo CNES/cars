@@ -18,10 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/preprocessing.py
+"""
 
+from __future__ import absolute_import
 import tempfile
 import os
 import pickle
+from typing import Tuple
+
 import pytest
 
 import numpy as np
@@ -31,7 +37,61 @@ import xarray as xr
 from utils import absolute_data_path, temporary_dir, assert_same_datasets
 from cars import preprocessing
 from cars import stereo
-from cars import parameters as params
+from cars import pipelines
+from cars import constants as cst
+
+
+def generate_epipolar_grids(
+        img1: str,
+        img2: str,
+        srtm_dir: str=None,
+        default_alt: float=None,
+        epi_step: float=30)\
+    -> Tuple[xr.Dataset, xr.Dataset, int, int, float]:
+    """
+    Generate epipolar resampling grids
+    as xarray.Dataset from a pair of images and srtm_dir
+
+    :param img1: Path to the left image
+    :param img2: Path to right image
+    :param srtm_dir: Path to folder containing SRTM tiles
+    :param default_alt: Default altitude above ellipsoid
+    :epi_step: Step of the resampling grid
+    :return: Tuple containing :
+        left_grid_dataset, right_grid_dataset containing the resampling grids
+        epipolar_size_x, epipolar_size_y epipolar grids size
+        baseline  : (resolution * B/H)
+    """
+    # Launch OTB pipeline to get stero grids
+    grid1, grid2, __, __, epipolar_size_x, epipolar_size_y, baseline = \
+        pipelines.build_stereorectification_grid_pipeline(
+        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
+
+    col = np.array(range(0, grid1.shape[0] * epi_step, epi_step))
+    row = np.array(range(0, grid1.shape[1] * epi_step, epi_step))
+
+    left_grid_dataset = xr.Dataset({cst.X: ([cst.ROW, cst.COL],
+                                             grid1[:, :, 0]),
+                                    cst.Y: ([cst.ROW, cst.COL],
+                                             grid1[:, :, 1])},
+                                   coords={cst.ROW: row,
+                                           cst.COL: col},
+                                   attrs={"epi_step": epi_step,
+                                          "epipolar_size_x": epipolar_size_x,
+                                          "epipolar_size_y": epipolar_size_y})
+
+    right_grid_dataset = xr.Dataset({cst.X: ([cst.ROW, cst.COL],
+                                              grid2[:, :, 0]),
+                                     cst.Y: ([cst.ROW, cst.COL],
+                                              grid2[:, :, 1])},
+                                    coords={cst.ROW: row,
+                                            cst.COL: col},
+                                    attrs={"epi_step": epi_step,
+                                           "epipolar_size_x": epipolar_size_x,
+                                           "epipolar_size_y": epipolar_size_y})
+    return left_grid_dataset, right_grid_dataset,\
+           epipolar_size_x, epipolar_size_y,\
+           baseline
 
 
 @pytest.mark.unit_tests
@@ -43,8 +103,9 @@ def test_generate_epipolar_grids():
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
-    left_grid, right_grid, size_x, size_y, baseline = preprocessing.generate_epipolar_grids(
-        img1, img2, dem)
+    left_grid, right_grid, size_x, size_y, baseline = \
+        generate_epipolar_grids(
+            img1, img2, dem)
 
     assert size_x == 612
     assert size_y == 612
@@ -75,22 +136,25 @@ def test_generate_epipolar_grids_default_alt():
     dem = None
     default_alt = 500
 
-    left_grid, right_grid, size_x, size_y, baseline = preprocessing.generate_epipolar_grids(
-        img1, img2, dem, default_alt)
+    left_grid, right_grid, size_x, size_y, baseline = \
+        generate_epipolar_grids(
+            img1, img2, dem, default_alt)
 
     assert size_x == 612
     assert size_y == 612
     assert baseline == 0.7039446234703064
 
     # Uncomment to update baseline
-    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid_default_alt.nc"))
+    # left_grid.to_netcdf(absolute_data_path(
+    # "ref_output/left_grid_default_alt.nc"))
 
     left_grid_ref = xr.open_dataset(
         absolute_data_path("ref_output/left_grid_default_alt.nc"))
     assert_same_datasets(left_grid, left_grid_ref)
 
     # Uncomment to update baseline
-    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid_default_alt.nc"))
+    # right_grid.to_netcdf(absolute_data_path(
+    # "ref_output/right_grid_default_alt.nc"))
 
     right_grid_ref = xr.open_dataset(
         absolute_data_path("ref_output/right_grid_default_alt.nc"))
@@ -109,18 +173,22 @@ def test_dataset_matching():
     mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
     nodata1 = 0
     nodata2 = 0
-    grid1 = absolute_data_path("input/preprocessing_input/left_epipolar_grid_reunion.tif")
-    grid2 = absolute_data_path("input/preprocessing_input/right_epipolar_grid_reunion.tif")
+    grid1 = absolute_data_path(
+        "input/preprocessing_input/left_epipolar_grid_reunion.tif")
+    grid2 = absolute_data_path(
+        "input/preprocessing_input/right_epipolar_grid_reunion.tif")
 
     epipolar_size_x = 596
     epipolar_size_y = 596
 
     left = stereo.resample_image(
         img1, grid1, [
-            epipolar_size_x, epipolar_size_y], region=region, nodata=nodata1, mask=mask1)
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
     right = stereo.resample_image(
         img2, grid2, [
-            epipolar_size_x, epipolar_size_y], region=region, nodata=nodata2, mask=mask2)
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata2, mask=mask2)
 
     matches = preprocessing.dataset_matching(left, right)
 
@@ -135,10 +203,12 @@ def test_dataset_matching():
 
     left = stereo.resample_image(
         img1, grid1, [
-            epipolar_size_x, epipolar_size_y], region=region, nodata=nodata1, mask=mask1)
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
     right = stereo.resample_image(
         img1, grid1, [
-            epipolar_size_x, epipolar_size_y], region=region, nodata=nodata1, mask=mask1)
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
 
     matches = preprocessing.dataset_matching(left, right)
 
@@ -199,14 +269,17 @@ def test_correct_right_grid():
         grid = rio_grid.read()
         grid = np.transpose(grid, (1, 2, 0))
 
-        corrected_grid, corrected_matches, in_stats, out_stats = preprocessing.correct_right_grid(
-            matches_filtered, grid, origin, spacing)
+        corrected_grid, corrected_matches, in_stats, out_stats = \
+            preprocessing.correct_right_grid(
+                matches_filtered, grid, origin, spacing)
 
         # Uncomment to update ref
-        #np.save(absolute_data_path("ref_output/corrected_right_grid.npy"), corrected_grid)
+        # np.save(absolute_data_path("ref_output/corrected_right_grid.npy"),
+        # corrected_grid)
         corrected_grid_ref = np.load(
             absolute_data_path("ref_output/corrected_right_grid.npy"))
-        np.testing.assert_allclose(corrected_grid, corrected_grid_ref, atol=0.05, rtol=1.0e-6)
+        np.testing.assert_allclose(corrected_grid, corrected_grid_ref,
+                                   atol=0.05, rtol=1.0e-6)
 
         assert corrected_grid.shape == grid.shape
 
@@ -223,10 +296,14 @@ def test_correct_right_grid():
         assert abs(
             out_stats["median_epipolar_error"][1]) < abs(
             in_stats["median_epipolar_error"][1])
-        assert out_stats["std_epipolar_error"][0] < in_stats["std_epipolar_error"][0]
-        assert out_stats["std_epipolar_error"][1] < in_stats["std_epipolar_error"][1]
-        assert out_stats["rms_epipolar_error"] < in_stats["rms_epipolar_error"]
-        assert out_stats["rmsd_epipolar_error"] < in_stats["rmsd_epipolar_error"]
+        assert out_stats["std_epipolar_error"][0] \
+             < in_stats["std_epipolar_error"][0]
+        assert out_stats["std_epipolar_error"][1] \
+             < in_stats["std_epipolar_error"][1]
+        assert out_stats["rms_epipolar_error"] \
+             < in_stats["rms_epipolar_error"]
+        assert out_stats["rmsd_epipolar_error"] \
+             < in_stats["rmsd_epipolar_error"]
 
         # Assert absolute performances
 
@@ -267,7 +344,8 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
 
-    srtm_ds = preprocessing.read_lowres_dem(startx, starty, sizex, sizey, dem=dem)
+    srtm_ds = preprocessing.read_lowres_dem(
+        startx, starty, sizex, sizey, dem=dem)
 
     # Uncomment to update baseline
     #srtm_ds.to_netcdf(absolute_data_path("ref_output/srtm_xt.nc"))
@@ -306,7 +384,9 @@ def test_get_ground_angles():
     angles = preprocessing.get_ground_angles(left_img, right_img)
     angles = np.asarray(angles) # transform tuple to array
 
-    np.testing.assert_allclose(angles, [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114], rtol=1e-01)
+    np.testing.assert_allclose(angles,
+    [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114],
+    rtol=1e-01)
 
 
 @pytest.mark.unit_tests
@@ -317,10 +397,11 @@ def test_project_coordinates_on_line():
     origin=[0,0]
     vec = [0.5, 0.5]
 
-    x = np.array([1,2,3])
-    y = np.array([1,2,3])
+    x_coord = np.array([1,2,3])
+    y_coord = np.array([1,2,3])
 
-    coords = preprocessing.project_coordinates_on_line(x,y, origin, vec)
+    coords = preprocessing.project_coordinates_on_line(x_coord, y_coord,
+                                                                origin, vec)
 
     np.testing.assert_allclose(coords, [1.41421356, 2.82842712, 4.24264069])
 
@@ -330,23 +411,28 @@ def test_lowres_initial_dem_splines_fit():
     """
     Test lowres_initial_dem_splines_fit
     """
-    lowres_dsm_from_matches = xr.open_dataset(absolute_data_path("input/splines_fit_input/lowres_dsm_from_matches.nc"))
-    lowres_initial_dem = xr.open_dataset(absolute_data_path("input/splines_fit_input/lowres_initial_dem.nc"))
+    lowres_dsm_from_matches = xr.open_dataset(absolute_data_path(
+        "input/splines_fit_input/lowres_dsm_from_matches.nc"))
+    lowres_initial_dem = xr.open_dataset(absolute_data_path(
+        "input/splines_fit_input/lowres_initial_dem.nc"))
 
-    origin = [float(lowres_dsm_from_matches.x[0].values), float(lowres_dsm_from_matches.y[0].values)]
+    origin = [float(lowres_dsm_from_matches.x[0].values),
+              float(lowres_dsm_from_matches.y[0].values)]
     vec = [0,1]
 
-    splines = preprocessing.lowres_initial_dem_splines_fit(lowres_dsm_from_matches,
-                                                           lowres_initial_dem,
-                                                           origin,
-                                                           vec)
+    splines = preprocessing.lowres_initial_dem_splines_fit(
+        lowres_dsm_from_matches, lowres_initial_dem, origin, vec)
 
 
     # Uncomment to update reference
-    # with open(absolute_data_path("ref_output/splines_ref.pck"),'wb') as f:
-    #     pickle.dump(splines,f)
+    # with open(absolute_data_path(
+    #                   "ref_output/splines_ref.pck"),'wb') as splines_files:
+    #     pickle.dump(splines, splines_file)
 
-    with open(absolute_data_path("ref_output/splines_ref.pck"),'rb') as f:
-        ref_splines = pickle.load(f)
-        np.testing.assert_allclose(splines.get_coeffs(), ref_splines.get_coeffs())
-        np.testing.assert_allclose(splines.get_knots(), ref_splines.get_knots())
+    with open(absolute_data_path(
+                        "ref_output/splines_ref.pck"),'rb') as splines_file:
+        ref_splines = pickle.load(splines_file)
+        np.testing.assert_allclose(splines.get_coeffs(),
+                                   ref_splines.get_coeffs())
+        np.testing.assert_allclose(splines.get_knots(),
+                                   ref_splines.get_knots())

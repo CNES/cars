@@ -20,7 +20,8 @@
 #
 
 """
-This module provides functions to start and stop a local or PBS cluster
+Cluster module:
+provides functions to start and stop a local or PBS cluster.
 """
 
 # Standard imports
@@ -40,9 +41,11 @@ from distributed.diagnostics.plugin import WorkerPlugin
 class ComputeDSMMemoryLogger(WorkerPlugin):
     """A subclass of WorkerPlugin dedicated to monitoring workers memory
 
-       This plugin enables two things:
-       - Additional traces in dask log with amount of tasks and associated memory each time the worker changes its internal state
-       - A numpy data file with memory metrics and timing
+    This plugin enables two things:
+    - Additional dask log traces : (for each worker internal state change)
+        - amount of tasks
+        - associated memory
+    - A numpy data file with memory metrics and timing
     """
     def __init__(self, outdir):
         """
@@ -57,6 +60,8 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         Associate plugin with a worker
         :param worker: The worker to associate the plugin with
         """
+        # Pylint Exception : Inherited attributes outside __init__
+        #pylint: disable=attribute-defined-outside-init
         self.worker = worker
         self.name = worker.name
         # Measure plugin registration time
@@ -65,10 +70,13 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         self.data=([[0, 0, 0, 0, 0, 0]])
 
 
-    def transition(self, key, start, finish, *args, **kwargs):
+    def transition(self, key, start, finish, **kwargs):
         """
         Callback when worker changes internal state
         """
+        # TODO Pylint Exception : Inherited attributes outside __init__
+        #pylint: disable=attribute-defined-outside-init
+
         # Setup logging
         worker_logger = logging.getLogger('distributed.worker')
 
@@ -82,14 +90,14 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         elapsed_time = time.time()-self.start_time
 
         # Walk the worker known memory
-        for k,v in self.worker.nbytes.items():
+        for task, task_size in self.worker.nbytes.items():
 
             # Sort between point clouds and rasters
-            if k.startswith("images_pair_to_3d_points"):
-                total_point_clouds_nbytes += v
+            if task.startswith("images_pair_to_3d_points"):
+                total_point_clouds_nbytes += task_size
                 total_point_clouds_in_memory += 1
             else:
-                total_rasters_nbytes += v
+                total_rasters_nbytes += task_size
                 total_rasters_in_memory += 1
 
         # Use psutil to capture python process memory as well
@@ -97,17 +105,31 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         process_memory = process.memory_info().rss
 
         # Update data records
-        self.data = np.concatenate((self.data,np.array([[elapsed_time,
-                                                         total_point_clouds_in_memory, total_point_clouds_nbytes,
-                                                         total_rasters_in_memory, total_rasters_nbytes,
-                                                         process_memory]])))
-                
+        self.data = np.concatenate((self.data,
+                                    np.array([[ elapsed_time,
+                                                total_point_clouds_in_memory,
+                                                total_point_clouds_nbytes,
+                                                total_rasters_in_memory,
+                                                total_rasters_nbytes,
+                                                process_memory]])))
+        # Convert nbytes size for logging
+        total_point_clouds_nbytes = float(total_point_clouds_nbytes)/1000000
+        total_rasters_nbytes = float(total_rasters_nbytes)/1000000
+        process_memory = float(process_memory)/1000000
+
         # Log memory state
-        worker_logger.info("Memory report: point clouds = {} ({} Mb), rasters = {} ({} Mb), python process memory = {} Mb".format(total_point_clouds_in_memory,
-                float(total_point_clouds_nbytes)/1000000, total_rasters_in_memory,float(total_rasters_nbytes)/1000000, float(process_memory)/1000000))
-                
+        worker_logger.info(
+            "Memory report: point clouds = {} ({} Mb), "
+                            "rasters = {} ({} Mb), "
+                            "python process memory = {} Mb".format(
+                        total_point_clouds_in_memory, total_point_clouds_nbytes,
+                        total_rasters_in_memory, total_rasters_nbytes,
+                        process_memory ))
+
+        # Save data records in npy file
         # TODO: Save only every x seconds ?
-        np.save(os.path.join(self.outdir,'dask_log',"memory_"+self.name+'.npy'),self.data)
+        file = os.path.join(self.outdir,'dask_log',"memory_"+self.name+'.npy')
+        np.save(file, self.data)
 
 
 def start_local_cluster(nb_workers, timeout=600):
@@ -144,17 +166,23 @@ def stop_local_cluster(cluster, client):
 
 def start_cluster(nb_workers, walltime, out_dir, timeout=600):
     """
-    This function create a dask cluster. Each worker has nb_cpus cpus and only one
-    python process is started on each worker.
+    This function create a dask cluster.
+    Each worker has nb_cpus cpus.
+    Only one python process is started on each worker.
 
-    start_cluster will use OMP_NUM_THREADS environment variable to determine how many threads
-    might be used by a worker when running C/C++ code (default to 1)
+    Threads number:
+    start_cluster will use OMP_NUM_THREADS environment variable to determine
+    how many threads might be used by a worker when running C/C++ code.
+    (default to 1)
 
-    start_cluster will use CARS_NB_WORKERS_PER_PBS_JOB environment variable to determine
-    how many workers should be started by a single PBS job (default to 1)
+    Workers number:
+    start_cluster will use CARS_NB_WORKERS_PER_PBS_JOB environment variable
+    to determine how many workers should be started by a single PBS job.
+    (default to 1)
 
-    start_cluster will use CARS_PBS_QUEUE to determine in which queue worker jobs should
-    be posted.
+    Queue worker:
+    start_cluster will use CARS_PBS_QUEUE to determine
+    in which queue worker jobs should be posted.
 
     :param nb_workers: Number of dask workers
     :type nb_workers: int
@@ -191,16 +219,17 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
     nb_jobs = int(math.ceil(nb_workers / nb_workers_per_job))
 
     logging.info(
-        "Starting Dask PBS cluster with {} workers ({} workers with {} cores each per PSB job)".format(
-            nb_workers,
-            nb_workers_per_job,
-            omp_num_threads))
+        "Starting Dask PBS cluster with {} workers "
+        "({} workers with {} cores each per PSB job)".format(
+        nb_workers,
+        nb_workers_per_job, omp_num_threads))
+
     logging.info(
-        "Submitting {} PBS jobs with configuration cpu={},mem={},walltime={}".format(
-            nb_jobs,
-            nb_cpus,
-            memory,
-            walltime))
+        "Submitting {} PBS jobs "
+        "with configuration cpu={}, mem={}, walltime={}".format(
+        nb_jobs,
+        nb_cpus, memory, walltime))
+
     names = [
         'PATH',
         'PYTHONPATH',

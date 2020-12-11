@@ -18,16 +18,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/tiling.py
+"""
+
+
+from __future__ import absolute_import
 
 import pytest
-import numpy as np
-import rasterio as rio
+
 from shapely.geometry import Polygon
 from shapely.affinity import translate
 
-from cars import tiling, configuration as cfg
-from utils import absolute_data_path
-
+from cars import tiling
 
 @pytest.mark.unit_tests
 def test_grid():
@@ -107,23 +110,22 @@ def test_list_tiles():
     tiles = tiling.list_tiles(region, largest_region, tile_size, margin=1)
 
     assert tiles == [
-        [
-            30, 50, 40, 60], [
-            30, 60, 40, 70], [
-                30, 70, 40, 80], [
-                    30, 80, 40, 90], [
-                        40, 50, 50, 60], [
-                            40, 60, 50, 70], [
-                                40, 70, 50, 80], [
-                                    40, 80, 50, 90], [
-                                        50, 50, 60, 60], [
-                                            50, 60, 60, 70], [
-                                                50, 70, 60, 80], [
-                                                    50, 80, 60, 90], [
-                                                        60, 50, 70, 60], [
-                                                            60, 60, 70, 70], [
-                                                                60, 70, 70, 80], [
-                                                                    60, 80, 70, 90]]
+        [30, 50, 40, 60],
+        [30, 60, 40, 70],
+        [30, 70, 40, 80],
+        [30, 80, 40, 90],
+        [40, 50, 50, 60],
+        [40, 60, 50, 70],
+        [40, 70, 50, 80],
+        [40, 80, 50, 90],
+        [50, 50, 60, 60],
+        [50, 60, 60, 70],
+        [50, 70, 60, 80],
+        [50, 80, 60, 90],
+        [60, 50, 70, 60],
+        [60, 60, 70, 70],
+        [60, 70, 70, 80],
+        [60, 80, 70, 90]]
 
 
 @pytest.mark.unit_tests
@@ -146,6 +148,10 @@ def test_snap_to_grid():
 
 @pytest.mark.unit_tests
 def test_ground_positions_from_envelopes():
+    """
+    Test ground_polygon_from_envelopes tiling function.
+    Create two non intersected envelopes and check exception raised
+    """
     envelope = Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)])
     envelope_intersection = translate(envelope, xoff=0.5, yoff=0.5)
     envelope_no_intersection = translate(envelope, xoff=2.0, yoff=2.0)
@@ -161,5 +167,6 @@ def test_ground_positions_from_envelopes():
     try:
         tiling.ground_polygon_from_envelopes(
             envelope, envelope_no_intersection, 4326, 4326, 4326)
-    except Exception as e:
-        assert str(e) == 'The two envelopes do not intersect one another'
+    except Exception as intersect_error:
+        assert str(intersect_error) == \
+                        'The two envelopes do not intersect one another'

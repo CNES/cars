@@ -20,11 +20,12 @@
 #
 
 """
-This module contains some general purpose functions that do not fit in other modules
+Utils module:
+contains some cars global shared general purpose functions
 """
 
 # Standard imports
-from typing import Union
+from typing import Union, Tuple
 import warnings
 import os
 import logging
@@ -32,6 +33,7 @@ import struct
 from datetime import datetime
 import errno
 import numpy as np
+import numpy.linalg as la
 from json_checker import Checker
 
 # Third party imports
@@ -67,13 +69,15 @@ def safe_makedirs(directory):
 
 def make_relative_path_absolute(path, directory):
     """
-    If path is a valid relative path with respect to directory, returns it as an absolute path
+    If path is a valid relative path with respect to directory,
+    returns it as an absolute path
 
     :param  path: The relative path
     :type path: string
     :param directory: The directory path should be relative to
     :type directory: string
-    :returns: os.path.join(directory,path) if path is a valid relative path form directory, else path
+    :returns: os.path.join(directory,path)
+        if path is a valid relative path form directory, else path
     :rtype: string
     """
     out = path
@@ -95,58 +99,56 @@ def ncdf_can_open(file_path):
     try:
         with xr.open_dataset(file_path) as _:
             return True
-    except Exception as e:
+    except Exception as read_error:
         logging.error("Exception caught while trying to read file {}: {}"
-                      .format(file_path, e)
+                      .format(file_path, read_error)
                       )
         return False
 
 
-def rasterio_can_open(f):
+def rasterio_can_open(raster_file: str) -> bool:
     """
-    Test if file f can be open by rasterio
+    Test if a file can be open by rasterio
 
-    :param f: File to test
-    :type f: string
+    :param raster_file: File to test
     :returns: True if rasterio can open file and False otherwise
-    :rtype: bool
     """
     try:
-        rio.open(f)
+        rio.open(raster_file)
         return True
-    except Exception as e:
-        logging.warning("Impossible to read file {}: {}".format(f, e))
+    except Exception as read_error:
+        logging.warning("Impossible to read file {}: {}"
+                .format(raster_file, read_error))
         return False
 
 
-def rasterio_get_nb_bands(f):
+def rasterio_get_nb_bands(raster_file: str) -> int:
     """
     Get the number of bands in an image file
 
     :param f: Image file
-    :type f: string
     :returns: The number of bands
-    :rtype: int
     """
-    with rio.open(f, 'r') as ds:
-        return ds.count
+    with rio.open(raster_file, 'r') as descriptor:
+        return descriptor.count
 
 
-def rasterio_get_size(f):
+def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     """
     Get the size of an image (file)
 
-    :param f: Image file
-    :type f: string
+    :param raster_file: Image file
     :returns: The size (width, height)
-    :rtype: int, int
     """
-    with rio.open(f, 'r') as ds:
-        return (ds.width, ds.height)
+    with rio.open(raster_file, 'r') as descriptor:
+        return (descriptor.width, descriptor.height)
 
-def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:float=300) -> (float, float):
+def get_elevation_range_from_metadata(img:str, default_min:float=0,
+                                default_max:float=300) -> Tuple[float, float]:
     """
-    This function will try to derive a valid RPC altitude range from img metadata.
+    This function will try to derive a valid RPC altitude range
+    from img metadata.
+
     It will first try to read metadata with gdal.
     If it fails, it will look for values in the geom file if it exists
     If it fails, it will return the default range
@@ -157,9 +159,9 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
     :returns: (elev_min, elev_max) float tuple
     """
     # First, try to get range from gdal metadata
-    with rio.open(img) as ds:
-        gdal_height_offset = ds.get_tag_item('HEIGHT_OFF','RPC')
-        gdal_height_scale  = ds.get_tag_item('HEIGHT_SCALE','RPC')
+    with rio.open(img) as descriptor:
+        gdal_height_offset = descriptor.get_tag_item('HEIGHT_OFF','RPC')
+        gdal_height_scale  = descriptor.get_tag_item('HEIGHT_SCALE','RPC')
 
         if gdal_height_scale is not None and gdal_height_offset is not None:
             if isinstance(gdal_height_offset, str):
@@ -175,11 +177,11 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
 
     # If geom file exists
     if os.path.isfile(geom_file):
-        with open(geom_file,'r') as f:
+        with open(geom_file,'r') as geom_file_desc:
             geom_height_offset = None
             geom_height_scale = None
 
-            for line in f:
+            for line in geom_file_desc:
                 if line.startswith("height_off:"):
                     geom_height_offset = float(line.split(sep=':')[1])
 
@@ -192,59 +194,70 @@ def get_elevation_range_from_metadata(img:str, default_min:float=0, default_max:
     # If we are still here, return a default range:
     return (default_min, default_max)
 
-def otb_can_open(f):
+def otb_can_open(raster_file: str) -> bool:
     """
-    Test if file f can be open by otb and that it has a correct geom file associated
+    Test if file can be open by otb
+    and that it has a correct geom file associated
 
-    :param f: filename
-    :type f: str
+    :param raster_file: filename
     :return: True if the file can be used with the otb, False otherwise
-    :rtype: bool
     """
     read_im_app = otbApplication.Registry.CreateApplication("ReadImageInfo")
-    read_im_app.SetParameterString("in", f)
+    read_im_app.SetParameterString("in", raster_file)
     read_im_app.SetParameterString("outkwl", "./otb_can_open_test.geom")
 
     try:
         read_im_app.ExecuteAndWriteOutput()
         if os.path.exists("./otb_can_open_test.geom"):
-            with open("./otb_can_open_test.geom") as f:
+            with open("./otb_can_open_test.geom") as geom_file_desc:
                 geom_dict = dict()
-                for l in f:
-                    key, val = l.split(': ')
+                for line in geom_file_desc:
+                    key, val = line.split(': ')
                     geom_dict[key] = val
-
-                if 'line_den_coeff_00' not in geom_dict or 'samp_den_coeff_00' not in geom_dict or \
-                        'line_num_coeff_00' not in geom_dict or 'samp_num_coeff_00' not in geom_dict or \
-                        'line_off' not in geom_dict or 'line_scale' not in geom_dict or \
-                        'samp_off' not in geom_dict or 'samp_scale' not in geom_dict or \
-                        'lat_off' not in geom_dict or 'lat_scale' not in geom_dict or \
-                        'long_off' not in geom_dict or 'long_scale' not in geom_dict or \
-                        'height_off' not in geom_dict or 'height_scale' not in geom_dict or \
+                #pylint: disable=too-many-boolean-expressions
+                if      'line_den_coeff_00' not in geom_dict or \
+                        'samp_den_coeff_00' not in geom_dict or \
+                        'line_num_coeff_00' not in geom_dict or \
+                        'samp_num_coeff_00' not in geom_dict or \
+                        'line_off' not in geom_dict or \
+                        'line_scale' not in geom_dict or \
+                        'samp_off' not in geom_dict or \
+                        'samp_scale' not in geom_dict or \
+                        'lat_off' not in geom_dict or \
+                        'lat_scale' not in geom_dict or \
+                        'long_off' not in geom_dict or \
+                        'long_scale' not in geom_dict or \
+                        'height_off' not in geom_dict or \
+                        'height_scale' not in geom_dict or \
                         'polynomial_format' not in geom_dict:
-                    logging.error("No RPC model set for image {}".format(f))
+                    logging.error("No RPC model set for image {}"
+                                .format(geom_file_desc))
                     return False
 
             os.remove("./otb_can_open_test.geom")
             return True
-        else:
-            logging.error("{} does not have associated geom file".format(f))
-            return False
-    except Exception as e:
+        # else
+        logging.error("{} does not have associated geom file"
+                        .format(geom_file_desc))
+        return False
+    except Exception as read_error:
         logging.error(
-            "Exception caught while trying to read file {}: {}".format(f, e))
+            "Exception caught while trying to read file {}: {}"
+                .format(raster_file, read_error))
         return False
 
 
-def get_version():
+def get_version() -> str:
     """
     Return version based on git branch / commit sha1
 
+    TODO : review how to do CARS Version
+
     :returns: A string containing version
-    :rtype: string
     """
     version = "Unknown"
     try:
+        #pylint: disable=import-outside-toplevel
         from git import Repo
         from git.exc import InvalidGitRepositoryError
         repo = Repo(os.path.join(os.path.dirname(
@@ -281,19 +294,22 @@ def read_vector(path_to_file):
             _, epsg = vec_file.crs['init'].split(':')
             for feat in vec_file:
                 polys.append(shape(feat['geometry']))
-    except BaseException:
-        raise Exception('Impossible to read {} file'.format(path_to_file))
+    except BaseException as base_except:
+        raise Exception('Impossible to read {} file'.format(
+                        path_to_file)) from base_except
 
     if len(polys) == 1:
         return polys[0], int(epsg)
-    elif len(polys) > 1:
-        logging.info('Multi features files are not supported, the first feature of {} will be used'.
+
+    if len(polys) > 1:
+        logging.info('Multi features files are not supported, '
+                     'the first feature of {} will be used'.
                      format(path_to_file))
         return polys[0], int(epsg)
-    else:
-        logging.info(
-            'No feature is present in the {} file'.format(path_to_file))
-        return None
+
+    logging.info(
+        'No feature is present in the {} file'.format(path_to_file))
+    return None
 
 
 def write_vector(polys, path_to_file, epsg, driver='GPKG'):
@@ -313,7 +329,8 @@ def write_vector(polys, path_to_file, epsg, driver='GPKG'):
         }
     }
 
-    with fiona.open(path_to_file, 'w', crs=crs, driver=driver, schema=sch) as f:
+    with fiona.open(path_to_file, 'w',
+                    crs=crs, driver=driver, schema=sch) as vector_file:
         for poly in polys:
             poly_dict = {
                 'geometry': mapping(poly),
@@ -321,60 +338,61 @@ def write_vector(polys, path_to_file, epsg, driver='GPKG'):
                     'Type': 'Polygon'
                 }
             }
-            f.write(poly_dict)
+            vector_file.write(poly_dict)
 
-def angle_vectors(v1:np.ndarray, v2:np.ndarray) -> float :
+def angle_vectors(vector_1: np.ndarray, vector_2: np.ndarray) -> float :
     """
     Compute the smallest angle in radians between two angle_vectors
     Use arctan2 more precise than arcos2
     Tan θ = |(axb)|/ (a.b)
     (same: Cos θ = (a.b)/(|a||b|))
 
-    :param v1: Numpy first vector
-    :param v2: Numpy second vector
+    :param vector_1: Numpy first vector
+    :param vector_2: Numpy second vector
     :return: Smallest angle in radians
     """
-    import numpy.linalg as la
 
-    vec_dot = np.dot(v1, v2)
-    vec_norm = la.norm(np.cross(v1, v2))
+    vec_dot = np.dot(vector_1, vector_2)
+    vec_norm = la.norm(np.cross(vector_1, vector_2))
     return np.arctan2(vec_norm, vec_dot)
 
 
-def write_ply(path: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
+def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     """
     Write cloud to a ply file
 
     :param path: path to the ply file to write
-    :param cloud: cloud to write, it can be a xr.Dataset as the ones given in output of the triangulation
+    :param cloud: cloud to write,
+        it can be a xr.Dataset as the ones given in output of the triangulation
     or a pandas.DataFrame as used in the rasterization
     """
 
-    with open(path, 'w') as f:
+    with open(path_ply_file, 'w') as ply_file:
         if isinstance(cloud, xr.Dataset):
             nb_points = int(cloud[cst.POINTS_CLOUD_CORR_MSK]
-                            .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
+                .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
         else:
             nb_points = cloud.shape[0]
 
-        f.write("ply\n")
-        f.write("format ascii 1.0\n")
-        f.write("element vertex {}\n".format(nb_points))
-        f.write("property float x\n")
-        f.write("property float y\n")
-        f.write("property float z\n")
-        f.write("end_header\n")
+        ply_file.write("ply\n")
+        ply_file.write("format ascii 1.0\n")
+        ply_file.write("element vertex {}\n".format(nb_points))
+        ply_file.write("property float x\n")
+        ply_file.write("property float y\n")
+        ply_file.write("property float z\n")
+        ply_file.write("end_header\n")
 
         if isinstance(cloud, xr.Dataset):
-            for x, y, z, m in zip(np.nditer(cloud[cst.X].values),
-                                  np.nditer(cloud[cst.Y].values),
-                                  np.nditer(cloud[cst.Z].values),
-                                  np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
-                if m != 0:
-                    f.write("{} {} {}\n".format(x, y, z))
+            for x_item, y_item, z_item, mask_item in zip(
+                            np.nditer(cloud[cst.X].values),
+                            np.nditer(cloud[cst.Y].values),
+                            np.nditer(cloud[cst.Z].values),
+                            np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
+                if mask_item != 0:
+                    ply_file.write("{} {} {}\n".format(x_item, y_item, z_item))
         else:
             for xyz in cloud.itertuples():
-                f.write("{} {} {}\n".format(getattr(xyz, cst.X),
+                ply_file.write("{} {} {}\n".format(getattr(xyz, cst.X),
                                             getattr(xyz, cst.Y),
                                             getattr(xyz, cst.Z)))
 
@@ -431,10 +449,13 @@ def add_log_file(out_dir, command):
     # set file log handler
     now = datetime.now()
     h_log_file = logging.FileHandler(os.path.join(out_dir,
-                                                  '{}_{}.log'.format(now.strftime("%y-%m-%d_%Hh%Mm"), command)))
+                '{}_{}.log'.format(now.strftime("%y-%m-%d_%Hh%Mm"), command)))
     h_log_file.setLevel(logging.getLogger().getEffectiveLevel())
 
-    formatter = logging.Formatter(fmt='%(asctime)s :: %(levelname)s :: %(message)s', datefmt='%y-%m-%d %H:%M:%S')
+    formatter = logging.Formatter(
+        fmt='%(asctime)s :: %(levelname)s :: %(message)s',
+        datefmt='%y-%m-%d %H:%M:%S'
+    )
     h_log_file.setFormatter(formatter)
 
     # add it to the logger

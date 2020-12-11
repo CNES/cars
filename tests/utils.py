@@ -18,6 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Utils testing generic module:
+contains global shared generic functions for tests/*.py
+"""
 
 import os
 import rasterio as rio
@@ -26,7 +30,8 @@ import numpy as np
 
 def absolute_data_path(data_path):
     """
-    Return a full absolute path to test data using the CARS_TEST_DATA environment variable.
+    Return a full absolute path to test data using the CARS_TEST_DATA
+    environment variable.
     """
     data_folder = os.path.join(os.path.dirname(__file__), "data")
     return os.path.join(data_folder, data_path)
@@ -34,12 +39,14 @@ def absolute_data_path(data_path):
 
 def temporary_dir():
     """
-    Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment variable. Defaults to /tmp
+    Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment
+    variable. Defaults to /tmp
     """
     if "CARS_TEST_TEMPORARY_DIR" not in os.environ:
+        # return default tmp dir
         return "/tmp"
-    else:
-        return os.environ["CARS_TEST_TEMPORARY_DIR"]
+    # return env defined tmp dir
+    return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
 
 def assert_same_images(actual, expected, rtol=0, atol=0):
@@ -84,4 +91,3 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
                                    expected[key].values,
                                    rtol=rtol,
                                    atol=atol)
-

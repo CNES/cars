@@ -18,6 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/utils.py
+"""
 
 import os
 import tempfile
@@ -28,24 +31,26 @@ import xarray as xr
 import fiona
 from shapely.geometry import Polygon, shape
 
-from cars import utils
 from utils import absolute_data_path, temporary_dir
+from cars import utils
 
 
 @pytest.mark.unit_tests
 def test_ncdf_can_open():
     fake_path = '/here/im/not.nc'
-    assert(not utils.ncdf_can_open(fake_path))
+    assert not utils.ncdf_can_open(fake_path)
 
 
 @pytest.mark.unit_tests
 def test_rasterio_can_open():
     """
+    Test rasterio_can_open function with existing and fake raster
     """
     existing = absolute_data_path("input/phr_ventoux/left_image.tif")
     not_existing = "/stuff/dummy_file.doe"
     assert utils.rasterio_can_open(existing)
     assert not utils.rasterio_can_open(not_existing)
+
 
 @pytest.mark.unit_tests
 def test_get_elevation_range_from_metadata():
@@ -56,11 +61,14 @@ def test_get_elevation_range_from_metadata():
 
     (min_elev, max_elev) = utils.get_elevation_range_from_metadata(img)
 
-    assert(min_elev == 632.5)
-    assert(max_elev == 1517.5)
+    assert min_elev == 632.5
+    assert max_elev == 1517.5
 
 @pytest.mark.unit_tests
 def test_otb_can_open():
+    """
+    Test otb_can_open() with different geom configurations
+    """
     # existing
     existing_with_geom = absolute_data_path("input/phr_ventoux/left_image.tif")
     # existing with no geom file
@@ -74,7 +82,11 @@ def test_otb_can_open():
 
 @pytest.mark.unit_tests
 def test_fix_shapely():
-    poly, _ = utils.read_vector(absolute_data_path("input/utils_input/poly.gpkg"))
+    """
+    Test read_vector fix shapely with poly.gpkg example
+    """
+    poly, _ = utils.read_vector(
+        absolute_data_path("input/utils_input/poly.gpkg"))
     assert poly.is_valid is False
     poly = poly.buffer(0)
     assert poly.is_valid is True
@@ -82,7 +94,9 @@ def test_fix_shapely():
 
 @pytest.mark.unit_tests
 def test_read_vector():
-
+    """
+    Test if read_vector function works with an input example
+    """
     path_to_shapefile = absolute_data_path(
         "input/utils_input/left_envelope.shp")
 
@@ -104,13 +118,16 @@ def test_read_vector():
          44.20805805252155)]
 
     # test exception
-    with pytest.raises(Exception) as e:
+    with pytest.raises(Exception) as read_error:
         utils.read_vector('test.shp')
-        assert str(e) == 'Impossible to read test.shp shapefile'
+        assert str(read_error) == 'Impossible to read test.shp shapefile'
 
 
 @pytest.mark.unit_tests
 def test_write_vector():
+    """
+    Test if write_vector function works with testing Polygons
+    """
     polys = [Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)]),
              Polygon([(2.0, 2.0), (2.0, 3.0), (3.0, 3.0), (3.0, 2.0)])]
 
@@ -128,19 +145,19 @@ def test_write_vector():
 
         assert nb_feat == 2
 
+
 @pytest.mark.unit_tests
 def test_angle_vectors():
-    # Testing vectors and angle result reference
-    v1 = [1,1,1]
-    v2 = [-1,-1,-1]
+    """
+    Testing vectors and angle result reference
+    """
+    vector_1 = [1,1,1]
+    vector_2 = [-1,-1,-1]
     angle_ref = np.pi
 
-    angle_result = utils.angle_vectors(v1, v2)
+    angle_result = utils.angle_vectors(vector_1, vector_2)
 
     assert angle_result == angle_ref
-
-
-
 
 
 @pytest.mark.unit_tests

@@ -18,16 +18,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module for cars/cluster.py
+"""
+
+from __future__ import absolute_import
+import tempfile
+from utils import temporary_dir
 
 import pytest
-import tempfile
 from cars import cluster
-from utils import temporary_dir
 
 
 @pytest.mark.unit_tests
 def test_local_cluster():
     """
+    Simple start and stop local cluster test
     """
     clus, client = cluster.start_local_cluster(4)
     cluster.stop_local_cluster(clus, client)
@@ -40,5 +46,5 @@ def test_cluster():
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         clus, client = cluster.start_cluster(2, "00:01:00", directory)
-        link = cluster.get_dashboard_link(clus)
+        __ = cluster.get_dashboard_link(clus)
         cluster.stop_cluster(clus, client)

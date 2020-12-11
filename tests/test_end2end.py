@@ -18,13 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Test module End to End:
+Prepare and Compute DSM run user tests through pipelines run() functions
+TODO: Cars_cli is not tested
+"""
 
-import pytest
+from __future__ import absolute_import
+
 import tempfile
 import os
 import json
 import math
-from shutil import copy2
+
+import pytest
+
 import pyproj
 
 import rasterio
@@ -32,7 +40,8 @@ from shapely.geometry import Polygon
 from shapely.ops import transform
 
 from utils import temporary_dir, absolute_data_path, assert_same_images
-from cars.parameters import read_input_parameters, read_preprocessing_content_file
+from cars.parameters import read_input_parameters
+from cars.parameters import read_preprocessing_content_file
 from cars import prepare
 from cars import compute_dsm
 from cars import configuration_correlator as corr_cfg
@@ -69,13 +78,17 @@ def test_end2end_ventoux_unique():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, 'r') as f:
-            preproc_data = json.load(f)
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_x"] == 612
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_y"] == 612
+        with open(preproc_json, 'r') as preproc_json_file:
+            preproc_data = json.load(preproc_json_file)
+            assert preproc_data["preprocessing"]\
+                ["output"]["epipolar_size_x"] == 612
+            assert preproc_data["preprocessing"]\
+                ["output"]["epipolar_size_y"] == 612
             assert - \
-                20 < preproc_data["preprocessing"]["output"]["minimum_disparity"] < -18
-            assert 14 < preproc_data["preprocessing"]["output"]["maximum_disparity"] < 15
+                20 < preproc_data["preprocessing"]\
+                    ["output"]["minimum_disparity"] < -18
+            assert 14 < preproc_data["preprocessing"]\
+                ["output"]["maximum_disparity"] < 15
             for img in [
                 "matches",
                 "right_epipolar_grid",
@@ -111,10 +124,14 @@ def test_end2end_ventoux_unique():
         #copy2(os.path.join(out_stereo, 'clr.tif'),
         #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                                "ref_output/clr_end2end_ventoux.tif"),
+                           rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
     # Test that we have the same results without setting the color1
@@ -156,10 +173,14 @@ def test_end2end_ventoux_unique():
             walltime="00:10:00",
             use_sec_disp=True)
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_ventoux.tif"),
+                           rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
     input_json = read_input_parameters(
@@ -203,10 +224,14 @@ def test_end2end_ventoux_unique():
             walltime="00:10:00",
             use_sec_disp=True)
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_ventoux.tif"),
+                           rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
@@ -238,14 +263,15 @@ def test_prepare_ventoux_bias():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, 'r') as f:
-            preproc_data = json.load(f)
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_x"] == 612
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_y"] == 612
-            assert - \
-                86 < preproc_data["preprocessing"]["output"]["minimum_disparity"] < -84
-            assert - \
-                46 < preproc_data["preprocessing"]["output"]["maximum_disparity"] < -44
+        with open(preproc_json, 'r') as preproc_json_file:
+            preproc_data = json.load(preproc_json_file)
+            preproc_output = preproc_data["preprocessing"]["output"]
+            assert preproc_output["epipolar_size_x"] == 612
+            assert preproc_output["epipolar_size_y"] == 612
+            assert preproc_output["minimum_disparity"] > -86
+            assert preproc_output["minimum_disparity"] < -84
+            assert preproc_output["maximum_disparity"] > -46
+            assert preproc_output["maximum_disparity"] < -44
             for img in [
                 "matches",
                 "right_epipolar_grid",
@@ -287,13 +313,15 @@ def test_end2end_ventoux_with_color():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, 'r') as f:
-            preproc_data = json.load(f)
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_x"] == 612
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_y"] == 612
-            assert - \
-                20 < preproc_data["preprocessing"]["output"]["minimum_disparity"] < -18
-            assert 14 < preproc_data["preprocessing"]["output"]["maximum_disparity"] < 15
+        with open(preproc_json, 'r') as preproc_json_file:
+            preproc_data = json.load(preproc_json_file)
+            preproc_output = preproc_data["preprocessing"]["output"]
+            assert preproc_output["epipolar_size_x"] == 612
+            assert preproc_output["epipolar_size_y"] == 612
+            assert preproc_output["minimum_disparity"] > -20
+            assert preproc_output["minimum_disparity"] < -18
+            assert preproc_output["maximum_disparity"] > 14
+            assert preproc_output["maximum_disparity"] < 15
             for img in [
                 "matches",
                 "right_epipolar_grid",
@@ -328,10 +356,14 @@ def test_end2end_ventoux_with_color():
         #copy2(os.path.join(out_stereo, 'clr.tif'),
         #      absolute_data_path("ref_output/clr_end2end_ventoux_4bands.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux_4bands.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_ventoux_4bands.tif"),
+                           rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
@@ -389,21 +421,30 @@ def test_compute_dsm_with_roi_ventoux():
 
         # Uncomment the 2 following instructions to update reference data
         #copy2(os.path.join(out_stereo, 'dsm.tif'),
-        #      absolute_data_path("ref_output/dsm_end2end_ventoux_with_roi.tif"))
+        #      absolute_data_path(
+        #      "ref_output/dsm_end2end_ventoux_with_roi.tif"))
         #copy2(os.path.join(out_stereo, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux_with_roi.tif"))
+        #      absolute_data_path(
+        #      "ref_output/clr_end2end_ventoux_with_roi.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux_with_roi.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux_with_roi.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux_with_roi.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_ventoux_with_roi.tif"),
+                           rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
         # check final bounding box
         # create reference
         [roi_xmin, roi_ymin, roi_xmax, roi_ymax] = roi
-        roi_poly = Polygon([(roi_xmin, roi_ymin), (roi_xmax, roi_ymin),
-                            (roi_xmax, roi_ymax), (roi_xmin, roi_ymax), (roi_xmin, roi_ymin)])
+        roi_poly = Polygon([(roi_xmin, roi_ymin),
+                            (roi_xmax, roi_ymin),
+                            (roi_xmax, roi_ymax),
+                            (roi_xmin, roi_ymax),
+                            (roi_xmin, roi_ymin)])
 
         project = pyproj.Transformer.from_proj(
             pyproj.Proj(
@@ -479,14 +520,20 @@ def test_compute_dsm_with_snap_to_img1():
 
         # Uncomment the 2 following instructions to update reference data
         #copy2(os.path.join(out_stereo, 'dsm.tif'),
-        #      absolute_data_path("ref_output/dsm_end2end_ventoux_with_snap_to_img1.tif"))
+        #      absolute_data_path(
+        #      "ref_output/dsm_end2end_ventoux_with_snap_to_img1.tif"))
         #copy2(os.path.join(out_stereo, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux_with_snap_to_img1.tif"))
+        #      absolute_data_path(
+        #      "ref_output/clr_end2end_ventoux_with_snap_to_img1.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux_with_snap_to_img1.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux_with_snap_to_img1.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                    "ref_output/dsm_end2end_ventoux_with_snap_to_img1.tif"),
+                               atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                    "ref_output/clr_end2end_ventoux_with_snap_to_img1.tif"),
+                    rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
@@ -522,13 +569,15 @@ def test_end2end_quality_stats():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, 'r') as f:
-            preproc_data = json.load(f)
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_x"] == 612
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_y"] == 612
-            assert - \
-                20 < preproc_data["preprocessing"]["output"]["minimum_disparity"] < -18
-            assert 14 < preproc_data["preprocessing"]["output"]["maximum_disparity"] < 15
+        with open(preproc_json, 'r') as preproc_json_file:
+            preproc_data = json.load(preproc_json_file)
+            preproc_output = preproc_data["preprocessing"]["output"]
+            assert preproc_output["epipolar_size_x"] == 612
+            assert preproc_output["epipolar_size_y"] == 612
+            assert preproc_output["minimum_disparity"] > -20
+            assert preproc_output["minimum_disparity"] < -18
+            assert preproc_output["maximum_disparity"] > 14
+            assert preproc_output["maximum_disparity"] < 15
             for img in [
                 "matches",
                 "right_epipolar_grid",
@@ -568,22 +617,36 @@ def test_end2end_quality_stats():
         #copy2(os.path.join(out_stereo, 'dsm_std.tif'),
         #      absolute_data_path("ref_output/dsm_std_end2end_ventoux.tif"))
         #copy2(os.path.join(out_stereo, 'dsm_n_pts.tif'),
-        #      absolute_data_path("ref_output/dsm_n_pts_end2end_ventoux.tif"))
+        #      absolute_data_path(
+        #      "ref_output/dsm_n_pts_end2end_ventoux.tif"))
         #copy2(os.path.join(out_stereo, 'dsm_pts_in_cell.tif'),
-        #      absolute_data_path("ref_output/dsm_pts_in_cell_end2end_ventoux.tif"))
+        #      absolute_data_path(
+        #      "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
-        assert_same_images(os.path.join(out_stereo, "dsm_mean.tif"), absolute_data_path(
-            "ref_output/dsm_mean_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "dsm_std.tif"), absolute_data_path(
-            "ref_output/dsm_std_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "dsm_n_pts.tif"), absolute_data_path(
-            "ref_output/dsm_n_pts_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "dsm_pts_in_cell.tif"), absolute_data_path(
-            "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"), atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                            "ref_output/dsm_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                            "ref_output/clr_end2end_ventoux.tif"),
+                           rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm_mean.tif"),
+                           absolute_data_path(
+                            "ref_output/dsm_mean_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "dsm_std.tif"),
+                           absolute_data_path(
+                            "ref_output/dsm_std_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "dsm_n_pts.tif"),
+                           absolute_data_path(
+                            "ref_output/dsm_n_pts_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "dsm_pts_in_cell.tif"),
+                           absolute_data_path(
+                            "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"),
+                           atol=0.0001, rtol=1e-6)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
@@ -618,13 +681,15 @@ def test_end2end_ventoux_egm96_geoid():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, 'r') as f:
-            preproc_data = json.load(f)
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_x"] == 612
-            assert preproc_data["preprocessing"]["output"]["epipolar_size_y"] == 612
-            assert - \
-                20 < preproc_data["preprocessing"]["output"]["minimum_disparity"] < -18
-            assert 14 < preproc_data["preprocessing"]["output"]["maximum_disparity"] < 15
+        with open(preproc_json, 'r') as preproc_json_file:
+            preproc_data = json.load(preproc_json_file)
+            preproc_output = preproc_data["preprocessing"]["output"]
+            assert preproc_output["epipolar_size_x"] == 612
+            assert preproc_output["epipolar_size_y"] == 612
+            assert preproc_output["minimum_disparity"] > -20
+            assert preproc_output["minimum_disparity"] < -18
+            assert preproc_output["maximum_disparity"] > 14
+            assert preproc_output["maximum_disparity"] < 15
             for img in [
                 "matches",
                 "right_epipolar_grid",
@@ -660,10 +725,14 @@ def test_end2end_ventoux_egm96_geoid():
         #copy2(os.path.join(out_stereo, 'clr.tif'),
         #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux_egm96.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux_egm96.tif"),
+                               atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_ventoux.tif"),
+                               rtol=1.e-7, atol=1.e-7)
     assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
     # Test that we have the same results without setting the color1
@@ -706,9 +775,12 @@ def test_end2end_ventoux_egm96_geoid():
             use_sec_disp=True
         )
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_ventoux_egm96.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_ventoux_egm96.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
             "ref_output/clr_end2end_ventoux.tif"), rtol=1.e-7, atol=1.e-7)
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
@@ -772,12 +844,18 @@ def test_end2end_paca_with_mask():
         # copy2(os.path.join(out_stereo, 'msk.tif'),
         #      absolute_data_path("ref_output/msk_end2end_paca.tif"))
 
-        assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-            "ref_output/dsm_end2end_paca.tif"), atol=0.0001, rtol=1e-6)
-        assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-            "ref_output/clr_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
-        assert_same_images(os.path.join(out_stereo, "msk.tif"), absolute_data_path(
-            "ref_output/msk_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                           absolute_data_path(
+                               "ref_output/dsm_end2end_paca.tif"),
+                           atol=0.0001, rtol=1e-6)
+        assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                           absolute_data_path(
+                               "ref_output/clr_end2end_paca.tif"),
+                           rtol=1.e-7, atol=1.e-7)
+        assert_same_images(os.path.join(out_stereo, "msk.tif"),
+                           absolute_data_path(
+                               "ref_output/msk_end2end_paca.tif"),
+                           rtol=1.e-7, atol=1.e-7)
 
         # Test we have the same results with multiprocessing
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -828,9 +906,15 @@ def test_end2end_paca_with_mask():
             # copy2(os.path.join(out_stereo, 'msk.tif'),
             #      absolute_data_path("ref_output/msk_end2end_paca.tif"))
 
-            assert_same_images(os.path.join(out_stereo, "dsm.tif"), absolute_data_path(
-                "ref_output/dsm_end2end_paca.tif"), atol=0.0001, rtol=1e-6)
-            assert_same_images(os.path.join(out_stereo, "clr.tif"), absolute_data_path(
-                "ref_output/clr_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
-            assert_same_images(os.path.join(out_stereo, "msk.tif"), absolute_data_path(
-                "ref_output/msk_end2end_paca.tif"), rtol=1.e-7, atol=1.e-7)
+            assert_same_images(os.path.join(out_stereo, "dsm.tif"),
+                               absolute_data_path(
+                                   "ref_output/dsm_end2end_paca.tif"),
+                               atol=0.0001, rtol=1e-6)
+            assert_same_images(os.path.join(out_stereo, "clr.tif"),
+                               absolute_data_path(
+                                   "ref_output/clr_end2end_paca.tif"),
+                               rtol=1.e-7, atol=1.e-7)
+            assert_same_images(os.path.join(out_stereo, "msk.tif"),
+                               absolute_data_path(
+                                   "ref_output/msk_end2end_paca.tif"),
+                               rtol=1.e-7, atol=1.e-7)

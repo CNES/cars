@@ -20,19 +20,20 @@
 #
 
 """
-This module contains functions used during preprocessing step of cars (sub-command prepare)
+Preprocessing module:
+contains functions used during cars prepare pipeline step of cars
 """
 
 # Standard imports
+from __future__ import absolute_import
 import math
 import logging
-from typing import Union, List, Tuple
+from typing import Union, Tuple
 
 # Third party imports
 import numpy as np
 import rasterio as rio
 from affine import Affine
-from scipy import stats
 from scipy import interpolate
 from scipy.signal import butter, lfilter, filtfilt, lfilter_zi
 import xarray as xr
@@ -45,74 +46,13 @@ from cars import constants as cst
 from cars import projection
 from cars import utils
 
-def generate_epipolar_grids(img1, img2, srtm_dir=None, default_alt=None, epi_step=30):
+def dataset_matching(ds1, ds2, matching_threshold = 0.6, n_octave = 8,
+                     n_scale_per_octave = 3, dog_threshold = 20,
+                     edge_threshold = 5, magnification = 2.0,
+                     backmatching = True):
     """
-    Generate epipolar resampling grids as xarray.Dataset from a pair of images and srtm_dir
-
-    :param img1: Path to the left image
-    :type img1: string
-    :param img2: Path to right image
-    :type img2: string
-    :param srtm_dir: Path to folder containing SRTM tiles
-    :type srtm_dir: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    :epi_step: Step of the resampling grid
-    :epi_step: float
-    :return: left_grid_dataset, right_grid_dataset containing the resampling grids
-    :rtypes: (xarray.Dataset, xarray.Dataset)
-    """
-    grid1, grid2, epipolar_size_x, epipolar_size_y, baseline, stereogrid_pipeline = pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
-
-    # Export grids to numpy
-    left_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray("io.outleft"))
-    right_grid_as_array = np.copy(
-        stereogrid_pipeline["stereo_app"].GetVectorImageAsNumpyArray("io.outright"))
-
-    col = np.array(range(0, left_grid_as_array.shape[0] * epi_step, epi_step))
-    row = np.array(range(0, left_grid_as_array.shape[1] * epi_step, epi_step))
-
-    left_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
-                                           cst.COL],
-                                          left_grid_as_array[:,
-                                                             :,
-                                                             0]),
-                                    cst.Y: ([cst.ROW,
-                                           cst.COL],
-                                          left_grid_as_array[:,
-                                                             :,
-                                                             1])},
-                                   coords={cst.ROW: row,
-                                           cst.COL: col},
-                                   attrs={"epi_step": epi_step,
-                                          "epipolar_size_x": epipolar_size_x,
-                                          "epipolar_size_y": epipolar_size_y})
-
-    right_grid_dataset = xr.Dataset({cst.X: ([cst.ROW,
-                                            cst.COL],
-                                           right_grid_as_array[:,
-                                                               :,
-                                                               0]),
-                                     cst.Y: ([cst.ROW,
-                                            cst.COL],
-                                           right_grid_as_array[:,
-                                                               :,
-                                                               1])},
-                                    coords={cst.ROW: row,
-                                            cst.COL: col},
-                                    attrs={"epi_step": epi_step,
-                                           "epipolar_size_x": epipolar_size_x,
-                                           "epipolar_size_y": epipolar_size_y})
-    return left_grid_dataset, right_grid_dataset, epipolar_size_x, epipolar_size_y, baseline
-
-
-def dataset_matching(ds1, ds2, matching_threshold=0.6, n_octave=8,
-                     n_scale_per_octave=3, dog_threshold=20,
-                     edge_threshold=5, magnification=2.0, backmatching=True):
-    """
-    Compute sift matches between two datasets produced by stereo.epipolar_rectify_images
+    Compute sift matches between two datasets
+    produced by stereo.epipolar_rectify_images
 
     :param ds1: Left image dataset
     :type ds1: xarray.Dataset as produced by stereo.epipolar_rectify_images
@@ -182,7 +122,8 @@ def dataset_matching(ds1, ds2, matching_threshold=0.6, n_octave=8,
 
 def remove_epipolar_outliers(matches, percent=0.1):
     """
-    This function will filter the match vector according to a quantile of epipolar error
+    This function will filter the match vector
+    according to a quantile of epipolar error
 
     :param matches: the [4,N] matches array
     :type matches: numpy array
@@ -206,7 +147,8 @@ def remove_epipolar_outliers(matches, percent=0.1):
 
 def compute_disparity_range(matches, percent=0.1):
     """
-    This function will compute the disparity range from matches by filtering percent outliers
+    This function will compute the disparity range
+    from matches by filtering percent outliers
 
     :param matches: the [4,N] matches array
     :type matches: numpy array
@@ -262,29 +204,38 @@ def correct_right_grid(matches, grid, origin, spacing):
     source_points[:, :, 1] += y_values_2d
 
     # Extract matches for convenience
-    x1 = matches[:, 0]
-    y1 = matches[:, 1]
-    x2 = matches[:, 2]
-    y2 = matches[:, 3]
+    matches_y1 = matches[:, 1]
+    matches_x2 = matches[:, 2]
+    matches_y2 = matches[:, 3]
 
     # Map real matches to sensor geometry
-    sensor_matches_raw_x = interpolate.griddata((np.ravel(x_values_2d), np.ravel(
-        y_values_2d)), np.ravel(source_points[:, :, 0]), (x2, y2))
-    sensor_matches_raw_y = interpolate.griddata((np.ravel(x_values_2d), np.ravel(
-        y_values_2d)), np.ravel(source_points[:, :, 1]), (x2, y2))
+    sensor_matches_raw_x = interpolate.griddata((
+        np.ravel(x_values_2d),
+        np.ravel(y_values_2d)),
+        np.ravel(source_points[:, :, 0]), (matches_x2, matches_y2))
+
+    sensor_matches_raw_y = interpolate.griddata((
+        np.ravel(x_values_2d),
+        np.ravel(y_values_2d)),
+        np.ravel(source_points[:, :, 1]), (matches_x2, matches_y2))
 
     # Simulate matches that have no epipolar error (i.e. y2 == y1) and map
     # them to sensor geometry
-    sensor_matches_perfect_x = interpolate.griddata((np.ravel(x_values_2d), np.ravel(
-        y_values_2d)), np.ravel(source_points[:, :, 0]), (x2, y1))
-    sensor_matches_perfect_y = interpolate.griddata((np.ravel(x_values_2d), np.ravel(
-        y_values_2d)), np.ravel(source_points[:, :, 1]), (x2, y1))
+    sensor_matches_perfect_x = interpolate.griddata((
+        np.ravel(x_values_2d),
+        np.ravel(y_values_2d)),
+        np.ravel(source_points[:, :, 0]), (matches_x2, matches_y1))
+
+    sensor_matches_perfect_y = interpolate.griddata((
+        np.ravel(x_values_2d),
+        np.ravel(y_values_2d)),
+        np.ravel(source_points[:, :, 1]), (matches_x2, matches_y1))
 
     # Compute epipolar error in sensor geometry in both direction
     epipolar_error_x = sensor_matches_perfect_x - sensor_matches_raw_x
     epipolar_error_y = sensor_matches_perfect_y - sensor_matches_raw_y
 
-    # Ouptut epipolar error stats for monitoring
+    # Output epipolar error stats for monitoring
     mean_epipolar_error = [
         np.mean(epipolar_error_x),
         np.mean(epipolar_error_y)]
@@ -313,7 +264,12 @@ def correct_right_grid(matches, grid, origin, spacing):
         "rmsd_epipolar_error": rmsd_epipolar_error}
 
     logging.debug(
-        "Epipolar error before correction: \nx    = {:.3f} +/- {:.3f} pixels \ny    = {:.3f} +/- {:.3f} pixels \nrmse = {:.3f} +/- {:.3f} pixels \nmedianx = {:.3f} pixels \nmediany = {:.3f} pixels".format(
+        "Epipolar error before correction: \n"
+        "x    = {:.3f} +/- {:.3f} pixels \n"
+        "y    = {:.3f} +/- {:.3f} pixels \n"
+        "rmse = {:.3f} +/- {:.3f} pixels \n"
+        "medianx = {:.3f} pixels \n"
+        "mediany = {:.3f} pixels".format(
             mean_epipolar_error[0],
             std_epipolar_error[0],
             mean_epipolar_error[1],
@@ -324,20 +280,20 @@ def correct_right_grid(matches, grid, origin, spacing):
             median_epipolar_error[1]))
 
     # Perform bilinear regression for both component of epipolar error
-    lstsq_input = np.array([x2 * 0 + 1, x2, y2]).T
-    coefsx, rx, rankx, sx = np.linalg.lstsq(
+    lstsq_input = np.array([matches_x2 * 0 + 1, matches_x2, matches_y2]).T
+    coefsx, residx, __, __ = np.linalg.lstsq(
         lstsq_input, epipolar_error_x, rcond=None)
-    coefsy, ry, ranky, sy = np.linalg.lstsq(
+    coefsy, residy, __, __ = np.linalg.lstsq(
         lstsq_input, epipolar_error_y, rcond=None)
 
     # Normalize residuals by number of matches
-    rmsex = np.sqrt(rx / matches.shape[0])
-    rmsey = np.sqrt(ry / matches.shape[1])
+    rmsex = np.sqrt(residx / matches.shape[0])
+    rmsey = np.sqrt(residy / matches.shape[1])
 
     logging.debug(
-        "Root Mean Square Error of correction estimation: rmsex={} pixels, rmsey={} pixels".format(
-            rmsex,
-            rmsey))
+        "Root Mean Square Error of correction estimation:"
+        "rmsex={} pixels, rmsey={} pixels".format(
+            rmsex, rmsey))
 
     # Reshape coefs to 2D (expected by np.polynomial.polyval2d)
     coefsx_2d = np.ndarray((2, 2))
@@ -366,15 +322,23 @@ def correct_right_grid(matches, grid, origin, spacing):
 
     # Map corrected matches to sensor geometry
     sensor_matches_corrected_x = sensor_matches_raw_x + \
-        np.polynomial.polynomial.polyval2d(x2, y2, coefsx_2d)
+        np.polynomial.polynomial.polyval2d(matches_x2, matches_y2, coefsx_2d)
     sensor_matches_corrected_y = sensor_matches_raw_y + \
-        np.polynomial.polynomial.polyval2d(x2, y2, coefsy_2d)
+        np.polynomial.polynomial.polyval2d(matches_x2, matches_y2, coefsy_2d)
 
     # Map corrected matches to epipolar geometry
-    epipolar_matches_corrected_x = interpolate.griddata((np.ravel(source_points[:, :, 0]), np.ravel(
-        source_points[:, :, 1])), np.ravel(x_values_2d), (sensor_matches_corrected_x, sensor_matches_corrected_y))
-    epipolar_matches_corrected_y = interpolate.griddata((np.ravel(source_points[:, :, 0]), np.ravel(
-        source_points[:, :, 1])), np.ravel(y_values_2d), (sensor_matches_corrected_x, sensor_matches_corrected_y))
+    epipolar_matches_corrected_x = interpolate.griddata((
+        np.ravel(source_points[:, :, 0]),
+        np.ravel(source_points[:, :, 1])),
+        np.ravel(x_values_2d),
+        (sensor_matches_corrected_x, sensor_matches_corrected_y)
+    )
+    epipolar_matches_corrected_y = interpolate.griddata((
+        np.ravel(source_points[:, :, 0]),
+        np.ravel(source_points[:, :, 1])),
+        np.ravel(y_values_2d),
+        (sensor_matches_corrected_x, sensor_matches_corrected_y)
+    )
 
     corrected_matches = np.copy(matches)
     corrected_matches[:, 2] = epipolar_matches_corrected_x
@@ -382,8 +346,10 @@ def correct_right_grid(matches, grid, origin, spacing):
 
     # Compute epipolar error in sensor geometry in both direction after
     # correction
-    corrected_epipolar_error_x = sensor_matches_perfect_x - sensor_matches_corrected_x
-    corrected_epipolar_error_y = sensor_matches_perfect_y - sensor_matches_corrected_y
+    corrected_epipolar_error_x =\
+        sensor_matches_perfect_x - sensor_matches_corrected_x
+    corrected_epipolar_error_y =\
+        sensor_matches_perfect_y - sensor_matches_corrected_y
 
     # Ouptut corrected epipolar error stats for monitoring
     mean_corrected_epipolar_error = [
@@ -416,7 +382,12 @@ def correct_right_grid(matches, grid, origin, spacing):
         "rmsd_epipolar_error": rmsd_corrected_epipolar_error}
 
     logging.debug(
-        "Epipolar error after  correction: \nx    = {:.3f} +/- {:.3f} pixels \ny    = {:.3f} +/- {:.3f} pixels \nrmse = {:.3f} +/- {:.3f} pixels \nmedianx = {:.3f} pixels \nmediany = {:.3f} pixels".format(
+        "Epipolar error after  correction: \n"
+        "x    = {:.3f} +/- {:.3f} pixels \n"
+        "y    = {:.3f} +/- {:.3f} pixels \n"
+        "rmse = {:.3f} +/- {:.3f} pixels \n"
+        "medianx = {:.3f} pixels \n"
+        "mediany = {:.3f} pixels".format(
             mean_corrected_epipolar_error[0],
             std_corrected_epipolar_error[0],
             mean_corrected_epipolar_error[1],
@@ -445,20 +416,19 @@ def write_grid(grid, fname, origin, spacing):
     """
 
     geotransform = (
-        origin[0] -
-        0.5 *
-        spacing[0],
+        origin[0] - 0.5 * spacing[0],
         spacing[0],
         0.0,
-        origin[1] -
-        0.5 *
-        spacing[1],
+        origin[1] - 0.5 * spacing[1],
         0.0,
         spacing[1])
 
     transform = Affine.from_gdal(*geotransform)
 
-    with rio.open(fname, 'w', height=grid.shape[0], width=grid.shape[1], count=2, driver='GTiff', dtype=grid.dtype, transform=transform) as dst:
+    with rio.open(fname, 'w', height=grid.shape[0],
+                  width=grid.shape[1], count=2, driver='GTiff',
+                  dtype=grid.dtype, transform=transform)\
+        as dst:
         dst.write_band(1, grid[:, :, 0])
         dst.write_band(2, grid[:, :, 1])
 
@@ -494,13 +464,16 @@ def image_envelope(img, shp, dem=None, default_alt=None):
     app.ExecuteAndWriteOutput()
 
 
-def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, resolution = 0.000277777777778):
+def read_lowres_dem(startx, starty, sizex, sizey,
+                    dem=None, default_alt=None,
+                    resolution = 0.000277777777778):
     """
     Read an extract of the low resolution input DSM and return it as an Array
 
     :param startx: Upper left x coordinate for grid in WGS84
     :type startx: float
-    :param starty: Upper left y coordinate for grid in WGS84 (remember that values are decreasing in y axis)
+    :param starty: Upper left y coordinate for grid in WGS84
+        (remember that values are decreasing in y axis)
     :type starty: float
     :param sizex: Size of grid in x direction
     :type sizex: int
@@ -543,41 +516,51 @@ def read_lowres_dem(startx, starty, sizex, sizey, dem=None, default_alt=None, re
     dims = [cst.Y, cst.X]
     coords = {cst.X: x_values_1d,
               cst.Y: y_values_1d}
-    dsm_as_ds = xr.Dataset({cst.RASTER_HGT: (dims, dem_as_array)}, coords=coords)
+    dsm_as_ds =\
+        xr.Dataset({cst.RASTER_HGT: (dims, dem_as_array)}, coords=coords)
     dsm_as_ds[cst.EPSG] = 4326
     dsm_as_ds[cst.RESOLUTION] = resolution
 
     return dsm_as_ds
 
-def get_time_ground_direction(img:str, x:float=None, y:float=None,
-                              y_offset:float=None, dem:str = None) -> np.ndarray:
+def get_time_ground_direction(
+    img:str, x_loc:float=None, y_loc:float=None,
+    y_offset:float=None, dem:str = None)-> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
     time on ground.
     Done by two "img" localizations at "y" and "y+y_offset" values.
 
     :param img: Path to an image
-    :param x: x location in image for estimation (default=center)
-    :param y: y location in image for estimation (default=1/4)
+    :param x_loc: x location in image for estimation (default=center)
+    :param y_loc: y location in image for estimation (default=1/4)
     :param y_offset: y location in image for estimation (default=1/2)
     :param dem: DEM for direct localisation function
     :return: normalized direction vector as a numpy array
     """
-    # Define x: image center, y: 1/4 of image, y_offset: 3/4 of image if not defined
+    # Define x: image center,
+    #        y: 1/4 of image,
+    # y_offset: 3/4 of image if not defined
     img_size_x, img_size_y = utils.rasterio_get_size(img)
-    if x is None : x = img_size_x/2
-    if y is None : y = img_size_y/4
-    if y_offset is None : y_offset = img_size_y/2
+    if x_loc is None:
+        x_loc = img_size_x/2
+    if y_loc is None:
+        y_loc = img_size_y/4
+    if y_offset is None:
+        y_offset = img_size_y/2
 
     # Check x, y, y_offset to be in image
-    assert x >= 0 and x <= img_size_x
-    assert y >= 0 and y <= img_size_y
-    assert y_offset >0 and y <= img_size_y
+    assert x_loc >= 0
+    assert x_loc <= img_size_x
+    assert y_loc >= 0
+    assert y_loc <= img_size_y
+    assert y_offset > 0
+    assert y_loc + y_offset <= img_size_y
 
     # Get first coordinates of time direction vector
-    lat1, lon1, alt1 = sensor_to_geo(img, x, y, dem=dem)
+    lat1, lon1, __ = sensor_to_geo(img, x_loc, y_loc, dem=dem)
     # Get second coordinates of time direction vector
-    lat2, lon2, alt2 = sensor_to_geo(img, x, y+y_offset, dem=dem)
+    lat2, lon2, __ = sensor_to_geo(img, x_loc, y_loc+y_offset, dem=dem)
 
     # Create and normalize the time direction vector
     vec = np.array([lon1-lon2, lat1-lat2])
@@ -585,8 +568,9 @@ def get_time_ground_direction(img:str, x:float=None, y:float=None,
 
     return vec
 
-def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:str=None,
-                  default_elevation:float=None) -> np.ndarray:
+def sensor_to_geo(
+    img:str, x_coord:float, y_coord:float, z_coord:float=None, dem:str=None,
+    geoid:str=None, default_elevation:float=None) -> np.ndarray:
     """
     For a given image point, compute the latitude, longitude, altitude
 
@@ -597,9 +581,9 @@ def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:s
     Advice: to be sure, use x,y,z inputs only
 
     :param img: Path to an image
-    :param x: X Coordinate in input image sensor
-    :param y: Y Coordinate in input image sensor
-    :param z: Z Altitude coordinate to take the image
+    :param x_coord: X Coordinate in input image sensor
+    :param y_coord: Y Coordinate in input image sensor
+    :param z_coord: Z Altitude coordinate to take the image
     :param dem: if z not defined, take this DEM directory input
     :param geoid: if z and dem not defined, take GEOID directory input
     :param elevation: if z, dem, geoid not defined, take default elevation
@@ -608,18 +592,18 @@ def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:s
     s2c_app = otb.Registry.CreateApplication("ConvertSensorToGeoPointFast")
 
     s2c_app.SetParameterString('in', img)
-    s2c_app.SetParameterFloat('input.idx', x)
-    s2c_app.SetParameterFloat('input.idy', y)
+    s2c_app.SetParameterFloat('input.idx', x_coord)
+    s2c_app.SetParameterFloat('input.idy', y_coord)
 
-    if z is not None:
-        s2c_app.SetParameterFloat("input.idz", z)
+    if z_coord is not None:
+        s2c_app.SetParameterFloat("input.idz", z_coord)
     elif dem is not None:
         s2c_app.SetParameterString("elevation.dem", dem)
     elif geoid is not None:
         s2c_app.SetParameterString("elevation.geoid", geoid)
     elif default_elevation is not None:
         s2c_app.SetParameterFloat("elevation.default", default_elevation)
-    #else the ConvertSensorToGeoPointFast will have only X, Y and OTB configured GEOID
+    #else ConvertSensorToGeoPointFast have only X, Y and OTB configured GEOID
 
     s2c_app.Execute()
 
@@ -629,8 +613,8 @@ def sensor_to_geo(img:str, x:float, y:float, z:float=None, dem:str=None, geoid:s
 
     return np.array([lat, lon , alt ])
 
-def get_ground_direction(img:str, x:float=None, y:float=None,
-                         z0:float=None, z:float=None )->np.ndarray:
+def get_ground_direction(img:str, x_coord:float=None, y_coord:float=None,
+                         z0_coord:float=None, z_coord:float=None )->np.ndarray:
     """
     For a given image (x,y) point, compute the direction vector to ground
     The function use sensor_to_geo and make a z variation to get
@@ -647,91 +631,116 @@ def get_ground_direction(img:str, x:float=None, y:float=None,
     """
     # Define x, y in image center if not defined
     img_size_x, img_size_y = utils.rasterio_get_size(img)
-    if x is None : x = img_size_x/2
-    if y is None : y = img_size_y/2
+    if x_coord is None:
+        x_coord = img_size_x/2
+    if y_coord is None:
+        y_coord = img_size_y/2
     # Check x, y to be in image
-    assert x >= 0 and x <= img_size_x
-    assert y >= 0 and y <= img_size_y
+    assert x_coord >= 0
+    assert x_coord <= img_size_x
+    assert y_coord >= 0
+    assert y_coord <= img_size_y
 
     # Define z and z0 from img RPC constraints if not defined
     (min_alt, max_alt) = utils.get_elevation_range_from_metadata(img)
-    if z0 is None: z0 = min_alt
-    if z is None: z = max_alt
+    if z0_coord is None:
+        z0_coord = min_alt
+    if z_coord is None:
+        z_coord = max_alt
     # Check z0 and z to be in RPC constraints
-    assert z0 >= min_alt and z0 <= max_alt
-    assert z  >= min_alt and z  <= max_alt
+    assert z0_coord >= min_alt
+    assert z0_coord <= max_alt
+    assert z_coord >= min_alt
+    assert z_coord <= max_alt
 
     # Get origin vector coordinate with z0 altitude
-    lat0, lon0, alt0 = sensor_to_geo(img, x, y ,z=z0)
+    lat0, lon0, alt0 = sensor_to_geo(img, x_coord, y_coord ,z_coord=z0_coord)
     # Get end vector coordinate with z altitude
-    lat, lon, alt = sensor_to_geo(img, x, y, z=z)
+    lat, lon, alt = sensor_to_geo(img, x_coord, y_coord, z_coord=z_coord)
 
     return np.array([lat0, lon0, alt0, lat, lon, alt])
 
-def get_ground_angles(img1:str, img2:str,
-                      x1:float=None, y1:float=None, z1_0:float=None, z1:float=None,
-                      x2:float=None, y2:float=None, z2_0:float=None, z2:float=None )\
-                   -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+def get_ground_angles(
+        img1:str, img2:str,
+        x1_coord:float=None, y1_coord:float=None,
+        z1_0_coord:float=None, z1_coord:float=None,
+        x2_coord:float=None, y2_coord:float=None,
+        z2_0_coord:float=None, z2_coord:float=None )\
+    -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
     """
     For a given image (x,y) point, compute the Azimuth angle,
     Elevation angle (not the altitude !) and Range from Ground z0 perspective
     for both stereo image (img1: left and img2: right)
 
-    Calculate also the convergence angle: Angle between the two satellites from ground.
+    Calculate also the convergence angle between the two satellites from ground.
 
     The function use get_ground_direction function to have coordinates of
     ground direction vector and compute angles and range.
 
     Ref: Jeong, Jaehoon. (2017).
-    IMAGING GEOMETRY AND POSITIONING ACCURACY OF DUAL SATELLITE STEREO IMAGES: A REVIEW.
-    ISPRS Annals of Photogrammetry, Remote Sensing and Spatial Information Sciences.
+    IMAGING GEOMETRY AND POSITIONING ACCURACY OF DUAL SATELLITE STEREO IMAGES:
+    A REVIEW. ISPRS Annals of Photogrammetry, Remote Sensing and Spatial
+    Information Sciences.
     IV-2/W4. 235-242. 10.5194/isprs-annals-IV-2-W4-235-2017.
-    https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/IV-2-W4/235/2017/isprs-annals-IV-2-W4-235-2017.pdf
 
     Perspectives: get bisector  elevation (BIE), and asymmetry angle
 
     :param img1: Path to left image1
     :param img2: Path to right image2
-    :param x1: X Coordinate in input left image1  sensor
-    :param y1: Y Coordinate in input left image1 sensor
-    :param z1_0: Left image1 Z altitude origin coordinate for ground direction vector
-    :param z1:  Left image1 Z altitude end coordinate for ground direction vector
-    :param x2: X Coordinate in input right image2 sensor
-    :param y2: Y Coordinate in input right image2 sensor
-    :param z2_0: Right image2 Z altitude origin coordinate for ground direction vector
-    :param z2: Right image2 Z altitude end coordinate for ground direction vector
-    :return: Left Azimuth, Left Elevation Angle, Right Azimuth, Right Elevation Angle, Convergence Angle
+    :param x1_coord: X Coordinate in input left image1  sensor
+    :param y1_coord: Y Coordinate in input left image1 sensor
+    :param z1_0_coord: Left image1 Z altitude origin coordinate
+        for ground direction vector
+    :param z1_coord:  Left image1 Z altitude end coordinate
+        for ground direction vector
+    :param x2_coord: X Coordinate in input right image2 sensor
+    :param y2_coord: Y Coordinate in input right image2 sensor
+    :param z2_0_coord: Right image2 Z altitude origin coordinate
+        for ground direction vector
+    :param z2_coord: Right image2 Z altitude end coordinate
+        for ground direction vector
+    :return: Left Azimuth, Left Elevation Angle,
+            Right Azimuth, Right Elevation Angle, Convergence Angle
     """
 
     # Get image1 <-> satellite vector from image2 metadata geometric model
-    lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(img1, x1, y1, z1_0, z1)
+    lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 =\
+        get_ground_direction(img1, x1_coord, y1_coord, z1_0_coord, z1_coord)
     # Get East North Up vector for left image1
-    x1_e, y1_n, y1_u = enu1 = projection.geo_to_enu(lat1, lon1, alt1, lat1_0, lon1_0, alt1_0)
-    # Convert vector to Azimuth, Elevation, Range
-    az1, elev_angle1, range1 = projection.enu_to_aer(x1_e, y1_n, y1_u)
+    x1_e, y1_n, y1_u = enu1 =\
+        projection.geo_to_enu(lat1, lon1, alt1, lat1_0, lon1_0, alt1_0)
+    # Convert vector to Azimuth, Elevation, Range (unused)
+    az1, elev_angle1, __ =\
+        projection.enu_to_aer(x1_e, y1_n, y1_u)
 
     # Get image2 <-> satellite vector from image2 metadata geometric model
-    lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(img2, x2, y2, z2_0, z2)
+    lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 =\
+        get_ground_direction(img2, x2_coord, y2_coord, z2_0_coord, z2_coord)
     # Get East North Up vector for right image2
-    x2_e, y2_n, y2_u = enu2 = projection.geo_to_enu(lat2, lon2, alt2, lat2_0, lon2_0, alt2_0)
-    # Convert ENU to Azimuth, Elevation, Range
-    az2, elev_angle2, range2 = projection.enu_to_aer(x2_e, y2_n, y2_u)
+    x2_e, y2_n, y2_u = enu2 =\
+        projection.geo_to_enu(lat2, lon2, alt2, lat2_0, lon2_0, alt2_0)
+    # Convert ENU to Azimuth, Elevation, Range (unused)
+    az2, elev_angle2, __ = projection.enu_to_aer(x2_e, y2_n, y2_u)
 
     # Get convergence angle from two enu vectors.
     convergence_angle=np.degrees(utils.angle_vectors(enu1, enu2))
 
     return az1, elev_angle1, az2, elev_angle2, convergence_angle
 
-def project_coordinates_on_line(x:Union[float, np.ndarray], y:Union[float, np.ndarray], origin:np.ndarray, vec:np.ndarray) -> np.ndarray:
+def project_coordinates_on_line(
+        x_coord: Union[float, np.ndarray],
+        y_coord: Union[float, np.ndarray],
+        origin:np.ndarray,
+        vec:np.ndarray) -> np.ndarray:
     """
     Project coordinates (x,y) on a line starting from origin with a
     direction vector vec, and return the euclidean distances between
     projected points and origin.
 
-    :param x: scalar or vector of coordinates x
-    :type x: float or np.array(float) of shape [n]
-    :param y: scalar or vector of coordinates x
-    :type y: float or np.array(float) of shape [n]
+    :param x_coord: scalar or vector of coordinates x
+    :type x_coord: float or np.array(float) of shape [n]
+    :param y_coord: scalar or vector of coordinates x
+    :type y_coord: float or np.array(float) of shape [n]
     :param origin: coordinates of origin point for line
     :type origin: list(float) or np.array(float) of size 2
     :param vec: direction vector of line
@@ -739,52 +748,62 @@ def project_coordinates_on_line(x:Union[float, np.ndarray], y:Union[float, np.nd
     :return: vector of distances of projected points to origin
     :rtype: numpy array of float
     """
-    assert len(x) == len(y)
+    assert len(x_coord) == len(y_coord)
     assert len(origin) == 2
     assert len(vec) == 2
 
     vec_angle = math.atan2(vec[1],vec[0])
-    point_angle = np.arctan2(y-origin[1], x-origin[0])
+    point_angle = np.arctan2(y_coord-origin[1], x_coord-origin[0])
     proj_angle = point_angle - vec_angle
-    dist_to_origin = np.sqrt(np.square(x-origin[0]) + np.square(y-origin[1]))
+    dist_to_origin = np.sqrt(\
+        np.square(x_coord-origin[0]) + np.square(y_coord-origin[1]))
 
     return dist_to_origin*np.cos(proj_angle)
 
 
 def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
                                    lowres_initial_dem: xr.Dataset,
-                                   origin:np.ndarray,
+                                   origin: np.ndarray,
                                    time_direction_vector: np.ndarray,
-                                   ext:int = 3,
-                                   order:int = 3):
+                                   ext: int = 3,
+                                   order: int = 3):
     """
     This function takes 2 datasets containing DSM and models the
     difference between the two as an UnivariateSpline along the
     direction given by origin and time_direction_vector. Internally,
     it looks for the highest smoothing factor that satisfies the rmse threshold.
 
-    :param lowres_dsm_from_matches: Dataset containing the low resolution DSM obtained from matches, as returned by the rasterization.simple_rasterization_dataset function.
-    :type lowres_dsm_from_matches: xr.Dataset
-    :param lowres_initial_dem: Dataset containing the low resolution DEM, obtained by read_lowres_dem function, on the same grid as lowres_dsm_from_matches
-    :type lowres_initial_dem: xr.Dataset
+    :param lowres_dsm_from_matches: Dataset containing the low resolution DSM
+        obtained from matches, as returned by the
+        rasterization.simple_rasterization_dataset function.
+    :param lowres_initial_dem: Dataset containing the low resolution DEM,
+        obtained by read_lowres_dem function,
+        on the same grid as lowres_dsm_from_matches
     :param origin: coordinates of origin point for line
     :type origin: list(float) or np.array(float) of size 2
     :param time_direction_vector: direction vector of line
     :type time_direction_vector: list(float) or np.array(float) of size 2
     :param ext: behavior outside of interpolation domain
+    :param order: spline order
     """
     # Initial DSM difference
-    dsm_diff = lowres_initial_dem.hgt-lowres_dsm_from_matches.hgt
+    dsm_diff = lowres_initial_dem.hgt - lowres_dsm_from_matches.hgt
 
     # Form arrays of coordinates
     x_values_2d, y_values_2d = np.meshgrid(dsm_diff.x, dsm_diff.y)
 
-    # Project coordinates on the line of increasing acquisition time to form 1D coordinates
+    # Project coordinates on the line
+    # of increasing acquisition time to form 1D coordinates
     # If there are sensor oscillations, they will occur in this direction
-    linear_coords = project_coordinates_on_line(x_values_2d, y_values_2d, origin, time_direction_vector)
+    linear_coords = project_coordinates_on_line(x_values_2d, y_values_2d,
+                                                origin, time_direction_vector)
 
     # Form a 1D array with diff values indexed with linear coords
-    linear_diff_array = xr.DataArray(dsm_diff.values.ravel(), coords={"l" : linear_coords.ravel()}, dims = ("l"))
+    linear_diff_array = xr.DataArray(
+        dsm_diff.values.ravel(),
+        coords={"l" : linear_coords.ravel()},
+        dims = ("l")
+    )
     linear_diff_array = linear_diff_array.dropna(dim='l')
     linear_diff_array = linear_diff_array.sortby('l')
 
@@ -792,51 +811,79 @@ def lowres_initial_dem_splines_fit(lowres_dsm_from_matches: xr.Dataset,
     min_l = np.min(linear_diff_array.l)
     max_l = np.max(linear_diff_array.l)
     nbins = int(math.ceil((max_l-min_l)/(lowres_dsm_from_matches.resolution)))
-    median_linear_diff_array = linear_diff_array.groupby_bins('l',nbins).median()
+    median_linear_diff_array =\
+        linear_diff_array.groupby_bins('l',nbins).median()
     median_linear_diff_array = median_linear_diff_array.rename({'l_bins': 'l'})
-    median_linear_diff_array = median_linear_diff_array.assign_coords({'l' : np.array([d.mid for d in median_linear_diff_array.l.data])})
+    median_linear_diff_array = median_linear_diff_array.assign_coords(
+        {'l' : np.array([d.mid for d in median_linear_diff_array.l.data])})
 
-    count_linear_diff_array = linear_diff_array.groupby_bins('l',nbins).count()
+    count_linear_diff_array = linear_diff_array.groupby_bins('l', nbins).count()
     count_linear_diff_array = count_linear_diff_array.rename({'l_bins': 'l'})
-    count_linear_diff_array = count_linear_diff_array.assign_coords({'l' : np.array([d.mid for d in count_linear_diff_array.l.data])})
+    count_linear_diff_array = count_linear_diff_array.assign_coords(
+        {'l' : np.array([d.mid for d in count_linear_diff_array.l.data])})
 
     # Filter measurements with insufficient amount of points
-    median_linear_diff_array = median_linear_diff_array.where(count_linear_diff_array > 100).dropna(dim='l')
+    median_linear_diff_array = median_linear_diff_array.where(
+        count_linear_diff_array > 100).dropna(dim='l')
 
     if len(median_linear_diff_array) < 100:
-        logging.warning('Insufficient amount of points along time direction after measurements filtering to estimate correction to fit initial DEM')
+        logging.warning("Insufficient amount of points along time direction "
+                        "after measurements filtering to estimate correction "
+                        "to fit initial DEM")
         return None
 
     # Apply butterworth lowpass filter to retrieve only the low frequency
-    # (from example of doc: https://docs.scipy.org/doc/scipy/reference/generated/scipy.signal.butter.html#scipy.signal.butter )
+    # (from example of doc: https://docs.scipy.org/doc/scipy/reference/
+    # generated/scipy.signal.butter.html#scipy.signal.butter )
     b, a = butter(3, 0.05)
-    zi = lfilter_zi(b, a)
-    z, _ = lfilter(b, a, median_linear_diff_array.values, zi=zi*median_linear_diff_array.values[0])
-    z2, _ = lfilter(b, a, z, zi=zi*z[0])
-    filtered_median_linear_diff_array = xr.DataArray(filtfilt(b, a,median_linear_diff_array.values),coords=median_linear_diff_array.coords)
-
+    zi_filter  = lfilter_zi(b, a)
+    z_filter, _ = lfilter(b, a,
+        median_linear_diff_array.values,
+        zi=zi_filter*median_linear_diff_array.values[0])
+    lfilter(b, a, z_filter, zi = zi_filter*z_filter[0])
+    filtered_median_linear_diff_array = xr.DataArray(
+        filtfilt(b, a,median_linear_diff_array.values),
+        coords=median_linear_diff_array.coords
+    )
 
     # Estimate performances of spline s = 100 * length of diff array
-    s = 100 * len(filtered_median_linear_diff_array.l)
-    splines = interpolate.UnivariateSpline(filtered_median_linear_diff_array.l,filtered_median_linear_diff_array.values, ext=ext, k=order, s=s)
-    estimated_correction = xr.DataArray(splines(filtered_median_linear_diff_array.l),coords=filtered_median_linear_diff_array.coords)
+    smoothing_factor = 100 * len(filtered_median_linear_diff_array.l)
+    splines = interpolate.UnivariateSpline(
+        filtered_median_linear_diff_array.l,
+        filtered_median_linear_diff_array.values,
+        ext=ext, k=order, s=smoothing_factor
+    )
+    estimated_correction = xr.DataArray(
+        splines(filtered_median_linear_diff_array.l),
+        coords=filtered_median_linear_diff_array.coords
+    )
     rmse = (filtered_median_linear_diff_array-estimated_correction).std(dim='l')
 
     target_rmse = 0.3
 
     # If RMSE is too high, try to decrease smoothness until it fits
-    while rmse > target_rmse and s > 0.001:
+    while rmse > target_rmse and smoothing_factor > 0.001:
         # divide s by 2
-        s/=2
+        smoothing_factor/=2
 
         # Estimate splines
-        splines = interpolate.UnivariateSpline(filtered_median_linear_diff_array.l,filtered_median_linear_diff_array.values, ext=ext, k=order, s=s)
+        splines = interpolate.UnivariateSpline(
+            filtered_median_linear_diff_array.l,
+            filtered_median_linear_diff_array.values,
+            ext=ext, k=order, s=smoothing_factor)
 
         # Compute RMSE
-        estimated_correction = xr.DataArray(splines(filtered_median_linear_diff_array.l),coords=filtered_median_linear_diff_array.coords)
-        rmse = (filtered_median_linear_diff_array-estimated_correction).std(dim='l')
+        estimated_correction = xr.DataArray(
+            splines(filtered_median_linear_diff_array.l),
+            coords=filtered_median_linear_diff_array.coords
+        )
 
-    logging.debug("Best smoothing factor for splines regression: {} (rmse={})".format(s,rmse))
+        rmse = (filtered_median_linear_diff_array \
+            - estimated_correction).std(dim='l')
+
+    logging.debug(
+        "Best smoothing factor for splines regression: "
+        "{} (rmse={})".format(smoothing_factor, rmse))
 
     # Return estimated spline
     return splines

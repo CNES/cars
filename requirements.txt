@@ -13,7 +13,6 @@ pytest
 pytest-cov
 json-checker
 xarray
-k3d
 tqdm
 sphinx-rtd-theme
 netCDF4==1.5.3
@@ -26,3 +25,5 @@ numba
 pandas
 tbb
 pandora-plugin-libsgm==0.2.2
+pylint
+pre-commit
