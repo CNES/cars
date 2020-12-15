@@ -100,12 +100,14 @@ The prepare input file (``preproc_input.json``) file is formatted as follows:
 .. code-block:: json
 
     {
-        "img1" : "/tmp/cars/tests/data/input/phr_reunion/left_image.tif",
-        "color1" : "/tmp/cars/tests/data/input/phr_reunion/left_image.tif",
-        "img2" : "/tmp/cars/tests/data/input/phr_reunion/right_image.tif",
-        "mask1" : "/tmp/cars/tests/data/input/phr_reunion/left_mask.tif",
-        "mask2" : "/tmp/cars/tests/data/input/phr_reunion/right_mask.tif",
-        "srtm_dir" : "/tmp/cars/tests/data/input/phr_reunion/srtm",
+        "img1" : "/tmp/cars/tests/data/input/phr_paca/left_image.tif",
+        "color1" : "/tmp/cars/tests/data/input/phr_paca/left_image.tif",
+        "img2" : "/tmp/cars/tests/data/input/phr_paca/right_image.tif",
+        "mask1" : "/tmp/cars/tests/data/input/phr_paca/left_multiclasses_msk.tif",
+        "mask2" : "/tmp/cars/tests/data/input/phr_paca/right_multiclasses_msk.tif",
+        "mask1_classes" : "/tmp/cars/tests/data/input/phr_paca/left_msk_classes.json",
+        "mask2_classes" : "/tmp/cars/tests/data/input/phr_paca/right_msk_classes.json",
+        "srtm_dir" : "/tmp/cars/tests/data/input/phr_paca/srtm",
         "default_alt": 0,
         "nodata1": 0,
         "nodata2": 0
@@ -122,9 +124,42 @@ The other optional fields of the input json file are:
 
 * The ``srtm_dir`` field contains the path to the folder in which are located the srtm tiles covering the production.
 * ``default_alt`` : this parameter allows to set the default height above ellipsoid when there is no DEM available, no coverage for some points or pixels with no_data in the DEM tiles (default value: 0).
-* ``mask1`` : external mask of the image 1 (convention: 0 is a valid pixel, other values indicate data to ignore)
-* ``mask2`` : external mask of the image 2 (convention: 0 is a valid pixel, other values indicate data to ignore)
+* ``mask1`` : external mask of the image 1. This mask can be a "two-states" mask (convention: 0 is a valid pixel, other values indicate data to ignore) or a multi-classes mask in which case the ``mask1_classes`` shall be indicated in the configuration file.
+* ``mask2`` : external mask of the image 2. This mask can be a "two-states" mask (convention: 0 is a valid pixel, other values indicate data to ignore) or a multi-classes mask in which case the ``mask2_classes`` shall be indicated in the configuration file.
+* ``mask1_classes`` : json file indicated the ``mask1``'s classes usage (see next section for more details).
+* ``mask2_classes`` : json file indicated the ``mask2``'s classes usage (see next section for more details).
 * ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
+
+
+**Warning** : If the ``mask1`` (or ``mask2``) is a multi-classes one and no ``mask1_classes`` (or ``mask2_classes``) configuration file is indicated, all non-zeros values of the mask will be considered as unvalid data.
+
+**Warning** : The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
+
+
+CARS mask multi-classes json file
+---------------------------------
+
+Multi-classes masks have a unified Cars json format enabling the use of several mask information into the API. The classes can be used differently depending on the tag used in the json file defined below.
+
+Json files are given in the ``mask1_classes`` and ``mask2_classes`` fields of the configuration files (see previous section). These files indicates the masks's classes usage and are structured as follows :
+
+.. code-block:: json
+
+    {
+        "ignored_by_correlation": [1, 2],
+        "set_to_ref_alt": [1, 3, 4],
+        "ignored_by_sift_matching": [2]
+    }
+
+Usage in the ``prepare`` step:
+
+* The classes listed in ``ignored_by_sift_matching`` will be masked at the sparse matching step.
+
+Usage in the ``compute_dsm`` step:
+
+* The classes listed in ``ignored_by_correlation`` will be masked at the correlation step (pandora).
+* The classes listed in ``set_to_ref_alt`` will be set to the reference altitude (srtm or scalar). To do so, these pixels' disparity will be set to 0.
+
 
 Input optional parameters
 -------------------------
@@ -171,76 +206,88 @@ The ``content.json`` file lists the generated files and some numerical elements:
 
     {
       "input": {
-        "img1": "/tmp/cars/tests/data/input/phr_reunion/left_image.tif",
-        "color1": "/tmp/cars/tests/data/input/phr_ventoux/left_image.tif",
-        "img2": "/tmp/cars/tests/data/input/phr_reunion/right_image.tif",
-        "srtm_dir": "/tmp/cars/tests/data/input/phr_reunion/srtm"
+        "img1": "/tmp/cars/tests/data/input/phr_paca/left_image.tif",
+        "mask1": "/tmp/cars/tests/data/input/phr_paca/left_multiclass_msk.tif",
+        "mask1_classes": "/tmp/cars/tests/data/input/phr_paca/left_msk_classes.json",
         "nodata1": 0,
-        "nodata2": 0
+        "img2": "/tmp/cars/tests/data/input/phr_paca/right_image.tif",
+        "mask2": "/tmp/cars/tests/data/input/phr_paca/right_multiclass_msk.tif",
+        "mask2_classes": "/tmp/cars/tests/data/input/phr_paca/right_msk_classes.json",
+        "nodata2": 0,
+        "srtm_dir": "/tmp/cars/tests/data/input/phr_paca/srtm"
       },
       "preprocessing": {
-        "version": "master//xxx",
-      "parameters": {
-        "epi_step": 30,
-        "disparity_margin": 0.02,
-        "epipolar_error_upper_bound": 10.0,
-        "epipolar_error_maximum_bias": 0.0,
-        "elevation_delta_lower_bound": -1000.0,
-        "elevation_delta_upper_bound": 1000.0
-      },
-      "static_parameters": {
-        "sift": {
-          "matching_threshold": 0.6,
-          "n_octave": 8,
-          "n_scale_per_octave": 3,
-          "dog_threshold": 20.0,
-          "edge_threshold": 5.0,
-          "magnification": 2.0,
-          "back_matching": true
+        "version": "147_multi_classes_mask_doc//847e",
+        "parameters": {
+          "epi_step": 30,
+          "disparity_margin": 0.25,
+          "epipolar_error_upper_bound": 43.0,
+          "epipolar_error_maximum_bias": 0.0,
+          "elevation_delta_lower_bound": -20.0,
+          "elevation_delta_upper_bound": 20.0,
+          "mask_classes_usage_in_prepare": {
+            "mask1_ignored_by_sift_matching": [
+              1
+            ],
+            "mask2_ignored_by_sift_matching": [
+              1
+            ]
+          }
         },
-        "low_res_dsm": {
-          "low_res_dsm_resolution_in_degree": 0.000277777777778,
-          "lowres_dsm_min_sizex": 100,
-          "lowres_dsm_min_sizey": 100,
-          "low_res_dsm_ext": 3,
-          "low_res_dsm_order": 3
+        "static_parameters": {
+          "sift": {
+            "matching_threshold": 0.6,
+            "n_octave": 8,
+            "n_scale_per_octave": 3,
+            "dog_threshold": 20.0,
+            "edge_threshold": 5.0,
+            "magnification": 2.0,
+            "back_matching": true
+          },
+          "low_res_dsm": {
+            "low_res_dsm_resolution_in_degree": 0.000277777777778,
+            "lowres_dsm_min_sizex": 100,
+            "lowres_dsm_min_sizey": 100,
+            "low_res_dsm_ext": 3,
+            "low_res_dsm_order": 3
+          },
+          "disparity_range": {
+            "disparity_outliers_rejection_percent": 0.1
+          }
         },
-        "disparity_range": {
-          "disparity_outliers_rejection_percent": 0.1
+        "output": {
+          "left_envelope": "left_envelope.shp",
+          "right_envelope": "right_envelope.shp",
+          "envelopes_intersection": "envelopes_intersection.gpkg",
+          "envelopes_intersection_bounding_box": [
+            7.292954644352718,
+            43.68961593954899,
+            7.295742924906745,
+            43.691746080922535
+          ],
+          "epipolar_size_x": 550,
+          "epipolar_size_y": 550,
+          "epipolar_origin_x": 0.0,
+          "epipolar_origin_y": 0.0,
+          "epipolar_spacing_x": 30.0,
+          "epipolar_spacing_y": 30.0,
+          "disp_to_alt_ratio": 1.342233116897663,
+          "left_azimuth_angle": 324.2335255560172,
+          "left_elevation_angle": 79.63809387446263,
+          "right_azimuth_angle": 223.4124262214363,
+          "right_elevation_angle": 73.44127819956262,
+          "convergence_angle": 21.049281048130418,
+          "raw_matches": "raw_matches.npy",
+          "left_epipolar_grid": "left_epipolar_grid.tif",
+          "right_epipolar_grid": "right_epipolar_grid.tif",
+          "right_epipolar_uncorrected_grid": "right_epipolar_grid_uncorrected.tif",
+          "minimum_disparity": -14.42170348554717,
+          "maximum_disparity": 12.408438545673961,
+          "matches": "matches.npy",
+          "lowres_dsm": "lowres_dsm_from_matches.nc",
+          "lowres_initial_dem": "lowres_initial_dem.nc",
+          "lowres_elevation_difference": "lowres_elevation_diff.nc"
         }
-      },
-      "output": {
-        "left_envelope": "left_envelope.shp",
-        "right_envelope": "right_envelope.shp",
-        "envelopes_intersection": "envelopes_intersection.gpkg",
-        "envelopes_intersection_bounding_box": [
-          5.193458481212276,
-          44.205842790578764,
-          5.1960808063316835,
-          44.20667085592526
-        ],
-        "epipolar_size_x": 612,
-        "epipolar_size_y": 612,
-        "epipolar_origin_x": 0.0,
-        "epipolar_origin_y": 0.0,
-        "epipolar_spacing_x": 30.0,
-        "epipolar_spacing_y": 30.0,
-        "disp_to_alt_ratio": 1.4205723011357743,
-        "left_azimuth_angle": 19.481207316272496,
-        "left_elevation_angle": 81.18985591945633,
-        "right_azimuth_angle": 189.9898649136366,
-        "right_elevation_angle": 78.61360403162179,
-        "convergence_angle": 20.127731135010947,
-        "raw_matches": "raw_matches.npy",
-        "left_epipolar_grid": "left_epipolar_grid.tif",
-        "right_epipolar_grid": "right_epipolar_grid.tif",
-        "right_epipolar_uncorrected_grid": "right_epipolar_grid_uncorrected.tif",
-        "minimum_disparity": -13.96791418466181,
-        "maximum_disparity": 9.159503566132702,
-        "matches": "matches.npy",
-        "lowres_dsm": "lowres_dsm_from_matches.nc",
-        "lowres_initial_dem": "lowres_initial_dem.nc",
-        "lowres_elevation_difference": "lowres_elevation_diff.nc"
       }
     }
 
@@ -448,119 +495,156 @@ Once the computation is done, the output folder also contains a ``content.json``
     {
       "input_configurations": [
         {
-          "input": {
-            "img1": "/tmp/cars/tests/data/input/phr_reunion/left_image.tif",
-            "color1": "/tmp/cars/tests/data/input/phr_ventoux/left_image.tif",
-            "img2": "/tmp/cars/tests/data/input/phr_reunion/right_image.tif",
-            "srtm_dir": "/tmp/cars/tests/data/input/phr_reunion/srtm"
-            "nodata1": 0,
-            "nodata2": 0
-          },
-          "preprocessing": {
-            "version": "master//xxx",
-          "parameters": {
-            "epi_step": 30,
-            "disparity_margin": 0.02,
-            "epipolar_error_upper_bound": 10.0,
-            "epipolar_error_maximum_bias": 0.0,
-            "elevation_delta_lower_bound": -1000.0,
-            "elevation_delta_upper_bound": 1000.0
-          },
-          "static_parameters": {
-            "sift": {
-              "matching_threshold": 0.6,
-              "n_octave": 8,
-              "n_scale_per_octave": 3,
-              "dog_threshold": 20.0,
-              "edge_threshold": 5.0,
-              "magnification": 2.0,
-              "back_matching": true
+          "input_configuration": {
+            "input": {
+              "img1": "/tmp/cars/tests/data/input/phr_paca/left_image.tif",
+              "mask1": "/tmp/cars/tests/data/input/phr_paca/left_multiclass_msk.tif",
+              "mask1_classes": "/tmp/cars/tests/data/input/phr_paca/left_msk_classes.json",
+              "nodata1": 0,
+              "img2": "/tmp/cars/tests/data/input/phr_paca/right_image.tif",
+              "mask2": "/tmp/cars/tests/data/input/phr_paca/right_multiclass_msk.tif",
+              "mask2_classes": "/tmp/cars/tests/data/input/phr_paca/right_msk_classes.json",
+              "nodata2": 0,
+              "srtm_dir": "/tmp/cars/tests/data/input/phr_paca/srtm"
             },
-            "low_res_dsm": {
-              "low_res_dsm_resolution_in_degree": 0.000277777777778,
-              "lowres_dsm_min_sizex": 100,
-              "lowres_dsm_min_sizey": 100,
-              "low_res_dsm_ext": 3,
-              "low_res_dsm_order": 3
+            "preprocessing": {
+              "version": "147_multi_classes_mask_doc//847e",
+              "parameters": {
+                "epi_step": 30,
+                "disparity_margin": 0.25,
+                "epipolar_error_upper_bound": 43.0,
+                "epipolar_error_maximum_bias": 0.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "mask_classes_usage_in_prepare": {
+                  "mask1_ignored_by_sift_matching": [
+                    1
+                  ],
+                  "mask2_ignored_by_sift_matching": [
+                    1
+                  ]
+                }
+              },
+              "static_parameters": {
+                "sift": {
+                  "matching_threshold": 0.6,
+                  "n_octave": 8,
+                  "n_scale_per_octave": 3,
+                  "dog_threshold": 20.0,
+                  "edge_threshold": 5.0,
+                  "magnification": 2.0,
+                  "back_matching": true
+                },
+                "low_res_dsm": {
+                  "low_res_dsm_resolution_in_degree": 0.000277777777778,
+                  "lowres_dsm_min_sizex": 100,
+                  "lowres_dsm_min_sizey": 100,
+                  "low_res_dsm_ext": 3,
+                  "low_res_dsm_order": 3
+                },
+                "disparity_range": {
+                  "disparity_outliers_rejection_percent": 0.1
+                }
+              },
+              "output": {
+                "left_envelope": "/tmp/out_preproc/left_envelope.shp",
+                "right_envelope": "/tmp/out_preproc/right_envelope.shp",
+                "envelopes_intersection": "/tmp/out_preproc/envelopes_intersection.gpkg",
+                "envelopes_intersection_bounding_box": [
+                  7.292954644352718,
+                  43.68961593954899,
+                  7.295742924906745,
+                  43.691746080922535
+                ],
+                "epipolar_size_x": 550,
+                "epipolar_size_y": 550,
+                "epipolar_origin_x": 0.0,
+                "epipolar_origin_y": 0.0,
+                "epipolar_spacing_x": 30.0,
+                "epipolar_spacing_y": 30.0,
+                "disp_to_alt_ratio": 1.342233116897663,
+                "left_azimuth_angle": 324.2335255560172,
+                "left_elevation_angle": 79.63809387446263,
+                "right_azimuth_angle": 223.4124262214363,
+                "right_elevation_angle": 73.44127819956262,
+                "convergence_angle": 21.049281048130418,
+                "raw_matches": "/tmp/out_preproc/raw_matches.npy",
+                "left_epipolar_grid": "/tmp/out_preproc/left_epipolar_grid.tif",
+                "right_epipolar_grid": "/tmp/out_preproc/right_epipolar_grid.tif",
+                "right_epipolar_uncorrected_grid": "/tmp/out_preproc/right_epipolar_grid_uncorrected.tif",
+                "minimum_disparity": -14.42170348554717,
+                "maximum_disparity": 12.408438545673961,
+                "matches": "/tmp/out_preproc/matches.npy",
+                "lowres_dsm": "/tmp/out_preproc/lowres_dsm_from_matches.nc",
+                "lowres_initial_dem": "/tmp/out_preproc/lowres_initial_dem.nc",
+                "lowres_elevation_difference": "/tmp/out_preproc/lowres_elevation_diff.nc"
+              }
+            }
+          },
+          "mask_classes_usage_in_compute_dsm": {
+            "mask1_ignored_by_correlation": [
+              1
+            ],
+            "mask1_set_to_ref_alt": [
+              1
+            ],
+            "mask2_ignored_by_correlation": [
+              1
+            ],
+            "mask2_set_to_ref_alt": [
+              1,
+              150
+            ]
+          }
+        }
+      ],
+      "stereo": {
+        "version": "147_multi_classes_mask_doc//847e",
+        "parameters": {
+          "resolution": 0.5,
+          "sigma": 0.3,
+          "dsm_radius": 3,
+          "epsg": 32631
+        },
+        "static_parameters": {
+          "tiling_configuration": {
+            "epipolar_tile_margin_in_percent": 20
+          },
+          "rasterization": {
+            "grid_points_division_factor": null
+          },
+          "cloud_filtering": {
+            "small_components": {
+              "on_ground_margin": 10,
+              "connection_distance": 3.0,
+              "nb_points_threshold": 50,
+              "clusters_distance_threshold": null,
+              "removed_elt_mask": false,
+              "mask_value": 255
             },
-            "disparity_range": {
-              "disparity_outliers_rejection_percent": 0.1
+            "statistical_outliers": {
+              "k": 50,
+              "std_dev_factor": 5.0,
+              "removed_elt_mask": false,
+              "mask_value": 255
             }
           },
           "output": {
-            "left_envelope": "/tmp/test_angles/left_envelope.shp",
-            "right_envelope": "/tmp/test_angles/right_envelope.shp",
-            "envelopes_intersection": "/tmp/test_angles/envelopes_intersection.gpkg",
-            "envelopes_intersection_bounding_box": [
-              5.193458481212276,
-              44.205842790578764,
-              5.1960808063316835,
-              44.20667085592526
-            ],
-            "epipolar_size_x": 612,
-            "epipolar_size_y": 612,
-            "epipolar_origin_x": 0.0,
-            "epipolar_origin_y": 0.0,
-            "epipolar_spacing_x": 30.0,
-            "epipolar_spacing_y": 30.0,
-            "disp_to_alt_ratio": 1.4205723011357743,
-            "left_azimuth_angle": 19.481207316272496,
-            "left_elevation_angle": 81.18985591945633,
-            "right_azimuth_angle": 189.9898649136366,
-            "right_elevation_angle": 78.61360403162179,
-            "convergence_angle": 20.127731135010947,
-            "raw_matches": "/tmp/test_angles/raw_matches.npy",
-            "left_epipolar_grid": "/tmp/test_angles/left_epipolar_grid.tif",
-            "right_epipolar_grid": "/tmp/test_angles/right_epipolar_grid.tif",
-            "right_epipolar_uncorrected_grid": "/tmp/test_angles/right_epipolar_grid_uncorrected.tif",
-            "minimum_disparity": -13.96791418466181,
-            "maximum_disparity": 9.159503566132702,
-            "matches": "/tmp/test_angles/matches.npy",
-            "lowres_dsm": "/tmp/test_angles/lowres_dsm_from_matches.nc",
-            "lowres_initial_dem": "/tmp/test_angles/lowres_initial_dem.nc",
-            "lowres_elevation_difference": "/tmp/test_angles/lowres_elevation_diff.nc"
-          }
-        }
-      }
-    ],
-    "stereo": {
-      "version": "master//xxx",
-      "parameters": {
-        "resolution": 0.5,
-        "sigma": null,
-        "dsm_radius": 1
-      },
-      "static_parameters": {
-        "rasterization": {
-          "grid_points_division_factor": null
-        },
-        "cloud_filtering": {
-          "small_components": {
-            "on_ground_margin": 10,
-            "connection_distance": 3.0,
-            "nb_points_threshold": 50,
-            "clusters_distance_threshold": null,
-            "removed_elt_mask": false,
-            "mask_value": 255
-          },
-          "statistical_outliers": {
-            "k": 50,
-            "std_dev_factor": 5.0,
-            "removed_elt_mask": false,
-            "mask_value": 255
+            "color_image_encoding": "uint16"
           }
         },
         "output": {
-          "color_image_encoding": "uint16"
+          "altimetric_reference": "ellipsoid",
+          "epsg": 32631,
+          "dsm": "dsm.tif",
+          "dsm_no_data": -999.0,
+          "color_no_data": 0.0,
+          "color": "clr.tif",
+          "msk": "/tmp/out_stereo/msk.tif",
+          "dsm_mean": "dsm_mean.tif",
+          "dsm_std": "dsm_std.tif",
+          "dsm_n_pts": "dsm_n_pts.tif",
+          "dsm_points_in_cell": "dsm_pts_in_cell.tif"
         }
-      },
-      "output": {
-        "altimetric_reference": "ellipsoid",
-        "epsg": 32631,
-        "dsm": "dsm.tif",
-        "dsm_no_data": -32768.0,
-        "color_no_data": 0.0,
-        "color": "clr.tif"
       }
     }
-  }
