@@ -66,6 +66,12 @@ Masks
 
 CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
 
+The masks can be "two-states" ones: 0 values will be considered as valid data, while any other value will be considered as unvalid data and thus will be masked during the 3D restitution process.
+
+The masks can also be multi-classes ones: they contain several values, one for each class (forest, water, cloud...). To use a multi-classes mask, a json file has to be indicated by the user in the configuration file. See the [cli_usage](./cli_usage.rst) for more details.
+
+**Warning** : The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
+
 
 Output data
 ===========
