@@ -47,7 +47,6 @@ DESCRIPTION =  ("CARS is a multi-view stereovision pipeline "
 URL = 'https://github.com/CNES/cars'
 AUTHOR = 'CNES'
 REQUIRES_PYTHON = '>=3.6.0'
-VERSION = '0.2.0'
 EMAIL = 'david.youssefi@cnes.fr'
 LICENSE = 'Apache License 2.0'
 REQUIREMENTS = ['numpy>=1.17.0',
@@ -79,6 +78,8 @@ REQUIREMENTS = ['numpy>=1.17.0',
                 'pandora-plugin-libsgm==0.2.2',
                 'pylint',
                 'pre-commit']
+
+SETUP_REQUIREMENTS = ['setuptools-scm']
 
 def readme():
     with copen('README.md', 'r', 'utf-8') as fstream:
@@ -173,7 +174,7 @@ class CompileInstallCommand(install):
 # Setup
 setup(
     name=NAME,
-    version=VERSION,
+    use_scm_version=True,
     description=DESCRIPTION,
     url=URL,
     author=AUTHOR,
@@ -184,6 +185,7 @@ setup(
     long_description=readme(),
     install_requires=REQUIREMENTS,
     python_requires=REQUIRES_PYTHON,
+    setup_requires=SETUP_REQUIREMENTS,
     entry_points={
                   'console_scripts': ['cars_cli = bin.cars_cli:entry_point']
                  },
