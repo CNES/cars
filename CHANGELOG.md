@@ -16,7 +16,7 @@ A new section Unreleased is opened then for next dev phase.
 ### Fixed
 
 
-## 0.3.0 Mask management (December 2020)
+## 0.3.0 Multi-classes mask management (December 2020)
 
 ### Added
 
