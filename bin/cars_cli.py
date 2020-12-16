@@ -31,6 +31,7 @@ import warnings
 from typing import List, Tuple
 import argcomplete
 
+from cars import __version__
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -49,6 +50,9 @@ def cars_cli_parser() -> argparse.ArgumentParser:
         description="CARS: CNES Algorithms to Reconstruct Surface")
 
     # General arguments at first level
+    parser.add_argument('--version', '-v', action='version',
+                        version='%(prog)s {version}'.format(
+                                        version=__version__))
     parser.add_argument(
         "--loglevel", default="INFO",
        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
