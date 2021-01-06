@@ -55,16 +55,27 @@ def sec_col():
 
 
 @pytest.fixture(scope="module")
-def ref_ds(ref_row, ref_col): #pylint: disable=redefined-outer-name
+def margins():
+    return 1, 2, 3, 4
+
+
+@pytest.fixture(scope="module")
+def ref_ds(ref_row, ref_col, margins): #pylint: disable=redefined-outer-name
     """Returns a small reference dataset"""
     ref_mc_msk = np.array([[1, 2, 0],
                            [0, 0, 3],
                            [0, 0, 0]], dtype=np.uint16)
 
+    ref_mc_msk = np.pad(ref_mc_msk,
+                        [(margins[1], margins[3]), (margins[0], margins[2])])
+
     out_ds = xr.Dataset({
         cst.EPI_MSK: ([cst.ROW, cst.COL], ref_mc_msk)
-    }, coords={cst.ROW: np.array(range(ref_row)),
-               cst.COL: np.array(range(ref_col))})
+    }, coords={cst.ROW: np.array(range(ref_row + margins[1] + margins[3])),
+               cst.COL: np.array(range(ref_col + margins[0] + margins[2]))})
+
+    out_ds.attrs[cst.EPI_MARGINS] = \
+        np.array((-margins[0], -margins[1], margins[2], margins[3]))
 
     return out_ds
 
@@ -81,6 +92,8 @@ def sec_ds(sec_row, sec_col): #pylint: disable=redefined-outer-name
         cst.EPI_MSK: ([cst.ROW, cst.COL], sec_mc_msk)
     }, coords={cst.ROW: np.array(range(sec_row)),
                cst.COL: np.array(range(sec_col))})
+
+    out_ds.attrs[cst.EPI_MARGINS] = np.array((0, 0, 0, 0))
 
     return out_ds
 
@@ -169,15 +182,25 @@ def test_update_disp_0(
             absolute_data_path(
       "input/matching_regularisation_input/mask2_set_to_ref_alt_classes.json"))
 
+    # crop mask to ROI
+    ref_roi = [int(-ref_ds.attrs[cst.EPI_MARGINS][0]),
+               int(-ref_ds.attrs[cst.EPI_MARGINS][1]),
+               int(ref_ds.dims[cst.COL] - \
+                   ref_ds.attrs[cst.EPI_MARGINS][2]),
+               int(ref_ds.dims[cst.ROW] - \
+                   ref_ds.attrs[cst.EPI_MARGINS][3])]
+    c_ref_msk = \
+        ref_ds[cst.EPI_MSK].values[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
+
+    # create ref
     up_ref_disp = deepcopy(ref_disp[cst.DISP_MAP].values)
     up_ref_disp_msk = deepcopy(ref_disp[cst.DISP_MSK].values)
 
     ref_msk_set_to_ref_alt = np.logical_or(
-        np.where(ref_ds[cst.EPI_MSK].values == 1, True, False),
-        np.where(ref_ds[cst.EPI_MSK].values == 3, True, False))
+        np.where(c_ref_msk == 1, True, False),
+        np.where(c_ref_msk == 3, True, False))
     up_ref_disp[ref_msk_set_to_ref_alt] = 0
-    up_ref_disp_msk[np.where(ref_ds[cst.EPI_MSK].values == 3,
-                    True, False)] = 255
+    up_ref_disp_msk[np.where(c_ref_msk == 3, True, False)] = 255
 
     assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MAP].values,
                        up_ref_disp)

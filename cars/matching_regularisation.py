@@ -66,11 +66,29 @@ def update_disp_to_0(
                     ref_ds[cst.EPI_MSK].values, mask_ref_classes,
                     mask_classes.set_to_ref_alt_tag, out_msk_dtype=np.bool)
 
+        # crop mask to ROI
+        ref_roi = [int(-ref_ds.attrs[cst.EPI_MARGINS][0]),
+                   int(-ref_ds.attrs[cst.EPI_MARGINS][1]),
+                   int(ref_ds.dims[cst.COL] - \
+                       ref_ds.attrs[cst.EPI_MARGINS][2]),
+                   int(ref_ds.dims[cst.ROW] - \
+                       ref_ds.attrs[cst.EPI_MARGINS][3])]
+        mask_ref = mask_ref[ref_roi[1]:ref_roi[3], ref_roi[0]:ref_roi[2]]
+
     mask_sec = None
     if mask_sec_classes is not None and cst.STEREO_SEC in disp:
         mask_sec = mask_classes.create_msk_from_tag(
                     sec_ds[cst.EPI_MSK].values, mask_sec_classes,
                     mask_classes.set_to_ref_alt_tag, out_msk_dtype=np.bool)
+
+        # crop mask to ROI
+        sec_roi = [int(-sec_ds.attrs[cst.EPI_MARGINS][0]),
+                   int(-sec_ds.attrs[cst.EPI_MARGINS][1]),
+                   int(sec_ds.dims[cst.COL] - \
+                       sec_ds.attrs[cst.EPI_MARGINS][2]),
+                   int(sec_ds.dims[cst.ROW] - \
+                       sec_ds.attrs[cst.EPI_MARGINS][3])]
+        mask_sec = mask_sec[sec_roi[1]:sec_roi[3], sec_roi[0]:sec_roi[2]]
 
     if mask_ref is not None:
         update_disp_ds_from_msk(disp[cst.STEREO_REF], mask_ref)
