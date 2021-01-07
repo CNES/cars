@@ -26,14 +26,12 @@ contains matching outputs regularisation functions
 
 # Standard imports
 from typing import Union
-#import logging
 
 # Third party imports
 import numpy as np
 import xarray as xr
 
 # Cars imports
-#from cars import parameters as params
 from cars import constants as cst
 from cars import mask_classes
 
