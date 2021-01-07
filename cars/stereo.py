@@ -71,6 +71,9 @@ def register_xarray():
     @sizeof.sizeof.register(xr.DataArray)
     #pylint: disable=unused-variable
     def sizeof_xarray_dataarray(xarr):
+        """
+        Inner function for total size of xarray_dataarray
+        """
         total_size = sizeof.sizeof(xarr.values)
         for __, carray in xarr.coords.items():
             total_size += sizeof.sizeof(carray.values)
@@ -79,6 +82,9 @@ def register_xarray():
     @sizeof.sizeof.register(xr.Dataset)
     #pylint: disable=unused-variable
     def sizeof_xarray_dataset(xdat):
+        """
+        Inner function for total size of xarray_dataset
+        """
         total_size = 0
         for __, varray in xdat.data_vars.items():
             total_size += sizeof.sizeof(varray.values)
