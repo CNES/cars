@@ -225,8 +225,10 @@ def write_geotiff_dsm(future_dsm,
     with rasterio_handles(names, files, params,
                             nodata_values, nb_bands_to_write) as rio_handles:
 
-        # Use inner function for the writing of tiles
         def write(raster_tile):
+            """
+            Inner function for tiles writing
+            """
 
             # Skip empty tile
             if raster_tile is None:

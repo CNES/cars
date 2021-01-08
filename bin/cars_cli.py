@@ -508,6 +508,10 @@ def main_cli(args, parser, check_inputs=False):
 
 
 def entry_point():
+    """
+    Main initial cars cli entry point
+    Configure and launch parser before main_cli function
+    """
     parser = cars_cli_parser()
     args = parser.parse_args()
     main_cli(args, parser)
