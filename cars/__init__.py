@@ -31,4 +31,4 @@ except DistributionNotFound:
         from setuptools_scm import get_version
         __version__ = get_version()
     except ModuleNotFoundError:
-        print("\nWARNING: No version defined: install setuptools_scm package\n")
+        __version__ = None
