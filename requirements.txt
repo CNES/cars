@@ -27,3 +27,4 @@ tbb
 pandora-plugin-libsgm==0.2.2
 pylint
 pre-commit
+setuptools_scm

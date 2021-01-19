@@ -26,5 +26,9 @@ from pkg_resources import get_distribution, DistributionNotFound
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
-    # package is not installed
-    pass
+    # package is not installed, use setuptools_scm directly
+    try:
+        from setuptools_scm import get_version
+        __version__ = get_version()
+    except ModuleNotFoundError:
+        print("\nWARNING: No version defined: install setuptools_scm package\n")
