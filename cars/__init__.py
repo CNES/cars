@@ -22,13 +22,16 @@
 Cars module init file
 """
 from pkg_resources import get_distribution, DistributionNotFound
+from setuptools_scm import get_version
+
+__version__ = None
 
 try:
     __version__ = get_distribution(__name__).version
 except DistributionNotFound:
     # package is not installed, use setuptools_scm directly
     try:
-        from setuptools_scm import get_version
         __version__ = get_version()
-    except ModuleNotFoundError:
-        __version__ = None
+    except LookupError:
+        # setuptools-scm was unable to detect version : version = None
+        pass
