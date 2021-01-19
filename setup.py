@@ -77,7 +77,8 @@ REQUIREMENTS = ['numpy>=1.17.0',
                 'tbb',
                 'pandora-plugin-libsgm==0.2.2',
                 'pylint',
-                'pre-commit']
+                'pre-commit',
+                'setuptools-scm']
 
 SETUP_REQUIREMENTS = ['setuptools-scm']
 
