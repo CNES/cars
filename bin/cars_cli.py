@@ -46,7 +46,7 @@ def cars_cli_parser() -> argparse.ArgumentParser:
     """
     # Create cars cli parser fril argparse
     parser = argparse.ArgumentParser(
-        os.path.basename(__file__),
+        "cars_cli",
         description="CARS: CNES Algorithms to Reconstruct Surface")
 
     # General arguments at first level
