@@ -33,10 +33,10 @@ from osgeo import osr
 import rasterio as rio
 import xarray as xr
 
-from utils import temporary_dir
 from cars import readwrite
 from cars import rasterization
 from cars.cluster import start_local_cluster, stop_local_cluster
+from .utils import temporary_dir
 
 
 @pytest.mark.unit_tests

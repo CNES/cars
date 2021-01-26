@@ -25,8 +25,8 @@ Test module for cars/pipelines.py
 from __future__ import absolute_import
 import pytest
 import numpy as np
-from utils import absolute_data_path
 from cars import pipelines
+from .utils import absolute_data_path
 
 @pytest.mark.unit_tests
 def test_build_stereorectification_grid_pipeline():

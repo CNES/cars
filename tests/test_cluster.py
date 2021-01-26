@@ -24,10 +24,10 @@ Test module for cars/cluster.py
 
 from __future__ import absolute_import
 import tempfile
-from utils import temporary_dir
 
 import pytest
 from cars import cluster
+from .utils import temporary_dir
 
 
 @pytest.mark.unit_tests

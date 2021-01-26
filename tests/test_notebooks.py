@@ -29,7 +29,7 @@ import os
 import fileinput
 import pytest
 
-from utils import temporary_dir, absolute_data_path
+from .utils import temporary_dir, absolute_data_path
 
 @pytest.mark.notebook_tests
 def test_step_by_step_compute_dsm():

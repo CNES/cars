@@ -39,12 +39,12 @@ import rasterio
 from shapely.geometry import Polygon
 from shapely.ops import transform
 
-from utils import temporary_dir, absolute_data_path, assert_same_images
 from cars.parameters import read_input_parameters
 from cars.parameters import read_preprocessing_content_file
 from cars import prepare
 from cars import compute_dsm
 from cars import configuration_correlator as corr_cfg
+from .utils import temporary_dir, absolute_data_path, assert_same_images
 
 
 @pytest.mark.unit_tests

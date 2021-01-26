@@ -28,10 +28,10 @@ import pytest
 import numpy as np
 import xarray as xr
 
-from utils import absolute_data_path, assert_same_datasets
 
 from cars import constants as cst
 from cars import matching_regularisation
+from .utils import absolute_data_path, assert_same_datasets
 
 
 @pytest.fixture(scope="module")
