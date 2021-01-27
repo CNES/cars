@@ -1,0 +1,7 @@
+[run]
+source = cars
+omit =
+    # Omit tests
+    /tests/*
+    # Omit venv
+    /venv*/
