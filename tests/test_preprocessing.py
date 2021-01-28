@@ -34,11 +34,11 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 
-from utils import absolute_data_path, temporary_dir, assert_same_datasets
 from cars import preprocessing
 from cars import stereo
 from cars import pipelines
 from cars import constants as cst
+from .utils import absolute_data_path, temporary_dir, assert_same_datasets
 
 
 def generate_epipolar_grids(

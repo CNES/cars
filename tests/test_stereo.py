@@ -34,10 +34,10 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
                                  concat_conf
 
-from utils import absolute_data_path, assert_same_datasets
 from cars.utils import read_geoid_file
 from cars import stereo
 from cars import constants as cst
+from .utils import absolute_data_path, assert_same_datasets
 
 
 # Local testing stereo function pytest fixtures

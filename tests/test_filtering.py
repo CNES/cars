@@ -29,8 +29,8 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from utils import assert_same_datasets
 from cars import filtering
+from .utils import assert_same_datasets
 
 
 

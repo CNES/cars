@@ -3,7 +3,8 @@ build/
 __pycache__/
 .cache/
 dask-worker-space/
-.coverage*
+.coverage
+.coverage.*
 coverage.xml
 pytest-report.xml
 pylint-report.xml

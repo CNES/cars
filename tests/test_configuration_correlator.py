@@ -26,8 +26,8 @@ import os
 import tempfile
 import pytest
 
-from utils import temporary_dir
 from cars import configuration_correlator as corr_cfg
+from .utils import temporary_dir
 
 
 @pytest.mark.unit_tests

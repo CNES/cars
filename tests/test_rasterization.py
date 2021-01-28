@@ -31,11 +31,11 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from utils import absolute_data_path
-from utils import assert_same_datasets
-
 from cars import rasterization
 from cars import constants as cst
+
+from .utils import absolute_data_path
+from .utils import assert_same_datasets
 
 @pytest.mark.unit_tests
 def test_get_utm_zone_as_epsg_code():
