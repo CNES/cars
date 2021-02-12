@@ -116,8 +116,8 @@ def cars_cli_parser() -> argparse.ArgumentParser:
         choices=("pbs_dask", "local_dask"),
         help="Parallelization mode (default: local_dask)")
     prepare_parser.add_argument(
-        "--nb_workers", type=int, default=8,
-        help="Number of workers (default: 8, should be > 0)")
+        "--nb_workers", type=int, default=2,
+        help="Number of workers (default: 2, should be > 0)")
     prepare_parser.add_argument(
         "--walltime", default="00:59:00",
         help="Walltime for one worker (default: 00:59:00). "
@@ -225,8 +225,8 @@ def cars_cli_parser() -> argparse.ArgumentParser:
         choices=("pbs_dask", "local_dask", "mp"),
         help="Parallelization mode (default: local_dask) ")
     compute_dsm_parser.add_argument(
-        "--nb_workers", type=int, default=32,
-        help="Number of workers (default: 32, should be > 0)")
+        "--nb_workers", type=int, default=2,
+        help="Number of workers (default: 2, should be > 0)")
     compute_dsm_parser.add_argument(
         "--walltime", default="00:59:00",
         help="Walltime for one worker (default: 00:59:00). "
