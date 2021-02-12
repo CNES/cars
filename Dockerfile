@@ -64,10 +64,13 @@ COPY geoid /usr/local/geoid
 ENV OTB_GEOID_FILE=/usr/local/geoid/egm96.grd
 
 # install cars
-RUN python3 -m pip  --no-cache-dir install pip six setuptools cython --upgrade
-RUN python3 -m pip  --no-cache-dir install pygdal=="$(gdal-config --version).*"
+RUN python3 -m pip --no-cache-dir install pip six setuptools cython --upgrade
+RUN python3 -m pip --no-cache-dir install --no-binary fiona fiona
+RUN python3 -m pip --no-cache-dir install --no-binary rasterio rasterio
+RUN python3 -m pip --no-cache-dir install pygdal=="$(gdal-config --version).*"
+
 ENV VLFEAT_INCLUDE_DIR=/usr/local/include
-RUN python3 -m pip  --no-cache-dir install /cars/.
+RUN python3 -m pip --no-cache-dir install /cars/.
 
 RUN ln -s /usr/bin/python3 /usr/bin/python
 
