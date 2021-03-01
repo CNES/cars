@@ -217,7 +217,7 @@ def run(
     utils.add_log_file(out_dir, 'prepare')
 
     if not check_inputs:
-        logging.warning(
+        logging.info(
             'The inputs consistency will not be checked. '
             'To enable the inputs checking, add --check_inputs '
             'to your command line')
