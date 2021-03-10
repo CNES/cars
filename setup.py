@@ -188,7 +188,7 @@ setup(
     python_requires=REQUIRES_PYTHON,
     setup_requires=SETUP_REQUIREMENTS,
     entry_points={
-                  'console_scripts': ['cars_cli = bin.cars_cli:entry_point']
+                  'console_scripts': ['cars_cli = cars.cars_cli:entry_point']
                  },
     cmdclass={
               'build_py': CustomBuildPyCommand,

@@ -28,7 +28,7 @@ from copy import copy
 import pytest
 
 
-from bin.cars_cli import main_cli, cars_cli_parser
+from cars.cars_cli import main_cli, cars_cli_parser
 from .utils import temporary_dir, absolute_data_path
 
 
