@@ -1,7 +1,7 @@
 Command line usage
 ==================
 
-`cars_cli.py  <../../bin/cars_cli.py>`_ is the unique entry point for CARS command line usage.
+`cars_cli.py  <../../cars/cars_cli.py>`_ is the unique entry point for CARS command line usage.
 
 It enables two main steps : `prepare` and `compute_dsm` described in the following sections.
 
