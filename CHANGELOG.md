@@ -13,6 +13,7 @@ A new section Unreleased is opened then for next dev phase.
 ### Changed 
 
 - Move cars_cli.py from bin to cars. [#188]
+- Rename cars_cli to cars. [#188]
 
 
 ### Fixed
