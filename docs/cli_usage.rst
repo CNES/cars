@@ -1,15 +1,15 @@
 Command line usage
 ==================
 
-`cars_cli.py  <../../bin/cars_cli.py>`_ is the unique entry point for CARS command line usage.
+`cars  <../../cars/cars.py>`_ is the unique entry point for CARS command line usage.
 
 It enables two main steps : `prepare` and `compute_dsm` described in the following sections.
 
 .. code-block:: bash
 
-    usage: cars_cli.py [options] <command> [<args>]
+    usage: cars [options] <command> [<args>]
 
-    The cars_cli.py commands are:
+    The cars commands are:
         prepare             Preparation for compute_dsm producing stereo-
                             rectification grid as well as an estimate of the
                             disparity to explore.
@@ -39,7 +39,7 @@ Command Description
 
 .. code-block:: bash
 
-        usage: cars_cli.py prepare [-h] -i INJSON -o OUTDIR [--epi_step EPI_STEP]
+        usage: cars prepare [-h] -i INJSON -o OUTDIR [--epi_step EPI_STEP]
                                    [--disparity_margin DISPARITY_MARGIN]
                                    [--epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND]
                                    [--epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS]
@@ -89,7 +89,7 @@ Command line usage
 
 .. code-block:: bash
 
-    $ cars_cli.py prepare -i preproc_input.json -o outdir
+    $ cars prepare -i preproc_input.json -o outdir
 
 
 Input json file
@@ -175,7 +175,7 @@ Some optional parameters of the command line impact the matching:
 
 During its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks' execution in real time. The parameters ``nb_workers`` and ``walltime`` configures respectively dask cluster workers number and the maximum time of execution.
 
-``cars_cli.py prepare`` has also a ``--check_inputs`` option which enables the check of the input data consistency, it is to say that:
+``cars prepare`` has also a ``--check_inputs`` option which enables the check of the input data consistency, it is to say that:
 
 * ``img1`` and ``img2`` only have one band, are readable with the OTB and have a RPC model. It is also checked that the data seem to be in the sensor geometry (positive pixel size).
 * ``mask1`` has the same size as ``img1`` and, as well, that ``mask2`` has the same size as ``img2``.
@@ -324,7 +324,7 @@ Command Description
 
 .. code-block:: bash
 
-        usage: cars_cli.py compute_dsm [-h] -i [INJSONS [INJSONS ...]] -o OUTDIR
+        usage: cars compute_dsm [-h] -i [INJSONS [INJSONS ...]] -o OUTDIR
                                        [--sigma SIGMA] [--dsm_radius DSM_RADIUS]
                                        [--resolution RESOLUTION] [--epsg EPSG]
                                        [--roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX | --roi_file ROI_FILE]
@@ -411,7 +411,7 @@ Command line usage:
 
 .. code-block:: bash
 
-    $ cars_cli.py compute_dsm -i content.json content2.json ... -o outdir
+    $ cars compute_dsm -i content.json content2.json ... -o outdir
 
 This program takes as input a json file or a list of N json files in the case of a N images pairs processing. This corresponds to the content.json files generated at the prepare step (cf. above).
 Its output is the path to the folder which will contain the results of the stereo, that is to say the ``dsm.tif`` (regular grid of altitudes) and the ``clr.tif`` (corresponding color) files.
@@ -427,7 +427,7 @@ Some optional parameters enable to modify the regular grid:
 * ``epsg``: epsg code used for the cloud projection. If not set by the user, the more appropriate UTM zone will be retrieved automatically
 * ``roi_bbox``: DSM ROI in final projection [xmin ymin xmax ymax].
 
-    * example with a quadruplet: ``cars_cli.py compute_dsm content.json outdir/ --roi_bbox 0.1 0.2 0.3 0.4``
+    * example with a quadruplet: ``cars compute_dsm content.json outdir/ --roi_bbox 0.1 0.2 0.3 0.4``
 * ``roi_file`` : DSM ROI file (vector file or image which footprint will be taken as ROI). The conversion to the final geometry ROI bounding box will be performed automatically. Mutually exclusive with ``roi_bbox`` option.
 * ``dsm_no_data``: no data value of the final dsm
 * ``color_no_data``: no data value of the final color ortho-image
