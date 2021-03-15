@@ -9,6 +9,7 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Added
 
+- Write used dask configuration in output directory. [#224]
 
 ### Changed 
 

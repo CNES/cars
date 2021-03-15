@@ -168,3 +168,17 @@ def test_write_ply():
     points = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/points_ref.nc"))
     utils.write_ply(os.path.join(temporary_dir(), 'test.ply'), points)
+
+
+@pytest.mark.unit_tests
+def test_write_dask_config():
+    """
+    Test write used dask config
+    """
+    cfg_dask = {'key1' : 2,
+        'key2' : {
+            'key3' : 'string1',
+            'key4' : [1, 2, 4]
+        }
+    }
+    utils.write_dask_config(cfg_dask, temporary_dir(), 'test')
