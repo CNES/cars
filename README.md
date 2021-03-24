@@ -1,38 +1,86 @@
-CARS
-====
+<div align="center">
+  <a href="https://github.com/CNES/cars"><img src="docs/source/images/picto_transparent.png" alt="CARS" title="CARS"  width="20%"></a>
 
-**CARS** is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
-This Multiview stereo pipeline is intended for massive DSM production with a robust and performant design. 
-CARS means CNES Algorithms to Reconstruct Surface (or Chaîne Automatique de Restitution Stéréoscopique in french)
+<h4>CARS, a satellite multi view stereo pipeline </h4>
 
-It is composed of:
+[![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
+[![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](CONTRIBUTING.md)
+[![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0/)
+[![Documentation](https://readthedocs.org/projects/cars/badge/?version=latest)](https://cars.readthedocs.io/?badge=latest)
 
-* A **Python API**, based on **xarray**, enabling to realize all the computation steps leading to a DSM.
-* An **end-to-end processing chain** based on this API. It can be performed using **dask** (locally or on a cluster which has a GPFS centralized files storage) or **multiprocessing** libraries to distribute the computations.
+<p>
+  <a href="#overview">Overview</a> •
+  <a href="#quick-start">Quick Start</a> •
+  <a href="#documentation">Documentation</a> •
+  <a href="#contribution">Contribution</a> •
+  <a href="#references">References</a>
+</p>
+</div>
 
-Documentation 
-=============
+## Overview
 
-1. [Generalities](./docs/generalities.rst)
-2. [Installation](./docs/install.rst)
-3. [Command line usage](./docs/cli_usage.rst)
-4. [Jupyter notebooks](./docs/notebooks.rst)
+From stereo images  |  CARS produces a Digital Surface Model (DSM)
+:-------------------------:|:-------------------------:
+<img src="docs/source/images/animation_sat.gif" alt="drawing" width="400"/> |  <img src="docs/source/images/overview_dsm_3d.gif" alt="drawing" width="400"/>
 
-Contribution 
-============
-To do a bug report or a contribution, see the [**contribution guide**](CONTRIBUTING.md).
 
-Changelog
-=========
-To know project evolution, see the [**Changelog**](CHANGELOG.md)
+**CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.  
+This Multiview Stereo Pipeline is intended for massive DSM production with a robust and performant design.
 
-Licence
-=======
-See [the license](./LICENSE) for all legal issues concerning the use of CARS.
+Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
+- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="docs/source/images/logo_co3D_cnes.jpg" width="20" height="20"/></a>
+- <a href="https://www.ai4geo.eu/">AI4GEO project &nbsp;&nbsp;&nbsp;  </a>
 
-References
-==========
+## Quick start
 
-- Youssefi D., Michel, J., Sarrazin, E., Buffe, F., Cournet, M., Delvit, J., L’Helguen, C., Melet, O., Emilien, A., Bosman, J., 2020. Cars: A photogrammetry pipeline using dask graphs to construct a global 3d model. IGARSS - IEEE International Geoscience and Remote Sensing Symposium.
+### CARS Docker Image
 
-- Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. A new satellite imagery stereo pipeline designed for scalability, robustness and performance. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.
+[![Docker Status](http://dockeri.co/image/cnes/cars)](https://hub.docker.com/r/cnes/cars)
+
+CARS is available on Docker Hub and can be downloaded by:
+``` bash
+docker pull cnes/cars
+```
+
+### Two steps, one DSM
+
+You only need to launch two commands:
+``` 
+# prepare step 
+docker run -v "$(pwd)"/data:/data cnes/cars prepare -i /data/input.json -o /data/prepare_outdir
+```
+```
+# compute_dsm step 
+docker run -v "$(pwd)"/data:/data cnes/cars compute_dsm -i /data/prepare_outdir/content.json -o /data/compute_dsm_outdir
+```
+with one configuration input file ("input.json") located in a "data" folder to be consistent with the previous command lines:
+```
+{
+    "img1" : "img1.tif",
+    "color1" : "color1.tif",
+    "img2" : "img2.tif",
+    "srtm_dir" : "srtm_dir",
+    "nodata1": 0,
+    "nodata2": 0
+}
+```
+
+### On the way to the Pyramids...
+
+You want to build the pyramids by yourself? Download our [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples/data_samples.tar.bz2) to give CARS a try!  
+You're at a dead end? This [quick start script](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh) sets you back on the right path.
+
+## Documentation
+
+Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest)  
+See [CARS generation README](docs/README.md) to rebuild documentation.
+
+## Contribution
+
+To do a bug report or a contribution, see the [**Contribution Guide**](CONTRIBUTING.md).  
+For project evolution, see [**Changelog**](CHANGELOG.md)
+
+## References
+
+- [Youssefi D., Michel, J., Sarrazin, E., Buffe, F., Cournet, M., Delvit, J., L’Helguen, C., Melet, O., Emilien, A., Bosman, J., 2020. Cars: A photogrammetry pipeline using dask graphs to construct a global 3d model. IGARSS - IEEE International Geoscience and Remote Sensing Symposium.](https://ieeexplore.ieee.org/document/9324020)
+- [Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. A new satellite imagery stereo pipeline designed for scalability, robustness and performance. ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.](https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/V-2-2020/171/2020/)
