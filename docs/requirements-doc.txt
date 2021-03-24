@@ -1,0 +1,17 @@
+sphinx
+rinohtype
+numpydoc
+graphviz
+sphinx-rtd-theme
+argcomplete
+psutil
+numpy
+json_checker
+dask_jobqueue
+scipy
+pandas
+pandora
+tqdm
+rasterio
+affine
+osgeo
