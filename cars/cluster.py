@@ -161,7 +161,7 @@ def stop_local_cluster(cluster, client):
     """
     client.close()
     cluster.close()
-    logging.info("Local cluster stopped")
+    logging.info("Local cluster correctly stopped")
 
 
 def start_cluster(nb_workers, walltime, out_dir, timeout=600):
@@ -294,4 +294,4 @@ def stop_cluster(cluster, client):
     """
     client.close()
     cluster.close()
-    logging.info("Dask cluster stopped")
+    logging.info("Dask cluster correctly stopped")
