@@ -67,7 +67,7 @@ with one configuration input file ("input.json") located in a "data" folder to b
 
 ### On the way to the Pyramids...
 
-You want to build the pyramids by yourself? Download our [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples/data_samples.tar.bz2) to give CARS a try!  
+You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples/data_samples.tar.bz2) to give CARS a try!  
 You're at a dead end? This [quick start script](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh) sets you back on the right path.
 
 ## Documentation
