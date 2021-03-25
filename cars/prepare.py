@@ -507,7 +507,7 @@ def run(
     # Save dask config used
     dask_config_used = dask.config.config
     utils.write_dask_config(dask_config_used, out_dir,
-     "dask_config_prepare")
+                            params.prepare_dask_config_tag)
 
     use_dask = {"local_dask":True, "pbs_dask":True}
     if mode not in use_dask.keys():

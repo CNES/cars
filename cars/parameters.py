@@ -314,6 +314,10 @@ stereo_output_section_tag = "output"
 stereo_parameters_section_tag = "parameters"
 stereo_version_tag = "version"
 
+# tags for dask configuration file
+prepare_dask_config_tag = "dask_config_prepare"
+compute_dsm_dask_config_tag = "dask_config_compute_dsm"
+
 
 # Schema for input configuration json
 input_configuration_schema = {

@@ -197,8 +197,10 @@ After its execution, the ``outdir`` folder contains the following elements:
 .. code-block:: bash
 
     ls outdir/
-    yy-MM-dd_HHhmmm_prepare.log  dask_log                     left_envelope.dbf  left_envelope.shp  left_epipolar_grid.tif      lowres_elevation_diff.nc  matches.npy      right_envelope.dbf  right_envelope.shp  right_epipolar_grid.tif
-    content.json                 envelopes_intersection.gpkg  left_envelope.prj  left_envelope.shx  lowres_dsm_from_matches.nc  lowres_initial_dem.nc     raw_matches.npy  right_envelope.prj  right_envelope.shx  right_epipolar_grid_uncorrected.tif
+    yy-MM-dd_HHhmmm_prepare.log  dask_log                     left_envelope.prj  left_epipolar_grid.tif      lowres_initial_dem.nc  right_envelope.dbf  right_envelope.shx
+    content.json                 envelopes_intersection.gpkg  left_envelope.shp  lowres_dsm_from_matches.nc  matches.npy            right_envelope.prj  right_epipolar_grid.tif
+    dask_config_prepare.yaml     left_envelope.dbf            left_envelope.shx  lowres_elevation_diff.nc    raw_matches.npy        right_envelope.shp  right_epipolar_grid_uncorrected.tif
+
 
 The ``content.json`` file lists the generated files and some numerical elements:
 
@@ -307,6 +309,7 @@ The other files are:
 * ``lowres_initial_dem.nc`` : initial DEM in input of the prepare step corresponding to the two images envelopes' intersection zone
 * ``corrected_lowres_dsm_from_matches.nc`` :  Corrected low resolution DSM from matches if low resolution DSM is large enough (minimum size is 100x100)
 * ``corrected_lowres_elevation_diff.nc`` : difference between the initial DEM in input of the prepare step  and the corrected low resolution DSM. if low resolution DSM is large enough (minimum size is 100x100)
+* ``dask_config_prepare.yaml`` : the dask configuration used (only for ``local_dask`` and ``pbs_dask`` modes)
 
 DSM production with compute\_dsm
 ================================
@@ -466,19 +469,20 @@ The nodes on which the computations are performed should be able to handle the o
 Output contents
 ---------------
 
-The output folder contains a content.json file, the computed dsm and the color ortho-image (if the ``color1`` field is not set in the input configuration file then the ``img1`` is used).
+The output folder contains a content.json file, the computed dsm, the color ortho-image (if the ``color1`` field is not set in the input configuration file then the ``img1`` is used) and, if dask is used, the dask configuration.
 
 .. code-block:: bash
 
     $ ls
-    clr.tif  content.json  dask_log  dsm.tif
+    yy-MM-dd_HHhmmm_compute_dsm.log  clr.tif  content.json  dask_config_compute_dsm.yaml  dask_log
+
 
 If the ``--output_stats`` is activated, the output directory will contain tiff images corresponding to different statistics computed during the rasterization.
 
 .. code-block:: bash
 
     $ ls
-    clr.tif  content.json  dask_log  dsm_mean.tif  dsm_n_pts.tif  dsm_pts_in_cell.tif  dsm_std.tif  dsm.tif
+    yy-MM-dd_HHhmmm_compute_dsm.log  clr.tif  content.json  dask_config_compute_dsm.yaml  dask_log  dsm_mean.tif  dsm_n_pts.tif  dsm_pts_in_cell.tif  dsm_std.tif  dsm.tif
 
 Those statistics are:
 
