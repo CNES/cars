@@ -668,11 +668,16 @@ def run(
     client = None
 
     # Use dask
+
     use_dask = {"local_dask":True, "pbs_dask":True, "mp":False}
     if mode not in use_dask.keys():
         raise NotImplementedError('{} mode is not implemented'.format(mode))
 
     if use_dask[mode]:
+        dask_config_used = dask.config.config
+        utils.write_dask_config(dask_config_used, out_dir,
+                                params.compute_dsm_dask_config_tag)
+
         if mode == "local_dask":
             cluster, client = start_local_cluster(nb_workers)
         else:

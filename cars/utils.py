@@ -35,6 +35,7 @@ import errno
 import numpy as np
 import numpy.linalg as la
 from json_checker import Checker
+import yaml
 
 # Third party imports
 import pandas
@@ -450,3 +451,28 @@ def check_json(conf, schema):
     schema_validator = Checker(schema)
     checked_conf = schema_validator.validate(conf)
     return checked_conf
+
+
+def write_dask_config(dask_config: dict,
+        output_dir: str,
+        file_name: str):
+    """
+    Writes the dask config used in yaml format.
+
+    :param dask_config: Dask config used
+    :type dask_config: dict
+    :param output_dir: output directory path
+    :type dask_config: dict
+    :param output_dir: output directory path
+    """
+
+    # warning
+    logging.info("Dask will merge several config files"\
+        "located at default locations such as"\
+        " ~/.config/dask/ .\n Dask config in "\
+        " $DASK_DIR will be used with the highest priority.")
+
+    # file path where to store the dask config
+    dask_config_path = os.path.join(output_dir, file_name + ".yaml")
+    with open(dask_config_path, 'w') as dask_config_file:
+        yaml.dump(dask_config, dask_config_file)

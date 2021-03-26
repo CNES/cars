@@ -25,6 +25,7 @@ Test module for cars/utils.py
 import os
 import tempfile
 import pytest
+import yaml
 
 import numpy as np
 import xarray as xr
@@ -168,3 +169,29 @@ def test_write_ply():
     points = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/points_ref.nc"))
     utils.write_ply(os.path.join(temporary_dir(), 'test.ply'), points)
+
+
+@pytest.mark.unit_tests
+def test_write_dask_config():
+    """
+    Test write used dask config
+    """
+    file_root_name = 'test'
+    cfg_dask = {'key1' : 2,
+        'key2' : {
+            'key3' : 'string1',
+            'key4' : [1, 2, 4]
+        }
+    }
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        utils.write_dask_config(cfg_dask, directory, file_root_name)
+
+        # test file existence and content
+        file_path = os.path.join(directory, file_root_name + '.yaml')
+
+        assert os.path.exists(file_path)
+
+        with open(file_path) as file:
+            cfg_dask_from_file = yaml.load(file)
+
+            assert cfg_dask == cfg_dask_from_file

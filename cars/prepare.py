@@ -502,7 +502,14 @@ def run(
     client = None
 
     # TODO: prepare mp mode
+
     # Use dask
+
+    # Save dask config used
+    dask_config_used = dask.config.config
+    utils.write_dask_config(dask_config_used, out_dir,
+                            params.prepare_dask_config_tag)
+
     use_dask = {"local_dask":True, "pbs_dask":True}
     if mode not in use_dask.keys():
         raise NotImplementedError('{} mode is not implemented'.format(mode))
