@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Main cars Command Line Interface: program "cars_cli.py",
+Main cars Command Line Interface
 user main argparse wrapper to CARS 3D pipelines submodules
 """
 
@@ -37,7 +37,7 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
-def cars_cli_parser() -> argparse.ArgumentParser:
+def cars_parser() -> argparse.ArgumentParser:
     """
     Main CLI argparse parser function
     It builds argparse objects and constructs CLI interfaces parameters.
@@ -46,7 +46,7 @@ def cars_cli_parser() -> argparse.ArgumentParser:
     """
     # Create cars cli parser fril argparse
     parser = argparse.ArgumentParser(
-        "cars_cli",
+        "cars",
         description="CARS: CNES Algorithms to Reconstruct Surface")
 
     # General arguments at first level
@@ -377,7 +377,7 @@ def main_cli(args, parser, check_inputs=False):
         # If there are invalid parameters, stop now
         if stop_now:
             logging.critical(
-                "Invalid parameters detected, please fix cars_cli \
+                "Invalid parameters detected, please fix cars \
             prepare command-line.")
             sys.exit(1)
 
@@ -463,7 +463,7 @@ def main_cli(args, parser, check_inputs=False):
         # If there are invalid parameters, stop now
         if stop_now:
             logging.critical(
-                "Invalid parameters detected, please fix cars_cli \
+                "Invalid parameters detected, please fix cars \
             compute_dsm command-line.")
             sys.exit(1)
 
@@ -507,15 +507,15 @@ def main_cli(args, parser, check_inputs=False):
         sys.exit(1)
 
 
-def entry_point():
+def main():
     """
     Main initial cars cli entry point
     Configure and launch parser before main_cli function
     """
-    parser = cars_cli_parser()
+    parser = cars_parser()
     args = parser.parse_args()
     main_cli(args, parser)
 
 
 if __name__ == '__main__':
-    entry_point()
+    main()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # coding: utf8
 #
-# Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+# Copyright (c) 2021 Centre National d'Etudes Spatiales (CNES).
 #
 # This file is part of CARS
 # (see https://github.com/CNES/cars).
@@ -18,181 +18,94 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
-# Install CARS, whether via
-#      ``python setup.py install``
-#    or
-#      ``pip install cars``
 """
-This file is the package main program.
+CARS setup.py
+Most of the configuration is in setup.cfg except :
+  - Surcharging subcommand install and develop with cars OTB build
+  - Enabling setuptools_scm
 """
-
 import os
 import sys
-from distutils.spawn import find_executable, spawn
-import re
 from pathlib import Path
-from codecs import open as copen
+from shutil import which
+from subprocess import run
 
-from setuptools import setup, find_packages
-from setuptools.command.build_py import build_py
+from setuptools import setup
+from setuptools.command.develop import develop
 from setuptools.command.install import install
 
 
-# Meta-data.
-NAME = "cars"
-DESCRIPTION =  ("CARS is a multi-view stereovision pipeline "
-                "for satellite images. It produces Digital Surface Model "
-                "in raster format.")
-URL = 'https://github.com/CNES/cars'
-AUTHOR = 'CNES'
-REQUIRES_PYTHON = '>=3.6.0'
-EMAIL = 'david.youssefi@cnes.fr'
-LICENSE = 'Apache License 2.0'
-REQUIREMENTS = ['numpy>=1.17.0',
-                'scipy',
-                'matplotlib',
-                'affine',
-                'rasterio>=1.1.3',
-                'dask',
-                'distributed',
-                'dask-jobqueue',
-                'jupyter',
-                'bokeh',
-                'pylint',
-                'pytest',
-                'pytest-cov',
-                'json-checker',
-                'xarray',
-                'tqdm',
-                'sphinx-rtd-theme',
-                'netCDF4>=1.5.3',
-                'GitPython',
-                'argcomplete',
-                'Shapely',
-                'Fiona',
-                'pyproj',
-                'numba',
-                'pandas',
-                'tbb',
-                'pandora-plugin-libsgm==0.2.2',
-                'pylint',
-                'pre-commit',
-                'setuptools-scm']
-
-SETUP_REQUIREMENTS = ['setuptools-scm']
-
-def readme():
-    with copen('README.md', 'r', 'utf-8') as fstream:
-        return fstream.read()
-
-
-class CustomBuildPyCommand(build_py):
+def cars_otb_build(command_subclass):
     """
-       Add custom step for CARS installation
+    A decorator subclassing one of the setuptools commands.
+    It modifies the run() method
     """
+    orig_run = command_subclass.run
 
-    def check(self): #pylint: disable=no-self-use
+    def cars_check_env():
         """
-           Check environment
-           Test if Geoid file is provided
+        Check environment
+        Test requirements for build : cmake, OTB, vlfeat
         """
-        if os.environ.get("OTB_GEOID_FILE") is None:
-            raise Exception("OTB_GEOID_FILE not set")
-
-    def create_env_script(self): #pylint: disable=no-self-use
-        """
-           Create environment file to set CARS environment
-        """
-        geoid_file_to_replace = os.environ.get("OTB_GEOID_FILE")
-        template = None
-        with open('template_env_cars.sh') as src:
-            template = src.readlines()
-        with open('env_cars.sh','w') as dest:
-            for line in template:
-                if "GEOID_FILE_TO_REPLACE" in line:
-                    dest.write(re.sub(r'GEOID_FILE_TO_REPLACE',
-                                geoid_file_to_replace, line))
-                else:
-                    dest.write(line)
-
-    def run(self): #pylint: disable=no-self-use
-        self.check()
-        self.create_env_script()
-        super(CustomBuildPyCommand,     #pylint: disable=super-with-arguments
-                            self).run() #pylint: disable=super-with-arguments
-
-
-class CompileInstallCommand(install):
-    """
-       Add custom step for CARS installation
-    """
-
-    def check(self): #pylint: disable=no-self-use
-        """
-           Check environment
-           Test requirements for build : cmake, OTB, vlfeat
-           Test if Geoid file is provided
-        """
-        if find_executable("cmake") is None:
+        if which("cmake") is None:
             raise Exception("Command cmake not found")
-        if find_executable("otbcli_ReadImageInfo") is None:
+        if which("otbcli_ReadImageInfo") is None:
             raise Exception("OTB not found")
         if os.environ.get("OTB_APPLICATION_PATH") is None:
             raise Exception("OTB_APPLICATION_PATH not set")
         if os.environ.get("VLFEAT_INCLUDE_DIR") is None:
             raise Exception("VLFEAT_INCLUDE_DIR not set")
 
-
-    def compile_and_install_cars(self): #pylint: disable=no-self-use
+    def cars_otb_build_install():
         """
-           Run external script to compile et install OTB remote modules
+        Run external script to build and install OTB remote modules
         """
         if sys.prefix is None:
             sys.prefix = "/usr/local"
         current_dir = os.getcwd()
-        build_dir = Path("build")
-        build_dir.mkdir(exist_ok=True)
+        Path("build").mkdir(exist_ok=True)
         os.chdir("build")
-        cmd = ['cmake',
-               f'-DCMAKE_INSTALL_PREFIX={sys.prefix}',
-               '-DOTB_BUILD_MODULE_AS_STANDALONE=ON',
-               '-DCMAKE_BUILD_TYPE=Release',
-               f'-DVLFEAT_INCLUDE_DIR={os.environ["VLFEAT_INCLUDE_DIR"]}',
-               '../otb_remote_module']
-        spawn(cmd)
-        spawn(['make','install'])
+        # Build cmake cmd for OTB applications
+        cmd = [
+            "cmake",
+            f"-DCMAKE_INSTALL_PREFIX={sys.prefix}",
+            "-DOTB_BUILD_MODULE_AS_STANDALONE=ON",
+            "-DCMAKE_BUILD_TYPE=Release",
+            f'-DVLFEAT_INCLUDE_DIR={os.environ["VLFEAT_INCLUDE_DIR"]}',
+            "../otb_remote_module",
+        ]
+        run(cmd, check=True)
+        # Install OTB applications in sys.prefix/lib (path in env_cars.sh)
+        run(["make", "install"], check=True)
         os.chdir(current_dir)
 
+    def modified_run(self):
+        print("CARS check environment")
+        cars_check_env()
+        print("CARS OTB modules build and install ")
+        cars_otb_build_install()
+        # Launch original subcommand run()
+        orig_run(self)
 
-    def run(self): #pylint: disable=no-self-use
-        self.check()
-        self.compile_and_install_cars()
-        super(CompileInstallCommand,    #pylint: disable=super-with-arguments
-                            self).run() #pylint: disable=super-with-arguments
+    command_subclass.run = modified_run
+    return command_subclass
 
 
-# Setup
+# Apply same cars specific setup decorator to custom setup commands:
+#   develop : pip install -e .
+#   install : pip install .
+@cars_otb_build
+class CustomDevelopCommand(develop):
+    pass
+
+
+@cars_otb_build
+class CustomInstallCommand(install):
+    pass
+
+
+# Setup with setup.cfg config
 setup(
-    name=NAME,
     use_scm_version=True,
-    description=DESCRIPTION,
-    url=URL,
-    author=AUTHOR,
-    author_email=EMAIL,
-    license=LICENSE,
-    packages=find_packages(),
-    data_files=[('static_conf', ['static_conf/static_configuration.json'])],
-    long_description=readme(),
-    install_requires=REQUIREMENTS,
-    python_requires=REQUIRES_PYTHON,
-    setup_requires=SETUP_REQUIREMENTS,
-    entry_points={
-                  'console_scripts': ['cars = cars.cars:entry_point']
-                 },
-    cmdclass={
-              'build_py': CustomBuildPyCommand,
-              'install': CompileInstallCommand
-             },
-    scripts=['env_cars.sh']
+    cmdclass={"install": CustomInstallCommand, "develop": CustomDevelopCommand},
 )

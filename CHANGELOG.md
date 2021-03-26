@@ -12,6 +12,9 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Changed 
 
+- Update/Clean package setup (add Makefile, clean requirements) [#210, #193]
+- Make pip install -e work [#207]
+- Update/Clean environment parameters [#166]
 - Move cars_cli.py from bin to cars. [#188]
 - Rename cars_cli to cars. [#188]
 

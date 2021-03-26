@@ -170,29 +170,71 @@ LowResDSMParams = namedtuple(
 RasterizationParams = namedtuple(
     'RasterizationParams', rasterization_schema.keys())
 
+#### Global environment settings as in setup.cfg ####
+CARS_GEOID_PATH = "geoid/egm96.grd" # Path in cars package
+CARS_STATIC_CONFIGURATION = "static_configuration.json" # Path in cars package
+
+def set_env():
+    """
+    Set CARS needed global environment variables :
+    - CARS_STATIC_CONFIGURATION : path of json CARS static configuration file
+    - OTB_GEOID_FILE : path to the GEOID file.
+
+    By default, deployed by cars.
+    But can be defined externally by user.
+    """
+    # Set logger
+    logger = logging.getLogger()
+
+    # Get root package directory
+    package_path = os.path.dirname(__file__)
+
+    #### CARS configuration
+
+    # CARS_STATIC_CONFIGURATION
+    if 'CARS_STATIC_CONFIGURATION' not in os.environ:
+        # set cars static from deployed setup.py package data
+        os.environ['CARS_STATIC_CONFIGURATION'] = \
+                    os.path.join(package_path, CARS_STATIC_CONFIGURATION)
+        logger.debug('CARS_STATIC_CONFIGURATION not externally defined.'
+                    ' Set to CARS internal: {}'.format(
+                    os.environ['CARS_STATIC_CONFIGURATION']))
+
+    if not os.path.exists(os.environ['CARS_STATIC_CONFIGURATION']):
+        log_msg = 'The file indicated {} does not exist'.format(
+                                    os.environ['CARS_STATIC_CONFIGURATION'])
+        logger.critical(log_msg)
+        raise Exception(log_msg)
+
+    #### OTB configuration
+
+    # OTB_GEOID_FILE
+    if 'OTB_GEOID_FILE' not in os.environ:
+        #set local geoid path (with resolved path from setup install)
+        os.environ['OTB_GEOID_FILE'] = os.path.join(package_path,
+                                                    CARS_GEOID_PATH)
+        logger.debug('OTB_GEOID_FILE not defined.'
+                    ' Set to CARS internal: {}'.format(
+                                                os.environ['OTB_GEOID_FILE']))
+
+    if not os.path.exists(os.environ.get('OTB_GEOID_FILE')):
+        log_msg = 'OTB_GEOID_FILE environment variable is not set'
+        logger.critical(log_msg)
+        raise Exception(log_msg)
 
 def load_cfg():
     """
-    Load the static configuration file.
-    It shall be automatically installed
-    as $CARS_STATIC_CONFIGURATION/static_conf/static_configuration.json.
+    Load Configuration from the static configuration file.
+    Get Configuration file from CARS_STATIC_CONFIGURATION variable
+
+    Set environment variable configuration before,
+    specially CARS_STATIC_CONFIGURATION if not defined
     """
-    path = os.environ.get('CARS_STATIC_CONFIGURATION')
+    # Set CARS environment variables :
+    set_env()
 
-    if path is None:
-        logger = logging.getLogger()
-        logger.critical(
-            'CARS_STATIC_CONFIGURATION environment variable is not set')
-
-    # Read the static configuration file
-    conf_file_path = os.path.join(path,
-                    'static_conf', 'static_configuration.json')
-    if not os.path.exists(conf_file_path):
-        logger = logging.getLogger()
-        logger.critical(
-            'The file indicated {} does not exist'.format(conf_file_path))
-
-    with open(conf_file_path, 'r') as conf_file:
+    # Open cars static configuration file set in setenv() if not defined by user
+    with open(os.environ.get('CARS_STATIC_CONFIGURATION'), 'r') as conf_file:
         global cfg
         cfg = json.load(conf_file)
         utils.check_json(cfg, static_conf_schema)

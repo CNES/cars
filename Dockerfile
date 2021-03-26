@@ -7,15 +7,15 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     cmake-curses-gui=3.10.2-1ubuntu2.18.04.1 \
-    git=1:2.17.1-1ubuntu0.7 \
+    git=1:2.17.1-1ubuntu0.8 \
     wget=1.19.4-1ubuntu2.2 \
     file=1:5.32-2ubuntu0.4 \
     apt-utils=1.6.12ubuntu0.2 \
     gcc=4:7.4.0-1ubuntu2.3 \
     g++=4:7.4.0-1ubuntu2.3 \
     make=4.1-9.1ubuntu1 \
-    libpython3.6=3.6.9-1~18.04ubuntu1.3 \
-    python3.6-dev=3.6.9-1~18.04ubuntu1.3 \
+    libpython3.6=3.6.9-1~18.04ubuntu1.4 \
+    python3.6-dev=3.6.9-1~18.04ubuntu1.4 \
     libgl1=1.0.0-2ubuntu2.3 \
     libglu1-mesa=9.0.0-2.1build1 \
     libgl1-mesa-dev=20.0.8-0ubuntu1~18.04.1 \
@@ -56,28 +56,23 @@ RUN make \
     && cp -r vl/*.h /usr/local/include/vl
 WORKDIR /opt
 RUN rm -rf vlfeat
+ENV VLFEAT_INCLUDE_DIR=/usr/local/include
 
-# copy
+
+# copy cars
 WORKDIR /cars
 COPY . /cars/
-COPY geoid /usr/local/geoid
-ENV OTB_GEOID_FILE=/usr/local/geoid/egm96.grd
 
 # install cars
-RUN python3 -m pip --no-cache-dir install pip six setuptools cython --upgrade
+RUN python3 -m pip --no-cache-dir install pip setuptools cython --upgrade
 RUN python3 -m pip --no-cache-dir install --no-binary fiona fiona
 RUN python3 -m pip --no-cache-dir install --no-binary rasterio rasterio
 RUN python3 -m pip --no-cache-dir install pygdal=="$(gdal-config --version).*"
 
-ENV VLFEAT_INCLUDE_DIR=/usr/local/include
 RUN python3 -m pip --no-cache-dir install /cars/.
 
-RUN ln -s /usr/bin/python3 /usr/bin/python
-
 # source /usr/local/bin/env_cars.sh
-ENV CARSPATH=/cars \
-    CARS_STATIC_CONFIGURATION=/usr/local \
-    OTB_APPLICATION_PATH=/usr/lib:/usr/local/lib:$OTB_APPLICATION_PATH \
+ENV OTB_APPLICATION_PATH=/usr/lib:/usr/local/lib:$OTB_APPLICATION_PATH \
     LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
     CARS_NB_WORKERS_PER_PBS_JOB=2 \
     OMP_NUM_THREADS=4 \
@@ -85,7 +80,6 @@ ENV CARSPATH=/cars \
     OTB_LOGGER_LEVEL=WARNING \
     GDAL_CACHEMAX=128 \
     ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1 \
-    CARS_TEST_TEMPORARY_DIR=/tmp \
     CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
 
 ENV NUMBA_NUM_THREADS=$OMP_NUM_THREADS \
@@ -95,5 +89,5 @@ ENV NUMBA_NUM_THREADS=$OMP_NUM_THREADS \
 ENV OTB_MAX_RAM_HINT=1000
 
 # launch cars
-ENTRYPOINT ["cars_cli"]
+ENTRYPOINT ["cars"]
 CMD ["-h"]
