@@ -94,8 +94,12 @@ prepare_params_schema = {
 # tiling configuration tags and schema
 tiling_conf_tag = 'tiling_configuration'
 epi_tile_margin_tag = 'epipolar_tile_margin_in_percent'
+min_epi_tile_size_tag = 'min_epipolar_tile_size'
+max_epi_tile_size_tag = 'max_epipolar_tile_size'
 tiling_conf_schema = {
-    epi_tile_margin_tag: Or(None, int)
+    epi_tile_margin_tag: Or(None, int),
+    min_epi_tile_size_tag: Or(None, int),
+    max_epi_tile_size_tag: Or(None, int)
 }
 
 # rasterization tags and schema
@@ -169,6 +173,7 @@ LowResDSMParams = namedtuple(
     'LowResDSMParams', low_res_dsm_parameters_schema.keys())
 RasterizationParams = namedtuple(
     'RasterizationParams', rasterization_schema.keys())
+TilingParams = namedtuple('TilingParams', tiling_conf_schema.keys())
 
 #### Global environment settings as in setup.cfg ####
 CARS_GEOID_PATH = "geoid/egm96.grd" # Path in cars package
@@ -295,15 +300,21 @@ def get_disparity_outliers_rejection_percent() -> float:
                 disparity_outliers_rejection_percent_tag]
 
 
-def get_epi_tile_margin_percent() -> int:
+def get_tiling_params() -> TilingParams:
     """
-    :return: The epipolar tile margin to use as a percent
-        of the estimated tile size from static configuration file
+    Construct the TilingParams namedtuple
+    from the static configuration file
+
+    :return: The epipolar tile params of the estimated tile size
     """
     if cfg is None:
         load_cfg()
 
-    return cfg[compute_dsm_tag][tiling_conf_tag][epi_tile_margin_tag]
+    # get tiling section
+    tiling_dict = cfg[compute_dsm_tag][tiling_conf_tag]
+    tiling_params = TilingParams(*tiling_dict.values())
+
+    return tiling_params
 
 
 def get_rasterization_params() -> RasterizationParams:
