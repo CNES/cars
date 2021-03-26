@@ -56,6 +56,7 @@ from cars import tiling
 from cars import utils
 from cars import projection
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
+from cars.lib.steps.sparse_matching import sift
 
 
 def matching_wrapper(
@@ -136,7 +137,7 @@ def matching_wrapper(
     # Perform matching
     sift_params = static_cfg.get_sift_params()
     matches = \
-        preprocessing.dataset_matching(left_ds, right_ds,
+        sift.dataset_matching(left_ds, right_ds,
             matching_threshold =\
                 getattr(sift_params, static_cfg.sift_matching_threshold_tag),
             n_octave =\

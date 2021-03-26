@@ -162,60 +162,6 @@ def test_generate_epipolar_grids_default_alt():
 
 
 @pytest.mark.unit_tests
-def test_dataset_matching():
-    """
-    Test dataset_matching method
-    """
-    region = [200, 250, 320, 400]
-    img1 = absolute_data_path("input/phr_reunion/left_image.tif")
-    img2 = absolute_data_path("input/phr_reunion/right_image.tif")
-    mask1 = absolute_data_path("input/phr_reunion/left_mask.tif")
-    mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
-    nodata1 = 0
-    nodata2 = 0
-    grid1 = absolute_data_path(
-        "input/preprocessing_input/left_epipolar_grid_reunion.tif")
-    grid2 = absolute_data_path(
-        "input/preprocessing_input/right_epipolar_grid_reunion.tif")
-
-    epipolar_size_x = 596
-    epipolar_size_y = 596
-
-    left = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
-        img2, grid2, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata2, mask=mask2)
-
-    matches = preprocessing.dataset_matching(left, right)
-
-    # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/matches.npy"), matches)
-
-    matches_ref = np.load(absolute_data_path("ref_output/matches.npy"))
-    np.testing.assert_allclose(matches, matches_ref)
-
-    # Case with no matches
-    region = [0, 0, 2, 2]
-
-    left = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-
-    matches = preprocessing.dataset_matching(left, right)
-
-    assert matches.shape == (0, 4)
-
-
-@pytest.mark.unit_tests
 def test_remove_epipolar_outliers():
     """
     Test remove epipolar outliers function
