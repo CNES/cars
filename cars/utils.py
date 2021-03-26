@@ -246,37 +246,6 @@ def otb_can_open(raster_file: str) -> bool:
                 .format(raster_file, read_error))
         return False
 
-
-def get_version() -> str:
-    """
-    Return version based on git branch / commit sha1
-
-    TODO : review how to do CARS Version
-
-    :returns: A string containing version
-    """
-    version = "Unknown"
-    try:
-        #pylint: disable=import-outside-toplevel
-        from git import Repo
-        from git.exc import InvalidGitRepositoryError
-        repo = Repo(os.path.join(os.path.dirname(
-            os.path.abspath(__file__)), ".."))
-        if not repo.bare:
-            try:
-                version = str(repo.active_branch) + "/"
-            except TypeError:
-                version = ""
-            version = version + "/" + \
-                str(repo.git.rev_parse(repo.head.commit.hexsha, short=4))
-    except ImportError:
-        pass
-    except InvalidGitRepositoryError:
-        # Not in a git repo
-        pass
-    return version
-
-
 def read_vector(path_to_file):
     """
     Read vector file and returns the corresponding polygon
@@ -399,8 +368,11 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
 
 def read_geoid_file():
     """
-    Read geoid height from OTB geoid file defined by the $OTB_GEOID_FILE
-    environement variable.
+    Read geoid height from OTB geoid file
+    Geoid is defined by the $OTB_GEOID_FILE global environement variable.
+
+    A default CARS geoid is deployed in setup.py and
+    configured in configuration.py
 
     Geoid is returned as an xarray.Dataset and height is stored in the `hgt`
     variable, which is indexed by `lat` and `lon` coordinates. Dataset
@@ -410,7 +382,8 @@ def read_geoid_file():
     :return: the geoid height array in meter.
     :rtype: xarray.Dataset
     """
-    geoid_path = os.environ['OTB_GEOID_FILE']
+    # Set geoid path from OTB_GEOID_FILE
+    geoid_path = os.environ.get('OTB_GEOID_FILE')
 
     with open(geoid_path, mode='rb') as in_grd:  # reading binary data
         # first header part, 4 float of 4 bytes -> 16 bytes to read

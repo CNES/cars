@@ -21,7 +21,7 @@
 
 """
 Main 3D Compute DSM pipeline module:
-contains all the functions associated with its cars_cli subcommand.
+contains all the functions associated with its cars subcommand.
 """
 
 # Standard imports
@@ -48,6 +48,7 @@ from shapely.geometry import Polygon
 import xarray as xr
 
 # Cars imports
+from cars import __version__
 from cars import stereo
 from cars import rasterization
 from cars import parameters as params
@@ -297,7 +298,7 @@ def run(
         params.stereo_inputs_section_tag: [],
         params.stereo_section_tag:
         {
-            params.stereo_version_tag: utils.get_version(),
+            params.stereo_version_tag: __version__,
             params.stereo_parameters_section_tag:
             {
                 params.resolution_tag: resolution,

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for bin/cars_cli.py
+Test module for cars/cars.py
 """
 
 import tempfile
@@ -28,7 +28,7 @@ from copy import copy
 import pytest
 
 
-from cars.cars import main_cli, cars_cli_parser
+from cars.cars import main_cli, cars_parser
 from .utils import temporary_dir, absolute_data_path
 
 
@@ -37,7 +37,7 @@ from .utils import temporary_dir, absolute_data_path
 def prepare_default_args():
     """
     Testing default cars prepare arguments pytest fixture,
-    ease cars_cli prepare test readibility
+    ease cars prepare test readibility
     """
     args = argparse.Namespace()
     args.loglevel = 'INFO'
@@ -60,7 +60,7 @@ def prepare_default_args():
 def compute_dsm_default_args():
     """
     Testing default cars compute_dsm arguments pytest fixture,
-    ease cars_cli compute_dsm test readibility
+    ease cars compute_dsm test readibility
     """
     args = argparse.Namespace()
     args.loglevel = 'INFO'
@@ -77,7 +77,7 @@ def compute_dsm_default_args():
     args.roi_file = None
     args.epsg = None
     args.injsons = [absolute_data_path(
-        'input/cars_cli_input/content.json')]
+        'input/cars_input/content.json')]
     args.mode = 'local_dask'
     args.nb_workers = 4
     args.walltime = '00:59:00'
@@ -95,7 +95,7 @@ def test_command():
     """
     Cars command pytest with wrong subcommand
     """
-    parser = cars_cli_parser()
+    parser = cars_parser()
 
     args = argparse.Namespace()
     args.loglevel = 'INFO'
@@ -118,7 +118,7 @@ def test_prepare_args(
     """
     Cars prepare arguments test with default and degraded cases
     """
-    parser = cars_cli_parser()
+    parser = cars_parser()
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         prepare_default_args.outdir = directory
@@ -133,7 +133,7 @@ def test_prepare_args(
         args_bad_json = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_json.injson = absolute_data_path(
-                'input/cars_cli_input/test.json')
+                'input/cars_input/test.json')
             main_cli(args_bad_json, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -216,7 +216,7 @@ def test_dsm_compute_arg(
     """
     Cars compute_dsm arguments test with default and degraded cases
     """
-    parser = cars_cli_parser()
+    parser = cars_parser()
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         compute_dsm_default_args.outdir = directory
@@ -237,19 +237,19 @@ def test_dsm_compute_arg(
         # test image roi argument
         args_roi_file = copy(compute_dsm_default_args)
         args_roi_file.roi_file = absolute_data_path(
-            'input/cars_cli_input/roi_image.tif')
+            'input/cars_input/roi_image.tif')
         main_cli(args_roi_file, parser, check_inputs=True)
 
         # test vector roi argument
         args_roi_file.roi_file = absolute_data_path(
-            'input/cars_cli_input/roi_vector.gpkg')
+            'input/cars_input/roi_vector.gpkg')
         main_cli(args_roi_file, parser, check_inputs=True)
 
         # degraded cases input jsons
         args_bad_jsons = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_jsons.injsons = [
-                absolute_data_path('input/cars_cli_input/test.txt')]
+                absolute_data_path('input/cars_input/test.txt')]
             main_cli(args_bad_jsons, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -303,7 +303,7 @@ def test_dsm_compute_arg(
         args_bad_roi_file = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_roi_file.roi_file = \
-                absolute_data_path('input/cars_cli_input/test.txt')
+                absolute_data_path('input/cars_input/test.txt')
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -326,7 +326,7 @@ def test_dsm_compute_arg(
         args_bad_correlator_conf = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_correlator_conf.corr_config = absolute_data_path(
-                'input/cars_cli_input/test.txt')
+                'input/cars_input/test.txt')
             main_cli(args_bad_correlator_conf, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1

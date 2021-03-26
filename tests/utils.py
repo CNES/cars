@@ -27,10 +27,16 @@ import os
 import rasterio as rio
 import numpy as np
 
+def cars_path():
+    """
+    Return root of cars source directory
+    One level down from tests
+    """
+    return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
 
 def absolute_data_path(data_path):
     """
-    Return a full absolute path to test data using the CARS_TEST_DATA
+    Return a full absolute path to test data
     environment variable.
     """
     data_folder = os.path.join(os.path.dirname(__file__), "data")

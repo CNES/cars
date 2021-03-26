@@ -21,17 +21,24 @@
 """
 Cars module init file
 """
-from pkg_resources import get_distribution, DistributionNotFound
-from setuptools_scm import get_version
 
-__version__ = None
+# Standard imports
+import sys
 
+# ** VERSION **
+# pylint: disable=import-error,no-name-in-module
+# Depending on python version get importlib standard lib or backported package
+if sys.version_info[:2] >= (3, 8):
+    # when python3 > 3.8
+    from importlib.metadata import PackageNotFoundError  # pragma: no cover
+    from importlib.metadata import version
+else:
+    from importlib_metadata import PackageNotFoundError  # pragma: no cover
+    from importlib_metadata import version
+# Get cars package version (installed from setuptools_scm)
 try:
-    __version__ = get_distribution(__name__).version
-except DistributionNotFound:
-    # package is not installed, use setuptools_scm directly
-    try:
-        __version__ = get_version()
-    except LookupError:
-        # setuptools-scm was unable to detect version : version = None
-        pass
+    __version__ = version("cars")
+except PackageNotFoundError:
+    __version__ = "unknown"  # pragma: no cover
+finally:
+    del version, PackageNotFoundError

@@ -1,4 +1,4 @@
-#
+#!/usr/bin/env python
 # coding: utf8
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
 #
@@ -25,11 +25,10 @@ from __future__ import absolute_import
 
 import subprocess
 import tempfile
-import os
 import fileinput
 import pytest
 
-from .utils import temporary_dir, absolute_data_path
+from .utils import temporary_dir, absolute_data_path, cars_path
 
 @pytest.mark.notebook_tests
 def test_step_by_step_compute_dsm():
@@ -38,7 +37,6 @@ def test_step_by_step_compute_dsm():
     notebook conversion (.ipynb->.py), replace default TODO values,
     run the notebook with ipython and check return code
     """
-    cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
     # input_json = read_input_parameters(
@@ -62,12 +60,12 @@ def test_step_by_step_compute_dsm():
                         '--to script '
                         '{}/notebooks/step_by_step_compute_dsm.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True, check=True)
+                       .format(cars_path(), directory)], shell=True, check=True)
 
         for line in fileinput.input(
             '{}/step_by_step_compute_dsm.py'.format(directory), inplace=True):
             if "cars_home = \"TODO\"" in line:
-                line = line.replace("TODO", cars_path)
+                line = line.replace("TODO", cars_path())
             elif "content_dir = \"TODO\"" in line:
                 line = line.replace("TODO",
                                     absolute_data_path(
@@ -93,7 +91,6 @@ def test_epipolar_distributions():
     notebook conversion (.ipynb->.py), replace default TODO values,
     run the notebook with ipython and check return code
     """
-    cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
     # input_json = read_input_parameters(
@@ -116,12 +113,12 @@ def test_epipolar_distributions():
         subprocess.run(['jupyter nbconvert '
                         '--to script {}/notebooks/epipolar_distributions.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True, check=True)
+                       .format(cars_path(), directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/epipolar_distributions.py'
         .format(directory), inplace=True):
             if "cars_home = \"TODO\"" in line:
-                line = line.replace("TODO", cars_path)
+                line = line.replace("TODO", cars_path())
             elif "content_dir = \"TODO\"" in line:
                 line = line.replace("TODO",
                                     absolute_data_path(
@@ -141,18 +138,17 @@ def test_lowres_dem_fit():
     notebook conversion (.ipynb->.py), replace default TODO values,
     run the notebook with ipython and check return code
     """
-    cars_path = os.environ.get('CARSPATH')
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         subprocess.run(['jupyter nbconvert '
                         '--to script {}/notebooks/lowres_dem_fit.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True, check=True)
+                       .format(cars_path(), directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/lowres_dem_fit.py'.format(directory),
                                     inplace=True):
             if "cars_home = \"TODO\"" in line:
-                line = line.replace("TODO", cars_path)
+                line = line.replace("TODO", cars_path())
             elif "content_dir = \"TODO\"" in line:
                 line = line.replace("TODO",
                                     absolute_data_path(
@@ -171,7 +167,6 @@ def test_compute_dsm_memory_monitoring():
     notebook conversion (.ipynb->.py), replace default TODO values,
     run the notebook with ipython and check return code
     """
-    cars_path = os.environ.get('CARSPATH')
 
     # uncomment the following lines to regenerate the input files
     # input_json = read_input_parameters(
@@ -195,7 +190,7 @@ def test_compute_dsm_memory_monitoring():
                         '--to script '
                         '{}/notebooks/compute_dsm_memory_monitoring.ipynb '
                         '--output-dir {}'
-                       .format(cars_path, directory)], shell=True, check=True)
+                       .format(cars_path(), directory)], shell=True, check=True)
 
         for line in fileinput.input('{}/compute_dsm_memory_monitoring.py'
         .format(directory), inplace=True):

@@ -12,3 +12,5 @@ pylint-report.xml
 .ipynb_checkpoints/
 *.pyc
 *.aux.xml
+htmlcov/
+venv/

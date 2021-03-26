@@ -21,7 +21,7 @@
 
 """
 Main cars prepare pipeline module:
-contains functions associated to prepare cars_cli sub-command
+contains functions associated to prepare cars sub-command
 """
 
 # Standard imports
@@ -43,6 +43,7 @@ import dask
 import rasterio as rio
 
 # Cars imports
+from cars import __version__
 from cars import preprocessing
 from cars import pipelines
 from cars import stereo
@@ -232,7 +233,7 @@ def run(
     out_json = {
         params.input_section_tag: config,
         params.preprocessing_section_tag: {
-            params.preprocessing_version_tag: utils.get_version(),
+            params.preprocessing_version_tag: __version__,
             params.preprocessing_parameters_section_tag: {
         params.epi_step_tag: epi_step,
         params.disparity_margin_tag: disparity_margin,
