@@ -46,31 +46,6 @@ from cars import projection
 from cars import utils
 
 
-def remove_epipolar_outliers(matches, percent=0.1):
-    """
-    This function will filter the match vector
-    according to a quantile of epipolar error
-
-    :param matches: the [4,N] matches array
-    :type matches: numpy array
-    :param percent: the quantile to remove at each extrema
-    :type percent: float
-    :return: the filtered match array
-    :rtype: numpy array
-    """
-    epipolar_error_min = np.percentile(matches[:, 1] - matches[:, 3], percent)
-    epipolar_error_max = np.percentile(
-        matches[:, 1] - matches[:, 3], 100 - percent)
-    logging.info(
-        "Epipolar error range after outlier rejection: [{},{}]".format(
-            epipolar_error_min,
-            epipolar_error_max))
-    out = matches[(matches[:, 1] - matches[:, 3]) < epipolar_error_max]
-    out = out[(out[:, 1] - out[:, 3]) > epipolar_error_min]
-
-    return out
-
-
 def compute_disparity_range(matches, percent=0.1):
     """
     This function will compute the disparity range
