@@ -28,7 +28,7 @@ import pytest
 import numpy as np
 
 from cars import stereo
-from .utils import absolute_data_path, temporary_dir, assert_same_datasets
+from tests.utils import absolute_data_path, temporary_dir, assert_same_datasets
 from cars.lib.steps.sparse_matching import sift
 
 
