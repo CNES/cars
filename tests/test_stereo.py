@@ -202,12 +202,33 @@ def test_optimal_tile_size():
     disp = 61
     mem = 313
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp, mem)
+    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+                                                         min_tile_size=0,
+                                                         max_tile_size=1000,
+                                                         otb_max_ram_hint=mem)
+
     assert res == 400
+
+    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+                                                         min_tile_size=0,
+                                                         max_tile_size=300,
+                                                         otb_max_ram_hint=mem)
+
+    assert res == 300
+
+    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+                                                         min_tile_size=500,
+                                                         max_tile_size=1000,
+                                                         otb_max_ram_hint=mem)
+
+    assert res == 500
 
     # Test case where default tile size is returned
     assert stereo\
-        .optimal_tile_size_pandora_plugin_libsgm(-1000, 1000, 100,
+        .optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,
+                                                 min_tile_size=0,
+                                                 max_tile_size=1000,
+                                                 otb_max_ram_hint=100,
                                                  tile_size_rounding=33) == 33
 
 

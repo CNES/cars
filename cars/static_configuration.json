@@ -22,7 +22,9 @@
   },
   "compute_dsm":{
     "tiling_configuration":{
-      "epipolar_tile_margin_in_percent": 20
+      "epipolar_tile_margin_in_percent": 60,
+      "min_epipolar_tile_size": 300,
+      "max_epipolar_tile_size": 1500
     },
     "rasterization":{
       "grid_points_division_factor": null
