@@ -1,54 +1,92 @@
 ============
 Installation
 ============
-
-Prerequisites
-=============
+.. _dependencies:
 
 Dependencies
-------------
+=============
 
-CARS is based on the implementation of some algorithms furnished by the `Orfeo Toolbox 7.0 <https://www.orfeo-toolbox.org>`_ and the `VLFeat <http://www.vlfeat.org/>`_ library.
+CARS is based on the implementation of some algorithms furnished by the `Orfeo Toolbox <https://www.orfeo-toolbox.org>`_ and the `VLFeat <http://www.vlfeat.org/>`_ library.
 Thus, they have to be installed in order to use CARS. See:
 
 * `OTB installation <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_
 * `VLFeat installation <https://github.com/vlfeat/vlfeat>`_
 
-Required python packages
-------------------------
+After OTB installation, the following have to checked:
+* all OTB environment have to be setup (otb applications working, ``OTB_APPLICATION_PATH`` set, ...)
+* gdal-config have to work : If not present in your particular OTB install, copy the provided one in your OTB install path.
 
-The use of CARS also requires the prior installation of the Python packages listed in the ``requirements.txt`` file present at the project's root.
-**Beware**: The numpy package has to be installed separately otherwise some dependencies won't be correctly installed.
+After Vlfeat installation, the following environment variable have to be set:
+* ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
+* ``VLFEAT_LIBRARY`` : should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
 
-It is possible to create a specific virtual environment, to do so:
+Quick installation
+==================
+If dependencies are installed, CARS can be quickly installed with make command in a virtualenv environment
 
 .. code-block:: bash
 
-    $ virtualenv -p python pyenv-dev/
-    $ source pyenv-dev/bin/activate
-    $ pip install numpy
-    $ pip install -r requirements.txt
+    $ git clone https://github.com/CNES/cars.git
+    $ make install
+    $ source venv/bin/activate
+    $ source venv/bin/env_cars.sh
+    $ cars -h
 
-To install other versions of Pandora and its plugins than the ones already installed in CARS, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
+Configuration
+==============
+Cars can be configured mainly through command line : Go to :ref:`cli_usage`
+
+A default `static configuration  <../../cars/static_configuration.json>`_ is deployed with cars installation.
+This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
+
+A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
+It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``
+
+Advanced Manual Installation
+=============================
+The following steps are defined in Makefile for ``install`` command
+
+Virtualenv
+----------
+First create a virtualenv and update pip
+
+.. code-block:: bash
+
+    $ virtualenv -p python venv/
+    $ source venv/bin/activate
+    $ python3 -m pip install --upgrade pip setuptools
+
+Required python packages
+------------------------
+
+The use of CARS requires the prior installation of the some Python packages listed in the ``setup.cfg`` file and automatically installed with pip install.
+But the **numpy** and **cython** package has to be installed separately otherwise some dependencies won't be correctly installed.
+Also, on some installations, **fiona**, **rasterio** and **pygdal** have to be installed from source to fit local GDAL version.
+
+See ``Makefile`` file for details.
+
+.. code-block:: bash
+
+    $ virtualenv -p python venv/
+    $ source venv/bin/activate
+    $ python3 -m pip install --upgrade cython numpy
+    $ python3 -m pip install --no-binary fiona fiona
+    $ python3 -m pip install --no-binary rasterio rasterio
+    $ python3 -m pip install pygdal=="$(gdal-config --version).*"
+
+It is also possible to manually install CARS correlator Pandora with different plugins and configuration: see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
 
 Environment variables
 ---------------------
 
-The ``PATH``, ``PYTHONPATH``, ``LD_LIBRARY_PATH`` and ``OTB_APPLICATION_PATH`` environment variables have to be set to use the Python API as well as the OTB applications on which they depend.
+In order to work, several environment variables impacting the dask, ITK, OTB, numba and gdal configurations are set by default in the ``env_cars.sh`` script.
 
-Some other environment variables have also to be set:
+For OTB CARS applications, the ``PATH``, ``PYTHONPATH``, ``LD_LIBRARY_PATH`` and ``OTB_APPLICATION_PATH`` environment variables have to be set to use the Python API as well as the OTB applications on which they depend.
 
-* ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
-* ``VLFEAT_LIBRARY`` : should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
-* ``OTB_GEOID_FILE`` : location of the geoid file to use
+CARS OTB Application  Compilation
+---------------------------------
 
-*To be noted*: Some other environment variable impacting the dask, ITK, OTB, numba and gdal configurations are set by default in the ``template_env_cars.sh`` script during the cars package installation.
-The ``CARS_STATIC_CONFIGURATION`` environment variable is also defined in order to lead to the CARS project directory. This configuration file, fixing the static parameters used by the CARS API, should then be found at the following path: ``$CARS_STATIC_CONFIGURATION/static_conf/static_configuration.json``.
-
-Installation
-============
-
-First the OTB remote modules have to be built:
+CARS OTB remote modules can be built manually (as in setup.py automatically in pip install):
 
 .. code-block:: bash
 
@@ -57,79 +95,14 @@ First the OTB remote modules have to be built:
     $ cmake -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release -DVLFEAT_INCLUDE_DIR=$VLFEAT_INCLUDE_DIR ../otb_remote_module
     $ make
 
+CARS manual installation
+------------------------
+
 Then, to install CARS:
 
 .. code-block:: bash
 
     $ cd project_root
-    $ pip install cars
+    $ pip install .
 
 The main programs are in Python and thus can be used as they are.
-
-Tests execution
-===============
-
-CARS includes a set of tests which can be executed with ``pytest`` to validate an installation or a development.
-
-Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` has to be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use ``/tmp``).
-
-Two kinds of tests are identified by specific pytest markers:
-- the unit tests defined by the ``unit_tests`` marker
-- the PBS cluster tests defined by the ``pbs_cluster_tests`` marker
-- the Jupyter notebooks test defined by the ``notebook_tests`` marker
-
-To execute the tests, one should just have to call ``py.test`` at the CARS projects's root (after initializing the environment):
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ python -m pytest
-
-To run only the unit tests:
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ pytest -m unit_tests
-
-To run only the PBS cluster tests:
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ pytest -m pbs_cluster_tests
-
-To run only the Jupyter notebooks tests:
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ pytest -m notebook_tests
-
-It is possible to obtain the code coverage level of the tests by installing the ``pytest-cov`` module and use the ``--cov`` option.
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ python -m pytest --cov=cars
-
-It is also possible to execute only a specific part of the test, either by indicating the test file to run:
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ python -m pytest tests/test_tiling.py
-
-Or by using the ``-k`` option which will execute the tests which names contain the option's value:
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ python -m pytest -k end2end
-
-By default, ``pytest`` does not display the traces generated by the tests but only the tests' status (passed or failed). To get all traces, the following options have to be added to the command line (which can be combined with the previous options):
-
-.. code-block:: bash
-
-    $ cd cars/
-    $ python -m pytest -s -o log_cli=true -o log_cli_level=INFO
