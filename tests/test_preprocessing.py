@@ -36,7 +36,7 @@ import xarray as xr
 
 from cars import preprocessing
 from cars import stereo
-from cars import pipelines
+from cars import otb_pipelines
 from cars import constants as cst
 from cars.lib.steps.sparse_matching import sift, matches_regularisation
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
@@ -119,7 +119,7 @@ def generate_epipolar_grids(
     """
     # Launch OTB pipeline to get stero grids
     grid1, grid2, __, __, epipolar_size_x, epipolar_size_y, baseline = \
-        pipelines.build_stereorectification_grid_pipeline(
+        otb_pipelines.build_stereorectification_grid_pipeline(
         img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
 
     col = np.array(range(0, grid1.shape[0] * epi_step, epi_step))

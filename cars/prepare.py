@@ -45,7 +45,7 @@ import rasterio as rio
 # Cars imports
 from cars import __version__
 from cars import preprocessing
-from cars import pipelines
+from cars import otb_pipelines
 from cars import stereo
 from cars import rasterization
 from cars import parameters as params
@@ -388,7 +388,7 @@ def run(
     logging.info("Generating epipolar rectification grid ...")
     grid1, grid2, grid_origin, grid_spacing, epipolar_size_x, epipolar_size_y,\
         alt_to_disp_ratio =\
-            pipelines.build_stereorectification_grid_pipeline(
+            otb_pipelines.build_stereorectification_grid_pipeline(
                 img1,
                 img2,
                 dem=srtm_dir,
