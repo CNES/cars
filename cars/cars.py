@@ -311,7 +311,7 @@ def main_cli(args, parser, check_inputs=False):
     import sys
     import logging
 
-    from cars import prepare
+    from cars.pipelines import prepare
     from cars import compute_dsm
     from cars import parameters as params
     from cars import configuration_correlator as corr_cfg
