@@ -56,7 +56,7 @@ from cars import tiling
 from cars import utils
 from cars import projection
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
-from cars.lib.steps.sparse_matching import sift
+from cars.lib.steps.sparse_matching import sift, matches_regularisation
 
 
 def matching_wrapper(
@@ -742,7 +742,7 @@ than --epipolar_error_upper_bound = {} pix".format(
             corrected_matches.shape[0]))
 
     dmin, dmax =\
-        preprocessing.compute_disparity_range(
+        matches_regularisation.compute_disparity_range(
             corrected_matches,
             static_cfg.get_disparity_outliers_rejection_percent()
         )

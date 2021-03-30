@@ -243,7 +243,8 @@ def test_compute_disparity_range():
     matches = np.load(matches_file)
 
     matches_filtered = matches_regularisation.remove_epipolar_outliers(matches)
-    dispmin, dispmax = preprocessing.compute_disparity_range(matches_filtered)
+    dispmin, dispmax = \
+        matches_regularisation.compute_disparity_range(matches_filtered)
 
     assert dispmin == -3.1239416122436525
     assert dispmax == 3.820396270751972

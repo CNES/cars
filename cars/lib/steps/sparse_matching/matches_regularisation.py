@@ -55,3 +55,23 @@ def remove_epipolar_outliers(matches, percent=0.1):
     out = out[(out[:, 1] - out[:, 3]) > epipolar_error_min]
 
     return out
+
+
+def compute_disparity_range(matches, percent=0.1):
+    """
+    This function will compute the disparity range
+    from matches by filtering percent outliers
+
+    :param matches: the [4,N] matches array
+    :type matches: numpy array
+    :param percent: the quantile to remove at each extrema (in %)
+    :type percent: float
+    :return: the disparity range
+    :rtype: float, float
+    """
+    disparity = matches[:, 2] - matches[:, 0]
+
+    mindisp = np.percentile(disparity, percent)
+    maxdisp = np.percentile(disparity, 100 - percent)
+
+    return mindisp, maxdisp
