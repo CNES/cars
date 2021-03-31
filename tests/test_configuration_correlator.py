@@ -26,7 +26,7 @@ import os
 import tempfile
 import pytest
 
-from cars import configuration_correlator as corr_cfg
+from cars.lib.externals.matching.correlator_configuration import corr_conf
 from .utils import temporary_dir
 
 
@@ -35,7 +35,7 @@ def test_configure_pandora_default():
     """
     Test configure pandora correlator (default configuration)
     """
-    corr_config = corr_cfg.configure_correlator()
+    corr_config = corr_conf.configure_correlator()
     assert corr_config["stereo"]["stereo_method"] == "census"
     assert corr_config["optimization"]["optimization_method"] == "sgm"
 
@@ -86,5 +86,5 @@ def test_configure_pandora_with_file():
         with open(json_path, "w") as json_file:
             json_file.write(json_content)
 
-        corr_config = corr_cfg.configure_correlator(json_path)
+        corr_config = corr_conf.configure_correlator(json_path)
         assert corr_config["optimization"]["P2"] == 24

@@ -42,7 +42,7 @@ from shapely.ops import transform
 from cars.parameters import read_input_parameters
 from cars.parameters import read_preprocessing_content_file
 from cars.pipelines import prepare, compute_dsm
-from cars import configuration_correlator as corr_cfg
+from cars.lib.externals.matching.correlator_configuration import corr_conf
 from .utils import temporary_dir, absolute_data_path, assert_same_images
 
 
@@ -99,7 +99,7 @@ def test_end2end_ventoux_unique():
 
         out_stereo = os.path.join(directory, "out_preproc")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -155,7 +155,7 @@ def test_end2end_ventoux_unique():
         preproc_json = os.path.join(out_preproc, "content.json")
         out_stereo = os.path.join(directory, "out_preproc")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -206,7 +206,7 @@ def test_end2end_ventoux_unique():
         preproc_json = os.path.join(out_preproc, "content.json")
         out_stereo = os.path.join(directory, "out_preproc")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -332,7 +332,7 @@ def test_end2end_ventoux_with_color():
 
         out_stereo = os.path.join(directory, "out_preproc")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -401,7 +401,7 @@ def test_compute_dsm_with_roi_ventoux():
         roi = [5.194, 44.2059, 5.195, 44.2064]
         roi_epsg = 4326
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -500,7 +500,7 @@ def test_compute_dsm_with_snap_to_img1():
         out_stereo = os.path.join(directory, "out_preproc")
         final_epsg = 32631
         resolution = 0.5
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -588,7 +588,7 @@ def test_end2end_quality_stats():
 
         out_stereo = os.path.join(directory, "out_preproc")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -699,7 +699,7 @@ def test_end2end_ventoux_egm96_geoid():
                         preproc_data["preprocessing"]["output"][img]))
 
         out_stereo = os.path.join(directory, "out_preproc")
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -755,7 +755,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         preproc_json = os.path.join(out_preproc, "content.json")
         out_stereo = os.path.join(directory, "out_preproc")
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -816,7 +816,7 @@ def test_end2end_paca_with_mask():
 
         out_stereo = os.path.join(directory, "out_stereo")
 
-        corr_config = corr_cfg.configure_correlator()
+        corr_config = corr_conf.configure_correlator()
 
         compute_dsm.run(
             [read_preprocessing_content_file(preproc_json)],
@@ -878,7 +878,7 @@ def test_end2end_paca_with_mask():
 
             out_stereo = os.path.join(directory, "out_stereo")
 
-            corr_config = corr_cfg.configure_correlator()
+            corr_config = corr_conf.configure_correlator()
 
             compute_dsm.run(
                 [read_preprocessing_content_file(preproc_json)],
