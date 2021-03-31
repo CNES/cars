@@ -56,7 +56,7 @@ from cars import tiling
 from cars import utils
 from cars import projection
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
-from cars.lib.steps.sparse_matching import sift, matches_regularisation
+from cars.lib.steps.sparse_matching import sift, filtering
 from cars.lib.steps.epi_rectif import grids
 
 
@@ -743,7 +743,7 @@ than --epipolar_error_upper_bound = {} pix".format(
             corrected_matches.shape[0]))
 
     dmin, dmax =\
-        matches_regularisation.compute_disparity_range(
+        filtering.compute_disparity_range(
             corrected_matches,
             static_cfg.get_disparity_outliers_rejection_percent()
         )

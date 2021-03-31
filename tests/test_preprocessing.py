@@ -38,7 +38,7 @@ from cars import preprocessing
 from cars import stereo
 from cars import pipelines
 from cars import constants as cst
-from cars.lib.steps.sparse_matching import sift, matches_regularisation
+from cars.lib.steps.sparse_matching import sift, filtering
 from cars.lib.steps.epi_rectif import grids
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
 
@@ -227,7 +227,7 @@ def test_remove_epipolar_outliers():
 
     matches = np.load(matches_file)
 
-    matches_filtered = matches_regularisation.remove_epipolar_outliers(matches)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2
@@ -243,9 +243,9 @@ def test_compute_disparity_range():
 
     matches = np.load(matches_file)
 
-    matches_filtered = matches_regularisation.remove_epipolar_outliers(matches)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
     dispmin, dispmax = \
-        matches_regularisation.compute_disparity_range(matches_filtered)
+        filtering.compute_disparity_range(matches_filtered)
 
     assert dispmin == -3.1239416122436525
     assert dispmax == 3.820396270751972
@@ -266,7 +266,7 @@ def test_correct_right_grid():
     matches = np.load(matches_file)
     matches = np.array(matches)
 
-    matches_filtered = matches_regularisation.remove_epipolar_outliers(matches)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
 
     with rio.open(grid_file) as rio_grid:
         grid = rio_grid.read()
