@@ -49,7 +49,7 @@ from cars import otb_pipelines
 from cars import stereo
 from cars import rasterization
 from cars import parameters as params
-from cars import configuration as static_cfg
+from cars.conf import static_conf
 from cars import constants as cst
 from cars import tiling
 from cars import utils
@@ -133,7 +133,7 @@ def run(
     config = utils.check_json(in_json, params.input_configuration_schema)
 
     # Retrieve static parameters (sift and low res dsm)
-    static_params = static_cfg.get_cfg()
+    static_params = static_conf.get_cfg()
 
     # Initialize output json dict
     out_json = {
@@ -148,7 +148,7 @@ def run(
         params.elevation_delta_lower_bound_tag: elevation_delta_lower_bound,
         params.elevation_delta_upper_bound_tag: elevation_delta_upper_bound
             },
-            params.static_params_tag: static_params[static_cfg.prepare_tag],
+            params.static_params_tag: static_params[static_conf.prepare_tag],
             params.preprocessing_output_section_tag: {}
         }
     }
@@ -649,7 +649,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     dmin, dmax =\
         filtering.compute_disparity_range(
             corrected_matches,
-            static_cfg.get_disparity_outliers_rejection_percent()
+            static_conf.get_disparity_outliers_rejection_percent()
         )
     margin = abs(dmax - dmin) * disparity_margin
     dmin -= margin
@@ -690,10 +690,10 @@ than --epipolar_error_upper_bound = {} pix".format(
                                         out_json, corrected_matches)
 
     # Then define the size of the lower res DSM to rasterize
-    low_res_dsm_params = static_cfg.get_low_res_dsm_params()
+    low_res_dsm_params = static_conf.get_low_res_dsm_params()
     lowres_dsm_resolution = getattr(
         low_res_dsm_params,
-        static_cfg.low_res_dsm_resolution_in_degree_tag # Value in degree
+        static_conf.low_res_dsm_resolution_in_degree_tag # Value in degree
     )
     lowres_dsm_sizex = int(math.ceil(
         (inter_xmax-inter_xmin)/lowres_dsm_resolution)
@@ -749,10 +749,10 @@ than --epipolar_error_upper_bound = {} pix".format(
     # Now, estimate a correction to align DSM on the lowres initial DEM
     splines = None
     cfg_low_res_dsm_min_sizex = getattr(low_res_dsm_params,
-        static_cfg.low_res_dsm_min_sizex_for_align_tag)
+        static_conf.low_res_dsm_min_sizex_for_align_tag)
 
     cfg_low_res_dsm_min_sizey = getattr(low_res_dsm_params,
-        static_cfg.low_res_dsm_min_sizey_for_align_tag)
+        static_conf.low_res_dsm_min_sizey_for_align_tag)
 
     if lowres_dsm_sizex > cfg_low_res_dsm_min_sizex and \
        lowres_dsm_sizey > cfg_low_res_dsm_min_sizey:
@@ -796,9 +796,9 @@ than --epipolar_error_upper_bound = {} pix".format(
             lowres_initial_dem,
             origin, time_direction_vector,
             ext=getattr(low_res_dsm_params,
-                        static_cfg.low_res_dsm_ext_tag),
+                        static_conf.low_res_dsm_ext_tag),
             order=getattr(low_res_dsm_params,
-                          static_cfg.low_res_dsm_ext_tag))
+                          static_conf.low_res_dsm_ext_tag))
 
     else:
         logging.warning("Low resolution DSM is not large enough "

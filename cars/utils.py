@@ -373,7 +373,7 @@ def read_geoid_file():
     Geoid is defined by the $OTB_GEOID_FILE global environement variable.
 
     A default CARS geoid is deployed in setup.py and
-    configured in configuration.py
+    configured in conf/static_conf.py
 
     Geoid is returned as an xarray.Dataset and height is stored in the `hgt`
     variable, which is indexed by `lat` and `lon` coordinates. Dataset
