@@ -19,13 +19,13 @@
 # limitations under the License.
 #
 """
-Test module for cars/pipelines.py
+Test module for cars/otb_pipelines.py
 """
 
 from __future__ import absolute_import
 import pytest
 import numpy as np
-from cars import pipelines
+from cars import otb_pipelines
 from .utils import absolute_data_path
 
 @pytest.mark.unit_tests
@@ -39,7 +39,7 @@ def test_build_stereorectification_grid_pipeline():
     step = 45
     left_grid_np, right_grid_np, left_grid_origin, left_grid_spacing, \
         epipolar_size_x, epipolar_size_y, disp_to_alt_ratio \
-            = pipelines.build_stereorectification_grid_pipeline(
+            = otb_pipelines.build_stereorectification_grid_pipeline(
         img1, img2, dem, epi_step=step)
 
     assert epipolar_size_x == 612
@@ -77,7 +77,7 @@ def test_build_extract_roi_application():
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
     region = [100, 200, 300, 400]
 
-    app = pipelines.build_extract_roi_application(img, region)
+    app = otb_pipelines.build_extract_roi_application(img, region)
 
     assert app.GetParameterInt("startx") == region[0]
     assert app.GetParameterInt("starty") == region[1]
@@ -95,7 +95,7 @@ def test_build_mask_pipeline():
     nodata = 0
     mask = absolute_data_path("input/phr_reunion/left_mask.tif")
     roi = [100, 200, 300, 400]
-    out_np = pipelines.build_mask_pipeline(
+    out_np = otb_pipelines.build_mask_pipeline(
         img, grid, nodata, mask, 2387, 2387, roi)
 
     assert out_np.shape == (200, 200)
@@ -108,7 +108,7 @@ def test_build_image_resampling_pipeline():
     img = absolute_data_path("input/phr_reunion/left_image.tif")
     grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
     roi = [100, 200, 300, 400]
-    out_np = pipelines.build_image_resampling_pipeline(
+    out_np = otb_pipelines.build_image_resampling_pipeline(
         img, grid, 2387, 2387, roi)
 
     assert out_np.shape == (200, 200, 1)

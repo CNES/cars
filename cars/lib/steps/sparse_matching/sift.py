@@ -28,7 +28,7 @@ import otbApplication as otb
 
 
 # Cars imports
-from cars import pipelines
+from cars import otb_pipelines
 from cars import constants as cst
 
 
@@ -62,13 +62,13 @@ def dataset_matching(ds1, ds2, matching_threshold = 0.6, n_octave = 8,
     origin2 = [float(ds2.attrs['region'][0]), float(ds2.attrs['region'][1])]
 
     # Encode images for OTB
-    im1 = pipelines.encode_to_otb(
+    im1 = otb_pipelines.encode_to_otb(
         ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
-    msk1 = pipelines.encode_to_otb(
+    msk1 = otb_pipelines.encode_to_otb(
         ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
-    im2 = pipelines.encode_to_otb(
+    im2 = otb_pipelines.encode_to_otb(
         ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
-    msk2 = pipelines.encode_to_otb(
+    msk2 = otb_pipelines.encode_to_otb(
         ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
 
     # Build sift matching app

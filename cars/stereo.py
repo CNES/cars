@@ -51,7 +51,7 @@ import pandora.marge
 from pandora import constants as pcst
 
 # Cars imports
-from cars import pipelines
+from cars import otb_pipelines
 from cars import tiling
 from cars import parameters as params
 from cars import projection
@@ -212,11 +212,11 @@ def resample_image(
     img_has_mask = nodata is not None or mask is not None
     msk = None
     if img_has_mask:
-        msk = pipelines.build_mask_pipeline(
+        msk = otb_pipelines.build_mask_pipeline(
             img, grid, nodata, mask, largest_size[0], largest_size[1], region)
 
     # Build resampling pipelines for images
-    resamp = pipelines.build_image_resampling_pipeline(
+    resamp = otb_pipelines.build_image_resampling_pipeline(
         img, grid, largest_size[0], largest_size[1], region, lowres_color)
 
     dataset = create_im_dataset(resamp, region, largest_size, band_coords, msk)
@@ -1151,7 +1151,7 @@ def compute_points_cloud(data: xr.Dataset,
     :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
-    disp = pipelines.encode_to_otb(
+    disp = otb_pipelines.encode_to_otb(
         data[cst.DISP_MAP].values,
         data.attrs[cst.EPI_FULL_SIZE],
         data.attrs[roi_key])
