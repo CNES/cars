@@ -50,11 +50,11 @@ from cars import stereo
 from cars import rasterization
 from cars import parameters as params
 from cars import configuration as static_cfg
-from cars import mask_classes
 from cars import constants as cst
 from cars import tiling
 from cars import utils
 from cars import projection
+from cars.conf import mask_classes
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
 from cars.lib.steps.sparse_matching import filtering
 from cars.lib.steps.epi_rectif import grids

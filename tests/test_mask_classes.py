@@ -25,7 +25,7 @@ Test module for cars/mask_classes.py
 import pytest
 import numpy as np
 
-from cars import mask_classes
+from cars.conf import mask_classes
 from .utils import absolute_data_path
 
 

@@ -37,7 +37,7 @@ from json_checker import OptionalKey, And, Or
 
 # cars imports
 from cars import configuration as static_cfg
-from cars import mask_classes
+from cars.conf import mask_classes
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
