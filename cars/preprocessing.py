@@ -32,8 +32,6 @@ from typing import Union, Tuple
 
 # Third party imports
 import numpy as np
-import rasterio as rio
-from affine import Affine
 from scipy import interpolate
 from scipy.signal import butter, lfilter, filtfilt, lfilter_zi
 import xarray as xr
@@ -44,38 +42,6 @@ import otbApplication as otb
 from cars import constants as cst
 from cars import projection
 from cars import utils
-
-
-def write_grid(grid, fname, origin, spacing):
-    """
-    Write an epipolar resampling grid to file
-
-    :param grid: the grid to write
-    :type grid: 3D numpy array
-    :param fname: the filename to which the grid will be written
-    :type fname: string
-    :param origin: origin of the grid
-    :type origin: (float, float)
-    :param spacing: spacing of the grid
-    :type spacing: (float, float)
-    """
-
-    geotransform = (
-        origin[0] - 0.5 * spacing[0],
-        spacing[0],
-        0.0,
-        origin[1] - 0.5 * spacing[1],
-        0.0,
-        spacing[1])
-
-    transform = Affine.from_gdal(*geotransform)
-
-    with rio.open(fname, 'w', height=grid.shape[0],
-                  width=grid.shape[1], count=2, driver='GTiff',
-                  dtype=grid.dtype, transform=transform)\
-        as dst:
-        dst.write_band(1, grid[:, :, 0])
-        dst.write_band(2, grid[:, :, 1])
 
 
 def image_envelope(img, shp, dem=None, default_alt=None):

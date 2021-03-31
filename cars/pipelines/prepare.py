@@ -59,7 +59,7 @@ from cars.cluster import start_local_cluster, start_cluster, stop_cluster
 from cars.lib.steps.sparse_matching import filtering
 from cars.lib.steps.epi_rectif import grids
 from cars.pipelines.wrappers import matching_wrapper
-
+from cars.lib.io import write
 
 def run(
         in_json: params.input_configuration_type,
@@ -427,9 +427,9 @@ def run(
 
     # Write temporary grid
     tmp1 = os.path.join(out_dir, "tmp1.tif")
-    preprocessing.write_grid(grid1, tmp1, grid_origin, grid_spacing)
+    write.write_grid(grid1, tmp1, grid_origin, grid_spacing)
     tmp2 = os.path.join(out_dir, "tmp2.tif")
-    preprocessing.write_grid(grid2, tmp2, grid_origin, grid_spacing)
+    write.write_grid(grid2, tmp2, grid_origin, grid_spacing)
 
     # Compute margins for right region
     margins = [
@@ -597,7 +597,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     out_json[params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]\
         [params.left_epipolar_grid_tag] = out_left_grid
-    preprocessing.write_grid(
+    write.write_grid(
         grid1,
         out_left_grid,
         grid_origin,
@@ -608,7 +608,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     out_json[params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]\
         [params.right_epipolar_grid_tag] = out_right_grid
-    preprocessing.write_grid(
+    write.write_grid(
         corrected_right_grid,
         out_right_grid,
         grid_origin,
@@ -622,7 +622,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         [params.preprocessing_output_section_tag]\
         [params.right_epipolar_uncorrected_grid_tag] =\
             out_right_grid_uncorrected
-    preprocessing.write_grid(
+    write.write_grid(
         grid2,
         out_right_grid_uncorrected,
         grid_origin,
