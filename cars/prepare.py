@@ -57,6 +57,7 @@ from cars import utils
 from cars import projection
 from cars.cluster import start_local_cluster, start_cluster, stop_cluster
 from cars.lib.steps.sparse_matching import sift, matches_regularisation
+from cars.lib.steps.epi_rectif import grids
 
 
 def matching_wrapper(
@@ -674,7 +675,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     # Commpute correction for right grid
     logging.info("Generating correction for right epipolar grid ...")
     corrected_right_grid, corrected_matches, __, __ =\
-        preprocessing.correct_right_grid(
+        grids.correct_right_grid(
             matches, grid2, grid_origin, grid_spacing)
 
     corrected_epipolar_error = corrected_matches[:,

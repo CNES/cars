@@ -39,6 +39,7 @@ from cars import stereo
 from cars import pipelines
 from cars import constants as cst
 from cars.lib.steps.sparse_matching import sift, matches_regularisation
+from cars.lib.steps.epi_rectif import grids
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
 
 
@@ -272,7 +273,7 @@ def test_correct_right_grid():
         grid = np.transpose(grid, (1, 2, 0))
 
         corrected_grid, corrected_matches, in_stats, out_stats = \
-            preprocessing.correct_right_grid(
+            grids.correct_right_grid(
                 matches_filtered, grid, origin, spacing)
 
         # Uncomment to update ref
