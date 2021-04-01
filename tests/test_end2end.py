@@ -46,7 +46,7 @@ from cars import configuration_correlator as corr_cfg
 from .utils import temporary_dir, absolute_data_path, assert_same_images
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_end2end_ventoux_unique():
     """
     End to end processing
@@ -234,7 +234,7 @@ def test_end2end_ventoux_unique():
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_prepare_ventoux_bias():
     """
     Dask prepare with bias geoms
@@ -281,7 +281,7 @@ def test_prepare_ventoux_bias():
                         preproc_data["preprocessing"]["output"][img]))
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_end2end_ventoux_with_color():
     """
     End to end processing with p+xs fusion
@@ -366,7 +366,7 @@ def test_end2end_ventoux_with_color():
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_compute_dsm_with_roi_ventoux():
     """
     Dask compute dsm processing with input roi (cars_stereo)
@@ -466,7 +466,7 @@ def test_compute_dsm_with_roi_ventoux():
         assert math.ceil(ref_ymax / resolution) * resolution == ymax
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_compute_dsm_with_snap_to_img1():
     """
     Dask compute dsm processing with input roi (cars_stereo)
@@ -537,7 +537,7 @@ def test_compute_dsm_with_snap_to_img1():
 
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_end2end_quality_stats():
     """
     End to end processing
@@ -649,7 +649,7 @@ def test_end2end_quality_stats():
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_end2end_ventoux_egm96_geoid():
     """
     End to end processing
@@ -784,7 +784,7 @@ def test_end2end_ventoux_egm96_geoid():
         assert os.path.exists(os.path.join(out_stereo, "msk.tif")) is False
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_end2end_paca_with_mask():
     """
     End to end processing
