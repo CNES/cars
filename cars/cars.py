@@ -313,7 +313,7 @@ def main_cli(args, parser, check_inputs=False):
 
     from cars.pipelines import prepare
     from cars.pipelines import compute_dsm
-    from cars import parameters as params
+    from cars.conf import parameters as params
     from cars.lib.externals.matching.correlator_configuration import corr_conf
 
     # logging

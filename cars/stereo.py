@@ -53,7 +53,7 @@ from pandora import constants as pcst
 # Cars imports
 from cars import otb_pipelines
 from cars import tiling
-from cars import parameters as params
+from cars.conf import parameters as params
 from cars import projection
 from cars import utils
 from cars.conf import mask_classes

@@ -39,8 +39,8 @@ import rasterio
 from shapely.geometry import Polygon
 from shapely.ops import transform
 
-from cars.parameters import read_input_parameters
-from cars.parameters import read_preprocessing_content_file
+from cars.conf.parameters import read_input_parameters
+from cars.conf.parameters import read_preprocessing_content_file
 from cars.pipelines import prepare, compute_dsm
 from cars.lib.externals.matching.correlator_configuration import corr_conf
 from .utils import temporary_dir, absolute_data_path, assert_same_images

@@ -51,7 +51,7 @@ import xarray as xr
 from cars import __version__
 from cars import stereo
 from cars import rasterization
-from cars import parameters as params
+from cars.conf import parameters as params
 from cars.conf import static_conf
 from cars import tiling
 from cars import utils
