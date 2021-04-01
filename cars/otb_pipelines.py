@@ -28,7 +28,7 @@ from __future__ import absolute_import
 import numpy as np
 import otbApplication
 
-from cars import mask_classes
+from cars.conf import mask_classes
 
 
 def build_stereorectification_grid_pipeline(

@@ -52,13 +52,13 @@ from cars import __version__
 from cars import stereo
 from cars import rasterization
 from cars import parameters as params
-from cars import configuration as static_cfg
-from cars import mask_classes
+from cars.conf import static_conf
 from cars import tiling
 from cars import utils
 from cars import projection
 from cars import readwrite
 from cars import constants as cst
+from cars.conf import mask_classes
 from cars.cluster import start_local_cluster, start_cluster,\
                          stop_cluster, ComputeDSMMemoryLogger
 
@@ -291,7 +291,7 @@ def run(
         "Received {} stereo pairs configurations".format(len(in_jsons)))
 
     # Retrieve static parameters (rasterization and cloud filtering)
-    static_params = static_cfg.get_cfg()
+    static_params = static_conf.get_cfg()
 
     # Initiate ouptut json dictionary
     out_json = {
@@ -305,7 +305,8 @@ def run(
                 params.sigma_tag: sigma,
                 params.dsm_radius_tag: dsm_radius
             },
-            params.static_params_tag: static_params[static_cfg.compute_dsm_tag],
+            params.static_params_tag: static_params[
+                static_conf.compute_dsm_tag],
             params.stereo_output_section_tag: {}
         }
     }
@@ -569,14 +570,14 @@ def run(
         if epi_tile_size is not None:
             opt_epipolar_tile_size = epi_tile_size
         else:
-            tiling_params = static_cfg.get_tiling_params()
+            tiling_params = static_conf.get_tiling_params()
             opt_epipolar_tile_size =\
                 stereo.optimal_tile_size_pandora_plugin_libsgm(
                     disp_min, disp_max,
-                    getattr(tiling_params, static_cfg.min_epi_tile_size_tag),
-                    getattr(tiling_params, static_cfg.max_epi_tile_size_tag),
+                    getattr(tiling_params, static_conf.min_epi_tile_size_tag),
+                    getattr(tiling_params, static_conf.max_epi_tile_size_tag),
                     margin=getattr(tiling_params,
-                                   static_cfg.epi_tile_margin_tag))
+                                   static_conf.epi_tile_margin_tag))
 
         logging.info(
             "Optimal tile size for epipolar regions: "
@@ -982,21 +983,21 @@ def run(
         # cloud filtering params
         if cloud_small_components_filter:
             small_cpn_filter_params =\
-                static_cfg.get_small_components_filter_params()
+                static_conf.get_small_components_filter_params()
         else:
             small_cpn_filter_params = None
 
         if cloud_statistical_outliers_filter:
             statistical_filter_params =\
-                static_cfg.get_statistical_outliers_filter_params()
+                static_conf.get_statistical_outliers_filter_params()
         else:
             statistical_filter_params = None
 
         # rasterization grid division factor
-        rasterization_params = static_cfg.get_rasterization_params()
+        rasterization_params = static_conf.get_rasterization_params()
         grid_points_division_factor =\
             getattr(
-            rasterization_params, static_cfg.grid_points_division_factor_tag)
+            rasterization_params, static_conf.grid_points_division_factor_tag)
 
         if len(required_point_clouds) > 0:
             logging.debug(
@@ -1027,7 +1028,7 @@ def run(
                         write_dsm_by_tile,
                         args = (
                     required_point_clouds, resolution, epsg, tmp_dir,
-                    nb_bands, static_cfg.get_color_image_encoding(),
+                    nb_bands, static_conf.get_color_image_encoding(),
                     output_stats, write_msk
                         ),
                         kwds = {
@@ -1091,7 +1092,7 @@ def run(
         readwrite.write_geotiff_dsm(
             future_dsm_tiles, out_dir, xsize, ysize,
             bounds, resolution, epsg, nb_bands, dsm_no_data,
-            color_no_data, color_dtype = static_cfg.get_color_image_encoding(),
+            color_no_data, color_dtype = static_conf.get_color_image_encoding(),
             write_color=True, write_stats=output_stats, write_msk=write_msk,
             msk_no_data=msk_no_data)
 

@@ -33,7 +33,7 @@ import xarray as xr
 
 # Cars imports
 from cars import constants as cst
-from cars import mask_classes
+from cars.conf import mask_classes
 
 
 def update_disp_to_0(

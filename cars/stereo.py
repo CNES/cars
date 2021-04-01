@@ -56,7 +56,7 @@ from cars import tiling
 from cars import parameters as params
 from cars import projection
 from cars import utils
-from cars import mask_classes
+from cars.conf import mask_classes
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
 from cars import matching_regularisation

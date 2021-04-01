@@ -30,8 +30,8 @@ from typing import List
 import numpy as np
 
 from cars import stereo
-from cars import mask_classes
-from cars import configuration as static_cfg
+from cars.conf import static_conf
+from cars.conf import mask_classes
 from cars.lib.steps.sparse_matching import sift
 from cars import constants as cst
 
@@ -112,22 +112,22 @@ def matching_wrapper(
             )
 
     # Perform matching
-    sift_params = static_cfg.get_sift_params()
+    sift_params = static_conf.get_sift_params()
     matches = \
         sift.dataset_matching(left_ds, right_ds,
             matching_threshold =\
-                getattr(sift_params, static_cfg.sift_matching_threshold_tag),
+                getattr(sift_params, static_conf.sift_matching_threshold_tag),
             n_octave =\
-                getattr(sift_params, static_cfg.sift_n_octave_tag),
+                getattr(sift_params, static_conf.sift_n_octave_tag),
             n_scale_per_octave =\
-                getattr(sift_params, static_cfg.sift_n_scale_per_octave_tag),
+                getattr(sift_params, static_conf.sift_n_scale_per_octave_tag),
             dog_threshold =\
-                getattr(sift_params, static_cfg.sift_dog_threshold_tag),
+                getattr(sift_params, static_conf.sift_dog_threshold_tag),
             edge_threshold =\
-                getattr(sift_params, static_cfg.sift_edge_threshold_tag),
+                getattr(sift_params, static_conf.sift_edge_threshold_tag),
             magnification =\
-                getattr(sift_params, static_cfg.sift_magnification_tag),
+                getattr(sift_params, static_conf.sift_magnification_tag),
             backmatching =\
-                getattr(sift_params, static_cfg.sift_back_matching_tag))
+                getattr(sift_params, static_conf.sift_back_matching_tag))
 
     return matches

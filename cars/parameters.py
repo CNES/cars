@@ -36,8 +36,8 @@ import json
 from json_checker import OptionalKey, And, Or
 
 # cars imports
-from cars import configuration as static_cfg
-from cars import mask_classes
+from cars.conf import static_conf
+from cars.conf import mask_classes
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
@@ -404,7 +404,7 @@ preprocessing_content_schema = {
     {
         preprocessing_version_tag: str,
         preprocessing_parameters_section_tag: preprocessing_parameters_schema,
-        static_params_tag: static_cfg.prepare_params_schema,
+        static_params_tag: static_conf.prepare_params_schema,
         preprocessing_output_section_tag: preprocessing_output_schema
     }
 }
@@ -458,7 +458,7 @@ stereo_content_schema = {
     {
         stereo_version_tag: str,
         stereo_parameters_section_tag: stereo_parameters_schema,
-        static_params_tag: static_cfg.compute_dsm_params_schema,
+        static_params_tag: static_conf.compute_dsm_params_schema,
         stereo_output_section_tag: stereo_output_schema
     }
 }
