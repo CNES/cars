@@ -56,9 +56,25 @@ install-dev: install-deps ## install cars in dev mode and set env
 	@chmod +x ${VENV}/bin/register-python-argcomplete
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
-test: install-dev ## run all tests (depends install) from dev mode
+test: install-dev ## run all unit tests (depends install) from dev mode
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc --cov-report html --cov
+	@${VENV}/bin/pytest -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc --cov-report html --cov
+
+test-end2end: install-dev ## run end2end tests only
+	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
+	@${VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+
+test-unit: install-dev ## run unit tests only
+	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
+	@${VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+
+test-pbs-cluster: install-dev ## run pbs cluster tests only
+	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
+	@${VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+
+test-notebook: install-dev ## run notebook tests only
+	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
+	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
 
 lint: install-dev  ## run lint tools (depends install)
 	@${VENV}/bin/isort --check **/*.py
