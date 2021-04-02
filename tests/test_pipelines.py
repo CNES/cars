@@ -26,7 +26,7 @@ from __future__ import absolute_import
 import pytest
 import numpy as np
 from cars import pipelines
-from .utils import absolute_data_path
+from .utils import absolute_data_path, otb_geoid_file_set, otb_geoid_file_unset
 
 @pytest.mark.unit_tests
 def test_build_stereorectification_grid_pipeline():
@@ -37,6 +37,10 @@ def test_build_stereorectification_grid_pipeline():
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
+    # Launch otb stereorectification grid pipeline
     left_grid_np, right_grid_np, left_grid_origin, left_grid_spacing, \
         epipolar_size_x, epipolar_size_y, disp_to_alt_ratio \
             = pipelines.build_stereorectification_grid_pipeline(
@@ -66,6 +70,9 @@ def test_build_stereorectification_grid_pipeline():
     right_grid_np_reference = np.load(
         absolute_data_path("ref_output/right_grid.npy"))
     np.testing.assert_allclose(right_grid_np, right_grid_np_reference)
+
+    ## unset otb geoid file
+    otb_geoid_file_unset()
 
 
 @pytest.mark.unit_tests
