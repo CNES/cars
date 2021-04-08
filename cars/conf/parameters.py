@@ -38,6 +38,7 @@ from json_checker import OptionalKey, And, Or
 # cars imports
 from cars.conf import static_conf
 from cars.conf import mask_classes
+from cars.conf import input_parameters 
 from cars.utils import rasterio_can_open, ncdf_can_open, \
     make_relative_path_absolute
 
@@ -45,38 +46,6 @@ from cars.utils import rasterio_can_open, ncdf_can_open, \
 # TODO : not use a global parameters variable ?
 #pylint: disable=invalid-name
 static_params_tag = 'static_parameters'
-
-
-def read_input_parameters(filename):
-    """
-    Read an input parameters json file.
-    Relative paths will be made absolute.
-
-    :param filename: Path to json file
-    :type filename: str
-
-    :returns: The dictionary read from file
-    :rtype: dict
-    """
-    config = {}
-    with open(filename, 'r') as f:
-        # Load json file
-        config = json.load(f)
-        json_dir = os.path.abspath(os.path.dirname(filename))
-        # make potential relative paths absolute
-        for tag in [
-                img1_tag,
-                img2_tag,
-                mask1_tag,
-                mask2_tag,
-                mask1_classes_tag,
-                mask2_classes_tag,
-                color1_tag,
-                srtm_dir_tag]:
-            if tag in config:
-                config[tag] = make_relative_path_absolute(
-                    config[tag], json_dir)
-    return config
 
 
 def write_preprocessing_content_file(config, filename, indent=2):
@@ -139,15 +108,15 @@ def read_preprocessing_content_file(filename):
         json_dir = os.path.abspath(os.path.dirname(filename))
         # Make relative path absolute
         for tag in [
-                img1_tag,
-                img2_tag,
-                mask1_tag,
-                mask2_tag,
-                color1_tag,
-                srtm_dir_tag]:
-            if tag in config[input_section_tag]:
-                v = config[input_section_tag][tag]
-                config[input_section_tag][tag] =\
+                input_parameters.IMG1_TAG,
+                input_parameters.IMG2_TAG,
+                input_parameters.MASK1_TAG,
+                input_parameters.MASK2_TAG,
+                input_parameters.COLOR1_TAG,
+                input_parameters.SRTM_DIR_TAG]:
+            if tag in config[input_parameters.INPUT_SECTION_TAG]:
+                v = config[input_parameters.INPUT_SECTION_TAG][tag]
+                config[input_parameters.INPUT_SECTION_TAG][tag] =\
                     make_relative_path_absolute(v, json_dir)
         for tag in [
                 left_epipolar_grid_tag,
@@ -210,19 +179,6 @@ def write_stereo_content_file(config, filename, indent=2):
         json.dump(config, f, indent=indent)
 
 
-# tags for input parameters
-img1_tag = "img1"
-img2_tag = "img2"
-srtm_dir_tag = "srtm_dir"
-color1_tag = "color1"
-mask1_tag = "mask1"
-mask2_tag = "mask2"
-mask1_classes_tag = "mask1_classes"
-mask2_classes_tag = "mask2_classes"
-nodata1_tag = "nodata1"
-nodata2_tag = "nodata2"
-default_alt_tag = "default_alt"
-
 # Tags for preprocessing output section in content.json of preprocessing step
 minimum_disparity_tag = "minimum_disparity"
 maximum_disparity_tag = "maximum_disparity"
@@ -267,12 +223,11 @@ epipolar_error_upper_bound_tag = "epipolar_error_upper_bound"
 epipolar_error_maximum_bias_tag = "epipolar_error_maximum_bias"
 prepare_mask_classes_usage_tag = "mask_classes_usage_in_prepare"
 mask1_ignored_by_sift_matching_tag =\
-    '%s_%s' % (mask1_tag, mask_classes.ignored_by_sift_matching_tag)
+    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.ignored_by_sift_matching_tag)
 mask2_ignored_by_sift_matching_tag =\
-    '%s_%s' % (mask2_tag, mask_classes.ignored_by_sift_matching_tag)
+    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.ignored_by_sift_matching_tag)
 
 # Tags for content.json of preprocessing step
-input_section_tag = "input"
 preprocessing_section_tag = "preprocessing"
 preprocessing_output_section_tag = "output"
 preprocessing_parameters_section_tag = "parameters"
@@ -284,13 +239,13 @@ sigma_tag = "sigma"
 dsm_radius_tag = "dsm_radius"
 stereo_mask_classes_usage_tag = "mask_classes_usage_in_compute_dsm"
 mask1_ignored_by_corr_tag =\
-    '%s_%s' % (mask1_tag, mask_classes.ignored_by_corr_tag)
+    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.ignored_by_corr_tag)
 mask2_ignored_by_corr_tag =\
-    '%s_%s' % (mask2_tag, mask_classes.ignored_by_corr_tag)
+    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.ignored_by_corr_tag)
 mask1_set_to_ref_alt_tag =\
-    '%s_%s' % (mask1_tag, mask_classes.set_to_ref_alt_tag)
+    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.set_to_ref_alt_tag)
 mask2_set_to_ref_alt_tag =\
-    '%s_%s' % (mask2_tag, mask_classes.set_to_ref_alt_tag)
+    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.set_to_ref_alt_tag)
 
 # Tags for content.json stereo/output section of stereo step
 dsm_tag = "dsm"
@@ -317,27 +272,6 @@ stereo_version_tag = "version"
 # tags for dask configuration file
 prepare_dask_config_tag = "dask_config_prepare"
 compute_dsm_dask_config_tag = "dask_config_compute_dsm"
-
-
-# Schema for input configuration json
-input_configuration_schema = {
-    img1_tag: And(str, rasterio_can_open),
-    img2_tag: And(str, rasterio_can_open),
-    OptionalKey(srtm_dir_tag): And(str, os.path.isdir),
-    OptionalKey(color1_tag): And(str, rasterio_can_open),
-    OptionalKey(mask1_tag): And(str, rasterio_can_open),
-    OptionalKey(mask2_tag): And(str, rasterio_can_open),
-    OptionalKey(mask1_classes_tag): \
-        And(str, mask_classes.mask_classes_can_open),
-    OptionalKey(mask2_classes_tag): \
-        And(str, mask_classes.mask_classes_can_open),
-    OptionalKey(default_alt_tag): float,
-    nodata1_tag: int,
-    nodata2_tag: int
-}
-
-# Type for input configuration json
-input_configuration_type = Dict[str, Union[int, str]]
 
 # Schema of preprocessing/output section
 preprocessing_output_schema = {
@@ -399,7 +333,7 @@ preprocessing_parameters_type = Dict[str, Union[float, int]]
 
 # Schema of the full content.json for preprocessing output
 preprocessing_content_schema = {
-    input_section_tag: input_configuration_schema,
+    input_parameters.INPUT_SECTION_TAG: input_parameters.input_configuration_schema,
     preprocessing_section_tag:
     {
         preprocessing_version_tag: str,

@@ -49,6 +49,7 @@ from cars import otb_pipelines
 from cars import stereo
 from cars import rasterization
 from cars.conf import parameters as params
+from cars.conf import input_parameters as in_params
 from cars.conf import static_conf
 from cars import constants as cst
 from cars import tiling
@@ -62,7 +63,7 @@ from cars.pipelines.wrappers import matching_wrapper
 from cars.lib.io import write
 
 def run(
-        in_json: params.input_configuration_type,
+        in_json: in_params.InputConfigurationType,
         out_dir: str,
         epi_step: int=30,
         region_size: int=500,
@@ -130,14 +131,14 @@ def run(
             'to your command line')
 
     # Check configuration dict
-    config = utils.check_json(in_json, params.input_configuration_schema)
+    config = utils.check_json(in_json, in_params.input_configuration_schema)
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
 
     # Initialize output json dict
     out_json = {
-        params.input_section_tag: config,
+        in_params.INPUT_SECTION_TAG: config,
         params.preprocessing_section_tag: {
             params.preprocessing_version_tag: __version__,
             params.preprocessing_parameters_section_tag: {
@@ -154,17 +155,20 @@ def run(
     }
 
     # Read input parameters
-    img1 = config[params.img1_tag]
-    img2 = config[params.img2_tag]
+    # TODO why not a config.get() for these two here ?
+    # TODO looks like we only get in_params from the config file,
+    #      so maybe a single conf.read_config() or smth like that ?
+    img1 = config[in_params.IMG1_TAG]
+    img2 = config[in_params.IMG2_TAG]
 
-    srtm_dir = config.get(params.srtm_dir_tag, None)
-    nodata1 = config.get(params.nodata1_tag, None)
-    nodata2 = config.get(params.nodata2_tag, None)
-    mask1 = config.get(params.mask1_tag, None)
-    mask2 = config.get(params.mask2_tag, None)
-    mask1_classes = config.get(params.mask1_classes_tag, None)
-    mask2_classes = config.get(params.mask2_classes_tag, None)
-    default_alt = config.get(params.default_alt_tag, 0)
+    srtm_dir = config.get(in_params.SRTM_DIR_TAG, None)
+    nodata1 = config.get(in_params.NODATA1_TAG, None)
+    nodata2 = config.get(in_params.NODATA2_TAG, None)
+    mask1 = config.get(in_params.MASK1_TAG, None)
+    mask2 = config.get(in_params.MASK2_TAG, None)
+    mask1_classes = config.get(in_params.MASK1_CLASSES_TAG, None)
+    mask2_classes = config.get(in_params.MASK2_CLASSES_TAG, None)
+    default_alt = config.get(in_params.DEFAULT_ALT_TAG, 0)
 
     # retrieve masks classes usages
     classes_usage = dict()
@@ -180,6 +184,16 @@ def run(
             mask2_classes_dict.get(
                 mask_classes.ignored_by_sift_matching_tag, None)
 
+    # TODO I get that using variable as tags helps by not having to know
+    #      what is the actual name of a tag, and being able to change it
+    #      from a single place. But still, here the developer of the prepare
+    #      method has to know to full architecture of the mask classes (even if
+    #      he does not know what the actual tag value is).
+    #      Maybe all of this could
+    #      be located in a place where the mask are set. This could be the only
+    #      place in charge of mask related config/param stuff. I won't say
+    #      the big C word but I am thinking about it ;-). Anyway, it could be a
+    #      mask module if not mask C.
     if mask1_classes is not None or mask2_classes is not None:
         out_json[params.preprocessing_section_tag]\
             [params.preprocessing_parameters_section_tag]\

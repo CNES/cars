@@ -313,6 +313,7 @@ def main_cli(args, parser, check_inputs=False):
 
     from cars.pipelines import prepare
     from cars.pipelines import compute_dsm
+    from cars.conf import input_parameters as in_params
     from cars.conf import parameters as params
     from cars.lib.externals.matching.correlator_configuration import corr_conf
 
@@ -382,7 +383,7 @@ def main_cli(args, parser, check_inputs=False):
             sys.exit(1)
 
         # Read input json file
-        in_json = params.read_input_parameters(args.injson)
+        in_json = in_params.read_input_parameters(args.injson)
 
         if not check_inputs:
             prepare.run(

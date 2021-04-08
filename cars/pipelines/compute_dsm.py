@@ -51,6 +51,7 @@ import xarray as xr
 from cars import __version__
 from cars import stereo
 from cars import rasterization
+from cars.conf import input_parameters as in_params
 from cars.conf import parameters as params
 from cars.conf import static_conf
 from cars import tiling
@@ -353,9 +354,9 @@ def run(
 
         # retrieve masks classes usages
         mask1_classes = configuration[
-            params.input_section_tag].get(params.mask1_classes_tag, None)
+            in_params.INPUT_SECTION_TAG].get(in_params.MASK1_CLASSES_TAG, None)
         mask2_classes = configuration[
-            params.input_section_tag].get(params.mask2_classes_tag, None)
+            in_params.INPUT_SECTION_TAG].get(in_params.MASK2_CLASSES_TAG, None)
 
         classes_usage = dict()
         if mask1_classes is not None:
@@ -388,7 +389,8 @@ def run(
         configurations_data[config_id]['configuration'] = configuration
 
         # Get local conf left image for this in_json iteration
-        conf_left_img = configuration[params.input_section_tag][params.img1_tag]
+        conf_left_img = configuration[
+            in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG]
 
         # Check left image and raise a warning
         # if different left images are used along with snap_to_img1 mode
@@ -406,7 +408,8 @@ def run(
         # then the DSM rasterized mask will be written alongside the DSM
         # TODO : Mask 2 ?
         mask1 = \
-            configuration[params.input_section_tag].get(params.mask1_tag, None)
+            configuration[
+                in_params.INPUT_SECTION_TAG].get(in_params.MASK1_TAG, None)
         if mask1 is not None:
             write_msk = True
 
@@ -562,8 +565,10 @@ def run(
                 logging.warning(
                     "The pair composed of {} and {} "
                     "does not intersect the requested ROI".format(
-                    configuration[params.input_section_tag][params.img1_tag],
-                    configuration[params.input_section_tag][params.img2_tag]
+                    configuration[
+                        in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG],
+                    configuration[
+                        in_params.INPUT_SECTION_TAG][in_params.IMG2_TAG]
                 ))
 
         # Get optimal tile size
@@ -858,16 +863,17 @@ def run(
         configurations_data[config_id]['epipolar_points_max'] = points_max
 
     # Retrieve number of bands
-    if params.color1_tag in configuration[params.input_section_tag]:
+    if in_params.COLOR1_TAG in configuration[in_params.INPUT_SECTION_TAG]:
         nb_bands = utils.rasterio_get_nb_bands(
-            configuration[params.input_section_tag][params.color1_tag])
+            configuration[in_params.INPUT_SECTION_TAG][in_params.COLOR1_TAG])
     else:
         logging.info('No color image has been given in input, '
                      '{} will be used as the color image'.format(
-                     configuration[params.input_section_tag][params.img1_tag]))
+                     configuration[
+                         in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG]))
 
         nb_bands = utils.rasterio_get_nb_bands(
-            configuration[params.input_section_tag][params.img1_tag])
+            configuration[in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG])
 
     logging.info("Number of bands in color image: {}".format(nb_bands))
 

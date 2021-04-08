@@ -54,6 +54,7 @@ from pandora import constants as pcst
 from cars import otb_pipelines
 from cars import tiling
 from cars.conf import parameters as params
+from cars.conf import input_parameters as in_params
 from cars import projection
 from cars import utils
 from cars.conf import mask_classes
@@ -302,21 +303,22 @@ def epipolar_rectify_images(
     :rtype: xarray.Dataset, xarray.Dataset, xarray.Dataset
     """
     # Retrieve information from configuration
-    input_configuration = configuration[params.input_section_tag]
+    input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_conf = configuration\
         [params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]
 
-    img1 = input_configuration[params.img1_tag]
-    img2 = input_configuration[params.img2_tag]
+    # TODO pourquoi pas une fonction qui retourne tout ça et qui serait dans `input_parameters.py` ?
+    img1 = input_configuration[in_params.IMG1_TAG]
+    img2 = input_configuration[in_params.IMG2_TAG]
 
-    nodata1 = input_configuration.get(params.nodata1_tag, None)
-    nodata2 = input_configuration.get(params.nodata2_tag, None)
-    mask1 = input_configuration.get(params.mask1_tag, None)
-    mask1_classes = input_configuration.get(params.mask1_classes_tag, None)
-    mask2 = input_configuration.get(params.mask2_tag, None)
-    mask2_classes = input_configuration.get(params.mask2_classes_tag, None)
-    color1 = input_configuration.get(params.color1_tag, None)
+    nodata1 = input_configuration.get(in_params.NODATA1_TAG, None)
+    nodata2 = input_configuration.get(in_params.NODATA2_TAG, None)
+    mask1 = input_configuration.get(in_params.MASK1_TAG, None)
+    mask1_classes = input_configuration.get(in_params.MASK1_CLASSES_TAG, None)
+    mask2 = input_configuration.get(in_params.MASK2_TAG, None)
+    mask2_classes = input_configuration.get(in_params.MASK2_CLASSES_TAG, None)
+    color1 = input_configuration.get(in_params.COLOR1_TAG, None)
 
     grid1 = preprocessing_output_conf[params.left_epipolar_grid_tag]
     grid2 = preprocessing_output_conf[params.right_epipolar_grid_tag]
@@ -503,10 +505,12 @@ def compute_disparity(left_dataset,
                         'data value used for epipolar rectification.')
 
     # Handle masks' classes if necessary
-    mask1_classes = input_stereo_cfg[params.input_section_tag]\
-                                    .get(params.mask1_classes_tag, None)
-    mask2_classes = input_stereo_cfg[params.input_section_tag]\
-                                    .get(params.mask2_classes_tag, None)
+    # TODO ce serait le rêve un peu d'avoir tout ça déjà dans les attributs
+    #  de la classe stereo pour pas le modifier dans chaque fonction ici ;-)
+    mask1_classes = input_stereo_cfg[in_params.INPUT_SECTION_TAG]\
+                                    .get(in_params.MASK1_CLASSES_TAG, None)
+    mask2_classes = input_stereo_cfg[in_params.INPUT_SECTION_TAG]\
+                                    .get(in_params.MASK2_CLASSES_TAG, None)
     mask1_use_classes = False
     mask2_use_classes = False
 
@@ -1022,13 +1026,13 @@ def triangulate(configuration,
     """
 
     # Retrieve information from configuration
-    input_configuration = configuration[params.input_section_tag]
+    input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_conf = configuration\
         [params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]
 
-    img1 = input_configuration[params.img1_tag]
-    img2 = input_configuration[params.img2_tag]
+    img1 = input_configuration[in_params.IMG1_TAG]
+    img2 = input_configuration[in_params.IMG2_TAG]
 
     grid1 = preprocessing_output_conf[params.left_epipolar_grid_tag]
     grid2 = preprocessing_output_conf[params.right_epipolar_grid_tag]
@@ -1250,13 +1254,13 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     """
 
     # Retrieve information from configuration
-    input_configuration = configuration[params.input_section_tag]
+    input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_configuration = configuration\
         [params.preprocessing_section_tag]\
         [params.preprocessing_output_section_tag]
 
-    img1 = input_configuration[params.img1_tag]
-    img2 = input_configuration[params.img2_tag]
+    img1 = input_configuration[in_params.IMG1_TAG]
+    img2 = input_configuration[in_params.IMG2_TAG]
 
     grid1 = preprocessing_output_configuration[params.left_epipolar_grid_tag]
     grid2 = preprocessing_output_configuration[params.right_epipolar_grid_tag]
@@ -1406,9 +1410,9 @@ def images_pair_to_3d_points(input_stereo_cfg,
 
     # If necessary, set disparity to 0 for classes to be set to input dem
     mask1_classes = input_stereo_cfg \
-        [params.input_section_tag].get(params.mask1_classes_tag, None)
+        [in_params.INPUT_SECTION_TAG].get(in_params.MASK1_CLASSES_TAG, None)
     mask2_classes = input_stereo_cfg \
-        [params.input_section_tag].get(params.mask2_classes_tag, None)
+        [in_params.INPUT_SECTION_TAG].get(in_params.MASK2_CLASSES_TAG, None)
     matching_regularisation.update_disp_to_0(
         disp, left, right, mask1_classes, mask2_classes)
 
