@@ -314,7 +314,7 @@ def main_cli(args, parser, check_inputs=False):
     from cars.pipelines import prepare
     from cars.pipelines import compute_dsm
     from cars.conf import input_parameters as in_params
-    from cars.conf import parameters as params
+    from cars.conf import output_prepare
     from cars.lib.externals.matching.correlator_configuration import corr_conf
 
     # logging
@@ -469,7 +469,7 @@ def main_cli(args, parser, check_inputs=False):
             sys.exit(1)
 
         # Read input json files
-        in_jsons = [params.read_preprocessing_content_file(
+        in_jsons = [output_prepare.read_preprocessing_content_file(
             f) for f in args.injsons]
         # Configure correlator
         corr_config = corr_conf.configure_correlator(args.corr_config)

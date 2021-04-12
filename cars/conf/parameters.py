@@ -29,124 +29,19 @@ and check json parameters files.
 
 # Standard imports
 import os
-from typing import Dict, Union
 
 # json checker imports
 import json
 from json_checker import OptionalKey, And, Or
 
 # cars imports
-from cars.conf import static_conf
-from cars.conf import mask_classes
-from cars.conf import input_parameters 
-from cars.utils import rasterio_can_open, ncdf_can_open, \
-    make_relative_path_absolute
+from cars.conf import mask_classes, static_conf, \
+    input_parameters, output_prepare
+from cars.utils import rasterio_can_open, ncdf_can_open
 
 # TODO : with refactoring : constants in UPPER_CASE
 # TODO : not use a global parameters variable ?
 #pylint: disable=invalid-name
-static_params_tag = 'static_parameters'
-
-
-def write_preprocessing_content_file(config, filename, indent=2):
-    """
-    Write a preprocessing json content file.
-    Relative paths in preprocessing/output section will be made absolute.
-
-    :param config: dictionnary holding the config to write
-    :type config: dict
-    :param filename: Path to json file
-    :type filename: str
-    :param indent: indentations in output file
-    :type indent: int
-    """
-    with open(filename, 'w') as f:
-        # Make absolute path relative
-        for tag in [
-                left_epipolar_grid_tag,
-                right_epipolar_grid_tag,
-                left_envelope_tag,
-                right_envelope_tag,
-                matches_tag,
-                raw_matches_tag,
-                right_epipolar_uncorrected_grid_tag,
-                left_envelope_tag,
-                right_envelope_tag,
-                envelopes_intersection_tag,
-                lowres_dsm_tag,
-                lowres_initial_dem_tag,
-                lowres_elevation_difference_tag,
-                lowres_dem_splines_fit_tag,
-                corrected_lowres_dsm_tag,
-                corrected_lowres_elevation_difference_tag]:
-            if tag in config[
-                preprocessing_section_tag][preprocessing_output_section_tag]:
-
-                v = config[preprocessing_section_tag][
-                        preprocessing_output_section_tag][tag]
-
-                config[preprocessing_section_tag][
-                    preprocessing_output_section_tag][tag] = os.path.basename(v)
-
-        json.dump(config, f, indent=indent)
-
-
-def read_preprocessing_content_file(filename):
-    """
-    Read a json content file from preprocessing step.
-    Relative paths in preprocessing/output section  will be made absolute.
-
-    :param filename: Path to json file
-    :type filename: str
-
-    :returns: The dictionnary read from file
-    :rtype: dict
-    """
-    config = {}
-    with open(filename, 'r') as f:
-        config = json.load(f)
-        json_dir = os.path.abspath(os.path.dirname(filename))
-        # Make relative path absolute
-        for tag in [
-                input_parameters.IMG1_TAG,
-                input_parameters.IMG2_TAG,
-                input_parameters.MASK1_TAG,
-                input_parameters.MASK2_TAG,
-                input_parameters.COLOR1_TAG,
-                input_parameters.SRTM_DIR_TAG]:
-            if tag in config[input_parameters.INPUT_SECTION_TAG]:
-                v = config[input_parameters.INPUT_SECTION_TAG][tag]
-                config[input_parameters.INPUT_SECTION_TAG][tag] =\
-                    make_relative_path_absolute(v, json_dir)
-        for tag in [
-                left_epipolar_grid_tag,
-                right_epipolar_grid_tag,
-                left_envelope_tag,
-                right_envelope_tag,
-                matches_tag,
-                raw_matches_tag,
-                right_epipolar_uncorrected_grid_tag,
-                left_envelope_tag,
-                right_envelope_tag,
-                envelopes_intersection_tag,
-                lowres_dsm_tag,
-                lowres_initial_dem_tag,
-                lowres_elevation_difference_tag,
-                lowres_dem_splines_fit_tag,
-                corrected_lowres_dsm_tag,
-                corrected_lowres_elevation_difference_tag
-                ]:
-            if tag in config[preprocessing_section_tag][
-                    preprocessing_output_section_tag]:
-
-                v = config[preprocessing_section_tag][
-                        preprocessing_output_section_tag][tag]
-
-                config[preprocessing_section_tag][
-                        preprocessing_output_section_tag][tag] =\
-                            make_relative_path_absolute(v, json_dir)
-    return config
-
 
 def write_stereo_content_file(config, filename, indent=2):
     """
@@ -179,60 +74,6 @@ def write_stereo_content_file(config, filename, indent=2):
         json.dump(config, f, indent=indent)
 
 
-# Tags for preprocessing output section in content.json of preprocessing step
-minimum_disparity_tag = "minimum_disparity"
-maximum_disparity_tag = "maximum_disparity"
-left_epipolar_grid_tag = "left_epipolar_grid"
-right_epipolar_grid_tag = "right_epipolar_grid"
-left_envelope_tag = "left_envelope"
-right_envelope_tag = "right_envelope"
-envelopes_intersection_tag = "envelopes_intersection"
-epipolar_size_x_tag = "epipolar_size_x"
-epipolar_size_y_tag = "epipolar_size_y"
-epipolar_origin_x_tag = "epipolar_origin_x"
-epipolar_origin_y_tag = "epipolar_origin_y"
-epipolar_spacing_x_tag = "epipolar_spacing_x"
-epipolar_spacing_y_tag = "epipolar_spacing_y"
-matches_tag = "matches"
-raw_matches_tag = "raw_matches"
-lowres_dsm_tag = "lowres_dsm"
-lowres_initial_dem_tag = "lowres_initial_dem"
-lowres_elevation_difference_tag = "lowres_elevation_difference"
-right_epipolar_uncorrected_grid_tag = "right_epipolar_uncorrected_grid"
-disp_to_alt_ratio_tag = "disp_to_alt_ratio"
-left_azimuth_angle_tag = "left_azimuth_angle"
-left_elevation_angle_tag = "left_elevation_angle"
-right_azimuth_angle_tag = "right_azimuth_angle"
-right_elevation_angle_tag = "right_elevation_angle"
-convergence_angle_tag = "convergence_angle"
-time_direction_line_origin_x_tag = "time_direction_line_origin_x"
-time_direction_line_origin_y_tag = "time_direction_line_origin_y"
-time_direction_line_vector_x_tag = "time_direction_line_vector_x"
-time_direction_line_vector_y_tag = "time_direction_line_vector_y"
-lowres_dem_splines_fit_tag = "lowres_dem_splines_fit"
-corrected_lowres_dsm_tag = "corrected_lowres_dsm"
-corrected_lowres_elevation_difference_tag =\
-    "corrected_lowres_elevation_difference"
-
-# Tags for preprocessing parameters
-epi_step_tag = "epi_step"
-disparity_margin_tag = "disparity_margin"
-elevation_delta_lower_bound_tag = "elevation_delta_lower_bound"
-elevation_delta_upper_bound_tag = "elevation_delta_upper_bound"
-epipolar_error_upper_bound_tag = "epipolar_error_upper_bound"
-epipolar_error_maximum_bias_tag = "epipolar_error_maximum_bias"
-prepare_mask_classes_usage_tag = "mask_classes_usage_in_prepare"
-mask1_ignored_by_sift_matching_tag =\
-    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.ignored_by_sift_matching_tag)
-mask2_ignored_by_sift_matching_tag =\
-    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.ignored_by_sift_matching_tag)
-
-# Tags for content.json of preprocessing step
-preprocessing_section_tag = "preprocessing"
-preprocessing_output_section_tag = "output"
-preprocessing_parameters_section_tag = "parameters"
-preprocessing_version_tag = "version"
-
 # Tags for content.json stereo/parameters section of stereo step
 resolution_tag = "resolution"
 sigma_tag = "sigma"
@@ -259,7 +100,6 @@ dsm_no_data_tag = "dsm_no_data"
 color_no_data_tag = "color_no_data"
 epsg_tag = "epsg"
 alt_reference_tag = 'altimetric_reference'
-envelopes_intersection_bb_tag = "envelopes_intersection_bounding_box"
 
 # tags from content.json of stereo step
 stereo_inputs_section_tag = "input_configurations"
@@ -270,83 +110,7 @@ stereo_parameters_section_tag = "parameters"
 stereo_version_tag = "version"
 
 # tags for dask configuration file
-prepare_dask_config_tag = "dask_config_prepare"
 compute_dsm_dask_config_tag = "dask_config_compute_dsm"
-
-# Schema of preprocessing/output section
-preprocessing_output_schema = {
-    minimum_disparity_tag: float,
-    maximum_disparity_tag: float,
-    left_epipolar_grid_tag: And(str, rasterio_can_open),
-    right_epipolar_grid_tag: And(str, rasterio_can_open),
-    right_epipolar_uncorrected_grid_tag: And(str, rasterio_can_open),
-    left_envelope_tag: And(str, os.path.isfile),
-    right_envelope_tag: And(str, os.path.isfile),
-    epipolar_size_x_tag: And(int, lambda x: x > 0),
-    epipolar_size_y_tag: And(int, lambda x: x > 0),
-    epipolar_origin_x_tag: float,
-    epipolar_origin_y_tag: float,
-    epipolar_spacing_x_tag: float,
-    epipolar_spacing_y_tag: float,
-    disp_to_alt_ratio_tag: float,
-    left_azimuth_angle_tag: float,
-    left_elevation_angle_tag: float,
-    right_azimuth_angle_tag: float,
-    right_elevation_angle_tag: float,
-    convergence_angle_tag: float,
-    OptionalKey(time_direction_line_origin_x_tag): float,
-    OptionalKey(time_direction_line_origin_y_tag): float,
-    OptionalKey(time_direction_line_vector_x_tag): float,
-    OptionalKey(time_direction_line_vector_y_tag): float,
-    lowres_dsm_tag: And(str, os.path.isfile),
-    lowres_initial_dem_tag: And(str, os.path.isfile),
-    lowres_elevation_difference_tag: And(str, os.path.isfile),
-    OptionalKey(lowres_dem_splines_fit_tag): And(str, os.path.isfile),
-    OptionalKey(corrected_lowres_dsm_tag): And(str, os.path.isfile),
-    OptionalKey(corrected_lowres_elevation_difference_tag): \
-                                        And(str, os.path.isfile),
-    OptionalKey(matches_tag): And(str, os.path.isfile),
-    OptionalKey(raw_matches_tag): And(str, os.path.isfile),
-    OptionalKey(envelopes_intersection_tag): str,
-    OptionalKey(envelopes_intersection_bb_tag): list
-}
-
-# Type of preprocessing/output section
-preprocessing_output_type = Dict[str, Union[float, str, int]]
-
-# schema of the preprocessing/parameters section
-preprocessing_parameters_schema = {
-    epi_step_tag: And(int, lambda x: x > 0),
-    disparity_margin_tag: And(float, lambda x: 0. <= x <= 1.),
-    epipolar_error_upper_bound_tag: And(float, lambda x: x > 0),
-    epipolar_error_maximum_bias_tag: And(float, lambda x: x >= 0),
-    elevation_delta_lower_bound_tag: float,
-    elevation_delta_upper_bound_tag: float,
-    OptionalKey(prepare_mask_classes_usage_tag): {
-        mask1_ignored_by_sift_matching_tag: Or([int], None),
-        mask2_ignored_by_sift_matching_tag: Or([int], None)
-    }
-}
-
-# Type of the preprocessing/parameters section
-preprocessing_parameters_type = Dict[str, Union[float, int]]
-
-# Schema of the full content.json for preprocessing output
-preprocessing_content_schema = {
-    input_parameters.INPUT_SECTION_TAG: input_parameters.input_configuration_schema,
-    preprocessing_section_tag:
-    {
-        preprocessing_version_tag: str,
-        preprocessing_parameters_section_tag: preprocessing_parameters_schema,
-        static_params_tag: static_conf.prepare_params_schema,
-        preprocessing_output_section_tag: preprocessing_output_schema
-    }
-}
-
-# Type of the full content.json for preprocessing output
-preprocessing_content_type = Dict[str, Union[str,
-                                             preprocessing_parameters_type,
-                                             preprocessing_output_type]]
 
 # Schema of the output section of stereo content.json
 stereo_output_schema = {
@@ -360,7 +124,8 @@ stereo_output_schema = {
     OptionalKey(dsm_n_pts_tag): And(str, rasterio_can_open),
     OptionalKey(dsm_points_in_cell_tag): And(str, rasterio_can_open),
     epsg_tag: int,
-    alt_reference_tag: str
+    alt_reference_tag: str,
+    OptionalKey(output_prepare.ENVELOPES_INTERSECTION_BB_TAG): list
 }
 
 # schema of the parameters section
@@ -383,7 +148,8 @@ stereo_content_schema = {
     stereo_inputs_section_tag:
     [
         {
-            stereo_input_tag: preprocessing_content_schema,
+            #TODO ça me perturbe un poil de dépendre du output_prepare
+            stereo_input_tag: output_prepare.PREPROCESSING_CONTENT_SCHEMA,
             OptionalKey(stereo_mask_classes_usage_tag):\
                                         stereo_classes_usage_schema
         }
@@ -392,7 +158,8 @@ stereo_content_schema = {
     {
         stereo_version_tag: str,
         stereo_parameters_section_tag: stereo_parameters_schema,
-        static_params_tag: static_conf.compute_dsm_params_schema,
+        input_parameters.STATIC_PARAMS_TAG:
+         static_conf.compute_dsm_params_schema,
         stereo_output_section_tag: stereo_output_schema
     }
 }

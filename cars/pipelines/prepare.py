@@ -48,7 +48,7 @@ from cars import preprocessing
 from cars import otb_pipelines
 from cars import stereo
 from cars import rasterization
-from cars.conf import parameters as params
+from cars.conf import output_prepare
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf
 from cars import constants as cst
@@ -131,7 +131,7 @@ def run(
             'to your command line')
 
     # Check configuration dict
-    config = utils.check_json(in_json, in_params.input_configuration_schema)
+    config = utils.check_json(in_json, in_params.INPUT_CONFIGURATION_SCHEMA)
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
@@ -139,18 +139,22 @@ def run(
     # Initialize output json dict
     out_json = {
         in_params.INPUT_SECTION_TAG: config,
-        params.preprocessing_section_tag: {
-            params.preprocessing_version_tag: __version__,
-            params.preprocessing_parameters_section_tag: {
-        params.epi_step_tag: epi_step,
-        params.disparity_margin_tag: disparity_margin,
-        params.epipolar_error_upper_bound_tag: epipolar_error_upper_bound,
-        params.epipolar_error_maximum_bias_tag: epipolar_error_maximum_bias,
-        params.elevation_delta_lower_bound_tag: elevation_delta_lower_bound,
-        params.elevation_delta_upper_bound_tag: elevation_delta_upper_bound
+        output_prepare.PREPROCESSING_SECTION_TAG: {
+            output_prepare.PREPROCESSING_VERSION_TAG: __version__,
+            output_prepare.PREPROCESSING_PARAMETERS_SECTION_TAG: {
+        output_prepare.EPI_STEP_TAG: epi_step,
+        output_prepare.DISPARITY_MARGIN_TAG: disparity_margin,
+        output_prepare.EPIPOLAR_ERROR_UPPER_BOUND_TAG:
+         epipolar_error_upper_bound,
+        output_prepare.EPIPOLAR_ERROR_MAXIMUM_BIAS_TAG:
+         epipolar_error_maximum_bias,
+        output_prepare.ELEVATION_DELTA_LOWER_BOUND_TAG:
+         elevation_delta_lower_bound,
+        output_prepare.ELEVATION_DELTA_UPPER_BOUND_TAG:
+         elevation_delta_upper_bound
             },
-            params.static_params_tag: static_params[static_conf.prepare_tag],
-            params.preprocessing_output_section_tag: {}
+            in_params.STATIC_PARAMS_TAG: static_params[static_conf.prepare_tag],
+            output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {}
         }
     }
 
@@ -174,13 +178,13 @@ def run(
     classes_usage = dict()
     if mask1_classes is not None:
         mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
-        classes_usage[params.mask1_ignored_by_sift_matching_tag] = \
+        classes_usage[output_prepare.MASK1_IGNORED_BY_SIFT_MATCHING_TAG] = \
             mask1_classes_dict.get(
                 mask_classes.ignored_by_sift_matching_tag, None)
 
     if mask2_classes is not None:
         mask2_classes_dict = mask_classes.read_mask_classes(mask2_classes)
-        classes_usage[params.mask2_ignored_by_sift_matching_tag] = \
+        classes_usage[output_prepare.MASK2_IGNORED_BY_SIFT_MATCHING_TAG] = \
             mask2_classes_dict.get(
                 mask_classes.ignored_by_sift_matching_tag, None)
 
@@ -195,9 +199,9 @@ def run(
     #      the big C word but I am thinking about it ;-). Anyway, it could be a
     #      mask module if not mask C.
     if mask1_classes is not None or mask2_classes is not None:
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_parameters_section_tag]\
-            [params.prepare_mask_classes_usage_tag] = classes_usage
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_PARAMETERS_SECTION_TAG]\
+            [output_prepare.PREPARE_MASK_CLASSES_USAGE_TAG] = classes_usage
 
     # log information considering reference altitudes used
     if srtm_dir is not None:
@@ -261,12 +265,12 @@ def run(
     logging.info("Computing images envelopes and their intersection")
     shp1 = os.path.join(out_dir, "left_envelope.shp")
     shp2 = os.path.join(out_dir, "right_envelope.shp")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.left_envelope_tag] = shp1
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.right_envelope_tag] = shp2
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.LEFT_ENVELOPE_TAG] = shp1
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.RIGHT_ENVELOPE_TAG] = shp2
     preprocessing.image_envelope(
         img1, shp1, dem=srtm_dir, default_alt=default_alt)
     preprocessing.image_envelope(
@@ -283,13 +287,13 @@ def run(
     utils.write_vector([inter_poly], out_envelopes_intersection, epsg1)
 
     conf_out_dict =\
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_output_section_tag]
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
-    conf_out_dict[params.envelopes_intersection_tag] =\
+    conf_out_dict[output_prepare.ENVELOPES_INTERSECTION_TAG] =\
         out_envelopes_intersection
 
-    conf_out_dict[params.envelopes_intersection_bb_tag] = [
+    conf_out_dict[output_prepare.ENVELOPES_INTERSECTION_BB_TAG] = [
         inter_xmin, inter_ymin, inter_xmax, inter_ymax]
 
     if check_inputs:
@@ -318,33 +322,33 @@ def run(
     # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
     disp_to_alt_ratio = 1 / alt_to_disp_ratio
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_size_x_tag] = epipolar_size_x
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_SIZE_X_TAG] = epipolar_size_x
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_size_y_tag] = epipolar_size_y
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_SIZE_Y_TAG] = epipolar_size_y
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_origin_x_tag] = grid_origin[0]
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_ORIGIN_X_TAG] = grid_origin[0]
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_origin_y_tag] = grid_origin[1]
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_ORIGIN_Y_TAG] = grid_origin[1]
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_spacing_x_tag] = grid_spacing[0]
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_SPACING_X_TAG] = grid_spacing[0]
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.epipolar_spacing_y_tag] = grid_spacing[1]
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.EPIPOLAR_SPACING_Y_TAG] = grid_spacing[1]
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.disp_to_alt_ratio_tag] = disp_to_alt_ratio
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.DISP_TO_ALT_RATIO_TAG] = disp_to_alt_ratio
 
     logging.info("Size of epipolar images: {}x{} pixels".format(
         epipolar_size_x, epipolar_size_y))
@@ -367,21 +371,21 @@ def run(
     logging.info("Stereo satellite convergence angle from ground: {:.1f}°"\
                  .format(convergence_angle))
 
-    out_json[params.preprocessing_section_tag] \
-            [params.preprocessing_output_section_tag]\
-            [params.left_azimuth_angle_tag] = left_az
-    out_json[params.preprocessing_section_tag] \
-            [params.preprocessing_output_section_tag]\
-            [params.left_elevation_angle_tag] = left_elev_angle
-    out_json[params.preprocessing_section_tag] \
-            [params.preprocessing_output_section_tag]\
-            [params.right_azimuth_angle_tag] = right_az
-    out_json[params.preprocessing_section_tag] \
-            [params.preprocessing_output_section_tag]\
-            [params.right_elevation_angle_tag] = right_elev_angle
-    out_json[params.preprocessing_section_tag] \
-            [params.preprocessing_output_section_tag]\
-            [params.convergence_angle_tag] = convergence_angle
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG] \
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.LEFT_AZIMUTH_ANGLE_TAG] = left_az
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG] \
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.LEFT_ELEVATION_ANGLE_TAG] = left_elev_angle
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG] \
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.RIGHT_AZIMUTH_ANGLE_TAG] = right_az
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG] \
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.RIGHT_ELEVATION_ANGLE_TAG] = right_elev_angle
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG] \
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.CONVERGENCE_ANGLE_TAG] = convergence_angle
 
     logging.info("Sparse matching ...")
 
@@ -428,7 +432,7 @@ def run(
     # Save dask config used
     dask_config_used = dask.config.config
     utils.write_dask_config(dask_config_used, out_dir,
-                            params.prepare_dask_config_tag)
+                            output_prepare.PREPROCESSING_DASK_CONFIG_TAG)
 
     use_dask = {"local_dask":True, "pbs_dask":True}
     if mode not in use_dask.keys():
@@ -514,9 +518,9 @@ def run(
     # Export matches
     logging.info("Writing raw matches file")
     raw_matches_array_path = os.path.join(out_dir, "raw_matches.npy")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.raw_matches_tag] = raw_matches_array_path
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.RAW_MATCHES_TAG] = raw_matches_array_path
     np.save(raw_matches_array_path, matches)
 
     # Filter matches that are out of margin
@@ -608,9 +612,9 @@ than --epipolar_error_upper_bound = {} pix".format(
 
     # TODO: add stats in content.json
     out_left_grid = os.path.join(out_dir, "left_epipolar_grid.tif")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.left_epipolar_grid_tag] = out_left_grid
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.LEFT_EPIPOLAR_GRID_TAG] = out_left_grid
     write.write_grid(
         grid1,
         out_left_grid,
@@ -619,9 +623,9 @@ than --epipolar_error_upper_bound = {} pix".format(
 
     # Export corrected right grid
     out_right_grid = os.path.join(out_dir, "right_epipolar_grid.tif")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.right_epipolar_grid_tag] = out_right_grid
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.RIGHT_EPIPOLAR_GRID_TAG] = out_right_grid
     write.write_grid(
         corrected_right_grid,
         out_right_grid,
@@ -632,9 +636,9 @@ than --epipolar_error_upper_bound = {} pix".format(
     logging.info("Writing uncorrected right grid")
     out_right_grid_uncorrected = os.path.join(
         out_dir, "right_epipolar_grid_uncorrected.tif")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.right_epipolar_uncorrected_grid_tag] =\
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG] =\
             out_right_grid_uncorrected
     write.write_grid(
         grid2,
@@ -674,12 +678,12 @@ than --epipolar_error_upper_bound = {} pix".format(
             dmin,
             dmax,
             margin))
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.minimum_disparity_tag] = dmin
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.maximum_disparity_tag] = dmax
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.MINIMUM_DISPARITY_TAG] = dmin
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.MAXIMUM_DISPARITY_TAG] = dmax
 
     logging.info(
         "Equivalent range in meters: [{:.3f} m, {:.3f} m] "
@@ -691,9 +695,9 @@ than --epipolar_error_upper_bound = {} pix".format(
     # Export matches
     logging.info("Writing matches file")
     matches_array_path = os.path.join(out_dir, "matches.npy")
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.matches_tag] = matches_array_path
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.MATCHES_TAG] = matches_array_path
     np.save(matches_array_path, corrected_matches)
 
     # Now compute low resolution DSM and its initial DEM counterpart
@@ -731,9 +735,9 @@ than --epipolar_error_upper_bound = {} pix".format(
             #TODO add proper CRS info
     lowres_dsm.to_netcdf(lowres_dsm_file)
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.lowres_dsm_tag] = lowres_dsm_file
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.LOWRES_DSM_TAG] = lowres_dsm_file
 
     # Now read the exact same grid on initial DEM
     lowres_initial_dem = preprocessing.read_lowres_dem(
@@ -744,9 +748,9 @@ than --epipolar_error_upper_bound = {} pix".format(
     lowres_initial_dem_file = os.path.join(out_dir, "lowres_initial_dem.nc")
     lowres_initial_dem.to_netcdf(lowres_initial_dem_file)
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.lowres_initial_dem_tag]\
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.LOWRES_INITIAL_DEM_TAG]\
             = lowres_initial_dem_file
 
     # also write the difference
@@ -755,9 +759,9 @@ than --epipolar_error_upper_bound = {} pix".format(
     lowres_dsm_diff = lowres_initial_dem - lowres_dsm
     (lowres_dsm_diff).to_netcdf(lowres_elevation_difference_file)
 
-    out_json[params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]\
-        [params.lowres_elevation_difference_tag]\
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+        [output_prepare.LOWRES_ELEVATION_DIFFERENCE_TAG]\
             = lowres_elevation_difference_file
 
     # Now, estimate a correction to align DSM on the lowres initial DEM
@@ -789,20 +793,22 @@ than --epipolar_error_upper_bound = {} pix".format(
 
         origin = [float(lowres_dsm_diff[cst.X][0].values),
                   float(lowres_dsm_diff[cst.Y][0].values)]
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_output_section_tag]\
-            [params.time_direction_line_origin_x_tag] = origin[0]
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.TIME_DIRECTION_LINE_ORIGIN_X_TAG] = origin[0]
 
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_output_section_tag]\
-            [params.time_direction_line_origin_y_tag] = origin[1]
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.TIME_DIRECTION_LINE_ORIGIN_Y_TAG] = origin[1]
 
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_output_section_tag]\
-            [params.time_direction_line_vector_x_tag] = time_direction_vector[0]
-        out_json[params.preprocessing_section_tag]\
-            [params.preprocessing_output_section_tag]\
-            [params.time_direction_line_vector_y_tag] = time_direction_vector[1]
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.TIME_DIRECTION_LINE_VECTOR_X_TAG] = \
+             time_direction_vector[0]
+        out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+            [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+            [output_prepare.TIME_DIRECTION_LINE_VECTOR_Y_TAG] = \
+             time_direction_vector[1]
 
         # Then we estimate the correction splines
         splines = preprocessing.lowres_initial_dem_splines_fit(
@@ -827,9 +833,9 @@ than --epipolar_error_upper_bound = {} pix".format(
 
         with open(lowres_dem_splines_fit_file,'wb') as splines_fit_file_reader:
             pickle.dump(splines, splines_fit_file_reader)
-            out_json[params.preprocessing_section_tag]\
-                [params.preprocessing_output_section_tag]\
-                [params.lowres_dem_splines_fit_tag]\
+            out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+                [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+                [output_prepare.LOWRES_DEM_SPLINES_FIT_TAG]\
                     = lowres_dem_splines_fit_file
 
             logging.info("Generating corrected low resolution DSM from matches")
@@ -874,9 +880,10 @@ than --epipolar_error_upper_bound = {} pix".format(
                 os.path.join(out_dir,"corrected_lowres_dsm_from_matches.nc")
                     # TODO add proper CRS info
             corrected_lowres_dsm.to_netcdf(corrected_lowres_dsm_file)
-            out_json[params.preprocessing_section_tag]\
-                [params.preprocessing_output_section_tag]\
-                [params.corrected_lowres_dsm_tag] = corrected_lowres_dsm_file
+            out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+                [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+                [output_prepare.CORRECTED_LOWRES_DSM_TAG] = \
+                    corrected_lowres_dsm_file
 
             # also write the difference
             corrected_lowres_elevation_difference_file =\
@@ -885,20 +892,20 @@ than --epipolar_error_upper_bound = {} pix".format(
                 lowres_initial_dem - corrected_lowres_dsm
             (corrected_lowres_dsm_diff).to_netcdf(
                 corrected_lowres_elevation_difference_file)
-            out_json[params.preprocessing_section_tag]\
-                [params.preprocessing_output_section_tag]\
-                [params.corrected_lowres_elevation_difference_tag]\
+            out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
+                [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]\
+                [output_prepare.CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG]\
                 = corrected_lowres_elevation_difference_file
 
     # Write the output json
     try:
-        utils.check_json(out_json, params.preprocessing_content_schema)
+        utils.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error))
 
     out_json_path = os.path.join(out_dir, "content.json")
-    params.write_preprocessing_content_file(out_json, out_json_path)
+    output_prepare.write_preprocessing_content_file(out_json, out_json_path)
 
     # stop cluster
     stop_cluster(cluster, client)

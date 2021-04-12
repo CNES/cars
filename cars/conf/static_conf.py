@@ -33,6 +33,8 @@ from cars import filtering
 
 # TODO : not use a global cfg variable ?
 # TODO : with refactoring : constants in UPPER_CASE
+
+
 #pylint: disable=invalid-name
 cfg = None
 

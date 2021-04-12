@@ -57,7 +57,7 @@ from cars.conf import parameters as params
 from cars.conf import input_parameters as in_params
 from cars import projection
 from cars import utils
-from cars.conf import mask_classes
+from cars.conf import mask_classes, output_prepare
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
 from cars import matching_regularisation
@@ -305,10 +305,11 @@ def epipolar_rectify_images(
     # Retrieve information from configuration
     input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_conf = configuration\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
-    # TODO pourquoi pas une fonction qui retourne tout ça et qui serait dans `input_parameters.py` ?
+    # TODO pourquoi pas une fonction qui retourne tout ça et
+    # qui serait dans `input_parameters.py` ?
     img1 = input_configuration[in_params.IMG1_TAG]
     img2 = input_configuration[in_params.IMG2_TAG]
 
@@ -320,11 +321,13 @@ def epipolar_rectify_images(
     mask2_classes = input_configuration.get(in_params.MASK2_CLASSES_TAG, None)
     color1 = input_configuration.get(in_params.COLOR1_TAG, None)
 
-    grid1 = preprocessing_output_conf[params.left_epipolar_grid_tag]
-    grid2 = preprocessing_output_conf[params.right_epipolar_grid_tag]
+    grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
+    grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
 
-    epipolar_size_x = preprocessing_output_conf[params.epipolar_size_x_tag]
-    epipolar_size_y = preprocessing_output_conf[params.epipolar_size_y_tag]
+    epipolar_size_x = preprocessing_output_conf[
+        output_prepare.EPIPOLAR_SIZE_X_TAG]
+    epipolar_size_y = preprocessing_output_conf[
+        output_prepare.EPIPOLAR_SIZE_Y_TAG]
 
     # Force region to be float
     region = [int(x) for x in region]
@@ -1028,17 +1031,17 @@ def triangulate(configuration,
     # Retrieve information from configuration
     input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_conf = configuration\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
     img1 = input_configuration[in_params.IMG1_TAG]
     img2 = input_configuration[in_params.IMG2_TAG]
 
-    grid1 = preprocessing_output_conf[params.left_epipolar_grid_tag]
-    grid2 = preprocessing_output_conf[params.right_epipolar_grid_tag]
+    grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
+    grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
     if snap_to_img1:
         grid2 = preprocessing_output_conf[
-            params.right_epipolar_uncorrected_grid_tag]
+            output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG]
 
     point_clouds = dict()
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
@@ -1256,14 +1259,16 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     # Retrieve information from configuration
     input_configuration = configuration[in_params.INPUT_SECTION_TAG]
     preprocessing_output_configuration = configuration\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
     img1 = input_configuration[in_params.IMG1_TAG]
     img2 = input_configuration[in_params.IMG2_TAG]
 
-    grid1 = preprocessing_output_configuration[params.left_epipolar_grid_tag]
-    grid2 = preprocessing_output_configuration[params.right_epipolar_grid_tag]
+    grid1 = preprocessing_output_configuration[
+        output_prepare.LEFT_EPIPOLAR_GRID_TAG]
+    grid2 = preprocessing_output_configuration[
+        output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
     if snap_to_img1:
         grid2 = preprocessing_output_configuration\
             [params.right_epipolar_uncorrected_grid_tag]
@@ -1375,10 +1380,12 @@ def images_pair_to_3d_points(input_stereo_cfg,
 
     # Retrieve disp min and disp max if needed
     preprocessing_output_cfg = input_stereo_cfg\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
-    minimum_disparity = preprocessing_output_cfg[params.minimum_disparity_tag]
-    maximum_disparity = preprocessing_output_cfg[params.maximum_disparity_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    minimum_disparity = preprocessing_output_cfg[
+        output_prepare.MINIMUM_DISPARITY_TAG]
+    maximum_disparity = preprocessing_output_cfg[
+        output_prepare.MAXIMUM_DISPARITY_TAG]
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -1532,12 +1539,12 @@ def compute_epipolar_grid_min_max(grid,
     """
     # Retrieve disp min and disp max if needed
     preprocessing_output_configuration = conf\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
     minimum_disparity = preprocessing_output_configuration\
-                        [params.minimum_disparity_tag]
+                        [output_prepare.MINIMUM_DISPARITY_TAG]
     maximum_disparity = preprocessing_output_configuration\
-                        [params.maximum_disparity_tag]
+                        [output_prepare.MAXIMUM_DISPARITY_TAG]
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -1601,10 +1608,12 @@ def transform_terrain_region_to_epipolar(
     """
     # Retrieve disp min and disp max if needed
     preprocessing_output_conf = conf\
-        [params.preprocessing_section_tag]\
-        [params.preprocessing_output_section_tag]
-    minimum_disparity = preprocessing_output_conf[params.minimum_disparity_tag]
-    maximum_disparity = preprocessing_output_conf[params.maximum_disparity_tag]
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    minimum_disparity = preprocessing_output_conf[
+        output_prepare.MINIMUM_DISPARITY_TAG]
+    maximum_disparity = preprocessing_output_conf[
+        output_prepare.MAXIMUM_DISPARITY_TAG]
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -1622,8 +1631,10 @@ def transform_terrain_region_to_epipolar(
                             [region[0],region[3]]])
 
     epipolar_grid = tiling.grid(0, 0,
-                         preprocessing_output_conf[params.epipolar_size_x_tag],
-                         preprocessing_output_conf[params.epipolar_size_y_tag],
+                         preprocessing_output_conf[
+                             output_prepare.EPIPOLAR_SIZE_X_TAG],
+                         preprocessing_output_conf[
+                             output_prepare.EPIPOLAR_SIZE_Y_TAG],
                          step,
                          step)
 

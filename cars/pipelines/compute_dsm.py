@@ -53,7 +53,7 @@ from cars import stereo
 from cars import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import parameters as params
-from cars.conf import static_conf
+from cars.conf import static_conf, output_prepare
 from cars import tiling
 from cars import utils
 from cars import projection
@@ -208,7 +208,7 @@ def rasterization_wrapper(clouds_and_colors, resolution, epsg, **kwargs):
 
 
 def run(
-        in_jsons: List[params.preprocessing_content_type],
+        in_jsons: List[output_prepare.PreprocessingContentType],
         out_dir: str,
         resolution: float=0.5,
         min_elevation_offset: float=None,
@@ -306,7 +306,7 @@ def run(
                 params.sigma_tag: sigma,
                 params.dsm_radius_tag: dsm_radius
             },
-            params.static_params_tag: static_params[
+            in_params.STATIC_PARAMS_TAG: static_params[
                 static_conf.compute_dsm_tag],
             params.stereo_output_section_tag: {}
         }
@@ -350,7 +350,7 @@ def run(
 
         # Check configuration with respect to schema
         configuration = utils.check_json(
-            in_json, params.preprocessing_content_schema)
+            in_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
 
         # retrieve masks classes usages
         mask1_classes = configuration[
@@ -415,21 +415,25 @@ def run(
 
         # Get Preprocessing output config
         preprocessing_output_config = configuration[
-            params.preprocessing_section_tag][
-            params.preprocessing_output_section_tag]
+            output_prepare.PREPROCESSING_SECTION_TAG][
+            output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
         # Get largest epipolar regions from configuration file
         largest_epipolar_region =\
-            [0, 0, preprocessing_output_config[params.epipolar_size_x_tag],
-                   preprocessing_output_config[params.epipolar_size_y_tag]]
+            [0, 0, preprocessing_output_config[
+                output_prepare.EPIPOLAR_SIZE_X_TAG],
+                   preprocessing_output_config[
+                       output_prepare.EPIPOLAR_SIZE_Y_TAG]]
 
         configurations_data[config_id]['largest_epipolar_region'] =\
                                                         largest_epipolar_region
 
-        disp_min = preprocessing_output_config[params.minimum_disparity_tag]
-        disp_max = preprocessing_output_config[params.maximum_disparity_tag]
+        disp_min = preprocessing_output_config[
+            output_prepare.MINIMUM_DISPARITY_TAG]
+        disp_max = preprocessing_output_config[
+            output_prepare.MAXIMUM_DISPARITY_TAG]
         disp_to_alt_ratio = preprocessing_output_config[
-                                               params.disp_to_alt_ratio_tag]
+            output_prepare.DISP_TO_ALT_RATIO_TAG]
 
         # Check if we need to override disp_min
         if min_elevation_offset is not None:
@@ -468,10 +472,14 @@ def run(
         configurations_data[config_id]['disp_min'] = disp_min
         configurations_data[config_id]['disp_max'] = disp_max
 
-        origin = [preprocessing_output_config[params.epipolar_origin_x_tag],
-                  preprocessing_output_config[params.epipolar_origin_y_tag]]
-        spacing = [preprocessing_output_config[params.epipolar_spacing_x_tag],
-                   preprocessing_output_config[params.epipolar_spacing_y_tag]]
+        origin = [preprocessing_output_config[
+                      output_prepare.EPIPOLAR_ORIGIN_X_TAG],
+                  preprocessing_output_config[
+                      output_prepare.EPIPOLAR_ORIGIN_Y_TAG]]
+        spacing = [preprocessing_output_config[
+                       output_prepare.EPIPOLAR_SPACING_X_TAG],
+                   preprocessing_output_config[
+                       output_prepare.EPIPOLAR_SPACING_Y_TAG]]
 
         configurations_data[config_id]['origin'] = origin
         configurations_data[config_id]['spacing'] = spacing
@@ -482,7 +490,7 @@ def run(
         logging.debug("Spacing of epipolar grid: {}".format(spacing))
 
         # Warning if align is set but correction is missing
-        param_lowres_tag = params.lowres_dem_splines_fit_tag
+        param_lowres_tag = output_prepare.LOWRES_DEM_SPLINES_FIT_TAG
         if align and param_lowres_tag not in preprocessing_output_config:
             logging.warning(
                 ('Align with low resolution DSM option is set but splines '
@@ -540,7 +548,8 @@ def run(
 
         # Retrieve bounding box of the ground intersection of the envelopes
         inter_poly, inter_epsg = utils.read_vector(
-            preprocessing_output_config[params.envelopes_intersection_tag])
+            preprocessing_output_config[
+                output_prepare.ENVELOPES_INTERSECTION_TAG])
 
         if epsg != inter_epsg:
             inter_poly =\
@@ -595,14 +604,14 @@ def run(
         # Split epipolar image in pieces
         epipolar_regions = tiling.split(
             0, 0,
-            preprocessing_output_config[params.epipolar_size_x_tag],
-            preprocessing_output_config[params.epipolar_size_y_tag],
+            preprocessing_output_config[output_prepare.EPIPOLAR_SIZE_X_TAG],
+            preprocessing_output_config[output_prepare.EPIPOLAR_SIZE_Y_TAG],
             opt_epipolar_tile_size, opt_epipolar_tile_size)
 
         epipolar_regions_grid = tiling.grid(
             0, 0,
-            preprocessing_output_config[params.epipolar_size_x_tag],
-            preprocessing_output_config[params.epipolar_size_y_tag],
+            preprocessing_output_config[output_prepare.EPIPOLAR_SIZE_X_TAG],
+            preprocessing_output_config[output_prepare.EPIPOLAR_SIZE_Y_TAG],
             opt_epipolar_tile_size, opt_epipolar_tile_size)
 
         configurations_data[config_id]['epipolar_regions'] = epipolar_regions

@@ -33,6 +33,10 @@ from cars.conf import mask_classes
 from cars.utils import make_relative_path_absolute, rasterio_can_open
 
 
+# tag for static conf file
+STATIC_PARAMS_TAG = 'static_parameters'
+
+
 def read_input_parameters(filename):
     """
     Read an input parameters json file.
@@ -79,7 +83,7 @@ NODATA2_TAG = "nodata2"
 DEFAULT_ALT_TAG = "default_alt"
 
 # Schema for input configuration json
-input_configuration_schema = {
+INPUT_CONFIGURATION_SCHEMA = {
     IMG1_TAG: And(str, rasterio_can_open),
     IMG2_TAG: And(str, rasterio_can_open),
     OptionalKey(SRTM_DIR_TAG): And(str, os.path.isdir),
