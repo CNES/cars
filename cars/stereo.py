@@ -53,11 +53,10 @@ from pandora import constants as pcst
 # Cars imports
 from cars import otb_pipelines
 from cars import tiling
-from cars.conf import parameters as params
 from cars.conf import input_parameters as in_params
 from cars import projection
 from cars import utils
-from cars.conf import mask_classes, output_prepare
+from cars.conf import mask_classes, output_prepare, output_compute_dsm
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
 from cars import matching_regularisation
@@ -1064,26 +1063,29 @@ def triangulate(configuration,
             dataset_msk=im_sec_msk_ds)
 
     # Handle alignment with lowres DEM
-    if align and params.lowres_dem_splines_fit_tag in preprocessing_output_conf:
+    if align and output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG \
+        in preprocessing_output_conf:
         # Read splines file
         splines_file = preprocessing_output_conf[
-            params.lowres_dem_splines_fit_tag]
+            output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG]
         splines_coefs = None
         with open(splines_file,'rb') as splines_file_reader:
             splines_coefs = pickle.load(splines_file_reader)
 
         # Read time direction line parameters
-        time_direction_origin = [preprocessing_output_conf[
-                                 params.time_direction_line_origin_x_tag],
-                                 preprocessing_output_conf[
-                                 params.time_direction_line_origin_y_tag]]
-        time_direction_vector = [preprocessing_output_conf[
-                                 params.time_direction_line_vector_x_tag],
-                                 preprocessing_output_conf[
-                                 params.time_direction_line_vector_y_tag]]
+        time_direction_origin = \
+            [preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_X_TAG],
+                preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_Y_TAG]]
+        time_direction_vector = \
+            [preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_X_TAG],
+                preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_Y_TAG]]
 
         disp_to_alt_ratio = preprocessing_output_conf[
-                            params.disp_to_alt_ratio_tag]
+                            output_compute_dsm.DISP_TO_ALT_RATIO_TAG]
 
         # Interpolate correction
         point_cloud_z_correction = \
@@ -1271,7 +1273,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
         output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
     if snap_to_img1:
         grid2 = preprocessing_output_configuration\
-            [params.right_epipolar_uncorrected_grid_tag]
+            [output_compute_dsm.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG]
 
     # Retrieve elevation range from imgs
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)

@@ -52,8 +52,7 @@ from cars import __version__
 from cars import stereo
 from cars import rasterization
 from cars.conf import input_parameters as in_params
-from cars.conf import parameters as params
-from cars.conf import static_conf, output_prepare
+from cars.conf import static_conf, output_prepare, output_compute_dsm
 from cars import tiling
 from cars import utils
 from cars import projection
@@ -296,35 +295,38 @@ def run(
 
     # Initiate ouptut json dictionary
     out_json = {
-        params.stereo_inputs_section_tag: [],
-        params.stereo_section_tag:
+        output_compute_dsm.COMPUTE_DSM_INPUTS_SECTION_TAG: [],
+        output_compute_dsm.COMPUTE_DSM_SECTION_TAG:
         {
-            params.stereo_version_tag: __version__,
-            params.stereo_parameters_section_tag:
+            output_compute_dsm.COMPUTE_DSM_VERSION_TAG: __version__,
+            output_compute_dsm.COMPUTE_DSM_PARAMETERS_SECTION_TAG:
             {
-                params.resolution_tag: resolution,
-                params.sigma_tag: sigma,
-                params.dsm_radius_tag: dsm_radius
+                output_compute_dsm.RESOLUTION_TAG: resolution,
+                output_compute_dsm.SIGMA_TAG: sigma,
+                output_compute_dsm.DSM_RADIUS_TAG: dsm_radius
             },
             in_params.STATIC_PARAMS_TAG: static_params[
                 static_conf.compute_dsm_tag],
-            params.stereo_output_section_tag: {}
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {}
         }
     }
 
     if use_geoid_alt:
         geoid_data = utils.read_geoid_file()
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.alt_reference_tag] = 'geoid'
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.ALT_REFERENCE_TAG] = 'geoid'
     else:
         geoid_data = None
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.alt_reference_tag] = 'ellipsoid'
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.ALT_REFERENCE_TAG] = 'ellipsoid'
 
 
     if epsg is not None:
-        out_json[params.stereo_section_tag][
-            params.stereo_parameters_section_tag][params.epsg_tag] = epsg
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_PARAMETERS_SECTION_TAG][
+                output_compute_dsm.EPSG_TAG] = epsg
 
     roi_epsg = None
     if roi is not None:
@@ -361,28 +363,30 @@ def run(
         classes_usage = dict()
         if mask1_classes is not None:
             mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
-            classes_usage[params.mask1_ignored_by_corr_tag] =\
+            classes_usage[output_compute_dsm.MASK1_IGNORED_BY_CORR_TAG] =\
                 mask1_classes_dict.get(mask_classes.ignored_by_corr_tag, None)
-            classes_usage[params.mask1_set_to_ref_alt_tag] = \
+            classes_usage[output_compute_dsm.MASK1_SET_TO_REF_ALT_TAG] = \
                 mask1_classes_dict.get(mask_classes.set_to_ref_alt_tag, None)
 
         if mask2_classes is not None:
             mask2_classes_dict = mask_classes.read_mask_classes(mask2_classes)
-            classes_usage[params.mask2_ignored_by_corr_tag] = \
+            classes_usage[output_compute_dsm.MASK2_IGNORED_BY_CORR_TAG] = \
                 mask2_classes_dict.get(mask_classes.ignored_by_corr_tag, None)
-            classes_usage[params.mask2_set_to_ref_alt_tag] = \
+            classes_usage[output_compute_dsm.MASK2_SET_TO_REF_ALT_TAG] = \
                 mask2_classes_dict.get(mask_classes.set_to_ref_alt_tag, None)
 
         # Append input configuration to output json
         out_json_config = {
-            params.stereo_input_tag: configuration,
+            output_compute_dsm.COMPUTE_DSM_INPUT_TAG: configuration,
         }
 
         if mask1_classes is not None or mask2_classes is not None:
             out_json_config[
-                params.stereo_mask_classes_usage_tag] = classes_usage
+                output_compute_dsm.COMPUTE_DSM_MASK_CLASSES_USAGE_TAG] = \
+                    classes_usage
 
-        out_json[params.stereo_inputs_section_tag].append(out_json_config)
+        out_json[output_compute_dsm.COMPUTE_DSM_INPUTS_SECTION_TAG].append(
+            out_json_config)
 
         configurations_data[config_id] = {}
 
@@ -695,7 +699,7 @@ def run(
     if use_dask[mode]:
         dask_config_used = dask.config.config
         utils.write_dask_config(dask_config_used, out_dir,
-                                params.compute_dsm_dask_config_tag)
+                                output_compute_dsm.COMPUTE_DSM_DASK_CONFIG_TAG)
 
         if mode == "local_dask":
             cluster, client = start_local_cluster(nb_workers)
@@ -1155,38 +1159,49 @@ def run(
                 vrt_options, out_dsm_points_in_cell)
 
     # Fill output json file
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-        params.epsg_tag] = epsg
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-        params.dsm_tag] = out_dsm
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-        params.dsm_no_data_tag] = float(dsm_no_data)
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-        params.color_no_data_tag] = float(color_no_data)
-    out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-        params.color_tag] = out_clr
+    out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+        output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+        output_compute_dsm.EPSG_TAG] = epsg
+    out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+        output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+        output_compute_dsm.DSM_TAG] = out_dsm
+    out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+        output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+        output_compute_dsm.DSM_NO_DATA_TAG] = float(dsm_no_data)
+    out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+        output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+        output_compute_dsm.COLOR_NO_DATA_TAG] = float(color_no_data)
+    out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+        output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+        output_compute_dsm.COLOR_TAG] = out_clr
 
     if write_msk:
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.msk_tag] = out_msk
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.MSK_TAG] = out_msk
 
     if output_stats:
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.dsm_mean_tag] = out_dsm_mean
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.dsm_std_tag] = out_dsm_std
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.dsm_n_pts_tag] = out_dsm_n_pts
-        out_json[params.stereo_section_tag][params.stereo_output_section_tag][
-            params.dsm_points_in_cell_tag] = out_dsm_points_in_cell
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.DSM_MEAN_TAG] = out_dsm_mean
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.DSM_STD_TAG] = out_dsm_std
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.DSM_N_PTS_TAG] = out_dsm_n_pts
+        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
+            output_compute_dsm.DSM_POINTS_IN_CELL_TAG] = out_dsm_points_in_cell
 
     # Write the output json
     out_json_path = os.path.join(out_dir, "content.json")
 
     try:
-        utils.check_json(out_json, params.stereo_content_schema)
+        utils.check_json(out_json,
+                         output_compute_dsm.COMPUTE_DSM_CONTENT_SCHEMA)
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error))
 
-    params.write_stereo_content_file(out_json, out_json_path)
+    output_compute_dsm.write_stereo_content_file(out_json, out_json_path)
