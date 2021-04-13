@@ -21,16 +21,22 @@
 
 """
 Preprocessing module:
-contains functions used during cars prepare pipeline step of cars
+contains functions used for epipolar grid creation and correction
 """
 
 # Standard imports
 from __future__ import absolute_import
 import logging
+import math
 
 # Third party imports
 import numpy as np
 from scipy import interpolate
+
+from cars.conf import output_prepare
+from cars import constants as cst
+from cars import projection
+from cars.lib.steps.triangulation import triangulate_matches
 
 
 def correct_right_grid(matches, grid, origin, spacing):
@@ -267,3 +273,74 @@ def correct_right_grid(matches, grid, origin, spacing):
 
     # And return it
     return corrected_right_grid, corrected_matches, in_stats, out_stats
+
+
+def compute_epipolar_grid_min_max(grid,
+                                  epsg,
+                                  conf,
+                                  disp_min = None,
+                                  disp_max = None):
+    """
+    Compute ground terrain location of epipolar grids at disp_min and disp_max
+
+    :param grid: The epipolar grid to project
+    :type grid: np.ndarray of shape (N,M,2)
+    :param epsg: EPSG code of the terrain projection
+    :type epsg: Int
+    :param conf: Configuration dictionnary from prepare step
+    :type conf: Dict
+    :param disp_min: Minimum disparity
+                     (if None, read from configuration dictionnary)
+    :type disp_min: Float or None
+    :param disp_max: Maximum disparity
+                     (if None, read from configuration dictionnary)
+    :type disp_max: Float or None
+    :returns: a tuple of location grid at disp_min and disp_max
+    :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param
+    """
+    # Retrieve disp min and disp max if needed
+    preprocessing_output_configuration = conf\
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    minimum_disparity = preprocessing_output_configuration\
+                        [output_prepare.MINIMUM_DISPARITY_TAG]
+    maximum_disparity = preprocessing_output_configuration\
+                        [output_prepare.MAXIMUM_DISPARITY_TAG]
+
+    if disp_min is None:
+        disp_min = int(math.floor(minimum_disparity))
+    else:
+        disp_min = int(math.floor(disp_min))
+
+    if disp_max is None:
+        disp_max = int(math.ceil(maximum_disparity))
+    else:
+        disp_max = int(math.ceil(disp_max))
+
+    # Generate disp_min and disp_max matches
+    matches_min = np.stack((grid[:,:,0].flatten(),
+                            grid[:,:,1].flatten(),
+                            grid[:,:,0].flatten()+disp_min,
+                            grid[:,:,1].flatten()), axis=1)
+    matches_max = np.stack((grid[:,:,0].flatten(),
+                            grid[:,:,1].flatten(),
+                            grid[:,:,0].flatten()+disp_max,
+                            grid[:,:,1].flatten()), axis=1)
+
+    # Generate corresponding points clouds
+    pc_min = triangulate_matches(conf, matches_min)
+    pc_max = triangulate_matches(conf, matches_max)
+
+    # Convert to correct EPSG
+    projection.points_cloud_conversion_dataset(pc_min, epsg)
+    projection.points_cloud_conversion_dataset(pc_max, epsg)
+
+    # Form grid_min and grid_max
+    grid_min = np.concatenate((pc_min[cst.X].values,
+                               pc_min[cst.Y].values),
+                              axis=1)
+    grid_max = np.concatenate((pc_max[cst.X].values,
+                               pc_max[cst.Y].values),
+                              axis=1)
+
+    return grid_min, grid_max

@@ -36,6 +36,7 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
 
 from cars.utils import read_geoid_file
 from cars import stereo
+from cars.lib.steps import triangulation
 from cars import constants as cst
 from .utils import absolute_data_path, assert_same_datasets
 
@@ -792,7 +793,7 @@ def test_triangulate_matches(
 
     matches = np.array([[0.,0.,0.,0.]])
 
-    llh = stereo.triangulate_matches(images_and_grids_conf, matches)
+    llh = triangulation.triangulate_matches(images_and_grids_conf, matches)
 
     # Check properties
     assert(llh.dims == {cst.ROW: 1, cst.COL: 1})

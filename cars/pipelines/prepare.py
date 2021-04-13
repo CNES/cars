@@ -46,7 +46,7 @@ import rasterio as rio
 from cars import __version__
 from cars import preprocessing
 from cars import otb_pipelines
-from cars import stereo
+from cars.lib.steps import triangulation
 from cars import rasterization
 from cars.conf import output_prepare
 from cars.conf import input_parameters as in_params
@@ -704,7 +704,7 @@ than --epipolar_error_upper_bound = {} pix".format(
 
     # First, triangulate matches
     logging.info("Generating low resolution DSM from matches")
-    points_cloud_from_matches = stereo.triangulate_matches(
+    points_cloud_from_matches = triangulation.triangulate_matches(
                                         out_json, corrected_matches)
 
     # Then define the size of the lower res DSM to rasterize
@@ -862,7 +862,7 @@ than --epipolar_error_upper_bound = {} pix".format(
 
             # Triangulate and rasterize again
             corrected_points_cloud_from_matches =\
-                stereo.triangulate_matches(out_json, z_corrected_matches)
+                triangulation.triangulate_matches(out_json, z_corrected_matches)
 
             corrected_lowres_dsm =\
                 rasterization.simple_rasterization_dataset(

@@ -60,6 +60,7 @@ from cars.conf import mask_classes, output_prepare, output_compute_dsm
 from cars.preprocessing import project_coordinates_on_line
 from cars import constants as cst
 from cars import matching_regularisation
+from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
 # Register sizeof for xarray
@@ -1237,84 +1238,6 @@ def compute_points_cloud(data: xr.Dataset,
 
     return point_cloud
 
-
-def triangulate_matches(configuration, matches, snap_to_img1=False):
-    """
-    This function will perform triangulation from sift matches
-
-    :param configuration: StereoConfiguration
-    :type configuration: StereoConfiguration
-    :param matches: numpy.array of matches of shape (nb_matches, 4)
-    :type data: numpy.ndarray
-    :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so
-                         as to cross those of img1
-    :param snap_to_img1: bool
-    :returns: point_cloud as a dataset containing:
-
-        * Array with shape (nb_matches,1,3), with last dimension
-        corresponding to longitude, lattitude and elevation
-        * Array with shape (nb_matches,1) with output mask
-
-    :rtype: xarray.Dataset
-    """
-
-    # Retrieve information from configuration
-    input_configuration = configuration[in_params.INPUT_SECTION_TAG]
-    preprocessing_output_configuration = configuration\
-        [output_prepare.PREPROCESSING_SECTION_TAG]\
-        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
-
-    img1 = input_configuration[in_params.IMG1_TAG]
-    img2 = input_configuration[in_params.IMG2_TAG]
-
-    grid1 = preprocessing_output_configuration[
-        output_prepare.LEFT_EPIPOLAR_GRID_TAG]
-    grid2 = preprocessing_output_configuration[
-        output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
-    if snap_to_img1:
-        grid2 = preprocessing_output_configuration\
-            [output_compute_dsm.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG]
-
-    # Retrieve elevation range from imgs
-    (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
-    (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
-
-    # Build triangulation app
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation")
-
-    triangulation_app.SetParameterString("mode","sift")
-    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches",matches)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev",min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev",max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev",min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev",max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
-
-    row = np.array(range(llh.shape[0]))
-    col = np.array([0])
-
-    msk = np.full(llh.shape[0:2],255, dtype=np.uint8)
-
-    point_cloud = xr.Dataset({cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
-                              cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
-                              cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
-                              cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
-                                                          msk)},
-                             coords={cst.ROW: row,cst.COL: col})
-    point_cloud.attrs[cst.EPSG] = int(4326)
-
-    return point_cloud
-
-
 def images_pair_to_3d_points(input_stereo_cfg,
                              region,
                              corr_cfg,
@@ -1514,78 +1437,6 @@ def geoid_offset(points, geoid):
     out_pc = out_pc.reset_coords(['lat', 'lon'], drop=True)
 
     return out_pc
-
-
-def compute_epipolar_grid_min_max(grid,
-                                  epsg,
-                                  conf,
-                                  disp_min = None,
-                                  disp_max = None):
-    """
-    Compute ground terrain location of epipolar grids at disp_min and disp_max
-
-    :param grid: The epipolar grid to project
-    :type grid: np.ndarray of shape (N,M,2)
-    :param epsg: EPSG code of the terrain projection
-    :type epsg: Int
-    :param conf: Configuration dictionnary from prepare step
-    :type conf: Dict
-    :param disp_min: Minimum disparity
-                     (if None, read from configuration dictionnary)
-    :type disp_min: Float or None
-    :param disp_max: Maximum disparity
-                     (if None, read from configuration dictionnary)
-    :type disp_max: Float or None
-    :returns: a tuple of location grid at disp_min and disp_max
-    :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param
-    """
-    # Retrieve disp min and disp max if needed
-    preprocessing_output_configuration = conf\
-        [output_prepare.PREPROCESSING_SECTION_TAG]\
-        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
-    minimum_disparity = preprocessing_output_configuration\
-                        [output_prepare.MINIMUM_DISPARITY_TAG]
-    maximum_disparity = preprocessing_output_configuration\
-                        [output_prepare.MAXIMUM_DISPARITY_TAG]
-
-    if disp_min is None:
-        disp_min = int(math.floor(minimum_disparity))
-    else:
-        disp_min = int(math.floor(disp_min))
-
-    if disp_max is None:
-        disp_max = int(math.ceil(maximum_disparity))
-    else:
-        disp_max = int(math.ceil(disp_max))
-
-    # Generate disp_min and disp_max matches
-    matches_min = np.stack((grid[:,:,0].flatten(),
-                            grid[:,:,1].flatten(),
-                            grid[:,:,0].flatten()+disp_min,
-                            grid[:,:,1].flatten()), axis=1)
-    matches_max = np.stack((grid[:,:,0].flatten(),
-                            grid[:,:,1].flatten(),
-                            grid[:,:,0].flatten()+disp_max,
-                            grid[:,:,1].flatten()), axis=1)
-
-    # Generate corresponding points clouds
-    pc_min = triangulate_matches(conf, matches_min)
-    pc_max = triangulate_matches(conf, matches_max)
-
-    # Convert to correct EPSG
-    projection.points_cloud_conversion_dataset(pc_min, epsg)
-    projection.points_cloud_conversion_dataset(pc_max, epsg)
-
-    # Form grid_min and grid_max
-    grid_min = np.concatenate((pc_min[cst.X].values,
-                               pc_min[cst.Y].values),
-                              axis=1)
-    grid_max = np.concatenate((pc_max[cst.X].values,
-                               pc_max[cst.Y].values),
-                              axis=1)
-
-    return grid_min, grid_max
-
 
 def transform_terrain_region_to_epipolar(
         region, conf,
