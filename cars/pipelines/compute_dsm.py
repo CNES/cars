@@ -59,7 +59,7 @@ from cars import projection
 from cars import readwrite
 from cars import constants as cst
 from cars.conf import mask_classes
-from cars.cluster import start_local_cluster, start_cluster,\
+from cars.cluster.dask import start_local_cluster, start_cluster,\
                          stop_cluster, ComputeDSMMemoryLogger
 
 
