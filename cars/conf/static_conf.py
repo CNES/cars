@@ -34,6 +34,18 @@ from cars import filtering
 # TODO : not use a global cfg variable ?
 # TODO : with refactoring : constants in UPPER_CASE
 
+# TODO I understand this is to hide parameters to users and
+# avoid having multiples configuration to maintain.
+# It one thing not to communicate about these parameters
+# but I see more than a conf file here with some getters too
+# I don't know what is the best way to achieve what we want here but two
+# things bother me a little:
+# - using env variables (makes it hard to debug)
+# - setting default values here for methods that are step specifics
+#   (instead of using default values in the declaration of this methods,
+#   this makes it harder to create unitary test for the default values
+#   since those values are here and not in the declaration of the unitary
+#   method we want to test)
 
 #pylint: disable=invalid-name
 cfg = None

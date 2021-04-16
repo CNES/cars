@@ -770,7 +770,7 @@ def test_triangulation_1(
     """
     disp1_ref = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/disp1_ref.nc"))
-    point_cloud_dict = stereo.triangulate(
+    point_cloud_dict = triangulation.triangulate(
                     images_and_grids_conf, disp1_ref, None)
 
     assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
@@ -865,7 +865,7 @@ def test_geoid_offset():
 
     geoid = read_geoid_file()
 
-    computed_geoid = stereo.geoid_offset(points, geoid)
+    computed_geoid = triangulation.geoid_offset(points, geoid)
 
     assert(np.allclose(geoid_ref.z.values, computed_geoid.z.values,
                        atol=1e-3, rtol=1e-12))

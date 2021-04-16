@@ -23,6 +23,7 @@
 Preprocessing module:
 contains functions used for epipolar grid creation and correction
 """
+# TODO why not just call this module "rectification" ?
 
 # Standard imports
 from __future__ import absolute_import

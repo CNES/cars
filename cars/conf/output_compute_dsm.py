@@ -32,6 +32,16 @@ from cars.conf import input_parameters, mask_classes, \
 from cars.utils import rasterio_can_open, ncdf_can_open
 
 
+# TODO something is weird here but I guess it comes from the fact the
+# compute_dsm is both a step and a pipeline...
+# If we are going to create multiple pipelines to stop and
+# different points (for validation or else) then are we going to
+# create more files like this one ot the output_prepare one that
+# will be using as output tags for a pipeline but also input tags
+# for a step ? Maybe we could move all the tags to the actual steps
+# that managing them ? Like moving the matching tags to the matching step ?
+
+
 def write_stereo_content_file(config, filename, indent=2):
     """
     Write a stereo json content file.
