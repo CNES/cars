@@ -31,11 +31,11 @@ from typing import List
 
 import numpy as np
 
-from cars import stereo
 from cars.conf import static_conf
 from cars.conf import mask_classes
 from cars.lib.steps.sparse_matching import sift
 from cars import constants as cst
+from cars.lib.steps.epi_rectif import resampling
 
 
 def matching_wrapper(
@@ -80,7 +80,7 @@ def matching_wrapper(
     largest_size = [epipolar_size_x, epipolar_size_y]
 
     # Resample left dataset
-    left_ds = stereo.resample_image(
+    left_ds = resampling.resample_image(
         img1, grid1, largest_size,
         region=left_region, nodata=nodata1, mask=mask1)
 
@@ -95,7 +95,7 @@ def matching_wrapper(
             )
 
     # Resample right dataset
-    right_ds = stereo.resample_image(
+    right_ds = resampling.resample_image(
         img2,
         grid2,
         largest_size,

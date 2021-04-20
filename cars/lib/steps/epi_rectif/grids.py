@@ -20,10 +20,12 @@
 #
 
 """
-Preprocessing module:
+Grids module:
 contains functions used for epipolar grid creation and correction
 """
-# TODO why not just call this module "rectification" ?
+
+# TODO this is where we should have an abstract class definition with otb,
+#      shareloc & libgeo as possible instances
 
 # Standard imports
 from __future__ import absolute_import

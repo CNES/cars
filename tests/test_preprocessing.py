@@ -35,11 +35,10 @@ import rasterio as rio
 import xarray as xr
 
 from cars import preprocessing
-from cars import stereo
 from cars import otb_pipelines
 from cars import constants as cst
 from cars.lib.steps.sparse_matching import sift, filtering
-from cars.lib.steps.epi_rectif import grids
+from cars.lib.steps.epi_rectif import grids, resampling
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
 
 
@@ -63,11 +62,11 @@ def test_dataset_matching():
     epipolar_size_x = 596
     epipolar_size_y = 596
 
-    left = stereo.resample_image(
+    left = resampling.resample_image(
         img1, grid1, [
             epipolar_size_x, epipolar_size_y],
             region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
+    right = resampling.resample_image(
         img2, grid2, [
             epipolar_size_x, epipolar_size_y],
             region=region, nodata=nodata2, mask=mask2)
@@ -83,11 +82,11 @@ def test_dataset_matching():
     # Case with no matches
     region = [0, 0, 2, 2]
 
-    left = stereo.resample_image(
+    left = resampling.resample_image(
         img1, grid1, [
             epipolar_size_x, epipolar_size_y],
             region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
+    right = resampling.resample_image(
         img1, grid1, [
             epipolar_size_x, epipolar_size_y],
             region=region, nodata=nodata1, mask=mask1)

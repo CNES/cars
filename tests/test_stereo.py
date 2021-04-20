@@ -38,6 +38,7 @@ from cars.utils import read_geoid_file
 from cars import stereo
 from cars.lib.steps import triangulation
 from cars import constants as cst
+from cars.lib.steps.epi_rectif import resampling
 from .utils import absolute_data_path, assert_same_datasets
 
 
@@ -246,7 +247,7 @@ def test_resample_image():
     epipolar_size_x = 612
     epipolar_size_y = 612
 
-    test_dataset = stereo.resample_image(
+    test_dataset = resampling.resample_image(
         img, grid, [
             epipolar_size_x, epipolar_size_y], region=region, nodata=nodata)
 
@@ -355,7 +356,7 @@ def test_epipolar_rectify_images_3(
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
     # Rectify images
-    left, right, clr = stereo.epipolar_rectify_images(configuration,
+    left, right, clr = resampling.epipolar_rectify_images(configuration,
                                                       region,
                                                       margin)
 
