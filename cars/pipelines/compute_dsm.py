@@ -61,6 +61,7 @@ from cars import constants as cst
 from cars.conf import mask_classes
 from cars.cluster.dask import start_local_cluster, start_cluster,\
                          stop_cluster, ComputeDSMMemoryLogger
+from cars.lib.steps.matching import dense_matching
 
 
 def region_hash_string(region):
@@ -590,7 +591,7 @@ def run(
         else:
             tiling_params = static_conf.get_tiling_params()
             opt_epipolar_tile_size =\
-                stereo.optimal_tile_size_pandora_plugin_libsgm(
+                dense_matching.optimal_tile_size_pandora_plugin_libsgm(
                     disp_min, disp_max,
                     getattr(tiling_params, static_conf.min_epi_tile_size_tag),
                     getattr(tiling_params, static_conf.max_epi_tile_size_tag),

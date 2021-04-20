@@ -39,6 +39,7 @@ from cars import stereo
 from cars.lib.steps import triangulation
 from cars import constants as cst
 from cars.lib.steps.epi_rectif import resampling
+from cars.lib.steps.matching import dense_matching
 from .utils import absolute_data_path, assert_same_datasets
 
 
@@ -204,21 +205,21 @@ def test_optimal_tile_size():
     disp = 61
     mem = 313
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=0,
                                                          max_tile_size=1000,
                                                          otb_max_ram_hint=mem)
 
     assert res == 400
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=0,
                                                          max_tile_size=300,
                                                          otb_max_ram_hint=mem)
 
     assert res == 300
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=500,
                                                          max_tile_size=1000,
                                                          otb_max_ram_hint=mem)
@@ -226,7 +227,7 @@ def test_optimal_tile_size():
     assert res == 500
 
     # Test case where default tile size is returned
-    assert stereo\
+    assert dense_matching\
         .optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,
                                                  min_tile_size=0,
                                                  max_tile_size=1000,
@@ -396,7 +397,7 @@ def test_compute_disparity_1(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -448,7 +449,7 @@ def test_compute_disparity_3(
     disp_min = -43
     disp_max = 41
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -502,7 +503,7 @@ def test_compute_disparity_1_msk_ref(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -539,7 +540,7 @@ def test_compute_disparity_1_msk_ref(
     conf['input']['mask1_classes'] = absolute_data_path(
         "input/intermediate_results/data1_ref_left_mask_classes.json")
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       conf,
                                       corr_cfg,
@@ -579,7 +580,7 @@ def test_compute_disparity_1_msk_sec(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       conf,
                                       corr_cfg,
@@ -630,7 +631,7 @@ def test_compute_mask_to_use_in_pandora():
         absolute_data_path(
             "input/intermediate_results/data1_ref_right_masked.nc"))
 
-    test_mask = stereo.compute_mask_to_use_in_pandora(
+    test_mask = dense_matching.compute_mask_to_use_in_pandora(
         corr_cfg, right_input, cst.EPI_MSK, [100])
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
@@ -670,7 +671,7 @@ def test_create_inside_sec_roi_mask():
     # add an invalid pixel in the useful zone
     mask[1, 1] = 0
 
-    msk = stereo.create_inside_sec_roi_mask(disp, mask, test_dataset)
+    msk = dense_matching.create_inside_sec_roi_mask(disp, mask, test_dataset)
 
     # create reference data
     ref_msk = np.zeros((disp_nb_row, disp_nb_col), dtype=np.int16)
@@ -741,7 +742,7 @@ def test_estimate_color_from_disparity():
     sec_dataset.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
 
     # interpolate color
-    interp_clr_dataset = stereo.estimate_color_from_disparity(
+    interp_clr_dataset = dense_matching.estimate_color_from_disparity(
         disp_dataset, sec_dataset, clr_dataset)
 
     # reference
