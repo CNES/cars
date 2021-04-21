@@ -237,13 +237,13 @@ def roi_to_start_and_size(region, resolution):
     :type region: list of four float
     :param resolution: The resolution to use to determine sizes
     :type resolution: float
-    :returns: xmin, ymin, xsize, ysize tuple
+    :returns: xstart, ystart, xsize, ysize tuple
     :rtype: list of two float + two int
     """
     xstart = region[0]
     ystart = region[3]
-    xsize = math.ceil((region[2] - region[0]) / resolution)
-    ysize = math.ceil((region[3] - region[1]) / resolution)
+    xsize = int(np.round((region[2] - region[0]) / resolution))
+    ysize = int(np.round((region[3] - region[1]) / resolution))
 
     return xstart, ystart, xsize, ysize
 

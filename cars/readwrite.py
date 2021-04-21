@@ -56,12 +56,13 @@ def compute_output_window(tile, full_bounds, resolution):
     :rtype: tuple(int, int, int, int)
     """
     x_min, _, _, y_max = full_bounds
-    x_0 = int((np.min(tile.coords[cst.X]) - x_min) / resolution - 0.5)
-    y_0 = int((y_max - np.max(tile.coords[cst.Y])) / resolution - 0.5)
-    x_1 = int((np.max(tile.coords[cst.X]) - x_min) / resolution - 0.5)
-    y_1 = int((y_max - np.min(tile.coords[cst.Y])) / resolution - 0.5)
 
-    return (x_0, y_0, x_1, y_1)
+    x_0 = np.round((np.min(tile.coords[cst.X]) - x_min) / resolution - 0.5)
+    y_0 = np.round((y_max - np.max(tile.coords[cst.Y])) / resolution - 0.5)
+    x_1 = np.round((np.max(tile.coords[cst.X]) - x_min) / resolution - 0.5)
+    y_1 = np.round((y_max - np.min(tile.coords[cst.Y])) / resolution - 0.5)
+
+    return (int(x_0), int(y_0), int(x_1), int(y_1))
 
 
 @contextmanager
