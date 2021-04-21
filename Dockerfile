@@ -89,5 +89,5 @@ ENV NUMBA_NUM_THREADS=$OMP_NUM_THREADS \
 ENV OTB_MAX_RAM_HINT=1000
 
 # launch cars
-#ENTRYPOINT ["cars"]
-#CMD ["-h"]
+ENTRYPOINT ["cars"]
+CMD ["-h"]

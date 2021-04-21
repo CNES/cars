@@ -31,7 +31,8 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from cars import rasterization
+from cars.lib.steps import rasterization
+from cars.lib.steps import points_cloud
 from cars import constants as cst
 
 from .utils import absolute_data_path
@@ -126,7 +127,7 @@ def test_create_combined_cloud():
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
 
-    cloud, epsg = rasterization.create_combined_cloud(
+    cloud, epsg = points_cloud.create_combined_cloud(
         cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
         ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
         epipolar_border_margin=1, radius=1, with_coords=False)
@@ -159,7 +160,7 @@ def test_create_combined_cloud():
     # test with mask
     cloud_list = [get_cloud0_ds(with_msk=True), cloud2]
 
-    cloud, epsg = rasterization.create_combined_cloud(
+    cloud, epsg = points_cloud.create_combined_cloud(
         cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
         ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
         epipolar_border_margin=1, radius=1, with_coords=False)
@@ -217,7 +218,7 @@ def test_create_combined_cloud():
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
     clr_list = [clr0, clr1, clr2]
 
-    cloud, epsg = rasterization.\
+    cloud, epsg = points_cloud.\
         create_combined_cloud(
             cloud_list, epsg, color_list=clr_list, resolution=0.5, xstart=40.0,
             ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
@@ -241,7 +242,7 @@ def test_create_combined_cloud():
     assert np.allclose(cloud.values, ref_cloud_clr)
 
     # test with coords and colors
-    cloud, epsg = rasterization.\
+    cloud, epsg = points_cloud.\
         create_combined_cloud(
             cloud_list, epsg,
             color_list=clr_list, resolution=0.5, xstart=40.0,
@@ -278,7 +279,7 @@ def test_create_combined_cloud():
     assert np.allclose(cloud, ref_cloud_clr_coords)
 
     # test with coords (no colors)
-    cloud, epsg = rasterization.create_combined_cloud(
+    cloud, epsg = points_cloud.create_combined_cloud(
         cloud_list, epsg, color_list=None, resolution=0.5, xstart=40.0,
         ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
         epipolar_border_margin=1, radius=1, with_coords=True)
@@ -291,7 +292,7 @@ def test_create_combined_cloud():
 
     # test exception
     with pytest.raises(Exception) as test_error:
-        rasterization.create_combined_cloud(
+        points_cloud.create_combined_cloud(
             cloud_list, epsg, color_list=[clr0], resolution=0.5, xstart=40.0,
             ystart=50.0, xsize=20, ysize=25, on_ground_margin=1,
             epipolar_border_margin=1, radius=1, with_coords=True)

@@ -29,7 +29,7 @@ from json_checker import Or
 from numpy import dtype
 
 from cars import utils
-from cars import filtering
+from cars.lib.steps import points_cloud
 
 # TODO : not use a global cfg variable ?
 # TODO : with refactoring : constants in UPPER_CASE
@@ -349,9 +349,9 @@ def get_rasterization_params() -> RasterizationParams:
 
 
 def get_small_components_filter_params()\
-    -> filtering.SmallComponentsFilterParams:
+    -> points_cloud.SmallComponentsFilterParams:
     """
-    Construct the filtering.SmallComponentParams namedtuple
+    Construct the points_cloud.SmallComponentParams namedtuple
     from the static configuration file
 
     :return: the small components filter parameters
@@ -365,15 +365,15 @@ def get_small_components_filter_params()\
     if small_cpn_filter_dict is None:
         return None
 
-    small_cpn_filter_params = filtering.SmallComponentsFilterParams(
+    small_cpn_filter_params = points_cloud.SmallComponentsFilterParams(
                                             *small_cpn_filter_dict.values())
     return small_cpn_filter_params
 
 
 def get_statistical_outliers_filter_params()\
-    -> filtering.StatisticalFilterParams:
+    -> points_cloud.StatisticalFilterParams:
     """
-    Construct the filtering.StatisticalFilterParams namedtuple
+    Construct the points_cloud.StatisticalFilterParams namedtuple
     from the static configuration file
 
     :return: the statistical outliers filter parameters
@@ -387,7 +387,7 @@ def get_statistical_outliers_filter_params()\
     if stat_filter_dict is None:
         return None
 
-    stat_filter_params = filtering.StatisticalFilterParams(
+    stat_filter_params = points_cloud.StatisticalFilterParams(
                                         *stat_filter_dict.values())
     return stat_filter_params
 

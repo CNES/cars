@@ -44,6 +44,7 @@ from cars import constants as cst
 from cars.conf import input_parameters, mask_classes
 from cars import datasets
 
+
 def create_inside_sec_roi_mask(disp: np.ndarray,
                                disp_msk: np.ndarray,
                                sec_dataset: xr.Dataset) -> np.ndarray:

@@ -47,7 +47,7 @@ from cars import __version__
 from cars import preprocessing
 from cars import otb_pipelines
 from cars.lib.steps import triangulation
-from cars import rasterization
+from cars.lib.steps import rasterization
 from cars.conf import output_prepare
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf

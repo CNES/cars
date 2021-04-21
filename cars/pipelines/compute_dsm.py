@@ -50,7 +50,7 @@ import xarray as xr
 # Cars imports
 from cars import __version__
 from cars import stereo
-from cars import rasterization
+from cars.lib.steps import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf, output_prepare, output_compute_dsm
 from cars import tiling
