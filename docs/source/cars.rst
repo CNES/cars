@@ -4,6 +4,14 @@ cars package
 Submodules
 ----------
 
+cars.cars module
+----------------
+
+.. automodule:: cars.cars
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
 cars.cluster module
 -------------------
 
@@ -48,6 +56,22 @@ cars.filtering module
 ---------------------
 
 .. automodule:: cars.filtering
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cars.mask\_classes module
+-------------------------
+
+.. automodule:: cars.mask_classes
+   :members:
+   :undoc-members:
+   :show-inheritance:
+
+cars.matching\_regularisation module
+------------------------------------
+
+.. automodule:: cars.matching_regularisation
    :members:
    :undoc-members:
    :show-inheritance:
@@ -131,7 +155,6 @@ cars.utils module
    :members:
    :undoc-members:
    :show-inheritance:
-
 
 Module contents
 ---------------
