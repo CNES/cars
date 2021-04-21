@@ -35,11 +35,12 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  concat_conf
 
 from cars.utils import read_geoid_file
-from cars import stereo
 from cars.lib.steps import triangulation
 from cars import constants as cst
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
+from cars import tiling
+from cars.pipelines import wrappers
 from .utils import absolute_data_path, assert_same_datasets
 
 
@@ -297,7 +298,7 @@ def test_epipolar_rectify_images_1(
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
     # Rectify images
-    left, right, clr = stereo.epipolar_rectify_images(configuration,
+    left, right, clr = resampling.epipolar_rectify_images(configuration,
                                                       region,
                                                       margin)
 
@@ -832,7 +833,7 @@ def test_images_pair_to_3d_points(
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
-    cloud, __ = stereo.images_pair_to_3d_points(configuration,
+    cloud, __ = wrappers.images_pair_to_3d_points(configuration,
                                                    region,
                                                    corr_cfg,
                                                    disp_min=-13,
@@ -888,6 +889,6 @@ def test_transform_terrain_region_to_epipolar(
         .update(epipolar_sizes_conf["preprocessing"]["output"])
 
     region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = stereo.transform_terrain_region_to_epipolar(
+    out_region = tiling.transform_terrain_region_to_epipolar(
         region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]

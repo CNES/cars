@@ -62,8 +62,12 @@ from cars.conf import mask_classes
 from cars.cluster.dask import start_local_cluster, start_cluster,\
                          stop_cluster, ComputeDSMMemoryLogger
 from cars.lib.steps.matching import dense_matching
+from cars.lib.steps.epi_rectif import grids
+from cars.pipelines import wrappers
 
 
+# TODO Je comprends l'idée de déplacer ça vers tiling mais ce n'est utilisé
+#      qu'ici donc je doute...
 def region_hash_string(region):
     '''
     This lambda will allow to derive a key
@@ -90,7 +94,7 @@ def write_3d_points(configuration, region, corr_config,
     color_dir = os.path.join(config_id_dir, "color")
 
     # Compute 3d points and colors
-    points, colors = stereo.images_pair_to_3d_points(configuration, region,
+    points, colors = wrappers.images_pair_to_3d_points(configuration, region,
                                                      corr_config, **kwargs)
 
     # Create output directories
@@ -528,7 +532,7 @@ def run(
 
         # Compute terrain min and max again, this time using estimated epsg code
         terrain_dispmin, terrain_dispmax =\
-            stereo.compute_epipolar_grid_min_max(
+            grids.compute_epipolar_grid_min_max(
                 corners, epsg, configuration, disp_min, disp_max)
 
 
@@ -735,7 +739,7 @@ def run(
             # Use Dask delayed
             for region in conf['epipolar_regions']:
                 delayed_point_clouds.append(
-                    dask.delayed(stereo.images_pair_to_3d_points)(
+                    dask.delayed(wrappers.images_pair_to_3d_points)(
                         conf['configuration'], region, corr_config,
                         disp_min = conf['disp_min'],
                         disp_max = conf['disp_max'],
@@ -794,7 +798,7 @@ def run(
 
         # Compute disp_min and disp_max location for epipolar grid
         epipolar_grid_min, epipolar_grid_max = \
-            stereo.compute_epipolar_grid_min_max(
+            grids.compute_epipolar_grid_min_max(
                 conf['epipolar_regions_grid'],
                 epsg, conf["configuration"],
                 conf['disp_min'], conf['disp_max'])

@@ -37,6 +37,7 @@ from pkg_resources import iter_entry_points
 import numpy as np
 import xarray as xr
 import pandora
+import pandora.marge
 from pandora import constants as pcst
 
 from cars import constants as cst

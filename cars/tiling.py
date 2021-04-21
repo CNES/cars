@@ -25,11 +25,19 @@ contains functions related to regions and tiles management
 """
 
 import math
+
 import numpy as np
+from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
+from scipy.spatial import tsearch #pylint: disable=no-name-in-module
+from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
+
 from cars import projection
+from cars.conf import output_prepare
+from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
 def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
+    #TODO could we try to use one more "split" in the docstring ? ;-)
     """
     Generate grid of positions by splitting [xmin, xmax]x[ymin, ymax]
         in splits of xsplit x ysplit size
@@ -46,7 +54,7 @@ def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
     :type xsplit: int
     :param ysplit: height of splits
     :type ysplit: int
-    :returns: A tuple with output grid, number of splits if first direction (n),
+    :returns: A tuple with output grid, number of splits in first direction (n),
         number of splits in second direction (m)
     :type ndarray of shape (n+1, m+1, 2)
     """
@@ -60,6 +68,8 @@ def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
             res[j, i, 0] = min(xmax, xmin + i * xsplit)
             res[j, i, 1] = min(ymax, ymin + j * ysplit)
 
+    # TODO return res as in resultat ? maybe we could use a more obvious name ?
+    #      or less obvious depending on how we define obvious for sure
     return res
 
 
@@ -317,3 +327,114 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
     ymax = math.ceil(ymax / resolution) * resolution
 
     return xmin, ymin, xmax, ymax
+
+
+def transform_terrain_region_to_epipolar(
+        region, conf,
+        epsg = 4326,
+        disp_min = None,
+        disp_max = None,
+        step = 100):
+    """
+    Transform terrain region to epipolar region according to ground_positions
+
+    :param region: The terrain region to transform to epipolar region
+                   ([lat_min, lon_min, lat_max, lon_max])
+    :type region: list of four float
+    :param ground_positions: Grid of ground positions for epipolar geometry
+    :type ground_positions: numpy array # TODO pas a jour
+    :param origin: origin of the grid # TODO pas a jour
+    :type origin: list of two float # TODO pas a jour
+    :param spacing: spacing of the grid # TODO pas a jour
+    :type spacing: list of two float # TODO pas a jour
+    :returns: The epipolar region as [xmin, ymin, xmax, ymax]
+    :rtype: list of four float
+    """
+    # Retrieve disp min and disp max if needed
+    preprocessing_output_conf = conf\
+        [output_prepare.PREPROCESSING_SECTION_TAG]\
+        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    minimum_disparity = preprocessing_output_conf[
+        output_prepare.MINIMUM_DISPARITY_TAG]
+    maximum_disparity = preprocessing_output_conf[
+        output_prepare.MAXIMUM_DISPARITY_TAG]
+
+    if disp_min is None:
+        disp_min = int(math.floor(minimum_disparity))
+    else:
+        disp_min = int(math.floor(disp_min))
+
+    if disp_max is None:
+        disp_max = int(math.ceil(maximum_disparity))
+    else:
+        disp_max = int(math.ceil(disp_max))
+
+    region_grid = np.array([[region[0],region[1]],
+                            [region[2],region[1]],
+                            [region[2],region[3]],
+                            [region[0],region[3]]])
+
+    epipolar_grid = grid(0, 0,
+                         preprocessing_output_conf[
+                             output_prepare.EPIPOLAR_SIZE_X_TAG],
+                         preprocessing_output_conf[
+                             output_prepare.EPIPOLAR_SIZE_Y_TAG],
+                         step,
+                         step)
+
+    epi_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
+
+    epipolar_grid_min, epipolar_grid_max = compute_epipolar_grid_min_max(
+        epipolar_grid, epsg, conf,disp_min, disp_max)
+
+    # Build Delaunay triangulations
+    delaunay_min = Delaunay(epipolar_grid_min)
+    delaunay_max = Delaunay(epipolar_grid_max)
+
+    # Build kdtrees
+    tree_min = cKDTree(epipolar_grid_min)
+    tree_max = cKDTree(epipolar_grid_max)
+
+    # Look-up terrain grid with Delaunay
+    s_min = tsearch(delaunay_min, region_grid)
+    s_max = tsearch(delaunay_max, region_grid)
+
+    points_list = []
+    # For each corner
+    for i in range(0,4):
+        # If we are inside triangulation of s_min
+        if s_min[i] != -1:
+            # Add points from surrounding triangle
+            for point in epi_grid_flat[delaunay_min.simplices[s_min[i]]]:
+                points_list.append(point)
+        else:
+            # else add nearest neighbor
+            __, point_idx = tree_min.query(region_grid[i,:])
+            points_list.append(epi_grid_flat[point_idx])
+        # If we are inside triangulation of s_min
+            if s_max[i] != -1:
+                # Add points from surrounding triangle
+                for point in epi_grid_flat[delaunay_max.simplices[s_max[i]]]:
+                    points_list.append(point)
+            else:
+                # else add nearest neighbor
+                __, point_nn_idx = tree_max.query(region_grid[i,:])
+                points_list.append(epi_grid_flat[point_nn_idx])
+
+    points_min = np.min(points_list, axis=0)
+    points_max = np.max(points_list, axis=0)
+
+    # Bouding region of corresponding cell
+    epipolar_region_minx = points_min[0]
+    epipolar_region_miny = points_min[1]
+    epipolar_region_maxx = points_max[0]
+    epipolar_region_maxy = points_max[1]
+
+    # This mimics the previous code that was using
+    # transform_terrain_region_to_epipolar
+    epipolar_region = [
+        epipolar_region_minx,
+        epipolar_region_miny,
+        epipolar_region_maxx,
+        epipolar_region_maxy]
+    return epipolar_region

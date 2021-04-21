@@ -24,6 +24,12 @@ Preprocessing module:
 contains functions used during cars prepare pipeline step of cars
 """
 
+#TODO "cars prepare pipeline step" ? I might be confused between notions of
+#     pipelines and steps
+
+#TODO is improted inside prepare & triangulation,
+#     is it solely a prepare preprocessing (a pre-prepare) ?
+
 # Standard imports
 from __future__ import absolute_import
 import math

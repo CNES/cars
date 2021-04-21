@@ -29,7 +29,9 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
                                  concat_conf
 
-
+# TODO pourquoi appeler cette methode dans cars.py ? si ce n'est utilisé que par
+#      le module de matching qui lui meme n'utilise que pandora ? on ne peut pas
+#      appeler pandora avec une autre conf que la sienne
 def configure_correlator(corr_file_path=None):
     """
     Provide correlator configuration through dictionary format.
