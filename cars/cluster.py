@@ -90,10 +90,11 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         elapsed_time = time.time()-self.start_time
 
         # Walk the worker known memory
-        for task, task_size in self.worker.nbytes.items():
+        for task_key in self.worker.tasks.keys():
+            task_size = self.worker.tasks[task_key].get_nbytes()
 
             # Sort between point clouds and rasters
-            if task.startswith("images_pair_to_3d_points"):
+            if task_key.startswith("images_pair_to_3d_points"):
                 total_point_clouds_nbytes += task_size
                 total_point_clouds_in_memory += 1
             else:
