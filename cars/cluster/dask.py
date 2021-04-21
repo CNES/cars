@@ -90,10 +90,11 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         elapsed_time = time.time()-self.start_time
 
         # Walk the worker known memory
-        for task, task_size in self.worker.nbytes.items():
+        for task_key in self.worker.tasks.keys():
+            task_size = self.worker.tasks[task_key].get_nbytes()
 
             # Sort between point clouds and rasters
-            if task.startswith("images_pair_to_3d_points"):
+            if task_key.startswith("images_pair_to_3d_points"):
                 total_point_clouds_nbytes += task_size
                 total_point_clouds_in_memory += 1
             else:
@@ -244,7 +245,8 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
         'OTB_MAX_RAM_HINT',
         'VIRTUAL_ENV',
         'ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS',
-        'GDAL_CACHEMAX']
+        'GDAL_CACHEMAX',
+        'DASK_CONFIG']
     names = [name for name in names if os.environ.get(name)]
     envs = ["export {}={}".format(name, os.environ[name]) for name in names]
     log_directory = os.path.join(os.path.abspath(out_dir), "dask_log")

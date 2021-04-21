@@ -34,6 +34,7 @@ import errno
 import math
 from glob import glob
 import multiprocessing
+from collections import Counter
 
 # Third party imports
 import numpy as np
@@ -803,6 +804,7 @@ def run(
                 epsg, conf["configuration"],
                 conf['disp_min'], conf['disp_max'])
 
+        epipolar_regions_grid_size = np.shape(conf['epipolar_regions_grid'])[:2]
         epipolar_regions_grid_flat = conf['epipolar_regions_grid'].reshape(
             -1, conf['epipolar_regions_grid'].shape[-1])
 
@@ -825,6 +827,17 @@ def run(
         # Look-up terrain_grid with Delaunay
         s_min = tsearch(delaunay_min, terrain_grid*precision_factor)
         s_max = tsearch(delaunay_max, terrain_grid*precision_factor)
+
+        # Filter simplices on the edges
+        edges = np.ones(epipolar_regions_grid_size)
+        edges[1:-1,1:-1] = 0
+        edges_ravel = np.ravel(edges)
+        s_min_edges = np.sum(edges_ravel[delaunay_min.simplices],
+                             axis=1) == 3
+        s_max_edges = np.sum(edges_ravel[delaunay_max.simplices],
+                             axis=1) == 3
+        s_min[s_min_edges[s_min]] = -1
+        s_max[s_max_edges[s_max]] = -1
 
         points_disp_min =\
             epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
@@ -1072,6 +1085,9 @@ def run(
             number_of_epipolar_tiles_per_terrain_tiles.append(
                 len(required_point_clouds))
 
+    logging.info("Number of epipolar tiles "
+                 "for each terrain tile (counter): {}".format(
+                     sorted(Counter(number_of_epipolar_tiles_per_terrain_tiles).items())))
 
     logging.info("Average number of epipolar tiles "
                  "for each terrain tile: {}".format(

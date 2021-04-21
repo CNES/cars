@@ -23,8 +23,14 @@ copyright = '2021, CNES'
 author = 'CARS Team'
 
 # The full version, including alpha/beta/rc tags
-release = '0.3.0'
-version = '0.3.0'
+from pkg_resources import get_distribution
+try:
+    version = get_distribution('cars').version
+    release = version
+except Exception as error:
+    print("WARNING: cannot find cars version")
+    version = "Unknown"
+    release = version
 
 # The master toctree document.
 master_doc = 'index'

@@ -46,8 +46,10 @@ def test_compute_output_window():
     """
 
     resolution = 0.3
-    x_start = 25
-    y_start = 15
+
+    # add digits after the decimal point to check precision
+    x_start = 25.200001
+    y_start = 15.000001
     x_size = 300
     y_size = 250
     x_values_1d = np.linspace(x_start + 0.5 * resolution,
@@ -59,7 +61,7 @@ def test_compute_output_window():
     raster_coords = {'x': x_values_1d, 'y': y_values_1d}
     tile = xr.Dataset({},
                       coords=raster_coords)
-    bounds = (120, 150, 412, 512)
+    bounds = (120, 150, 412.2, 511.8)
 
     indices = readwrite.compute_output_window(tile, bounds, resolution)
     assert indices == (-316, 1656, -17, 1905)

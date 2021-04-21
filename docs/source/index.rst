@@ -3,18 +3,40 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-Welcome to CARS's documentation!
-================================
+:Version: |version|
 
-CARS is a dedicated and open source 3D tool to produce Digital Surface Models from satellite imaging by photogrammetry.
+CARS, a satellite multi view stereo pipeline
+============================================
 
+**CARS** is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 This Multiview stereo pipeline is intended for massive DSM production with a robust and performant design.
+
+
+.. |img1| image:: images/animation_sat.gif
+   :width: 100%
+.. |img2| image:: images/overview_dsm_3d.gif
+   :width: 80%
+
++--------------------+---------------------------------------------+
+| From stereo images | CARS produces a Digital Surface Model (DSM) |
++--------------------+---------------------------------------------+
+| |img1|             | |img2|                                      |
++--------------------+---------------------------------------------+
+
 
 CARS means CNES Algorithms to Reconstruct Surface (or Chaîne Automatique de Restitution Stéréoscopique in french)
 
+Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
+
+- `CO3D project <https://co3d.cnes.fr/en/co3d-0>`_
+- `AI4GEO project <https://www.ai4geo.eu/>`_
+
 It is composed of:
-A Python API, based on xarray, enabling to realize all the computation steps leading to a DSM.
-An end-to-end processing chain based on this API. It can be performed using dask (locally or on a cluster which has a GPFS centralized files storage) or multiprocessing libraries to distribute the computations.
+
+- A **Python 3D API**, based on xarray, enabling to realize all the computation steps leading to a DSM.
+- An **end-to-end processing** chain based on this API.
+
+The chain can use dask (local or cluster with centralized GPFS files storage) or multiprocessing libraries to distribute the computations.
 
 Table of Contents
 =================
@@ -27,6 +49,7 @@ Table of Contents
    install
    cli_usage
    notebooks
+   developer
    modules
 
 Indices and tables
