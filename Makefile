@@ -56,25 +56,32 @@ install-dev: install-deps ## install cars in dev mode and set env
 	@chmod +x ${VENV}/bin/register-python-argcomplete
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
-test: install-dev ## run all unit tests (depends install) from dev mode
+test: install-dev ## run all tests + coverage html
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
 	@${VENV}/bin/pytest -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc --cov-report html --cov
 
+test-ci: install-dev ## run unit and pbs tests + coverage for cars-ci
+	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
+	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+
 test-end2end: install-dev ## run end2end tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+	@${VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO
 
 test-unit: install-dev ## run unit tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+	@${VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=INFO
 
 test-pbs-cluster: install-dev ## run pbs cluster tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+	@${VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO
 
 test-notebook: install-dev ## run notebook tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc
+	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO
+
+lint-ci: install-dev ## run lint tools for cars-ci (TODO merge lint with isort, black, ...)
+	@${VENV}/bin/pylint **/*.py --rcfile=.pylintrc --output-format=parseable > pylint-report.txt || cat pylint-report.txt
 
 lint: install-dev  ## run lint tools (depends install)
 	@${VENV}/bin/isort --check **/*.py
