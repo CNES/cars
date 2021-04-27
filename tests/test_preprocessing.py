@@ -40,6 +40,7 @@ from cars import constants as cst
 from cars.lib.steps.sparse_matching import sift, filtering
 from cars.lib.steps.epi_rectif import grids, resampling
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
+from .utils import otb_geoid_file_set, otb_geoid_file_unset
 
 
 @pytest.mark.unit_tests
@@ -117,6 +118,9 @@ def generate_epipolar_grids(
         epipolar_size_x, epipolar_size_y epipolar grids size
         baseline  : (resolution * B/H)
     """
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
     # Launch OTB pipeline to get stero grids
     grid1, grid2, __, __, epipolar_size_x, epipolar_size_y, baseline = \
         otb_pipelines.build_stereorectification_grid_pipeline(
@@ -144,6 +148,10 @@ def generate_epipolar_grids(
                                     attrs={"epi_step": epi_step,
                                            "epipolar_size_x": epipolar_size_x,
                                            "epipolar_size_y": epipolar_size_y})
+
+    # Unset geoid for the test to be standalone
+    otb_geoid_file_unset()
+
     return left_grid_dataset, right_grid_dataset,\
            epipolar_size_x, epipolar_size_y,\
            baseline

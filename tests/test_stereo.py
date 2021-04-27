@@ -21,7 +21,6 @@
 """
 Test module for cars/stereo.py
 """
-
 import json
 import math
 from copy import deepcopy
@@ -42,7 +41,7 @@ from cars.lib.steps.matching import dense_matching
 from cars import tiling
 from cars.pipelines import wrappers
 from .utils import absolute_data_path, assert_same_datasets
-
+from .utils import otb_geoid_file_set, otb_geoid_file_unset
 
 # Local testing stereo function pytest fixtures
 # Ease following stereo tests readibility
@@ -866,12 +865,18 @@ def test_geoid_offset():
         cst.Z: ((cst.ROW, cst.COL), np.zeros_like(geoid_ref.z))
     })
 
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
     geoid = read_geoid_file()
 
     computed_geoid = triangulation.geoid_offset(points, geoid)
 
     assert(np.allclose(geoid_ref.z.values, computed_geoid.z.values,
                        atol=1e-3, rtol=1e-12))
+
+    # Unset geoid for the test to be standalone
+    otb_geoid_file_unset()
 
 
 @pytest.mark.unit_tests
