@@ -30,6 +30,7 @@ The Merge Request shall have a short description of the proposed changes. If it 
 Likewise, if you work on a branch (which is recommended), prefix the branch's name by `xx-` in order to link it to the xx issue.
 
 CARS Classical workflow is :
+* Check Licence and sign [Contributor Licence Agrement](#Contribution license agreement) (Individual or Corporate)
 * Create an issue (or begin from an existing one)
 * Create a Merge Request from the issue: a MR is created accordingly with "WIP:", "Closes xx" and associated "xx-name-issue" branch
 * CARS hacking code from a local working directory or from the forge (less possibilities)
@@ -38,6 +39,28 @@ CARS Classical workflow is :
 * Beware that [pylint](https://pypi.org/project/pylint/) pylint pre-commit tool is installed in continuous integration (see below pre-commit validation).
 * Launch the [tests](./docs/install.rst) on your modifications (or don't forget to add ones).
 * When finished, change your Merge Request name (erase "WIP:" in title ) and ask `@cars` to review the code (see below Merge request acceptation process)
+ 
+
+# Contribution license agreement
+
+CARS requires that contributors sign out a [Contributor License
+Agreement](https://en.wikipedia.org/wiki/Contributor_License_Agreement). The
+purpose of this CLA is to ensure that the project has the necessary ownership or
+grants of rights over all contributions to allow them to distribute under the
+chosen license (Apache License Version 2.0)
+
+To accept your contribution, we need you to complete, sign and email to *cars [at]
+cnes [dot] fr* an [Individual Contributor Licensing
+Agreement](./CARS-ICLA.doc) (ICLA) form and a
+[Corporate Contributor Licensing
+Agreement](./CARS-CCLA.doc) (CCLA) form if you are
+contributing on behalf of your company or another entity which retains copyright
+for your contribution.
+
+The copyright owner (or owner's agent) must be mentioned in headers of all
+modified source files and also added to the [NOTICE
+file](./NOTICE).
+
 
 # Coding guide
 
