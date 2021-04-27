@@ -51,9 +51,9 @@ chosen license (Apache License Version 2.0)
 
 To accept your contribution, we need you to complete, sign and email to *cars [at]
 cnes [dot] fr* an [Individual Contributor Licensing
-Agreement](./CARS-ICLA.doc) (ICLA) form and a
+Agreement](./docs/source/CLA/ICLA-CARS.doc) (ICLA) form and a
 [Corporate Contributor Licensing
-Agreement](./CARS-CCLA.doc) (CCLA) form if you are
+Agreement](./docs/source/CLA/CCLA-CARS.doc) (CCLA) form if you are
 contributing on behalf of your company or another entity which retains copyright
 for your contribution.
 
