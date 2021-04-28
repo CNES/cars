@@ -46,8 +46,7 @@ import otbApplication as otb
 
 # Cars imports
 from cars import constants as cst
-from cars import projection
-from cars import utils
+from cars.core import projection, utils
 
 
 def image_envelope(img, shp, dem=None, default_alt=None):

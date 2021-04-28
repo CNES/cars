@@ -32,7 +32,7 @@ import xarray as xr
 import fiona
 from shapely.geometry import Polygon, shape
 
-from cars import utils
+from cars.core import utils
 from .utils import absolute_data_path, temporary_dir
 
 

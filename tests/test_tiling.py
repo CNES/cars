@@ -30,7 +30,7 @@ import pytest
 from shapely.geometry import Polygon
 from shapely.affinity import translate
 
-from cars import tiling
+from cars.core import tiling, projection
 
 @pytest.mark.unit_tests
 def test_grid():
@@ -146,6 +146,7 @@ def test_snap_to_grid():
     assert (0, 0, 11, 11) == tiling.snap_to_grid(0.1, 0.2, 10.1, 10.2, 1.)
 
 
+# TODO move to test_projection
 @pytest.mark.unit_tests
 def test_ground_positions_from_envelopes():
     """
@@ -156,7 +157,7 @@ def test_ground_positions_from_envelopes():
     envelope_intersection = translate(envelope, xoff=0.5, yoff=0.5)
     envelope_no_intersection = translate(envelope, xoff=2.0, yoff=2.0)
 
-    inter, bounding_box = tiling.ground_polygon_from_envelopes(
+    inter, bounding_box = projection.ground_polygon_from_envelopes(
         envelope, envelope_intersection, 4326, 4326, 4326)
 
     assert list(inter.exterior.coords) == [
@@ -165,7 +166,7 @@ def test_ground_positions_from_envelopes():
 
     # test exception
     try:
-        tiling.ground_polygon_from_envelopes(
+        projection.ground_polygon_from_envelopes(
             envelope, envelope_no_intersection, 4326, 4326, 4326)
     except Exception as intersect_error:
         assert str(intersect_error) == \

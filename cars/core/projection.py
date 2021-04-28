@@ -28,9 +28,10 @@ contains some general purpose functions using polygons and data projections
 from typing import List, Tuple
 import os
 import logging
-import numpy as np
 
 # Third party imports
+import numpy as np
+import otbApplication
 import pandas
 import xarray as xr
 import rasterio as rio
@@ -42,7 +43,7 @@ import osgeo
 from osgeo import osr
 
 # cars import
-from cars import utils
+from cars.core import utils
 from cars import constants as cst
 
 
@@ -447,3 +448,69 @@ def points_cloud_conversion_dataframe(
         cloud[cst.X] = xyz_in[:, 0]
         cloud[cst.Y] = xyz_in[:, 1]
         cloud[cst.Z] = xyz_in[:, 2]
+
+
+def get_utm_zone_as_epsg_code(lon, lat):
+    """
+    Returns the EPSG code of the UTM zone where the lat, lon point falls in
+
+    :param lon: longitude of the point
+    :type lon: float
+    :param lat: lattitude of the point
+    :type lat: float
+    :returns: The EPSG code corresponding to the UTM zone
+    :rtype: int
+    """
+    utm_app = otbApplication.Registry.CreateApplication(
+        "ObtainUTMZoneFromGeoPoint")
+    utm_app.SetParameterFloat("lon", float(lon))
+    utm_app.SetParameterFloat("lat", float(lat))
+    utm_app.Execute()
+    zone = utm_app.GetParameterInt("utm")
+    north_south = 600 if lat >= 0 else 700
+    return 32000 + north_south + zone
+
+
+def ground_polygon_from_envelopes(
+        poly_envelope1,
+        poly_envelope2,
+        epsg1,
+        epsg2,
+        tgt_epsg=4326):
+    """
+    compute the ground polygon of the intersection of two envelopes
+
+    :raise: Exception when the envelopes don't intersect one to each other
+
+    :param poly_envelope1: path to the first envelope
+    :type poly_envelope1: Polygon
+    :param poly_envelope2: path to the second envelope
+    :type poly_envelope2: Polygon
+    :param epsg1: EPSG code of poly_envelope1
+    :type epsg1: int
+    :param epsg2: EPSG code of poly_envelope2
+    :type epsg2: int
+    :param tgt_epsg: EPSG code of the new projection
+        (default value is set to 4326)
+    :type tgt_epsg: int
+    :return: a tuple with the shapely polygon of the intersection
+        and the intersection's bounding box
+        (described by a tuple (minx, miny, maxx, maxy))
+    :rtype: Tuple[polygon, Tuple[int, int, int, int]]
+    """
+    # project to the correct epsg if necessary
+    if epsg1 != tgt_epsg:
+        poly_envelope1 = polygon_projection(
+            poly_envelope1, epsg1, tgt_epsg)
+
+    if epsg2 != tgt_epsg:
+        poly_envelope2 = polygon_projection(
+            poly_envelope2, epsg2, tgt_epsg)
+
+    # intersect both envelopes
+    if poly_envelope1.intersects(poly_envelope2):
+        inter = poly_envelope1.intersection(poly_envelope2)
+    else:
+        raise Exception('The two envelopes do not intersect one another')
+
+    return inter, inter.bounds

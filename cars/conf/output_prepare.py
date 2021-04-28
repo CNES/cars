@@ -31,7 +31,7 @@ from json_checker import OptionalKey, And, Or
 
 from cars.conf import mask_classes
 from cars.conf import input_parameters, static_conf
-from cars.utils import make_relative_path_absolute, rasterio_can_open
+from cars.core.utils import make_relative_path_absolute, rasterio_can_open
 
 
 def write_preprocessing_content_file(config, filename, indent=2):

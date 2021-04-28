@@ -31,7 +31,6 @@ from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
 from scipy.spatial import tsearch #pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 
-from cars import projection
 from cars.conf import output_prepare
 from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
@@ -256,51 +255,6 @@ def roi_to_start_and_size(region, resolution):
     ysize = int(np.round((region[3] - region[1]) / resolution))
 
     return xstart, ystart, xsize, ysize
-
-
-def ground_polygon_from_envelopes(
-        poly_envelope1,
-        poly_envelope2,
-        epsg1,
-        epsg2,
-        tgt_epsg=4326):
-    """
-    compute the ground polygon of the intersection of two envelopes
-
-    :raise: Exception when the envelopes don't intersect one to each other
-
-    :param poly_envelope1: path to the first envelope
-    :type poly_envelope1: Polygon
-    :param poly_envelope2: path to the second envelope
-    :type poly_envelope2: Polygon
-    :param epsg1: EPSG code of poly_envelope1
-    :type epsg1: int
-    :param epsg2: EPSG code of poly_envelope2
-    :type epsg2: int
-    :param tgt_epsg: EPSG code of the new projection
-        (default value is set to 4326)
-    :type tgt_epsg: int
-    :return: a tuple with the shapely polygon of the intersection
-        and the intersection's bounding box
-        (described by a tuple (minx, miny, maxx, maxy))
-    :rtype: Tuple[polygon, Tuple[int, int, int, int]]
-    """
-    # project to the correct epsg if necessary
-    if epsg1 != tgt_epsg:
-        poly_envelope1 = projection.polygon_projection(
-            poly_envelope1, epsg1, tgt_epsg)
-
-    if epsg2 != tgt_epsg:
-        poly_envelope2 = projection.polygon_projection(
-            poly_envelope2, epsg2, tgt_epsg)
-
-    # intersect both envelopes
-    if poly_envelope1.intersects(poly_envelope2):
-        inter = poly_envelope1.intersection(poly_envelope2)
-    else:
-        raise Exception('The two envelopes do not intersect one another')
-
-    return inter, inter.bounds
 
 
 def snap_to_grid(xmin, ymin, xmax, ymax, resolution):

@@ -33,7 +33,7 @@ import xarray as xr
 import otbApplication
 
 from cars import constants as cst
-from cars import utils
+from cars.core import utils
 from cars import otb_pipelines
 from cars.conf import input_parameters, \
                       output_compute_dsm, \

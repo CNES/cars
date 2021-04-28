@@ -39,37 +39,15 @@ from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 import xarray as xr
 from numba import njit, float64, int64, boolean
 from numba.core.errors import NumbaPerformanceWarning
-import otbApplication
 from osgeo import osr
 
 # cars import
-from cars import projection
+from cars.core import projection
 from cars import constants as cst
 # TODO a voir mais ça m'ennuie d'avoir un step qui dépende d'un autre
 from cars.lib.steps import points_cloud
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
-
-
-def get_utm_zone_as_epsg_code(lon, lat):
-    """
-    Returns the EPSG code of the UTM zone where the lat, lon point falls in
-
-    :param lon: longitude of the point
-    :type lon: float
-    :param lat: lattitude of the point
-    :type lat: float
-    :returns: The EPSG code corresponding to the UTM zone
-    :rtype: int
-    """
-    utm_app = otbApplication.Registry.CreateApplication(
-        "ObtainUTMZoneFromGeoPoint")
-    utm_app.SetParameterFloat("lon", float(lon))
-    utm_app.SetParameterFloat("lat", float(lat))
-    utm_app.Execute()
-    zone = utm_app.GetParameterInt("utm")
-    north_south = 600 if lat >= 0 else 700
-    return 32000 + north_south + zone
 
 
 def compute_xy_starts_and_sizes(resolution: float, cloud: pandas.DataFrame)\

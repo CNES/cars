@@ -29,7 +29,7 @@ from shapely.geometry import Polygon
 import numpy as np
 import pandas
 
-from cars import projection, utils
+from cars.core import projection, utils
 from .utils import absolute_data_path
 
 @pytest.mark.unit_tests

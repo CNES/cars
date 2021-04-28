@@ -54,9 +54,7 @@ from cars import stereo
 from cars.lib.steps import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf, output_prepare, output_compute_dsm
-from cars import tiling
-from cars import utils
-from cars import projection
+from cars.core import tiling, utils, projection
 from cars import readwrite
 from cars import constants as cst
 from cars.conf import mask_classes
@@ -1087,7 +1085,8 @@ def run(
 
     logging.info("Number of epipolar tiles "
                  "for each terrain tile (counter): {}".format(
-                     sorted(Counter(number_of_epipolar_tiles_per_terrain_tiles).items())))
+                     sorted(Counter(
+                         number_of_epipolar_tiles_per_terrain_tiles).items())))
 
     logging.info("Average number of epipolar tiles "
                  "for each terrain tile: {}".format(

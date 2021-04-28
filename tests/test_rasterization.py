@@ -34,16 +34,18 @@ import xarray as xr
 from cars.lib.steps import rasterization
 from cars.lib.steps import points_cloud
 from cars import constants as cst
+from cars.core import projection
 
 from .utils import absolute_data_path
 from .utils import assert_same_datasets
 
+#TODO move to projection
 @pytest.mark.unit_tests
 def test_get_utm_zone_as_epsg_code():
     """
     Test if a point in Toulouse gives the correct EPSG code
     """
-    epsg = rasterization.get_utm_zone_as_epsg_code(1.442299, 43.600764)
+    epsg = projection.get_utm_zone_as_epsg_code(1.442299, 43.600764)
     assert epsg == 32631
 
 

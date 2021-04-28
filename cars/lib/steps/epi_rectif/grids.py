@@ -38,7 +38,8 @@ from scipy import interpolate
 
 from cars.conf import output_prepare
 from cars import constants as cst
-from cars import projection
+from cars.core import projection
+# TODO depends on another step (and a later one)
 from cars.lib.steps.triangulation import triangulate_matches
 
 

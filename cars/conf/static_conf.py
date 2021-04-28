@@ -28,7 +28,7 @@ import json
 from json_checker import Or
 from numpy import dtype
 
-from cars import utils
+from cars.core import utils
 from cars.lib.steps import points_cloud
 
 # TODO : not use a global cfg variable ?

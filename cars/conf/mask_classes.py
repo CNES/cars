@@ -29,7 +29,8 @@ from json_checker import OptionalKey
 
 import numpy as np
 
-from cars import utils
+# TODO module conf depends on module core
+from cars.core import utils
 
 # Specific values
 # 0 = valid pixels

@@ -43,8 +43,7 @@ from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
 from cars import matching_regularisation
 from cars.lib.steps import triangulation
-from cars import projection
-from cars import tiling
+from cars.core import projection, tiling
 
 
 def matching_wrapper(

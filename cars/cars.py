@@ -252,7 +252,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
 
     import logging
     import rasterio
-    from cars import utils
+    from cars.core import utils
 
 
     # Declare output

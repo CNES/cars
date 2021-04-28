@@ -34,7 +34,7 @@ import pandas
 from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 
 from cars import constants as cst
-from cars import projection
+from cars.core import projection
 
 
 def create_combined_cloud(

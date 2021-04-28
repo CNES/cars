@@ -33,12 +33,12 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
                                  concat_conf
 
-from cars.utils import read_geoid_file
+from cars.core.utils import read_geoid_file
 from cars.lib.steps import triangulation
 from cars import constants as cst
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
-from cars import tiling
+from cars.core import tiling
 from cars.pipelines import wrappers
 from .utils import absolute_data_path, assert_same_datasets
 from .utils import otb_geoid_file_set, otb_geoid_file_unset
