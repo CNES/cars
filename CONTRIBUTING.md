@@ -117,7 +117,7 @@ The Merge Request will be merged into master after being review by a CARS steeri
 Only the members of this committee can merge into master.
 
 The checklist of a Merge Request acceptance is the following:
-* [ ] At least 1 code review have been done by members of the group above (who check among others the correct application of the rules listed in the [Coding guide](#coding-guide)).
+* [ ] At least one code review has been done by members of the group above (who check among others the correct application of the rules listed in the [Coding guide](#coding-guide)).
 * [ ] All comments of the reviewers has been dealt with and are closed
 * [ ] The reviewers have signaled their approbation (thumb up)
 * [ ] No developer is against the Merge Request (thumb down)
