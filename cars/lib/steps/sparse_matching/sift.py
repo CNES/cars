@@ -18,6 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+"""
+Sift module:
+contains sift matching method
+"""
 
 # Standard imports
 from __future__ import absolute_import
@@ -29,7 +33,7 @@ import otbApplication as otb
 
 # Cars imports
 from cars import otb_pipelines
-from cars import constants as cst
+from cars.core import constants as cst
 
 
 def dataset_matching(ds1, ds2, matching_threshold = 0.6, n_octave = 8,

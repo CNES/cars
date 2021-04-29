@@ -32,7 +32,7 @@ import numpy as np
 import xarray as xr
 import otbApplication
 
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import utils
 from cars import otb_pipelines
 from cars.conf import input_parameters, \

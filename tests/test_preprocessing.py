@@ -36,7 +36,7 @@ import xarray as xr
 
 from cars import preprocessing
 from cars import otb_pipelines
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.lib.steps.sparse_matching import sift, filtering
 from cars.lib.steps.epi_rectif import grids, resampling
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets

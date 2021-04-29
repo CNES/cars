@@ -51,7 +51,7 @@ from cars.lib.steps import rasterization
 from cars.conf import output_prepare
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import tiling, utils, projection
 from cars.conf import mask_classes
 from cars.cluster.dask import start_local_cluster, start_cluster, stop_cluster

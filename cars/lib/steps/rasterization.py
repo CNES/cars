@@ -43,7 +43,7 @@ from osgeo import osr
 
 # cars import
 from cars.core import projection
-from cars import constants as cst
+from cars.core import constants as cst
 # TODO a voir mais ça m'ennuie d'avoir un step qui dépende d'un autre
 from cars.lib.steps import points_cloud
 

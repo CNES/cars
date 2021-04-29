@@ -46,7 +46,7 @@ from fiona.crs import from_epsg
 from shapely.geometry import mapping, shape
 import otbApplication
 
-from cars import constants as cst
+from cars.core import constants as cst
 
 
 # Filter rasterio warning when image is not georeferenced

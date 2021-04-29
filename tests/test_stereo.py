@@ -35,7 +35,7 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
 
 from cars.core.utils import read_geoid_file
 from cars.lib.steps import triangulation
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
 from cars.core import tiling

@@ -45,7 +45,7 @@ import otbApplication as otb
 
 
 # Cars imports
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import projection, utils
 
 

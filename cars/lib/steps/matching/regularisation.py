@@ -32,7 +32,7 @@ import numpy as np
 import xarray as xr
 
 # Cars imports
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.conf import mask_classes
 
 

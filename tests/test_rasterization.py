@@ -33,7 +33,7 @@ import xarray as xr
 
 from cars.lib.steps import rasterization
 from cars.lib.steps import points_cloud
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import projection
 
 from .utils import absolute_data_path

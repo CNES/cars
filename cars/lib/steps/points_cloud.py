@@ -33,7 +33,7 @@ import numpy as np
 import pandas
 from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import projection
 
 

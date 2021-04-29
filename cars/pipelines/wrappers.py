@@ -38,10 +38,9 @@ from cars.conf import mask_classes,\
                       input_parameters,\
                       output_prepare
 from cars.lib.steps.sparse_matching import sift
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.lib.steps.epi_rectif import resampling
-from cars.lib.steps.matching import dense_matching
-from cars import matching_regularisation
+from cars.lib.steps.matching import dense_matching, regularisation
 from cars.lib.steps import triangulation
 from cars.core import projection, tiling
 
@@ -256,7 +255,7 @@ def images_pair_to_3d_points(input_stereo_cfg,
     mask2_classes = input_stereo_cfg \
         [input_parameters.INPUT_SECTION_TAG].\
             get(input_parameters.MASK2_CLASSES_TAG, None)
-    matching_regularisation.update_disp_to_0(
+    regularisation.update_disp_to_0(
         disp, left, right, mask1_classes, mask2_classes)
 
     colors = dict()

@@ -40,7 +40,7 @@ import pandora
 import pandora.marge
 from pandora import constants as pcst
 
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.conf import input_parameters, mask_classes
 from cars import datasets
 

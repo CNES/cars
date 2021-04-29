@@ -44,7 +44,7 @@ from osgeo import osr
 
 # cars import
 from cars.core import utils
-from cars import constants as cst
+from cars.core import constants as cst
 
 
 def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,

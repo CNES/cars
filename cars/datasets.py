@@ -29,7 +29,7 @@ import numpy as np
 import xarray as xr
 
 
-from cars import constants as cst
+from cars.core import constants as cst
 # TODO je me demande si les constantes qu'on importe ne devrait pas etre
 #      definie ici puisqu'elle concerne juste le dataset ?
 

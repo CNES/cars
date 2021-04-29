@@ -31,7 +31,7 @@ import numpy as np
 
 from cars.conf import input_parameters, mask_classes, output_prepare
 from cars.core import tiling
-from cars import constants as cst
+from cars.core import constants as cst
 from cars.core import utils
 from cars import otb_pipelines
 from cars import datasets
