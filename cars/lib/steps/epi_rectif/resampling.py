@@ -34,7 +34,7 @@ from cars.core import tiling
 from cars.core import constants as cst
 from cars.core import utils
 from cars import otb_pipelines
-from cars import datasets
+from cars.core import datasets
 
 
 def epipolar_rectify_images(
