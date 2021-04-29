@@ -55,7 +55,7 @@ from cars.lib.steps import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf, output_prepare, output_compute_dsm
 from cars.core import tiling, utils, projection
-from cars import readwrite
+from cars.lib.io import output
 from cars import constants as cst
 from cars.conf import mask_classes
 from cars.cluster.dask import start_local_cluster, start_cluster,\
@@ -166,7 +166,7 @@ def write_dsm_by_tile(clouds_and_colors_as_str_list: List[str],
                    xstart +resolution*xsize, ystart]
 
     # write DSM tile as geoTIFF
-    readwrite.write_geotiff_dsm([dsm], tmp_dir, xsize, ysize, tile_bounds,
+    output.write_geotiff_dsm([dsm], tmp_dir, xsize, ysize, tile_bounds,
                                 resolution, epsg, nb_bands, dsm_nodata,
                                 color_nodata, color_dtype = color_dtype,
                                 write_color=True, write_stats=output_stats,
@@ -1128,7 +1128,7 @@ def run(
 
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        readwrite.write_geotiff_dsm(
+        output.write_geotiff_dsm(
             future_dsm_tiles, out_dir, xsize, ysize,
             bounds, resolution, epsg, nb_bands, dsm_no_data,
             color_no_data, color_dtype = static_conf.get_color_image_encoding(),
@@ -1154,12 +1154,13 @@ def run(
         logging.info("Building VRT")
         vrt_options = gdal.BuildVRTOptions(resampleAlg='nearest')
 
-        def vrt_mosaic(tiles_glob, vrt_name, vrt_options, output):
+        def vrt_mosaic(tiles_glob, vrt_name, vrt_options, output_file):
             vrt_file = os.path.join(out_dir, vrt_name)
             tiles_list = glob(os.path.join(out_dir, 'tmp', tiles_glob))
             gdal.BuildVRT(vrt_file, tiles_list, options=vrt_options)
             vrt_file_descriptor = gdal.Open(vrt_file)
-            vrt_file_descriptor = gdal.Translate(output, vrt_file_descriptor)
+            vrt_file_descriptor = gdal.Translate(output_file,
+                                                 vrt_file_descriptor)
             vrt_file_descriptor = None
 
         vrt_mosaic('*_dsm.tif', 'dsm.vrt', vrt_options, out_dsm)

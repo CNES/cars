@@ -20,9 +20,11 @@
 #
 
 """
-Readwrite module:
+Output module:
 contains all compute_dsm.py main pipeline reading/writing functions
 """
+
+#TODO ce fichier ne devrait il pas etre plus "proche" de compute_dsm ?
 
 # Standard imports
 from typing import Tuple

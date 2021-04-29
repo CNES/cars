@@ -24,6 +24,11 @@ Configure correlator module:
 contains functions to retrieve the correlator configuration
 """
 
+#TODO arborescence lib/externals/matching/correlator_configuration/corr_conf.py
+# c'est pas un peu overkill sachant que dans lib/externals
+# il n'y a que ce fichier ?
+# ca fait bcp de __init__.py pour pas grand chose
+
 import pandora
 from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
