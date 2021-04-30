@@ -111,5 +111,5 @@ clean: ## clean: remove venv, cars build, cache, ...
 	@rm -rf **/__pycache__
 	@rm -rf .eggs
 	@rm -rf dask-worker-space/
-	@rm .coverage
+	@rm -f .coverage
 	@rm -rf .coverage.*
