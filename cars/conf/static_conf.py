@@ -28,7 +28,7 @@ import json
 from json_checker import Or
 from numpy import dtype
 
-from cars.core import utils
+from cars.core import inputs
 from cars.lib.steps import points_cloud
 
 # TODO : not use a global cfg variable ?
@@ -256,7 +256,7 @@ def load_cfg():
     with open(os.environ.get('CARS_STATIC_CONFIGURATION'), 'r') as conf_file:
         global cfg
         cfg = json.load(conf_file)
-        utils.check_json(cfg, static_conf_schema)
+        inputs.check_json(cfg, static_conf_schema)
 
 
 def get_cfg():

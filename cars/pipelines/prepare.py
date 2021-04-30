@@ -52,7 +52,7 @@ from cars.conf import output_prepare
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf
 from cars.core import constants as cst
-from cars.core import tiling, utils, projection
+from cars.core import tiling, utils, projection, inputs, outputs
 from cars.conf import mask_classes
 from cars.cluster.dask import start_local_cluster, start_cluster, stop_cluster
 from cars.lib.steps.sparse_matching import filtering
@@ -129,7 +129,7 @@ def run(
             'to your command line')
 
     # Check configuration dict
-    config = utils.check_json(in_json, in_params.INPUT_CONFIGURATION_SCHEMA)
+    config = inputs.check_json(in_json, in_params.INPUT_CONFIGURATION_SCHEMA)
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
@@ -218,30 +218,32 @@ def run(
     if check_inputs:
         logging.info('Checking inputs consistency')
 
-        if utils.rasterio_get_nb_bands(
-                img1) != 1 or utils.rasterio_get_nb_bands(img2) != 1:
+        if inputs.rasterio_get_nb_bands(
+                img1) != 1 or inputs.rasterio_get_nb_bands(img2) != 1:
             raise Exception(
                 '{} and {} are not mono-band images'.format(img1, img2))
 
         if mask1 is not None:
-            if utils.rasterio_get_size(img1) != utils.rasterio_get_size(mask1):
+            if inputs.rasterio_get_size(img1) !=\
+                inputs.rasterio_get_size(mask1):
                 raise Exception(
                     'The image {} and the mask {} '
                     'do not have the same size'.format(
                         img1, mask1))
 
         if mask2 is not None:
-            if utils.rasterio_get_size(img2) != utils.rasterio_get_size(mask2):
+            if inputs.rasterio_get_size(img2) !=\
+                inputs.rasterio_get_size(mask2):
                 raise Exception(
                     'The image {} and the mask {} '
                     'do not have the same size'.format(
                         img2, mask2))
 
-        if not utils.otb_can_open(img1):
+        if not inputs.otb_can_open(img1):
             raise Exception(
                 'Problem while opening image {} with the otb'.format(img1))
 
-        if not utils.otb_can_open(img2):
+        if not inputs.otb_can_open(img2):
             raise Exception(
                 'Problem while opening image {} with the otb'.format(img1))
 
@@ -274,8 +276,8 @@ def run(
     preprocessing.image_envelope(
         img2, shp2, dem=srtm_dir, default_alt=default_alt)
 
-    poly1, epsg1 = utils.read_vector(shp1)
-    poly2, epsg2 = utils.read_vector(shp2)
+    poly1, epsg1 = inputs.read_vector(shp1)
+    poly2, epsg2 = inputs.read_vector(shp2)
 
     inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax) = \
         projection.ground_polygon_from_envelopes(
@@ -283,7 +285,7 @@ def run(
 
     out_envelopes_intersection = os.path.join(
         out_dir, 'envelopes_intersection.gpkg')
-    utils.write_vector([inter_poly], out_envelopes_intersection, epsg1)
+    outputs.write_vector([inter_poly], out_envelopes_intersection, epsg1)
 
     conf_out_dict =\
         out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
@@ -430,7 +432,7 @@ def run(
 
     # Save dask config used
     dask_config_used = dask.config.config
-    utils.write_dask_config(dask_config_used, out_dir,
+    outputs.write_dask_config(dask_config_used, out_dir,
                             output_prepare.PREPROCESSING_DASK_CONFIG_TAG)
 
     use_dask = {"local_dask":True, "pbs_dask":True}
@@ -898,7 +900,7 @@ than --epipolar_error_upper_bound = {} pix".format(
 
     # Write the output json
     try:
-        utils.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
+        inputs.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error))

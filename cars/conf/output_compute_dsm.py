@@ -29,7 +29,7 @@ from json_checker import OptionalKey, And, Or
 
 from cars.conf import input_parameters, mask_classes, \
                       output_prepare, static_conf
-from cars.core.utils import rasterio_can_open, ncdf_can_open
+from cars.core.inputs import rasterio_can_open, ncdf_can_open
 
 
 # TODO something is weird here but I guess it comes from the fact the

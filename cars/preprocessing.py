@@ -46,7 +46,7 @@ import otbApplication as otb
 
 # Cars imports
 from cars.core import constants as cst
-from cars.core import projection, utils
+from cars.core import projection, utils, inputs
 
 
 def image_envelope(img, shp, dem=None, default_alt=None):
@@ -157,7 +157,7 @@ def get_time_ground_direction(
     # Define x: image center,
     #        y: 1/4 of image,
     # y_offset: 3/4 of image if not defined
-    img_size_x, img_size_y = utils.rasterio_get_size(img)
+    img_size_x, img_size_y = inputs.rasterio_get_size(img)
     if x_loc is None:
         x_loc = img_size_x/2
     if y_loc is None:
@@ -246,7 +246,7 @@ def get_ground_direction(img:str, x_coord:float=None, y_coord:float=None,
     :return: (lat0,lon0,alt0, lat,lon,alt) origin and end vector coordinates
     """
     # Define x, y in image center if not defined
-    img_size_x, img_size_y = utils.rasterio_get_size(img)
+    img_size_x, img_size_y = inputs.rasterio_get_size(img)
     if x_coord is None:
         x_coord = img_size_x/2
     if y_coord is None:

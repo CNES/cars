@@ -252,7 +252,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
 
     import logging
     import rasterio
-    from cars.core import utils
+    from cars.core import inputs
 
 
     # Declare output
@@ -268,7 +268,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
         # if it is a vector file
         if extension in ['.gpkg', '.shp', '.kml']:
             try:
-                roi_poly, roi_epsg = utils.read_vector(arg_roi_file)
+                roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
                 roi = (roi_poly.bounds, roi_epsg)
             except BaseException:
                 logging.critical(
@@ -276,7 +276,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
                 stop_now = True
 
         # if not, it is an image
-        elif utils.rasterio_can_open(arg_roi_file):
+        elif inputs.rasterio_can_open(arg_roi_file):
             data = rasterio.open(arg_roi_file)
             xmin = min(data.bounds.left, data.bounds.right)
             ymin = min(data.bounds.bottom, data.bounds.top)

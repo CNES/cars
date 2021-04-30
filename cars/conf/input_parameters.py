@@ -30,7 +30,8 @@ from typing import Dict, Union
 from json_checker import OptionalKey, And
 
 from cars.conf import mask_classes
-from cars.core.utils import make_relative_path_absolute, rasterio_can_open
+from cars.core.utils import make_relative_path_absolute
+from cars.core.inputs import rasterio_can_open
 
 
 # tag for static conf file

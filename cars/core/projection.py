@@ -43,7 +43,7 @@ import osgeo
 from osgeo import osr
 
 # cars import
-from cars.core import utils
+from cars.core import inputs
 from cars.core import constants as cst
 
 
@@ -120,7 +120,7 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
             unsupported_formats = ['.omd']
             _, ext = os.path.splitext(file)
             if ext not in unsupported_formats:
-                if utils.rasterio_can_open(os.path.join(srtm_dir, file)):
+                if inputs.rasterio_can_open(os.path.join(srtm_dir, file)):
                     with rio.open(os.path.join(srtm_dir, file)) as data:
 
                         xmin = min(data.bounds.left, data.bounds.right)

@@ -30,7 +30,7 @@ from json_checker import OptionalKey
 import numpy as np
 
 # TODO module conf depends on module core
-from cars.core import utils
+from cars.core import inputs
 
 # Specific values
 # 0 = valid pixels
@@ -65,7 +65,7 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
     with open(mask_classes_path, 'r') as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
         try:
-            utils.check_json(classes_usage_dict, msk_classes_json_schema)
+            inputs.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
         except Exception as read_error:
             logging.error("Exception caught while trying to read file {}: {}"

@@ -32,14 +32,14 @@ import xarray as xr
 import fiona
 from shapely.geometry import Polygon, shape
 
-from cars.core import utils
+from cars.core import utils, outputs, inputs
 from .utils import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests
 def test_ncdf_can_open():
     fake_path = '/here/im/not.nc'
-    assert not utils.ncdf_can_open(fake_path)
+    assert not inputs.ncdf_can_open(fake_path)
 
 
 @pytest.mark.unit_tests
@@ -49,8 +49,8 @@ def test_rasterio_can_open():
     """
     existing = absolute_data_path("input/phr_ventoux/left_image.tif")
     not_existing = "/stuff/dummy_file.doe"
-    assert utils.rasterio_can_open(existing)
-    assert not utils.rasterio_can_open(not_existing)
+    assert inputs.rasterio_can_open(existing)
+    assert not inputs.rasterio_can_open(not_existing)
 
 
 @pytest.mark.unit_tests
@@ -76,9 +76,9 @@ def test_otb_can_open():
     existing_no_geom = absolute_data_path("input/utils_input/im1.tif")
     not_existing = "/stuff/dummy_file.doe"
 
-    assert utils.otb_can_open(existing_with_geom)
-    assert not utils.otb_can_open(existing_no_geom)
-    assert not utils.otb_can_open(not_existing)
+    assert inputs.otb_can_open(existing_with_geom)
+    assert not inputs.otb_can_open(existing_no_geom)
+    assert not inputs.otb_can_open(not_existing)
 
 
 @pytest.mark.unit_tests
@@ -86,7 +86,7 @@ def test_fix_shapely():
     """
     Test read_vector fix shapely with poly.gpkg example
     """
-    poly, _ = utils.read_vector(
+    poly, _ = inputs.read_vector(
         absolute_data_path("input/utils_input/poly.gpkg"))
     assert poly.is_valid is False
     poly = poly.buffer(0)
@@ -101,7 +101,7 @@ def test_read_vector():
     path_to_shapefile = absolute_data_path(
         "input/utils_input/left_envelope.shp")
 
-    poly, epsg = utils.read_vector(path_to_shapefile)
+    poly, epsg = inputs.read_vector(path_to_shapefile)
 
     assert epsg == 4326
     assert isinstance(poly, Polygon)
@@ -134,7 +134,7 @@ def test_write_vector():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         path_to_file = os.path.join(directory, 'test.gpkg')
-        utils.write_vector(polys, path_to_file, 4326)
+        outputs.write_vector(polys, path_to_file, 4326)
 
         assert os.path.exists(path_to_file)
 
@@ -168,7 +168,7 @@ def test_write_ply():
     """
     points = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/points_ref.nc"))
-    utils.write_ply(os.path.join(temporary_dir(), 'test.ply'), points)
+    outputs.write_ply(os.path.join(temporary_dir(), 'test.ply'), points)
 
 
 @pytest.mark.unit_tests
@@ -184,7 +184,7 @@ def test_write_dask_config():
         }
     }
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        utils.write_dask_config(cfg_dask, directory, file_root_name)
+        outputs.write_dask_config(cfg_dask, directory, file_root_name)
 
         # test file existence and content
         file_path = os.path.join(directory, file_root_name + '.yaml')

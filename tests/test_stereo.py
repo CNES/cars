@@ -33,7 +33,7 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
                                  concat_conf
 
-from cars.core.utils import read_geoid_file
+from cars.core.inputs import read_geoid_file
 from cars.lib.steps import triangulation
 from cars.core import constants as cst
 from cars.lib.steps.epi_rectif import resampling

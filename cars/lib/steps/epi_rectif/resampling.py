@@ -32,7 +32,7 @@ import numpy as np
 from cars.conf import input_parameters, mask_classes, output_prepare
 from cars.core import tiling
 from cars.core import constants as cst
-from cars.core import utils
+from cars.core import inputs
 from cars import otb_pipelines
 from cars.core import datasets
 
@@ -193,8 +193,8 @@ def epipolar_rectify_images(
     left_roi = tiling.crop(left_roi, [0, 0, epipolar_size_x, epipolar_size_y])
 
     # Check if p+xs fusion is not needed (color1 and img1 have the same size)
-    # TODO tentant de virer la dependance a utils si elle sert juste a ca ici
-    if utils.rasterio_get_size(color1) == utils.rasterio_get_size(img1):
+    # TODO tentant de virer la dependance a inputs si elle sert juste a ca ici
+    if inputs.rasterio_get_size(color1) == inputs.rasterio_get_size(img1):
         left_color_dataset = resample_image(
             color1, grid1,
             [epipolar_size_x, epipolar_size_y],

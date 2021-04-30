@@ -54,7 +54,7 @@ from cars import stereo
 from cars.lib.steps import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf, output_prepare, output_compute_dsm
-from cars.core import tiling, utils, projection
+from cars.core import tiling, utils, projection, inputs, outputs
 from cars.lib.io import output
 from cars.core import constants as cst
 from cars.conf import mask_classes
@@ -316,7 +316,7 @@ def run(
     }
 
     if use_geoid_alt:
-        geoid_data = utils.read_geoid_file()
+        geoid_data = inputs.read_geoid_file()
         out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
             output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG][
             output_compute_dsm.ALT_REFERENCE_TAG] = 'geoid'
@@ -355,7 +355,7 @@ def run(
         config_id = "config_{}".format(config_idx)
 
         # Check configuration with respect to schema
-        configuration = utils.check_json(
+        configuration = inputs.check_json(
             in_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
 
         # retrieve masks classes usages
@@ -555,7 +555,7 @@ def run(
                             terrain_area))
 
         # Retrieve bounding box of the ground intersection of the envelopes
-        inter_poly, inter_epsg = utils.read_vector(
+        inter_poly, inter_epsg = inputs.read_vector(
             preprocessing_output_config[
                 output_prepare.ENVELOPES_INTERSECTION_TAG])
 
@@ -702,7 +702,7 @@ def run(
 
     if use_dask[mode]:
         dask_config_used = dask.config.config
-        utils.write_dask_config(dask_config_used, out_dir,
+        outputs.write_dask_config(dask_config_used, out_dir,
                                 output_compute_dsm.COMPUTE_DSM_DASK_CONFIG_TAG)
 
         if mode == "local_dask":
@@ -893,7 +893,7 @@ def run(
 
     # Retrieve number of bands
     if in_params.COLOR1_TAG in configuration[in_params.INPUT_SECTION_TAG]:
-        nb_bands = utils.rasterio_get_nb_bands(
+        nb_bands = inputs.rasterio_get_nb_bands(
             configuration[in_params.INPUT_SECTION_TAG][in_params.COLOR1_TAG])
     else:
         logging.info('No color image has been given in input, '
@@ -901,7 +901,7 @@ def run(
                      configuration[
                          in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG]))
 
-        nb_bands = utils.rasterio_get_nb_bands(
+        nb_bands = inputs.rasterio_get_nb_bands(
             configuration[in_params.INPUT_SECTION_TAG][in_params.IMG1_TAG])
 
     logging.info("Number of bands in color image: {}".format(nb_bands))
@@ -1219,7 +1219,7 @@ def run(
     out_json_path = os.path.join(out_dir, "content.json")
 
     try:
-        utils.check_json(out_json,
+        inputs.check_json(out_json,
                          output_compute_dsm.COMPUTE_DSM_CONTENT_SCHEMA)
     except CheckerError as check_error:
         logging.warning(
