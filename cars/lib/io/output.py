@@ -26,10 +26,7 @@ contains all compute_dsm.py main pipeline reading/writing functions
 
 #TODO ce fichier ne devrait il pas etre plus "proche" de compute_dsm ?
 
-#TODO petit doute sur le nom du module.... output est souvent un argument
-# des fonctions ce qui vient surcharger le nom du module s'il n'est pas
-# importe avec un "import output as 'prout'" du coup c'est un peu
-# dangereux je pense
+#TODO: Refacto to write_dsm steps?
 
 # Standard imports
 from typing import Tuple
