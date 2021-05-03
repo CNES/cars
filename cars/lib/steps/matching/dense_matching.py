@@ -524,7 +524,6 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
     :returns: Optimal tile size according to benchmarked memory usage
     """
 
-    #TODO ne faudrait il pas recevoir un parametre 'memory' directement?
     if otb_max_ram_hint is None:
         if "OTB_MAX_RAM_HINT" in os.environ:
             otb_max_ram_hint = int(os.environ["OTB_MAX_RAM_HINT"])
