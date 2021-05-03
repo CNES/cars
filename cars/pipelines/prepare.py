@@ -186,16 +186,6 @@ def run(
             mask2_classes_dict.get(
                 mask_classes.ignored_by_sift_matching_tag, None)
 
-    # TODO I get that using variable as tags helps by not having to know
-    #      what is the actual name of a tag, and being able to change it
-    #      from a single place. But still, here the developer of the prepare
-    #      method has to know to full architecture of the mask classes (even if
-    #      he does not know what the actual tag value is).
-    #      Maybe all of this could
-    #      be located in a place where the mask are set. This could be the only
-    #      place in charge of mask related config/param stuff. I won't say
-    #      the big C word but I am thinking about it ;-). Anyway, it could be a
-    #      mask module if not mask C.
     if mask1_classes is not None or mask2_classes is not None:
         out_json[output_prepare.PREPROCESSING_SECTION_TAG]\
             [output_prepare.PREPROCESSING_PARAMETERS_SECTION_TAG]\
