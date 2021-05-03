@@ -23,7 +23,7 @@
 Preprocessing module:
 contains functions used during cars prepare pipeline step of cars
 """
-
+# TODO dispatch preprocess part into steps used by prepare pipeline.
 
 # Standard imports
 from __future__ import absolute_import
