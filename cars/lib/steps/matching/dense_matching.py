@@ -201,10 +201,6 @@ def get_masks_from_pandora(disp:xr.Dataset,
     return masks
 
 
-#TODO finalement plutot que dans datasets je place cette fonction ici car,
-#     est ce que la methode suivante ne devrait pas etre dans la partie
-#     Pandora ? en mode pandora doit sortir un dataset disparite car
-#     c'est ce que cars attend ?
 def create_disp_dataset(disp: xr.Dataset,
                         ref_dataset: xr.Dataset,
                         sec_dataset: xr.Dataset=None,
