@@ -295,11 +295,11 @@ def transform_terrain_region_to_epipolar(
                    ([lat_min, lon_min, lat_max, lon_max])
     :type region: list of four float
     :param ground_positions: Grid of ground positions for epipolar geometry
-    :type ground_positions: numpy array # TODO pas a jour
-    :param origin: origin of the grid # TODO pas a jour
-    :type origin: list of two float # TODO pas a jour
-    :param spacing: spacing of the grid # TODO pas a jour
-    :type spacing: list of two float # TODO pas a jour
+    :type ground_positions: numpy array
+    :param origin: origin of the grid
+    :type origin: list of two float
+    :param spacing: spacing of the grid
+    :type spacing: list of two float
     :returns: The epipolar region as [xmin, ymin, xmax, ymax]
     :rtype: list of four float
     """
