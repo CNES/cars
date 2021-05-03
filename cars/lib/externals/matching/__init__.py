@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS pipelines module init file
+CARS lib/externals/matching module init file
 """

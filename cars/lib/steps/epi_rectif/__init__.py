@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS pipelines module init file
+CARS lib/steps/epi_rectif module init file
 """
