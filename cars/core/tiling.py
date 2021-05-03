@@ -36,7 +36,6 @@ from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
 def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
-    #TODO could we try to use one more "split" in the docstring ? ;-)
     """
     Generate grid of positions by splitting [xmin, xmax]x[ymin, ymax]
         in splits of xsplit x ysplit size
