@@ -26,10 +26,6 @@ Cars Constants module
 # general
 ROW = 'row' # cannot be changed because of PANDORA input format
 COL = 'col' # cannot be changed because of PANDORA input format
-# TODO ce serait sympa de pouvoir centraliser tous les impacts de PANDORA
-#      dans la partie dense matching. On peut faire en sorte de ne plus jamais
-#      changer l'api de pandora bien sur. Mais ca rassurerait pas mal de ne pas
-#      voir ecrit "PANDORA" dans ce fichier je trouve.
 BAND = 'band'
 X = 'x'
 Y = 'y'
