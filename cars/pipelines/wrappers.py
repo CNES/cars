@@ -141,7 +141,6 @@ def matching_wrapper(
 
     return matches
 
-# TODO this function looks like what a machine state will do...
 def images_pair_to_3d_points(input_stereo_cfg,
                              region,
                              corr_cfg,
