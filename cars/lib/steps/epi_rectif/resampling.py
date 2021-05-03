@@ -87,7 +87,6 @@ def epipolar_rectify_images(
                                             None)
     color1 = input_configuration.get(input_parameters.COLOR1_TAG, None)
 
-    # TODO ça fait bizarre d'aller lire des input dans un output quand même
     grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
     grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
 
