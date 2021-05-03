@@ -61,10 +61,6 @@ def remove_epipolar_outliers(matches, percent=0.1):
 
 
 def compute_disparity_range(matches, percent=0.1):
-    #TODO move elsewhere ? I see no filtering here
-    #     this looks like a prerequisite for the matching step
-    #     so maybe move it to the matching part if no one else
-    #     needs that
     """
     This function will compute the disparity range
     from matches by filtering percent outliers
