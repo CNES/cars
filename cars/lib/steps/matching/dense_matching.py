@@ -29,7 +29,6 @@ import logging
 #TODO utile que pour la gestion de l'otb_ram_hint
 #    ne faudrait il pas donner en param la ram dispo pour la taille de tuile ?
 import os
-# TODO utile pour l'estimation de la couleur
 from scipy import interpolate
 
 from pkg_resources import iter_entry_points
