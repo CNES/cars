@@ -31,9 +31,6 @@ from cars.conf import input_parameters, mask_classes, \
                       output_prepare, static_conf
 from cars.core.inputs import rasterio_can_open, ncdf_can_open
 
-
-# TODO something is weird here but I guess it comes from the fact the
-# compute_dsm is both a step and a pipeline...
 # If we are going to create multiple pipelines to stop and
 # different points (for validation or else) then are we going to
 # create more files like this one ot the output_prepare one that
