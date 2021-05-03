@@ -26,8 +26,6 @@ This module is responsible for the dense matching algorithms:
 
 from typing import Dict, List
 import logging
-#TODO utile que pour la gestion de l'otb_ram_hint
-#    ne faudrait il pas donner en param la ram dispo pour la taille de tuile ?
 import os
 from scipy import interpolate
 
