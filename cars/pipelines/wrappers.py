@@ -21,10 +21,6 @@
 """
 CARS pipelines/wrapper module:
 """
-#TODO to be removed
-#TODO what should we be looking for here ?
-#     what does "wrappers" stands for ?
-#     what is it that is not a wrapper of something inside cars ?
 
 import logging
 from typing import List, Dict, Tuple
