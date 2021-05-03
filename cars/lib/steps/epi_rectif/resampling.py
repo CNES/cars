@@ -70,10 +70,6 @@ def epipolar_rectify_images(
         [output_prepare.PREPROCESSING_SECTION_TAG]\
         [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
-    # TODO pourquoi pas une fonction qui retourne tout ça et
-    # qui serait dans `input_parameters.py` ?
-    # voire meme pourquoi pas avoir reçu tout ça à l'initialisation
-    # du step rectification ?
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
 
