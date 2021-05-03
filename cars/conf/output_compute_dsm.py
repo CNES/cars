@@ -147,7 +147,6 @@ COMPUTE_DSM_CONTENT_SCHEMA = {
     COMPUTE_DSM_INPUTS_SECTION_TAG:
     [
         {
-            #TODO ça me perturbe un poil de dépendre du output_prepare
             COMPUTE_DSM_INPUT_TAG: output_prepare.PREPROCESSING_CONTENT_SCHEMA,
             OptionalKey(COMPUTE_DSM_MASK_CLASSES_USAGE_TAG):\
                                         COMPUTE_DSM_CLASSES_USAGE_SCHEMA
