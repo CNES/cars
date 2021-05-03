@@ -65,8 +65,7 @@ from cars.lib.steps.epi_rectif import grids
 from cars.pipelines import wrappers
 
 
-# TODO Je comprends l'idée de déplacer ça vers tiling mais ce n'est utilisé
-#      qu'ici donc je doute...
+# TODO move function refactor tiling
 def region_hash_string(region):
     '''
     This lambda will allow to derive a key
