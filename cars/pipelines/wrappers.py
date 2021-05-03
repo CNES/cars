@@ -239,10 +239,6 @@ def images_pair_to_3d_points(input_stereo_cfg,
                                                  region,
                                                  margins)
     # Compute disparity
-    # TODO: c'est pas bizarre que la conf de pandora soit donnee à
-    #       dense_matching ? peut être que dense_matching
-    #       sachant qu'il va faire du pandora pourrait recuperer
-    #       la conf tout seul ?
     disp = dense_matching.compute_disparity(
         left, right, input_stereo_cfg, corr_cfg, disp_min, disp_max,
         use_sec_disp=use_sec_disp)
