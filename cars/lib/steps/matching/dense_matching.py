@@ -568,9 +568,6 @@ def optimal_tile_size_pandora_plugin_libsgm(disp_min: int,
     return tile_size
 
 
-# TODO petit doute ici sur l'interet d'avoir cette methode a cet endroit
-#      elle impose un "from scipy import interpolate"
-#      et j'ai l'impression qu'on n'est pas de le dense matching ici
 def estimate_color_from_disparity(disp_ref_to_sec: xr.Dataset,
                                   sec_ds: xr.Dataset,
                                   sec_color: xr.Dataset) -> xr.Dataset:
