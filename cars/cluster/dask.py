@@ -35,8 +35,42 @@ import psutil
 import numpy as np
 from dask_jobqueue import PBSCluster
 from dask.distributed import Client, LocalCluster
+from dask import sizeof
+import xarray as xr
 
 from distributed.diagnostics.plugin import WorkerPlugin
+
+
+@sizeof.sizeof.register_lazy("xarray")
+def register_xarray():
+    """
+    Add hook to dask so it correctly estimates memory used by xarray
+    """
+    @sizeof.sizeof.register(xr.DataArray)
+    #pylint: disable=unused-variable
+    def sizeof_xarray_dataarray(xarr):
+        """
+        Inner function for total size of xarray_dataarray
+        """
+        total_size = sizeof.sizeof(xarr.values)
+        for __, carray in xarr.coords.items():
+            total_size += sizeof.sizeof(carray.values)
+        total_size += sizeof.sizeof(xarr.attrs)
+        return total_size
+    @sizeof.sizeof.register(xr.Dataset)
+    #pylint: disable=unused-variable
+    def sizeof_xarray_dataset(xdat):
+        """
+        Inner function for total size of xarray_dataset
+        """
+        total_size = 0
+        for __, varray in xdat.data_vars.items():
+            total_size += sizeof.sizeof(varray.values)
+        for __, carray in xdat.coords.items():
+            total_size += sizeof.sizeof(carray)
+        total_size += sizeof.sizeof(xdat.attrs)
+        return total_size
+
 
 class ComputeDSMMemoryLogger(WorkerPlugin):
     """A subclass of WorkerPlugin dedicated to monitoring workers memory

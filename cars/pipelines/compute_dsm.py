@@ -33,7 +33,7 @@ import logging
 import errno
 import math
 from glob import glob
-import multiprocessing
+import multiprocessing as mp
 from collections import Counter
 
 # Third party imports
@@ -50,7 +50,6 @@ import xarray as xr
 
 # Cars imports
 from cars import __version__
-from cars import stereo
 from cars.lib.steps import rasterization
 from cars.conf import input_parameters as in_params
 from cars.conf import static_conf, output_prepare, output_compute_dsm
@@ -77,7 +76,7 @@ def region_hash_string(region):
 def write_3d_points(configuration, region, corr_config,
                     tmp_dir, config_id, **kwargs):
     '''
-    Wraps the call to stereo.images_pair_to_3d_points
+    Wraps the call to wrappers.images_pair_to_3d_points
     and write down the output points and colors
 
     :param configuration: configuration values
@@ -507,7 +506,7 @@ def run(
 
         # Numpy array with corners of largest epipolar region.
         # Order does not matter here,
-        # since it will be passed to stereo.compute_epipolar_grid_min_max
+        # since it will be passed to grids.compute_epipolar_grid_min_max
         corners = np.array(
             [[[largest_epipolar_region[0],largest_epipolar_region[1]],
             [largest_epipolar_region[0], largest_epipolar_region[3]]],
@@ -520,7 +519,7 @@ def run(
             # Compute epipolar image terrain position corners
             # for min and max disparity
             terrain_dispmin, terrain_dispmax =\
-                stereo.compute_epipolar_grid_min_max(
+                grids.compute_epipolar_grid_min_max(
                     corners, 4326, configuration, disp_min, disp_max)
 
             epsg = rasterization.get_utm_zone_as_epsg_code(
@@ -760,8 +759,8 @@ def run(
             def update(args): #pylint: disable=unused-argument
                 pbar.update()
 
-            # create a thread pool
-            pool = multiprocessing.Pool(nb_workers)
+            # create a multiprocessing thread pool
+            pool = mp.Pool(nb_workers) #pylint: disable=consider-using-with
 
             # launch several 'write_3d_points()' to process each epipolar region
             for region in conf['epipolar_regions']:
@@ -919,7 +918,7 @@ def run(
         def update(args): #pylint: disable=unused-argument
             pbar.update()
         # initialize a thread pool for multiprocessing mode
-        pool = multiprocessing.Pool(nb_workers)
+        pool = mp.Pool(nb_workers) #pylint: disable=consider-using-with
 
     # Loop on terrain regions and derive dependency to epipolar regions
     for terrain_region_dix in tqdm(range(number_of_terrain_splits),
