@@ -35,40 +35,38 @@ from cars.conf import output_prepare
 from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
-def grid(xmin, ymin, xmax, ymax, xsplit, ysplit):
+def grid(
+    xmin: float,
+    ymin: float,
+    xmax: float,
+    ymax: float,
+    xsplit: int,
+    ysplit: int)-> np.ndarray:
     """
     Generate grid of positions by splitting [xmin, xmax]x[ymin, ymax]
         in splits of xsplit x ysplit size
 
     :param xmin : xmin of the bounding box of the region to split
-    :type xmin: float
     :param ymin : ymin of the bounding box of the region to split
-    :type ymin: float
     :param xmax : xmax of the bounding box of the region to split
-    :type xmax: float
     :param ymax : ymax of the bounding box of the region to split
-    :type ymax: float
     :param xsplit: width of splits
-    :type xsplit: int
     :param ysplit: height of splits
-    :type ysplit: int
-    :returns: A tuple with output grid, number of splits in first direction (n),
-        number of splits in second direction (m)
-    :type ndarray of shape (n+1, m+1, 2)
+    :returns: The output ndarray grid with nb_ysplits splits in first direction
+        and nb_xsplits in second direction for 2 dimensions 0:x, 1:y
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
     nb_ysplits = math.ceil((ymax - ymin) / ysplit)
 
-    res = np.ndarray(shape=(nb_ysplits + 1, nb_xsplits + 1, 2), dtype=float)
+    out_grid = \
+        np.ndarray(shape=(nb_ysplits + 1, nb_xsplits + 1, 2), dtype=float)
 
     for i in range(0, nb_xsplits + 1):
         for j in range(0, nb_ysplits + 1):
-            res[j, i, 0] = min(xmax, xmin + i * xsplit)
-            res[j, i, 1] = min(ymax, ymin + j * ysplit)
+            out_grid[j, i, 0] = min(xmax, xmin + i * xsplit)
+            out_grid[j, i, 1] = min(ymax, ymin + j * ysplit)
 
-    # TODO return res as in resultat ? maybe we could use a more obvious name ?
-    #      or less obvious depending on how we define obvious for sure
-    return res
+    return out_grid
 
 
 def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
