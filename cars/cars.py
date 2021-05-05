@@ -23,7 +23,8 @@ Main cars Command Line Interface
 user main argparse wrapper to CARS 3D pipelines submodules
 """
 
-# Standard imports (but keep local functions for performance : TODO refactor )
+# Standard imports
+# TODO refactor but keep local functions for performance and remove pylint
 # pylint: disable=import-outside-toplevel
 import os
 import argparse

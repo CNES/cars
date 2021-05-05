@@ -157,7 +157,7 @@ def run(
     }
 
     # Read input parameters
-    # TODO why not a config.get() for these two here ?
+    # TODO Refacto conf : why not a config.get() for these two here ?
     # TODO looks like we only get in_params from the config file,
     #      so maybe a single conf.read_config() or smth like that ?
     img1 = config[in_params.IMG1_TAG]

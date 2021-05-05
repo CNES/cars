@@ -24,8 +24,6 @@ Output module:
 contains all compute_dsm.py main pipeline reading/writing functions
 """
 
-#TODO ce fichier ne devrait il pas etre plus "proche" de compute_dsm ?
-
 #TODO: Refacto to write_dsm steps?
 
 # Standard imports

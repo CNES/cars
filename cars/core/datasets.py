@@ -30,8 +30,7 @@ import xarray as xr
 
 
 from cars.core import constants as cst
-# TODO je me demande si les constantes qu'on importe ne devrait pas etre
-#      definie ici puisqu'elle concerne juste le dataset ?
+# TODO: refacto constants: define constants here as only concerning datasets
 
 
 def create_im_dataset(img: np.ndarray,

@@ -31,19 +31,13 @@ from numpy import dtype
 from cars.core import inputs
 from cars.lib.steps import points_cloud
 
+# TODO : Refacto Conf with unitary and independent steps
 # TODO : not use a global cfg variable ?
 # TODO : with refactoring : constants in UPPER_CASE
-
-# TODO I understand this is to hide parameters to users and
-# avoid having multiples configuration to maintain.
-# It one thing not to communicate about these parameters
-# but I see more than a conf file here with some getters too
-# I don't know what is the best way to achieve what we want here but two
-# things bother me a little:
-# - using env variables (makes it hard to debug)
-# - setting default values here for methods that are step specifics
-#   (instead of using default values in the declaration of this methods,
-#   this makes it harder to create unitary test for the default values
+# TODO : Clean Env variables (makes it hard to debug)
+# TODO : Set default values in each steps methods even be careful with unicity
+#   (using default values in the declaration of this methods,
+#   makes it harder to create unitary test for the default values
 #   since those values are here and not in the declaration of the unitary
 #   method we want to test)
 

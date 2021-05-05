@@ -433,8 +433,8 @@ def compute_disparity(left_dataset,
                         'data value used for epipolar rectification.')
 
     # Handle masks' classes if necessary
-    # TODO ce serait le rêve un peu d'avoir tout ça déjà dans les attributs
-    #  de la classe stereo pour pas le modifier dans chaque fonction ici ;-)
+    # TODO : Refacto stereo to not change attributes here
+    # but in stereo class or dedicated functional step
     mask1_classes = input_stereo_cfg[input_parameters.INPUT_SECTION_TAG]\
                                     .get(input_parameters.MASK1_CLASSES_TAG,
                                          None)

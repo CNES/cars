@@ -95,11 +95,8 @@ def epipolar_rectify_images(
     region = [int(x) for x in region]
 
     # Apply margins to left image
-    # TODO ne faudrait il pas que les region tuilées sont fournies en
-    #      paramètres?
-    #      j'aurai bien garder uniquement le savoir faire de resampling ici
-    #      il me semble que ce serait bien de décorréler si possible cette
-    #      partie
+    # TODO: tiled region should be given in parameter
+    # TODO: keep only resampling here (keep functional unitary approach)
     left_region = region.copy()
     left_margins = margins.loc[dict(image='ref_margin')].values
     left_roi = tiling.crop(
@@ -188,7 +185,7 @@ def epipolar_rectify_images(
     left_roi = tiling.crop(left_roi, [0, 0, epipolar_size_x, epipolar_size_y])
 
     # Check if p+xs fusion is not needed (color1 and img1 have the same size)
-    # TODO tentant de virer la dependance a inputs si elle sert juste a ca ici
+    # TODO : Refactor inputs dependency as only here ?
     if inputs.rasterio_get_size(color1) == inputs.rasterio_get_size(img1):
         left_color_dataset = resample_image(
             color1, grid1,

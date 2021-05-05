@@ -24,7 +24,7 @@ Grids module:
 contains functions used for epipolar grid creation and correction
 """
 
-# TODO this is where we should have an abstract class definition with otb,
+# TODO Refactor : we should have an abstract class definition with otb,
 #      shareloc & libgeo as possible instances
 
 # Standard imports
@@ -39,7 +39,7 @@ from scipy import interpolate
 from cars.conf import output_prepare
 from cars.core import constants as cst
 from cars.core import projection
-# TODO depends on another step (and a later one)
+# TODO depends on another step (and a later one) : make it independent
 from cars.lib.steps.triangulation import triangulate_matches
 
 
