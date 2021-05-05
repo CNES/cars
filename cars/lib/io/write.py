@@ -20,9 +20,10 @@
 #
 
 """
-Preprocessing module:
-contains functions used during cars prepare pipeline step of cars
+io.write module:
+contains write grid functions used during cars prepare pipeline step of cars
 """
+# TODO : to move with epipolar_steps ?
 
 # Standard imports
 from __future__ import absolute_import
