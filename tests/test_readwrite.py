@@ -22,6 +22,8 @@
 Test module for cars/readwrite.py
 """
 
+#TODO change file name
+
 import os
 import tempfile
 import pytest
@@ -33,9 +35,9 @@ from osgeo import osr
 import rasterio as rio
 import xarray as xr
 
-from cars import readwrite
-from cars import rasterization
-from cars.cluster import start_local_cluster, stop_local_cluster
+from cars.lib.io import output
+from cars.lib.steps import rasterization
+from cars.cluster.dask import start_local_cluster, stop_local_cluster
 from .utils import temporary_dir
 
 
@@ -63,7 +65,7 @@ def test_compute_output_window():
                       coords=raster_coords)
     bounds = (120, 150, 412.2, 511.8)
 
-    indices = readwrite.compute_output_window(tile, bounds, resolution)
+    indices = output.compute_output_window(tile, bounds, resolution)
     assert indices == (-316, 1656, -17, 1905)
 
 
@@ -90,7 +92,7 @@ def test_rasterio_handles():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         dsm_file = os.path.join(directory, 'dsm.tif')
         clr_file = os.path.join(directory, 'clr.tif')
-        file_handles = readwrite.rasterio_handles(
+        file_handles = output.rasterio_handles(
             ['hgt', 'clr'],
             [dsm_file, clr_file],
             [rio_params, rio_params],
@@ -148,7 +150,7 @@ def test_write_geotiff_dsm():
         dsm_file = os.path.join(directory, "dsm.tif")
         clr_file = os.path.join(directory, "clr.tif")
         msk_file = os.path.join(directory, "msk.tif")
-        readwrite.write_geotiff_dsm(
+        output.write_geotiff_dsm(
             future_dsm, directory, xsize, ysize, bounds, resolution,
             epsg, nb_bands, dsm_no_data, color_no_data,
             write_msk=True, msk_no_data=msk_no_data)

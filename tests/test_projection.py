@@ -29,7 +29,7 @@ from shapely.geometry import Polygon
 import numpy as np
 import pandas
 
-from cars import projection, utils
+from cars.core import projection, inputs
 from .utils import absolute_data_path
 
 @pytest.mark.unit_tests
@@ -75,7 +75,7 @@ def test_compute_dem_intersection_with_poly():
     Test compute_dem_intersection_with_poly with right and fake configs
     """
     # test 100% coverage
-    inter_poly, inter_epsg = utils.read_vector(absolute_data_path(
+    inter_poly, inter_epsg = inputs.read_vector(absolute_data_path(
         "input/utils_input/envelopes_intersection.gpkg"))
 
     dem_inter_poly, cover = projection.compute_dem_intersection_with_poly(

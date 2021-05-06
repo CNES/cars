@@ -29,8 +29,8 @@ import numpy as np
 import xarray as xr
 
 
-from cars import constants as cst
-from cars import matching_regularisation
+from cars.core import constants as cst
+from cars.lib.steps.matching import regularisation
 from .utils import absolute_data_path, assert_same_datasets
 
 
@@ -150,7 +150,7 @@ def test_update_disp_to_0_no_tags_in_jsons(
 
     # test
     disp_no_tags_in_json = deepcopy(disp)
-    matching_regularisation.update_disp_to_0(
+    regularisation.update_disp_to_0(
         disp_no_tags_in_json, ref_ds, sec_ds,
         absolute_data_path(
     "input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"),
@@ -174,7 +174,7 @@ def test_update_disp_0(
     }
 
     # test
-    matching_regularisation.\
+    regularisation.\
         update_disp_to_0(
             disp, ref_ds, sec_ds,
             absolute_data_path(

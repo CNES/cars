@@ -29,7 +29,7 @@ import pandas
 import numpy as np
 import xarray as xr
 
-from cars import filtering
+from cars.lib.steps import points_cloud
 from .utils import assert_same_datasets
 
 
@@ -54,12 +54,12 @@ def test_detect_small_components():
                 for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
                 ], axis=0)
 
-    indexes_to_filter = filtering.detect_small_components(
+    indexes_to_filter = points_cloud.detect_small_components(
         cloud_arr, 0.5, 10, 2)
     assert sorted(indexes_to_filter ) == [3, 4, 24]
 
     # test without the second level of filtering
-    indexes_to_filter = filtering.detect_small_components(
+    indexes_to_filter = points_cloud.detect_small_components(
         cloud_arr, 0.5, 10, None)
     assert sorted(indexes_to_filter) == [0, 1, 3, 4, 5, 6, 24]
 
@@ -88,13 +88,16 @@ def test_detect_statistical_outliers():
                 for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
                 ], axis=0)
 
-    removed_elt_pos = filtering.detect_statistical_outliers(ref_cloud, 4, 0.0)
+    removed_elt_pos = points_cloud.detect_statistical_outliers(ref_cloud,
+                                                               4, 0.0)
     assert sorted(removed_elt_pos) == [5, 11, 17, 23, 29]
 
-    removed_elt_pos = filtering.detect_statistical_outliers(ref_cloud, 4, 1.0)
+    removed_elt_pos = points_cloud.detect_statistical_outliers(ref_cloud,
+                                                               4, 1.0)
     assert sorted(removed_elt_pos) == [11, 17, 23, 29]
 
-    removed_elt_pos = filtering.detect_statistical_outliers(ref_cloud, 4, 2.0)
+    removed_elt_pos = points_cloud.detect_statistical_outliers(ref_cloud,
+                                                               4, 2.0)
     assert sorted(removed_elt_pos) == [23, 29]
 
 
@@ -112,7 +115,7 @@ def test_filter_cloud():
                              'idx_im_epi'])
 
     elt_to_remove = [0, 5]
-    __, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = points_cloud.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True)
 
     # reference
@@ -131,7 +134,7 @@ def test_filter_cloud():
     assert ref_removed_elt_pos.equals(removed_elt_pos)
 
     # test cases where removed_elt_pos should be None
-    __, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = points_cloud.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=False)
 
     assert removed_elt_pos is None
@@ -140,7 +143,7 @@ def test_filter_cloud():
     cloud_arr = cloud_arr.reshape((10, 3))
 
     cloud = pandas.DataFrame(cloud_arr, columns=['x', 'y', 'z'])
-    __, removed_elt_pos = filtering.filter_cloud(
+    __, removed_elt_pos = points_cloud.filter_cloud(
         cloud, elt_to_remove, filtered_elt_pos=True)
 
     assert removed_elt_pos is None
@@ -166,7 +169,7 @@ def test_add_cloud_filtering_msk():
                                            'coord_epi_geom_j',
                                            'idx_im_epi'])
 
-    filtering.add_cloud_filtering_msk([ds0, ds1],elt_remove, 'mask', 255)
+    points_cloud.add_cloud_filtering_msk([ds0, ds1],elt_remove, 'mask', 255)
 
     mask0 = np.zeros((nb_row, nb_col), dtype=np.uint16)
     mask0[1, 2] = 255
@@ -188,7 +191,10 @@ def test_add_cloud_filtering_msk():
                                       columns=['coord_epi_geom_i',
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
-        filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
+        points_cloud.add_cloud_filtering_msk([ds0, ds1],
+                                             elt_remove,
+                                             'mask',
+                                             255)
         assert str(index_error) == 'Index indicated in the elt_pos_infos '\
                          'pandas.DataFrame is not coherent with the clouds '\
                          'list given in input'
@@ -200,7 +206,10 @@ def test_add_cloud_filtering_msk():
                                       columns=['coord_epi_geom_i',
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
-        filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
+        points_cloud.add_cloud_filtering_msk([ds0, ds1],
+                                             elt_remove,
+                                             'mask',
+                                             255)
         assert str(index_error) == 'Index indicated in the elt_pos_infos '\
                          'pandas.DataFrame is not coherent ' \
                          'with the clouds list given in input'
@@ -211,6 +220,9 @@ def test_add_cloud_filtering_msk():
                                       columns=['coord_epi_geom_i',
                                                'coord_epi_geom_j',
                                                'idx_im_epi'])
-        filtering.add_cloud_filtering_msk([ds0, ds1], elt_remove, 'mask', 255)
+        points_cloud.add_cloud_filtering_msk([ds0, ds1],
+                                             elt_remove,
+                                             'mask',
+                                             255)
         assert str(index_error) == 'Point at location (11,2) is not '\
                                     'accessible in an image of size (5,10)'

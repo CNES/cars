@@ -14,10 +14,10 @@ Install CARS doc added requirements in requirements-doc.txt
 
 For Autodoc generation in docs directory:
 ````
-sphinx-apidoc -o source/ ../
+sphinx-apidoc -o source/apidoc/ ../cars
 ````
 
-For HTML documentation generation :
+For HTML documentation generation:
 ```
 make html
 ```

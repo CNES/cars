@@ -23,7 +23,8 @@ Main cars Command Line Interface
 user main argparse wrapper to CARS 3D pipelines submodules
 """
 
-# Standard imports (but keep local functions for performance : TODO refactor )
+# Standard imports
+# TODO refactor but keep local functions for performance and remove pylint
 # pylint: disable=import-outside-toplevel
 import os
 import argparse
@@ -252,7 +253,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
 
     import logging
     import rasterio
-    from cars import utils
+    from cars.core import inputs
 
 
     # Declare output
@@ -268,7 +269,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
         # if it is a vector file
         if extension in ['.gpkg', '.shp', '.kml']:
             try:
-                roi_poly, roi_epsg = utils.read_vector(arg_roi_file)
+                roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
                 roi = (roi_poly.bounds, roi_epsg)
             except BaseException:
                 logging.critical(
@@ -276,7 +277,7 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
                 stop_now = True
 
         # if not, it is an image
-        elif utils.rasterio_can_open(arg_roi_file):
+        elif inputs.rasterio_can_open(arg_roi_file):
             data = rasterio.open(arg_roi_file)
             xmin = min(data.bounds.left, data.bounds.right)
             ymin = min(data.bounds.bottom, data.bounds.top)
@@ -311,10 +312,11 @@ def main_cli(args, parser, check_inputs=False):
     import sys
     import logging
 
-    from cars import prepare
-    from cars import compute_dsm
-    from cars import parameters as params
-    from cars import configuration_correlator as corr_cfg
+    from cars.pipelines import prepare
+    from cars.pipelines import compute_dsm
+    from cars.conf import input_parameters as in_params
+    from cars.conf import output_prepare
+    from cars.lib.externals.matching.correlator_configuration import corr_conf
 
     # logging
     numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -382,7 +384,7 @@ def main_cli(args, parser, check_inputs=False):
             sys.exit(1)
 
         # Read input json file
-        in_json = params.read_input_parameters(args.injson)
+        in_json = in_params.read_input_parameters(args.injson)
 
         if not check_inputs:
             prepare.run(
@@ -468,10 +470,10 @@ def main_cli(args, parser, check_inputs=False):
             sys.exit(1)
 
         # Read input json files
-        in_jsons = [params.read_preprocessing_content_file(
+        in_jsons = [output_prepare.read_preprocessing_content_file(
             f) for f in args.injsons]
         # Configure correlator
-        corr_config = corr_cfg.configure_correlator(args.corr_config)
+        corr_config = corr_conf.configure_correlator(args.corr_config)
 
         if not check_inputs:
             compute_dsm.run(

@@ -35,11 +35,66 @@ import rasterio as rio
 import xarray as xr
 
 from cars import preprocessing
-from cars import stereo
-from cars import pipelines
-from cars import constants as cst
+from cars import otb_pipelines
+from cars.core import constants as cst
+from cars.lib.steps.sparse_matching import sift, filtering
+from cars.lib.steps.epi_rectif import grids, resampling
 from .utils import absolute_data_path, temporary_dir, assert_same_datasets
 from .utils import otb_geoid_file_set, otb_geoid_file_unset
+
+
+@pytest.mark.unit_tests
+def test_dataset_matching():
+    """
+    Test dataset_matching method
+    """
+    region = [200, 250, 320, 400]
+    img1 = absolute_data_path("input/phr_reunion/left_image.tif")
+    img2 = absolute_data_path("input/phr_reunion/right_image.tif")
+    mask1 = absolute_data_path("input/phr_reunion/left_mask.tif")
+    mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
+    nodata1 = 0
+    nodata2 = 0
+    grid1 = absolute_data_path(
+        "input/preprocessing_input/left_epipolar_grid_reunion.tif")
+    grid2 = absolute_data_path(
+        "input/preprocessing_input/right_epipolar_grid_reunion.tif")
+
+    epipolar_size_x = 596
+    epipolar_size_y = 596
+
+    left = resampling.resample_image(
+        img1, grid1, [
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
+    right = resampling.resample_image(
+        img2, grid2, [
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata2, mask=mask2)
+
+    matches = sift.dataset_matching(left, right)
+
+    # Uncomment to update baseline
+    # np.save(absolute_data_path("ref_output/matches.npy"), matches)
+
+    matches_ref = np.load(absolute_data_path("ref_output/matches.npy"))
+    np.testing.assert_allclose(matches, matches_ref)
+
+    # Case with no matches
+    region = [0, 0, 2, 2]
+
+    left = resampling.resample_image(
+        img1, grid1, [
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
+    right = resampling.resample_image(
+        img1, grid1, [
+            epipolar_size_x, epipolar_size_y],
+            region=region, nodata=nodata1, mask=mask1)
+
+    matches = sift.dataset_matching(left, right)
+
+    assert matches.shape == (0, 4)
 
 
 def generate_epipolar_grids(
@@ -68,7 +123,7 @@ def generate_epipolar_grids(
 
     # Launch OTB pipeline to get stero grids
     grid1, grid2, __, __, epipolar_size_x, epipolar_size_y, baseline = \
-        pipelines.build_stereorectification_grid_pipeline(
+        otb_pipelines.build_stereorectification_grid_pipeline(
         img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step)
 
     col = np.array(range(0, grid1.shape[0] * epi_step, epi_step))
@@ -170,60 +225,6 @@ def test_generate_epipolar_grids_default_alt():
 
 
 @pytest.mark.unit_tests
-def test_dataset_matching():
-    """
-    Test dataset_matching method
-    """
-    region = [200, 250, 320, 400]
-    img1 = absolute_data_path("input/phr_reunion/left_image.tif")
-    img2 = absolute_data_path("input/phr_reunion/right_image.tif")
-    mask1 = absolute_data_path("input/phr_reunion/left_mask.tif")
-    mask2 = absolute_data_path("input/phr_reunion/right_mask.tif")
-    nodata1 = 0
-    nodata2 = 0
-    grid1 = absolute_data_path(
-        "input/preprocessing_input/left_epipolar_grid_reunion.tif")
-    grid2 = absolute_data_path(
-        "input/preprocessing_input/right_epipolar_grid_reunion.tif")
-
-    epipolar_size_x = 596
-    epipolar_size_y = 596
-
-    left = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
-        img2, grid2, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata2, mask=mask2)
-
-    matches = preprocessing.dataset_matching(left, right)
-
-    # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/matches.npy"), matches)
-
-    matches_ref = np.load(absolute_data_path("ref_output/matches.npy"))
-    np.testing.assert_allclose(matches, matches_ref)
-
-    # Case with no matches
-    region = [0, 0, 2, 2]
-
-    left = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-    right = stereo.resample_image(
-        img1, grid1, [
-            epipolar_size_x, epipolar_size_y],
-            region=region, nodata=nodata1, mask=mask1)
-
-    matches = preprocessing.dataset_matching(left, right)
-
-    assert matches.shape == (0, 4)
-
-
-@pytest.mark.unit_tests
 def test_remove_epipolar_outliers():
     """
     Test remove epipolar outliers function
@@ -233,7 +234,7 @@ def test_remove_epipolar_outliers():
 
     matches = np.load(matches_file)
 
-    matches_filtered = preprocessing.remove_epipolar_outliers(matches)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2
@@ -249,8 +250,9 @@ def test_compute_disparity_range():
 
     matches = np.load(matches_file)
 
-    matches_filtered = preprocessing.remove_epipolar_outliers(matches)
-    dispmin, dispmax = preprocessing.compute_disparity_range(matches_filtered)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
+    dispmin, dispmax = \
+        filtering.compute_disparity_range(matches_filtered)
 
     assert dispmin == -3.1239416122436525
     assert dispmax == 3.820396270751972
@@ -271,14 +273,14 @@ def test_correct_right_grid():
     matches = np.load(matches_file)
     matches = np.array(matches)
 
-    matches_filtered = preprocessing.remove_epipolar_outliers(matches)
+    matches_filtered = filtering.remove_epipolar_outliers(matches)
 
     with rio.open(grid_file) as rio_grid:
         grid = rio_grid.read()
         grid = np.transpose(grid, (1, 2, 0))
 
         corrected_grid, corrected_matches, in_stats, out_stats = \
-            preprocessing.correct_right_grid(
+            grids.correct_right_grid(
                 matches_filtered, grid, origin, spacing)
 
         # Uncomment to update ref

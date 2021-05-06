@@ -50,7 +50,7 @@ Table of Contents
    cli_usage
    notebooks
    developer
-   modules
+   apidoc/modules
 
 Indices and tables
 ==================

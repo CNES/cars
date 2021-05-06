@@ -26,25 +26,25 @@ from __future__ import absolute_import
 import tempfile
 
 import pytest
-from cars import cluster
+from cars.cluster import dask as dask_cluster
 from .utils import temporary_dir
 
 
 @pytest.mark.unit_tests
-def test_local_cluster():
+def test_local_dask_cluster():
     """
     Simple start and stop local cluster test
     """
-    clus, client = cluster.start_local_cluster(4)
-    cluster.stop_local_cluster(clus, client)
+    clus, client = dask_cluster.start_local_cluster(4)
+    dask_cluster.stop_local_cluster(clus, client)
 
 
 @pytest.mark.pbs_cluster_tests
-def test_cluster():
+def test_dask_cluster():
     """
-    End to end cluster management test
+    End to end dask_cluster management test
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        clus, client = cluster.start_cluster(2, "00:01:00", directory)
-        __ = cluster.get_dashboard_link(clus)
-        cluster.stop_cluster(clus, client)
+        clus, client = dask_cluster.start_cluster(2, "00:01:00", directory)
+        __ = dask_cluster.get_dashboard_link(clus)
+        dask_cluster.stop_cluster(clus, client)

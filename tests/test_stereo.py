@@ -33,9 +33,13 @@ from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
                                  get_config_image, check_image_section,\
                                  concat_conf
 
-from cars.utils import read_geoid_file
-from cars import stereo
-from cars import constants as cst
+from cars.core.inputs import read_geoid_file
+from cars.lib.steps import triangulation
+from cars.core import constants as cst
+from cars.lib.steps.epi_rectif import resampling
+from cars.lib.steps.matching import dense_matching
+from cars.core import tiling
+from cars.pipelines import wrappers
 from .utils import absolute_data_path, assert_same_datasets
 from .utils import otb_geoid_file_set, otb_geoid_file_unset
 
@@ -201,21 +205,21 @@ def test_optimal_tile_size():
     disp = 61
     mem = 313
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=0,
                                                          max_tile_size=1000,
                                                          otb_max_ram_hint=mem)
 
     assert res == 400
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=0,
                                                          max_tile_size=300,
                                                          otb_max_ram_hint=mem)
 
     assert res == 300
 
-    res = stereo.optimal_tile_size_pandora_plugin_libsgm(0, disp,
+    res = dense_matching.optimal_tile_size_pandora_plugin_libsgm(0, disp,
                                                          min_tile_size=500,
                                                          max_tile_size=1000,
                                                          otb_max_ram_hint=mem)
@@ -223,7 +227,7 @@ def test_optimal_tile_size():
     assert res == 500
 
     # Test case where default tile size is returned
-    assert stereo\
+    assert dense_matching\
         .optimal_tile_size_pandora_plugin_libsgm(-1000, 1000,
                                                  min_tile_size=0,
                                                  max_tile_size=1000,
@@ -244,7 +248,7 @@ def test_resample_image():
     epipolar_size_x = 612
     epipolar_size_y = 612
 
-    test_dataset = stereo.resample_image(
+    test_dataset = resampling.resample_image(
         img, grid, [
             epipolar_size_x, epipolar_size_y], region=region, nodata=nodata)
 
@@ -293,7 +297,7 @@ def test_epipolar_rectify_images_1(
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
     # Rectify images
-    left, right, clr = stereo.epipolar_rectify_images(configuration,
+    left, right, clr = resampling.epipolar_rectify_images(configuration,
                                                       region,
                                                       margin)
 
@@ -353,7 +357,7 @@ def test_epipolar_rectify_images_3(
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
     # Rectify images
-    left, right, clr = stereo.epipolar_rectify_images(configuration,
+    left, right, clr = resampling.epipolar_rectify_images(configuration,
                                                       region,
                                                       margin)
 
@@ -393,7 +397,7 @@ def test_compute_disparity_1(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -445,7 +449,7 @@ def test_compute_disparity_3(
     disp_min = -43
     disp_max = 41
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -499,7 +503,7 @@ def test_compute_disparity_1_msk_ref(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       images_and_grids_conf,
                                       corr_cfg,
@@ -536,7 +540,7 @@ def test_compute_disparity_1_msk_ref(
     conf['input']['mask1_classes'] = absolute_data_path(
         "input/intermediate_results/data1_ref_left_mask_classes.json")
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       conf,
                                       corr_cfg,
@@ -576,7 +580,7 @@ def test_compute_disparity_1_msk_sec(
     disp_min = -13
     disp_max = 14
 
-    output = stereo.compute_disparity(left_input,
+    output = dense_matching.compute_disparity(left_input,
                                       right_input,
                                       conf,
                                       corr_cfg,
@@ -627,7 +631,7 @@ def test_compute_mask_to_use_in_pandora():
         absolute_data_path(
             "input/intermediate_results/data1_ref_right_masked.nc"))
 
-    test_mask = stereo.compute_mask_to_use_in_pandora(
+    test_mask = dense_matching.compute_mask_to_use_in_pandora(
         corr_cfg, right_input, cst.EPI_MSK, [100])
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
@@ -667,7 +671,7 @@ def test_create_inside_sec_roi_mask():
     # add an invalid pixel in the useful zone
     mask[1, 1] = 0
 
-    msk = stereo.create_inside_sec_roi_mask(disp, mask, test_dataset)
+    msk = dense_matching.create_inside_sec_roi_mask(disp, mask, test_dataset)
 
     # create reference data
     ref_msk = np.zeros((disp_nb_row, disp_nb_col), dtype=np.int16)
@@ -738,7 +742,7 @@ def test_estimate_color_from_disparity():
     sec_dataset.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
 
     # interpolate color
-    interp_clr_dataset = stereo.estimate_color_from_disparity(
+    interp_clr_dataset = dense_matching.estimate_color_from_disparity(
         disp_dataset, sec_dataset, clr_dataset)
 
     # reference
@@ -768,7 +772,7 @@ def test_triangulation_1(
     """
     disp1_ref = xr.open_dataset(absolute_data_path(
         "input/intermediate_results/disp1_ref.nc"))
-    point_cloud_dict = stereo.triangulate(
+    point_cloud_dict = triangulation.triangulate(
                     images_and_grids_conf, disp1_ref, None)
 
     assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
@@ -791,7 +795,7 @@ def test_triangulate_matches(
 
     matches = np.array([[0.,0.,0.,0.]])
 
-    llh = stereo.triangulate_matches(images_and_grids_conf, matches)
+    llh = triangulation.triangulate_matches(images_and_grids_conf, matches)
 
     # Check properties
     assert(llh.dims == {cst.ROW: 1, cst.COL: 1})
@@ -828,7 +832,7 @@ def test_images_pair_to_3d_points(
     # Pandora configuration
     corr_cfg = create_corr_conf()
 
-    cloud, __ = stereo.images_pair_to_3d_points(configuration,
+    cloud, __ = wrappers.images_pair_to_3d_points(configuration,
                                                    region,
                                                    corr_cfg,
                                                    disp_min=-13,
@@ -866,7 +870,7 @@ def test_geoid_offset():
 
     geoid = read_geoid_file()
 
-    computed_geoid = stereo.geoid_offset(points, geoid)
+    computed_geoid = triangulation.geoid_offset(points, geoid)
 
     assert(np.allclose(geoid_ref.z.values, computed_geoid.z.values,
                        atol=1e-3, rtol=1e-12))
@@ -890,6 +894,6 @@ def test_transform_terrain_region_to_epipolar(
         .update(epipolar_sizes_conf["preprocessing"]["output"])
 
     region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = stereo.transform_terrain_region_to_epipolar(
+    out_region = tiling.transform_terrain_region_to_epipolar(
         region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
