@@ -105,7 +105,7 @@ def test_end2end_ventoux_unique():
             [read_preprocessing_content_file(preproc_json)],
             out_stereo,
             resolution=0.5,
-            epsg=32631,
+            epsg=None,
             sigma=0.3,
             dsm_radius=3,
             dsm_no_data=-999,
