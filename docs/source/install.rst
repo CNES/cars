@@ -27,6 +27,7 @@ If dependencies are installed, CARS can be quickly installed with make command i
 .. code-block:: bash
 
     $ git clone https://github.com/CNES/cars.git
+    $ cd cars
     $ make install
     $ source venv/bin/activate
     $ source venv/bin/env_cars.sh
