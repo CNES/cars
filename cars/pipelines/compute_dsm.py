@@ -43,10 +43,10 @@ from scipy.spatial import tsearch #pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 from tqdm import tqdm
 from json_checker import CheckerError
-import dask
 from osgeo import gdal, osr
 from shapely.geometry import Polygon
 import xarray as xr
+import dask
 
 # Cars imports
 from cars import __version__
@@ -522,8 +522,8 @@ def run(
                 grids.compute_epipolar_grid_min_max(
                     corners, 4326, configuration, disp_min, disp_max)
 
-            epsg = rasterization.get_utm_zone_as_epsg_code(
-                                            *np.mean(terrain_dispmin, axis=0))
+            epsg = projection.get_utm_zone_as_epsg_code(
+                *np.mean(terrain_dispmin, axis=0))
 
             logging.info("EPSG code: {}".format(epsg))
 
