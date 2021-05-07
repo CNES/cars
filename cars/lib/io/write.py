@@ -52,13 +52,20 @@ def write_grid(grid, fname, origin, spacing):
         0.0,
         origin[1] - 0.5 * spacing[1],
         0.0,
-        spacing[1])
+        spacing[1],
+    )
 
     transform = Affine.from_gdal(*geotransform)
 
-    with rio.open(fname, 'w', height=grid.shape[0],
-                  width=grid.shape[1], count=2, driver='GTiff',
-                  dtype=grid.dtype, transform=transform)\
-        as dst:
+    with rio.open(
+        fname,
+        "w",
+        height=grid.shape[0],
+        width=grid.shape[1],
+        count=2,
+        driver="GTiff",
+        dtype=grid.dtype,
+        transform=transform,
+    ) as dst:
         dst.write_band(1, grid[:, :, 0])
         dst.write_band(2, grid[:, :, 1])

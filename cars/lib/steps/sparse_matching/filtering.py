@@ -33,7 +33,7 @@ import numpy as np
 
 
 def remove_epipolar_outliers(matches, percent=0.1):
-    #TODO why is this not inside the "rectification" step ?
+    # TODO why is this not inside the "rectification" step ?
     #     or inside a "correction" step ?
     #     looks like this has nothing to do with the sparse matching itself
     """
@@ -49,11 +49,13 @@ def remove_epipolar_outliers(matches, percent=0.1):
     """
     epipolar_error_min = np.percentile(matches[:, 1] - matches[:, 3], percent)
     epipolar_error_max = np.percentile(
-        matches[:, 1] - matches[:, 3], 100 - percent)
+        matches[:, 1] - matches[:, 3], 100 - percent
+    )
     logging.info(
         "Epipolar error range after outlier rejection: [{},{}]".format(
-            epipolar_error_min,
-            epipolar_error_max))
+            epipolar_error_min, epipolar_error_max
+        )
+    )
     out = matches[(matches[:, 1] - matches[:, 3]) < epipolar_error_max]
     out = out[(out[:, 1] - out[:, 3]) > epipolar_error_min]
 

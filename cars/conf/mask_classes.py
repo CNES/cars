@@ -43,16 +43,17 @@ NO_DATA_IN_EPIPOLAR_RECTIFICATION = 255
 PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]
 
 # tags for mask classes json parameters
-ignored_by_corr_tag = "ignored_by_correlation" #pylint: disable=invalid-name
-set_to_ref_alt_tag = "set_to_ref_alt" #pylint: disable=invalid-name
-ignored_by_sift_matching_tag = \
-                    "ignored_by_sift_matching" #pylint: disable=invalid-name
+ignored_by_corr_tag = "ignored_by_correlation"  # pylint: disable=invalid-name
+set_to_ref_alt_tag = "set_to_ref_alt"  # pylint: disable=invalid-name
+ignored_by_sift_matching_tag = (  # pylint: disable=invalid-name
+    "ignored_by_sift_matching"
+)
 
 # Schema for mask json
 msk_classes_json_schema = {
     OptionalKey(ignored_by_corr_tag): [int],
     OptionalKey(set_to_ref_alt_tag): [int],
-    OptionalKey(ignored_by_sift_matching_tag): [int]
+    OptionalKey(ignored_by_sift_matching_tag): [int],
 }
 
 
@@ -65,14 +66,17 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
     :return: True if the json file validates the msk_classes_json_schema,
         False otherwise
     """
-    with open(mask_classes_path, 'r') as mask_classes_file:
+    with open(mask_classes_path, "r") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
         try:
             inputs.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
         except Exception as read_error:
-            logging.error("Exception caught while trying to read file {}: {}"
-                           .format(mask_classes_path, read_error))
+            logging.error(
+                "Exception caught while trying to read file {}: {}".format(
+                    mask_classes_path, read_error
+                )
+            )
             return False
 
 
@@ -86,7 +90,7 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
     """
     classes_usage_dict = dict()
 
-    with open(mask_classes_path, 'r') as mask_classes_file:
+    with open(mask_classes_path, "r") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
 
     # check that required values are not protected for CARS internal usage
@@ -96,8 +100,10 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
 
     for i in PROTECTED_VALUES:
         if i in used_values:
-            logging.warning("{} value cannot be used as a mask class, "
-                            "it is reserved for CARS internal use".format(i))
+            logging.warning(
+                "{} value cannot be used as a mask class, "
+                "it is reserved for CARS internal use".format(i)
+            )
 
     return classes_usage_dict
 
@@ -117,8 +123,9 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
 
     # update with the locations of the protected values in the mask
     for i in PROTECTED_VALUES:
-        msk_classes =\
-            np.logical_or(msk_classes, np.where(msk == i, True, False))
+        msk_classes = np.logical_or(
+            msk_classes, np.where(msk == i, True, False)
+        )
 
     # set these location to nan in order to discard them
     msk_only_classes = msk.astype(np.float)
@@ -127,12 +134,13 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
     # check if mask has several classes
     return bool(np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes))
 
+
 def create_msk_from_classes(
-        mc_msk: np.ndarray,
-        classes_to_use: List[int],
-        out_msk_pix_value: int=255,
-        out_msk_dtype: np.dtype=np.uint16
-    ) -> np.ndarray:
+    mc_msk: np.ndarray,
+    classes_to_use: List[int],
+    out_msk_pix_value: int = 255,
+    out_msk_dtype: np.dtype = np.uint16,
+) -> np.ndarray:
     """
     Create a mask of type out_msk_dtype set to the out_msk_pix_value for pixels
     belonging to the required classes (defined by the classes_to_use parameter)
@@ -152,16 +160,17 @@ def create_msk_from_classes(
         not_msk_pix_value = False
     else:
         not_msk_pix_value = 0
-    out_msk =\
-        np.full(mc_msk.shape, fill_value=not_msk_pix_value, dtype=out_msk_dtype)
+    out_msk = np.full(
+        mc_msk.shape, fill_value=not_msk_pix_value, dtype=out_msk_dtype
+    )
 
     # create boolean mask with the pixels of the required classes as True
     msk_with_selected_classes = np.zeros(mc_msk.shape, dtype=np.bool)
 
     for i in classes_to_use:
         msk_with_selected_classes = np.logical_or(
-            msk_with_selected_classes,
-            np.where(mc_msk == i, True, False))
+            msk_with_selected_classes, np.where(mc_msk == i, True, False)
+        )
 
     out_msk[msk_with_selected_classes] = out_msk_pix_value
 
@@ -169,13 +178,13 @@ def create_msk_from_classes(
 
 
 def create_msk_from_tag(
-        mc_msk: np.ndarray,
-        msk_classes_path: str,
-        classes_to_use_tag: str,
-        out_msk_pix_value: int=255,
-        out_msk_dtype: np.dtype=np.uint16,
-        mask_intern_no_data_val: bool=False
-    ) -> np.ndarray:
+    mc_msk: np.ndarray,
+    msk_classes_path: str,
+    classes_to_use_tag: str,
+    out_msk_pix_value: int = 255,
+    out_msk_dtype: np.dtype = np.uint16,
+    mask_intern_no_data_val: bool = False,
+) -> np.ndarray:
     """
     Create a mask of type out_msk_dtype set to the out_msk_pix_value for pixels
     belonging to the required classes  in the multi-classes mask in input.
@@ -211,10 +220,11 @@ def create_msk_from_tag(
         classes_to_mask.extend(classes_dict[classes_to_use_tag])
     else:
         logging.warning(
-            'No class specified by the {} tag in {}.'
-            'No class will be used to mask the image data in '
-            'the corresponding step in cars'.format(
-            classes_to_use_tag, msk_classes_path)
+            "No class specified by the {} tag in {}."
+            "No class will be used to mask the image data in "
+            "the corresponding step in cars".format(
+                classes_to_use_tag, msk_classes_path
+            )
         )
 
     # add specific values
@@ -223,8 +233,7 @@ def create_msk_from_tag(
 
     # create final mask
     out_msk = create_msk_from_classes(
-        mc_msk, classes_to_mask,
-        out_msk_pix_value, out_msk_dtype
+        mc_msk, classes_to_mask, out_msk_pix_value, out_msk_dtype
     )
 
     return out_msk

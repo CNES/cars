@@ -50,10 +50,13 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     or a pandas.DataFrame as used in the rasterization
     """
 
-    with open(path_ply_file, 'w') as ply_file:
+    with open(path_ply_file, "w") as ply_file:
         if isinstance(cloud, xr.Dataset):
-            nb_points = int(cloud[cst.POINTS_CLOUD_CORR_MSK]
-                .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0).count())
+            nb_points = int(
+                cloud[cst.POINTS_CLOUD_CORR_MSK]
+                .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0)
+                .count()
+            )
         else:
             nb_points = cloud.shape[0]
 
@@ -67,20 +70,25 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
 
         if isinstance(cloud, xr.Dataset):
             for x_item, y_item, z_item, mask_item in zip(
-                            np.nditer(cloud[cst.X].values),
-                            np.nditer(cloud[cst.Y].values),
-                            np.nditer(cloud[cst.Z].values),
-                            np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values)):
+                np.nditer(cloud[cst.X].values),
+                np.nditer(cloud[cst.Y].values),
+                np.nditer(cloud[cst.Z].values),
+                np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values),
+            ):
                 if mask_item != 0:
                     ply_file.write("{} {} {}\n".format(x_item, y_item, z_item))
         else:
             for xyz in cloud.itertuples():
-                ply_file.write("{} {} {}\n".format(getattr(xyz, cst.X),
-                                            getattr(xyz, cst.Y),
-                                            getattr(xyz, cst.Z)))
+                ply_file.write(
+                    "{} {} {}\n".format(
+                        getattr(xyz, cst.X),
+                        getattr(xyz, cst.Y),
+                        getattr(xyz, cst.Z),
+                    )
+                )
 
 
-def write_vector(polys, path_to_file, epsg, driver='GPKG'):
+def write_vector(polys, path_to_file, epsg, driver="GPKG"):
     """
     Write list of polygons in a single vector file
 
@@ -90,28 +98,20 @@ def write_vector(polys, path_to_file, epsg, driver='GPKG'):
     :param driver: vector file type (default format is geopackage)
     """
     crs = from_epsg(epsg)
-    sch = {
-        'geometry': 'Polygon',
-        'properties': {
-            'Type': 'str:10'
-        }
-    }
+    sch = {"geometry": "Polygon", "properties": {"Type": "str:10"}}
 
-    with fiona.open(path_to_file, 'w',
-                    crs=crs, driver=driver, schema=sch) as vector_file:
+    with fiona.open(
+        path_to_file, "w", crs=crs, driver=driver, schema=sch
+    ) as vector_file:
         for poly in polys:
             poly_dict = {
-                'geometry': mapping(poly),
-                'properties': {
-                    'Type': 'Polygon'
-                }
+                "geometry": mapping(poly),
+                "properties": {"Type": "Polygon"},
             }
             vector_file.write(poly_dict)
 
 
-def write_dask_config(dask_config: dict,
-        output_dir: str,
-        file_name: str):
+def write_dask_config(dask_config: dict, output_dir: str, file_name: str):
     """
     Writes the dask config used in yaml format.
 
@@ -123,12 +123,14 @@ def write_dask_config(dask_config: dict,
     """
 
     # warning
-    logging.info("Dask will merge several config files"\
-        "located at default locations such as"\
-        " ~/.config/dask/ .\n Dask config in "\
-        " $DASK_DIR will be used with the highest priority.")
+    logging.info(
+        "Dask will merge several config files"
+        "located at default locations such as"
+        " ~/.config/dask/ .\n Dask config in "
+        " $DASK_DIR will be used with the highest priority."
+    )
 
     # file path where to store the dask config
     dask_config_path = os.path.join(output_dir, file_name + ".yaml")
-    with open(dask_config_path, 'w') as dask_config_file:
+    with open(dask_config_path, "w") as dask_config_file:
         yaml.dump(dask_config, dask_config_file)

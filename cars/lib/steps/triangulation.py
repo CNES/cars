@@ -41,13 +41,15 @@ from cars.core import utils
 from cars.preprocessing import project_coordinates_on_line
 
 
-def triangulate(configuration,
-                disp_ref: xr.Dataset,
-                disp_sec:xr.Dataset=None,
-                im_ref_msk_ds: xr.Dataset=None,
-                im_sec_msk_ds: xr.Dataset=None,
-                snap_to_img1:bool = False,
-                align:bool = False) -> Dict[str, xr.Dataset]:
+def triangulate(
+    configuration,
+    disp_ref: xr.Dataset,
+    disp_sec: xr.Dataset = None,
+    im_ref_msk_ds: xr.Dataset = None,
+    im_sec_msk_ds: xr.Dataset = None,
+    snap_to_img1: bool = False,
+    align: bool = False,
+) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
 
@@ -83,9 +85,9 @@ def triangulate(configuration,
 
     # Retrieve information from configuration
     input_configuration = configuration[input_parameters.INPUT_SECTION_TAG]
-    preprocessing_output_conf = configuration\
-        [output_prepare.PREPROCESSING_SECTION_TAG]\
-        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    preprocessing_output_conf = configuration[
+        output_prepare.PREPROCESSING_SECTION_TAG
+    ][output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
@@ -94,7 +96,8 @@ def triangulate(configuration,
     grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
     if snap_to_img1:
         grid2 = preprocessing_output_conf[
-            output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG]
+            output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
+        ]
 
     point_clouds = dict()
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
@@ -104,7 +107,8 @@ def triangulate(configuration,
         grid1,
         grid2,
         roi_key=cst.ROI,
-        dataset_msk=im_ref_msk_ds)
+        dataset_msk=im_ref_msk_ds,
+    )
 
     if disp_sec is not None:
         point_clouds[cst.STEREO_SEC] = compute_points_cloud(
@@ -114,81 +118,103 @@ def triangulate(configuration,
             grid2,
             grid1,
             roi_key=cst.ROI_WITH_MARGINS,
-            dataset_msk=im_sec_msk_ds)
+            dataset_msk=im_sec_msk_ds,
+        )
 
     # Handle alignment with lowres DEM
-    if align and output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG \
-        in preprocessing_output_conf:
+    if (
+        align
+        and output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG
+        in preprocessing_output_conf
+    ):
         # Read splines file
         splines_file = preprocessing_output_conf[
-            output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG]
+            output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG
+        ]
         splines_coefs = None
-        with open(splines_file,'rb') as splines_file_reader:
+        with open(splines_file, "rb") as splines_file_reader:
             splines_coefs = pickle.load(splines_file_reader)
 
         # Read time direction line parameters
-        time_direction_origin = \
-            [preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_X_TAG],
-                preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_Y_TAG]]
-        time_direction_vector = \
-            [preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_X_TAG],
-                preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_Y_TAG]]
+        time_direction_origin = [
+            preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_X_TAG
+            ],
+            preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_Y_TAG
+            ],
+        ]
+        time_direction_vector = [
+            preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_X_TAG
+            ],
+            preprocessing_output_conf[
+                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_Y_TAG
+            ],
+        ]
 
         disp_to_alt_ratio = preprocessing_output_conf[
-                            output_compute_dsm.DISP_TO_ALT_RATIO_TAG]
+            output_compute_dsm.DISP_TO_ALT_RATIO_TAG
+        ]
 
         # Interpolate correction
-        point_cloud_z_correction = \
-            splines_coefs(project_coordinates_on_line(
+        point_cloud_z_correction = splines_coefs(
+            project_coordinates_on_line(
                 point_clouds[cst.STEREO_REF][cst.X].values.ravel(),
                 point_clouds[cst.STEREO_REF][cst.Y].values.ravel(),
                 time_direction_origin,
-                time_direction_vector))
+                time_direction_vector,
+            )
+        )
         point_cloud_z_correction = np.reshape(
-            point_cloud_z_correction,
-            point_clouds[cst.STEREO_REF][cst.X].shape)
+            point_cloud_z_correction, point_clouds[cst.STEREO_REF][cst.X].shape
+        )
 
         # Convert to disparity correction
-        point_cloud_disp_correction = point_cloud_z_correction/disp_to_alt_ratio
+        point_cloud_disp_correction = (
+            point_cloud_z_correction / disp_to_alt_ratio
+        )
 
         # Correct disparity
-        disp_ref[cst.DISP_MAP] = disp_ref[cst.DISP_MAP] - \
-                                 point_cloud_disp_correction
+        disp_ref[cst.DISP_MAP] = (
+            disp_ref[cst.DISP_MAP] - point_cloud_disp_correction
+        )
 
         # Triangulate again
         point_clouds[cst.STEREO_REF] = compute_points_cloud(
-            disp_ref, img1, img2, grid1, grid2, roi_key=cst.ROI)
+            disp_ref, img1, img2, grid1, grid2, roi_key=cst.ROI
+        )
 
         # TODO handle sec case
         if disp_sec is not None:
             # Interpolate correction
-            point_cloud_z_correction = \
-                splines_coefs(
-                    project_coordinates_on_line(
-                        point_clouds[cst.STEREO_SEC][cst.X].values.ravel(),
-                        point_clouds[cst.STEREO_SEC][cst.Y].values.ravel(),
-                        time_direction_origin,
-                        time_direction_vector))
+            point_cloud_z_correction = splines_coefs(
+                project_coordinates_on_line(
+                    point_clouds[cst.STEREO_SEC][cst.X].values.ravel(),
+                    point_clouds[cst.STEREO_SEC][cst.Y].values.ravel(),
+                    time_direction_origin,
+                    time_direction_vector,
+                )
+            )
             point_cloud_z_correction = np.reshape(
                 point_cloud_z_correction,
-                point_clouds[cst.STEREO_SEC][cst.X].shape)
+                point_clouds[cst.STEREO_SEC][cst.X].shape,
+            )
 
             # Convert to disparity correction
-            point_cloud_disp_correction = \
-                point_cloud_z_correction/disp_to_alt_ratio
+            point_cloud_disp_correction = (
+                point_cloud_z_correction / disp_to_alt_ratio
+            )
 
             # Correct disparity
-            disp_sec[cst.DISP_MAP] = \
+            disp_sec[cst.DISP_MAP] = (
                 disp_sec[cst.DISP_MAP] + point_cloud_disp_correction
+            )
 
             # Triangulate again
             point_clouds[cst.STEREO_SEC] = compute_points_cloud(
-                disp_sec, img2, img1, grid2, grid1,
-                roi_key=cst.ROI_WITH_MARGINS)
+                disp_sec, img2, img1, grid2, grid1, roi_key=cst.ROI_WITH_MARGINS
+            )
 
     return point_clouds
 
@@ -215,20 +241,23 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
     # Retrieve information from configuration
     input_configuration = configuration[input_parameters.INPUT_SECTION_TAG]
-    preprocessing_output_configuration = configuration\
-        [output_prepare.PREPROCESSING_SECTION_TAG]\
-        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    preprocessing_output_configuration = configuration[
+        output_prepare.PREPROCESSING_SECTION_TAG
+    ][output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
 
     grid1 = preprocessing_output_configuration[
-        output_prepare.LEFT_EPIPOLAR_GRID_TAG]
+        output_prepare.LEFT_EPIPOLAR_GRID_TAG
+    ]
     grid2 = preprocessing_output_configuration[
-        output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
+        output_prepare.RIGHT_EPIPOLAR_GRID_TAG
+    ]
     if snap_to_img1:
-        grid2 = preprocessing_output_configuration\
-            [output_compute_dsm.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG]
+        grid2 = preprocessing_output_configuration[
+            output_compute_dsm.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
+        ]
 
     # Retrieve elevation range from imgs
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
@@ -236,19 +265,20 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
     # Build triangulation app
     triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation")
+        "EpipolarTriangulation"
+    )
 
-    triangulation_app.SetParameterString("mode","sift")
-    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches",matches)
+    triangulation_app.SetParameterString("mode", "sift")
+    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches", matches)
 
     triangulation_app.SetParameterString("leftgrid", grid1)
     triangulation_app.SetParameterString("rightgrid", grid2)
     triangulation_app.SetParameterString("leftimage", img1)
     triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev",min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev",max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev",min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev",max_elev2)
+    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
+    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
+    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
+    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
 
     triangulation_app.Execute()
 
@@ -257,27 +287,32 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     row = np.array(range(llh.shape[0]))
     col = np.array([0])
 
-    msk = np.full(llh.shape[0:2],255, dtype=np.uint8)
+    msk = np.full(llh.shape[0:2], 255, dtype=np.uint8)
 
-    point_cloud = xr.Dataset({cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
-                              cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
-                              cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
-                              cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
-                                                          msk)},
-                             coords={cst.ROW: row,cst.COL: col})
+    point_cloud = xr.Dataset(
+        {
+            cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
+            cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
+            cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
+            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], msk),
+        },
+        coords={cst.ROW: row, cst.COL: col},
+    )
     point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud
 
 
-def compute_points_cloud(data: xr.Dataset,
-                         img1: xr.Dataset,
-                         img2: xr.Dataset,
-                         grid1: str,
-                         grid2: str,
-                         roi_key: str,
-                         dataset_msk: xr.Dataset=None) -> xr.Dataset:
-    #TODO detail a bit more what this method do
+def compute_points_cloud(
+    data: xr.Dataset,
+    img1: xr.Dataset,
+    img2: xr.Dataset,
+    grid1: str,
+    grid2: str,
+    roi_key: str,
+    dataset_msk: xr.Dataset = None,
+) -> xr.Dataset:
+    # TODO detail a bit more what this method do
     """
     Compute points cloud
 
@@ -295,7 +330,8 @@ def compute_points_cloud(data: xr.Dataset,
     disp = otb_pipelines.encode_to_otb(
         data[cst.DISP_MAP].values,
         data.attrs[cst.EPI_FULL_SIZE],
-        data.attrs[roi_key])
+        data.attrs[roi_key],
+    )
 
     # Retrieve elevation range from imgs
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
@@ -303,20 +339,20 @@ def compute_points_cloud(data: xr.Dataset,
 
     # Build triangulation app
     triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation")
+        "EpipolarTriangulation"
+    )
 
-    triangulation_app.SetParameterString("mode","disp")
-    triangulation_app.ImportImage(
-        "mode.disp.indisp", disp)
+    triangulation_app.SetParameterString("mode", "disp")
+    triangulation_app.ImportImage("mode.disp.indisp", disp)
 
     triangulation_app.SetParameterString("leftgrid", grid1)
     triangulation_app.SetParameterString("rightgrid", grid2)
     triangulation_app.SetParameterString("leftimage", img1)
     triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev",min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev",max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev",min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev",max_elev2)
+    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
+    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
+    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
+    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
 
     triangulation_app.Execute()
 
@@ -329,8 +365,10 @@ def compute_points_cloud(data: xr.Dataset,
         cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
         cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),  # latitudes
         cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
-        cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL],
-                                    data[cst.DISP_MSK].values)
+        cst.POINTS_CLOUD_CORR_MSK: (
+            [cst.ROW, cst.COL],
+            data[cst.DISP_MSK].values,
+        ),
     }
 
     if dataset_msk is not None:
@@ -338,33 +376,41 @@ def compute_points_cloud(data: xr.Dataset,
 
         if cst.EPI_MSK in ds_values_list:
             if roi_key == cst.ROI_WITH_MARGINS:
-                ref_roi = [0,
-                           0,
-                           int(dataset_msk.dims[cst.COL]),
-                           int(dataset_msk.dims[cst.ROW])]
+                ref_roi = [
+                    0,
+                    0,
+                    int(dataset_msk.dims[cst.COL]),
+                    int(dataset_msk.dims[cst.ROW]),
+                ]
             else:
-                ref_roi = [int(-dataset_msk.attrs[cst.EPI_MARGINS][0]),
-                           int(-dataset_msk.attrs[cst.EPI_MARGINS][1]),
-                           int(dataset_msk.dims[cst.COL] \
-                               - dataset_msk.attrs[cst.EPI_MARGINS][2]),
-                           int(dataset_msk.dims[cst.ROW] \
-                               - dataset_msk.attrs[cst.EPI_MARGINS][3])]
-            im_msk = dataset_msk[cst.EPI_MSK].values[ref_roi[1]:ref_roi[3],
-                                                     ref_roi[0]:ref_roi[2]]
+                ref_roi = [
+                    int(-dataset_msk.attrs[cst.EPI_MARGINS][0]),
+                    int(-dataset_msk.attrs[cst.EPI_MARGINS][1]),
+                    int(
+                        dataset_msk.dims[cst.COL]
+                        - dataset_msk.attrs[cst.EPI_MARGINS][2]
+                    ),
+                    int(
+                        dataset_msk.dims[cst.ROW]
+                        - dataset_msk.attrs[cst.EPI_MARGINS][3]
+                    ),
+                ]
+            im_msk = dataset_msk[cst.EPI_MSK].values[
+                ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+            ]
             values[cst.POINTS_CLOUD_MSK] = ([cst.ROW, cst.COL], im_msk)
         else:
-            worker_logger = logging.getLogger('distributed.worker')
+            worker_logger = logging.getLogger("distributed.worker")
             worker_logger.warning("No mask is present in the image dataset")
 
-    point_cloud = xr.Dataset(values,
-                             coords={cst.ROW: row, cst.COL: col})
+    point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     if roi_key == cst.ROI_WITH_MARGINS:
-        point_cloud.attrs[cst.ROI_WITH_MARGINS] = \
-            data.attrs[cst.ROI_WITH_MARGINS]
-    point_cloud.attrs[cst.EPI_FULL_SIZE] = \
-        data.attrs[cst.EPI_FULL_SIZE]
+        point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[
+            cst.ROI_WITH_MARGINS
+        ]
+    point_cloud.attrs[cst.EPI_FULL_SIZE] = data.attrs[cst.EPI_FULL_SIZE]
     point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud
@@ -392,21 +438,31 @@ def geoid_offset(points, geoid):
     longitudes[longitudes < 0] += 360
 
     # perform interpolation using point cloud coordinates.
-    if not geoid.lat_min <= out_pc[cst.Y].min() \
-        <= out_pc[cst.Y].max() <= geoid.lat_max \
-       and geoid.lon_min <= np.min(longitudes) \
-        <= np.max(longitudes) <= geoid.lat_max:
-        raise RuntimeError('Geoid does not fully cover the area spanned by '
-                           'the point cloud.')
+    if (
+        not geoid.lat_min
+        <= out_pc[cst.Y].min()
+        <= out_pc[cst.Y].max()
+        <= geoid.lat_max
+        and geoid.lon_min
+        <= np.min(longitudes)
+        <= np.max(longitudes)
+        <= geoid.lat_max
+    ):
+        raise RuntimeError(
+            "Geoid does not fully cover the area spanned by " "the point cloud."
+        )
 
     # interpolate data
-    ref_interp = geoid.interp({'lat': out_pc[cst.Y],
-                               'lon':xr.DataArray(longitudes,
-                                                  dims=(cst.ROW, cst.COL))})
+    ref_interp = geoid.interp(
+        {
+            "lat": out_pc[cst.Y],
+            "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
+        }
+    )
     # offset using geoid height
     out_pc[cst.Z] = points[cst.Z] - ref_interp.hgt
 
     # remove coordinates lat & lon added by the interpolation
-    out_pc = out_pc.reset_coords(['lat', 'lon'], drop=True)
+    out_pc = out_pc.reset_coords(["lat", "lon"], drop=True)
 
     return out_pc

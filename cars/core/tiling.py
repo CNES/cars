@@ -38,12 +38,8 @@ from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
 def grid(
-    xmin: float,
-    ymin: float,
-    xmax: float,
-    ymax: float,
-    xsplit: int,
-    ysplit: int)-> np.ndarray:
+    xmin: float, ymin: float, xmax: float, ymax: float, xsplit: int, ysplit: int
+) -> np.ndarray:
     """
     Generate grid of positions by splitting [xmin, xmax]x[ymin, ymax]
         in splits of xsplit x ysplit size
@@ -60,8 +56,9 @@ def grid(
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
     nb_ysplits = math.ceil((ymax - ymin) / ysplit)
 
-    out_grid = \
-        np.ndarray(shape=(nb_ysplits + 1, nb_xsplits + 1, 2), dtype=float)
+    out_grid = np.ndarray(
+        shape=(nb_ysplits + 1, nb_xsplits + 1, 2), dtype=float
+    )
 
     for i in range(0, nb_xsplits + 1):
         for j in range(0, nb_ysplits + 1):
@@ -99,10 +96,12 @@ def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
 
     for i in range(0, nb_xsplits):
         for j in range(0, nb_ysplits):
-            region = [xmin + i * xsplit,
-                      ymin + j * ysplit,
-                      xmin + (i + 1) * xsplit,
-                      ymin + (j + 1) * ysplit]
+            region = [
+                xmin + i * xsplit,
+                ymin + j * ysplit,
+                xmin + (i + 1) * xsplit,
+                ymin + (j + 1) * ysplit,
+            ]
 
             # Crop to largest region
             region = crop(region, [xmin, ymin, xmax, ymax])
@@ -162,8 +161,7 @@ def empty(region):
     :type region: list of four float
     :returns: True if the region is considered empty (no pixels inside),
         False otherwise
-    :rtype: bool
-"""
+    :rtype: bool"""
     return region[0] >= region[2] or region[1] >= region[3]
 
 
@@ -220,8 +218,12 @@ def list_tiles(region, largest_region, tile_size, margin=1):
         for tile_idx_y in range(min_tile_idx_y, max_tile_idx_y):
 
             # Derive tile coordinates
-            tile = [tile_idx_x * tile_size, tile_idx_y  * tile_size,
-                    (tile_idx_x + 1) * tile_size, (tile_idx_y  + 1) * tile_size]
+            tile = [
+                tile_idx_x * tile_size,
+                tile_idx_y * tile_size,
+                (tile_idx_x + 1) * tile_size,
+                (tile_idx_y + 1) * tile_size,
+            ]
 
             # Crop to largest region
             tile = crop(tile, largest_region)
@@ -283,11 +285,8 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
 
 
 def transform_terrain_region_to_epipolar(
-        region, conf,
-        epsg = 4326,
-        disp_min = None,
-        disp_max = None,
-        step = 100):
+    region, conf, epsg=4326, disp_min=None, disp_max=None, step=100
+):
     """
     Transform terrain region to epipolar region according to ground_positions
 
@@ -304,13 +303,15 @@ def transform_terrain_region_to_epipolar(
     :rtype: list of four float
     """
     # Retrieve disp min and disp max if needed
-    preprocessing_output_conf = conf\
-        [output_prepare.PREPROCESSING_SECTION_TAG]\
-        [output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
+    preprocessing_output_conf = conf[output_prepare.PREPROCESSING_SECTION_TAG][
+        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
+    ]
     minimum_disparity = preprocessing_output_conf[
-        output_prepare.MINIMUM_DISPARITY_TAG]
+        output_prepare.MINIMUM_DISPARITY_TAG
+    ]
     maximum_disparity = preprocessing_output_conf[
-        output_prepare.MAXIMUM_DISPARITY_TAG]
+        output_prepare.MAXIMUM_DISPARITY_TAG
+    ]
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -322,23 +323,29 @@ def transform_terrain_region_to_epipolar(
     else:
         disp_max = int(math.ceil(disp_max))
 
-    region_grid = np.array([[region[0],region[1]],
-                            [region[2],region[1]],
-                            [region[2],region[3]],
-                            [region[0],region[3]]])
+    region_grid = np.array(
+        [
+            [region[0], region[1]],
+            [region[2], region[1]],
+            [region[2], region[3]],
+            [region[0], region[3]],
+        ]
+    )
 
-    epipolar_grid = grid(0, 0,
-                         preprocessing_output_conf[
-                             output_prepare.EPIPOLAR_SIZE_X_TAG],
-                         preprocessing_output_conf[
-                             output_prepare.EPIPOLAR_SIZE_Y_TAG],
-                         step,
-                         step)
+    epipolar_grid = grid(
+        0,
+        0,
+        preprocessing_output_conf[output_prepare.EPIPOLAR_SIZE_X_TAG],
+        preprocessing_output_conf[output_prepare.EPIPOLAR_SIZE_Y_TAG],
+        step,
+        step,
+    )
 
     epi_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
 
     epipolar_grid_min, epipolar_grid_max = compute_epipolar_grid_min_max(
-        epipolar_grid, epsg, conf,disp_min, disp_max)
+        epipolar_grid, epsg, conf, disp_min, disp_max
+    )
 
     # Build Delaunay triangulations
     delaunay_min = Delaunay(epipolar_grid_min)
@@ -354,7 +361,7 @@ def transform_terrain_region_to_epipolar(
 
     points_list = []
     # For each corner
-    for i in range(0,4):
+    for i in range(0, 4):
         # If we are inside triangulation of s_min
         if s_min[i] != -1:
             # Add points from surrounding triangle
@@ -362,16 +369,16 @@ def transform_terrain_region_to_epipolar(
                 points_list.append(point)
         else:
             # else add nearest neighbor
-            __, point_idx = tree_min.query(region_grid[i,:])
+            __, point_idx = tree_min.query(region_grid[i, :])
             points_list.append(epi_grid_flat[point_idx])
-        # If we are inside triangulation of s_min
+            # If we are inside triangulation of s_min
             if s_max[i] != -1:
                 # Add points from surrounding triangle
                 for point in epi_grid_flat[delaunay_max.simplices[s_max[i]]]:
                     points_list.append(point)
             else:
                 # else add nearest neighbor
-                __, point_nn_idx = tree_max.query(region_grid[i,:])
+                __, point_nn_idx = tree_max.query(region_grid[i, :])
                 points_list.append(epi_grid_flat[point_nn_idx])
 
     points_min = np.min(points_list, axis=0)
@@ -389,5 +396,6 @@ def transform_terrain_region_to_epipolar(
         epipolar_region_minx,
         epipolar_region_miny,
         epipolar_region_maxx,
-        epipolar_region_maxy]
+        epipolar_region_maxy,
+    ]
     return epipolar_region

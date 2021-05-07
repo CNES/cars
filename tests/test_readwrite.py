@@ -22,7 +22,7 @@
 Test module for cars/readwrite.py
 """
 
-#TODO change file name
+# TODO change file name
 
 # Standard imports
 import os
@@ -59,15 +59,20 @@ def test_compute_output_window():
     y_start = 15.000001
     x_size = 300
     y_size = 250
-    x_values_1d = np.linspace(x_start + 0.5 * resolution,
-                              x_start + resolution * (x_size + 0.5), x_size,
-                              endpoint=False)
-    y_values_1d = np.linspace(y_start - 0.5 * resolution,
-                              y_start - resolution * (y_size + 0.5), y_size,
-                              endpoint=False)
-    raster_coords = {'x': x_values_1d, 'y': y_values_1d}
-    tile = xr.Dataset({},
-                      coords=raster_coords)
+    x_values_1d = np.linspace(
+        x_start + 0.5 * resolution,
+        x_start + resolution * (x_size + 0.5),
+        x_size,
+        endpoint=False,
+    )
+    y_values_1d = np.linspace(
+        y_start - 0.5 * resolution,
+        y_start - resolution * (y_size + 0.5),
+        y_size,
+        endpoint=False,
+    )
+    raster_coords = {"x": x_values_1d, "y": y_values_1d}
+    tile = xr.Dataset({}, coords=raster_coords)
     bounds = (120, 150, 412.2, 511.8)
 
     indices = output.compute_output_window(tile, bounds, resolution)
@@ -86,8 +91,13 @@ def test_rasterio_handles():
     geotransform = (bounds[0], resolution, 0.0, bounds[3], 0.0, -resolution)
     transform = Affine.from_gdal(*geotransform)
     rio_params = dict(
-        height=196, width=425, driver='GTiff', dtype=np.float32,
-        transform=transform, crs='EPSG:{}'.format(32631), tiled=True
+        height=196,
+        width=425,
+        driver="GTiff",
+        dtype=np.float32,
+        transform=transform,
+        crs="EPSG:{}".format(32631),
+        tiled=True,
     )
     dsm_no_data = -32768
     color_no_data = 0
@@ -95,18 +105,19 @@ def test_rasterio_handles():
 
     # Create file handles
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        dsm_file = os.path.join(directory, 'dsm.tif')
-        clr_file = os.path.join(directory, 'clr.tif')
+        dsm_file = os.path.join(directory, "dsm.tif")
+        clr_file = os.path.join(directory, "clr.tif")
         file_handles = output.rasterio_handles(
-            ['hgt', 'clr'],
+            ["hgt", "clr"],
             [dsm_file, clr_file],
             [rio_params, rio_params],
             [dsm_no_data, color_no_data],
-            [1, nb_bands])
+            [1, nb_bands],
+        )
 
         with file_handles as rio_handles:
             assert isinstance(rio_handles, dict)
-            assert 'hgt' in rio_handles.keys() and 'clr' in rio_handles.keys()
+            assert "hgt" in rio_handles.keys() and "clr" in rio_handles.keys()
             for key in rio_handles:
                 assert isinstance(rio_handles[key], rio.io.DatasetWriter)
 
@@ -138,10 +149,22 @@ def test_write_geotiff_dsm():
         delayed_raster_datasets = list()
         delayed_raster_datasets.append(
             dask.delayed(rasterization.create_raster_dataset)(
-            raster, xstart, ystart, xsize, ysize, resolution,
-            hgt_no_data, color_no_data, epsg, mean, stdev,
-            n_pts, n_in_cell, msk
-        ))
+                raster,
+                xstart,
+                ystart,
+                xsize,
+                ysize,
+                resolution,
+                hgt_no_data,
+                color_no_data,
+                epsg,
+                mean,
+                stdev,
+                n_pts,
+                n_in_cell,
+                msk,
+            )
+        )
 
         # Start cluster with a local cluster
         nb_workers = 4
@@ -156,9 +179,19 @@ def test_write_geotiff_dsm():
         clr_file = os.path.join(directory, "clr.tif")
         msk_file = os.path.join(directory, "msk.tif")
         output.write_geotiff_dsm(
-            future_dsm, directory, xsize, ysize, bounds, resolution,
-            epsg, nb_bands, dsm_no_data, color_no_data,
-            write_msk=True, msk_no_data=msk_no_data)
+            future_dsm,
+            directory,
+            xsize,
+            ysize,
+            bounds,
+            resolution,
+            epsg,
+            nb_bands,
+            dsm_no_data,
+            color_no_data,
+            write_msk=True,
+            msk_no_data=msk_no_data,
+        )
 
         # stop cluster
         stop_local_cluster(cluster, client)

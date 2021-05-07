@@ -44,18 +44,18 @@ def prepare_default_args():
     ease cars prepare test readibility
     """
     args = argparse.Namespace()
-    args.loglevel = 'INFO'
-    args.command = 'prepare'
+    args.loglevel = "INFO"
+    args.command = "prepare"
     args.disparity_margin = 0.25
     args.elevation_delta_lower_bound = -50.0
     args.elevation_delta_upper_bound = 50.0
     args.epi_step = 30
     args.epipolar_error_upper_bound = 10.0
     args.epipolar_error_maximum_bias = 0.0
-    args.injson = absolute_data_path('input/phr_ventoux/preproc_input.json')
-    args.mode = 'local_dask'
+    args.injson = absolute_data_path("input/phr_ventoux/preproc_input.json")
+    args.mode = "local_dask"
     args.nb_workers = 4
-    args.walltime = '00:59:00'
+    args.walltime = "00:59:00"
 
     return args
 
@@ -67,8 +67,8 @@ def compute_dsm_default_args():
     ease cars compute_dsm test readibility
     """
     args = argparse.Namespace()
-    args.loglevel = 'INFO'
-    args.command = 'compute_dsm'
+    args.loglevel = "INFO"
+    args.command = "compute_dsm"
     args.sigma = None
     args.resolution = 0.5
     args.color_no_data = 0
@@ -80,11 +80,10 @@ def compute_dsm_default_args():
     args.roi_bbox = None
     args.roi_file = None
     args.epsg = None
-    args.injsons = [absolute_data_path(
-        'input/cars_input/content.json')]
-    args.mode = 'local_dask'
+    args.injsons = [absolute_data_path("input/cars_input/content.json")]
+    args.mode = "local_dask"
     args.nb_workers = 4
-    args.walltime = '00:59:00'
+    args.walltime = "00:59:00"
 
     return args
 
@@ -102,8 +101,8 @@ def test_command():
     parser = cars_parser()
 
     args = argparse.Namespace()
-    args.loglevel = 'INFO'
-    args.command = 'test'
+    args.loglevel = "INFO"
+    args.command = "test"
 
     with pytest.raises(SystemExit) as exit_error:
         main_cli(args, parser, check_inputs=True)
@@ -118,7 +117,8 @@ def test_command():
 
 @pytest.mark.unit_tests
 def test_prepare_args(
-                prepare_default_args): #pylint: disable=redefined-outer-name
+    prepare_default_args,
+):  # pylint: disable=redefined-outer-name
     """
     Cars prepare arguments test with default and degraded cases
     """
@@ -130,14 +130,15 @@ def test_prepare_args(
         # test default args
         main_cli(prepare_default_args, parser, check_inputs=True)
 
-        prepare_default_args.loglevel = 'INFO'
+        prepare_default_args.loglevel = "INFO"
         main_cli(prepare_default_args, parser, check_inputs=True)
 
         # degraded cases injson
         args_bad_json = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_json.injson = absolute_data_path(
-                'input/cars_input/test.json')
+                "input/cars_input/test.json"
+            )
             main_cli(args_bad_json, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -184,7 +185,7 @@ def test_prepare_args(
         # degraded cases log level
         args_bad_loglevel = copy(prepare_default_args)
         with pytest.raises(ValueError):
-            args_bad_loglevel.loglevel = 'TEST'
+            args_bad_loglevel.loglevel = "TEST"
             main_cli(args_bad_loglevel, parser, check_inputs=True)
 
         # degraded cases number of workers
@@ -198,13 +199,13 @@ def test_prepare_args(
         # degraded cases wall time
         args_bad_wall_time = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
-            args_bad_wall_time.walltime = '000:00:00'
+            args_bad_wall_time.walltime = "000:00:00"
             main_cli(args_bad_wall_time, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
-            args_bad_wall_time.walltime = 'bb:bb:bb'
+            args_bad_wall_time.walltime = "bb:bb:bb"
             main_cli(args_bad_wall_time, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -214,9 +215,11 @@ def test_prepare_args(
 # DASK COMPUTE DSM
 # ----------------------------------
 
+
 @pytest.mark.unit_tests
 def test_dsm_compute_arg(
-            compute_dsm_default_args): #pylint: disable=redefined-outer-name
+    compute_dsm_default_args,
+):  # pylint: disable=redefined-outer-name
     """
     Cars compute_dsm arguments test with default and degraded cases
     """
@@ -235,25 +238,28 @@ def test_dsm_compute_arg(
 
         # test [xmin, ymin, xmax, ymax] roi argument
         args_roi_bbox = copy(compute_dsm_default_args)
-        args_roi_bbox.roi_bbox = ['1.0', '2.0', '3.0', '4.0']
+        args_roi_bbox.roi_bbox = ["1.0", "2.0", "3.0", "4.0"]
         main_cli(args_roi_bbox, parser, check_inputs=True)
 
         # test image roi argument
         args_roi_file = copy(compute_dsm_default_args)
         args_roi_file.roi_file = absolute_data_path(
-            'input/cars_input/roi_image.tif')
+            "input/cars_input/roi_image.tif"
+        )
         main_cli(args_roi_file, parser, check_inputs=True)
 
         # test vector roi argument
         args_roi_file.roi_file = absolute_data_path(
-            'input/cars_input/roi_vector.gpkg')
+            "input/cars_input/roi_vector.gpkg"
+        )
         main_cli(args_roi_file, parser, check_inputs=True)
 
         # degraded cases input jsons
         args_bad_jsons = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_jsons.injsons = [
-                absolute_data_path('input/cars_input/test.txt')]
+                absolute_data_path("input/cars_input/test.txt")
+            ]
             main_cli(args_bad_jsons, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -306,22 +312,25 @@ def test_dsm_compute_arg(
         # degraded cases input ROI file
         args_bad_roi_file = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
-            args_bad_roi_file.roi_file = \
-                absolute_data_path('input/cars_input/test.txt')
+            args_bad_roi_file.roi_file = absolute_data_path(
+                "input/cars_input/test.txt"
+            )
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
             args_bad_roi_file.roi_file = absolute_data_path(
-                'input/phr_ventoux/preproc_output/content.json')
+                "input/phr_ventoux/preproc_output/content.json"
+            )
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
             args_bad_roi_file.roi_file = absolute_data_path(
-                'input/phr_ventoux/left_image.tif')
+                "input/phr_ventoux/left_image.tif"
+            )
             main_cli(args_bad_roi_file, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -330,7 +339,8 @@ def test_dsm_compute_arg(
         args_bad_correlator_conf = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_correlator_conf.corr_config = absolute_data_path(
-                'input/cars_input/test.txt')
+                "input/cars_input/test.txt"
+            )
             main_cli(args_bad_correlator_conf, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
@@ -347,7 +357,7 @@ def test_dsm_compute_arg(
         # degraded cases log level
         args_bad_loglevel = copy(compute_dsm_default_args)
         with pytest.raises(ValueError):
-            args_bad_loglevel.loglevel = 'TEST'
+            args_bad_loglevel.loglevel = "TEST"
             main_cli(args_bad_loglevel, parser, check_inputs=True)
 
         # degraded cases number of workers
@@ -361,7 +371,7 @@ def test_dsm_compute_arg(
         # degraded cases wall time
         args_bad_wall_time = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
-            args_bad_wall_time.walltime = '000:00:00'
+            args_bad_wall_time.walltime = "000:00:00"
             main_cli(args_bad_wall_time, parser, check_inputs=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1

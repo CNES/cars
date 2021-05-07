@@ -106,8 +106,12 @@ def test_list_tiles():
 
     tiles = tiling.list_tiles(region, largest_region, tile_size, margin=0)
 
-    assert tiles == [[40, 60, 50, 70], [40, 70, 50, 80],
-                     [50, 60, 60, 70], [50, 70, 60, 80]]
+    assert tiles == [
+        [40, 60, 50, 70],
+        [40, 70, 50, 80],
+        [50, 60, 60, 70],
+        [50, 70, 60, 80],
+    ]
 
     tiles = tiling.list_tiles(region, largest_region, tile_size, margin=1)
 
@@ -127,7 +131,8 @@ def test_list_tiles():
         [60, 50, 70, 60],
         [60, 60, 70, 70],
         [60, 70, 70, 80],
-        [60, 80, 70, 90]]
+        [60, 80, 70, 90],
+    ]
 
 
 @pytest.mark.unit_tests
@@ -145,7 +150,7 @@ def test_snap_to_grid():
     """
     Test snap_to_grid function
     """
-    assert (0, 0, 11, 11) == tiling.snap_to_grid(0.1, 0.2, 10.1, 10.2, 1.)
+    assert (0, 0, 11, 11) == tiling.snap_to_grid(0.1, 0.2, 10.1, 10.2, 1.0)
 
 
 # TODO move to test_projection
@@ -160,16 +165,25 @@ def test_ground_positions_from_envelopes():
     envelope_no_intersection = translate(envelope, xoff=2.0, yoff=2.0)
 
     inter, bounding_box = projection.ground_polygon_from_envelopes(
-        envelope, envelope_intersection, 4326, 4326, 4326)
+        envelope, envelope_intersection, 4326, 4326, 4326
+    )
 
     assert list(inter.exterior.coords) == [
-        (1.5, 2.0), (2.0, 2.0), (2.0, 1.5), (1.5, 1.5), (1.5, 2.0)]
+        (1.5, 2.0),
+        (2.0, 2.0),
+        (2.0, 1.5),
+        (1.5, 1.5),
+        (1.5, 2.0),
+    ]
     assert bounding_box == (1.5, 1.5, 2.0, 2.0)
 
     # test exception
     try:
         projection.ground_polygon_from_envelopes(
-            envelope, envelope_no_intersection, 4326, 4326, 4326)
+            envelope, envelope_no_intersection, 4326, 4326, 4326
+        )
     except Exception as intersect_error:
-        assert str(intersect_error) == \
-                        'The two envelopes do not intersect one another'
+        assert (
+            str(intersect_error)
+            == "The two envelopes do not intersect one another"
+        )

@@ -35,7 +35,7 @@ from cars.core.inputs import rasterio_can_open
 from cars.core.utils import make_relative_path_absolute
 
 # tag for static conf file
-STATIC_PARAMS_TAG = 'static_parameters'
+STATIC_PARAMS_TAG = "static_parameters"
 
 
 def read_input_parameters(filename):
@@ -50,24 +50,25 @@ def read_input_parameters(filename):
     :rtype: dict
     """
     config = {}
-    with open(filename, 'r') as fstream:
+    with open(filename, "r") as fstream:
         # Load json file
         config = json.load(fstream)
         json_dir = os.path.abspath(os.path.dirname(filename))
         # make potential relative paths absolute
         for tag in [
-                IMG1_TAG,
-                IMG2_TAG,
-                MASK1_TAG,
-                MASK2_TAG,
-                MASK1_CLASSES_TAG,
-                MASK2_CLASSES_TAG,
-                COLOR1_TAG,
-                SRTM_DIR_TAG]:
+            IMG1_TAG,
+            IMG2_TAG,
+            MASK1_TAG,
+            MASK2_TAG,
+            MASK1_CLASSES_TAG,
+            MASK2_CLASSES_TAG,
+            COLOR1_TAG,
+            SRTM_DIR_TAG,
+        ]:
             if tag in config:
-                config[tag] = make_relative_path_absolute(
-                    config[tag], json_dir)
+                config[tag] = make_relative_path_absolute(config[tag], json_dir)
     return config
+
 
 # tags for input parameters
 INPUT_SECTION_TAG = "input"
@@ -91,13 +92,15 @@ INPUT_CONFIGURATION_SCHEMA = {
     OptionalKey(COLOR1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK2_TAG): And(str, rasterio_can_open),
-    OptionalKey(MASK1_CLASSES_TAG): \
-        And(str, mask_classes.mask_classes_can_open),
-    OptionalKey(MASK2_CLASSES_TAG): \
-        And(str, mask_classes.mask_classes_can_open),
+    OptionalKey(MASK1_CLASSES_TAG): And(
+        str, mask_classes.mask_classes_can_open
+    ),
+    OptionalKey(MASK2_CLASSES_TAG): And(
+        str, mask_classes.mask_classes_can_open
+    ),
     OptionalKey(DEFAULT_ALT_TAG): float,
     NODATA1_TAG: int,
-    NODATA2_TAG: int
+    NODATA2_TAG: int,
 }
 
 # Type for input configuration json

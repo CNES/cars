@@ -58,9 +58,9 @@ def configure_correlator(corr_file_path=None):
         #  * Census with 5 X 5 window
         #  * SGM
         user_cfg = {}
-        user_cfg['image'] = {}
-        user_cfg['image']['valid_pixels'] = 0
-        user_cfg['image']['no_data'] = 255
+        user_cfg["image"] = {}
+        user_cfg["image"]["valid_pixels"] = 0
+        user_cfg["image"]["no_data"] = 255
         user_cfg["stereo"] = {}
         user_cfg["stereo"]["stereo_method"] = "census"
         user_cfg["stereo"]["window_size"] = 5

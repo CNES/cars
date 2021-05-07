@@ -58,8 +58,9 @@ def write_stereo_content_file(config, filename, indent=2):
     :param indent: indentations in output file
     :type indent: int
     """
-    with open(filename, 'w') as fstream:
+    with open(filename, "w") as fstream:
         # Make absolute path relative
+        # fmt: off
         for tag in [
             DSM_TAG,
             COLOR_TAG,
@@ -76,7 +77,7 @@ def write_stereo_content_file(config, filename, indent=2):
                 config[COMPUTE_DSM_SECTION_TAG][
                     COMPUTE_DSM_OUTPUT_SECTION_TAG][tag] =\
                     os.path.basename(value)
-
+        # fmt: on
         json.dump(config, fstream, indent=indent)
 
 
@@ -85,14 +86,22 @@ RESOLUTION_TAG = "resolution"
 SIGMA_TAG = "sigma"
 DSM_RADIUS_TAG = "dsm_radius"
 COMPUTE_DSM_MASK_CLASSES_USAGE_TAG = "mask_classes_usage_in_compute_dsm"
-MASK1_IGNORED_BY_CORR_TAG =\
-    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.ignored_by_corr_tag)
-MASK2_IGNORED_BY_CORR_TAG =\
-    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.ignored_by_corr_tag)
-MASK1_SET_TO_REF_ALT_TAG =\
-    '%s_%s' % (input_parameters.MASK1_TAG, mask_classes.set_to_ref_alt_tag)
-MASK2_SET_TO_REF_ALT_TAG =\
-    '%s_%s' % (input_parameters.MASK2_TAG, mask_classes.set_to_ref_alt_tag)
+MASK1_IGNORED_BY_CORR_TAG = "%s_%s" % (
+    input_parameters.MASK1_TAG,
+    mask_classes.ignored_by_corr_tag,
+)
+MASK2_IGNORED_BY_CORR_TAG = "%s_%s" % (
+    input_parameters.MASK2_TAG,
+    mask_classes.ignored_by_corr_tag,
+)
+MASK1_SET_TO_REF_ALT_TAG = "%s_%s" % (
+    input_parameters.MASK1_TAG,
+    mask_classes.set_to_ref_alt_tag,
+)
+MASK2_SET_TO_REF_ALT_TAG = "%s_%s" % (
+    input_parameters.MASK2_TAG,
+    mask_classes.set_to_ref_alt_tag,
+)
 
 # Tags for content.json stereo/output section of stereo step
 DSM_TAG = "dsm"
@@ -105,7 +114,7 @@ DSM_POINTS_IN_CELL_TAG = "dsm_points_in_cell"
 DSM_NO_DATA_TAG = "dsm_no_data"
 COLOR_NO_DATA_TAG = "color_no_data"
 EPSG_TAG = "epsg"
-ALT_REFERENCE_TAG = 'altimetric_reference'
+ALT_REFERENCE_TAG = "altimetric_reference"
 
 # tags from content.json of compute dsm pipeline
 COMPUTE_DSM_INPUTS_SECTION_TAG = "input_configurations"
@@ -131,7 +140,7 @@ COMPUTE_DSM_OUTPUT_SCHEMA = {
     OptionalKey(DSM_POINTS_IN_CELL_TAG): And(str, rasterio_can_open),
     EPSG_TAG: int,
     ALT_REFERENCE_TAG: str,
-    OptionalKey(output_prepare.ENVELOPES_INTERSECTION_BB_TAG): list
+    OptionalKey(output_prepare.ENVELOPES_INTERSECTION_BB_TAG): list,
 }
 
 # schema of the parameters section
@@ -139,32 +148,33 @@ COMPUTE_DSM_PARAMETERS_SCHEMA = {
     RESOLUTION_TAG: And(float, lambda x: x > 0),
     OptionalKey(EPSG_TAG): And(int, lambda x: x > 0),
     SIGMA_TAG: Or(None, And(float, lambda x: x >= 0)),
-    DSM_RADIUS_TAG: And(int, lambda x: x >= 0)
+    DSM_RADIUS_TAG: And(int, lambda x: x >= 0),
 }
 
 COMPUTE_DSM_CLASSES_USAGE_SCHEMA = {
     MASK1_IGNORED_BY_CORR_TAG: Or([int], None),
     MASK2_IGNORED_BY_CORR_TAG: Or([int], None),
     MASK1_SET_TO_REF_ALT_TAG: Or([int], None),
-    MASK2_SET_TO_REF_ALT_TAG: Or([int], None)
+    MASK2_SET_TO_REF_ALT_TAG: Or([int], None),
 }
 
 # Schema of the full json for compute dsm output
 COMPUTE_DSM_CONTENT_SCHEMA = {
-    COMPUTE_DSM_INPUTS_SECTION_TAG:
-    [
+    COMPUTE_DSM_INPUTS_SECTION_TAG: [
         {
             COMPUTE_DSM_INPUT_TAG: output_prepare.PREPROCESSING_CONTENT_SCHEMA,
-            OptionalKey(COMPUTE_DSM_MASK_CLASSES_USAGE_TAG):\
-                                        COMPUTE_DSM_CLASSES_USAGE_SCHEMA
+            OptionalKey(
+                COMPUTE_DSM_MASK_CLASSES_USAGE_TAG
+            ): COMPUTE_DSM_CLASSES_USAGE_SCHEMA,
         }
     ],
-    COMPUTE_DSM_SECTION_TAG:
-    {
+    COMPUTE_DSM_SECTION_TAG: {
         COMPUTE_DSM_VERSION_TAG: str,
         COMPUTE_DSM_PARAMETERS_SECTION_TAG: COMPUTE_DSM_PARAMETERS_SCHEMA,
+        # fmt: off
         input_parameters.STATIC_PARAMS_TAG:
-         static_conf.compute_dsm_params_schema,
-        COMPUTE_DSM_OUTPUT_SECTION_TAG: COMPUTE_DSM_OUTPUT_SCHEMA
-    }
+            static_conf.compute_dsm_params_schema,
+        # fmt: on
+        COMPUTE_DSM_OUTPUT_SECTION_TAG: COMPUTE_DSM_OUTPUT_SCHEMA,
+    },
 }

@@ -39,11 +39,13 @@ def test_mask_classes_can_open():
     Test mask_classes_can_open function with right and wrong input files
     """
     mask_classes_path = absolute_data_path(
-        "input/phr_paca/left_msk_classes.json")
+        "input/phr_paca/left_msk_classes.json"
+    )
     assert mask_classes.mask_classes_can_open(mask_classes_path) is True
 
     wrong_mask_classes_path = absolute_data_path(
-        "input/mask_input/msk_wrong_json.json")
+        "input/mask_input/msk_wrong_json.json"
+    )
     assert mask_classes.mask_classes_can_open(wrong_mask_classes_path) is False
 
 
@@ -52,21 +54,30 @@ def test_carsmask_is_multiclasses_mask():
     """
     Create fake msk class and test carsmask_is_multiclasses_mask function
     """
-    mc_msk = np.array([[mask_classes.VALID_VALUE,
-                        mask_classes.VALID_VALUE, 2],
-                       [1, mask_classes.VALID_VALUE, 100],
-                       [mask_classes.VALID_VALUE, 100, 200]])
+    mc_msk = np.array(
+        [
+            [mask_classes.VALID_VALUE, mask_classes.VALID_VALUE, 2],
+            [1, mask_classes.VALID_VALUE, 100],
+            [mask_classes.VALID_VALUE, 100, 200],
+        ]
+    )
 
     is_mc_mask = mask_classes.is_multiclasses_mask(mc_msk)
 
     assert is_mc_mask is True
 
-    not_mc_msk = np.array([[mask_classes.VALID_VALUE,
-                            mask_classes.VALID_VALUE,
-                            mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
-                           [1, mask_classes.VALID_VALUE, 1],
-                           [mask_classes.VALID_VALUE, 1, 1]],
-                          dtype=np.uint16)
+    not_mc_msk = np.array(
+        [
+            [
+                mask_classes.VALID_VALUE,
+                mask_classes.VALID_VALUE,
+                mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            ],
+            [1, mask_classes.VALID_VALUE, 1],
+            [mask_classes.VALID_VALUE, 1, 1],
+        ],
+        dtype=np.uint16,
+    )
 
     is_mc_mask = mask_classes.is_multiclasses_mask(not_mc_msk)
 
@@ -81,40 +92,40 @@ def test_get_msk_from_classes():
     """
     classes_to_use_for_msk = [1, 100, 200]
 
-    mc_msk = np.array([[0, 0, 2],
-                       [1, 0, 100],
-                       [0, 100, 200]])
+    mc_msk = np.array([[0, 0, 2], [1, 0, 100], [0, 100, 200]])
 
     # test default mask creation
-    out_msk = mask_classes.create_msk_from_classes(mc_msk,
-                                                   classes_to_use_for_msk)
+    out_msk = mask_classes.create_msk_from_classes(
+        mc_msk, classes_to_use_for_msk
+    )
 
-    ref_msk = np.array([[0, 0, 0],
-                        [255, 0, 255],
-                        [0, 255, 255]], dtype=np.uint16)
+    ref_msk = np.array(
+        [[0, 0, 0], [255, 0, 255], [0, 255, 255]], dtype=np.uint16
+    )
 
     assert np.allclose(out_msk, ref_msk)
 
     # test out_msk_pix_value and out_msk_dtype parameters
-    out_msk = mask_classes.create_msk_from_classes(mc_msk,
-                                                   classes_to_use_for_msk,
-                                                   out_msk_pix_value=1,
-                                                   out_msk_dtype=np.int8)
+    out_msk = mask_classes.create_msk_from_classes(
+        mc_msk,
+        classes_to_use_for_msk,
+        out_msk_pix_value=1,
+        out_msk_dtype=np.int8,
+    )
 
-    ref_msk = np.array([[0, 0, 0],
-                        [1, 0, 1],
-                        [0, 1, 1]], dtype=np.int8)
+    ref_msk = np.array([[0, 0, 0], [1, 0, 1], [0, 1, 1]], dtype=np.int8)
 
     assert np.allclose(out_msk, ref_msk)
 
     # test boolean mask creation
-    out_msk = mask_classes.create_msk_from_classes(mc_msk,
-                                                   classes_to_use_for_msk,
-                                                   out_msk_dtype=np.bool)
+    out_msk = mask_classes.create_msk_from_classes(
+        mc_msk, classes_to_use_for_msk, out_msk_dtype=np.bool
+    )
 
-    ref_msk = np.array([[False, False, False],
-                        [True, False, True],
-                        [False, True, True]], dtype=np.bool)
+    ref_msk = np.array(
+        [[False, False, False], [True, False, True], [False, True, True]],
+        dtype=np.bool,
+    )
 
     assert np.allclose(out_msk, ref_msk)
 
@@ -126,19 +137,24 @@ def test_get_msk_from_tag():
     different configurations
     """
 
-    mc_msk = np.array([[0, 0, mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
-                       [1, 0, 100],
-                       [2, 100, 200]])
+    mc_msk = np.array(
+        [
+            [0, 0, mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
+            [1, 0, 100],
+            [2, 100, 200],
+        ]
+    )
 
     # test default mask creation
     out_msk = mask_classes.create_msk_from_tag(
         mc_msk,
         absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_corr_tag)
+        mask_classes.ignored_by_corr_tag,
+    )
 
-    ref_msk = np.array([[0, 0, 0],
-                        [255, 0, 255],
-                        [0, 255, 255]], dtype=np.uint16)
+    ref_msk = np.array(
+        [[0, 0, 0], [255, 0, 255], [0, 255, 255]], dtype=np.uint16
+    )
 
     assert np.allclose(out_msk, ref_msk)
 
@@ -146,11 +162,10 @@ def test_get_msk_from_tag():
     out_msk = mask_classes.create_msk_from_tag(
         mc_msk,
         absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_sift_matching_tag)
+        mask_classes.ignored_by_sift_matching_tag,
+    )
 
-    ref_msk = np.array([[0, 0, 0],
-                        [0, 0, 0],
-                        [0, 0, 0]], dtype=np.uint16)
+    ref_msk = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]], dtype=np.uint16)
 
     assert np.allclose(out_msk, ref_msk)
 
@@ -159,11 +174,12 @@ def test_get_msk_from_tag():
         mc_msk,
         absolute_data_path("input/mask_input/msk_classes.json"),
         mask_classes.ignored_by_corr_tag,
-        mask_intern_no_data_val=True)
+        mask_intern_no_data_val=True,
+    )
 
-    ref_msk = np.array([[0, 0, 255],
-                        [255, 0, 255],
-                        [0, 255, 255]], dtype=np.uint16)
+    ref_msk = np.array(
+        [[0, 0, 255], [255, 0, 255], [0, 255, 255]], dtype=np.uint16
+    )
 
     assert np.allclose(out_msk, ref_msk)
 
@@ -173,10 +189,9 @@ def test_get_msk_from_tag():
         mc_msk,
         absolute_data_path("input/mask_input/msk_classes.json"),
         mask_classes.ignored_by_sift_matching_tag,
-        mask_intern_no_data_val=True)
+        mask_intern_no_data_val=True,
+    )
 
-    ref_msk = np.array([[0, 0, 255],
-                        [0, 0, 0],
-                        [0, 0, 0]], dtype=np.uint16)
+    ref_msk = np.array([[0, 0, 255], [0, 0, 0], [0, 0, 0]], dtype=np.uint16)
 
     assert np.allclose(out_msk, ref_msk)

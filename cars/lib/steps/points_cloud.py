@@ -40,18 +40,19 @@ from cars.core import projection
 
 
 def create_combined_cloud(
-        cloud_list: List[xr.Dataset],
-        dsm_epsg: int,
-        color_list: List[xr.Dataset]=None,
-        resolution: float=None,
-        xstart: float=None,
-        ystart: float=None,
-        xsize: int=None,
-        ysize: int=None,
-        on_ground_margin: int=0,
-        epipolar_border_margin: int=0,
-        radius: float=1,
-        with_coords: bool=False) -> Tuple[pandas.DataFrame, int]:
+    cloud_list: List[xr.Dataset],
+    dsm_epsg: int,
+    color_list: List[xr.Dataset] = None,
+    resolution: float = None,
+    xstart: float = None,
+    ystart: float = None,
+    xsize: int = None,
+    ysize: int = None,
+    on_ground_margin: int = 0,
+    epipolar_border_margin: int = 0,
+    radius: float = 1,
+    with_coords: bool = False,
+) -> Tuple[pandas.DataFrame, int]:
     """
     Combine a list of clouds (and their colors) into a pandas dataframe
     structured with the following labels:
@@ -137,11 +138,17 @@ def create_combined_cloud(
             epsg = int(cloud_list_item.attrs[cst.EPSG])
         elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
             worker_logger.error(
-                "All points clouds do not have the same epsg code")
+                "All points clouds do not have the same epsg code"
+            )
 
     # compute margin/roi and final number of data to add to the combined cloud
-    roi = resolution is not None and xstart is not None and\
-        ystart is not None and xsize is not None and ysize is not None
+    roi = (
+        resolution is not None
+        and xstart is not None
+        and ystart is not None
+        and xsize is not None
+        and ysize is not None
+    )
     if roi:
         total_margin = (on_ground_margin + radius + 1) * resolution
         xend = xstart + (xsize + 1) * resolution
@@ -161,16 +168,22 @@ def create_combined_cloud(
     if color_list is not None:
         clr_im = color_list[0].im.values
         nb_band_clr = clr_im.shape[0]
-        list_clr = ["{}{}".format(
-                cst.POINTS_CLOUD_CLR_KEY_ROOT, i) for i in range(nb_band_clr)]
+        list_clr = [
+            "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, i)
+            for i in range(nb_band_clr)
+        ]
         nb_data.extend(list_clr)
     else:
         nb_band_clr = 0
 
     if with_coords:
-        nb_data.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-                        cst.POINTS_CLOUD_IDX_IM_EPI])
+        nb_data.extend(
+            [
+                cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+                cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
+                cst.POINTS_CLOUD_IDX_IM_EPI,
+            ]
+        )
 
     # iterate trough input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
@@ -186,9 +199,12 @@ def create_combined_cloud(
             # if the points clouds are not in the same referential as the roi,
             # it is converted using the dsm_epsg
             if epsg != dsm_epsg:
-                full_x, full_y =\
-                    projection.get_converted_xy_np_arrays_from_dataset(
-                        cloud_list_item, dsm_epsg)
+                (
+                    full_x,
+                    full_y,
+                ) = projection.get_converted_xy_np_arrays_from_dataset(
+                    cloud_list_item, dsm_epsg
+                )
 
             msk_xstart = np.where(full_x > xstart - total_margin, True, False)
             msk_xend = np.where(full_x < xend + total_margin, True, False)
@@ -196,10 +212,11 @@ def create_combined_cloud(
             msk_ystart = np.where(full_y < ystart + total_margin, True, False)
             terrain_tile_data_msk = np.logical_and(
                 msk_xstart,
-                np.logical_and(msk_xend, np.logical_and(msk_ystart, msk_yend))
+                np.logical_and(msk_xend, np.logical_and(msk_ystart, msk_yend)),
             )
-            terrain_tile_data_msk_pos =\
-                terrain_tile_data_msk.astype(np.int8).nonzero()
+            terrain_tile_data_msk_pos = terrain_tile_data_msk.astype(
+                np.int8
+            ).nonzero()
 
             # if the points clouds are not in the same referential as the roi,
             # retrieve the initial values
@@ -212,23 +229,22 @@ def create_combined_cloud(
                 continue
 
             # get useful data bounding box
-            bbox = [np.min(terrain_tile_data_msk_pos[0]),
-                    np.min(terrain_tile_data_msk_pos[1]),
-                    np.max(terrain_tile_data_msk_pos[0]),
-                    np.max(terrain_tile_data_msk_pos[1])]
+            bbox = [
+                np.min(terrain_tile_data_msk_pos[0]),
+                np.min(terrain_tile_data_msk_pos[1]),
+                np.max(terrain_tile_data_msk_pos[0]),
+                np.max(terrain_tile_data_msk_pos[1]),
+            ]
         else:
-            bbox = [0,
-                    0,
-                    full_y.shape[0]-1,
-                    full_y.shape[1]-1]
+            bbox = [0, 0, full_y.shape[0] - 1, full_y.shape[1] - 1]
 
         # add (x, y, z) information to the current cloud
-        c_x = full_x[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
-        c_y = full_y[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
-        c_z = full_z[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1]
+        c_x = full_x[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        c_y = full_y[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        c_z = full_z[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
 
         c_cloud = np.zeros(
-            (len(nb_data), (bbox[2] - bbox[0] + 1)*(bbox[3] - bbox[1] + 1))
+            (len(nb_data), (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1))
         )
         c_cloud[1, :] = np.ravel(c_x)
         c_cloud[2, :] = np.ravel(c_y)
@@ -237,49 +253,54 @@ def create_combined_cloud(
         ds_values_list = [key for key, _ in cloud_list_item.items()]
 
         if cst.POINTS_CLOUD_MSK in ds_values_list:
-            c_msk = cloud_list_item\
-                [cst.POINTS_CLOUD_MSK].values[bbox[0]:bbox[2]+1,
-                                              bbox[1]:bbox[3]+1]
+            c_msk = cloud_list_item[cst.POINTS_CLOUD_MSK].values[
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
             c_cloud[4, :] = np.ravel(c_msk)
 
         # add data valid mask
         # (points that are not in the border of the epipolar image)
         if epipolar_border_margin == 0:
-            epipolar_margin_mask = \
-                np.full(
-                    (cloud_list_item[cst.X].values.shape[0],
-                     cloud_list_item[cst.X].values.shape[1]),
-                     True
-                )
+            epipolar_margin_mask = np.full(
+                (
+                    cloud_list_item[cst.X].values.shape[0],
+                    cloud_list_item[cst.X].values.shape[1],
+                ),
+                True,
+            )
         else:
-            epipolar_margin_mask = \
-                np.full(
-                    (cloud_list_item[cst.X].values.shape[0],
-                     cloud_list_item[cst.X].values.shape[1]),
-                     False
-                )
+            epipolar_margin_mask = np.full(
+                (
+                    cloud_list_item[cst.X].values.shape[0],
+                    cloud_list_item[cst.X].values.shape[1],
+                ),
+                False,
+            )
             epipolar_margin_mask[
                 epipolar_border_margin:-epipolar_border_margin,
-                epipolar_border_margin:-epipolar_border_margin] = True
+                epipolar_border_margin:-epipolar_border_margin,
+            ] = True
 
         c_epipolar_margin_mask = epipolar_margin_mask[
-                                    bbox[0]:bbox[2] + 1, bbox[1]:bbox[3] + 1]
+            bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+        ]
         c_cloud[0, :] = np.ravel(c_epipolar_margin_mask)
 
         # add the color information to the current cloud
         if color_list is not None:
-            c_color = color_list[cloud_list_idx].im.values[:,
-                                                bbox[0]:bbox[2]+1,
-                                                bbox[1]:bbox[3]+1]
+            c_color = color_list[cloud_list_idx].im.values[
+                :, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
 
             for band in range(nb_band_clr):
-                c_cloud[4 + nb_data_msk + band, :] = \
-                    np.ravel(c_color[band, :, :])
+                c_cloud[4 + nb_data_msk + band, :] = np.ravel(
+                    c_color[band, :, :]
+                )
 
         # add the original image coordinates information to the current cloud
         if with_coords:
-            coords_line = np.linspace(bbox[0], bbox[2], bbox[2]-bbox[0]+1)
-            coords_col = np.linspace(bbox[1], bbox[3], bbox[3]-bbox[1]+1)
+            coords_line = np.linspace(bbox[0], bbox[2], bbox[2] - bbox[0] + 1)
+            coords_col = np.linspace(bbox[1], bbox[3], bbox[3] - bbox[1] + 1)
             coords_col, coords_line = np.meshgrid(coords_col, coords_line)
 
             c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
@@ -287,16 +308,20 @@ def create_combined_cloud(
             c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = cloud_list_idx
 
         # remove masked data (pandora + out of the terrain tile points)
-        c_terrain_tile_data_msk = \
+        c_terrain_tile_data_msk = (
             cloud_list_item[cst.POINTS_CLOUD_CORR_MSK].values[
-                    bbox[0]:bbox[2]+1,
-                    bbox[1]:bbox[3]+1
-                ] == 255
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
+            == 255
+        )
 
         if roi:
             c_terrain_tile_data_msk = np.logical_and(
                 c_terrain_tile_data_msk,
-                terrain_tile_data_msk[bbox[0]:bbox[2]+1, bbox[1]:bbox[3]+1])
+                terrain_tile_data_msk[
+                    bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+                ],
+            )
 
         c_terrain_tile_data_msk = np.ravel(c_terrain_tile_data_msk)
 
@@ -304,16 +329,18 @@ def create_combined_cloud(
 
         nb_points += c_cloud.shape[1]
 
-        c_cloud = np.delete(c_cloud.transpose(),
-                            c_terrain_tile_data_msk_pos[0], 0)
+        c_cloud = np.delete(
+            c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0
+        )
 
         # add current cloud to the combined one
         cloud = np.concatenate([cloud, c_cloud], axis=0)
 
     worker_logger.debug("Received {} points to rasterize".format(nb_points))
-    worker_logger.debug("Keeping {}/{} points "
-                        "inside rasterization grid".format(
-                            cloud.shape[0], nb_points))
+    worker_logger.debug(
+        "Keeping {}/{} points "
+        "inside rasterization grid".format(cloud.shape[0], nb_points)
+    )
 
     pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
 
@@ -349,19 +376,19 @@ def create_combined_cloud(
 #           value to use to identify the removed points in the mask
 #
 SmallComponentsFilterParams = namedtuple(
-    'SmallComponentsFilterParams',
+    "SmallComponentsFilterParams",
     [
-        'on_ground_margin',
-        'connection_val',
-        'nb_pts_threshold',
-        'clusters_distance_threshold',
-        'filtered_elt_msk',
-        'msk_value'
-    ]
+        "on_ground_margin",
+        "connection_val",
+        "nb_pts_threshold",
+        "clusters_distance_threshold",
+        "filtered_elt_msk",
+        "msk_value",
+    ],
 )
 
 # Cloud statistical filtering :
-#------------------------------
+# ------------------------------
 #   * k:
 #       number of neighbors
 #
@@ -376,25 +403,21 @@ SmallComponentsFilterParams = namedtuple(
 #       value to use to identify the removed points in the mask
 #
 StatisticalFilterParams = namedtuple(
-    'StatisticalFilterParams',
-    [
-        'k',
-        'std_dev_factor',
-        'filtered_elt_msk',
-        'msk_value'
-    ]
+    "StatisticalFilterParams",
+    ["k", "std_dev_factor", "filtered_elt_msk", "msk_value"],
 )
 
 
 ###### Small components filtering ######
 
+
 def small_components_filtering(
-        cloud: pandas.DataFrame,
-        connection_val: float,
-        nb_pts_threshold: int,
-        clusters_distance_threshold: float=None,
-        filtered_elt_pos: bool=False
-    ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
+    cloud: pandas.DataFrame,
+    connection_val: float,
+    nb_pts_threshold: int,
+    clusters_distance_threshold: float = None,
+    filtered_elt_pos: bool = False,
+) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
     Filter points cloud to remove small clusters of points
     (see the detect_small_components function).
@@ -415,23 +438,19 @@ def small_components_filtering(
         the removed elements positions in their epipolar images
     """
     cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = \
-        detect_small_components(
-            cloud_xyz,
-            connection_val,
-            nb_pts_threshold,
-            clusters_distance_threshold
-        )
+    index_elt_to_remove = detect_small_components(
+        cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold
+    )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
 
 
 def detect_small_components(
-        cloud_xyz: np.ndarray,
-        connection_val: float,
-        nb_pts_threshold: int,
-        clusters_distance_threshold: float=None
-    ) -> List[int]:
+    cloud_xyz: np.ndarray,
+    connection_val: float,
+    nb_pts_threshold: int,
+    clusters_distance_threshold: float = None,
+) -> List[int]:
     """
     Determine the indexes of the points of cloud_xyz to filter.
     The clusters are made of 'connected' points
@@ -466,8 +485,9 @@ def detect_small_components(
             continue
 
         # get point neighbors
-        neighbors_list =\
-            cloud_tree.query_ball_point(cloud_xyz[idx], connection_val)
+        neighbors_list = cloud_tree.query_ball_point(
+            cloud_xyz[idx], connection_val
+        )
 
         # add them to the current cluster
         seed = []
@@ -478,9 +498,9 @@ def detect_small_components(
         # iteratively add all the neighbors of the points
         # which were added to the current cluster (if there are some)
         while len(neighbors_list) != 0:
-            all_neighbors =\
-                cloud_tree.query_ball_point(
-                    cloud_xyz[neighbors_list], connection_val)
+            all_neighbors = cloud_tree.query_ball_point(
+                cloud_xyz[neighbors_list], connection_val
+            )
 
             # flatten neighbors
             new_neighbors = []
@@ -499,15 +519,17 @@ def detect_small_components(
 
     # determine clusters to remove
     cluster_to_remove = []
-    for connected_components_idx, connected_components_item \
-                                    in enumerate(connected_components):
+    for connected_components_idx, connected_components_item in enumerate(
+        connected_components
+    ):
         if len(connected_components_item) < nb_pts_threshold:
             if clusters_distance_threshold is not None:
                 # search if the current cluster has any neighbors
                 # in the clusters_distance_threshold radius
                 all_neighbors = cloud_tree.query_ball_point(
                     cloud_xyz[connected_components[connected_components_idx]],
-                    clusters_distance_threshold)
+                    clusters_distance_threshold,
+                )
 
                 # flatten neighbors
                 new_neighbors = []
@@ -515,8 +537,9 @@ def detect_small_components(
                     new_neighbors.extend(neighbor_item)
 
                 # retrieve only new neighbors
-                neighbors_list =\
-                    list(set(new_neighbors) - set(connected_components_item))
+                neighbors_list = list(
+                    set(new_neighbors) - set(connected_components_item)
+                )
 
                 # if there are no new neighbors, the cluster will be removed
                 if len(neighbors_list) == 0:
@@ -526,14 +549,16 @@ def detect_small_components(
 
     return cluster_to_remove
 
+
 ###### statistical filtering ######
 
+
 def statistical_outliers_filtering(
-        cloud: pandas.DataFrame,
-        k: int,
-        std_factor: float,
-        filtered_elt_pos: bool=False
-    ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
+    cloud: pandas.DataFrame,
+    k: int,
+    std_factor: float,
+    filtered_elt_pos: bool = False,
+) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
     Filter points cloud to remove statistical outliers
     (see the detect_statistical_outliers function).
@@ -556,10 +581,8 @@ def statistical_outliers_filtering(
 
 
 def detect_statistical_outliers(
-        cloud_xyz: np.ndarray,
-        k: int,
-        std_factor: float=3.0
-    ) -> List[int] :
+    cloud_xyz: np.ndarray, k: int, std_factor: float = 3.0
+) -> List[int]:
     """
     Determine the indexes of the points of cloud_xyz to filter.
     The removed points have mean distances with their k nearest neighbors
@@ -579,14 +602,13 @@ def detect_statistical_outliers(
     """
     # compute for each points, all the distances to their k neighbors
     cloud_tree = cKDTree(cloud_xyz)
-    neighbors_distances, _ = cloud_tree.query(cloud_xyz, k+1)
+    neighbors_distances, _ = cloud_tree.query(cloud_xyz, k + 1)
 
     # Compute the mean of those distances for each point
     # Mean is not used directly as each line
     #           contained the distance value to the point itself
     mean_neighbors_distances = np.sum(neighbors_distances, axis=1)
     mean_neighbors_distances /= k
-
 
     # compute mean and standard deviation of those mean distances
     #           for the whole point cloud
@@ -608,11 +630,12 @@ def detect_statistical_outliers(
 
 ###### common filtering tools ######
 
+
 def filter_cloud(
-        cloud:pandas.DataFrame,
-        index_elt_to_remove: List[int],
-        filtered_elt_pos:bool=False
-    ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
+    cloud: pandas.DataFrame,
+    index_elt_to_remove: List[int],
+    filtered_elt_pos: bool = False,
+) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
     Filter all points of the cloud DataFrame
     which index is in the index_elt_to_remove list.
@@ -635,29 +658,34 @@ def filter_cloud(
         (or None for the latter if filtered_elt_pos is set to False
         or if the cloud Dataframe has not been build with with_coords option)
     """
-    if filtered_elt_pos and \
-        not (cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
-             and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
-             and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns):
-        worker_logger = logging.getLogger('distributed.worker')
+    if filtered_elt_pos and not (
+        cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
+        and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
+        and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns
+    ):
+        worker_logger = logging.getLogger("distributed.worker")
         worker_logger.warning(
-            'In filter_cloud: the filtered_elt_pos has been activated but '
-            'the cloud Datafram has not been build with option with_coords. '
-            'The positions cannot be retrieved.')
+            "In filter_cloud: the filtered_elt_pos has been activated but "
+            "the cloud Datafram has not been build with option with_coords. "
+            "The positions cannot be retrieved."
+        )
         filtered_elt_pos = False
 
     # retrieve removed points position in their original epipolar images
     if filtered_elt_pos:
-        labels = [cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-                  cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-                  cst.POINTS_CLOUD_IDX_IM_EPI]
+        labels = [
+            cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+            cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
+            cst.POINTS_CLOUD_IDX_IM_EPI,
+        ]
 
         removed_elt_pos_infos = cloud.loc[
             cloud.index.values[index_elt_to_remove], labels
         ].values
 
-        removed_elt_pos_infos =\
-            pandas.DataFrame(removed_elt_pos_infos, columns=labels)
+        removed_elt_pos_infos = pandas.DataFrame(
+            removed_elt_pos_infos, columns=labels
+        )
     else:
         removed_elt_pos_infos = None
 
@@ -668,10 +696,11 @@ def filter_cloud(
 
 
 def add_cloud_filtering_msk(
-        clouds_list: List[xr.Dataset],
-        elt_pos_infos: pandas.DataFrame,
-        mask_label: str,
-        mask_value: int=255):
+    clouds_list: List[xr.Dataset],
+    elt_pos_infos: pandas.DataFrame,
+    mask_label: str,
+    mask_value: int = 255,
+):
     """
     Add a uint16 mask labeled 'mask_label' to the clouds in clouds_list.
     (in-line function)
@@ -688,15 +717,18 @@ def add_cloud_filtering_msk(
     """
 
     # Verify that the elt_pos_infos is consistent
-    if elt_pos_infos is None or \
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns or \
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns or \
-        cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns:
-        worker_logger = logging.getLogger('distributed.worker')
+    if (
+        elt_pos_infos is None
+        or cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns
+        or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
+        or cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns
+    ):
+        worker_logger = logging.getLogger("distributed.worker")
         worker_logger.warning(
-            'Cannot generate filtered elements mask, '
-            'no information about the point\'s'
-            ' original position in the epipolar image is given')
+            "Cannot generate filtered elements mask, "
+            "no information about the point's"
+            " original position in the epipolar image is given"
+        )
 
     else:
         elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_IDX_IM_EPI].to_numpy()
@@ -706,8 +738,9 @@ def add_cloud_filtering_msk(
 
         if min_elt_index < 0 or max_elt_index > len(clouds_list) - 1:
             raise Exception(
-            'Index indicated in the elt_pos_infos pandas. '
-            'DataFrame is not coherent with the clouds list given in input')
+                "Index indicated in the elt_pos_infos pandas. "
+                "DataFrame is not coherent with the clouds list given in input"
+            )
 
         # create and add mask to each element of clouds_list
         for cloud_idx, cloud_item in enumerate(clouds_list):
@@ -721,18 +754,27 @@ def add_cloud_filtering_msk(
             cur_elt_index = np.argwhere(elt_index == cloud_idx)
 
             for elt_pos in range(cur_elt_index.shape[0]):
-                i = int(elt_pos_infos.loc[cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_I].iat[0])
-                j = int(elt_pos_infos.loc[cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J].iat[0])
+                i = int(
+                    elt_pos_infos.loc[
+                        cur_elt_index[elt_pos],
+                        cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+                    ].iat[0]
+                )
+                j = int(
+                    elt_pos_infos.loc[
+                        cur_elt_index[elt_pos],
+                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
+                    ].iat[0]
+                )
 
                 try:
                     msk[i, j] = mask_value
                 except Exception as index_error:
                     raise Exception(
-                        'Point at location ({},{}) is not accessible '
-                        'in an image of size ({},{})'.format(
-                        i, j,
-                        msk.shape[0], msk.shape[1])) from index_error
+                        "Point at location ({},{}) is not accessible "
+                        "in an image of size ({},{})".format(
+                            i, j, msk.shape[0], msk.shape[1]
+                        )
+                    ) from index_error
 
             cloud_item[mask_label] = ([cst.ROW, cst.COL], msk)
