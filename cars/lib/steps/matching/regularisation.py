@@ -18,7 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Matching regularisation module:
 contains matching outputs regularisation functions
@@ -31,9 +30,9 @@ from typing import Union
 import numpy as np
 import xarray as xr
 
-# Cars imports
-from cars.core import constants as cst
+# CARS imports
 from cars.conf import mask_classes
+from cars.core import constants as cst
 
 
 def update_disp_to_0(

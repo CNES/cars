@@ -13,6 +13,7 @@
 #
 import os
 import sys
+
 sys.path.insert(0, os.path.abspath('../..'))
 sys.setrecursionlimit(1500)
 
@@ -24,6 +25,7 @@ author = 'CARS Team'
 
 # The full version, including alpha/beta/rc tags
 from pkg_resources import get_distribution
+
 try:
     version = get_distribution('cars').version
     release = version

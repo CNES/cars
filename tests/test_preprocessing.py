@@ -22,25 +22,34 @@
 Test module for cars/preprocessing.py
 """
 
+# Standard imports
 from __future__ import absolute_import
-import tempfile
+
 import os
 import pickle
+import tempfile
 from typing import Tuple
 
-import pytest
-
+# Third party imports
 import numpy as np
+import pytest
 import rasterio as rio
 import xarray as xr
 
-from cars import preprocessing
-from cars import otb_pipelines
+# CARS imports
+from cars import otb_pipelines, preprocessing
 from cars.core import constants as cst
-from cars.lib.steps.sparse_matching import sift, filtering
 from cars.lib.steps.epi_rectif import grids, resampling
-from .utils import absolute_data_path, temporary_dir, assert_same_datasets
-from .utils import otb_geoid_file_set, otb_geoid_file_unset
+from cars.lib.steps.sparse_matching import filtering, sift
+
+# CARS Tests imports
+from .utils import (
+    absolute_data_path,
+    assert_same_datasets,
+    otb_geoid_file_set,
+    otb_geoid_file_unset,
+    temporary_dir,
+)
 
 
 @pytest.mark.unit_tests

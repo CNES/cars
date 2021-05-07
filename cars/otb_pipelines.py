@@ -18,16 +18,19 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Pipelines module:
-contains functions that builds Orfeo ToolBox pipelines used by cars
+OTB Pipelines module:
+contains functions that builds Orfeo ToolBox pipelines used by CARS
 """
 
+# Standard imports
 from __future__ import absolute_import
+
+# Third party imports
 import numpy as np
 import otbApplication
 
+# CARS imports
 from cars.conf import mask_classes
 
 

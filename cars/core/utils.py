@@ -18,22 +18,20 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Utils module:
 contains some cars global shared general purpose functions
 """
-
 # Standard imports
-from typing import Tuple
-import os
-import logging
-from datetime import datetime
 import errno
-import numpy as np
-import numpy.linalg as la
+import logging
+import os
+from datetime import datetime
+from typing import Tuple
 
 # Third party imports
+import numpy as np
+import numpy.linalg as la
 import rasterio as rio
 
 

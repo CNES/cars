@@ -22,22 +22,25 @@
 Test module for cars/rasterization.py
 """
 
+# Standard imports
 from __future__ import absolute_import
 
 import logging
-import pytest
-import pandas
 
+# Third party imports
 import numpy as np
+import pandas
+import pytest
 import xarray as xr
 
-from cars.lib.steps import rasterization
-from cars.lib.steps import points_cloud
+# CARS imports
 from cars.core import constants as cst
 from cars.core import projection
+from cars.lib.steps import points_cloud, rasterization
 
-from .utils import absolute_data_path
-from .utils import assert_same_datasets
+# CARS Tests imports
+from .utils import absolute_data_path, assert_same_datasets
+
 
 #TODO move to projection
 @pytest.mark.unit_tests

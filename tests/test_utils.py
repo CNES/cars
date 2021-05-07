@@ -22,17 +22,22 @@
 Test module for cars/utils.py
 """
 
+# Standard imports
 import os
 import tempfile
-import pytest
-import yaml
 
-import numpy as np
-import xarray as xr
+# Third party imports
 import fiona
+import numpy as np
+import pytest
+import xarray as xr
+import yaml
 from shapely.geometry import Polygon, shape
 
-from cars.core import utils, outputs, inputs
+# CARS imports
+from cars.core import inputs, outputs, utils
+
+# CARS Tests imports
 from .utils import absolute_data_path, temporary_dir
 
 

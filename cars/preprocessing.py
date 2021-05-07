@@ -18,30 +18,29 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Preprocessing module:
-contains functions used during cars prepare pipeline step of cars
+contains functions used during CARS prepare pipeline step
 """
 # TODO dispatch preprocess part into steps used by prepare pipeline.
 
 # Standard imports
 from __future__ import absolute_import
-import math
+
 import logging
-from typing import Union, Tuple
+import math
+from typing import Tuple, Union
 
 # Third party imports
 import numpy as np
-from scipy import interpolate
-from scipy.signal import butter, lfilter, filtfilt, lfilter_zi
-import xarray as xr
 import otbApplication as otb
+import xarray as xr
+from scipy import interpolate
+from scipy.signal import butter, filtfilt, lfilter, lfilter_zi
 
-
-# Cars imports
+# CARS imports
 from cars.core import constants as cst
-from cars.core import projection, utils, inputs
+from cars.core import inputs, projection, utils
 
 
 def image_envelope(img, shp, dem=None, default_alt=None):

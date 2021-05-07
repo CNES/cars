@@ -18,20 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Datasets module is responsible for the CARS datasets
+CARS Datasets module
 """
 
+# Standard imports
 from typing import List
 
+# Third party imports
 import numpy as np
 import xarray as xr
 
-
+# CARS imports
 from cars.core import constants as cst
-# TODO: refacto constants: define constants here as only concerning datasets
 
+# TODO: refacto constants: define constants here as only concerning datasets
 
 def create_im_dataset(img: np.ndarray,
                       region: List[int],

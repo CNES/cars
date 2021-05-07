@@ -24,20 +24,25 @@ Test module for cars/readwrite.py
 
 #TODO change file name
 
+# Standard imports
 import os
 import tempfile
-import pytest
-import numpy as np
-from affine import Affine
 
+# Third party imports
 import dask
-from osgeo import osr
+import numpy as np
+import pytest
 import rasterio as rio
 import xarray as xr
+from affine import Affine
+from osgeo import osr
 
+# CARS imports
+from cars.cluster.dask import start_local_cluster, stop_local_cluster
 from cars.lib.io import output
 from cars.lib.steps import rasterization
-from cars.cluster.dask import start_local_cluster, stop_local_cluster
+
+# CARS Tests imports
 from .utils import temporary_dir
 
 

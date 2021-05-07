@@ -18,33 +18,32 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Projection module:
 contains some general purpose functions using polygons and data projections
 """
 
 # Standard imports
-from typing import List, Tuple
-import os
 import logging
+import os
+from typing import List, Tuple
 
 # Third party imports
 import numpy as np
+import osgeo
 import otbApplication
 import pandas
-import xarray as xr
-import rasterio as rio
-from rasterio.features import shapes
-from shapely.geometry import shape, Polygon
-from shapely.ops import transform
 import pyproj
-import osgeo
+import rasterio as rio
+import xarray as xr
 from osgeo import osr
+from rasterio.features import shapes
+from shapely.geometry import Polygon, shape
+from shapely.ops import transform
 
-# cars import
-from cars.core import inputs
+# CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
 
 
 def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,

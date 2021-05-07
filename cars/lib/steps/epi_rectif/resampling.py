@@ -18,23 +18,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Resampling module:
 contains functions used for epipolar resampling
 """
 
+# Standard imports
 import logging
 import math
 
+# Third party imports
 import numpy as np
 
-from cars.conf import input_parameters, mask_classes, output_prepare
-from cars.core import tiling
-from cars.core import constants as cst
-from cars.core import inputs
+# CARS imports
 from cars import otb_pipelines
-from cars.core import datasets
+from cars.conf import input_parameters, mask_classes, output_prepare
+from cars.core import constants as cst
+from cars.core import datasets, inputs, tiling
 
 
 def epipolar_rectify_images(

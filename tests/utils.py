@@ -23,9 +23,13 @@ Utils testing generic module:
 contains global shared generic functions for tests/*.py
 """
 
+# Standard imports
 import os
-import rasterio as rio
+
+# Third party imports
 import numpy as np
+import rasterio as rio
+
 
 def cars_path():
     """

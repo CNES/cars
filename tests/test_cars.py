@@ -22,15 +22,19 @@
 Test module for cars/cars.py
 """
 
-import tempfile
+# Standard imports
 import argparse
+import tempfile
 from copy import copy
+
+# Third party imports
 import pytest
 
+# CARS imports
+from cars.cars import cars_parser, main_cli
 
-from cars.cars import main_cli, cars_parser
-from .utils import temporary_dir, absolute_data_path
-
+# CARS Tests imports
+from .utils import absolute_data_path, temporary_dir
 
 
 @pytest.fixture(scope="module")

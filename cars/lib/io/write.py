@@ -18,15 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 io.write module:
-contains write grid functions used during cars prepare pipeline step of cars
+contains write grid functions used during CARS prepare pipeline step
 """
 # TODO : to move with epipolar_steps ?
 
 # Standard imports
 from __future__ import absolute_import
+
+# Third party imports
 import rasterio as rio
 from affine import Affine
 

@@ -22,11 +22,18 @@
 Test module for cars/cluster.py
 """
 
+# Standard imports
 from __future__ import absolute_import
+
 import tempfile
 
+# Third party imports
 import pytest
+
+# CARS imports
 from cars.cluster import dask as dask_cluster
+
+# CARS Tests imports
 from .utils import temporary_dir
 
 

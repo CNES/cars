@@ -21,14 +21,19 @@
 Test module for notebooks/*
 """
 
+# Standard imports
 from __future__ import absolute_import
 
+import fileinput
 import subprocess
 import tempfile
-import fileinput
+
+# Third party imports
 import pytest
 
-from .utils import temporary_dir, absolute_data_path, cars_path
+# CARS Tests imports
+from .utils import absolute_data_path, cars_path, temporary_dir
+
 
 @pytest.mark.notebook_tests
 def test_step_by_step_compute_dsm():

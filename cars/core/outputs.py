@@ -18,23 +18,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Outputs module:
-contains some cars global shared general purpose output functions
+contains some CARS global shared general purpose output functions
 """
-
-from typing import Union
+# Standard imports
 import logging
 import os
+from typing import Union
 
-import yaml
+# Third party imports
 import fiona
-from fiona.crs import from_epsg
-from shapely.geometry import mapping
-import xarray as xr
 import numpy as np
 import pandas
+import xarray as xr
+import yaml
+from fiona.crs import from_epsg
+from shapely.geometry import mapping
+
+# CARS imports
 from cars.core import constants as cst
 
 

@@ -18,21 +18,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 This module refers to the prepare outputs
 """
 
+# Standard imports
 import json
 import os
 from typing import Dict, Union
 
-from json_checker import OptionalKey, And, Or
+# Third party imports
+from json_checker import And, OptionalKey, Or
 
-from cars.conf import mask_classes
-from cars.conf import input_parameters, static_conf
-from cars.core.utils import make_relative_path_absolute
+# CARS imports
+from cars.conf import input_parameters, mask_classes, static_conf
 from cars.core.inputs import rasterio_can_open
+from cars.core.utils import make_relative_path_absolute
 
 
 def write_preprocessing_content_file(config, filename, indent=2):

@@ -22,15 +22,17 @@
 Test module for cars/tiling.py
 """
 
-
+# Standard imports
 from __future__ import absolute_import
 
+# Third party imports
 import pytest
-
-from shapely.geometry import Polygon
 from shapely.affinity import translate
+from shapely.geometry import Polygon
 
-from cars.core import tiling, projection
+# CARS imports
+from cars.core import projection, tiling
+
 
 @pytest.mark.unit_tests
 def test_grid():

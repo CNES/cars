@@ -22,15 +22,21 @@
 Test module for cars/projection.py
 """
 
+# Standard imports
 from __future__ import absolute_import
-import pytest
 
-from shapely.geometry import Polygon
+# Third party imports
 import numpy as np
 import pandas
+import pytest
+from shapely.geometry import Polygon
 
-from cars.core import projection, inputs
+# CARS imports
+from cars.core import inputs, projection
+
+# CARS Tests imports
 from .utils import absolute_data_path
+
 
 @pytest.mark.unit_tests
 def test_point_cloud_conversion():

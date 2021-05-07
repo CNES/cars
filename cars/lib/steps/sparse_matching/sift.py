@@ -20,7 +20,7 @@
 #
 """
 Sift module:
-contains sift matching method
+contains sift sparse matching method
 """
 
 # Standard imports
@@ -30,8 +30,7 @@ from __future__ import absolute_import
 import numpy as np
 import otbApplication as otb
 
-
-# Cars imports
+# CARS imports
 from cars import otb_pipelines
 from cars.core import constants as cst
 

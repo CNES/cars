@@ -18,47 +18,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Main cars prepare pipeline module:
-contains functions associated to prepare cars sub-command
+Main CARS prepare pipeline module:
+contains functions associated to prepare CARS sub-command
 """
 
 # Standard imports
-from __future__ import absolute_import
-from __future__ import print_function
-import os
-import logging
+from __future__ import absolute_import, print_function
+
 import errno
+import logging
 import math
+import os
 import pickle
 
 # Third party imports
-import numpy as np
-from tqdm import tqdm
-from json_checker import CheckerError
-from dask.distributed import as_completed
 import dask
+import numpy as np
 import rasterio as rio
+from dask.distributed import as_completed
+from json_checker import CheckerError
+from tqdm import tqdm
 
-
-# Cars imports
-from cars import __version__
-from cars import preprocessing
-from cars import otb_pipelines
-from cars.lib.steps import triangulation
-from cars.lib.steps import rasterization
-from cars.conf import output_prepare
+# CARS imports
+from cars import __version__, otb_pipelines, preprocessing
+from cars.cluster.dask import start_cluster, start_local_cluster, stop_cluster
 from cars.conf import input_parameters as in_params
-from cars.conf import static_conf
+from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
-from cars.core import tiling, utils, projection, inputs, outputs
-from cars.conf import mask_classes
-from cars.cluster.dask import start_local_cluster, start_cluster, stop_cluster
-from cars.lib.steps.sparse_matching import filtering
-from cars.lib.steps.epi_rectif import grids
-from cars.pipelines.wrappers import matching_wrapper
+from cars.core import inputs, outputs, projection, tiling, utils
 from cars.lib.io import write
+from cars.lib.steps import rasterization, triangulation
+from cars.lib.steps.epi_rectif import grids
+from cars.lib.steps.sparse_matching import filtering
+from cars.pipelines.wrappers import matching_wrapper
+
 
 def run(
         in_json: in_params.InputConfigurationType,

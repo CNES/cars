@@ -19,19 +19,23 @@
 # limitations under the License.
 #
 """
-Main cars Command Line Interface
+Main CARS Command Line Interface
 user main argparse wrapper to CARS 3D pipelines submodules
 """
+
 
 # Standard imports
 # TODO refactor but keep local functions for performance and remove pylint
 # pylint: disable=import-outside-toplevel
-import os
 import argparse
+import os
 import warnings
 from typing import List, Tuple
+
+# Third party imports
 import argcomplete
 
+#CARS imports
 from cars import __version__
 
 warnings.filterwarnings("ignore", category=FutureWarning)
@@ -251,10 +255,14 @@ def parse_roi_file(arg_roi_file: str, stop_now: bool)-> Tuple[List[float], int]:
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
 
+    # Standard imports
     import logging
-    import rasterio
-    from cars.core import inputs
 
+    # Third party imports
+    import rasterio
+
+    # CARS imports
+    from cars.core import inputs
 
     # Declare output
     roi = None
@@ -308,15 +316,17 @@ def main_cli(args, parser, check_inputs=False):
     """
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
+
+    # Standard imports
+    import logging
     import re
     import sys
-    import logging
 
-    from cars.pipelines import prepare
-    from cars.pipelines import compute_dsm
+    # CARS imports
     from cars.conf import input_parameters as in_params
     from cars.conf import output_prepare
     from cars.lib.externals.matching.correlator_configuration import corr_conf
+    from cars.pipelines import compute_dsm, prepare
 
     # logging
     numeric_level = getattr(logging, args.loglevel.upper(), None)

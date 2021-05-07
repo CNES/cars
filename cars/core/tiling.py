@@ -18,19 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Tiling module:
 contains functions related to regions and tiles management
 """
 
+# Standard imports
 import math
 
+# Third party imports
 import numpy as np
-from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
-from scipy.spatial import tsearch #pylint: disable=no-name-in-module
-from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
+from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
+from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
+from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
+# CARS imports
 from cars.conf import output_prepare
 from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 

@@ -22,10 +22,14 @@
 Test module for cars/mask_classes.py
 """
 
-import pytest
+# Third party imports
 import numpy as np
+import pytest
 
+# CARS imports
 from cars.conf import mask_classes
+
+# CARS Tests imports
 from .utils import absolute_data_path
 
 

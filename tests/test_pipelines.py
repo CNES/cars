@@ -22,11 +22,19 @@
 Test module for cars/otb_pipelines.py
 """
 
+# Standard imports
 from __future__ import absolute_import
-import pytest
+
+# Third party imports
 import numpy as np
+import pytest
+
+# CARS imports
 from cars import otb_pipelines
+
+# CARS Tests imports
 from .utils import absolute_data_path, otb_geoid_file_set, otb_geoid_file_unset
+
 
 @pytest.mark.unit_tests
 def test_build_stereorectification_grid_pipeline():

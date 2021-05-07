@@ -18,17 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Configure correlator module:
 contains functions to retrieve the correlator configuration
 """
 
-
+# Third party imports
 import pandora
-from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
-                                 get_config_image, check_image_section,\
-                                 concat_conf
+from pandora.JSON_checker import (
+    check_image_section,
+    check_pipeline_section,
+    concat_conf,
+    get_config_image,
+    get_config_pipeline,
+)
+
 
 def configure_correlator(corr_file_path=None):
     """

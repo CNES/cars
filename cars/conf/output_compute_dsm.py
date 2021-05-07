@@ -22,16 +22,23 @@
 This module refers to the compute_dsm outputs
 """
 
+# Standard imports
 import json
 import os
 
-from json_checker import OptionalKey, And, Or
+# Third party imports
+from json_checker import And, OptionalKey, Or
 
-from cars.conf import input_parameters, mask_classes, \
-                      output_prepare, static_conf
-from cars.core.inputs import rasterio_can_open, ncdf_can_open
+# CARS imports
+from cars.conf import (
+    input_parameters,
+    mask_classes,
+    output_prepare,
+    static_conf,
+)
+from cars.core.inputs import ncdf_can_open, rasterio_can_open
 
-# If we are going to create multiple pipelines to stop and
+# TODO : If we are going to create multiple pipelines to stop and
 # different points (for validation or else) then are we going to
 # create more files like this one ot the output_prepare one that
 # will be using as output tags for a pipeline but also input tags

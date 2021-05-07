@@ -18,26 +18,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Inputs module:
-contains some cars global shared general purpose inputs functions
+contains some CARS global shared general purpose inputs functions
 """
 
-from typing import Tuple
+# Standard imports
 import logging
 import os
 import struct
 import warnings
+from typing import Tuple
 
-from json_checker import Checker
-import xarray as xr
+# Third party imports
+import fiona
+import numpy as np
 import otbApplication
 import rasterio as rio
-import numpy as np
-import fiona
+import xarray as xr
+from json_checker import Checker
 from shapely.geometry import shape
-
 
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)

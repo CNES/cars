@@ -19,17 +19,20 @@
 # limitations under the License.
 #
 """
-cars mask classes module
+CARS mask classes module
 """
 
-from typing import Dict, List
-import logging
+# Standard imports
 import json
+import logging
+from typing import Dict, List
+
+# Third party imports
+import numpy as np
 from json_checker import OptionalKey
 
-import numpy as np
-
-# TODO module conf depends on module core
+# CARS imports
+# TODO refacto module conf depends on module core
 from cars.core import inputs
 
 # Specific values

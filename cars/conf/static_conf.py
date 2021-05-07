@@ -18,16 +18,21 @@
 # limitations under the License.
 #
 """
-Main cars Configuration module:
+Main CARS Configuration module:
 contains all the functions associated with cars configuration.
 """
-import os
-import logging
-from collections import namedtuple
+
+# Standard imports
 import json
+import logging
+import os
+from collections import namedtuple
+
+# Third party imports
 from json_checker import Or
 from numpy import dtype
 
+# CARS imports
 from cars.core import inputs
 from cars.lib.steps import points_cloud
 

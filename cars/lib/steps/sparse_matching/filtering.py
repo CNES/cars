@@ -18,14 +18,14 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Preprocessing module:
-contains functions used during cars prepare pipeline step of cars
+Filtering module:
+contains filtering functions used during CARS prepare pipeline step
 """
 
 # Standard imports
 from __future__ import absolute_import
+
 import logging
 
 # Third party imports

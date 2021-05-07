@@ -18,21 +18,23 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-This module is reponsible for the transition between triangulation and
+This module is responsible for the transition between triangulation and
 rasterization steps
 """
 
+# Standard imports
+import logging
 from collections import namedtuple
 from typing import List, Tuple, Union
-import logging
 
-import xarray as xr
+# Third party imports
 import numpy as np
 import pandas
-from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
+import xarray as xr
+from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
+# CARS imports
 from cars.core import constants as cst
 from cars.core import projection
 

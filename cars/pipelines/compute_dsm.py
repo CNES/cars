@@ -18,49 +18,56 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Main 3D Compute DSM pipeline module:
+Main 3D CARS Compute DSM pipeline module:
 contains all the functions associated with its cars subcommand.
 """
 
 # Standard imports
 from __future__ import print_function
 
-from typing import List, Tuple, Dict
-import os
-import logging
 import errno
+import logging
 import math
-from glob import glob
 import multiprocessing as mp
+import os
 from collections import Counter
+from glob import glob
+from typing import Dict, List, Tuple
 
 # Third party imports
+import dask
 import numpy as np
-from scipy.spatial import Delaunay #pylint: disable=no-name-in-module
-from scipy.spatial import tsearch #pylint: disable=no-name-in-module
-from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
-from tqdm import tqdm
+import xarray as xr
 from json_checker import CheckerError
 from osgeo import gdal, osr
+from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
+from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
+from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 from shapely.geometry import Polygon
-import xarray as xr
-import dask
+from tqdm import tqdm
 
-# Cars imports
+# CARS imports
 from cars import __version__
-from cars.lib.steps import rasterization
+from cars.cluster.dask import (
+    ComputeDSMMemoryLogger,
+    start_cluster,
+    start_local_cluster,
+    stop_cluster,
+)
 from cars.conf import input_parameters as in_params
-from cars.conf import static_conf, output_prepare, output_compute_dsm
-from cars.core import tiling, utils, projection, inputs, outputs
-from cars.lib.io import output
+from cars.conf import (
+    mask_classes,
+    output_compute_dsm,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
-from cars.conf import mask_classes
-from cars.cluster.dask import start_local_cluster, start_cluster,\
-                         stop_cluster, ComputeDSMMemoryLogger
-from cars.lib.steps.matching import dense_matching
+from cars.core import inputs, outputs, projection, tiling, utils
+from cars.lib.io import output
+from cars.lib.steps import rasterization
 from cars.lib.steps.epi_rectif import grids
+from cars.lib.steps.matching import dense_matching
 from cars.pipelines import wrappers
 
 

@@ -24,24 +24,33 @@ Test module for cars/stereo.py
 import json
 import math
 from copy import deepcopy
-import pytest
+
 import numpy as np
-import xarray as xr
-
 import pandora
-from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
-                                 get_config_image, check_image_section,\
-                                 concat_conf
+import pytest
+import xarray as xr
+from pandora.JSON_checker import (
+    check_image_section,
+    check_pipeline_section,
+    concat_conf,
+    get_config_image,
+    get_config_pipeline,
+)
 
+from cars.core import constants as cst
+from cars.core import tiling
 from cars.core.inputs import read_geoid_file
 from cars.lib.steps import triangulation
-from cars.core import constants as cst
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
-from cars.core import tiling
 from cars.pipelines import wrappers
-from .utils import absolute_data_path, assert_same_datasets
-from .utils import otb_geoid_file_set, otb_geoid_file_unset
+
+from .utils import (
+    absolute_data_path,
+    assert_same_datasets,
+    otb_geoid_file_set,
+    otb_geoid_file_unset,
+)
 
 # Local testing stereo function pytest fixtures
 # Ease following stereo tests readibility

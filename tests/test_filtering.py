@@ -22,16 +22,20 @@
 Test module for cars/filtering.py
 """
 
+# Standard imports
 from __future__ import absolute_import
-import pytest
-import pandas
 
+# Third party imports
 import numpy as np
+import pandas
+import pytest
 import xarray as xr
 
+# CARS imports
 from cars.lib.steps import points_cloud
-from .utils import assert_same_datasets
 
+# CARS Tests imports
+from .utils import assert_same_datasets
 
 
 @pytest.mark.unit_tests

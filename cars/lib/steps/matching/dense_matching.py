@@ -17,28 +17,28 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-
 """
 This module is responsible for the dense matching algorithms:
 - thus it creates a disparity map from a pair of images
 """
 
-
-from typing import Dict, List
+# Standard imports
 import logging
 import os
-from scipy import interpolate
+from typing import Dict, List
 
-from pkg_resources import iter_entry_points
-
+# Third party imports
 import numpy as np
-import xarray as xr
 import pandora
 import pandora.marge
+import xarray as xr
 from pandora import constants as pcst
+from pkg_resources import iter_entry_points
+from scipy import interpolate
 
-from cars.core import constants as cst
+# CARS imports
 from cars.conf import input_parameters, mask_classes
+from cars.core import constants as cst
 from cars.core import datasets
 
 

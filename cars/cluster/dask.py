@@ -18,26 +18,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Cluster module:
+Cluster dask module:
 provides functions to start and stop a local or PBS cluster.
 """
 
 # Standard imports
 import logging
-import os
 import math
+import os
 import time
-import psutil
 
 # Third-party imports
 import numpy as np
-from dask_jobqueue import PBSCluster
-from dask.distributed import Client, LocalCluster
-from dask import sizeof
+import psutil
 import xarray as xr
-
+from dask import sizeof
+from dask.distributed import Client, LocalCluster
+from dask_jobqueue import PBSCluster
 from distributed.diagnostics.plugin import WorkerPlugin
 
 

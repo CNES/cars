@@ -22,23 +22,28 @@
 CARS pipelines/wrapper module:
 """
 
+# Standard imports
 import logging
-from typing import List, Dict, Tuple
 import math
+from typing import Dict, List, Tuple
 
+# Third party imports
 import numpy as np
 import xarray as xr
 
-from cars.conf import mask_classes,\
-                      static_conf,\
-                      input_parameters,\
-                      output_prepare
-from cars.lib.steps.sparse_matching import sift
+# CARS imports
+from cars.conf import (
+    input_parameters,
+    mask_classes,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
+from cars.core import projection, tiling
+from cars.lib.steps import triangulation
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching, regularisation
-from cars.lib.steps import triangulation
-from cars.core import projection, tiling
+from cars.lib.steps.sparse_matching import sift
 
 
 def matching_wrapper(

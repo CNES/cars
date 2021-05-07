@@ -24,26 +24,29 @@ Prepare and Compute DSM run user tests through pipelines run() functions
 TODO: Cars_cli is not tested
 """
 
+# Standard imports
 from __future__ import absolute_import
 
-import tempfile
-import os
 import json
 import math
+import os
+import tempfile
 
-import pytest
-
+# Third party imports
 import pyproj
-
+import pytest
 import rasterio
 from shapely.geometry import Polygon
 from shapely.ops import transform
 
+# CARS imports
 from cars.conf.input_parameters import read_input_parameters
 from cars.conf.output_prepare import read_preprocessing_content_file
-from cars.pipelines import prepare, compute_dsm
 from cars.lib.externals.matching.correlator_configuration import corr_conf
-from .utils import temporary_dir, absolute_data_path, assert_same_images
+from cars.pipelines import compute_dsm, prepare
+
+# CARS Tests imports
+from .utils import absolute_data_path, assert_same_images, temporary_dir
 
 
 @pytest.mark.end2end_tests

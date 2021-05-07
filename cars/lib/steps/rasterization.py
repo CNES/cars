@@ -18,32 +18,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 This module is reponsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 """
 
-
 # Standard imports
-from typing import List, Tuple, Union
-import time
 import logging
-import warnings
 import math
+import time
+import warnings
+from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
 import pandas
-from scipy.spatial import cKDTree #pylint: disable=no-name-in-module
 import xarray as xr
-from numba import njit, float64, int64, boolean
+from numba import boolean, float64, int64, njit
 from numba.core.errors import NumbaPerformanceWarning
 from osgeo import osr
+from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
-# cars import
-from cars.core import projection
+# CARS imports
 from cars.core import constants as cst
+from cars.core import projection
 from cars.lib.steps import points_cloud
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)

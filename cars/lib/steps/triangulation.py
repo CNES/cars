@@ -18,26 +18,26 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Preprocessing module:
 contains functions used for triangulation
 """
 
+# Standard imports
 import logging
 import pickle
 from typing import Dict
 
+# Third party imports
 import numpy as np
-import xarray as xr
 import otbApplication
+import xarray as xr
 
+# CARS imports
+from cars import otb_pipelines
+from cars.conf import input_parameters, output_compute_dsm, output_prepare
 from cars.core import constants as cst
 from cars.core import utils
-from cars import otb_pipelines
-from cars.conf import input_parameters, \
-                      output_compute_dsm, \
-                      output_prepare
 from cars.preprocessing import project_coordinates_on_line
 
 

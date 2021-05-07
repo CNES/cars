@@ -18,7 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Grids module:
 contains functions used for epipolar grid creation and correction
@@ -29,6 +28,7 @@ contains functions used for epipolar grid creation and correction
 
 # Standard imports
 from __future__ import absolute_import
+
 import logging
 import math
 
@@ -36,9 +36,11 @@ import math
 import numpy as np
 from scipy import interpolate
 
+# CARS imports
 from cars.conf import output_prepare
 from cars.core import constants as cst
 from cars.core import projection
+
 # TODO depends on another step (and a later one) : make it independent
 from cars.lib.steps.triangulation import triangulate_matches
 

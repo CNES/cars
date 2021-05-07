@@ -18,7 +18,6 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Output module:
 contains all compute_dsm.py main pipeline reading/writing functions
@@ -27,19 +26,20 @@ contains all compute_dsm.py main pipeline reading/writing functions
 #TODO: Refacto to write_dsm steps?
 
 # Standard imports
-from typing import Tuple
 import logging
+import os
 from contextlib import contextmanager
+from typing import Tuple
 
 # Third party imports
-import os
 import numpy as np
-from affine import Affine
-from tqdm import tqdm
 import rasterio as rio
 import xarray as xr
+from affine import Affine
 from dask.distributed import as_completed
+from tqdm import tqdm
 
+# CARS imports
 from cars.core import constants as cst
 
 

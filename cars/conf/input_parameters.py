@@ -18,21 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 This input module refers to parameters and configuration inputs
 """
-
+# Standard imports
 import json
 import os
 from typing import Dict, Union
 
-from json_checker import OptionalKey, And
+# Third party imports
+from json_checker import And, OptionalKey
 
+# CARS imports
 from cars.conf import mask_classes
-from cars.core.utils import make_relative_path_absolute
 from cars.core.inputs import rasterio_can_open
-
+from cars.core.utils import make_relative_path_absolute
 
 # tag for static conf file
 STATIC_PARAMS_TAG = 'static_parameters'
