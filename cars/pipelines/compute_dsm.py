@@ -160,7 +160,7 @@ def write_dsm_by_tile(
         """
         Transform 3D cloud points or color path to xarray
         :param cloud_path: a 3D points or color str path dict
-        :return: a xarray dict as input path dict
+        :return: a xarray dict (as input cloud_path dict)
         """
         xr_dict = {
             name: xr.open_dataset(path) for name, path in cloud_path.items()
@@ -171,14 +171,6 @@ def write_dsm_by_tile(
         (xr_open_dict(paths[0]), xr_open_dict(paths[1]))
         for paths in clouds_and_colors_as_str_list
     ]
-
-    # xr_open_dict = lambda x: dict(
-    #     [(name, xr.open_dataset(value)) for name, value in x.items()]
-    # )
-    # clouds_and_colors_as_xr_list = [
-    #     (xr_open_dict(k[0]), xr_open_dict(k[1]))
-    #     for k in clouds_and_colors_as_str_list
-    # ]
 
     # Extract some kwargs keyword arguments from rasterization_wrapper
     xstart = kwargs.get("xstart")
