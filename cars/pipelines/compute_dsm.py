@@ -108,8 +108,8 @@ def write_3d_points(
     utils.safe_makedirs(color_dir)
 
     # Write to netcdf the 3D points and color,
-    ## for both cst.STEREO_REF and cst.STEREO_SEC modes
-    ## output paths end with '_ref.nc' or '_sec.nc'
+    # # for both cst.STEREO_REF and cst.STEREO_SEC modes
+    # # output paths end with '_ref.nc' or '_sec.nc'
     out_points = {}
     out_colors = {}
     for key in points:
@@ -156,13 +156,29 @@ def write_dsm_by_tile(
     :return the region hash string
     """
     # replace paths by opened Xarray datasets
-    xr_open_dict = lambda x: dict(
-        [(name, xr.open_dataset(value)) for name, value in x.items()]
-    )
+    def xr_open_dict(cloud_path: Dict) -> Dict:
+        """
+        Transform 3D cloud points or color path to xarray
+        :param cloud_path: a 3D points or color str path dict
+        :return: a xarray dict as input path dict
+        """
+        xr_dict = {
+            name: xr.open_dataset(path) for name, path in cloud_path.items()
+        }
+        return xr_dict
+
     clouds_and_colors_as_xr_list = [
-        (xr_open_dict(k[0]), xr_open_dict(k[1]))
-        for k in clouds_and_colors_as_str_list
+        (xr_open_dict(paths[0]), xr_open_dict(paths[1]))
+        for paths in clouds_and_colors_as_str_list
     ]
+
+    # xr_open_dict = lambda x: dict(
+    #     [(name, xr.open_dataset(value)) for name, value in x.items()]
+    # )
+    # clouds_and_colors_as_xr_list = [
+    #     (xr_open_dict(k[0]), xr_open_dict(k[1]))
+    #     for k in clouds_and_colors_as_str_list
+    # ]
 
     # Extract some kwargs keyword arguments from rasterization_wrapper
     xstart = kwargs.get("xstart")
@@ -248,7 +264,7 @@ def rasterization_wrapper(clouds_and_colors, resolution, epsg, **kwargs):
     )
 
 
-def run(
+def run(  # noqa: C901
     in_jsons: List[output_prepare.PreprocessingContentType],
     out_dir: str,
     resolution: float = 0.5,
@@ -411,7 +427,7 @@ def run(
             in_params.MASK2_CLASSES_TAG, None
         )
 
-        classes_usage = dict()
+        classes_usage = {}
         if mask1_classes is not None:
             mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
             classes_usage[
@@ -793,7 +809,7 @@ def run(
     # Compute optimal terrain tile size
     optimal_terrain_tile_widths = []
 
-    for config_id, conf in configurations_data.items():
+    for _, conf in configurations_data.items():
         # Compute terrain area covered by a single epipolar tile
         terrain_area_covered_by_epipolar_tile = conf["terrain_area"] / len(
             epipolar_regions
@@ -1140,7 +1156,7 @@ def run(
         required_point_clouds = []
 
         # For each stereo configuration
-        for config_id, conf in configurations_data.items():
+        for _, conf in configurations_data.items():
 
             epipolar_points_min = conf["epipolar_points_min"]
             epipolar_points_max = conf["epipolar_points_max"]
@@ -1297,22 +1313,18 @@ def run(
                 rank.append(i * i + j * j)
 
             else:
-                # Launch asynchrone job for write_dsm_by_tile()
-                delayed_dsm_tiles.append(
-                    pool.apply_async(
-                        write_dsm_by_tile,
-                        args=(
-                            required_point_clouds,
-                            resolution,
-                            epsg,
-                            tmp_dir,
-                            nb_bands,
-                            static_conf.get_color_image_encoding(),
-                            output_stats,
-                            write_msk,
-                        ),
-                        kwds={
-                            # fmt: off
+                # prepare local args and kwds for write_dsm_by_tile()
+                local_args = (
+                    required_point_clouds,
+                    resolution,
+                    epsg,
+                    tmp_dir,
+                    nb_bands,
+                    static_conf.get_color_image_encoding(),
+                    output_stats,
+                    write_msk,
+                )
+                local_kwds = {
                     "xstart": xstart,
                     "ystart": ystart,
                     "xsize": xsize,
@@ -1325,8 +1337,13 @@ def run(
                     "statistical_filter_params": statistical_filter_params,
                     "grid_points_division_factor": grid_points_division_factor,
                     "msk_no_data": msk_no_data,
-                            # fmt: on
-                        },
+                }
+                # Launch asynchronous job for write_dsm_by_tile()
+                delayed_dsm_tiles.append(
+                    pool.apply_async(
+                        write_dsm_by_tile,
+                        args=local_args,
+                        kwds=local_kwds,
                         callback=update,
                     )
                 )

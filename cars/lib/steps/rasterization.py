@@ -341,7 +341,7 @@ def flatten_index_list(nd_list):
         and the list of neighbors count for each grid point.
     :rtype: a tuple of 2 1d int64 numpy.ndarray.
     """
-    lengths = np.array([len(l) for l in nd_list])  # number of neighbors
+    lengths = np.array([len(list) for list in nd_list])  # number of neighbors
     list_1d = np.concatenate(nd_list).astype(int)
 
     return list_1d, lengths

@@ -53,5 +53,5 @@ def test_dask_cluster():
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         clus, client = dask_cluster.start_cluster(2, "00:01:00", directory)
-        __ = dask_cluster.get_dashboard_link(clus)
+        _ = dask_cluster.get_dashboard_link(clus)
         dask_cluster.stop_cluster(clus, client)

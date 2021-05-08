@@ -25,6 +25,7 @@ Test module for cars/matching_regularisation.py
 # Standard imports
 from __future__ import absolute_import
 
+import os
 from copy import deepcopy
 
 # Third party imports
@@ -168,22 +169,21 @@ def test_update_disp_to_0_no_tags_in_jsons(
     # disp dictionary
     disp = {cst.STEREO_REF: ref_disp, cst.STEREO_SEC: sec_disp}
 
+    # prepare mask path
+    mask_path_list = [
+        "input",
+        "matching_regularisation_input",
+        "mask_no_set_to_ref_alt_classes.json",
+    ]
+
     # test
     disp_no_tags_in_json = deepcopy(disp)
     regularisation.update_disp_to_0(
         disp_no_tags_in_json,
         ref_ds,
         sec_ds,
-        absolute_data_path(
-            # fmt: off
-    "input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"
-            # fmt: on
-        ),
-        absolute_data_path(
-            # fmt: off
-    "input/matching_regularisation_input/mask_no_set_to_ref_alt_classes.json"
-            # fmt: on
-        ),
+        absolute_data_path(os.path.join(*mask_path_list)),
+        absolute_data_path(os.path.join(*mask_path_list)),
     )
 
     assert_same_datasets(
@@ -205,21 +205,25 @@ def test_update_disp_0(
         cst.STEREO_SEC: deepcopy(sec_disp),
     }
 
+    # prepare masks paths
+    mask1_path_list = [
+        "input",
+        "matching_regularisation_input",
+        "mask1_set_to_ref_alt_classes.json",
+    ]
+    mask2_path_list = [
+        "input",
+        "matching_regularisation_input",
+        "mask2_set_to_ref_alt_classes.json",
+    ]
+
     # test
     regularisation.update_disp_to_0(
         disp,
         ref_ds,
         sec_ds,
-        absolute_data_path(
-            # fmt: off
-    "input/matching_regularisation_input/mask1_set_to_ref_alt_classes.json"
-            # fmt: on
-        ),
-        absolute_data_path(
-            # fmt: off
-    "input/matching_regularisation_input/mask2_set_to_ref_alt_classes.json"
-            # fmt: on
-        ),
+        absolute_data_path(os.path.join(*mask1_path_list)),
+        absolute_data_path(os.path.join(*mask2_path_list)),
     )
 
     # crop mask to ROI

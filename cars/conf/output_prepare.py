@@ -111,10 +111,13 @@ def read_preprocessing_content_file(filename):
             input_parameters.SRTM_DIR_TAG,
         ]:
             if tag in config[input_parameters.INPUT_SECTION_TAG]:
+                # Get config input parameters tag paths
                 value = config[input_parameters.INPUT_SECTION_TAG][tag]
+                # Update relative paths to absolute ones
                 config[input_parameters.INPUT_SECTION_TAG][
                     tag
                 ] = make_relative_path_absolute(value, json_dir)
+
         for tag in [
             LEFT_EPIPOLAR_GRID_TAG,
             RIGHT_EPIPOLAR_GRID_TAG,
@@ -133,17 +136,22 @@ def read_preprocessing_content_file(filename):
             CORRECTED_LOWRES_DSM_TAG,
             CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG,
         ]:
-            # fmt: off
-            if tag in config[PREPROCESSING_SECTION_TAG][
-                    PREPROCESSING_OUTPUT_SECTION_TAG]:
-
+            if (
+                tag
+                in config[PREPROCESSING_SECTION_TAG][
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ]
+            ):
+                # Get config preprocessing section tag paths
                 value = config[PREPROCESSING_SECTION_TAG][
-                        PREPROCESSING_OUTPUT_SECTION_TAG][tag]
-
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag]
+                # Update relative paths to absolute ones
                 config[PREPROCESSING_SECTION_TAG][
-                        PREPROCESSING_OUTPUT_SECTION_TAG][tag] =\
-                            make_relative_path_absolute(value, json_dir)
-            # fmt: on
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag] = make_relative_path_absolute(value, json_dir)
+
+    # Return config with absolute paths updated
     return config
 
 
@@ -272,19 +280,17 @@ PREPROCESSING_PARAMETERS_SCHEMA = {
 PreprocessingParametersType = Dict[str, Union[float, int]]
 
 # Schema of the full content.json for preprocessing output
-# fmt: off
+IN_CONF_SCHEMA = input_parameters.INPUT_CONFIGURATION_SCHEMA  # local variable
 PREPROCESSING_CONTENT_SCHEMA = {
-    input_parameters.INPUT_SECTION_TAG:
-     input_parameters.INPUT_CONFIGURATION_SCHEMA,
-    PREPROCESSING_SECTION_TAG:
-    {
+    input_parameters.INPUT_SECTION_TAG: IN_CONF_SCHEMA,
+    PREPROCESSING_SECTION_TAG: {
         PREPROCESSING_VERSION_TAG: str,
         PREPROCESSING_PARAMETERS_SECTION_TAG: PREPROCESSING_PARAMETERS_SCHEMA,
         input_parameters.STATIC_PARAMS_TAG: static_conf.prepare_params_schema,
-        PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA
-    }
+        PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA,
+    },
 }
-# fmt: on
+
 
 # Type of the full content.json for preprocessing output
 PreprocessingContentType = Dict[

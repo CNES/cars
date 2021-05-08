@@ -90,15 +90,15 @@ def test_rasterio_handles():
     resolution = 0.5
     geotransform = (bounds[0], resolution, 0.0, bounds[3], 0.0, -resolution)
     transform = Affine.from_gdal(*geotransform)
-    rio_params = dict(
-        height=196,
-        width=425,
-        driver="GTiff",
-        dtype=np.float32,
-        transform=transform,
-        crs="EPSG:{}".format(32631),
-        tiled=True,
-    )
+    rio_params = {
+        "height": 196,
+        "width": 425,
+        "driver": "GTiff",
+        "dtype": np.float32,
+        "transform": transform,
+        "crs": "EPSG:{}".format(32631),
+        "tiled": True,
+    }
     dsm_no_data = -32768
     color_no_data = 0
     nb_bands = 1
@@ -146,7 +146,7 @@ def test_write_geotiff_dsm():
         n_in_cell = np.ndarray(shape=(10, 10), dtype=np.uint16)
         msk = np.ndarray(shape=(10, 10), dtype=np.uint16)
 
-        delayed_raster_datasets = list()
+        delayed_raster_datasets = []
         delayed_raster_datasets.append(
             dask.delayed(rasterization.create_raster_dataset)(
                 raster,

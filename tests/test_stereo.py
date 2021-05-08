@@ -169,7 +169,7 @@ def create_corr_conf():
     """
     Create correlator configuration for stereo testing
     """
-    user_cfg = dict()
+    user_cfg = {}
     user_cfg["image"] = {}
     user_cfg["image"]["valid_pixels"] = 0
     user_cfg["image"]["no_data"] = 255

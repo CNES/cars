@@ -72,7 +72,7 @@ def cars_parser() -> argparse.ArgumentParser:
     # Create subcommand parser for prepare and compute_dsm
     subparsers = parser.add_subparsers(dest="command")
 
-    ### Prepare subcommand ###
+    # Prepare subcommand
 
     # Prepare subparser creation
     prepare_parser = subparsers.add_parser(
@@ -82,7 +82,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "as an estimate of the disparity to explore.",
     )
 
-    ## Prepare arguments
+    # Prepare arguments
 
     # Mandatories (in a specific argparse group)
     prepare_parser_mandatory = prepare_parser.add_argument_group(
@@ -163,7 +163,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "--check_inputs", action="store_true", help="Check inputs consistency"
     )
 
-    ### Compute_dsm subcommand ###
+    # Compute_dsm subcommand
 
     # Prepare subparser creation
     compute_dsm_parser = subparsers.add_parser(
@@ -173,7 +173,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "estimation, triangulation and rasterization",
     )
 
-    ## Compute_dsm arguments
+    # Compute_dsm arguments
 
     # Mandatories (in a specific argparse group)
     compute_dsm_parser_mandatory = compute_dsm_parser.add_argument_group(
@@ -411,7 +411,7 @@ def parse_roi_file(
     return roi, stop_now
 
 
-def main_cli(args, parser, check_inputs=False):
+def main_cli(args, parser, check_inputs=False):  # noqa: C901
     """
     Main for command line management
 
@@ -636,6 +636,13 @@ def main_cli(args, parser, check_inputs=False):
         corr_config = corr_conf.configure_correlator(args.corr_config)
 
         if not check_inputs:
+            # Prepare options not tested in test_cars.py
+
+            # Inverse disable_cloud_small_components_filter
+            small_components = not args.disable_cloud_small_components_filter
+            # Inverse disable_cloud_statistical_outliers_filter
+            stat_outliers = not args.disable_cloud_statistical_outliers_filter
+
             compute_dsm.run(
                 in_jsons,
                 args.outdir,
@@ -657,12 +664,8 @@ def main_cli(args, parser, check_inputs=False):
                 use_geoid_alt=args.use_geoid_as_alt_ref,
                 snap_to_img1=args.snap_to_left_image,
                 align=args.align_with_lowres_dem,
-                # fmt: off
-                cloud_small_components_filter=\
-                    not args.disable_cloud_small_components_filter,
-                cloud_statistical_outliers_filter=\
-                    not args.disable_cloud_statistical_outliers_filter,
-                # fmt: on
+                cloud_small_components_filter=small_components,
+                cloud_statistical_outliers_filter=stat_outliers,
                 use_sec_disp=args.use_sec_disp,
             )
 

@@ -88,7 +88,7 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
     :param mask_classes_path: path to the json file
     :return: dictionary of the mask classes to use in CARS
     """
-    classes_usage_dict = dict()
+    classes_usage_dict = {}
 
     with open(mask_classes_path, "r") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)

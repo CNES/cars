@@ -99,7 +99,7 @@ def triangulate(
             output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
         ]
 
-    point_clouds = dict()
+    point_clouds = {}
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
         disp_ref,
         img1,

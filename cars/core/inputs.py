@@ -207,7 +207,7 @@ def otb_can_open(raster_file: str) -> bool:
         read_im_app.ExecuteAndWriteOutput()
         if os.path.exists("./otb_can_open_test.geom"):
             with open("./otb_can_open_test.geom") as geom_file_desc:
-                geom_dict = dict()
+                geom_dict = {}
                 for line in geom_file_desc:
                     key, val = line.split(": ")
                     geom_dict[key] = val

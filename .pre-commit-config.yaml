@@ -15,6 +15,13 @@ repos:
     entry: black cars tests
     types: [python]
 
+  - id: flake8
+    name: flake8
+    stages: [commit]
+    language: system
+    entry: flake8 cars tests
+    types: [python]
+
   - id: pylint
     name: PyLint
     stages: [commit]

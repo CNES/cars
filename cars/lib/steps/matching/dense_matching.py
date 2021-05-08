@@ -104,7 +104,7 @@ def get_masks_from_pandora(
     :param verbose: verbose activation status
     :return: masks dictionary
     """
-    masks = dict()
+    masks = {}
 
     # Retrieve validity mask from pandora
     # Invalid pixels in validity mask are:
@@ -127,63 +127,111 @@ def get_masks_from_pandora(
     masks["mask"] = msk
 
     # With verbose, produce one mask for each invalid flag in
+    # TODO: refactor in function (many duplicated code)
     if verbose:
-        # fmt: off
         # Bit 9: False match bit 9
         msk_false_match = np.full(validity_mask_cropped.shape, False)
-        msk_false_match[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_MISMATCH) == 0)] = True
+        msk_false_match[
+            np.where(
+                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_MISMATCH) == 0
+            )
+        ] = True
         # Bit 8: Occlusion
         msk_occlusion = np.full(validity_mask_cropped.shape, False)
-        msk_occlusion[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_OCCLUSION) == 0)] = True
+        msk_occlusion[
+            np.where(
+                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_OCCLUSION) == 0
+            )
+        ] = True
         # Bit 7: Masked in secondary image
         msk_masked_sec = np.full(validity_mask_cropped.shape, False)
-        msk_masked_sec[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC) == 0)] = True
+        msk_masked_sec[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC
+                )
+                == 0
+            )
+        ] = True
         # Bit 6: Masked in reference image
         msk_masked_ref = np.full(validity_mask_cropped.shape, False)
-        msk_masked_ref[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF) == 0)] = True
+        msk_masked_ref[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF
+                )
+                == 0
+            )
+        ] = True
         # Bit 5: Filled false match
         msk_filled_false_match = np.full(validity_mask_cropped.shape, False)
-        msk_filled_false_match[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_FILLED_MISMATCH) == 0)] = True
+        msk_filled_false_match[
+            np.where(
+                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_FILLED_MISMATCH)
+                == 0
+            )
+        ] = True
         # Bit 4: Filled occlusion
         msk_filled_occlusion = np.full(validity_mask_cropped.shape, False)
-        msk_filled_occlusion[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION) == 0)] = True
+        msk_filled_occlusion[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
+                )
+                == 0
+            )
+        ] = True
         # Bit 3: Computation stopped during pixelic step, under pixelic
         # interpolation never ended
         msk_stopped_interp = np.full(validity_mask_cropped.shape, False)
-        msk_stopped_interp[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION) == 0)] = True
+        msk_stopped_interp[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
+                )
+                == 0
+            )
+        ] = True
         # Bit 2: Disparity range to explore is incomplete (borders reached in
         # secondary image)
         msk_incomplete_disp = np.full(validity_mask_cropped.shape, False)
-        msk_incomplete_disp[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE) == 0)] \
-                 = True
+        msk_incomplete_disp[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE
+                )
+                == 0
+            )
+        ] = True
         # Bit 1: Invalid in secondary image
+        # fmt: off
         msk_invalid_sec = np.full(validity_mask_cropped.shape, False)
-        msk_invalid_sec[np.where(
-            (validity_mask_cropped & \
-        pcst.PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING) == 0)] \
-            = True
+        msk_invalid_sec[
+            np.where(
+                (
+    validity_mask_cropped  # noqa: E122
+    & pcst.PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING  # noqa: E122
+                )
+                == 0
+            )
+        ] = True
+        # fmt: on
         # Bit 0: Invalid in reference image
         msk_invalid_ref = np.full(validity_mask_cropped.shape, False)
-        msk_invalid_ref[np.where(
-            (validity_mask_cropped & \
-             pcst.PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER) == 0)] = True
-        # fmt: on
+        msk_invalid_ref[
+            np.where(
+                (
+                    validity_mask_cropped
+                    & pcst.PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER
+                )
+                == 0
+            )
+        ] = True
 
         masks["masked_ref"] = msk_masked_ref
         masks["masked_sec"] = msk_masked_sec
@@ -522,7 +570,7 @@ def compute_disparity(
     if mask2_use_classes:
         right_dataset[cst.EPI_MSK].values = right_msk
 
-    disp = dict()
+    disp = {}
     disp[cst.STEREO_REF] = create_disp_dataset(
         ref, left_dataset, verbose=verbose
     )

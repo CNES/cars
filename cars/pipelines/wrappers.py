@@ -269,7 +269,7 @@ def images_pair_to_3d_points(
         disp, left, right, mask1_classes, mask2_classes
     )
 
-    colors = dict()
+    colors = {}
     colors[cst.STEREO_REF] = color
     if cst.STEREO_SEC in disp:
         # compute right color image from right-left disparity map

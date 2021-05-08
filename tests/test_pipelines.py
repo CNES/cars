@@ -88,7 +88,7 @@ def test_build_stereorectification_grid_pipeline():
     )
     np.testing.assert_allclose(right_grid_np, right_grid_np_reference)
 
-    ## unset otb geoid file
+    # unset otb geoid file
     otb_geoid_file_unset()
 
 

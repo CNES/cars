@@ -125,7 +125,7 @@ def write_dask_config(dask_config: dict, output_dir: str, file_name: str):
     # warning
     logging.info(
         "Dask will merge several config files"
-        "located at default locations such as"
+        " located at default locations such as"
         " ~/.config/dask/ .\n Dask config in "
         " $DASK_DIR will be used with the highest priority."
     )

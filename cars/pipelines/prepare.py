@@ -54,7 +54,7 @@ from cars.lib.steps.sparse_matching import filtering
 from cars.pipelines.wrappers import matching_wrapper
 
 
-def run(
+def run(  # noqa: C901
     in_json: in_params.InputConfigurationType,
     out_dir: str,
     epi_step: int = 30,
@@ -131,19 +131,24 @@ def run(
     static_params = static_conf.get_cfg()
 
     # Initialize output json dict
+    # (use local variables to keep indentation and line not too long)
+    epi_step_tag = output_prepare.EPI_STEP_TAG
+    disp_margin_tag = output_prepare.DISPARITY_MARGIN_TAG
+    epi_error_up_bound_tag = output_prepare.EPIPOLAR_ERROR_UPPER_BOUND_TAG
+    epi_error_max_bias_tag = output_prepare.EPIPOLAR_ERROR_MAXIMUM_BIAS_TAG
+    elev_delta_low_bound_tag = output_prepare.ELEVATION_DELTA_LOWER_BOUND_TAG
+    elev_delta_up_bound_tag = output_prepare.ELEVATION_DELTA_UPPER_BOUND_TAG
     out_json = {
         in_params.INPUT_SECTION_TAG: config,
         output_prepare.PREPROCESSING_SECTION_TAG: {
             output_prepare.PREPROCESSING_VERSION_TAG: __version__,
             output_prepare.PREPROCESSING_PARAMETERS_SECTION_TAG: {
-                # fmt: off
-    output_prepare.EPI_STEP_TAG: epi_step,
-    output_prepare.DISPARITY_MARGIN_TAG: disparity_margin,
-    output_prepare.EPIPOLAR_ERROR_UPPER_BOUND_TAG: epipolar_error_upper_bound,
-    output_prepare.EPIPOLAR_ERROR_MAXIMUM_BIAS_TAG: epipolar_error_maximum_bias,
-    output_prepare.ELEVATION_DELTA_LOWER_BOUND_TAG: elevation_delta_lower_bound,
-    output_prepare.ELEVATION_DELTA_UPPER_BOUND_TAG: elevation_delta_upper_bound,
-                # fmt: on
+                epi_step_tag: epi_step,
+                disp_margin_tag: disparity_margin,
+                epi_error_up_bound_tag: epipolar_error_upper_bound,
+                epi_error_max_bias_tag: epipolar_error_maximum_bias,
+                elev_delta_low_bound_tag: elevation_delta_lower_bound,
+                elev_delta_up_bound_tag: elevation_delta_upper_bound,
             },
             in_params.STATIC_PARAMS_TAG: static_params[static_conf.prepare_tag],
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
@@ -167,7 +172,7 @@ def run(
     default_alt = config.get(in_params.DEFAULT_ALT_TAG, 0)
 
     # retrieve masks classes usages
-    classes_usage = dict()
+    classes_usage = {}
     if mask1_classes is not None:
         mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
         classes_usage[
@@ -857,7 +862,13 @@ than --epipolar_error_upper_bound = {} pix".format(
         vec2 = preprocessing.get_time_ground_direction(img2, dem=srtm_dir)
         time_direction_vector = (vec1 + vec2) / 2
 
-        display_angle = lambda x: 180 * math.atan2(x[1], x[0]) / math.pi
+        def display_angle(vec):
+            """
+            Display angle in degree from a vector x
+            :param vec: vector to display
+            :rtype: angle in degree
+            """
+            return 180 * math.atan2(vec[1], vec[0]) / math.pi
 
         logging.info(
             "Time direction average azimuth: "

@@ -39,7 +39,7 @@ from cars.core import constants as cst
 from cars.core import projection
 
 
-def create_combined_cloud(
+def create_combined_cloud(  # noqa: C901
     cloud_list: List[xr.Dataset],
     dsm_epsg: int,
     color_list: List[xr.Dataset] = None,
@@ -347,7 +347,7 @@ def create_combined_cloud(
     return pd_cloud, epsg
 
 
-###### Parameters structures ######
+# ##### Parameters structures ######
 
 # Cloud small components filtering parameters :
 # ---------------------------------------------
@@ -408,7 +408,7 @@ StatisticalFilterParams = namedtuple(
 )
 
 
-###### Small components filtering ######
+# ##### Small components filtering ######
 
 
 def small_components_filtering(
@@ -550,7 +550,7 @@ def detect_small_components(
     return cluster_to_remove
 
 
-###### statistical filtering ######
+# ##### statistical filtering ######
 
 
 def statistical_outliers_filtering(
@@ -628,7 +628,7 @@ def detect_statistical_outliers(
     return detected_points
 
 
-###### common filtering tools ######
+# ##### common filtering tools ######
 
 
 def filter_cloud(

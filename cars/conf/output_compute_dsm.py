@@ -60,24 +60,28 @@ def write_stereo_content_file(config, filename, indent=2):
     """
     with open(filename, "w") as fstream:
         # Make absolute path relative
-        # fmt: off
         for tag in [
             DSM_TAG,
             COLOR_TAG,
             DSM_MEAN_TAG,
             DSM_STD_TAG,
             DSM_N_PTS_TAG,
-            DSM_POINTS_IN_CELL_TAG]:
-            if tag in config[COMPUTE_DSM_SECTION_TAG][
-                COMPUTE_DSM_OUTPUT_SECTION_TAG]:
+            DSM_POINTS_IN_CELL_TAG,
+        ]:
+            if (
+                tag
+                in config[COMPUTE_DSM_SECTION_TAG][
+                    COMPUTE_DSM_OUTPUT_SECTION_TAG
+                ]
+            ):
 
                 value = config[COMPUTE_DSM_SECTION_TAG][
-                    COMPUTE_DSM_OUTPUT_SECTION_TAG][tag]
+                    COMPUTE_DSM_OUTPUT_SECTION_TAG
+                ][tag]
 
-                config[COMPUTE_DSM_SECTION_TAG][
-                    COMPUTE_DSM_OUTPUT_SECTION_TAG][tag] =\
-                    os.path.basename(value)
-        # fmt: on
+                config[COMPUTE_DSM_SECTION_TAG][COMPUTE_DSM_OUTPUT_SECTION_TAG][
+                    tag
+                ] = os.path.basename(value)
         json.dump(config, fstream, indent=indent)
 
 

@@ -49,7 +49,7 @@ from cars.lib.steps import points_cloud
 # pylint: disable=invalid-name
 cfg = None
 
-#### Prepare ####
+# ### Prepare ####
 
 # sift tags and schema
 sift_tag = "sift"
@@ -103,7 +103,7 @@ prepare_params_schema = {
 }
 
 
-#### Compute DSM ####
+# ### Compute DSM ####
 
 # tiling configuration tags and schema
 tiling_conf_tag = "tiling_configuration"
@@ -168,7 +168,7 @@ compute_dsm_params_schema = {
 }
 
 
-#### final static conf file ####
+# ### final static conf file ####
 prepare_tag = "prepare"
 compute_dsm_tag = "compute_dsm"
 static_conf_schema = {
@@ -177,7 +177,7 @@ static_conf_schema = {
 }
 
 
-#### namedTuple for parameters ####
+# ### namedTuple for parameters ####
 SiftParams = namedtuple("SiftParams", sift_parameters_schema.keys())
 LowResDSMParams = namedtuple(
     "LowResDSMParams", low_res_dsm_parameters_schema.keys()
@@ -187,7 +187,7 @@ RasterizationParams = namedtuple(
 )
 TilingParams = namedtuple("TilingParams", tiling_conf_schema.keys())
 
-#### Global environment settings as in setup.cfg ####
+# ### Global environment settings as in setup.cfg ####
 CARS_GEOID_PATH = "../geoid/egm96.grd"  # Path in cars package (pkg)
 CARS_STATIC_CONFIGURATION = "../static_configuration.json"  # Path in cars pkg
 
@@ -207,7 +207,7 @@ def set_env():
     # Get root package directory
     package_path = os.path.dirname(__file__)
 
-    #### CARS configuration
+    # ### CARS configuration
 
     # CARS_STATIC_CONFIGURATION
     if "CARS_STATIC_CONFIGURATION" not in os.environ:
@@ -229,7 +229,7 @@ def set_env():
         logger.critical(log_msg)
         raise Exception(log_msg)
 
-    #### OTB configuration
+    # ### OTB configuration
 
     # OTB_GEOID_FILE
     if "OTB_GEOID_FILE" not in os.environ:
@@ -358,7 +358,7 @@ def get_rasterization_params() -> RasterizationParams:
 
 # fmt: off
 def get_small_components_filter_params() \
-    -> points_cloud.SmallComponentsFilterParams:
+        -> points_cloud.SmallComponentsFilterParams:
     """
     Construct the points_cloud.SmallComponentParams namedtuple
     from the static configuration file
@@ -380,8 +380,9 @@ def get_small_components_filter_params() \
     )
     return small_cpn_filter_params
 
+
 def get_statistical_outliers_filter_params() \
-    -> points_cloud.StatisticalFilterParams:
+        -> points_cloud.StatisticalFilterParams:
     """
     Construct the points_cloud.StatisticalFilterParams namedtuple
     from the static configuration file

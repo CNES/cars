@@ -80,18 +80,21 @@ test-notebook: install-dev ## run notebook tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
 	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO
 
-lint-ci: install-dev ## run lint tools for cars-ci (TODO merge lint with isort, black, ...)
-	@${VENV}/bin/pylint **/*.py --rcfile=.pylintrc --output-format=parseable > pylint-report.txt || cat pylint-report.txt
+lint-ci: install-dev ## run lint tools for cars-ci
+	@${VENV}/bin/isort --check cars tests
+	@${VENV}/bin/black --check cars tests
+	@${VENV}/bin/flake8 cars tests
+	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable > pylint-report.txt || cat pylint-report.txt
 
 lint: install-dev  ## run lint tools (depends install)
-	@${VENV}/bin/isort --check **/*.py
-	@${VENV}/bin/black --check **/*.py
-	@${VENV}/bin/flake8 **/*.py
-	@${VENV}/bin/pylint **/*.py
+	@${VENV}/bin/isort --check cars tests
+	@${VENV}/bin/black --check cars tests
+	@${VENV}/bin/flake8 cars tests
+	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc
 
 format: install-dev  ## run black and isort (depends install)
-	@${VENV}/bin/isort **/*.py
-	@${VENV}/bin/black **/*.py
+	@${VENV}/bin/isort cars tests
+	@${VENV}/bin/black cars tests
 
 docs:  ## build sphinx documentation (requires doc venv TODO)
 	@cd docs/ && make clean && make html && cd ..

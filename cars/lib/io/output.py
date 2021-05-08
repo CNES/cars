@@ -150,44 +150,44 @@ def write_geotiff_dsm(
     transform = Affine.from_gdal(*geotransform)
 
     # common parameters for rasterio output
-    dsm_rio_params = dict(
-        height=y_size,
-        width=x_size,
-        driver="GTiff",
-        dtype=np.float32,
-        transform=transform,
-        crs="EPSG:{}".format(epsg),
-        tiled=True,
-    )
-    clr_rio_params = dict(
-        height=y_size,
-        width=x_size,
-        driver="GTiff",
-        dtype=color_dtype,
-        transform=transform,
-        crs="EPSG:{}".format(epsg),
-        tiled=True,
-    )
+    dsm_rio_params = {
+        "height": y_size,
+        "width": x_size,
+        "driver": "GTiff",
+        "dtype": np.float32,
+        "transform": transform,
+        "crs": "EPSG:{}".format(epsg),
+        "tiled": True,
+    }
+    clr_rio_params = {
+        "height": y_size,
+        "width": x_size,
+        "driver": "GTiff",
+        "dtype": color_dtype,
+        "transform": transform,
+        "crs": "EPSG:{}".format(epsg),
+        "tiled": True,
+    }
 
-    dsm_rio_params_uint16 = dict(
-        height=y_size,
-        width=x_size,
-        driver="GTiff",
-        dtype=np.uint16,
-        transform=transform,
-        crs="EPSG:{}".format(epsg),
-        tiled=True,
-    )
+    dsm_rio_params_uint16 = {
+        "height": y_size,
+        "width": x_size,
+        "driver": "GTiff",
+        "dtype": np.uint16,
+        "transform": transform,
+        "crs": "EPSG:{}".format(epsg),
+        "tiled": True,
+    }
 
-    msk_rio_params_uint16 = dict(
-        height=y_size,
-        width=x_size,
-        driver="GTiff",
-        dtype=np.uint16,
-        transform=transform,
-        crs="EPSG:{}".format(epsg),
-        tiled=True,
-    )
+    msk_rio_params_uint16 = {
+        "height": y_size,
+        "width": x_size,
+        "driver": "GTiff",
+        "dtype": np.uint16,
+        "transform": transform,
+        "crs": "EPSG:{}".format(epsg),
+        "tiled": True,
+    }
 
     dsm_file = os.path.join(output_dir, prefix + "dsm.tif")
 
