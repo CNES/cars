@@ -23,9 +23,13 @@ Utils testing generic module:
 contains global shared generic functions for tests/*.py
 """
 
+# Standard imports
 import os
-import rasterio as rio
+
+# Third party imports
 import numpy as np
+import rasterio as rio
+
 
 def cars_path():
     """
@@ -33,6 +37,7 @@ def cars_path():
     One level down from tests
     """
     return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
 
 def absolute_data_path(data_path):
     """
@@ -42,19 +47,23 @@ def absolute_data_path(data_path):
     data_folder = os.path.join(os.path.dirname(__file__), "data")
     return os.path.join(data_folder, data_path)
 
+
 def otb_geoid_file_set():
     """
     Set global environment variable OTB_GEOID_FILE
     """
     # Set the geoid file from code source
     # Change with packaging reorganization
-    os.environ['OTB_GEOID_FILE'] = os.path.join(cars_path(),
-                                                    "cars/geoid/egm96.grd")
+    os.environ["OTB_GEOID_FILE"] = os.path.join(
+        cars_path(), "cars/geoid/egm96.grd"
+    )
+
+
 def otb_geoid_file_unset():
     """
     Unset global environment variable OTB_GEOID_FILE
     """
-    del os.environ['OTB_GEOID_FILE']
+    del os.environ["OTB_GEOID_FILE"]
 
 
 def temporary_dir():
@@ -83,31 +92,35 @@ def assert_same_images(actual, expected, rtol=0, atol=0):
             assert rio_actual.crs == rio_expected.crs
             assert rio_actual.nodata == rio_expected.nodata
             np.testing.assert_allclose(
-                rio_actual.read(), rio_expected.read(), rtol=rtol, atol=atol)
+                rio_actual.read(), rio_expected.read(), rtol=rtol, atol=atol
+            )
 
 
 def assert_same_datasets(actual, expected, rtol=0, atol=0):
     """
     Compare two datasets:
     """
-    assert list(actual.attrs.keys()).sort() == list(
-        expected.attrs.keys()).sort()
+    assert (
+        list(actual.attrs.keys()).sort() == list(expected.attrs.keys()).sort()
+    )
     for key in expected.attrs.keys():
         if isinstance(expected.attrs[key], np.ndarray):
-            np.testing.assert_allclose(actual.attrs[key],
-                                       expected.attrs[key])
+            np.testing.assert_allclose(actual.attrs[key], expected.attrs[key])
         else:
             assert actual.attrs[key] == expected.attrs[key]
     assert actual.dims == expected.dims
-    assert list(actual.coords.keys()).sort() == list(
-        expected.coords.keys()).sort()
+    assert (
+        list(actual.coords.keys()).sort() == list(expected.coords.keys()).sort()
+    )
     for key in expected.coords.keys():
-        np.testing.assert_allclose(actual.coords[key].values,
-                                   expected.coords[key].values)
-    assert list(actual.data_vars.keys()).sort() == list(
-        expected.data_vars.keys()).sort()
+        np.testing.assert_allclose(
+            actual.coords[key].values, expected.coords[key].values
+        )
+    assert (
+        list(actual.data_vars.keys()).sort()
+        == list(expected.data_vars.keys()).sort()
+    )
     for key in expected.data_vars.keys():
-        np.testing.assert_allclose(actual[key].values,
-                                   expected[key].values,
-                                   rtol=rtol,
-                                   atol=atol)
+        np.testing.assert_allclose(
+            actual[key].values, expected[key].values, rtol=rtol, atol=atol
+        )

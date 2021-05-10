@@ -18,26 +18,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Cluster module:
+Cluster dask module:
 provides functions to start and stop a local or PBS cluster.
 """
 
 # Standard imports
 import logging
-import os
 import math
+import os
 import time
-import psutil
 
 # Third-party imports
 import numpy as np
-from dask_jobqueue import PBSCluster
-from dask.distributed import Client, LocalCluster
-from dask import sizeof
+import psutil
 import xarray as xr
-
+from dask import sizeof
+from dask.distributed import Client, LocalCluster
+from dask_jobqueue import PBSCluster
 from distributed.diagnostics.plugin import WorkerPlugin
 
 
@@ -46,8 +44,9 @@ def register_xarray():
     """
     Add hook to dask so it correctly estimates memory used by xarray
     """
+
     @sizeof.sizeof.register(xr.DataArray)
-    #pylint: disable=unused-variable
+    # pylint: disable=unused-variable
     def sizeof_xarray_dataarray(xarr):
         """
         Inner function for total size of xarray_dataarray
@@ -57,8 +56,9 @@ def register_xarray():
             total_size += sizeof.sizeof(carray.values)
         total_size += sizeof.sizeof(xarr.attrs)
         return total_size
+
     @sizeof.sizeof.register(xr.Dataset)
-    #pylint: disable=unused-variable
+    # pylint: disable=unused-variable
     def sizeof_xarray_dataset(xdat):
         """
         Inner function for total size of xarray_dataset
@@ -81,6 +81,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         - associated memory
     - A numpy data file with memory metrics and timing
     """
+
     def __init__(self, outdir):
         """
         Constructor
@@ -95,24 +96,23 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         :param worker: The worker to associate the plugin with
         """
         # Pylint Exception : Inherited attributes outside __init__
-        #pylint: disable=attribute-defined-outside-init
+        # pylint: disable=attribute-defined-outside-init
         self.worker = worker
         self.name = worker.name
         # Measure plugin registration time
         self.start_time = time.time()
         # Data will hold the memory traces as numpy array
-        self.data=([[0, 0, 0, 0, 0, 0]])
-
+        self.data = [[0, 0, 0, 0, 0, 0]]
 
     def transition(self, key, start, finish, **kwargs):
         """
         Callback when worker changes internal state
         """
         # TODO Pylint Exception : Inherited attributes outside __init__
-        #pylint: disable=attribute-defined-outside-init
+        # pylint: disable=attribute-defined-outside-init
 
         # Setup logging
-        worker_logger = logging.getLogger('distributed.worker')
+        worker_logger = logging.getLogger("distributed.worker")
 
         # Define cumulants
         total_point_clouds_in_memory = 0
@@ -121,7 +121,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         total_rasters_nbytes = 0
 
         # Measure ellapsed time for the state change
-        elapsed_time = time.time()-self.start_time
+        elapsed_time = time.time() - self.start_time
 
         # Walk the worker known memory
         for task_key in self.worker.tasks.keys():
@@ -140,30 +140,46 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         process_memory = process.memory_info().rss
 
         # Update data records
-        self.data = np.concatenate((self.data,
-                                    np.array([[ elapsed_time,
-                                                total_point_clouds_in_memory,
-                                                total_point_clouds_nbytes,
-                                                total_rasters_in_memory,
-                                                total_rasters_nbytes,
-                                                process_memory]])))
+        self.data = np.concatenate(
+            (
+                self.data,
+                np.array(
+                    [
+                        [
+                            elapsed_time,
+                            total_point_clouds_in_memory,
+                            total_point_clouds_nbytes,
+                            total_rasters_in_memory,
+                            total_rasters_nbytes,
+                            process_memory,
+                        ]
+                    ]
+                ),
+            )
+        )
         # Convert nbytes size for logging
-        total_point_clouds_nbytes = float(total_point_clouds_nbytes)/1000000
-        total_rasters_nbytes = float(total_rasters_nbytes)/1000000
-        process_memory = float(process_memory)/1000000
+        total_point_clouds_nbytes = float(total_point_clouds_nbytes) / 1000000
+        total_rasters_nbytes = float(total_rasters_nbytes) / 1000000
+        process_memory = float(process_memory) / 1000000
 
         # Log memory state
         worker_logger.info(
             "Memory report: point clouds = {} ({} Mb), "
-                            "rasters = {} ({} Mb), "
-                            "python process memory = {} Mb".format(
-                        total_point_clouds_in_memory, total_point_clouds_nbytes,
-                        total_rasters_in_memory, total_rasters_nbytes,
-                        process_memory ))
+            "rasters = {} ({} Mb), "
+            "python process memory = {} Mb".format(
+                total_point_clouds_in_memory,
+                total_point_clouds_nbytes,
+                total_rasters_in_memory,
+                total_rasters_nbytes,
+                process_memory,
+            )
+        )
 
         # Save data records in npy file
         # TODO: Save only every x seconds ?
-        file = os.path.join(self.outdir,'dask_log',"memory_"+self.name+'.npy')
+        file = os.path.join(
+            self.outdir, "dask_log", "memory_" + self.name + ".npy"
+        )
         np.save(file, self.data)
 
 
@@ -230,18 +246,18 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
     """
     # Retrieve multi-threading factor for C/C++ code if available
     omp_num_threads = 1
-    if os.environ.get('OMP_NUM_THREADS'):
-        omp_num_threads = int(os.environ['OMP_NUM_THREADS'])
+    if os.environ.get("OMP_NUM_THREADS"):
+        omp_num_threads = int(os.environ["OMP_NUM_THREADS"])
 
     # Retrieve number of workers per PBS job
     nb_workers_per_job = 1
-    if os.environ.get('CARS_NB_WORKERS_PER_PBS_JOB'):
-        nb_workers_per_job = int(os.environ['CARS_NB_WORKERS_PER_PBS_JOB'])
+    if os.environ.get("CARS_NB_WORKERS_PER_PBS_JOB"):
+        nb_workers_per_job = int(os.environ["CARS_NB_WORKERS_PER_PBS_JOB"])
 
     # Retrieve PBS queue
     pbs_queue = None
-    if os.environ.get('CARS_PBS_QUEUE'):
-        pbs_queue = os.environ['CARS_PBS_QUEUE']
+    if os.environ.get("CARS_PBS_QUEUE"):
+        pbs_queue = os.environ["CARS_PBS_QUEUE"]
 
     # Total number of cpus is multi-threading factor times size of batch
     # (number of workers per PBS job)
@@ -256,47 +272,51 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
     logging.info(
         "Starting Dask PBS cluster with {} workers "
         "({} workers with {} cores each per PSB job)".format(
-        nb_workers,
-        nb_workers_per_job, omp_num_threads))
+            nb_workers, nb_workers_per_job, omp_num_threads
+        )
+    )
 
     logging.info(
         "Submitting {} PBS jobs "
         "with configuration cpu={}, mem={}, walltime={}".format(
-        nb_jobs,
-        nb_cpus, memory, walltime))
+            nb_jobs, nb_cpus, memory, walltime
+        )
+    )
 
     names = [
-        'PATH',
-        'PYTHONPATH',
-        'CARS_STATIC_CONFIGURATION',
-        'LD_LIBRARY_PATH',
-        'OTB_APPLICATION_PATH',
-        'OTB_GEOID_FILE',
-        'OMP_NUM_THREADS',
-        'NUMBA_NUM_THREADS',
-        'OPJ_NUM_THREADS',
-        'GDAL_NUM_THREADS',
-        'OTB_MAX_RAM_HINT',
-        'VIRTUAL_ENV',
-        'ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS',
-        'GDAL_CACHEMAX',
-        'DASK_CONFIG']
+        "PATH",
+        "PYTHONPATH",
+        "CARS_STATIC_CONFIGURATION",
+        "LD_LIBRARY_PATH",
+        "OTB_APPLICATION_PATH",
+        "OTB_GEOID_FILE",
+        "OMP_NUM_THREADS",
+        "NUMBA_NUM_THREADS",
+        "OPJ_NUM_THREADS",
+        "GDAL_NUM_THREADS",
+        "OTB_MAX_RAM_HINT",
+        "VIRTUAL_ENV",
+        "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS",
+        "GDAL_CACHEMAX",
+        "DASK_CONFIG",
+    ]
     names = [name for name in names if os.environ.get(name)]
     envs = ["export {}={}".format(name, os.environ[name]) for name in names]
     log_directory = os.path.join(os.path.abspath(out_dir), "dask_log")
-    local_directory = '$TMPDIR'
+    local_directory = "$TMPDIR"
     cluster = PBSCluster(
         processes=nb_workers_per_job,
         cores=nb_workers_per_job,
         resource_spec=resource,
         memory="{}MB".format(memory),
         local_directory=local_directory,
-        project='dask-test',
+        project="dask-test",
         walltime=walltime,
-        interface='ib0',
+        interface="ib0",
         queue=pbs_queue,
         env_extra=envs,
-        log_directory=log_directory)
+        log_directory=log_directory,
+    )
     logging.info("Dask cluster started")
     cluster.scale(nb_workers)
     client = Client(cluster, timeout=timeout)

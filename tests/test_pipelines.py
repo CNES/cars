@@ -22,11 +22,19 @@
 Test module for cars/otb_pipelines.py
 """
 
+# Standard imports
 from __future__ import absolute_import
-import pytest
+
+# Third party imports
 import numpy as np
+import pytest
+
+# CARS imports
 from cars import otb_pipelines
+
+# CARS Tests imports
 from .utils import absolute_data_path, otb_geoid_file_set, otb_geoid_file_unset
+
 
 @pytest.mark.unit_tests
 def test_build_stereorectification_grid_pipeline():
@@ -41,10 +49,17 @@ def test_build_stereorectification_grid_pipeline():
     otb_geoid_file_set()
 
     # Launch otb stereorectification grid pipeline
-    left_grid_np, right_grid_np, left_grid_origin, left_grid_spacing, \
-        epipolar_size_x, epipolar_size_y, disp_to_alt_ratio \
-            = otb_pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, dem, epi_step=step)
+    (
+        left_grid_np,
+        right_grid_np,
+        left_grid_origin,
+        left_grid_spacing,
+        epipolar_size_x,
+        epipolar_size_y,
+        disp_to_alt_ratio,
+    ) = otb_pipelines.build_stereorectification_grid_pipeline(
+        img1, img2, dem, epi_step=step
+    )
 
     assert epipolar_size_x == 612
     assert epipolar_size_y == 612
@@ -56,22 +71,24 @@ def test_build_stereorectification_grid_pipeline():
     assert np.isclose(disp_to_alt_ratio, 0.7, 0.01)
 
     # Uncomment to update baseline
-    #np.save(absolute_data_path("ref_output/left_grid.npy"), left_grid_np)
+    # np.save(absolute_data_path("ref_output/left_grid.npy"), left_grid_np)
 
     left_grid_np_reference = np.load(
-        absolute_data_path("ref_output/left_grid.npy"))
+        absolute_data_path("ref_output/left_grid.npy")
+    )
     np.testing.assert_allclose(left_grid_np, left_grid_np_reference)
 
     assert right_grid_np.shape == (15, 15, 2)
 
     # Uncomment to update baseline
-    #np.save(absolute_data_path("ref_output/right_grid.npy"), right_grid_np)
+    # np.save(absolute_data_path("ref_output/right_grid.npy"), right_grid_np)
 
     right_grid_np_reference = np.load(
-        absolute_data_path("ref_output/right_grid.npy"))
+        absolute_data_path("ref_output/right_grid.npy")
+    )
     np.testing.assert_allclose(right_grid_np, right_grid_np_reference)
 
-    ## unset otb geoid file
+    # unset otb geoid file
     otb_geoid_file_unset()
 
 
@@ -103,9 +120,11 @@ def test_build_mask_pipeline():
     mask = absolute_data_path("input/phr_reunion/left_mask.tif")
     roi = [100, 200, 300, 400]
     out_np = otb_pipelines.build_mask_pipeline(
-        img, grid, nodata, mask, 2387, 2387, roi)
+        img, grid, nodata, mask, 2387, 2387, roi
+    )
 
     assert out_np.shape == (200, 200)
+
 
 @pytest.mark.unit_tests
 def test_build_image_resampling_pipeline():
@@ -116,6 +135,7 @@ def test_build_image_resampling_pipeline():
     grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
     roi = [100, 200, 300, 400]
     out_np = otb_pipelines.build_image_resampling_pipeline(
-        img, grid, 2387, 2387, roi)
+        img, grid, 2387, 2387, roi
+    )
 
     assert out_np.shape == (200, 200, 1)

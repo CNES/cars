@@ -18,15 +18,16 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 io.write module:
-contains write grid functions used during cars prepare pipeline step of cars
+contains write grid functions used during CARS prepare pipeline step
 """
 # TODO : to move with epipolar_steps ?
 
 # Standard imports
 from __future__ import absolute_import
+
+# Third party imports
 import rasterio as rio
 from affine import Affine
 
@@ -51,13 +52,20 @@ def write_grid(grid, fname, origin, spacing):
         0.0,
         origin[1] - 0.5 * spacing[1],
         0.0,
-        spacing[1])
+        spacing[1],
+    )
 
     transform = Affine.from_gdal(*geotransform)
 
-    with rio.open(fname, 'w', height=grid.shape[0],
-                  width=grid.shape[1], count=2, driver='GTiff',
-                  dtype=grid.dtype, transform=transform)\
-        as dst:
+    with rio.open(
+        fname,
+        "w",
+        height=grid.shape[0],
+        width=grid.shape[1],
+        count=2,
+        driver="GTiff",
+        dtype=grid.dtype,
+        transform=transform,
+    ) as dst:
         dst.write_band(1, grid[:, :, 0])
         dst.write_band(2, grid[:, :, 1])

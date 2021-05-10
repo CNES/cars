@@ -18,17 +18,21 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Configure correlator module:
 contains functions to retrieve the correlator configuration
 """
 
-
+# Third party imports
 import pandora
-from pandora.JSON_checker import get_config_pipeline, check_pipeline_section,\
-                                 get_config_image, check_image_section,\
-                                 concat_conf
+from pandora.JSON_checker import (
+    check_image_section,
+    check_pipeline_section,
+    concat_conf,
+    get_config_image,
+    get_config_pipeline,
+)
+
 
 def configure_correlator(corr_file_path=None):
     """
@@ -54,9 +58,9 @@ def configure_correlator(corr_file_path=None):
         #  * Census with 5 X 5 window
         #  * SGM
         user_cfg = {}
-        user_cfg['image'] = {}
-        user_cfg['image']['valid_pixels'] = 0
-        user_cfg['image']['no_data'] = 255
+        user_cfg["image"] = {}
+        user_cfg["image"]["valid_pixels"] = 0
+        user_cfg["image"]["no_data"] = 255
         user_cfg["stereo"] = {}
         user_cfg["stereo"]["stereo_method"] = "census"
         user_cfg["stereo"]["window_size"] = 5

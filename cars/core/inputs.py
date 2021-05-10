@@ -18,29 +18,30 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Inputs module:
-contains some cars global shared general purpose inputs functions
+contains some CARS global shared general purpose inputs functions
 """
 
-from typing import Tuple
+# Standard imports
 import logging
 import os
 import struct
 import warnings
+from typing import Tuple
 
-from json_checker import Checker
-import xarray as xr
+# Third party imports
+import fiona
+import numpy as np
 import otbApplication
 import rasterio as rio
-import numpy as np
-import fiona
+import xarray as xr
+from json_checker import Checker
 from shapely.geometry import shape
-
 
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
+
 
 def read_vector(path_to_file):
     """
@@ -56,24 +57,25 @@ def read_vector(path_to_file):
     try:
         polys = []
         with fiona.open(path_to_file) as vec_file:
-            _, epsg = vec_file.crs['init'].split(':')
+            _, epsg = vec_file.crs["init"].split(":")
             for feat in vec_file:
-                polys.append(shape(feat['geometry']))
+                polys.append(shape(feat["geometry"]))
     except BaseException as base_except:
-        raise Exception('Impossible to read {} file'.format(
-                        path_to_file)) from base_except
+        raise Exception(
+            "Impossible to read {} file".format(path_to_file)
+        ) from base_except
 
     if len(polys) == 1:
         return polys[0], int(epsg)
 
     if len(polys) > 1:
-        logging.info('Multi features files are not supported, '
-                     'the first feature of {} will be used'.
-                     format(path_to_file))
+        logging.info(
+            "Multi features files are not supported, "
+            "the first feature of {} will be used".format(path_to_file)
+        )
         return polys[0], int(epsg)
 
-    logging.info(
-        'No feature is present in the {} file'.format(path_to_file))
+    logging.info("No feature is present in the {} file".format(path_to_file))
     return None
 
 
@@ -94,30 +96,38 @@ def read_geoid_file():
     :rtype: xarray.Dataset
     """
     # Set geoid path from OTB_GEOID_FILE
-    geoid_path = os.environ.get('OTB_GEOID_FILE')
+    geoid_path = os.environ.get("OTB_GEOID_FILE")
 
-    with open(geoid_path, mode='rb') as in_grd:  # reading binary data
+    with open(geoid_path, mode="rb") as in_grd:  # reading binary data
         # first header part, 4 float of 4 bytes -> 16 bytes to read
         # Endianness seems to be Big-Endian.
-        lat_min, lat_max, lon_min, lon_max = struct.unpack('>ffff',
-                                                           in_grd.read(16))
-        lat_step, lon_step = struct.unpack('>ff', in_grd.read(8))
+        lat_min, lat_max, lon_min, lon_max = struct.unpack(
+            ">ffff", in_grd.read(16)
+        )
+        lat_step, lon_step = struct.unpack(">ff", in_grd.read(8))
 
         n_lats = int(np.ceil((lat_max - lat_min)) / lat_step) + 1
         n_lons = int(np.ceil((lon_max - lon_min)) / lon_step) + 1
 
         # read height grid.
-        geoid_height = np.fromfile(in_grd, '>f4').reshape(n_lats, n_lons)
+        geoid_height = np.fromfile(in_grd, ">f4").reshape(n_lats, n_lons)
 
         # create output Dataset
-        geoid = xr.Dataset({'hgt': (('lat', 'lon'), geoid_height)},
-                           coords={
-                               'lat': np.linspace(lat_max, lat_min, n_lats),
-                               'lon': np.linspace(lon_min, lon_max, n_lons)},
-                           attrs={'lat_min': lat_min, 'lat_max': lat_max,
-                                  'lon_min': lon_min, 'lon_max': lon_max,
-                                  'd_lat': lat_step, 'd_lon': lon_step}
-                           )
+        geoid = xr.Dataset(
+            {"hgt": (("lat", "lon"), geoid_height)},
+            coords={
+                "lat": np.linspace(lat_max, lat_min, n_lats),
+                "lon": np.linspace(lon_min, lon_max, n_lons),
+            },
+            attrs={
+                "lat_min": lat_min,
+                "lat_max": lat_max,
+                "lon_min": lon_min,
+                "lon_max": lon_max,
+                "d_lat": lat_step,
+                "d_lon": lon_step,
+            },
+        )
 
         return geoid
 
@@ -129,7 +139,7 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
     :param f: Image file
     :returns: The number of bands
     """
-    with rio.open(raster_file, 'r') as descriptor:
+    with rio.open(raster_file, "r") as descriptor:
         return descriptor.count
 
 
@@ -140,7 +150,7 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     :param raster_file: Image file
     :returns: The size (width, height)
     """
-    with rio.open(raster_file, 'r') as descriptor:
+    with rio.open(raster_file, "r") as descriptor:
         return (descriptor.width, descriptor.height)
 
 
@@ -155,8 +165,9 @@ def rasterio_can_open(raster_file: str) -> bool:
         rio.open(raster_file)
         return True
     except Exception as read_error:
-        logging.warning("Impossible to read file {}: {}"
-                .format(raster_file, read_error))
+        logging.warning(
+            "Impossible to read file {}: {}".format(raster_file, read_error)
+        )
         return False
 
 
@@ -172,9 +183,11 @@ def ncdf_can_open(file_path):
         with xr.open_dataset(file_path) as _:
             return True
     except Exception as read_error:
-        logging.error("Exception caught while trying to read file {}: {}"
-                      .format(file_path, read_error)
-                      )
+        logging.error(
+            "Exception caught while trying to read file {}: {}".format(
+                file_path, read_error
+            )
+        )
         return False
 
 
@@ -194,40 +207,46 @@ def otb_can_open(raster_file: str) -> bool:
         read_im_app.ExecuteAndWriteOutput()
         if os.path.exists("./otb_can_open_test.geom"):
             with open("./otb_can_open_test.geom") as geom_file_desc:
-                geom_dict = dict()
+                geom_dict = {}
                 for line in geom_file_desc:
-                    key, val = line.split(': ')
+                    key, val = line.split(": ")
                     geom_dict[key] = val
-                #pylint: disable=too-many-boolean-expressions
-                if      'line_den_coeff_00' not in geom_dict or \
-                        'samp_den_coeff_00' not in geom_dict or \
-                        'line_num_coeff_00' not in geom_dict or \
-                        'samp_num_coeff_00' not in geom_dict or \
-                        'line_off' not in geom_dict or \
-                        'line_scale' not in geom_dict or \
-                        'samp_off' not in geom_dict or \
-                        'samp_scale' not in geom_dict or \
-                        'lat_off' not in geom_dict or \
-                        'lat_scale' not in geom_dict or \
-                        'long_off' not in geom_dict or \
-                        'long_scale' not in geom_dict or \
-                        'height_off' not in geom_dict or \
-                        'height_scale' not in geom_dict or \
-                        'polynomial_format' not in geom_dict:
-                    logging.error("No RPC model set for image {}"
-                                .format(geom_file_desc))
+                # pylint: disable=too-many-boolean-expressions
+                if (
+                    "line_den_coeff_00" not in geom_dict
+                    or "samp_den_coeff_00" not in geom_dict
+                    or "line_num_coeff_00" not in geom_dict
+                    or "samp_num_coeff_00" not in geom_dict
+                    or "line_off" not in geom_dict
+                    or "line_scale" not in geom_dict
+                    or "samp_off" not in geom_dict
+                    or "samp_scale" not in geom_dict
+                    or "lat_off" not in geom_dict
+                    or "lat_scale" not in geom_dict
+                    or "long_off" not in geom_dict
+                    or "long_scale" not in geom_dict
+                    or "height_off" not in geom_dict
+                    or "height_scale" not in geom_dict
+                    or "polynomial_format" not in geom_dict
+                ):
+                    logging.error(
+                        "No RPC model set for image {}".format(geom_file_desc)
+                    )
                     return False
 
             os.remove("./otb_can_open_test.geom")
             return True
         # else
-        logging.error("{} does not have associated geom file"
-                        .format(geom_file_desc))
+        logging.error(
+            "{} does not have associated geom file".format(geom_file_desc)
+        )
         return False
     except Exception as read_error:
         logging.error(
-            "Exception caught while trying to read file {}: {}"
-                .format(raster_file, read_error))
+            "Exception caught while trying to read file {}: {}".format(
+                raster_file, read_error
+            )
+        )
         return False
 
 

@@ -85,10 +85,10 @@ msg-template="{path}:{line}: [{msg_id}({symbol}), {obj}] {msg}"
 output-format=text
 
 # Tells whether to display a full report or only the messages.
-reports=yes
+reports=no
 
 # Activate the evaluation score.
-score=yes
+score=no
 
 
 [REFACTORING]
@@ -230,7 +230,7 @@ single-line-if-stmt=no
 
 # This flag controls whether inconsistent-quotes generates a warning when the
 # character used as a quote delimiter is used inconsistently within a module.
-check-quote-consistency=no
+check-quote-consistency=yes
 
 # This flag controls whether the implicit-str-concat should generate a warning
 # on implicit string concatenation in sequences defined over several lines.

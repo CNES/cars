@@ -1,9 +1,30 @@
 repos:
-  - repo: local
-    hooks:
-    -   id: pylint
-        name: PyLint
-        entry: python -m pylint --rcfile=.pylintrc
-        language: system
-        files: \.py$
-        stages: [commit]
+- repo: local
+  hooks:
+  - id: isort
+    name: isort
+    stages: [commit]
+    language: system
+    entry: isort cars tests
+    types: [python]
+
+  - id: black
+    name: black
+    stages: [commit]
+    language: system
+    entry: black cars tests
+    types: [python]
+
+  - id: flake8
+    name: flake8
+    stages: [commit]
+    language: system
+    entry: flake8 cars tests
+    types: [python]
+
+  - id: pylint
+    name: PyLint
+    stages: [commit]
+    language: system
+    entry: pylint cars tests --rcfile=.pylintrc
+    files: \.py$

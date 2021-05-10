@@ -18,21 +18,22 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 This module refers to the prepare outputs
 """
 
+# Standard imports
 import json
 import os
 from typing import Dict, Union
 
-from json_checker import OptionalKey, And, Or
+# Third party imports
+from json_checker import And, OptionalKey, Or
 
-from cars.conf import mask_classes
-from cars.conf import input_parameters, static_conf
-from cars.core.utils import make_relative_path_absolute
+# CARS imports
+from cars.conf import input_parameters, mask_classes, static_conf
 from cars.core.inputs import rasterio_can_open
+from cars.core.utils import make_relative_path_absolute
 
 
 def write_preprocessing_content_file(config, filename, indent=2):
@@ -47,34 +48,40 @@ def write_preprocessing_content_file(config, filename, indent=2):
     :param indent: indentations in output file
     :type indent: int
     """
-    with open(filename, 'w') as fstream:
+    with open(filename, "w") as fstream:
         # Make absolute path relative
         for tag in [
-                LEFT_EPIPOLAR_GRID_TAG,
-                RIGHT_EPIPOLAR_GRID_TAG,
-                LEFT_ENVELOPE_TAG,
-                RIGHT_ENVELOPE_TAG,
-                MATCHES_TAG,
-                RAW_MATCHES_TAG,
-                RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG,
-                LEFT_ENVELOPE_TAG,
-                RIGHT_ENVELOPE_TAG,
-                ENVELOPES_INTERSECTION_TAG,
-                LOWRES_DSM_TAG,
-                LOWRES_INITIAL_DEM_TAG,
-                LOWRES_ELEVATION_DIFFERENCE_TAG,
-                LOWRES_DEM_SPLINES_FIT_TAG,
-                CORRECTED_LOWRES_DSM_TAG,
-                CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG]:
-            if tag in config[
-                PREPROCESSING_SECTION_TAG][PREPROCESSING_OUTPUT_SECTION_TAG]:
+            LEFT_EPIPOLAR_GRID_TAG,
+            RIGHT_EPIPOLAR_GRID_TAG,
+            LEFT_ENVELOPE_TAG,
+            RIGHT_ENVELOPE_TAG,
+            MATCHES_TAG,
+            RAW_MATCHES_TAG,
+            RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG,
+            LEFT_ENVELOPE_TAG,
+            RIGHT_ENVELOPE_TAG,
+            ENVELOPES_INTERSECTION_TAG,
+            LOWRES_DSM_TAG,
+            LOWRES_INITIAL_DEM_TAG,
+            LOWRES_ELEVATION_DIFFERENCE_TAG,
+            LOWRES_DEM_SPLINES_FIT_TAG,
+            CORRECTED_LOWRES_DSM_TAG,
+            CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG,
+        ]:
+            if (
+                tag
+                in config[PREPROCESSING_SECTION_TAG][
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ]
+            ):
 
                 value = config[PREPROCESSING_SECTION_TAG][
-                        PREPROCESSING_OUTPUT_SECTION_TAG][tag]
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag]
 
                 config[PREPROCESSING_SECTION_TAG][
-                    PREPROCESSING_OUTPUT_SECTION_TAG][tag] = \
-                        os.path.basename(value)
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag] = os.path.basename(value)
 
         json.dump(config, fstream, indent=indent)
 
@@ -91,48 +98,60 @@ def read_preprocessing_content_file(filename):
     :rtype: dict
     """
     config = {}
-    with open(filename, 'r') as fstream:
+    with open(filename, "r") as fstream:
         config = json.load(fstream)
         json_dir = os.path.abspath(os.path.dirname(filename))
         # Make relative path absolute
         for tag in [
-                input_parameters.IMG1_TAG,
-                input_parameters.IMG2_TAG,
-                input_parameters.MASK1_TAG,
-                input_parameters.MASK2_TAG,
-                input_parameters.COLOR1_TAG,
-                input_parameters.SRTM_DIR_TAG]:
+            input_parameters.IMG1_TAG,
+            input_parameters.IMG2_TAG,
+            input_parameters.MASK1_TAG,
+            input_parameters.MASK2_TAG,
+            input_parameters.COLOR1_TAG,
+            input_parameters.SRTM_DIR_TAG,
+        ]:
             if tag in config[input_parameters.INPUT_SECTION_TAG]:
+                # Get config input parameters tag paths
                 value = config[input_parameters.INPUT_SECTION_TAG][tag]
-                config[input_parameters.INPUT_SECTION_TAG][tag] =\
-                    make_relative_path_absolute(value, json_dir)
+                # Update relative paths to absolute ones
+                config[input_parameters.INPUT_SECTION_TAG][
+                    tag
+                ] = make_relative_path_absolute(value, json_dir)
+
         for tag in [
-                LEFT_EPIPOLAR_GRID_TAG,
-                RIGHT_EPIPOLAR_GRID_TAG,
-                LEFT_ENVELOPE_TAG,
-                RIGHT_ENVELOPE_TAG,
-                MATCHES_TAG,
-                RAW_MATCHES_TAG,
-                RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG,
-                LEFT_ENVELOPE_TAG,
-                RIGHT_ENVELOPE_TAG,
-                ENVELOPES_INTERSECTION_TAG,
-                LOWRES_DSM_TAG,
-                LOWRES_INITIAL_DEM_TAG,
-                LOWRES_ELEVATION_DIFFERENCE_TAG,
-                LOWRES_DEM_SPLINES_FIT_TAG,
-                CORRECTED_LOWRES_DSM_TAG,
-                CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG
-                ]:
-            if tag in config[PREPROCESSING_SECTION_TAG][
-                    PREPROCESSING_OUTPUT_SECTION_TAG]:
-
+            LEFT_EPIPOLAR_GRID_TAG,
+            RIGHT_EPIPOLAR_GRID_TAG,
+            LEFT_ENVELOPE_TAG,
+            RIGHT_ENVELOPE_TAG,
+            MATCHES_TAG,
+            RAW_MATCHES_TAG,
+            RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG,
+            LEFT_ENVELOPE_TAG,
+            RIGHT_ENVELOPE_TAG,
+            ENVELOPES_INTERSECTION_TAG,
+            LOWRES_DSM_TAG,
+            LOWRES_INITIAL_DEM_TAG,
+            LOWRES_ELEVATION_DIFFERENCE_TAG,
+            LOWRES_DEM_SPLINES_FIT_TAG,
+            CORRECTED_LOWRES_DSM_TAG,
+            CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG,
+        ]:
+            if (
+                tag
+                in config[PREPROCESSING_SECTION_TAG][
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ]
+            ):
+                # Get config preprocessing section tag paths
                 value = config[PREPROCESSING_SECTION_TAG][
-                        PREPROCESSING_OUTPUT_SECTION_TAG][tag]
-
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag]
+                # Update relative paths to absolute ones
                 config[PREPROCESSING_SECTION_TAG][
-                        PREPROCESSING_OUTPUT_SECTION_TAG][tag] =\
-                            make_relative_path_absolute(value, json_dir)
+                    PREPROCESSING_OUTPUT_SECTION_TAG
+                ][tag] = make_relative_path_absolute(value, json_dir)
+
+    # Return config with absolute paths updated
     return config
 
 
@@ -169,8 +188,9 @@ TIME_DIRECTION_LINE_VECTOR_X_TAG = "time_direction_line_vector_x"
 TIME_DIRECTION_LINE_VECTOR_Y_TAG = "time_direction_line_vector_y"
 LOWRES_DEM_SPLINES_FIT_TAG = "lowres_dem_splines_fit"
 CORRECTED_LOWRES_DSM_TAG = "corrected_lowres_dsm"
-CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG =\
+CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG = (
     "corrected_lowres_elevation_difference"
+)
 
 # Tags for preprocessing parameters
 EPI_STEP_TAG = "epi_step"
@@ -180,12 +200,14 @@ ELEVATION_DELTA_UPPER_BOUND_TAG = "elevation_delta_upper_bound"
 EPIPOLAR_ERROR_UPPER_BOUND_TAG = "epipolar_error_upper_bound"
 EPIPOLAR_ERROR_MAXIMUM_BIAS_TAG = "epipolar_error_maximum_bias"
 PREPARE_MASK_CLASSES_USAGE_TAG = "mask_classes_usage_in_prepare"
-MASK1_IGNORED_BY_SIFT_MATCHING_TAG =\
-    '%s_%s' % (input_parameters.MASK1_TAG,
-    mask_classes.ignored_by_sift_matching_tag)
-MASK2_IGNORED_BY_SIFT_MATCHING_TAG =\
-    '%s_%s' % (input_parameters.MASK2_TAG,
-    mask_classes.ignored_by_sift_matching_tag)
+MASK1_IGNORED_BY_SIFT_MATCHING_TAG = "%s_%s" % (
+    input_parameters.MASK1_TAG,
+    mask_classes.ignored_by_sift_matching_tag,
+)
+MASK2_IGNORED_BY_SIFT_MATCHING_TAG = "%s_%s" % (
+    input_parameters.MASK2_TAG,
+    mask_classes.ignored_by_sift_matching_tag,
+)
 
 # Tags for content.json of preprocessing step
 PREPROCESSING_SECTION_TAG = "preprocessing"
@@ -228,13 +250,13 @@ PREPROCESSING_OUTPUT_SCHEMA = {
     LOWRES_ELEVATION_DIFFERENCE_TAG: And(str, os.path.isfile),
     OptionalKey(LOWRES_DEM_SPLINES_FIT_TAG): And(str, os.path.isfile),
     OptionalKey(CORRECTED_LOWRES_DSM_TAG): And(str, os.path.isfile),
-    OptionalKey(CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG): \
-                                        And(str, os.path.isfile),
+    OptionalKey(CORRECTED_LOWRES_ELEVATION_DIFFERENCE_TAG): And(
+        str, os.path.isfile
+    ),
     OptionalKey(MATCHES_TAG): And(str, os.path.isfile),
     OptionalKey(RAW_MATCHES_TAG): And(str, os.path.isfile),
     OptionalKey(ENVELOPES_INTERSECTION_TAG): str,
-    OptionalKey(ENVELOPES_INTERSECTION_BB_TAG): list
-
+    OptionalKey(ENVELOPES_INTERSECTION_BB_TAG): list,
 }
 
 # Type of preprocessing/output section
@@ -243,34 +265,34 @@ PreprocessingOutputType = Dict[str, Union[float, str, int]]
 # schema of the preprocessing/parameters section
 PREPROCESSING_PARAMETERS_SCHEMA = {
     EPI_STEP_TAG: And(int, lambda x: x > 0),
-    DISPARITY_MARGIN_TAG: And(float, lambda x: 0. <= x <= 1.),
+    DISPARITY_MARGIN_TAG: And(float, lambda x: 0.0 <= x <= 1.0),
     EPIPOLAR_ERROR_UPPER_BOUND_TAG: And(float, lambda x: x > 0),
     EPIPOLAR_ERROR_MAXIMUM_BIAS_TAG: And(float, lambda x: x >= 0),
     ELEVATION_DELTA_LOWER_BOUND_TAG: float,
     ELEVATION_DELTA_UPPER_BOUND_TAG: float,
     OptionalKey(PREPARE_MASK_CLASSES_USAGE_TAG): {
         MASK1_IGNORED_BY_SIFT_MATCHING_TAG: Or([int], None),
-        MASK2_IGNORED_BY_SIFT_MATCHING_TAG: Or([int], None)
-    }
+        MASK2_IGNORED_BY_SIFT_MATCHING_TAG: Or([int], None),
+    },
 }
 
 # Type of the preprocessing/parameters section
 PreprocessingParametersType = Dict[str, Union[float, int]]
 
 # Schema of the full content.json for preprocessing output
+IN_CONF_SCHEMA = input_parameters.INPUT_CONFIGURATION_SCHEMA  # local variable
 PREPROCESSING_CONTENT_SCHEMA = {
-    input_parameters.INPUT_SECTION_TAG:
-     input_parameters.INPUT_CONFIGURATION_SCHEMA,
-    PREPROCESSING_SECTION_TAG:
-    {
+    input_parameters.INPUT_SECTION_TAG: IN_CONF_SCHEMA,
+    PREPROCESSING_SECTION_TAG: {
         PREPROCESSING_VERSION_TAG: str,
         PREPROCESSING_PARAMETERS_SECTION_TAG: PREPROCESSING_PARAMETERS_SCHEMA,
         input_parameters.STATIC_PARAMS_TAG: static_conf.prepare_params_schema,
-        PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA
-    }
+        PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA,
+    },
 }
 
+
 # Type of the full content.json for preprocessing output
-PreprocessingContentType = Dict[str, Union[str,
-                                             PreprocessingParametersType,
-                                             PreprocessingOutputType]]
+PreprocessingContentType = Dict[
+    str, Union[str, PreprocessingParametersType, PreprocessingOutputType]
+]

@@ -18,37 +18,41 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
 Projection module:
 contains some general purpose functions using polygons and data projections
 """
 
 # Standard imports
-from typing import List, Tuple
-import os
 import logging
+import os
+from typing import List, Tuple
 
 # Third party imports
 import numpy as np
+import osgeo
 import otbApplication
 import pandas
-import xarray as xr
-import rasterio as rio
-from rasterio.features import shapes
-from shapely.geometry import shape, Polygon
-from shapely.ops import transform
 import pyproj
-import osgeo
+import rasterio as rio
+import xarray as xr
 from osgeo import osr
+from rasterio.features import shapes
+from shapely.geometry import Polygon, shape
+from shapely.ops import transform
 
-# cars import
-from cars.core import inputs
+# CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
 
 
-def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
-                               min_elev: float, max_elev: float) -> List[int]:
+def get_projected_bounding_box(
+    poly: Polygon,
+    poly_epsg: int,
+    target_epsg: int,
+    min_elev: float,
+    max_elev: float,
+) -> List[int]:
     """
     Get the maximum bounding box of the projected polygon
     considering an elevation range.
@@ -81,10 +85,18 @@ def get_projected_bounding_box(poly: Polygon, poly_epsg: int, target_epsg: int,
     poly_elev_max = polygon_projection(poly_elev_max, poly_epsg, target_epsg)
 
     # retrieve the largest bounding box
-    (xmin_poly_elev_min, ymin_poly_elev_min,\
-        xmax_poly_elev_min, ymax_poly_elev_min) = poly_elev_min.bounds
-    (xmin_poly_elev_max, ymin_poly_elev_max,\
-        xmax_poly_elev_max, ymax_poly_elev_max) = poly_elev_max.bounds
+    (
+        xmin_poly_elev_min,
+        ymin_poly_elev_min,
+        xmax_poly_elev_min,
+        ymax_poly_elev_min,
+    ) = poly_elev_min.bounds
+    (
+        xmin_poly_elev_max,
+        ymin_poly_elev_max,
+        xmax_poly_elev_max,
+        ymax_poly_elev_max,
+    ) = poly_elev_max.bounds
 
     xmin = min(xmin_poly_elev_min, xmin_poly_elev_max)
     ymin = min(ymin_poly_elev_min, ymin_poly_elev_max)
@@ -114,10 +126,11 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     dem_poly = None
     for _, _, srtm_files in os.walk(srtm_dir):
         logging.info(
-            'Browsing all files of the srtm dir. '
-            'Some files might be unreadable by rasterio (non blocking matter).')
+            "Browsing all files of the srtm dir. "
+            "Some files might be unreadable by rasterio (non blocking matter)."
+        )
         for file in srtm_files:
-            unsupported_formats = ['.omd']
+            unsupported_formats = [".omd"]
             _, ext = os.path.splitext(file)
             if ext not in unsupported_formats:
                 if inputs.rasterio_can_open(os.path.join(srtm_dir, file)):
@@ -131,16 +144,20 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
                         try:
                             file_epsg = data.crs.to_epsg()
                             file_bb = Polygon(
-                                [(xmin, ymin),
-                                 (xmin, ymax),
-                                 (xmax, ymax),
-                                 (xmax, ymin),
-                                 (xmin, ymin)])
+                                [
+                                    (xmin, ymin),
+                                    (xmin, ymax),
+                                    (xmax, ymax),
+                                    (xmax, ymin),
+                                    (xmin, ymin),
+                                ]
+                            )
 
                             # transform polygon if needed
                             if ref_epsg != file_epsg:
                                 file_bb = polygon_projection(
-                                    file_bb, file_epsg, ref_epsg)
+                                    file_bb, file_epsg, ref_epsg
+                                )
 
                             # if the srtm tile intersects the reference polygon
                             if file_bb.intersects(ref_poly):
@@ -148,21 +165,24 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
 
                                 # retrieve valid polygons
                                 for poly, val in shapes(
-                                        data.dataset_mask(),
-                                        transform=data.transform):
+                                    data.dataset_mask(),
+                                    transform=data.transform,
+                                ):
                                     if val != 0:
                                         poly = shape(poly)
                                         poly = poly.buffer(0)
                                         if ref_epsg != file_epsg:
                                             poly = polygon_projection(
-                                                poly, file_epsg, ref_epsg)
+                                                poly, file_epsg, ref_epsg
+                                            )
 
                                         # combine valid polygons
                                         if local_dem_poly is None:
                                             local_dem_poly = poly
                                         else:
                                             local_dem_poly = poly.union(
-                                                local_dem_poly)
+                                                local_dem_poly
+                                            )
 
                                 # combine the tile valid polygon to the other
                                 # tiles' ones
@@ -173,13 +193,13 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
 
                         except AttributeError as attribute_error:
                             logging.error(
-                                'Impossible to read the SRTM'
-                                'tile epsg code: {}'.format(attribute_error)
+                                "Impossible to read the SRTM"
+                                "tile epsg code: {}".format(attribute_error)
                             )
 
     # compute dem coverage polygon over the reference polygon
     if dem_poly is None or not dem_poly.intersects(ref_poly):
-        raise Exception('The input DEM does not intersect the useful zone')
+        raise Exception("The input DEM does not intersect the useful zone")
 
     dem_cover = dem_poly.intersection(ref_poly)
 
@@ -203,16 +223,17 @@ def polygon_projection(poly, from_epsg, to_epsg):
     :rtype: Polygon
     """
     project = pyproj.Transformer.from_proj(
-        pyproj.Proj(
-            init='epsg:{}'.format(from_epsg)), pyproj.Proj(
-            init='epsg:{}'.format(to_epsg)))
+        pyproj.Proj(init="epsg:{}".format(from_epsg)),
+        pyproj.Proj(init="epsg:{}".format(to_epsg)),
+    )
     poly = transform(project.transform, poly)
 
     return poly
 
 
-def geo_to_ecef(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray)\
-                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+def geo_to_ecef(
+    lat: np.ndarray, lon: np.ndarray, alt: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Point transformation from Geodetic of ellipsoid WGS-84) to ECEF
     ECEF: Earth-centered, Earth-fixed
@@ -223,14 +244,20 @@ def geo_to_ecef(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray)\
     :return:  ECEF (Earth centered, Earth fixed) x, y, z coordinates tuple
                                                     (in meters)
     """
-    epsg_in=4979 # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
-    epsg_out=4978 # EPSG code for ECEF WGS84 in x, y, z (meters)
+    epsg_in = 4979  # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
+    epsg_out = 4978  # EPSG code for ECEF WGS84 in x, y, z (meters)
 
     return points_cloud_conversion([(lon, lat, alt)], epsg_in, epsg_out)[0]
 
-def ecef_to_enu(x_ecef: np.ndarray, y_ecef: np.ndarray,  z_ecef: np.ndarray,\
-                lat0: np.ndarray, lon0: np.ndarray,  alt0: np.ndarray)\
-                -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def ecef_to_enu(
+    x_ecef: np.ndarray,
+    y_ecef: np.ndarray,
+    z_ecef: np.ndarray,
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    alt0: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Coordinates conversion from ECEF Earth Centered to
     East North Up Coordinate from a reference point (lat0, lon0, alt0)
@@ -258,23 +285,31 @@ def ecef_to_enu(x_ecef: np.ndarray, y_ecef: np.ndarray,  z_ecef: np.ndarray,\
     # Determine ECEF coordinates from reference geodetic
     x0_ecef, y0_ecef, z0_ecef = geo_to_ecef(lat0, lon0, alt0)
 
-    x_east = \
-        (-(x_ecef-x0_ecef) * sin_long0) +\
-        ((y_ecef-y0_ecef)*cos_long0)
-    y_north = \
-        (-cos_long0*sin_lat0*(x_ecef-x0_ecef)) -\
-        (sin_lat0*sin_long0*(y_ecef-y0_ecef)) +\
-        (cos_lat0*(z_ecef-z0_ecef))
-    z_up = \
-        (cos_lat0*cos_long0*(x_ecef-x0_ecef)) +\
-        (cos_lat0*sin_long0*(y_ecef-y0_ecef)) +\
-        (sin_lat0*(z_ecef-z0_ecef))
+    x_east = (-(x_ecef - x0_ecef) * sin_long0) + (
+        (y_ecef - y0_ecef) * cos_long0
+    )
+    y_north = (
+        (-cos_long0 * sin_lat0 * (x_ecef - x0_ecef))
+        - (sin_lat0 * sin_long0 * (y_ecef - y0_ecef))
+        + (cos_lat0 * (z_ecef - z0_ecef))
+    )
+    z_up = (
+        (cos_lat0 * cos_long0 * (x_ecef - x0_ecef))
+        + (cos_lat0 * sin_long0 * (y_ecef - y0_ecef))
+        + (sin_lat0 * (z_ecef - z0_ecef))
+    )
 
     return x_east, y_north, z_up
 
-def geo_to_enu(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
-               lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
-               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def geo_to_enu(
+    lat: np.ndarray,
+    lon: np.ndarray,
+    alt: np.ndarray,
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    alt0: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Point transformation from WGS-84 Geodetic coordinates to to ENU.
     Use geo_to_ecef and ecef_to_enu functions.
@@ -290,8 +325,10 @@ def geo_to_enu(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
     x_ecef, y_ecef, z_ecef = geo_to_ecef(lat, lon, alt)
     return ecef_to_enu(x_ecef, y_ecef, z_ecef, lat0, lon0, alt0)
 
-def enu_to_aer(x_east: np.ndarray, y_north: np.ndarray, z_up: np.ndarray)\
-               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def enu_to_aer(
+    x_east: np.ndarray, y_north: np.ndarray, z_up: np.ndarray
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     ENU coordinates to Azimuth, Elevation angle, Range from ENU origin
     Beware: Elevation angle is not the altitude.
@@ -302,20 +339,26 @@ def enu_to_aer(x_east: np.ndarray, y_north: np.ndarray, z_up: np.ndarray)\
     :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
     """
 
-    xy_range = np.hypot(x_east, y_north) # Distance of e, n vector
-    xyz_range = np.hypot(xy_range, z_up) # Distance of e, n, u vector
+    xy_range = np.hypot(x_east, y_north)  # Distance of e, n vector
+    xyz_range = np.hypot(xy_range, z_up)  # Distance of e, n, u vector
     elevation = np.arctan2(z_up, xy_range)
     azimuth = np.arctan2(x_east, y_north) % (2 * np.pi)
-                                        # From [-pi,+pi] to [0,2pi]
+    # From [-pi,+pi] to [0,2pi]
 
     azimuth = np.degrees(azimuth)
     elevation = np.degrees(elevation)
 
     return azimuth, elevation, xyz_range
 
-def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
-               lat0: np.ndarray, lon0: np.ndarray, alt0: np.ndarray)\
-               -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
+
+def geo_to_aer(
+    lat: np.ndarray,
+    lon: np.ndarray,
+    alt: np.ndarray,
+    lat0: np.ndarray,
+    lon0: np.ndarray,
+    alt0: np.ndarray,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray]:
     """
     Gives Azimuth, Elevation angle and Slant Range
     from a Reference to a Point with geodetic coordinates.
@@ -330,6 +373,7 @@ def geo_to_aer(lat: np.ndarray, lon: np.ndarray, alt: np.ndarray,
     """
     x_east, y_north, z_up = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
     return enu_to_aer(x_east, y_north, z_up)
+
 
 def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     """
@@ -360,8 +404,9 @@ def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
     return cloud_in
 
 
-def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset)\
-                                  -> Tuple[np.array, List[int]]:
+def get_xyz_np_array_from_dataset(
+    cloud_in: xr.Dataset,
+) -> Tuple[np.array, List[int]]:
     """
     Get a numpy array of size (nb_points, 3) with the columns
     being the x, y and z coordinates from a dataset as given
@@ -375,10 +420,9 @@ def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset)\
     :return: a tuple composed of the xyz numàpy array and its original shape
     """
     xyz = np.stack(
-        (cloud_in[cst.X].values,
-         cloud_in[cst.Y].values,
-         cloud_in[cst.Z]),
-        axis=-1)
+        (cloud_in[cst.X].values, cloud_in[cst.Y].values, cloud_in[cst.Z]),
+        axis=-1,
+    )
     xyz_shape = xyz.shape
     xyz = np.reshape(xyz, (-1, 3))
 
@@ -386,9 +430,8 @@ def get_xyz_np_array_from_dataset(cloud_in: xr.Dataset)\
 
 
 def get_converted_xy_np_arrays_from_dataset(
-        cloud_in: xr.Dataset,
-        epsg_out: int)\
-    -> Tuple[np.array, np.array]:
+    cloud_in: xr.Dataset, epsg_out: int
+) -> Tuple[np.array, np.array]:
     """
     Get the x and y coordinates as numpy array
     in the new referential indicated by epsg_out.
@@ -432,8 +475,8 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
 
 
 def points_cloud_conversion_dataframe(
-        cloud: pandas.DataFrame,
-        epsg_in: int, epsg_out: int):
+    cloud: pandas.DataFrame, epsg_in: int, epsg_out: int
+):
     """
     Convert a point cloud as a panda.DataFrame to another epsg (inplace)
 
@@ -462,7 +505,8 @@ def get_utm_zone_as_epsg_code(lon, lat):
     :rtype: int
     """
     utm_app = otbApplication.Registry.CreateApplication(
-        "ObtainUTMZoneFromGeoPoint")
+        "ObtainUTMZoneFromGeoPoint"
+    )
     utm_app.SetParameterFloat("lon", float(lon))
     utm_app.SetParameterFloat("lat", float(lat))
     utm_app.Execute()
@@ -472,11 +516,8 @@ def get_utm_zone_as_epsg_code(lon, lat):
 
 
 def ground_polygon_from_envelopes(
-        poly_envelope1,
-        poly_envelope2,
-        epsg1,
-        epsg2,
-        tgt_epsg=4326):
+    poly_envelope1, poly_envelope2, epsg1, epsg2, tgt_epsg=4326
+):
     """
     compute the ground polygon of the intersection of two envelopes
 
@@ -500,17 +541,15 @@ def ground_polygon_from_envelopes(
     """
     # project to the correct epsg if necessary
     if epsg1 != tgt_epsg:
-        poly_envelope1 = polygon_projection(
-            poly_envelope1, epsg1, tgt_epsg)
+        poly_envelope1 = polygon_projection(poly_envelope1, epsg1, tgt_epsg)
 
     if epsg2 != tgt_epsg:
-        poly_envelope2 = polygon_projection(
-            poly_envelope2, epsg2, tgt_epsg)
+        poly_envelope2 = polygon_projection(poly_envelope2, epsg2, tgt_epsg)
 
     # intersect both envelopes
     if poly_envelope1.intersects(poly_envelope2):
         inter = poly_envelope1.intersection(poly_envelope2)
     else:
-        raise Exception('The two envelopes do not intersect one another')
+        raise Exception("The two envelopes do not intersect one another")
 
     return inter, inter.bounds

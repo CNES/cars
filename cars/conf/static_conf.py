@@ -18,16 +18,21 @@
 # limitations under the License.
 #
 """
-Main cars Configuration module:
+Main CARS Configuration module:
 contains all the functions associated with cars configuration.
 """
-import os
-import logging
-from collections import namedtuple
+
+# Standard imports
 import json
+import logging
+import os
+from collections import namedtuple
+
+# Third party imports
 from json_checker import Or
 from numpy import dtype
 
+# CARS imports
 from cars.core import inputs
 from cars.lib.steps import points_cloud
 
@@ -41,20 +46,20 @@ from cars.lib.steps import points_cloud
 #   since those values are here and not in the declaration of the unitary
 #   method we want to test)
 
-#pylint: disable=invalid-name
+# pylint: disable=invalid-name
 cfg = None
 
-#### Prepare ####
+# ### Prepare ####
 
 # sift tags and schema
-sift_tag = 'sift'
-sift_matching_threshold_tag = 'matching_threshold'
-sift_n_octave_tag = 'n_octave'
-sift_n_scale_per_octave_tag = 'n_scale_per_octave'
-sift_dog_threshold_tag = 'dog_threshold'
-sift_edge_threshold_tag = 'edge_threshold'
-sift_magnification_tag = 'magnification'
-sift_back_matching_tag = 'back_matching'
+sift_tag = "sift"
+sift_matching_threshold_tag = "matching_threshold"
+sift_n_octave_tag = "n_octave"
+sift_n_scale_per_octave_tag = "n_scale_per_octave"
+sift_dog_threshold_tag = "dog_threshold"
+sift_edge_threshold_tag = "edge_threshold"
+sift_magnification_tag = "magnification"
+sift_back_matching_tag = "back_matching"
 sift_parameters_schema = {
     sift_matching_threshold_tag: float,
     sift_n_octave_tag: int,
@@ -62,130 +67,130 @@ sift_parameters_schema = {
     sift_dog_threshold_tag: float,
     sift_edge_threshold_tag: float,
     sift_magnification_tag: float,
-    sift_back_matching_tag: bool
+    sift_back_matching_tag: bool,
 }
 
 # low res dsm tags and schema
-low_res_dsm_tag = 'low_res_dsm'
-low_res_dsm_resolution_in_degree_tag = 'low_res_dsm_resolution_in_degree'
-low_res_dsm_min_sizex_for_align_tag = 'lowres_dsm_min_sizex'
-low_res_dsm_min_sizey_for_align_tag = 'lowres_dsm_min_sizey'
-low_res_dsm_ext_tag = 'low_res_dsm_ext'
-low_res_dsm_order_tag = 'low_res_dsm_order'
+low_res_dsm_tag = "low_res_dsm"
+low_res_dsm_resolution_in_degree_tag = "low_res_dsm_resolution_in_degree"
+low_res_dsm_min_sizex_for_align_tag = "lowres_dsm_min_sizex"
+low_res_dsm_min_sizey_for_align_tag = "lowres_dsm_min_sizey"
+low_res_dsm_ext_tag = "low_res_dsm_ext"
+low_res_dsm_order_tag = "low_res_dsm_order"
 low_res_dsm_parameters_schema = {
     low_res_dsm_resolution_in_degree_tag: float,
     low_res_dsm_min_sizex_for_align_tag: int,
     low_res_dsm_min_sizey_for_align_tag: int,
     low_res_dsm_ext_tag: int,
-    low_res_dsm_order_tag: int
+    low_res_dsm_order_tag: int,
 }
 
 # disparity range estimation
 disparity_range_tag = "disparity_range"
-disparity_outliers_rejection_percent_tag =\
+disparity_outliers_rejection_percent_tag = (
     "disparity_outliers_rejection_percent"
+)
 
 disparity_range_parameters_schema = {
-    disparity_outliers_rejection_percent_tag : float
+    disparity_outliers_rejection_percent_tag: float
 }
 
 # prepare schema
 prepare_params_schema = {
     sift_tag: sift_parameters_schema,
     low_res_dsm_tag: low_res_dsm_parameters_schema,
-    disparity_range_tag : disparity_range_parameters_schema
+    disparity_range_tag: disparity_range_parameters_schema,
 }
 
 
-#### Compute DSM ####
+# ### Compute DSM ####
 
 # tiling configuration tags and schema
-tiling_conf_tag = 'tiling_configuration'
-epi_tile_margin_tag = 'epipolar_tile_margin_in_percent'
-min_epi_tile_size_tag = 'min_epipolar_tile_size'
-max_epi_tile_size_tag = 'max_epipolar_tile_size'
+tiling_conf_tag = "tiling_configuration"
+epi_tile_margin_tag = "epipolar_tile_margin_in_percent"
+min_epi_tile_size_tag = "min_epipolar_tile_size"
+max_epi_tile_size_tag = "max_epipolar_tile_size"
 tiling_conf_schema = {
     epi_tile_margin_tag: Or(None, int),
     min_epi_tile_size_tag: Or(None, int),
-    max_epi_tile_size_tag: Or(None, int)
+    max_epi_tile_size_tag: Or(None, int),
 }
 
 # rasterization tags and schema
-rasterization_tag = 'rasterization'
-grid_points_division_factor_tag = 'grid_points_division_factor'
-rasterization_schema = {
-    grid_points_division_factor_tag: Or(None, int)
-}
+rasterization_tag = "rasterization"
+grid_points_division_factor_tag = "grid_points_division_factor"
+rasterization_schema = {grid_points_division_factor_tag: Or(None, int)}
 
 # cloud filtering tags and schema
-cloud_filtering_tag = 'cloud_filtering'
-small_cpnts_filter_tag = 'small_components'
-small_cpnts_on_ground_margin_tag = 'on_ground_margin'
-small_cpnts_connection_dist_tag = 'connection_distance'
-small_cpnts_nb_points_threshold_tag = 'nb_points_threshold'
-small_cpnts_clusters_dist_threshold_tag = 'clusters_distance_threshold'
-small_cpnts_removed_elt_mask_tag = 'removed_elt_mask'
-small_cpnts_mask_value_tag = 'mask_value'
+cloud_filtering_tag = "cloud_filtering"
+small_cpnts_filter_tag = "small_components"
+small_cpnts_on_ground_margin_tag = "on_ground_margin"
+small_cpnts_connection_dist_tag = "connection_distance"
+small_cpnts_nb_points_threshold_tag = "nb_points_threshold"
+small_cpnts_clusters_dist_threshold_tag = "clusters_distance_threshold"
+small_cpnts_removed_elt_mask_tag = "removed_elt_mask"
+small_cpnts_mask_value_tag = "mask_value"
 small_cpnts_schema = {
     small_cpnts_on_ground_margin_tag: int,
     small_cpnts_connection_dist_tag: float,
     small_cpnts_nb_points_threshold_tag: int,
     small_cpnts_clusters_dist_threshold_tag: None,
     small_cpnts_removed_elt_mask_tag: bool,
-    small_cpnts_mask_value_tag: int
+    small_cpnts_mask_value_tag: int,
 }
-stat_outliers_filter_tag = 'statistical_outliers'
-stat_outliers_k_tag = 'k'
-stat_outliers_stdev_factor_tag = 'std_dev_factor'
-stat_outliers_removed_elt_mask_tag = 'removed_elt_mask'
-stat_outliers_mask_value_tag = 'mask_value'
+stat_outliers_filter_tag = "statistical_outliers"
+stat_outliers_k_tag = "k"
+stat_outliers_stdev_factor_tag = "std_dev_factor"
+stat_outliers_removed_elt_mask_tag = "removed_elt_mask"
+stat_outliers_mask_value_tag = "mask_value"
 stat_outliers_schema = {
     stat_outliers_k_tag: int,
     stat_outliers_stdev_factor_tag: float,
     stat_outliers_removed_elt_mask_tag: bool,
-    stat_outliers_mask_value_tag: int
+    stat_outliers_mask_value_tag: int,
 }
 cloud_filtering_schema = {
     small_cpnts_filter_tag: Or(None, small_cpnts_schema),
-    stat_outliers_filter_tag: Or(None,stat_outliers_schema)
+    stat_outliers_filter_tag: Or(None, stat_outliers_schema),
 }
 
 # output tags and schema
-output_tag = 'output'
+output_tag = "output"
 color_image_encoding_tag = "color_image_encoding"
-output_schema = {
-    color_image_encoding_tag : str
-}
+output_schema = {color_image_encoding_tag: str}
 
 # compute dsm params schema
 compute_dsm_params_schema = {
     tiling_conf_tag: tiling_conf_schema,
     rasterization_tag: rasterization_schema,
     cloud_filtering_tag: cloud_filtering_schema,
-    output_tag: output_schema
+    output_tag: output_schema,
 }
 
 
-#### final static conf file ####
-prepare_tag = 'prepare'
-compute_dsm_tag = 'compute_dsm'
+# ### final static conf file ####
+prepare_tag = "prepare"
+compute_dsm_tag = "compute_dsm"
 static_conf_schema = {
     prepare_tag: prepare_params_schema,
-    compute_dsm_tag: compute_dsm_params_schema
+    compute_dsm_tag: compute_dsm_params_schema,
 }
 
 
-#### namedTuple for parameters ####
-SiftParams = namedtuple('SiftParams', sift_parameters_schema.keys())
+# ### namedTuple for parameters ####
+SiftParams = namedtuple("SiftParams", sift_parameters_schema.keys())
 LowResDSMParams = namedtuple(
-    'LowResDSMParams', low_res_dsm_parameters_schema.keys())
+    "LowResDSMParams", low_res_dsm_parameters_schema.keys()
+)
 RasterizationParams = namedtuple(
-    'RasterizationParams', rasterization_schema.keys())
-TilingParams = namedtuple('TilingParams', tiling_conf_schema.keys())
+    "RasterizationParams", rasterization_schema.keys()
+)
+TilingParams = namedtuple("TilingParams", tiling_conf_schema.keys())
 
-#### Global environment settings as in setup.cfg ####
-CARS_GEOID_PATH = "../geoid/egm96.grd" # Path in cars package (pkg)
-CARS_STATIC_CONFIGURATION = "../static_configuration.json" # Path in cars pkg
+# ### Global environment settings as in setup.cfg ####
+CARS_GEOID_PATH = "../geoid/egm96.grd"  # Path in cars package (pkg)
+CARS_STATIC_CONFIGURATION = "../static_configuration.json"  # Path in cars pkg
+
 
 def set_env():
     """
@@ -202,38 +207,46 @@ def set_env():
     # Get root package directory
     package_path = os.path.dirname(__file__)
 
-    #### CARS configuration
+    # ### CARS configuration
 
     # CARS_STATIC_CONFIGURATION
-    if 'CARS_STATIC_CONFIGURATION' not in os.environ:
+    if "CARS_STATIC_CONFIGURATION" not in os.environ:
         # set cars static from deployed setup.py package data
-        os.environ['CARS_STATIC_CONFIGURATION'] = \
-                    os.path.join(package_path, CARS_STATIC_CONFIGURATION)
-        logger.debug('CARS_STATIC_CONFIGURATION not externally defined.'
-                    ' Set to CARS internal: {}'.format(
-                    os.environ['CARS_STATIC_CONFIGURATION']))
+        os.environ["CARS_STATIC_CONFIGURATION"] = os.path.join(
+            package_path, CARS_STATIC_CONFIGURATION
+        )
+        logger.debug(
+            "CARS_STATIC_CONFIGURATION not externally defined."
+            " Set to CARS internal: {}".format(
+                os.environ["CARS_STATIC_CONFIGURATION"]
+            )
+        )
 
-    if not os.path.exists(os.environ['CARS_STATIC_CONFIGURATION']):
-        log_msg = 'The file indicated {} does not exist'.format(
-                                    os.environ['CARS_STATIC_CONFIGURATION'])
+    if not os.path.exists(os.environ["CARS_STATIC_CONFIGURATION"]):
+        log_msg = "The file indicated {} does not exist".format(
+            os.environ["CARS_STATIC_CONFIGURATION"]
+        )
         logger.critical(log_msg)
         raise Exception(log_msg)
 
-    #### OTB configuration
+    # ### OTB configuration
 
     # OTB_GEOID_FILE
-    if 'OTB_GEOID_FILE' not in os.environ:
-        #set local geoid path (with resolved path from setup install)
-        os.environ['OTB_GEOID_FILE'] = os.path.join(package_path,
-                                                    CARS_GEOID_PATH)
-        logger.debug('OTB_GEOID_FILE not defined.'
-                    ' Set to CARS internal: {}'.format(
-                                                os.environ['OTB_GEOID_FILE']))
+    if "OTB_GEOID_FILE" not in os.environ:
+        # set local geoid path (with resolved path from setup install)
+        os.environ["OTB_GEOID_FILE"] = os.path.join(
+            package_path, CARS_GEOID_PATH
+        )
+        logger.debug(
+            "OTB_GEOID_FILE not defined."
+            " Set to CARS internal: {}".format(os.environ["OTB_GEOID_FILE"])
+        )
 
-    if not os.path.exists(os.environ.get('OTB_GEOID_FILE')):
-        log_msg = 'OTB_GEOID_FILE environment variable is not set'
+    if not os.path.exists(os.environ.get("OTB_GEOID_FILE")):
+        log_msg = "OTB_GEOID_FILE environment variable is not set"
         logger.critical(log_msg)
         raise Exception(log_msg)
+
 
 def load_cfg():
     """
@@ -247,7 +260,7 @@ def load_cfg():
     set_env()
 
     # Open cars static configuration file set in setenv() if not defined by user
-    with open(os.environ.get('CARS_STATIC_CONFIGURATION'), 'r') as conf_file:
+    with open(os.environ.get("CARS_STATIC_CONFIGURATION"), "r") as conf_file:
         global cfg
         cfg = json.load(conf_file)
         inputs.check_json(cfg, static_conf_schema)
@@ -305,7 +318,8 @@ def get_disparity_outliers_rejection_percent() -> float:
         load_cfg()
 
     return cfg[prepare_tag][disparity_range_tag][
-                disparity_outliers_rejection_percent_tag]
+        disparity_outliers_rejection_percent_tag
+    ]
 
 
 def get_tiling_params() -> TilingParams:
@@ -342,8 +356,9 @@ def get_rasterization_params() -> RasterizationParams:
     return rasterization_params
 
 
-def get_small_components_filter_params()\
-    -> points_cloud.SmallComponentsFilterParams:
+# fmt: off
+def get_small_components_filter_params() \
+        -> points_cloud.SmallComponentsFilterParams:
     """
     Construct the points_cloud.SmallComponentParams namedtuple
     from the static configuration file
@@ -355,17 +370,19 @@ def get_small_components_filter_params()\
 
     # get small components filter section
     small_cpn_filter_dict = cfg[compute_dsm_tag][cloud_filtering_tag][
-                                small_cpnts_filter_tag]
+        small_cpnts_filter_tag
+    ]
     if small_cpn_filter_dict is None:
         return None
 
     small_cpn_filter_params = points_cloud.SmallComponentsFilterParams(
-                                            *small_cpn_filter_dict.values())
+        *small_cpn_filter_dict.values()
+    )
     return small_cpn_filter_params
 
 
-def get_statistical_outliers_filter_params()\
-    -> points_cloud.StatisticalFilterParams:
+def get_statistical_outliers_filter_params() \
+        -> points_cloud.StatisticalFilterParams:
     """
     Construct the points_cloud.StatisticalFilterParams namedtuple
     from the static configuration file
@@ -376,14 +393,18 @@ def get_statistical_outliers_filter_params()\
         load_cfg()
 
     # get statistical filter section
-    stat_filter_dict =\
-        cfg[compute_dsm_tag][cloud_filtering_tag][stat_outliers_filter_tag]
+    stat_filter_dict = cfg[compute_dsm_tag][cloud_filtering_tag][
+        stat_outliers_filter_tag
+    ]
     if stat_filter_dict is None:
         return None
 
     stat_filter_params = points_cloud.StatisticalFilterParams(
-                                        *stat_filter_dict.values())
+        *stat_filter_dict.values()
+    )
     return stat_filter_params
+# fmt: on
+
 
 def get_color_image_encoding() -> dtype:
     """
@@ -395,6 +416,7 @@ def get_color_image_encoding() -> dtype:
         load_cfg()
 
     color_image_encoding = cfg[compute_dsm_tag][output_tag][
-                                        color_image_encoding_tag]
+        color_image_encoding_tag
+    ]
 
     return dtype(color_image_encoding)

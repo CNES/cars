@@ -18,25 +18,25 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-Pipelines module:
-contains functions that builds Orfeo ToolBox pipelines used by cars
+OTB Pipelines module:
+contains functions that builds Orfeo ToolBox pipelines used by CARS
 """
 
+# Standard imports
 from __future__ import absolute_import
+
+# Third party imports
 import numpy as np
 import otbApplication
 
+# CARS imports
 from cars.conf import mask_classes
 
 
 def build_stereorectification_grid_pipeline(
-        img1,
-        img2,
-        dem = None,
-        default_alt = None,
-        epi_step = 30):
+    img1, img2, dem=None, default_alt=None, epi_step=30
+):
     """
     This function builds the stereo-rectification pipeline and
     return it along with grids and sizes
@@ -60,7 +60,8 @@ def build_stereorectification_grid_pipeline(
             baseline_ratio (resolution * B/H) as float,
     """
     stereo_app = otbApplication.Registry.CreateApplication(
-        "StereoRectificationGridGenerator")
+        "StereoRectificationGridGenerator"
+    )
 
     stereo_app.SetParameterString("io.inleft", img1)
     stereo_app.SetParameterString("io.inright", img2)
@@ -74,23 +75,30 @@ def build_stereorectification_grid_pipeline(
 
     # Export grids to numpy
     left_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outleft"))
+        stereo_app.GetVectorImageAsNumpyArray("io.outleft")
+    )
     right_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outright"))
+        stereo_app.GetVectorImageAsNumpyArray("io.outright")
+    )
 
-    epipolar_size_x, epipolar_size_y, baseline = \
-        stereo_app.GetParameterInt("epi.rectsizex"), \
-        stereo_app.GetParameterInt("epi.rectsizey"), \
-        stereo_app.GetParameterFloat("epi.baseline")
+    epipolar_size_x, epipolar_size_y, baseline = (
+        stereo_app.GetParameterInt("epi.rectsizex"),
+        stereo_app.GetParameterInt("epi.rectsizey"),
+        stereo_app.GetParameterFloat("epi.baseline"),
+    )
 
-    origin = stereo_app.GetImageOrigin(
-        "io.outleft")
-    spacing = stereo_app.GetImageSpacing(
-        "io.outleft")
+    origin = stereo_app.GetImageOrigin("io.outleft")
+    spacing = stereo_app.GetImageSpacing("io.outleft")
 
-
-    return left_grid_as_array, right_grid_as_array, \
-        origin, spacing, epipolar_size_x, epipolar_size_y, baseline
+    return (
+        left_grid_as_array,
+        right_grid_as_array,
+        origin,
+        spacing,
+        epipolar_size_x,
+        epipolar_size_y,
+        baseline,
+    )
 
 
 def build_extract_roi_application(img, region):
@@ -121,13 +129,8 @@ def build_extract_roi_application(img, region):
 
 
 def build_mask_pipeline(
-        img,
-        grid,
-        nodata,
-        mask,
-        epipolar_size_x,
-        epipolar_size_y,
-        roi):
+    img, grid, nodata, mask, epipolar_size_x, epipolar_size_y, roi
+):
     """
     This function builds a pipeline that computes and
     resampled image mask in epipolar geometry
@@ -157,16 +160,19 @@ def build_mask_pipeline(
     if mask is not None:
         mask_app.SetParameterString("inmask", mask)
         mask_app.EnableParameter("inmask")
-    mask_app.SetParameterFloat("outnodata",
-        mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    mask_app.SetParameterFloat(
+        "outnodata", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+    )
     mask_app.SetParameterFloat("outvalid", mask_classes.VALID_VALUE)
 
     mask_app.Execute()
 
     resampling_app = otbApplication.Registry.CreateApplication(
-        "GridBasedImageResampling")
+        "GridBasedImageResampling"
+    )
     resampling_app.SetParameterInputImage(
-        "io.in", mask_app.GetParameterOutputImage("out"))
+        "io.in", mask_app.GetParameterOutputImage("out")
+    )
 
     if isinstance(grid, str):
         resampling_app.SetParameterString("grid.in", grid)
@@ -177,21 +183,22 @@ def build_mask_pipeline(
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
     resampling_app.SetParameterString("interpolator", "nn")
-    resampling_app.SetParameterFloat("out.default",
-        mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION)
+    resampling_app.SetParameterFloat(
+        "out.default", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+    )
     resampling_app.Execute()
 
     # TODO: Dilate nodata mask to ensure that interpolated pixels are not
     # contaminated
     extract_app = build_extract_roi_application(
-        resampling_app.GetParameterOutputImage("io.out"), roi)
+        resampling_app.GetParameterOutputImage("io.out"), roi
+    )
     msk = np.copy(extract_app.GetImageAsNumpyArray("out"))
 
     return msk
 
-def build_bundletoperfectsensor_pipeline(
-        pan_img,
-        ms_img):
+
+def build_bundletoperfectsensor_pipeline(pan_img, ms_img):
     """
     This function builds the a pipeline that performs P+XS pansharpening
 
@@ -203,7 +210,8 @@ def build_bundletoperfectsensor_pipeline(
     :rtype: otb application
     """
     pansharpening_app = otbApplication.Registry.CreateApplication(
-        "BundleToPerfectSensor")
+        "BundleToPerfectSensor"
+    )
 
     pansharpening_app.SetParameterString("inp", pan_img)
     pansharpening_app.SetParameterString("inxs", ms_img)
@@ -214,12 +222,8 @@ def build_bundletoperfectsensor_pipeline(
 
 
 def build_image_resampling_pipeline(
-        img,
-        grid,
-        epipolar_size_x,
-        epipolar_size_y,
-        roi,
-        lowres_color=None):
+    img, grid, epipolar_size_x, epipolar_size_y, roi, lowres_color=None
+):
     """
     This function builds a pipeline that resamples images in epipolar geometry
 
@@ -242,11 +246,13 @@ def build_image_resampling_pipeline(
     # Build bundletoperfectsensor (p+xs fusion) for images
     if lowres_color is not None:
         pansharpening_app = build_bundletoperfectsensor_pipeline(
-            img, lowres_color)
+            img, lowres_color
+        )
         img = pansharpening_app.GetParameterOutputImage("out")
 
     resampling_app = otbApplication.Registry.CreateApplication(
-        "GridBasedImageResampling")
+        "GridBasedImageResampling"
+    )
 
     if isinstance(img, str):
         resampling_app.SetParameterString("io.in", img)
@@ -264,7 +270,8 @@ def build_image_resampling_pipeline(
     resampling_app.Execute()
 
     extract_app = build_extract_roi_application(
-        resampling_app.GetParameterOutputImage("io.out"), roi)
+        resampling_app.GetParameterOutputImage("io.out"), roi
+    )
 
     # Retrieve data and build left dataset
     resampled = np.copy(extract_app.GetVectorImageAsNumpyArray("out"))
@@ -272,8 +279,7 @@ def build_image_resampling_pipeline(
     return resampled
 
 
-def encode_to_otb(
-    data_array, largest_size, roi, origin=None, spacing=None):
+def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
     """
     This function encodes a numpy array with metadata
     so that it can be used by the ImportImage method of otb applications
@@ -306,18 +312,18 @@ def encode_to_otb(
     otb_largest_size[1] = int(largest_size[1])
 
     otb_roi_region = otbApplication.itkRegion()
-    otb_roi_region['size'][0] = int(roi[2] - roi[0])
-    otb_roi_region['size'][1] = int(roi[3] - roi[1])
-    otb_roi_region['index'][0] = int(roi[0])
-    otb_roi_region['index'][1] = int(roi[1])
+    otb_roi_region["size"][0] = int(roi[2] - roi[0])
+    otb_roi_region["size"][1] = int(roi[3] - roi[1])
+    otb_roi_region["index"][0] = int(roi[0])
+    otb_roi_region["index"][1] = int(roi[1])
 
     output = {}
 
-    output['origin'] = otb_origin
-    output['spacing'] = otb_spacing
-    output['size'] = otb_largest_size
-    output['region'] = otb_roi_region
-    output['metadata'] = otbApplication.itkMetaDataDictionary()
-    output['array'] = data_array
+    output["origin"] = otb_origin
+    output["spacing"] = otb_spacing
+    output["size"] = otb_largest_size
+    output["region"] = otb_roi_region
+    output["metadata"] = otbApplication.itkMetaDataDictionary()
+    output["array"] = data_array
 
     return output

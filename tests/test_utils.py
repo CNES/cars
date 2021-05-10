@@ -22,23 +22,28 @@
 Test module for cars/utils.py
 """
 
+# Standard imports
 import os
 import tempfile
-import pytest
-import yaml
 
-import numpy as np
-import xarray as xr
+# Third party imports
 import fiona
+import numpy as np
+import pytest
+import xarray as xr
+import yaml
 from shapely.geometry import Polygon, shape
 
-from cars.core import utils, outputs, inputs
+# CARS imports
+from cars.core import inputs, outputs, utils
+
+# CARS Tests imports
 from .utils import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests
 def test_ncdf_can_open():
-    fake_path = '/here/im/not.nc'
+    fake_path = "/here/im/not.nc"
     assert not inputs.ncdf_can_open(fake_path)
 
 
@@ -65,6 +70,7 @@ def test_get_elevation_range_from_metadata():
     assert min_elev == 632.5
     assert max_elev == 1517.5
 
+
 @pytest.mark.unit_tests
 def test_otb_can_open():
     """
@@ -87,7 +93,8 @@ def test_fix_shapely():
     Test read_vector fix shapely with poly.gpkg example
     """
     poly, _ = inputs.read_vector(
-        absolute_data_path("input/utils_input/poly.gpkg"))
+        absolute_data_path("input/utils_input/poly.gpkg")
+    )
     assert poly.is_valid is False
     poly = poly.buffer(0)
     assert poly.is_valid is True
@@ -99,29 +106,25 @@ def test_read_vector():
     Test if read_vector function works with an input example
     """
     path_to_shapefile = absolute_data_path(
-        "input/utils_input/left_envelope.shp")
+        "input/utils_input/left_envelope.shp"
+    )
 
     poly, epsg = inputs.read_vector(path_to_shapefile)
 
     assert epsg == 4326
     assert isinstance(poly, Polygon)
-    assert list(
-        poly.exterior.coords) == [
-        (5.193406138843349,
-         44.20805805252155),
-        (5.1965650939582435,
-         44.20809526197842),
-        (5.196654349708835,
-         44.205901416036546),
-        (5.193485218293437,
-         44.205842790578764),
-        (5.193406138843349,
-         44.20805805252155)]
+    assert list(poly.exterior.coords) == [
+        (5.193406138843349, 44.20805805252155),
+        (5.1965650939582435, 44.20809526197842),
+        (5.196654349708835, 44.205901416036546),
+        (5.193485218293437, 44.205842790578764),
+        (5.193406138843349, 44.20805805252155),
+    ]
 
     # test exception
     with pytest.raises(Exception) as read_error:
-        utils.read_vector('test.shp')
-        assert str(read_error) == 'Impossible to read test.shp shapefile'
+        utils.read_vector("test.shp")
+        assert str(read_error) == "Impossible to read test.shp shapefile"
 
 
 @pytest.mark.unit_tests
@@ -129,18 +132,20 @@ def test_write_vector():
     """
     Test if write_vector function works with testing Polygons
     """
-    polys = [Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)]),
-             Polygon([(2.0, 2.0), (2.0, 3.0), (3.0, 3.0), (3.0, 2.0)])]
+    polys = [
+        Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)]),
+        Polygon([(2.0, 2.0), (2.0, 3.0), (3.0, 3.0), (3.0, 2.0)]),
+    ]
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        path_to_file = os.path.join(directory, 'test.gpkg')
+        path_to_file = os.path.join(directory, "test.gpkg")
         outputs.write_vector(polys, path_to_file, 4326)
 
         assert os.path.exists(path_to_file)
 
         nb_feat = 0
         for feat in fiona.open(path_to_file):
-            poly = shape(feat['geometry'])
+            poly = shape(feat["geometry"])
             nb_feat += 1
             assert poly in polys
 
@@ -152,8 +157,8 @@ def test_angle_vectors():
     """
     Testing vectors and angle result reference
     """
-    vector_1 = [1,1,1]
-    vector_2 = [-1,-1,-1]
+    vector_1 = [1, 1, 1]
+    vector_2 = [-1, -1, -1]
     angle_ref = np.pi
 
     angle_result = utils.angle_vectors(vector_1, vector_2)
@@ -166,9 +171,10 @@ def test_write_ply():
     """
     Test write ply file
     """
-    points = xr.open_dataset(absolute_data_path(
-        "input/intermediate_results/points_ref.nc"))
-    outputs.write_ply(os.path.join(temporary_dir(), 'test.ply'), points)
+    points = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/points_ref.nc")
+    )
+    outputs.write_ply(os.path.join(temporary_dir(), "test.ply"), points)
 
 
 @pytest.mark.unit_tests
@@ -176,18 +182,13 @@ def test_write_dask_config():
     """
     Test write used dask config
     """
-    file_root_name = 'test'
-    cfg_dask = {'key1' : 2,
-        'key2' : {
-            'key3' : 'string1',
-            'key4' : [1, 2, 4]
-        }
-    }
+    file_root_name = "test"
+    cfg_dask = {"key1": 2, "key2": {"key3": "string1", "key4": [1, 2, 4]}}
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         outputs.write_dask_config(cfg_dask, directory, file_root_name)
 
         # test file existence and content
-        file_path = os.path.join(directory, file_root_name + '.yaml')
+        file_path = os.path.join(directory, file_root_name + ".yaml")
 
         assert os.path.exists(file_path)
 
