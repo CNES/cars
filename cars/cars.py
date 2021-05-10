@@ -42,6 +42,20 @@ warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
+class CarsArgumentParser(argparse.ArgumentParser):
+    """
+    ArgumentParser class adaptation for CARS
+    """
+
+    def convert_arg_line_to_args(self, arg_line):
+        """
+        Redefine herited function to accept one line argument parser in @file
+        from fromfile_prefix_chars file argument
+        https://docs.python.org/dev/library/argparse.html
+        """
+        return arg_line.split()
+
+
 def cars_parser() -> argparse.ArgumentParser:
     """
     Main CLI argparse parser function
@@ -49,9 +63,12 @@ def cars_parser() -> argparse.ArgumentParser:
 
     :return: CARS arparse CLI interface object
     """
-    # Create cars cli parser fril argparse
+    # Create cars cli parser from argparse
+    # use @file to use a file containing parameters
     parser = argparse.ArgumentParser(
-        "cars", description="CARS: CNES Algorithms to Reconstruct Surface"
+        "cars",
+        description="CARS: CNES Algorithms to Reconstruct Surface",
+        fromfile_prefix_chars="@",
     )
 
     # General arguments at first level
@@ -442,6 +459,9 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
         datefmt="%y-%m-%d %H:%M:%S",
         format="%(asctime)s :: %(levelname)s :: %(message)s",
     )
+
+    # Debug argparse show args
+    logging.debug("Show argparse arguments: {}".format(args))
 
     # main(s) for each command
     if args.command == "prepare":
