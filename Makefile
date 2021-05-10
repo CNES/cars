@@ -14,6 +14,7 @@ CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
 CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
 
 GDAL_VERSION = $(shell gdal-config --version)
+CARS_VERSION = $(shell python3 setup.py --version)
 
 # TARGETS
 .PHONY: help venv install test lint format docs docker clean
@@ -46,6 +47,7 @@ install: install-deps  ## install and set env
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .
 	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@chmod +x ${VENV}/bin/register-python-argcomplete
+	@echo "CARS ${CARS_VERSION} installed"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 install-dev: install-deps ## install cars in dev mode and set env
@@ -54,6 +56,7 @@ install-dev: install-deps ## install cars in dev mode and set env
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${VENV}/bin/pre-commit install -t pre-commit
 	@chmod +x ${VENV}/bin/register-python-argcomplete
+	@echo "CARS ${CARS_VERSION} installed in dev mode"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 test: install-dev ## run all tests + coverage html
@@ -104,7 +107,7 @@ docker: ## Build docker image (and check Dockerfile)
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
 	@echo "Build Docker image"
-	@docker build -t cars .
+	@docker build -t cnes/cars:${CARS_VERSION} .
 
 clean: ## clean: remove venv, cars build, cache, ...
 	@rm -rf ${VENV}
