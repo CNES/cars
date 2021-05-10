@@ -65,7 +65,7 @@ def cars_parser() -> argparse.ArgumentParser:
     """
     # Create cars cli parser from argparse
     # use @file to use a file containing parameters
-    parser = argparse.ArgumentParser(
+    parser = CarsArgumentParser(
         "cars",
         description="CARS: CNES Algorithms to Reconstruct Surface",
         fromfile_prefix_chars="@",
