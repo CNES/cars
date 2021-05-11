@@ -29,6 +29,7 @@ from __future__ import absolute_import
 # Third party imports
 import numpy as np
 import otbApplication
+import rasterio as rio
 
 # CARS imports
 from cars.conf import mask_classes
@@ -89,6 +90,17 @@ def build_stereorectification_grid_pipeline(
 
     origin = stereo_app.GetImageOrigin("io.outleft")
     spacing = stereo_app.GetImageSpacing("io.outleft")
+
+    # Convert epipolar size depending on the pixel size
+    # TODO: remove this patch when OTB issue
+    # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
+    # is resolved
+    with rio.open(img1, "r") as rio_dst:
+        pixel_size_x, pixel_size_y = rio_dst.transform[0], rio_dst.transform[4]
+
+    mean_size = (pixel_size_x + pixel_size_y) / 2
+    epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
+    epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
 
     return (
         left_grid_as_array,
