@@ -28,18 +28,19 @@ It enables two main steps : `prepare` and `compute_dsm` described in the followi
 Arguments in a file
 ===================
 Sometimes, for example when dealing with a particularly long argument lists, it may make sense to keep the list of arguments in a file rather than typing it out at the command line.
-With CARS, the `@` character can be used to define a file containing
+With CARS, the `@` character can be used to define a file containing arguments to be used.
 
 .. code-block:: bash
 
     cars @args.txt
 
-Example of args.txt file with `demo data  <demo/data_samples.tar.bz2>`. Some examples can be found in demo directory of cars documentation. _
+Example of arguments list in @args.txt file:
 
 .. code-block:: bash
 
     --loglevel CRITICAL prepare  -i data_samples/input12.json -o  data_samples/outprepare12 --nb_workers 2
 
+Examples files with `demo data  <demo/data_samples.tar.bz2>` can be found in demo directory of cars documentation.
 
 
 Prepare DSM production
