@@ -62,6 +62,7 @@ ENV VLFEAT_INCLUDE_DIR=/usr/local/include
 # copy cars
 WORKDIR /cars
 COPY . /cars/
+RUN make clean
 
 # install cars
 RUN python3 -m pip --no-cache-dir install pip setuptools cython --upgrade
