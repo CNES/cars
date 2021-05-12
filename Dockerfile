@@ -30,7 +30,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
 
 # install orfeo toolbox
 WORKDIR /opt/otb
-RUN wget -nv https://www.orfeo-toolbox.org/packages/OTB-7.2.0-Linux64.run \
+RUN wget -nv https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.2.0-Linux64.run \
     && chmod +x OTB-7.2.0-Linux64.run \
     && ./OTB-7.2.0-Linux64.run --target /usr/local/otb \
     && /bin/bash -c 'source /usr/local/otb/otbenv.profile' \
@@ -62,6 +62,7 @@ ENV VLFEAT_INCLUDE_DIR=/usr/local/include
 # copy cars
 WORKDIR /cars
 COPY . /cars/
+RUN make clean
 
 # install cars
 RUN python3 -m pip --no-cache-dir install pip setuptools cython --upgrade

@@ -45,12 +45,12 @@ docker pull cnes/cars
 ### Two steps, one DSM
 
 You only need to launch two commands:
-``` 
-# prepare step 
+```
+# prepare step
 docker run -v "$(pwd)"/data:/data cnes/cars prepare -i /data/input.json -o /data/prepare_outdir
 ```
 ```
-# compute_dsm step 
+# compute_dsm step
 docker run -v "$(pwd)"/data:/data cnes/cars compute_dsm -i /data/prepare_outdir/content.json -o /data/compute_dsm_outdir
 ```
 with one configuration input file ("input.json") located in a "data" folder to be consistent with the previous command lines:
@@ -67,7 +67,7 @@ with one configuration input file ("input.json") located in a "data" folder to b
 
 ### On the way to the Pyramids...
 
-You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples/data_samples.tar.bz2) to give CARS a try!  
+You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples.tar.bz2) to give CARS a try!
 You're at a dead end? This [quick start script](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh) sets you back on the right path.
 
 ## Documentation

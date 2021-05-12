@@ -1,0 +1,1 @@
+--loglevel CRITICAL compute_dsm -i data_samples/outprepare12/content.json data_samples/outprepare13/content.json  -o data_samples/outcompute/ --nb_workers=2

@@ -1,54 +1,63 @@
 #!/bin/bash
 echo " "
-echo "===== Demo CARS ====="
+echo "===== Demo CARS (with Docker) ====="
 echo " "
-sleep 2
 
-echo "1. Docker must be installed"
+echo "- Docker must be installed:"
 echo "  # docker -v"
 docker -v
 echo " "
-sleep 2
 
-echo "2. Create and go in a CARS test directory :"
-echo "  # mkdir test_cars; cd test_cars"
-mkdir test_cars; cd test_cars
-echo " "
-sleep 2
-
-
-echo "3. Get CARS dockerfile image :"
+echo "- Get CARS dockerfile image:"
 echo "  # docker pull cnes/cars"
 docker pull cnes/cars
 echo " "
-sleep 2
 
-echo "4. Get and unzip data samples from CARS repository : "
-wget https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples/data_samples.tar.bz2
+echo "- Get and extract data samples from CARS repository:"
+FILE="data_samples.tar.bz2"
+URL="https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/${FILE}"
+if [ -f ${FILE} ]; then
+    echo "  ! File ${FILE} already exists."
+else
+    # If not present, download data + md5sum.
+    echo "  # wget ${URL}"
+    echo "  # wget ${URL}.md5sum"
+    wget ${URL}
+    wget ${URL}.md5sum
+fi
+# Check md5sum
+echo "  # md5sum --status -c ${FILE}.md5sum"
+if md5sum --status -c ${FILE}.md5sum; then
+    echo "  ! MD5sum check: OK"
+else
+    # The MD5 sum didn't match
+    echo "  ! Md5sum check: KO. Exit."
+fi
+# Extract cars data samples
+echo "  # tar xvfj data_samples.tar.bz2"
 tar xvfj data_samples.tar.bz2
-rm data_samples.tar.bz2
-echo " "
-sleep 2
-
-echo "5. Launch CARS PREPARE step for img1 and img2 pair"
-echo "  # docker run -v \"\$(pwd)\"/data:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=2"
-docker run -v "$(pwd)"/data:/data cnes/cars --loglevel CRITICAL prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=4
 echo " "
 
+# CARS Docker Run
 
-echo "6. Launch CARS PREPARE step for img1 and img3 pair"
-echo "  # docker run -v \"\$(pwd)\"/data:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=2"
-docker run -v "$(pwd)"/data:/data cnes/cars --loglevel CRITICAL prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=4
+echo "- Launch CARS PREPARE step for img1 and img2 pair:"
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=2"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=2
 echo " "
 
-echo "7. Launch CARS COMPUTE DSM step"
-echo "  # docker run -v \"\$(pwd)\"/data:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json -o /data/outcompute/ --nb_workers=2"
-docker run -v "$(pwd)"/data:/data cnes/cars --loglevel CRITICAL compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/ --nb_workers=4
+echo "- Launch CARS PREPARE step for img1 and img3 pair:"
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=2"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=2
 echo " "
-# Clean rights on generated data
-docker run -it -v "$(pwd)"/data:/data --entrypoint /bin/bash cnes/cars -c "chown -R '$(id -u):$(id -g)' /data/"
 
-echo "8. Show resulting DSM"
-echo "  # ls -al data/outcompute/"
-ls -al data/outcompute/
-sleep 2
+echo "- Launch CARS COMPUTE DSM step:"
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json -o /data/outcompute/ --nb_workers=2"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/ --nb_workers=2
+echo " "
+
+# Clean rights on generated data. Otherwise, data cannot be deleted without root access.
+docker run -it -v "$(pwd)"/data_samples:/data --entrypoint /bin/bash cnes/cars -c "chown -R '$(id -u):$(id -g)' /data/"
+
+echo "- Show resulting DSM:"
+echo "  # ls -l data_samples/outcompute/"
+ls -l data_samples/outcompute/
