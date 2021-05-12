@@ -18,20 +18,24 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+
 """
 Configure correlator module:
 contains functions to retrieve the correlator configuration
 """
 
-# Third party imports
+from typing import Dict
+
+import numpy as np
 import pandora
-from pandora.JSON_checker import (
-    check_image_section,
+from json_checker import Checker, Or
+from pandora.check_json import (
     check_pipeline_section,
     concat_conf,
-    get_config_image,
     get_config_pipeline,
+    update_conf,
 )
+from pandora.state_machine import PandoraMachine
 
 
 def configure_correlator(corr_file_path=None):
@@ -58,45 +62,114 @@ def configure_correlator(corr_file_path=None):
         #  * Census with 5 X 5 window
         #  * SGM
         user_cfg = {}
-        user_cfg["image"] = {}
-        user_cfg["image"]["valid_pixels"] = 0
-        user_cfg["image"]["no_data"] = 255
-        user_cfg["stereo"] = {}
-        user_cfg["stereo"]["stereo_method"] = "census"
-        user_cfg["stereo"]["window_size"] = 5
-        user_cfg["stereo"]["subpix"] = 1
-        user_cfg["aggregation"] = {}
-        user_cfg["aggregation"]["aggregation_method"] = "none"
-        user_cfg["optimization"] = {}
-        user_cfg["optimization"]["optimization_method"] = "sgm"
-        user_cfg["optimization"]["P1"] = 8
-        user_cfg["optimization"]["P2"] = 32
-        user_cfg["optimization"]["p2_method"] = "constant"
-        user_cfg["optimization"]["penalty_method"] = "sgm_penalty"
-        user_cfg["optimization"]["overcounting"] = False
-        user_cfg["optimization"]["min_cost_paths"] = False
-        user_cfg["refinement"] = {}
-        user_cfg["refinement"]["refinement_method"] = "vfit"
-        user_cfg["filter"] = {}
-        user_cfg["filter"]["filter_method"] = "median"
-        user_cfg["filter"]["filter_size"] = 3
-        user_cfg["validation"] = {}
-        user_cfg["validation"]["validation_method"] = "cross_checking"
-        user_cfg["validation"]["cross_checking_threshold"] = 1.0
-        user_cfg["validation"]["right_left_mode"] = "accurate"
-        user_cfg["validation"]["interpolated_disparity"] = "none"
+        user_cfg["input"] = {}
+        user_cfg["pipeline"] = {}
+        user_cfg["pipeline"]["right_disp_map"] = {}
+        user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+        user_cfg["pipeline"]["matching_cost"] = {}
+        user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
+        user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
+        user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
+        user_cfg["pipeline"]["optimization"] = {}
+        user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
+        user_cfg["pipeline"]["optimization"]["P1"] = 8
+        user_cfg["pipeline"]["optimization"]["P2"] = 32
+        user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
+        user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
+        user_cfg["pipeline"]["optimization"]["overcounting"] = False
+        user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
+        user_cfg["pipeline"]["disparity"] = {}
+        user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
+        user_cfg["pipeline"]["disparity"]["invalid_disparity"] = "NaN"
+        user_cfg["pipeline"]["refinement"] = {}
+        user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
+        user_cfg["pipeline"]["filter"] = {}
+        user_cfg["pipeline"]["filter"]["filter_method"] = "median"
+        user_cfg["pipeline"]["filter"]["filter_size"] = 3
+        user_cfg["pipeline"]["validation"] = {}
+        user_cfg["pipeline"]["validation"][
+            "validation_method"
+        ] = "cross_checking"
+        user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
     else:
         user_cfg = pandora.read_config_file(corr_file_path)
 
     # Import plugins before checking confifuration
     pandora.import_plugin()
     # Check configuration and update the configuration with default values
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
     # check pipeline
     user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline)
-    # check image
-    user_cfg_image = get_config_image(user_cfg)
-    cfg_image = check_image_section(user_cfg_image)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
+    # check a part of input section
+    user_cfg_input = get_config_input_custom_cars(user_cfg)
+    cfg_input = check_input_section_custom_cars(user_cfg_input)
     # concatenate updated config
-    cfg = concat_conf([cfg_image, cfg_pipeline])
+    cfg = concat_conf([cfg_input, cfg_pipeline])
+
+    return cfg
+
+
+input_configuration_schema_custom_cars = {
+    "nodata_left": Or(
+        int, lambda x: np.isnan(x)  # pylint: disable=unnecessary-lambda
+    ),
+    "nodata_right": Or(
+        int, lambda x: np.isnan(x)  # pylint: disable=unnecessary-lambda
+    ),
+}
+
+default_short_configuration_input_custom_cars = {
+    "input": {
+        "nodata_left": -9999,
+        "nodata_right": -9999,
+    }
+}
+
+
+def get_config_input_custom_cars(user_cfg: Dict[str, dict]) -> Dict[str, dict]:
+    """
+    Get the input configuration
+
+    :param user_cfg: user configuration
+    :type user_cfg: dict
+    :return cfg: partial configuration
+    :rtype cfg: dict
+    """
+
+    cfg = {}
+
+    if "input" in user_cfg:
+        cfg["input"] = {}
+
+        if "nodata_left" in user_cfg["input"]:
+            cfg["input"]["nodata_left"] = user_cfg["input"]["nodata_left"]
+
+        if "nodata_right" in user_cfg["input"]:
+            cfg["input"]["nodata_right"] = user_cfg["input"]["nodata_right"]
+
+    return cfg
+
+
+def check_input_section_custom_cars(
+    user_cfg: Dict[str, dict]
+) -> Dict[str, dict]:
+    """
+    Complete and check if the dictionary is correct
+
+    :param user_cfg: user configuration
+    :type user_cfg: dict
+    :return: cfg: global configuration
+    :rtype: cfg: dict
+    """
+    # Add missing steps and inputs defaults values in user_cfg
+    cfg = update_conf(default_short_configuration_input_custom_cars, user_cfg)
+
+    # check schema
+    configuration_schema = {"input": input_configuration_schema_custom_cars}
+
+    checker = Checker(configuration_schema)
+    checker.validate(cfg)
+
     return cfg
