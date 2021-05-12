@@ -15,6 +15,7 @@ CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
 
 GDAL_VERSION = $(shell gdal-config --version)
 CARS_VERSION = $(shell python3 setup.py --version)
+CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 
 # TARGETS
 .PHONY: help venv install test lint format docs docker clean
@@ -106,8 +107,8 @@ docker: ## Build docker image (and check Dockerfile)
 	@echo "Check Dockerfile with hadolint"
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
-	@echo "Build Docker image"
-	@docker build -t cnes/cars:${CARS_VERSION} .
+	@echo "Build Docker image CARS ${CARS_VERSION_MIN}"
+	@docker build -t cnes/cars:${CARS_VERSION_MIN} .
 
 clean: ## clean: remove venv, cars build, cache, ...
 	@rm -rf ${VENV}
