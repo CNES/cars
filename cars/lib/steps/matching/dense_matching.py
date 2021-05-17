@@ -33,6 +33,9 @@ import pandora
 import pandora.marge
 import xarray as xr
 from pandora import constants as pcst
+from pandora.constants import (
+    PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING as P_MSK_PR_N_D,
+)
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
 from pkg_resources import iter_entry_points
@@ -217,7 +220,7 @@ def get_masks_from_pandora(
             np.where(
                 (
     validity_mask_cropped  # noqa: E122
-    & pcst.PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING  # noqa: E122, E501, B950  # pylint: disable=line-too-long
+    & P_MSK_PR_N_D  # noqa: E122
                 )
                 == 0
             )
