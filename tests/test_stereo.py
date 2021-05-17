@@ -695,7 +695,6 @@ def test_compute_mask_to_use_in_pandora():
     """
     Test compute_mask_to_use_in_pandora with a cloud "data1_ref_right_masked.nc"
     """
-    corr_cfg = create_corr_conf()
 
     right_input = xr.open_dataset(
         absolute_data_path(
@@ -704,7 +703,7 @@ def test_compute_mask_to_use_in_pandora():
     )
 
     test_mask = dense_matching.compute_mask_to_use_in_pandora(
-        corr_cfg, right_input, cst.EPI_MSK, [100]
+        right_input, cst.EPI_MSK, [100]
     )
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)
