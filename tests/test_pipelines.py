@@ -25,15 +25,25 @@ Test module for cars/otb_pipelines.py
 # Standard imports
 from __future__ import absolute_import
 
+import os
+import tempfile
+
 # Third party imports
 import numpy as np
+import otbApplication
 import pytest
+import rasterio as rio
 
 # CARS imports
 from cars import otb_pipelines
 
 # CARS Tests imports
-from .utils import absolute_data_path, otb_geoid_file_set, otb_geoid_file_unset
+from .utils import (
+    absolute_data_path,
+    otb_geoid_file_set,
+    otb_geoid_file_unset,
+    temporary_dir,
+)
 
 
 @pytest.mark.unit_tests
@@ -87,6 +97,194 @@ def test_build_stereorectification_grid_pipeline():
         absolute_data_path("ref_output/right_grid.npy")
     )
     np.testing.assert_allclose(right_grid_np, right_grid_np_reference)
+
+    # unset otb geoid file
+    otb_geoid_file_unset()
+
+
+@pytest.mark.unit_tests
+def test_build_stereorectification_grid_pipeline_scaled_inputs():
+    """
+    test different pixel sizes in input images
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+    step = 45
+
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
+    # reference
+    (
+        _,
+        _,
+        _,
+        _,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+    ) = otb_pipelines.build_stereorectification_grid_pipeline(
+        img1, img2, dem, epi_step=step
+    )
+
+    # define generic test
+    def test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex,
+        scaley,
+    ):
+        """
+        Test that epipolar image size and disp_to_alt_ratio remain unchanged
+        when scaling the input images
+
+        tested combinations:
+        - scaled img1 and scaled img2
+        - img1 and scaled img2
+        - scaled img1 and img2
+        """
+
+        # create otb app to rescale input images
+        app = otbApplication.Registry.CreateApplication(
+            "RigidTransformResample"
+        )
+
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+            # rescale inputs
+            img1_transform = os.path.join(directory, "img1_transform.tif")
+            img2_transform = os.path.join(directory, "img2_transform.tif")
+            app.SetParameterString("in", img1)
+            app.SetParameterString("transform.type", "id")
+            app.SetParameterFloat("transform.type.id.scalex", scalex)
+            app.SetParameterFloat("transform.type.id.scaley", scaley)
+            app.SetParameterString("out", img1_transform)
+            app.ExecuteAndWriteOutput()
+
+            app.SetParameterString("in", img2)
+            app.SetParameterString("out", img2_transform)
+            app.ExecuteAndWriteOutput()
+
+            with rio.open(img1_transform, "r") as rio_dst:
+                pixel_size_x, pixel_size_y = (
+                    rio_dst.transform[0],
+                    rio_dst.transform[4],
+                )
+                assert pixel_size_x == 1 / scalex
+                assert pixel_size_y == 1 / scaley
+
+            with rio.open(img2_transform, "r") as rio_dst:
+                pixel_size_x, pixel_size_y = (
+                    rio_dst.transform[0],
+                    rio_dst.transform[4],
+                )
+                assert pixel_size_x == 1 / scalex
+                assert pixel_size_y == 1 / scaley
+
+            # img1_transform / img2_transform
+            (
+                _,
+                _,
+                _,
+                _,
+                epipolar_size_x,
+                epipolar_size_y,
+                disp_to_alt_ratio,
+            ) = otb_pipelines.build_stereorectification_grid_pipeline(
+                img1_transform, img2_transform, dem, epi_step=step
+            )
+
+            assert epipolar_size_x == ref_epipolar_size_x
+            assert epipolar_size_y == ref_epipolar_size_y
+            assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
+
+            # img1_transform / img2
+            (
+                _,
+                _,
+                _,
+                _,
+                epipolar_size_x,
+                epipolar_size_y,
+                disp_to_alt_ratio,
+            ) = otb_pipelines.build_stereorectification_grid_pipeline(
+                img1_transform, img2, dem, epi_step=step
+            )
+
+            assert epipolar_size_x == ref_epipolar_size_x
+            assert epipolar_size_y == ref_epipolar_size_y
+            assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
+
+            # img1 / img2_transform
+            (
+                _,
+                _,
+                _,
+                _,
+                epipolar_size_x,
+                epipolar_size_y,
+                disp_to_alt_ratio,
+            ) = otb_pipelines.build_stereorectification_grid_pipeline(
+                img1, img2_transform, dem, epi_step=step
+            )
+
+            assert epipolar_size_x == ref_epipolar_size_x
+            assert epipolar_size_y == ref_epipolar_size_y
+            assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
+
+    # test with scalex= 2, scaley=2
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=2.0,
+        scaley=2.0,
+    )
+    # test with scalex= 2, scaley=3
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=2.0,
+        scaley=3.0,
+    )
+    # test with scalex= 0.5, scaley=0.5
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=1 / 2.0,
+        scaley=1 / 2.0,
+    )
+    # test with scalex= 0.5, scaley=0.25
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=1 / 2.0,
+        scaley=1 / 4.0,
+    )
 
     # unset otb geoid file
     otb_geoid_file_unset()

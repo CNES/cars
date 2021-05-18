@@ -22,6 +22,8 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
+- Fix epipolar size. [#206]
+
 
 ## 0.3.0 Multi-classes mask management (December 2020)
 
