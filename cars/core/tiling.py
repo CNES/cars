@@ -28,6 +28,7 @@ import math
 
 # Third party imports
 import numpy as np
+from osgeo import osr
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
@@ -284,23 +285,11 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
     return xmin, ymin, xmax, ymax
 
 
-def transform_terrain_region_to_epipolar(
+def terrain_region_to_epipolar(
     region, conf, epsg=4326, disp_min=None, disp_max=None, step=100
 ):
     """
-    Transform terrain region to epipolar region according to ground_positions
-
-    :param region: The terrain region to transform to epipolar region
-                   ([lat_min, lon_min, lat_max, lon_max])
-    :type region: list of four float
-    :param ground_positions: Grid of ground positions for epipolar geometry
-    :type ground_positions: numpy array
-    :param origin: origin of the grid
-    :type origin: list of two float
-    :param spacing: spacing of the grid
-    :type spacing: list of two float
-    :returns: The epipolar region as [xmin, ymin, xmax, ymax]
-    :rtype: list of four float
+    Transform terrain region to epipolar region
     """
     # Retrieve disp min and disp max if needed
     preprocessing_output_conf = conf[output_prepare.PREPROCESSING_SECTION_TAG][
@@ -391,7 +380,7 @@ def transform_terrain_region_to_epipolar(
     epipolar_region_maxy = points_max[1]
 
     # This mimics the previous code that was using
-    # transform_terrain_region_to_epipolar
+    # terrain_region_to_epipolar
     epipolar_region = [
         epipolar_region_minx,
         epipolar_region_miny,
@@ -399,3 +388,109 @@ def transform_terrain_region_to_epipolar(
         epipolar_region_maxy,
     ]
     return epipolar_region
+
+
+def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
+    """
+    Transform terrain grid to epipolar region
+    """
+    # Compute disp_min and disp_max location for epipolar grid
+    (epipolar_grid_min, epipolar_grid_max,) = compute_epipolar_grid_min_max(
+        conf["epipolar_regions_grid"],
+        epsg,
+        conf["configuration"],
+        conf["disp_min"],
+        conf["disp_max"],
+    )
+
+    epipolar_regions_grid_size = np.shape(conf["epipolar_regions_grid"])[:2]
+    epipolar_regions_grid_flat = conf["epipolar_regions_grid"].reshape(
+        -1, conf["epipolar_regions_grid"].shape[-1]
+    )
+
+    # in the following code a factor is used to increase the precision
+    spatial_ref = osr.SpatialReference()
+    spatial_ref.ImportFromEPSG(epsg)
+    if spatial_ref.IsGeographic():
+        precision_factor = 1000.0
+    else:
+        precision_factor = 1.0
+
+    # Build delaunay_triangulation
+    delaunay_min = Delaunay(epipolar_grid_min * precision_factor)
+    delaunay_max = Delaunay(epipolar_grid_max * precision_factor)
+
+    # Build kdtrees
+    tree_min = cKDTree(epipolar_grid_min * precision_factor)
+    tree_max = cKDTree(epipolar_grid_max * precision_factor)
+
+    # Look-up terrain_grid with Delaunay
+    s_min = tsearch(delaunay_min, terrain_grid * precision_factor)
+    s_max = tsearch(delaunay_max, terrain_grid * precision_factor)
+
+    # Filter simplices on the edges
+    edges = np.ones(epipolar_regions_grid_size)
+    edges[1:-1, 1:-1] = 0
+    edges_ravel = np.ravel(edges)
+    s_min_edges = np.sum(edges_ravel[delaunay_min.simplices], axis=1) == 3
+    s_max_edges = np.sum(edges_ravel[delaunay_max.simplices], axis=1) == 3
+    s_min[s_min_edges[s_min]] = -1
+    s_max[s_max_edges[s_max]] = -1
+
+    points_disp_min = epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
+
+    points_disp_max = epipolar_regions_grid_flat[delaunay_max.simplices[s_max]]
+
+    nn_disp_min = epipolar_regions_grid_flat[
+        tree_min.query(terrain_grid * precision_factor)[1]
+    ]
+
+    nn_disp_max = epipolar_regions_grid_flat[
+        tree_max.query(terrain_grid * precision_factor)[1]
+    ]
+
+    points_disp_min_min = np.min(points_disp_min, axis=2)
+    points_disp_min_max = np.max(points_disp_min, axis=2)
+    points_disp_max_min = np.min(points_disp_max, axis=2)
+    points_disp_max_max = np.max(points_disp_max, axis=2)
+
+    # Use either Delaunay search or NN search
+    # if delaunay search fails (point outside triangles)
+    points_disp_min_min = np.where(
+        np.stack((s_min, s_min), axis=-1) != -1,
+        points_disp_min_min,
+        nn_disp_min,
+    )
+
+    points_disp_min_max = np.where(
+        np.stack((s_min, s_min), axis=-1) != -1,
+        points_disp_min_max,
+        nn_disp_min,
+    )
+
+    points_disp_max_min = np.where(
+        np.stack((s_max, s_max), axis=-1) != -1,
+        points_disp_max_min,
+        nn_disp_max,
+    )
+
+    points_disp_max_max = np.where(
+        np.stack((s_max, s_max), axis=-1) != -1,
+        points_disp_max_max,
+        nn_disp_max,
+    )
+
+    points = np.stack(
+        (
+            points_disp_min_min,
+            points_disp_min_max,
+            points_disp_max_min,
+            points_disp_max_max,
+        ),
+        axis=0,
+    )
+
+    points_min = np.min(points, axis=0)
+    points_max = np.max(points, axis=0)
+
+    return points_min, points_max
