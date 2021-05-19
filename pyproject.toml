@@ -12,3 +12,4 @@ exclude = "(.eggs|.git|.mypy_cache|.nox|.tox|_build|build|dist|venv)"
 [tool.isort]
 profile = 'black'
 line_length = 80
+known_third_party = [ "dask" ]
