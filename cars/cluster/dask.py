@@ -22,6 +22,8 @@
 Cluster dask module:
 provides functions to start and stop a local or PBS cluster.
 """
+# Disable import order to avoid dask, isort check loop
+# pylint: disable=wrong-import-order
 
 # Standard imports
 import logging
@@ -33,31 +35,31 @@ import time
 import numpy as np
 import psutil
 import xarray as xr
-from dask import sizeof
 from dask.distributed import Client, LocalCluster
+from dask.sizeof import sizeof as dask_sizeof
 from dask_jobqueue import PBSCluster
 from distributed.diagnostics.plugin import WorkerPlugin
 
 
-@sizeof.sizeof.register_lazy("xarray")
+@dask_sizeof.register_lazy("xarray")
 def register_xarray():
     """
     Add hook to dask so it correctly estimates memory used by xarray
     """
 
-    @sizeof.sizeof.register(xr.DataArray)
+    @dask_sizeof.register(xr.DataArray)
     # pylint: disable=unused-variable
     def sizeof_xarray_dataarray(xarr):
         """
         Inner function for total size of xarray_dataarray
         """
-        total_size = sizeof.sizeof(xarr.values)
+        total_size = dask_sizeof(xarr.values)
         for __, carray in xarr.coords.items():
-            total_size += sizeof.sizeof(carray.values)
-        total_size += sizeof.sizeof(xarr.attrs)
+            total_size += dask_sizeof(carray.values)
+        total_size += dask_sizeof(xarr.attrs)
         return total_size
 
-    @sizeof.sizeof.register(xr.Dataset)
+    @dask_sizeof.register(xr.Dataset)
     # pylint: disable=unused-variable
     def sizeof_xarray_dataset(xdat):
         """
@@ -65,10 +67,10 @@ def register_xarray():
         """
         total_size = 0
         for __, varray in xdat.data_vars.items():
-            total_size += sizeof.sizeof(varray.values)
+            total_size += dask_sizeof(varray.values)
         for __, carray in xdat.coords.items():
-            total_size += sizeof.sizeof(carray)
-        total_size += sizeof.sizeof(xdat.attrs)
+            total_size += dask_sizeof(carray)
+        total_size += dask_sizeof(xdat.attrs)
         return total_size
 
 
