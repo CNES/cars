@@ -5,26 +5,26 @@ repos:
     name: isort
     stages: [commit]
     language: system
-    entry: isort cars tests
+    entry: isort
     types: [python]
 
   - id: black
     name: black
     stages: [commit]
     language: system
-    entry: black cars tests
+    entry: black
     types: [python]
 
   - id: flake8
     name: flake8
     stages: [commit]
     language: system
-    entry: flake8 cars tests
+    entry: flake8
     types: [python]
 
   - id: pylint
     name: PyLint
     stages: [commit]
     language: system
-    entry: pylint cars tests --rcfile=.pylintrc
+    entry: pylint --rcfile=.pylintrc
     files: \.py$
