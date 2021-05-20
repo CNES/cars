@@ -51,7 +51,7 @@ def epipolar_rectify_images(configuration, region, margins):
     :type region: list of four float
     :param margins: margins for the images
     :type: 2D (image, corner) DataArray, with the
-           dimensions image = ['ref_margin', 'sec_margin'],
+           dimensions image = ['left_margin', 'right_margin'],
            corner = ['left','up', 'right', 'down']
     :return: Datasets containing:
 
@@ -99,7 +99,7 @@ def epipolar_rectify_images(configuration, region, margins):
     # TODO: tiled region should be given in parameter
     # TODO: keep only resampling here (keep functional unitary approach)
     left_region = region.copy()
-    left_margins = margins.loc[{"image": "ref_margin"}].values
+    left_margins = margins["left_margin"].data
     left_roi = tiling.crop(
         left_region, [0, 0, epipolar_size_x, epipolar_size_y]
     )
@@ -108,7 +108,7 @@ def epipolar_rectify_images(configuration, region, margins):
         [0, 0, epipolar_size_x, epipolar_size_y],
     )
 
-    left_margins = margins.loc[{"image": "ref_margin"}].values
+    left_margins = margins["left_margin"].data
     # Get actual margin taking cropping into account
     left_margins[0] = left_region[0] - left_roi[0]
     left_margins[1] = left_region[1] - left_roi[1]
@@ -117,7 +117,7 @@ def epipolar_rectify_images(configuration, region, margins):
 
     # Apply margins to right image
     right_region = region.copy()
-    right_margins = margins.loc[{"image": "sec_margin"}].values
+    right_margins = margins["right_margin"].data
     right_roi = tiling.crop(
         right_region, [0, 0, epipolar_size_x, epipolar_size_y]
     )
@@ -284,7 +284,7 @@ def resample_image(
     )
 
     dataset = datasets.create_im_dataset(
-        resamp, region, largest_size, band_coords, msk
+        resamp, region, largest_size, img, band_coords, msk
     )
 
     return dataset

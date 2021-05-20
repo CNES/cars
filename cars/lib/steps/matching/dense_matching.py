@@ -33,6 +33,11 @@ import pandora
 import pandora.marge
 import xarray as xr
 from pandora import constants as pcst
+from pandora.constants import (
+    PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING as P_MSK_PR_N_D,
+)
+from pandora.img_tools import check_dataset
+from pandora.state_machine import PandoraMachine
 from pkg_resources import iter_entry_points
 from scipy import interpolate
 
@@ -91,7 +96,7 @@ def get_margins(disp_min, disp_max, corr_cfg):
     :type corr_cfg: dict
     :return: margins of the matching algorithm used
     """
-    return pandora.marge.get_margins(disp_min, disp_max, corr_cfg)
+    return pandora.marge.get_margins(disp_min, disp_max, corr_cfg["pipeline"])
 
 
 def get_masks_from_pandora(
@@ -149,7 +154,7 @@ def get_masks_from_pandora(
             np.where(
                 (
                     validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_SEC
+                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
                 )
                 == 0
             )
@@ -160,7 +165,7 @@ def get_masks_from_pandora(
             np.where(
                 (
                     validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_REF
+                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
                 )
                 == 0
             )
@@ -203,7 +208,7 @@ def get_masks_from_pandora(
             np.where(
                 (
                     validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_SEC_INCOMPLETE_DISPARITY_RANGE
+                    & pcst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
                 )
                 == 0
             )
@@ -215,7 +220,7 @@ def get_masks_from_pandora(
             np.where(
                 (
     validity_mask_cropped  # noqa: E122
-    & pcst.PANDORA_MSK_PIXEL_SEC_NODATA_OR_DISPARITY_RANGE_MISSING  # noqa: E122
+    & P_MSK_PR_N_D  # noqa: E122
                 )
                 == 0
             )
@@ -227,7 +232,7 @@ def get_masks_from_pandora(
             np.where(
                 (
                     validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_REF_NODATA_OR_BORDER
+                    & pcst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
                 )
                 == 0
             )
@@ -373,7 +378,6 @@ def create_disp_dataset(
 
 
 def compute_mask_to_use_in_pandora(
-    corr_cfg,
     dataset: xr.Dataset,
     msk_key: str,
     classes_to_ignore: List[int],
@@ -388,8 +392,6 @@ def compute_mask_to_use_in_pandora(
     'valid_pixels' and the 'no_data' fields of the correlation configuration
     file.
 
-    :param corr_cfg: Correlator configuration
-    :type corr_cfg: dict
     :param dataset: dataset containing the multi-classes mask from which the
                     mask to used in Pandora will be computed
     :param msk_key: key to use to access the multi-classes mask in the dataset
@@ -410,9 +412,10 @@ def compute_mask_to_use_in_pandora(
             "present in the dataset".format(msk_key)
         )
 
-    # retrieve specific values from the correlation configuration file
-    valid_pixels = corr_cfg["image"]["valid_pixels"]
-    nodata_pixels = corr_cfg["image"]["no_data"]
+    # retrieve specific values from datasets
+    # Valid values and nodata values
+    valid_pixels = dataset.attrs[cst.EPI_VALID_PIXELS]
+    nodata_pixels = dataset.attrs[cst.EPI_NO_DATA_MASK]
 
     info_dtype = np.iinfo(out_msk_dtype)
 
@@ -512,16 +515,6 @@ def compute_disparity(
     for entry_point in iter_entry_points(group="pandora.plugin"):
         entry_point.load()
 
-    if (
-        corr_cfg["image"]["no_data"]
-        != mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-    ):
-        logging.warning(
-            "mask no data value defined in the correlation "
-            "configuration file does not match the internal no "
-            "data value used for epipolar rectification."
-        )
-
     # Handle masks' classes if necessary
     # TODO : Refacto stereo to not change attributes here
     # but in stereo class or dedicated functional step
@@ -539,7 +532,6 @@ def compute_disparity(
         if mask_classes.ignored_by_corr_tag in classes_dict.keys():
             left_msk = left_dataset[cst.EPI_MSK].values
             left_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(
-                corr_cfg,
                 left_dataset,
                 cst.EPI_MSK,
                 classes_dict[mask_classes.ignored_by_corr_tag],
@@ -551,16 +543,31 @@ def compute_disparity(
         if mask_classes.ignored_by_corr_tag in classes_dict.keys():
             right_msk = right_dataset[cst.EPI_MSK].values
             right_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(
-                corr_cfg,
                 right_dataset,
                 cst.EPI_MSK,
                 classes_dict[mask_classes.ignored_by_corr_tag],
             )
             mask2_use_classes = True
 
+    # Update nodata values
+    left_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_left"]
+    right_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_right"]
+
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
+
+    # check datasets
+    checked_left_dataset = check_dataset(left_dataset)
+    checked_right_dataset = check_dataset(right_dataset)
+
     # Run the Pandora pipeline
     ref, sec = pandora.run(
-        left_dataset, right_dataset, int(disp_min), int(disp_max), corr_cfg
+        pandora_machine,
+        checked_left_dataset,
+        checked_right_dataset,
+        int(disp_min),
+        int(disp_max),
+        corr_cfg["pipeline"],
     )
 
     # Set the datasets' cst.EPI_MSK values back to the original

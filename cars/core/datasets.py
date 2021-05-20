@@ -27,6 +27,7 @@ from typing import List
 
 # Third party imports
 import numpy as np
+import rasterio as rio
 import xarray as xr
 
 # CARS imports
@@ -39,6 +40,7 @@ def create_im_dataset(
     img: np.ndarray,
     region: List[int],
     largest_size: List[int],
+    img_path: str = None,
     band_coords: bool = False,
     msk: np.ndarray = None,
 ) -> xr.Dataset:
@@ -48,11 +50,24 @@ def create_im_dataset(
     :param img: image as a numpy array
     :param region: region as list [xmin ymin xmax ymax]
     :param largest_size: whole image size
+    :param img_path: path to image
     :param band_coords: set to true to add the coords 'band' to the dataset
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
     nb_bands = img.shape[-1]
+
+    # Get georef and transform
+    img_crs = None
+    img_transform = None
+    if img_path is not None:
+        with rio.open(img_path) as img_srs:
+            img_crs = img_srs.profile["crs"]
+            img_transform = img_srs.profile["transform"]
+    if img_crs is None:
+        img_crs = "None"
+    if img_transform is None:
+        img_transform = "None"
 
     # Add band dimension if needed
     if band_coords or nb_bands > 1:
@@ -86,7 +101,11 @@ def create_im_dataset(
             msk.astype(np.int16), dims=[cst.ROW, cst.COL]
         )
 
+    dataset.attrs[cst.EPI_VALID_PIXELS] = 0
+    dataset.attrs[cst.EPI_NO_DATA_MASK] = 255
     dataset.attrs[cst.EPI_FULL_SIZE] = largest_size
+    dataset.attrs[cst.EPI_CRS] = img_crs
+    dataset.attrs[cst.EPI_TRANSFORM] = img_transform
     dataset.attrs["region"] = np.array(region)
 
     return dataset

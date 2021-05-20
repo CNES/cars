@@ -924,7 +924,9 @@ def run(  # noqa: C901
                 pbar.update()
 
             # create a multiprocessing thread pool
-            pool = mp.Pool(nb_workers)  # pylint: disable=consider-using-with
+            pool = mp.get_context("forkserver").Pool(
+                nb_workers
+            )  # pylint: disable=consider-using-with
 
             # launch several 'write_3d_points()' to process each epipolar region
             for region in conf["epipolar_regions"]:
