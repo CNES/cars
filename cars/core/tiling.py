@@ -34,7 +34,7 @@ from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
 # CARS imports
 from cars.conf import output_prepare
-from cars.lib.steps.epi_rectif.grids import compute_epipolar_grid_min_max
+from cars.steps.epi_rectif.grids import compute_epipolar_grid_min_max
 
 
 def grid(

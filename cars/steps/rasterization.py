@@ -42,7 +42,7 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 # CARS imports
 from cars.core import constants as cst
 from cars.core import projection
-from cars.lib.steps import points_cloud
+from cars.steps import points_cloud
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
 

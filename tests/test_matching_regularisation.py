@@ -35,7 +35,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-from cars.lib.steps.matching import regularisation
+from cars.steps.matching import regularisation
 
 # CARS Tests imports
 from .utils import absolute_data_path, assert_same_datasets

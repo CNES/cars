@@ -32,7 +32,7 @@ import pytest
 import xarray as xr
 
 # CARS imports
-from cars.lib.steps import points_cloud
+from cars.steps import points_cloud
 
 # CARS Tests imports
 from .utils import assert_same_datasets

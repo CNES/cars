@@ -39,8 +39,8 @@ import xarray as xr
 # CARS imports
 from cars import otb_pipelines, preprocessing
 from cars.core import constants as cst
-from cars.lib.steps.epi_rectif import grids, resampling
-from cars.lib.steps.sparse_matching import filtering, sift
+from cars.steps.epi_rectif import grids, resampling
+from cars.steps.sparse_matching import filtering, sift
 
 # CARS Tests imports
 from .utils import (

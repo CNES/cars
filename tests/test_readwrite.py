@@ -39,8 +39,8 @@ from osgeo import osr
 
 # CARS imports
 from cars.cluster.dask import start_local_cluster, stop_local_cluster
-from cars.lib.io import output
-from cars.lib.steps import rasterization
+from cars.io import output
+from cars.steps import rasterization
 
 # CARS Tests imports
 from .utils import temporary_dir
