@@ -29,17 +29,20 @@ import numpy as np
 import pandora
 import pytest
 import xarray as xr
-from pandora.JSON_checker import (
-    check_image_section,
+from pandora.check_json import (
     check_pipeline_section,
     concat_conf,
-    get_config_image,
     get_config_pipeline,
 )
+from pandora.state_machine import PandoraMachine
 
 from cars.core import constants as cst
 from cars.core import tiling
 from cars.core.inputs import read_geoid_file
+from cars.lib.externals.matching.correlator_configuration.corr_conf import (
+    check_input_section_custom_cars,
+    get_config_input_custom_cars,
+)
 from cars.lib.steps import triangulation
 from cars.lib.steps.epi_rectif import resampling
 from cars.lib.steps.matching import dense_matching
@@ -170,44 +173,46 @@ def create_corr_conf():
     Create correlator configuration for stereo testing
     """
     user_cfg = {}
-    user_cfg["image"] = {}
-    user_cfg["image"]["valid_pixels"] = 0
-    user_cfg["image"]["no_data"] = 255
-    user_cfg["stereo"] = {}
-    user_cfg["stereo"]["stereo_method"] = "census"
-    user_cfg["stereo"]["window_size"] = 5
-    user_cfg["stereo"]["subpix"] = 1
-    user_cfg["aggregation"] = {}
-    user_cfg["aggregation"]["aggregation_method"] = "none"
-    user_cfg["optimization"] = {}
-    user_cfg["optimization"]["optimization_method"] = "sgm"
-    user_cfg["optimization"]["P1"] = 8
-    user_cfg["optimization"]["P2"] = 32
-    user_cfg["optimization"]["p2_method"] = "constant"
-    user_cfg["optimization"]["penalty_method"] = "sgm_penalty"
-    user_cfg["optimization"]["overcounting"] = False
-    user_cfg["optimization"]["min_cost_paths"] = False
-    user_cfg["refinement"] = {}
-    user_cfg["refinement"]["refinement_method"] = "vfit"
-    user_cfg["filter"] = {}
-    user_cfg["filter"]["filter_method"] = "median"
-    user_cfg["filter"]["filter_size"] = 3
-    user_cfg["validation"] = {}
-    user_cfg["validation"]["validation_method"] = "cross_checking"
-    user_cfg["validation"]["cross_checking_threshold"] = 1.0
-    user_cfg["validation"]["right_left_mode"] = "accurate"
-    user_cfg["validation"]["interpolated_disparity"] = "none"
+    user_cfg["input"] = {}
+    user_cfg["pipeline"] = {}
+    user_cfg["pipeline"]["right_disp_map"] = {}
+    user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+    user_cfg["pipeline"]["matching_cost"] = {}
+    user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
+    user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
+    user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
+    user_cfg["pipeline"]["optimization"] = {}
+    user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
+    user_cfg["pipeline"]["optimization"]["P1"] = 8
+    user_cfg["pipeline"]["optimization"]["P2"] = 32
+    user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
+    user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
+    user_cfg["pipeline"]["optimization"]["overcounting"] = False
+    user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
+    user_cfg["pipeline"]["disparity"] = {}
+    user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
+    user_cfg["pipeline"]["disparity"]["invalid_disparity"] = 0
+    user_cfg["pipeline"]["refinement"] = {}
+    user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
+    user_cfg["pipeline"]["filter"] = {}
+    user_cfg["pipeline"]["filter"]["filter_method"] = "median"
+    user_cfg["pipeline"]["filter"]["filter_size"] = 3
+    user_cfg["pipeline"]["validation"] = {}
+    user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
+    user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
     # Import plugins before checking configuration
     pandora.import_plugin()
     # Check configuration and update the configuration with default values
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
     # check pipeline
     user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline)
-    # check image
-    user_cfg_image = get_config_image(user_cfg)
-    cfg_image = check_image_section(user_cfg_image)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
+    # check a part of input section
+    user_cfg_input = get_config_input_custom_cars(user_cfg)
+    cfg_input = check_input_section_custom_cars(user_cfg_input)
     # concatenate updated config
-    cfg = concat_conf([cfg_image, cfg_pipeline])
+    cfg = concat_conf([cfg_input, cfg_pipeline])
     return cfg
 
 
@@ -312,12 +317,15 @@ def test_epipolar_rectify_images_1(
     )
 
     region = [420, 200, 530, 320]
-    margin = xr.DataArray(
-        np.array([[33, 20, 34, 20], [33, 20, 34, 20]], dtype=int),
-        coords=[["ref_margin", "sec_margin"], ["left", "up", "right", "down"]],
-        dims=["image", "corner"],
+    col = np.arange(4)
+    margin = xr.Dataset(
+        {"left_margin": (["col"], np.array([33, 20, 34, 20]))},
+        coords={"col": col},
     )
-    margin.name = cst.EPI_MARGINS
+    margin["right_margin"] = xr.DataArray(
+        np.array([33, 20, 34, 20]), dims=["col"]
+    )
+
     margin.attrs[cst.EPI_DISP_MIN] = -13
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
@@ -376,12 +384,15 @@ def test_epipolar_rectify_images_3(
     )
 
     region = [420, 200, 530, 320]
-    margin = xr.DataArray(
-        np.array([[33, 20, 34, 20], [33, 20, 34, 20]], dtype=int),
-        coords=[["ref_margin", "sec_margin"], ["left", "up", "right", "down"]],
-        dims=["image", "corner"],
+    col = np.arange(4)
+    margin = xr.Dataset(
+        {"left_margin": (["col"], np.array([33, 20, 34, 20]))},
+        coords={"col": col},
     )
-    margin.name = cst.EPI_MARGINS
+    margin["right_margin"] = xr.DataArray(
+        np.array([33, 20, 34, 20]), dims=["col"]
+    )
+
     margin.attrs[cst.EPI_DISP_MIN] = -13
     margin.attrs[cst.EPI_DISP_MAX] = 14
 
@@ -684,7 +695,6 @@ def test_compute_mask_to_use_in_pandora():
     """
     Test compute_mask_to_use_in_pandora with a cloud "data1_ref_right_masked.nc"
     """
-    corr_cfg = create_corr_conf()
 
     right_input = xr.open_dataset(
         absolute_data_path(
@@ -693,7 +703,7 @@ def test_compute_mask_to_use_in_pandora():
     )
 
     test_mask = dense_matching.compute_mask_to_use_in_pandora(
-        corr_cfg, right_input, cst.EPI_MSK, [100]
+        right_input, cst.EPI_MSK, [100]
     )
 
     ref_msk = np.copy(right_input[cst.EPI_MSK].values)

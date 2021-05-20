@@ -45,6 +45,11 @@ EPI_MSK = "msk"  # has to be synchronized with the PANDORA input format
 EPI_MARGINS = "margins"
 EPI_DISP_MIN = "disp_min"
 EPI_DISP_MAX = "disp_max"
+EPI_VALID_PIXELS = "valid_pixels"
+EPI_NO_DATA_MASK = "no_data_mask"
+EPI_NO_DATA_IMG = "no_data_img"
+EPI_TRANSFORM = "transform"
+EPI_CRS = "crs"
 
 # disparity dataset
 DISP_MAP = "disp"
