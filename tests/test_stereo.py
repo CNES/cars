@@ -39,14 +39,14 @@ from pandora.state_machine import PandoraMachine
 from cars.core import constants as cst
 from cars.core import tiling
 from cars.core.inputs import read_geoid_file
-from cars.lib.externals.matching.correlator_configuration.corr_conf import (
+from cars.externals.matching.correlator_configuration.corr_conf import (
     check_input_section_custom_cars,
     get_config_input_custom_cars,
 )
-from cars.lib.steps import triangulation
-from cars.lib.steps.epi_rectif import resampling
-from cars.lib.steps.matching import dense_matching
 from cars.pipelines import wrappers
+from cars.steps import triangulation
+from cars.steps.epi_rectif import resampling
+from cars.steps.matching import dense_matching
 
 from .utils import (
     absolute_data_path,

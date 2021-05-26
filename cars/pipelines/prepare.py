@@ -47,11 +47,11 @@ from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
-from cars.lib.io import write
-from cars.lib.steps import rasterization, triangulation
-from cars.lib.steps.epi_rectif import grids
-from cars.lib.steps.sparse_matching import filtering
+from cars.io import write
 from cars.pipelines.wrappers import matching_wrapper
+from cars.steps import rasterization, triangulation
+from cars.steps.epi_rectif import grids
+from cars.steps.sparse_matching import filtering
 
 
 def run(  # noqa: C901

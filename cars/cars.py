@@ -445,7 +445,7 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     # CARS imports
     from cars.conf import input_parameters as in_params
     from cars.conf import output_prepare
-    from cars.lib.externals.matching.correlator_configuration import corr_conf
+    from cars.externals.matching.correlator_configuration import corr_conf
     from cars.pipelines import compute_dsm, prepare
 
     # logging

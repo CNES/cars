@@ -42,7 +42,7 @@ from shapely.ops import transform
 # CARS imports
 from cars.conf.input_parameters import read_input_parameters
 from cars.conf.output_prepare import read_preprocessing_content_file
-from cars.lib.externals.matching.correlator_configuration import corr_conf
+from cars.externals.matching.correlator_configuration import corr_conf
 from cars.pipelines import compute_dsm, prepare
 
 # CARS Tests imports

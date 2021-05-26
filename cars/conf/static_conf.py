@@ -34,7 +34,7 @@ from numpy import dtype
 
 # CARS imports
 from cars.core import inputs
-from cars.lib.steps import points_cloud
+from cars.steps import points_cloud
 
 # TODO : Refacto Conf with unitary and independent steps
 # TODO : not use a global cfg variable ?
