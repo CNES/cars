@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS lib/steps/sparse_matching module init file
+CARS steps/sparse_matching module init file
 """

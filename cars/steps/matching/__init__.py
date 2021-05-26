@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS lib/steps/matching module init file
+CARS steps/matching module init file
 """

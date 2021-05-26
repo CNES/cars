@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS lib/externals/matching module init file
+CARS externals/matching module init file
 """

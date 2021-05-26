@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS lib/steps/epi_rectif module init file
+CARS steps/epi_rectif module init file
 """

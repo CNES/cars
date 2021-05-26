@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS lib/io module init file
+CARS io module init file
 """
