@@ -239,7 +239,7 @@ def images_pair_to_3d_points(
 
     # Reproject region to epipolar geometry if necessary
     if epsg is not None:
-        region = tiling.transform_terrain_region_to_epipolar(
+        region = tiling.terrain_region_to_epipolar(
             region, input_stereo_cfg, epsg, disp_min, disp_max
         )
 

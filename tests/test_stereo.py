@@ -994,7 +994,7 @@ def test_geoid_offset():
 
 
 @pytest.mark.unit_tests
-def test_transform_terrain_region_to_epipolar(
+def test_terrain_region_to_epipolar(
     images_and_grids_conf,  # pylint: disable=redefined-outer-name
     disparities_conf,  # pylint: disable=redefined-outer-name
     epipolar_sizes_conf,
@@ -1011,7 +1011,5 @@ def test_transform_terrain_region_to_epipolar(
     )
 
     region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = tiling.transform_terrain_region_to_epipolar(
-        region, configuration
-    )
+    out_region = tiling.terrain_region_to_epipolar(region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
