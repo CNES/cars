@@ -55,7 +55,7 @@ def otb_geoid_file_set():
     # Set the geoid file from code source
     # Change with packaging reorganization
     os.environ["OTB_GEOID_FILE"] = os.path.join(
-        cars_path(), "cars/geoid/egm96.grd"
+        cars_path(), "cars/conf/geoid/egm96.grd"
     )
 
 

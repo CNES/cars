@@ -188,7 +188,7 @@ RasterizationParams = namedtuple(
 TilingParams = namedtuple("TilingParams", tiling_conf_schema.keys())
 
 # ### Global environment settings as in setup.cfg ####
-CARS_GEOID_PATH = "../geoid/egm96.grd"  # Path in cars package (pkg)
+CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 CARS_STATIC_CONFIGURATION = "../static_configuration.json"  # Path in cars pkg
 
 
