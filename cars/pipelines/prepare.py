@@ -49,7 +49,6 @@ from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
-from cars.io import write
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import rasterization, triangulation
 from cars.steps.epi_rectif import grids
@@ -491,9 +490,9 @@ def run(  # noqa: C901
 
     # Write temporary grid
     tmp1 = os.path.join(out_dir, "tmp1.tif")
-    write.write_grid(grid1, tmp1, grid_origin, grid_spacing)
+    grids.write_grid(grid1, tmp1, grid_origin, grid_spacing)
     tmp2 = os.path.join(out_dir, "tmp2.tif")
-    write.write_grid(grid2, tmp2, grid_origin, grid_spacing)
+    grids.write_grid(grid2, tmp2, grid_origin, grid_spacing)
 
     # Compute margins for right region
     margins = [
@@ -688,14 +687,14 @@ than --epipolar_error_upper_bound = {} pix".format(
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ][output_prepare.LEFT_EPIPOLAR_GRID_TAG] = out_left_grid
-    write.write_grid(grid1, out_left_grid, grid_origin, grid_spacing)
+    grids.write_grid(grid1, out_left_grid, grid_origin, grid_spacing)
 
     # Export corrected right grid
     out_right_grid = os.path.join(out_dir, "right_epipolar_grid.tif")
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ][output_prepare.RIGHT_EPIPOLAR_GRID_TAG] = out_right_grid
-    write.write_grid(
+    grids.write_grid(
         corrected_right_grid, out_right_grid, grid_origin, grid_spacing
     )
 
@@ -709,7 +708,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][
         output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
     ] = out_right_grid_uncorrected
-    write.write_grid(
+    grids.write_grid(
         grid2, out_right_grid_uncorrected, grid_origin, grid_spacing
     )
 
