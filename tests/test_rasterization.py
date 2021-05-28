@@ -20,7 +20,9 @@
 #
 """
 Test module for cars/rasterization.py
+TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import absolute_import

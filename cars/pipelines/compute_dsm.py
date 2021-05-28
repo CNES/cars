@@ -21,7 +21,9 @@
 """
 Main 3D CARS Compute DSM pipeline module:
 contains all the functions associated with its cars subcommand.
+TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import print_function

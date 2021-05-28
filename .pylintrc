@@ -51,7 +51,6 @@ disable=logging-format-interpolation,
 	no-member,
 	broad-except,
 	duplicate-code,
-	too-many-lines,
 	global-statement,
 	function-redefined,
 	consider-using-dict-comprehension,
@@ -208,7 +207,7 @@ indent-string='    '
 max-line-length=80
 
 # Maximum number of lines in a module.
-max-module-lines=1325
+max-module-lines=800
 
 # List of optional constructs for which whitespace checking is disabled. `dict-
 # separator` is used to allow tabulation in dicts, etc.: {1  : 1,\n222: 2}.

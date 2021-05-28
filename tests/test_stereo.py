@@ -20,7 +20,10 @@
 #
 """
 Test module for cars/stereo.py
+TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
+
 import json
 import math
 from copy import deepcopy
