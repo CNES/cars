@@ -27,6 +27,7 @@ from __future__ import absolute_import
 
 import os
 import tempfile
+from shutil import copy2
 
 # Third party imports
 import numpy as np
@@ -128,6 +129,57 @@ def test_build_stereorectification_grid_pipeline_scaled_inputs():
         img1, img2, dem, epi_step=step
     )
 
+    # define negative scale transform
+    def create_negative_transform(srs_img, dst_img, reverse_x, reverse_y):
+        """
+        Reverse transform on x or y axis if reverse_x or reverse_y are activated
+        :param srs_img:
+        :type srs_img: str
+        :param dst_img:
+        :type dst_img: str
+        :param reverse_x:
+        :type srs_img: bool
+        :param reverse_y:
+        :type srs_img: bool
+        :return:
+        """
+        with rio.open(srs_img, "r") as rio_former_dst:
+            former_array = rio_former_dst.read(1)
+            former_transform = rio_former_dst.transform
+            # modify transform
+            x_fact = 1
+            y_fact = 1
+            x_size = 0
+            y_size = 0
+
+            if reverse_x:
+                x_fact = -1
+                x_size = former_array.shape[0] * abs(former_transform[0])
+            if reverse_y:
+                y_fact = -1
+                y_size = former_array.shape[1] * abs(former_transform[4])
+            new_transform = rio.Affine(
+                x_fact * former_transform[0],
+                former_transform[1],
+                x_size + former_transform[2],
+                former_transform[3],
+                y_fact * former_transform[4],
+                y_size + former_transform[5],
+            )
+
+            with rio.open(
+                dst_img,
+                "w",
+                driver="GTiff",
+                height=former_array.shape[0],
+                width=former_array.shape[1],
+                count=1,
+                dtype=former_array.dtype,
+                crs=rio_former_dst.crs,
+                transform=new_transform,
+            ) as rio_dst:
+                rio_dst.write(former_array, 1)
+
     # define generic test
     def test_with_scaled_inputs(
         img1,
@@ -156,13 +208,41 @@ def test_build_stereorectification_grid_pipeline_scaled_inputs():
         )
 
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+            # manage negative scaling
+            negative_scale_x = scalex < 0
+            negative_scale_y = scaley < 0
+
             # rescale inputs
             img1_transform = os.path.join(directory, "img1_transform.tif")
             img2_transform = os.path.join(directory, "img2_transform.tif")
+
+            if negative_scale_x or negative_scale_y:
+                # create new images
+                img1_geom = img1.replace(".tif", ".geom")
+                img2_geom = img2.replace(".tif", ".geom")
+                img1_reversed = os.path.join(directory, "img1_reversed.tif")
+                img2_reversed = os.path.join(directory, "img2_reversed.tif")
+                img1_reversed_geom = os.path.join(
+                    directory, "img1_reversed.geom"
+                )
+                img2_reversed_geom = os.path.join(
+                    directory, "img2_reversed.geom"
+                )
+                copy2(img1_geom, img1_reversed_geom)
+                copy2(img2_geom, img2_reversed_geom)
+                create_negative_transform(
+                    img1, img1_reversed, negative_scale_x, negative_scale_y
+                )
+                create_negative_transform(
+                    img2, img2_reversed, negative_scale_x, negative_scale_y
+                )
+                img1 = img1_reversed
+                img2 = img2_reversed
+
             app.SetParameterString("in", img1)
             app.SetParameterString("transform.type", "id")
-            app.SetParameterFloat("transform.type.id.scalex", scalex)
-            app.SetParameterFloat("transform.type.id.scaley", scaley)
+            app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
+            app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
             app.SetParameterString("out", img1_transform)
             app.ExecuteAndWriteOutput()
 
@@ -284,6 +364,45 @@ def test_build_stereorectification_grid_pipeline_scaled_inputs():
         ref_disp_to_alt_ratio,
         scalex=1 / 2.0,
         scaley=1 / 4.0,
+    )
+
+    # test with scalex= 1, scaley=-1
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=1.0,
+        scaley=-1.0,
+    )
+
+    # test with scalex= -1, scaley=1
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=-1.0,
+        scaley=1.0,
+    )
+
+    # test with scalex= -1, scaley=-2
+    test_with_scaled_inputs(
+        img1,
+        img2,
+        dem,
+        step,
+        ref_epipolar_size_x,
+        ref_epipolar_size_y,
+        ref_disp_to_alt_ratio,
+        scalex=-1.0,
+        scaley=-2.0,
     )
 
     # unset otb geoid file
