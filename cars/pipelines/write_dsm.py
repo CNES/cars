@@ -19,11 +19,13 @@
 # limitations under the License.
 #
 """
-Output module:
-contains all compute_dsm.py main pipeline reading/writing functions
+Write_dsm module:
+contains all compute_dsm.py main pipeline writing functions
 """
 
-# TODO: Refacto to write_dsm steps?
+# TODO: Refacto to separate cluster (mp/dask) functional part from write
+#       rasterio functions. Where to put writing components ? steps ?
+# TODO: be coherent with pipelines wrappers reorganization
 
 # Standard imports
 import logging
