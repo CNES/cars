@@ -1,6 +1,6 @@
 Préconisations générales: 
 1. Pensez à bien mettre un **titre** d'issue explicite par rapport au bug
-2. Pensez à essayer au maximum d'aider le support (non garanti) avec des informations les plus claires et précises
+2. Pensez à essayer au maximum d'aider le support (best effort) avec des informations les plus claires et précises
 3. Mettre le bon label
 
 /label ~"Kind - Bug"
