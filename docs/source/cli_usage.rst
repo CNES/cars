@@ -149,7 +149,7 @@ The other optional fields of the input json file are:
 * ``mask2`` : external mask of the image 2. This mask can be a "two-states" mask (convention: 0 is a valid pixel, other values indicate data to ignore) or a multi-classes mask in which case the ``mask2_classes`` shall be indicated in the configuration file.
 * ``mask1_classes`` : json file indicated the ``mask1``'s classes usage (see next section for more details).
 * ``mask2_classes`` : json file indicated the ``mask2``'s classes usage (see next section for more details).
-* ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced DSM. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
+* ``color1`` : image stackable to ``img1`` used to create an ortho-image corresponding to the produced :term:`DSM`. This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
 
 
 **Warning** : If the ``mask1`` (or ``mask2``) is a multi-classes one and no ``mask1_classes`` (or ``mask2_classes``) configuration file is indicated, all non-zeros values of the mask will be considered as unvalid data.
@@ -325,11 +325,11 @@ The other files are:
 * ``ground_positions_grid.tif`` : image with the same geometry as the epipolar grid and for which each point has for value the ground position (lat/lon) of the corresponding point in the epipolar grid
 * ``matches.npy`` : matches list after filtering
 * ``raw_matches.npy`` : initial matches list
-* ``lowres_dsm_from_matches.nc`` : low resolution DSM computed from the matches
-* ``lowres_elevation_diff.nc`` : difference between the low resolution DSM computed from the matches and the initial DEM in input of the prepare step
+* ``lowres_dsm_from_matches.nc`` : low resolution :term:`DSM` computed from the matches
+* ``lowres_elevation_diff.nc`` : difference between the low resolution :term:`DSM` computed from the matches and the initial DEM in input of the prepare step
 * ``lowres_initial_dem.nc`` : initial DEM in input of the prepare step corresponding to the two images envelopes' intersection zone
-* ``corrected_lowres_dsm_from_matches.nc`` :  Corrected low resolution DSM from matches if low resolution DSM is large enough (minimum size is 100x100)
-* ``corrected_lowres_elevation_diff.nc`` : difference between the initial DEM in input of the prepare step  and the corrected low resolution DSM. if low resolution DSM is large enough (minimum size is 100x100)
+* ``corrected_lowres_dsm_from_matches.nc`` :  Corrected low resolution :term:`DSM` from matches if low resolution :term:`DSM` is large enough (minimum size is 100x100)
+* ``corrected_lowres_elevation_diff.nc`` : difference between the initial DEM in input of the prepare step  and the corrected low resolution :term:`DSM`. if low resolution :term:`DSM` is large enough (minimum size is 100x100)
 * ``dask_config_prepare.yaml`` : the dask configuration used (only for ``local_dask`` and ``pbs_dask`` modes)
 
 DSM production with compute\_dsm
@@ -449,10 +449,10 @@ Some optional parameters enable to modify the regular grid:
 * ``dsm_radius``: number of pixel rings to take into account in order to define the altitude of the current pixel
 * ``resolution``: altitude grid step (dsm)
 * ``epsg``: epsg code used for the cloud projection. If not set by the user, the more appropriate UTM zone will be retrieved automatically
-* ``roi_bbox``: DSM ROI in final projection [xmin ymin xmax ymax].
+* ``roi_bbox``: :term:`DSM` ROI in final projection [xmin ymin xmax ymax].
 
     * example with a quadruplet: ``cars compute_dsm content.json outdir/ --roi_bbox 0.1 0.2 0.3 0.4``
-* ``roi_file`` : DSM ROI file (vector file or image which footprint will be taken as ROI). The conversion to the final geometry ROI bounding box will be performed automatically. Mutually exclusive with ``roi_bbox`` option.
+* ``roi_file`` : :term:`DSM` ROI file (vector file or image which footprint will be taken as ROI). The conversion to the final geometry ROI bounding box will be performed automatically. Mutually exclusive with ``roi_bbox`` option.
 * ``dsm_no_data``: no data value of the final dsm
 * ``color_no_data``: no data value of the final color ortho-image
 * ``corr``: correlator to use ('pandora' (version V1.B))
@@ -462,7 +462,7 @@ Some optional parameters enable to modify the regular grid:
 * ``use_geoid_as_alt_ref``: controls the altimetric reference used to compute altitudes. If activated, the function uses the geoid file defined by the ```OTB_GEOID_FILE``` environment variable.
 * ``use_sec_disp`` : enables to use the secondary disparity map to densify the 3D points cloud.
 * ``snap_to_left_image`` : each 3D point is snapped to line of sight from left reference image (instead of using mid-point). This increases the coherence between several pairs if left image is the same image for all pairs.
-* ``align_with_lowres_dem``: During prepare step, a cubic splines correction is computed so as to align DSM from a pair with the initial low resolution DEM. If this mode is used, the correction estimated for each pair is applied. This will increases coherency between pairs and with the initial low resolution DEM.
+* ``align_with_lowres_dem``: During prepare step, a cubic splines correction is computed so as to align :term:`DSM` from a pair with the initial low resolution DEM. If this mode is used, the correction estimated for each pair is applied. This will increases coherency between pairs and with the initial low resolution DEM.
 * ``disable_cloud_small_components_filter``: Deactivate the filtering of small 3D points groups. The filtered groups are composed of less than 50 points, the distance between two "linked" points is less than 3.
 * ``disable_cloud_statistical_outliers_filter``: Deactivate the statistical filtering of the 3D points. For this filter the examined statistic is the mean distance of each point to its 50 nearest neighbors. The filtered points have a mean distance superior than this statistic's mean + 5 * this statistic's standard deviation.
 
