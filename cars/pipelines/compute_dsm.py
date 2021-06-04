@@ -48,7 +48,7 @@ from tqdm import tqdm
 
 # CARS imports
 from cars import __version__
-from cars.cluster.dask import (
+from cars.cluster.dask_mode import (
     ComputeDSMMemoryLogger,
     start_cluster,
     start_local_cluster,

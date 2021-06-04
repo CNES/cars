@@ -38,7 +38,7 @@ from affine import Affine
 from osgeo import osr
 
 # CARS imports
-from cars.cluster.dask import start_local_cluster, stop_local_cluster
+from cars.cluster.dask_mode import start_local_cluster, stop_local_cluster
 from cars.pipelines import write_dsm
 from cars.steps import rasterization
 

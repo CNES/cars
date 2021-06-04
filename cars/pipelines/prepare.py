@@ -44,7 +44,11 @@ from tqdm import tqdm
 
 # CARS imports
 from cars import __version__, otb_pipelines, preprocessing
-from cars.cluster.dask import start_cluster, start_local_cluster, stop_cluster
+from cars.cluster.dask_mode import (
+    start_cluster,
+    start_local_cluster,
+    stop_cluster,
+)
 from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
