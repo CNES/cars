@@ -40,7 +40,7 @@ import xarray as xr
 from cars import otb_pipelines, preprocessing
 from cars.core import constants as cst
 from cars.steps.epi_rectif import grids, resampling
-from cars.steps.sparse_matching import filtering, sift
+from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
 from .utils import (
@@ -91,7 +91,7 @@ def test_dataset_matching():
         mask=mask2,
     )
 
-    matches = sift.dataset_matching(left, right)
+    matches = sparse_matching.dataset_matching(left, right)
 
     # Uncomment to update baseline
     # np.save(absolute_data_path("ref_output/matches.npy"), matches)
@@ -119,7 +119,7 @@ def test_dataset_matching():
         mask=mask1,
     )
 
-    matches = sift.dataset_matching(left, right)
+    matches = sparse_matching.dataset_matching(left, right)
 
     assert matches.shape == (0, 4)
 
@@ -284,7 +284,7 @@ def test_remove_epipolar_outliers():
 
     matches = np.load(matches_file)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2
@@ -301,8 +301,8 @@ def test_compute_disparity_range():
 
     matches = np.load(matches_file)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
-    dispmin, dispmax = filtering.compute_disparity_range(matches_filtered)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
+    dispmin, dispmax = sparse_matching.compute_disparity_range(matches_filtered)
 
     assert dispmin == -3.1239416122436525
     assert dispmax == 3.820396270751972
@@ -325,7 +325,7 @@ def test_correct_right_grid():
     matches = np.load(matches_file)
     matches = np.array(matches)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
 
     with rio.open(grid_file) as rio_grid:
         grid = rio_grid.read()

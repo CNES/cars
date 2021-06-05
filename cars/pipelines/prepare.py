@@ -56,7 +56,7 @@ from cars.core import inputs, outputs, projection, tiling, utils
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import rasterization, triangulation
 from cars.steps.epi_rectif import grids
-from cars.steps.sparse_matching import filtering
+from cars.steps.matching import sparse_matching
 
 
 def run(  # noqa: C901
@@ -738,7 +738,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
     )
 
-    dmin, dmax = filtering.compute_disparity_range(
+    dmin, dmax = sparse_matching.compute_disparity_range(
         corrected_matches,
         static_conf.get_disparity_outliers_rejection_percent(),
     )
