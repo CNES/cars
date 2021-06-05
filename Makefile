@@ -12,6 +12,8 @@ CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
 CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
+CHECK_NUMBA = $(shell ${VENV}/bin/python -m pip list|grep numba)
+
 
 GDAL_VERSION = $(shell gdal-config --version)
 CARS_VERSION = $(shell python3 setup.py --version)
@@ -43,6 +45,7 @@ install-deps: venv
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
+	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --no-binary numba numba
 
 install: install-deps  ## install and set env
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .

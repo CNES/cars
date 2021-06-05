@@ -98,7 +98,7 @@ def build_stereorectification_grid_pipeline(
     with rio.open(img1, "r") as rio_dst:
         pixel_size_x, pixel_size_y = rio_dst.transform[0], rio_dst.transform[4]
 
-    mean_size = (pixel_size_x + pixel_size_y) / 2
+    mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
     epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
     epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
 
