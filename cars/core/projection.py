@@ -43,7 +43,7 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core import inputs
+from cars.core import inputs, outputs
 
 
 def get_projected_bounding_box(
@@ -435,6 +435,7 @@ def get_converted_xy_np_arrays_from_dataset(
     """
     Get the x and y coordinates as numpy array
     in the new referential indicated by epsg_out.
+    TODO: add test
 
     :param cloud_in: input xarray dataset
     :param epsg_out: target epsg code
@@ -453,6 +454,7 @@ def get_converted_xy_np_arrays_from_dataset(
 def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     """
     Convert a point cloud as an xarray.Dataset to another epsg (inplace)
+    TODO: add test
 
     :param cloud: cloud to project
     :param epsg_out: EPSG code of the ouptut SRS
@@ -496,6 +498,7 @@ def points_cloud_conversion_dataframe(
 def get_utm_zone_as_epsg_code(lon, lat):
     """
     Returns the EPSG code of the UTM zone where the lat, lon point falls in
+    TODO: refacto with externals (OTB)
 
     :param lon: longitude of the point
     :type lon: float
@@ -515,11 +518,44 @@ def get_utm_zone_as_epsg_code(lon, lat):
     return 32000 + north_south + zone
 
 
+def image_envelope(img, shp, dem=None, default_alt=None):
+    """
+    Export the image footprint to a shapefile
+    TODO: refacto with externals (OTB) and steps.
+
+    :param img: filename to image or OTB pointer to image
+    :type img:  string or OTBImagePointer
+    :param shp: Path to the output shapefile
+    :type shp: string
+    :param dem: Directory containing DEM tiles
+    :type dem: string
+    :param default_alt: Default altitude above ellipsoid
+    :type default_alt: float
+    """
+
+    app = otbApplication.Registry.CreateApplication("ImageEnvelope")
+
+    if isinstance(img, str):
+        app.SetParameterString("in", img)
+    else:
+        app.SetParameterInputImage("in", img)
+
+    if dem is not None:
+        app.SetParameterString("elev.dem", dem)
+
+    if default_alt is not None:
+        app.SetParameterFloat("elev.default", default_alt)
+
+    app.SetParameterString("out", shp)
+    app.ExecuteAndWriteOutput()
+
+
 def ground_polygon_from_envelopes(
     poly_envelope1, poly_envelope2, epsg1, epsg2, tgt_epsg=4326
 ):
     """
     compute the ground polygon of the intersection of two envelopes
+    TODO: refacto with externals (OTB) and steps.
 
     :raise: Exception when the envelopes don't intersect one to each other
 
@@ -553,3 +589,56 @@ def ground_polygon_from_envelopes(
         raise Exception("The two envelopes do not intersect one another")
 
     return inter, inter.bounds
+
+
+def ground_intersection_envelopes(
+    img1_path: str,
+    img2_path: str,
+    shp1_path: str,
+    shp2_path: str,
+    out_intersect_path: str,
+    dem_dir: str = None,
+    default_alt: float = None,
+) -> Tuple[Polygon, Tuple[int, int, int, int]]:
+    """
+    Compute ground intersection of two images with envelopes:
+    1/ Create envelopes for left, right images
+    2/ Read vectors and polygons with adequate EPSG codes.
+    3/ compute the ground polygon of the intersection of two envelopes
+    4/ Write the GPKG vector
+
+    Returns a shapely polygon and intersection bounding box
+
+    :raise: Exception when the envelopes don't intersect one to each other
+
+    :param img1: filename to image 1 (left)
+    :param img2: filename to image 2 (right)
+    :param shp1: Path to the output shapefile left
+    :param shp2: Path to the output shapefile right
+    :param dem_dir: Directory containing DEM tiles
+    :param default_alt: Default altitude above ellipsoid
+    :param out_intersect_path: out vector file path to create
+    :return: a tuple with the shapely polygon of the intersection
+        and the intersection's bounding box
+        (described by a tuple (minx, miny, maxx, maxy))
+    :rtype: Tuple[polygon, Tuple[int, int, int, int]]
+    """
+    # Create left, right envelopes from images and dem, default_alt
+    image_envelope(img1_path, shp1_path, dem=dem_dir, default_alt=default_alt)
+    image_envelope(img2_path, shp2_path, dem=dem_dir, default_alt=default_alt)
+
+    # Read vectors shapefiles
+    poly1, epsg1 = inputs.read_vector(shp1_path)
+    poly2, epsg2 = inputs.read_vector(shp2_path)
+
+    # Find polygon intersection from left, right polygons
+    inter_poly, (
+        inter_xmin,
+        inter_ymin,
+        inter_xmax,
+        inter_ymax,
+    ) = ground_polygon_from_envelopes(poly1, poly2, epsg1, epsg2, epsg1)
+    # Write intersection file vector from inter_poly
+    outputs.write_vector([inter_poly], out_intersect_path, epsg1)
+
+    return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)

@@ -277,44 +277,33 @@ def run(  # noqa: C901
     logging.info("Computing images envelopes and their intersection")
     shp1 = os.path.join(out_dir, "left_envelope.shp")
     shp2 = os.path.join(out_dir, "right_envelope.shp")
-    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.LEFT_ENVELOPE_TAG] = shp1
-    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.RIGHT_ENVELOPE_TAG] = shp2
-    preprocessing.image_envelope(
-        img1, shp1, dem=srtm_dir, default_alt=default_alt
+    out_envelopes_intersection = os.path.join(
+        out_dir, "envelopes_intersection.gpkg"
     )
-    preprocessing.image_envelope(
-        img2, shp2, dem=srtm_dir, default_alt=default_alt
-    )
-
-    poly1, epsg1 = inputs.read_vector(shp1)
-    poly2, epsg2 = inputs.read_vector(shp2)
 
     inter_poly, (
         inter_xmin,
         inter_ymin,
         inter_xmax,
         inter_ymax,
-    ) = projection.ground_polygon_from_envelopes(
-        poly1, poly2, epsg1, epsg2, epsg1
+    ) = projection.ground_intersection_envelopes(
+        img1,
+        img2,
+        shp1,
+        shp2,
+        out_envelopes_intersection,
+        dem_dir=srtm_dir,
+        default_alt=default_alt,
     )
-
-    out_envelopes_intersection = os.path.join(
-        out_dir, "envelopes_intersection.gpkg"
-    )
-    outputs.write_vector([inter_poly], out_envelopes_intersection, epsg1)
 
     conf_out_dict = out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ]
-
+    conf_out_dict[output_prepare.LEFT_ENVELOPE_TAG] = shp1
+    conf_out_dict[output_prepare.RIGHT_ENVELOPE_TAG] = shp2
     conf_out_dict[
         output_prepare.ENVELOPES_INTERSECTION_TAG
     ] = out_envelopes_intersection
-
     conf_out_dict[output_prepare.ENVELOPES_INTERSECTION_BB_TAG] = [
         inter_xmin,
         inter_ymin,
@@ -324,6 +313,7 @@ def run(  # noqa: C901
 
     if check_inputs:
         logging.info("Checking DEM coverage")
+        _, epsg1 = inputs.read_vector(shp1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
             srtm_dir, inter_poly, epsg1
         )

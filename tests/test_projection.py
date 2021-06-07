@@ -25,6 +25,9 @@ Test module for cars/projection.py
 # Standard imports
 from __future__ import absolute_import
 
+import os
+import tempfile
+
 # Third party imports
 import numpy as np
 import pandas
@@ -35,7 +38,7 @@ from shapely.geometry import Polygon
 from cars.core import inputs, projection
 
 # CARS Tests imports
-from .utils import absolute_data_path
+from .utils import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -126,3 +129,86 @@ def test_compute_dem_intersection_with_poly():
         str(intersect_error.value) == "The input DEM does not intersect "
         "the useful zone"
     )
+
+
+@pytest.mark.unit_tests
+def test_image_envelope():
+    """
+    Test image_envelope function
+    """
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+        projection.image_envelope(img, shp, dem)
+        assert os.path.isfile(shp)
+
+
+@pytest.mark.unit_tests
+def test_ground_intersection_envelopes():
+    """
+    Test ground_intersection_envelopes generation
+    """
+    # test on paca
+    img1 = absolute_data_path("input/phr_paca/left_image.tif")
+    img2 = absolute_data_path("input/phr_paca/right_image.tif")
+    srtm_dir = absolute_data_path("input/phr_paca/srtm")
+    # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
+    intersect_xymin_xymax_ref_1 = (
+        7.293045338193613,
+        43.68965406063334,
+        7.295803791847358,
+        43.691682697599205,
+    )
+    # Ref2 with OTB tests before with other SRTM ref
+    intersect_xymin_xymax_ref_2 = (
+        7.292954644352718,
+        43.68961593954899,
+        7.295742924906745,
+        43.691746080922535,
+    )
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+        out_shp1 = os.path.join(tmp_dir, "left_envelope.shp")
+        out_shp2 = os.path.join(tmp_dir, "right_envelope.shp")
+        out_intersect = os.path.join(tmp_dir, "envelopes_intersection.gpkg")
+
+        _, intersect_xymin_xymax = projection.ground_intersection_envelopes(
+            img1, img2, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+        )
+        # Check files creations
+        assert os.path.isfile(out_shp1)
+        assert os.path.isfile(out_shp2)
+        assert os.path.isfile(out_intersect)
+
+        # Check out values from ref
+        assert (
+            intersect_xymin_xymax == intersect_xymin_xymax_ref_1
+            or intersect_xymin_xymax_ref_2
+        )
+
+    # test paca and ventoux for no intersection
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+        out_shp1 = os.path.join(tmp_dir, "left_envelope_void.shp")
+        out_shp2 = os.path.join(tmp_dir, "right_envelope_void.shp")
+        out_intersect = os.path.join(tmp_dir, "envelopes_intersect_void.gpkg")
+
+        with pytest.raises(Exception) as intersect_error:
+            (
+                _,
+                intersect_xymin_xymax,
+            ) = projection.ground_intersection_envelopes(
+                img1, img2, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+            )
+        # Check files creations
+        assert os.path.isfile(out_shp1)
+        assert os.path.isfile(out_shp2)
+        assert not os.path.isfile(out_intersect)
+
+        # Check out raised Exception
+        assert (
+            str(intersect_error.value) == "The two envelopes do not intersect "
+            "one another"
+        )

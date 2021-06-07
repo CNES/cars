@@ -43,37 +43,6 @@ from cars.core import constants as cst
 from cars.core import inputs, projection, utils
 
 
-def image_envelope(img, shp, dem=None, default_alt=None):
-    """
-    Export the image footprint to a shapefile
-
-    :param img: filename to image or OTB pointer to image
-    :type img:  string or OTBImagePointer
-    :param shp: Path to the output shapefile
-    :type shp: string
-    :param dem: Directory containing DEM tiles
-    :type dem: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    """
-
-    app = otb.Registry.CreateApplication("ImageEnvelope")
-
-    if isinstance(img, str):
-        app.SetParameterString("in", img)
-    else:
-        app.SetParameterInputImage("in", img)
-
-    if dem is not None:
-        app.SetParameterString("elev.dem", dem)
-
-    if default_alt is not None:
-        app.SetParameterFloat("elev.default", default_alt)
-
-    app.SetParameterString("out", shp)
-    app.ExecuteAndWriteOutput()
-
-
 def read_lowres_dem(
     startx,
     starty,
