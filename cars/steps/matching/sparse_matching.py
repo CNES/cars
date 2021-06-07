@@ -33,8 +33,8 @@ import numpy as np
 import otbApplication as otb
 
 # CARS imports
-from cars import otb_pipelines
 from cars.core import constants as cst
+from cars.externals import otb_pipelines
 
 
 def dataset_matching(

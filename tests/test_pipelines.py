@@ -36,7 +36,7 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars import otb_pipelines
+from cars.externals import otb_pipelines
 
 # CARS Tests imports
 from .utils import (

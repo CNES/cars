@@ -43,7 +43,7 @@ from json_checker import CheckerError
 from tqdm import tqdm
 
 # CARS imports
-from cars import __version__, otb_pipelines, preprocessing
+from cars import __version__, preprocessing
 from cars.cluster.dask_mode import (
     start_cluster,
     start_local_cluster,
@@ -53,6 +53,7 @@ from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
+from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import rasterization, triangulation
 from cars.steps.epi_rectif import grids

@@ -21,6 +21,8 @@
 """
 OTB Pipelines module:
 contains functions that builds Orfeo ToolBox pipelines used by CARS
+Refacto: Split function in generic externals calls through functional steps
+         interfaces (epipolar rectification, ...)
 """
 
 # Standard imports

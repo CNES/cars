@@ -37,8 +37,9 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
-from cars import otb_pipelines, preprocessing
+from cars import preprocessing
 from cars.core import constants as cst
+from cars.externals import otb_pipelines
 from cars.steps.epi_rectif import grids, resampling
 from cars.steps.matching import sparse_matching
 

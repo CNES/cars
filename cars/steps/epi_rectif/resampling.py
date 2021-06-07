@@ -31,10 +31,10 @@ import math
 import numpy as np
 
 # CARS imports
-from cars import otb_pipelines
 from cars.conf import input_parameters, mask_classes, output_prepare
 from cars.core import constants as cst
 from cars.core import datasets, inputs, tiling
+from cars.externals import otb_pipelines
 
 
 def epipolar_rectify_images(configuration, region, margins):

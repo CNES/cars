@@ -34,10 +34,10 @@ import otbApplication
 import xarray as xr
 
 # CARS imports
-from cars import otb_pipelines
 from cars.conf import input_parameters, output_compute_dsm, output_prepare
 from cars.core import constants as cst
 from cars.core import utils
+from cars.externals import otb_pipelines
 from cars.preprocessing import project_coordinates_on_line
 
 
