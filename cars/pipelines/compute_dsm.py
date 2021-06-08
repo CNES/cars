@@ -63,6 +63,7 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
+from cars.externals import otb_pipelines
 from cars.pipelines import wrappers, write_dsm
 from cars.steps import rasterization
 from cars.steps.epi_rectif import grids
@@ -621,7 +622,7 @@ def run(  # noqa: C901
                 corners, 4326, configuration, disp_min, disp_max
             )
 
-            epsg = projection.get_utm_zone_as_epsg_code(
+            epsg = otb_pipelines.get_utm_zone_as_epsg_code(
                 *np.mean(terrain_dispmin, axis=0)
             )
 

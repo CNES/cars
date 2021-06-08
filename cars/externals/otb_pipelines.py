@@ -32,9 +32,11 @@ from __future__ import absolute_import
 import numpy as np
 import otbApplication
 import rasterio as rio
+import xarray as xr
 
 # CARS imports
 from cars.conf import mask_classes
+from cars.core import constants as cst
 
 
 def build_stereorectification_grid_pipeline(
@@ -341,3 +343,184 @@ def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
     output["array"] = data_array
 
     return output
+
+
+def image_envelope(img, shp, dem=None, default_alt=None):
+    """
+    Export the image footprint to a shapefile
+    TODO: refacto with externals (OTB) and steps.
+
+    :param img: filename to image or OTB pointer to image
+    :type img:  string or OTBImagePointer
+    :param shp: Path to the output shapefile
+    :type shp: string
+    :param dem: Directory containing DEM tiles
+    :type dem: string
+    :param default_alt: Default altitude above ellipsoid
+    :type default_alt: float
+    """
+
+    app = otbApplication.Registry.CreateApplication("ImageEnvelope")
+
+    if isinstance(img, str):
+        app.SetParameterString("in", img)
+    else:
+        app.SetParameterInputImage("in", img)
+
+    if dem is not None:
+        app.SetParameterString("elev.dem", dem)
+
+    if default_alt is not None:
+        app.SetParameterFloat("elev.default", default_alt)
+
+    app.SetParameterString("out", shp)
+    app.ExecuteAndWriteOutput()
+
+
+def sensor_to_geo(
+    img: str,
+    x_coord: float,
+    y_coord: float,
+    z_coord: float = None,
+    dem: str = None,
+    geoid: str = None,
+    default_elevation: float = None,
+) -> np.ndarray:
+    """
+    For a given image point, compute the latitude, longitude, altitude
+
+    Be careful: When SRTM is used, the default elevation (altitude)
+    doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
+    is called again. Check the values.
+
+    Advice: to be sure, use x,y,z inputs only
+
+    :param img: Path to an image
+    :param x_coord: X Coordinate in input image sensor
+    :param y_coord: Y Coordinate in input image sensor
+    :param z_coord: Z Altitude coordinate to take the image
+    :param dem: if z not defined, take this DEM directory input
+    :param geoid: if z and dem not defined, take GEOID directory input
+    :param elevation: if z, dem, geoid not defined, take default elevation
+    :return: Latitude, Longitude, Altitude coordinates as a numpy array
+    """
+    s2c_app = otbApplication.Registry.CreateApplication(
+        "ConvertSensorToGeoPointFast"
+    )
+
+    s2c_app.SetParameterString("in", img)
+    s2c_app.SetParameterFloat("input.idx", x_coord)
+    s2c_app.SetParameterFloat("input.idy", y_coord)
+
+    if z_coord is not None:
+        s2c_app.SetParameterFloat("input.idz", z_coord)
+    elif dem is not None:
+        s2c_app.SetParameterString("elevation.dem", dem)
+    elif geoid is not None:
+        s2c_app.SetParameterString("elevation.geoid", geoid)
+    elif default_elevation is not None:
+        s2c_app.SetParameterFloat("elevation.default", default_elevation)
+    # else ConvertSensorToGeoPointFast have only X, Y and OTB configured GEOID
+
+    s2c_app.Execute()
+
+    lon = s2c_app.GetParameterFloat("output.idx")
+    lat = s2c_app.GetParameterFloat("output.idy")
+    alt = s2c_app.GetParameterFloat("output.idz")
+
+    return np.array([lat, lon, alt])
+
+
+def get_utm_zone_as_epsg_code(lon, lat):
+    """
+    Returns the EPSG code of the UTM zone where the lat, lon point falls in
+    TODO: refacto with externals (OTB)
+
+    :param lon: longitude of the point
+    :type lon: float
+    :param lat: lattitude of the point
+    :type lat: float
+    :returns: The EPSG code corresponding to the UTM zone
+    :rtype: int
+    """
+    utm_app = otbApplication.Registry.CreateApplication(
+        "ObtainUTMZoneFromGeoPoint"
+    )
+    utm_app.SetParameterFloat("lon", float(lon))
+    utm_app.SetParameterFloat("lat", float(lat))
+    utm_app.Execute()
+    zone = utm_app.GetParameterInt("utm")
+    north_south = 600 if lat >= 0 else 700
+    return 32000 + north_south + zone
+
+
+def read_lowres_dem(
+    startx,
+    starty,
+    sizex,
+    sizey,
+    dem=None,
+    default_alt=None,
+    resolution=0.000277777777778,
+):
+    """
+    Read an extract of the low resolution input DSM and return it as an Array
+
+    :param startx: Upper left x coordinate for grid in WGS84
+    :type startx: float
+    :param starty: Upper left y coordinate for grid in WGS84
+        (remember that values are decreasing in y axis)
+    :type starty: float
+    :param sizex: Size of grid in x direction
+    :type sizex: int
+    :param sizey: Size of grid in y direction
+    :type sizey: int
+    :param dem: DEM directory
+    :type dem: string
+    :param default_alt: Default altitude above ellipsoid
+    :type default_alt: float
+    :param resolution: Resolution (in degrees) of output raster
+    :type resolution: float
+    :return: The extract of the lowres DEM as an xarray.Dataset
+    :rtype: xarray.Dataset
+    """
+
+    app = otbApplication.Registry.CreateApplication("DEMReader")
+
+    if dem is not None:
+        app.SetParameterString("elev.dem", dem)
+
+    if default_alt is not None:
+        app.SetParameterFloat("elev.default", default_alt)
+
+    app.SetParameterFloat("originx", startx)
+    app.SetParameterFloat("originy", starty)
+    app.SetParameterInt("sizex", sizex)
+    app.SetParameterInt("sizey", sizey)
+    app.SetParameterFloat("resolution", resolution)
+    app.Execute()
+
+    dem_as_array = np.copy(app.GetImageAsNumpyArray("out"))
+
+    x_values_1d = np.linspace(
+        startx + 0.5 * resolution,
+        startx + resolution * (sizex + 0.5),
+        sizex,
+        endpoint=False,
+    )
+    y_values_1d = np.linspace(
+        starty - 0.5 * resolution,
+        starty - resolution * (sizey + 0.5),
+        sizey,
+        endpoint=False,
+    )
+
+    dims = [cst.Y, cst.X]
+    coords = {cst.X: x_values_1d, cst.Y: y_values_1d}
+    dsm_as_ds = xr.Dataset(
+        {cst.RASTER_HGT: (dims, dem_as_array)}, coords=coords
+    )
+    dsm_as_ds[cst.EPSG] = 4326
+    dsm_as_ds[cst.RESOLUTION] = resolution
+
+    return dsm_as_ds

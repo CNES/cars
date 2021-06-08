@@ -132,20 +132,6 @@ def test_compute_dem_intersection_with_poly():
 
 
 @pytest.mark.unit_tests
-def test_image_envelope():
-    """
-    Test image_envelope function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        shp = os.path.join(directory, "envelope.gpkg")
-        projection.image_envelope(img, shp, dem)
-        assert os.path.isfile(shp)
-
-
-@pytest.mark.unit_tests
 def test_ground_intersection_envelopes():
     """
     Test ground_intersection_envelopes generation

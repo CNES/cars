@@ -25,13 +25,13 @@ contains some general purpose functions using polygons and data projections
 
 # Standard imports
 import logging
+import math
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
 import osgeo
-import otbApplication
 import pandas
 import pyproj
 import rasterio as rio
@@ -43,67 +43,8 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core import inputs, outputs
-
-
-def get_projected_bounding_box(
-    poly: Polygon,
-    poly_epsg: int,
-    target_epsg: int,
-    min_elev: float,
-    max_elev: float,
-) -> List[int]:
-    """
-    Get the maximum bounding box of the projected polygon
-    considering an elevation range.
-
-    To do so the polygon is projected two times using the min and
-    max elevations. The bounding box containing the two
-    projected polygons is then returned.
-
-    :param poly: polygon to project
-    :param poly_epsg: polygon epsg code
-    :param target_epsg:  epsg code of the target referential
-    :param min_elev: minimum elevation in the considering polygon
-    :param max_elev: maximum elevation in the considering polygon
-    :return: the maximum bounding box in the target epsg code referential
-        as a list [xmin, ymin, xmax, ymax]
-    """
-    # construct two polygons from the initial one
-    # and add min and max elevations in each of them
-    poly_pts_with_min_alt = []
-    poly_pts_with_max_alt = []
-    for point in list(poly.exterior.coords):
-        poly_pts_with_min_alt.append((point[0], point[1], min_elev))
-        poly_pts_with_max_alt.append((point[0], point[1], max_elev))
-
-    poly_elev_min = Polygon(poly_pts_with_min_alt)
-    poly_elev_max = Polygon(poly_pts_with_max_alt)
-
-    # project the polygons
-    poly_elev_min = polygon_projection(poly_elev_min, poly_epsg, target_epsg)
-    poly_elev_max = polygon_projection(poly_elev_max, poly_epsg, target_epsg)
-
-    # retrieve the largest bounding box
-    (
-        xmin_poly_elev_min,
-        ymin_poly_elev_min,
-        xmax_poly_elev_min,
-        ymax_poly_elev_min,
-    ) = poly_elev_min.bounds
-    (
-        xmin_poly_elev_max,
-        ymin_poly_elev_max,
-        xmax_poly_elev_max,
-        ymax_poly_elev_max,
-    ) = poly_elev_max.bounds
-
-    xmin = min(xmin_poly_elev_min, xmin_poly_elev_max)
-    ymin = min(ymin_poly_elev_min, ymin_poly_elev_max)
-    xmax = max(xmax_poly_elev_min, xmax_poly_elev_max)
-    ymax = max(ymax_poly_elev_min, ymax_poly_elev_max)
-
-    return [xmin, ymin, xmax, ymax]
+from cars.core import inputs, outputs, utils
+from cars.externals import otb_pipelines
 
 
 def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
@@ -495,61 +436,6 @@ def points_cloud_conversion_dataframe(
         cloud[cst.Z] = xyz_in[:, 2]
 
 
-def get_utm_zone_as_epsg_code(lon, lat):
-    """
-    Returns the EPSG code of the UTM zone where the lat, lon point falls in
-    TODO: refacto with externals (OTB)
-
-    :param lon: longitude of the point
-    :type lon: float
-    :param lat: lattitude of the point
-    :type lat: float
-    :returns: The EPSG code corresponding to the UTM zone
-    :rtype: int
-    """
-    utm_app = otbApplication.Registry.CreateApplication(
-        "ObtainUTMZoneFromGeoPoint"
-    )
-    utm_app.SetParameterFloat("lon", float(lon))
-    utm_app.SetParameterFloat("lat", float(lat))
-    utm_app.Execute()
-    zone = utm_app.GetParameterInt("utm")
-    north_south = 600 if lat >= 0 else 700
-    return 32000 + north_south + zone
-
-
-def image_envelope(img, shp, dem=None, default_alt=None):
-    """
-    Export the image footprint to a shapefile
-    TODO: refacto with externals (OTB) and steps.
-
-    :param img: filename to image or OTB pointer to image
-    :type img:  string or OTBImagePointer
-    :param shp: Path to the output shapefile
-    :type shp: string
-    :param dem: Directory containing DEM tiles
-    :type dem: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    """
-
-    app = otbApplication.Registry.CreateApplication("ImageEnvelope")
-
-    if isinstance(img, str):
-        app.SetParameterString("in", img)
-    else:
-        app.SetParameterInputImage("in", img)
-
-    if dem is not None:
-        app.SetParameterString("elev.dem", dem)
-
-    if default_alt is not None:
-        app.SetParameterFloat("elev.default", default_alt)
-
-    app.SetParameterString("out", shp)
-    app.ExecuteAndWriteOutput()
-
-
 def ground_polygon_from_envelopes(
     poly_envelope1, poly_envelope2, epsg1, epsg2, tgt_epsg=4326
 ):
@@ -624,8 +510,12 @@ def ground_intersection_envelopes(
     :rtype: Tuple[polygon, Tuple[int, int, int, int]]
     """
     # Create left, right envelopes from images and dem, default_alt
-    image_envelope(img1_path, shp1_path, dem=dem_dir, default_alt=default_alt)
-    image_envelope(img2_path, shp2_path, dem=dem_dir, default_alt=default_alt)
+    otb_pipelines.image_envelope(
+        img1_path, shp1_path, dem=dem_dir, default_alt=default_alt
+    )
+    otb_pipelines.image_envelope(
+        img2_path, shp2_path, dem=dem_dir, default_alt=default_alt
+    )
 
     # Read vectors shapefiles
     poly1, epsg1 = inputs.read_vector(shp1_path)
@@ -642,3 +532,224 @@ def ground_intersection_envelopes(
     outputs.write_vector([inter_poly], out_intersect_path, epsg1)
 
     return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)
+
+
+def project_coordinates_on_line(
+    x_coord: Union[float, np.ndarray],
+    y_coord: Union[float, np.ndarray],
+    origin: np.ndarray,
+    vec: np.ndarray,
+) -> np.ndarray:
+    """
+    Project coordinates (x,y) on a line starting from origin with a
+    direction vector vec, and return the euclidean distances between
+    projected points and origin.
+
+    :param x_coord: scalar or vector of coordinates x
+    :type x_coord: float or np.array(float) of shape [n]
+    :param y_coord: scalar or vector of coordinates x
+    :type y_coord: float or np.array(float) of shape [n]
+    :param origin: coordinates of origin point for line
+    :type origin: list(float) or np.array(float) of size 2
+    :param vec: direction vector of line
+    :type vec: list(float) or np.array(float) of size 2
+    :return: vector of distances of projected points to origin
+    :rtype: numpy array of float
+    """
+    assert len(x_coord) == len(y_coord)
+    assert len(origin) == 2
+    assert len(vec) == 2
+
+    vec_angle = math.atan2(vec[1], vec[0])
+    point_angle = np.arctan2(y_coord - origin[1], x_coord - origin[0])
+    proj_angle = point_angle - vec_angle
+    dist_to_origin = np.sqrt(
+        np.square(x_coord - origin[0]) + np.square(y_coord - origin[1])
+    )
+
+    return dist_to_origin * np.cos(proj_angle)
+
+
+def get_time_ground_direction(
+    img: str,
+    x_loc: float = None,
+    y_loc: float = None,
+    y_offset: float = None,
+    dem: str = None,
+) -> np.ndarray:
+    """
+    For a given image, compute the direction of increasing acquisition
+    time on ground.
+    Done by two "img" localizations at "y" and "y+y_offset" values.
+
+    :param img: Path to an image
+    :param x_loc: x location in image for estimation (default=center)
+    :param y_loc: y location in image for estimation (default=1/4)
+    :param y_offset: y location in image for estimation (default=1/2)
+    :param dem: DEM for direct localisation function
+    :return: normalized direction vector as a numpy array
+    """
+    # Define x: image center,
+    #        y: 1/4 of image,
+    # y_offset: 3/4 of image if not defined
+    img_size_x, img_size_y = inputs.rasterio_get_size(img)
+    if x_loc is None:
+        x_loc = img_size_x / 2
+    if y_loc is None:
+        y_loc = img_size_y / 4
+    if y_offset is None:
+        y_offset = img_size_y / 2
+
+    # Check x, y, y_offset to be in image
+    assert x_loc >= 0
+    assert x_loc <= img_size_x
+    assert y_loc >= 0
+    assert y_loc <= img_size_y
+    assert y_offset > 0
+    assert y_loc + y_offset <= img_size_y
+
+    # Get first coordinates of time direction vector
+    lat1, lon1, __ = otb_pipelines.sensor_to_geo(img, x_loc, y_loc, dem=dem)
+    # Get second coordinates of time direction vector
+    lat2, lon2, __ = otb_pipelines.sensor_to_geo(
+        img, x_loc, y_loc + y_offset, dem=dem
+    )
+
+    # Create and normalize the time direction vector
+    vec = np.array([lon1 - lon2, lat1 - lat2])
+    vec = vec / np.linalg.norm(vec)
+
+    return vec
+
+
+def get_ground_direction(
+    img: str,
+    x_coord: float = None,
+    y_coord: float = None,
+    z0_coord: float = None,
+    z_coord: float = None,
+) -> np.ndarray:
+    """
+    For a given image (x,y) point, compute the direction vector to ground
+    The function use otb_pipelines.sensor_to_geo and make a z variation to get
+    a ground direction vector.
+    By default, (x,y) is put at image center and z0, z at RPC geometric model
+    limits.
+
+    :param img: Path to an image
+    :param x: X Coordinate in input image sensor
+    :param y: Y Coordinate in input image sensor
+    :param z0: Z altitude reference coordinate
+    :param z: Z Altitude coordinate to take the image
+    :return: (lat0,lon0,alt0, lat,lon,alt) origin and end vector coordinates
+    """
+    # Define x, y in image center if not defined
+    img_size_x, img_size_y = inputs.rasterio_get_size(img)
+    if x_coord is None:
+        x_coord = img_size_x / 2
+    if y_coord is None:
+        y_coord = img_size_y / 2
+    # Check x, y to be in image
+    assert x_coord >= 0
+    assert x_coord <= img_size_x
+    assert y_coord >= 0
+    assert y_coord <= img_size_y
+
+    # Define z and z0 from img RPC constraints if not defined
+    (min_alt, max_alt) = utils.get_elevation_range_from_metadata(img)
+    if z0_coord is None:
+        z0_coord = min_alt
+    if z_coord is None:
+        z_coord = max_alt
+    # Check z0 and z to be in RPC constraints
+    assert z0_coord >= min_alt
+    assert z0_coord <= max_alt
+    assert z_coord >= min_alt
+    assert z_coord <= max_alt
+
+    # Get origin vector coordinate with z0 altitude
+    lat0, lon0, alt0 = otb_pipelines.sensor_to_geo(
+        img, x_coord, y_coord, z_coord=z0_coord
+    )
+    # Get end vector coordinate with z altitude
+    lat, lon, alt = otb_pipelines.sensor_to_geo(
+        img, x_coord, y_coord, z_coord=z_coord
+    )
+
+    return np.array([lat0, lon0, alt0, lat, lon, alt])
+
+
+def get_ground_angles(
+    img1: str,
+    img2: str,
+    x1_coord: float = None,
+    y1_coord: float = None,
+    z1_0_coord: float = None,
+    z1_coord: float = None,
+    x2_coord: float = None,
+    y2_coord: float = None,
+    z2_0_coord: float = None,
+    z2_coord: float = None,
+) -> Tuple[np.ndarray, np.ndarray, np.ndarray, np.ndarray, np.ndarray]:
+    """
+    For a given image (x,y) point, compute the Azimuth angle,
+    Elevation angle (not the altitude !) and Range from Ground z0 perspective
+    for both stereo image (img1: left and img2: right)
+
+    Calculate also the convergence angle between the two satellites from ground.
+
+    The function use get_ground_direction function to have coordinates of
+    ground direction vector and compute angles and range.
+
+    Ref: Jeong, Jaehoon. (2017).
+    IMAGING GEOMETRY AND POSITIONING ACCURACY OF DUAL SATELLITE STEREO IMAGES:
+    A REVIEW. ISPRS Annals of Photogrammetry, Remote Sensing and Spatial
+    Information Sciences.
+    IV-2/W4. 235-242. 10.5194/isprs-annals-IV-2-W4-235-2017.
+
+    Perspectives: get bisector  elevation (BIE), and asymmetry angle
+
+    :param img1: Path to left image1
+    :param img2: Path to right image2
+    :param x1_coord: X Coordinate in input left image1  sensor
+    :param y1_coord: Y Coordinate in input left image1 sensor
+    :param z1_0_coord: Left image1 Z altitude origin coordinate
+        for ground direction vector
+    :param z1_coord:  Left image1 Z altitude end coordinate
+        for ground direction vector
+    :param x2_coord: X Coordinate in input right image2 sensor
+    :param y2_coord: Y Coordinate in input right image2 sensor
+    :param z2_0_coord: Right image2 Z altitude origin coordinate
+        for ground direction vector
+    :param z2_coord: Right image2 Z altitude end coordinate
+        for ground direction vector
+    :return: Left Azimuth, Left Elevation Angle,
+            Right Azimuth, Right Elevation Angle, Convergence Angle
+    """
+
+    # Get image1 <-> satellite vector from image2 metadata geometric model
+    lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(
+        img1, x1_coord, y1_coord, z1_0_coord, z1_coord
+    )
+    # Get East North Up vector for left image1
+    x1_e, y1_n, y1_u = enu1 = geo_to_enu(
+        lat1, lon1, alt1, lat1_0, lon1_0, alt1_0
+    )
+    # Convert vector to Azimuth, Elevation, Range (unused)
+    az1, elev_angle1, __ = enu_to_aer(x1_e, y1_n, y1_u)
+
+    # Get image2 <-> satellite vector from image2 metadata geometric model
+    lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(
+        img2, x2_coord, y2_coord, z2_0_coord, z2_coord
+    )
+    # Get East North Up vector for right image2
+    x2_e, y2_n, y2_u = enu2 = geo_to_enu(
+        lat2, lon2, alt2, lat2_0, lon2_0, alt2_0
+    )
+    # Convert ENU to Azimuth, Elevation, Range (unused)
+    az2, elev_angle2, __ = enu_to_aer(x2_e, y2_n, y2_u)
+
+    # Get convergence angle from two enu vectors.
+    convergence_angle = np.degrees(utils.angle_vectors(enu1, enu2))
+
+    return az1, elev_angle1, az2, elev_angle2, convergence_angle

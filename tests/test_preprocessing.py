@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-Test module for cars/preprocessing.py
+Test module for old cars/preprocessing.py
+TODO: Refactor with new src organization
 """
 
 # Standard imports
@@ -35,9 +36,10 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
-from cars import preprocessing
 from cars.core import constants as cst
+from cars.core import projection
 from cars.externals import otb_pipelines
+from cars.steps import devib
 from cars.steps.epi_rectif import grids, resampling
 from cars.steps.matching import sparse_matching
 
@@ -401,7 +403,7 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
 
-    srtm_ds = preprocessing.read_lowres_dem(
+    srtm_ds = otb_pipelines.read_lowres_dem(
         startx, starty, sizex, sizey, dem=dem
     )
 
@@ -424,7 +426,7 @@ def test_get_time_ground_direction():
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    vec = preprocessing.get_time_ground_direction(img, dem=dem)
+    vec = projection.get_time_ground_direction(img, dem=dem)
 
     assert vec[0] == -0.03760314420222626
     assert vec[1] == 0.9992927516729553
@@ -439,7 +441,7 @@ def test_get_ground_angles():
     left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
     right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
 
-    angles = preprocessing.get_ground_angles(left_img, right_img)
+    angles = projection.get_ground_angles(left_img, right_img)
     angles = np.asarray(angles)  # transform tuple to array
 
     np.testing.assert_allclose(
@@ -460,7 +462,7 @@ def test_project_coordinates_on_line():
     x_coord = np.array([1, 2, 3])
     y_coord = np.array([1, 2, 3])
 
-    coords = preprocessing.project_coordinates_on_line(
+    coords = projection.project_coordinates_on_line(
         x_coord, y_coord, origin, vec
     )
 
@@ -485,7 +487,7 @@ def test_lowres_initial_dem_splines_fit():
     ]
     vec = [0, 1]
 
-    splines = preprocessing.lowres_initial_dem_splines_fit(
+    splines = devib.lowres_initial_dem_splines_fit(
         lowres_dsm_from_matches, lowres_initial_dem, origin, vec
     )
 

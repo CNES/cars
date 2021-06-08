@@ -43,7 +43,7 @@ from json_checker import CheckerError
 from tqdm import tqdm
 
 # CARS imports
-from cars import __version__, preprocessing
+from cars import __version__
 from cars.cluster.dask_mode import (
     start_cluster,
     start_local_cluster,
@@ -55,7 +55,7 @@ from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
-from cars.steps import rasterization, triangulation
+from cars.steps import devib, rasterization, triangulation
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
 
@@ -386,7 +386,7 @@ def run(  # noqa: C901
         right_az,
         right_elev_angle,
         convergence_angle,
-    ) = preprocessing.get_ground_angles(img1, img2)
+    ) = projection.get_ground_angles(img1, img2)
 
     logging.info(
         "Left  satellite coverture: Azimuth angle : {:.1f}°, "
@@ -804,7 +804,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][output_prepare.LOWRES_DSM_TAG] = lowres_dsm_file
 
     # Now read the exact same grid on initial DEM
-    lowres_initial_dem = preprocessing.read_lowres_dem(
+    lowres_initial_dem = otb_pipelines.read_lowres_dem(
         startx=inter_xmin,
         starty=inter_ymax,
         sizex=lowres_dsm_sizex,
@@ -854,8 +854,8 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
 
         # First, we estimate direction of acquisition time for both images
-        vec1 = preprocessing.get_time_ground_direction(img1, dem=srtm_dir)
-        vec2 = preprocessing.get_time_ground_direction(img2, dem=srtm_dir)
+        vec1 = projection.get_time_ground_direction(img1, dem=srtm_dir)
+        vec2 = projection.get_time_ground_direction(img2, dem=srtm_dir)
         time_direction_vector = (vec1 + vec2) / 2
 
         def display_angle(vec):
@@ -903,7 +903,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         ]
 
         # Then we estimate the correction splines
-        splines = preprocessing.lowres_initial_dem_splines_fit(
+        splines = devib.lowres_initial_dem_splines_fit(
             lowres_dsm,
             lowres_initial_dem,
             origin,
@@ -938,7 +938,7 @@ than --epipolar_error_upper_bound = {} pix".format(
 
             # Estimate correction on point cloud from matches
             points_cloud_from_matches_z_correction = splines(
-                preprocessing.project_coordinates_on_line(
+                projection.project_coordinates_on_line(
                     points_cloud_from_matches.x,
                     points_cloud_from_matches.y,
                     origin,
