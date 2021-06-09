@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/filtering.py
+Test module for cars/steps/points_cloud.py
 """
 
 # Standard imports

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/cluster.py
+Test module for cars/cluster/cluster.py
 """
 
 # Standard imports

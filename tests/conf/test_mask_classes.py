@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/mask_classes.py
+Test module for cars/conf/mask_classes.py
 """
 
 # Third party imports
