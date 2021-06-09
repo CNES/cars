@@ -234,3 +234,62 @@ def test_ground_intersection_envelopes():
             str(intersect_error.value) == "The two envelopes do not intersect "
             "one another"
         )
+
+
+@pytest.mark.unit_tests
+def test_get_time_ground_direction():
+    """
+    Test the get_time_ground_direction
+    """
+    # Bug OTB elevation: ref1 when launch standalone
+    ref1_vec_0 = -0.03747366058909428
+    ref1_vec_1 = 0.9992976157091807
+    # Bug OTB elevation: ref2 when all unit_tests launched (otb apps before)
+    ref2_vec_0 = -0.03760314420222626
+    ref2_vec_1 = 0.9992927516729553
+
+    # Force use of DEM if test is ran standalone
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    vec = projection.get_time_ground_direction(img, dem=dem)
+
+    assert vec[0] == ref1_vec_0 or ref2_vec_0
+    assert vec[1] == ref1_vec_1 or ref2_vec_1
+
+
+@pytest.mark.unit_tests
+def test_get_ground_angles():
+    """
+    Test the get_ground_angles function
+    """
+
+    left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
+
+    angles = projection.get_ground_angles(left_img, right_img)
+    angles = np.asarray(angles)  # transform tuple to array
+
+    np.testing.assert_allclose(
+        angles,
+        [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114],
+        rtol=1e-01,
+    )
+
+
+@pytest.mark.unit_tests
+def test_project_coordinates_on_line():
+    """
+    Test project_coordinates_on_line
+    """
+    origin = [0, 0]
+    vec = [0.5, 0.5]
+
+    x_coord = np.array([1, 2, 3])
+    y_coord = np.array([1, 2, 3])
+
+    coords = projection.project_coordinates_on_line(
+        x_coord, y_coord, origin, vec
+    )
+
+    np.testing.assert_allclose(coords, [1.41421356, 2.82842712, 4.24264069])
