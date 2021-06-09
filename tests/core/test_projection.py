@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/projection.py
+Test module for cars/core/projection.py
 """
 
 # Standard imports
@@ -39,7 +39,7 @@ from shapely.geometry import Polygon
 from cars.core import inputs, projection
 
 # CARS Tests imports
-from .helpers import absolute_data_path, temporary_dir
+from ..helpers import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests
