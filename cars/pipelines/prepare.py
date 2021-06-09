@@ -764,10 +764,14 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][output_prepare.MATCHES_TAG] = matches_array_path
     np.save(matches_array_path, corrected_matches)
 
-    # Now compute low resolution DSM and its initial DEM counterpart
+    # Devibration part :
+    # 1. Compute low resolution DSM from sparse matching matches
+    # 2. Get Initial DEM (typically SRTM) on the same grid resolution
+    # 3. Correction estimation of  DSM difference (with splines)
+    # 4. Compute corrected low resolution DSM
+    #    and corrected disparity to use in compute_dsm pipeline align mode.
 
     # First, triangulate matches
-    logging.info("Generating low resolution DSM from matches")
     points_cloud_from_matches = triangulation.triangulate_matches(
         out_json, corrected_matches
     )
@@ -784,6 +788,13 @@ than --epipolar_error_upper_bound = {} pix".format(
     lowres_dsm_sizey = int(
         math.ceil((inter_ymax - inter_ymin) / lowres_dsm_resolution)
     )
+    logging.info(
+        "Generating low resolution ({}°) DSM"
+        " from matches ({}x{})".format(
+            lowres_dsm_resolution, lowres_dsm_sizex, lowres_dsm_sizey
+        )
+    )
+
     lowres_dsm = rasterization.simple_rasterization_dataset(
         [points_cloud_from_matches],
         lowres_dsm_resolution,
@@ -909,15 +920,19 @@ than --epipolar_error_upper_bound = {} pix".format(
             origin,
             time_direction_vector,
             ext=getattr(low_res_dsm_params, static_conf.low_res_dsm_ext_tag),
-            order=getattr(low_res_dsm_params, static_conf.low_res_dsm_ext_tag),
+            order=getattr(
+                low_res_dsm_params, static_conf.low_res_dsm_order_tag
+            ),
         )
 
     else:
         logging.warning(
             "Low resolution DSM is not large enough "
-            "(minimum size is 100x100) "
+            "(minimum size is {}x{}) "
             "to estimate correction "
-            "to fit initial DEM, skipping ..."
+            "to fit initial DEM, skipping ...".format(
+                cfg_low_res_dsm_min_sizex, cfg_low_res_dsm_min_sizey
+            )
         )
 
     if splines is not None:
@@ -976,6 +991,7 @@ than --epipolar_error_upper_bound = {} pix".format(
             corrected_lowres_dsm_file = os.path.join(
                 out_dir, "corrected_lowres_dsm_from_matches.nc"
             )
+
             # TODO add proper CRS info
             corrected_lowres_dsm.to_netcdf(corrected_lowres_dsm_file)
             out_json[output_prepare.PREPROCESSING_SECTION_TAG][
