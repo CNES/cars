@@ -35,7 +35,7 @@ import xarray as xr
 from cars.steps import points_cloud
 
 # CARS Tests imports
-from .helpers import assert_same_datasets
+from ..helpers import assert_same_datasets
 
 
 @pytest.mark.unit_tests
