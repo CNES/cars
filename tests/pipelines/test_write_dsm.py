@@ -19,10 +19,9 @@
 # limitations under the License.
 #
 """
-Test module for cars/readwrite.py
+Test module for cars/pipelines/write_dsm.py
 """
-
-# TODO change file name
+# TODO: refacto with write_dsm and compute_dsm
 
 # Standard imports
 import os
@@ -43,7 +42,7 @@ from cars.pipelines import write_dsm
 from cars.steps import rasterization
 
 # CARS Tests imports
-from .helpers import temporary_dir
+from ..helpers import temporary_dir
 
 
 @pytest.mark.unit_tests
