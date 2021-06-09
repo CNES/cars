@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/tiling.py
+Test module for cars/core/tiling.py
 """
 
 # Standard imports
