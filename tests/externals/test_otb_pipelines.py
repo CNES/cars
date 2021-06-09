@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/otb_pipelines.py
+Test module for cars/externals/otb_pipelines.py
 """
 
 # Standard imports
@@ -39,7 +39,7 @@ import rasterio as rio
 from cars.externals import otb_pipelines
 
 # CARS Tests imports
-from .helpers import (
+from ..helpers import (
     absolute_data_path,
     otb_geoid_file_set,
     otb_geoid_file_unset,
