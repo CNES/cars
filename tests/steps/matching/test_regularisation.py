@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/matching_regularisation.py
+Test module for cars/steps/matching/regularisation.py
 """
 
 # Standard imports
@@ -38,7 +38,7 @@ from cars.core import constants as cst
 from cars.steps.matching import regularisation
 
 # CARS Tests imports
-from .helpers import absolute_data_path, assert_same_datasets
+from ...helpers import absolute_data_path, assert_same_datasets
 
 
 @pytest.fixture(scope="module")
