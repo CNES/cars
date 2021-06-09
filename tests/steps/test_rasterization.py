@@ -20,9 +20,8 @@
 #
 """
 Test module for cars/steps/rasterization.py
-TODO: refactor in several files and remove too-many-lines
+TODO: refactor with code source
 """
-# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import absolute_import
