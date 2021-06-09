@@ -39,7 +39,7 @@ import rasterio as rio
 from cars.externals import otb_pipelines
 
 # CARS Tests imports
-from .utils import (
+from .helpers import (
     absolute_data_path,
     otb_geoid_file_set,
     otb_geoid_file_unset,

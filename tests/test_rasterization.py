@@ -40,7 +40,7 @@ from cars.core import constants as cst
 from cars.steps import points_cloud, rasterization
 
 # CARS Tests imports
-from .utils import absolute_data_path, assert_same_datasets
+from .helpers import absolute_data_path, assert_same_datasets
 
 
 @pytest.mark.unit_tests

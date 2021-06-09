@@ -34,7 +34,7 @@ import pytest
 from cars.cluster import dask_mode
 
 # CARS Tests imports
-from tests.utils import temporary_dir
+from ..helpers import temporary_dir
 
 
 @pytest.mark.unit_tests

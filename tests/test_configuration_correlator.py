@@ -33,7 +33,7 @@ import pytest
 from cars.externals.matching.correlator_configuration import corr_conf
 
 # CARS Tests imports
-from .utils import temporary_dir
+from .helpers import temporary_dir
 
 
 @pytest.mark.unit_tests

@@ -38,7 +38,7 @@ from shapely.geometry import Polygon, shape
 from cars.core import inputs, outputs, utils
 
 # CARS Tests imports
-from .utils import absolute_data_path, temporary_dir
+from .helpers import absolute_data_path, temporary_dir
 
 
 @pytest.mark.unit_tests

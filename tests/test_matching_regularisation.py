@@ -38,7 +38,7 @@ from cars.core import constants as cst
 from cars.steps.matching import regularisation
 
 # CARS Tests imports
-from .utils import absolute_data_path, assert_same_datasets
+from .helpers import absolute_data_path, assert_same_datasets
 
 
 @pytest.fixture(scope="module")

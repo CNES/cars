@@ -30,7 +30,7 @@ import pytest
 from cars.conf import mask_classes
 
 # CARS Tests imports
-from .utils import absolute_data_path
+from .helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests

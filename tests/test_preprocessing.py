@@ -44,7 +44,7 @@ from cars.steps.epi_rectif import grids, resampling
 from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
-from .utils import (
+from .helpers import (
     absolute_data_path,
     assert_same_datasets,
     otb_geoid_file_set,

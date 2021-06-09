@@ -51,7 +51,7 @@ from cars.steps import triangulation
 from cars.steps.epi_rectif import resampling
 from cars.steps.matching import dense_matching
 
-from .utils import (
+from .helpers import (
     absolute_data_path,
     assert_same_datasets,
     otb_geoid_file_set,

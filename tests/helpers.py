@@ -19,8 +19,11 @@
 # limitations under the License.
 #
 """
-Utils testing generic module:
+Helpers shared testing generic module:
 contains global shared generic functions for tests/*.py
+TODO: Try to put the most part in cars source code (if pertinent) and
+organized functionnally.
+TODO: add conftest.py general tests conf with tests refactor.
 """
 
 # Standard imports
