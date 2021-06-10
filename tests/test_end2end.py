@@ -22,7 +22,9 @@
 Test module End to End:
 Prepare and Compute DSM run user tests through pipelines run() functions
 TODO: Cars_cli is not tested
+TODO: Refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import absolute_import

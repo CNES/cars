@@ -19,20 +19,22 @@
 # limitations under the License.
 #
 """
-Sift module:
+Sparse matching Sift module:
 contains sift sparse matching method
 """
 
 # Standard imports
 from __future__ import absolute_import
 
+import logging
+
 # Third party imports
 import numpy as np
 import otbApplication as otb
 
 # CARS imports
-from cars import otb_pipelines
 from cars.core import constants as cst
+from cars.externals import otb_pipelines
 
 
 def dataset_matching(
@@ -122,3 +124,54 @@ def dataset_matching(
         )
 
     return matches
+
+
+def remove_epipolar_outliers(matches, percent=0.1):
+    # TODO used only in test functions to test compute_disparity_range
+    # Refactor with sparse_matching
+    """
+    This function will filter the match vector
+    according to a quantile of epipolar error
+    used for testing compute_disparity_range sparse method
+
+    :param matches: the [4,N] matches array
+    :type matches: numpy array
+    :param percent: the quantile to remove at each extrema
+    :type percent: float
+    :return: the filtered match array
+    :rtype: numpy array
+    """
+    epipolar_error_min = np.percentile(matches[:, 1] - matches[:, 3], percent)
+    epipolar_error_max = np.percentile(
+        matches[:, 1] - matches[:, 3], 100 - percent
+    )
+    logging.info(
+        "Epipolar error range after outlier rejection: [{},{}]".format(
+            epipolar_error_min, epipolar_error_max
+        )
+    )
+    out = matches[(matches[:, 1] - matches[:, 3]) < epipolar_error_max]
+    out = out[(out[:, 1] - out[:, 3]) > epipolar_error_min]
+
+    return out
+
+
+def compute_disparity_range(matches, percent=0.1):
+    # TODO: Refactor with dense_matching to have only one API ?
+    """
+    This function will compute the disparity range
+    from matches by filtering percent outliers
+
+    :param matches: the [4,N] matches array
+    :type matches: numpy array
+    :param percent: the quantile to remove at each extrema (in %)
+    :type percent: float
+    :return: the disparity range
+    :rtype: float, float
+    """
+    disparity = matches[:, 2] - matches[:, 0]
+
+    mindisp = np.percentile(disparity, percent)
+    maxdisp = np.percentile(disparity, 100 - percent)
+
+    return mindisp, maxdisp

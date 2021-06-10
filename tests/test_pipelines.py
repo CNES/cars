@@ -36,7 +36,7 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars import otb_pipelines
+from cars.externals import otb_pipelines
 
 # CARS Tests imports
 from .utils import (
@@ -456,3 +456,26 @@ def test_build_image_resampling_pipeline():
     )
 
     assert out_np.shape == (200, 200, 1)
+
+
+@pytest.mark.unit_tests
+def test_get_utm_zone_as_epsg_code():
+    """
+    Test if a point in Toulouse gives the correct EPSG code
+    """
+    epsg = otb_pipelines.get_utm_zone_as_epsg_code(1.442299, 43.600764)
+    assert epsg == 32631
+
+
+@pytest.mark.unit_tests
+def test_image_envelope():
+    """
+    Test image_envelope function
+    """
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+        otb_pipelines.image_envelope(img, shp, dem)
+        assert os.path.isfile(shp)

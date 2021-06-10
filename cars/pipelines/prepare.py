@@ -21,7 +21,9 @@
 """
 Main CARS prepare pipeline module:
 contains functions associated to prepare CARS sub-command
+TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import absolute_import, print_function
@@ -41,17 +43,21 @@ from json_checker import CheckerError
 from tqdm import tqdm
 
 # CARS imports
-from cars import __version__, otb_pipelines, preprocessing
-from cars.cluster.dask import start_cluster, start_local_cluster, stop_cluster
+from cars import __version__
+from cars.cluster.dask_mode import (
+    start_cluster,
+    start_local_cluster,
+    stop_cluster,
+)
 from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
-from cars.io import write
+from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
-from cars.steps import rasterization, triangulation
+from cars.steps import devib, rasterization, triangulation
 from cars.steps.epi_rectif import grids
-from cars.steps.sparse_matching import filtering
+from cars.steps.matching import sparse_matching
 
 
 def run(  # noqa: C901
@@ -271,44 +277,33 @@ def run(  # noqa: C901
     logging.info("Computing images envelopes and their intersection")
     shp1 = os.path.join(out_dir, "left_envelope.shp")
     shp2 = os.path.join(out_dir, "right_envelope.shp")
-    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.LEFT_ENVELOPE_TAG] = shp1
-    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.RIGHT_ENVELOPE_TAG] = shp2
-    preprocessing.image_envelope(
-        img1, shp1, dem=srtm_dir, default_alt=default_alt
+    out_envelopes_intersection = os.path.join(
+        out_dir, "envelopes_intersection.gpkg"
     )
-    preprocessing.image_envelope(
-        img2, shp2, dem=srtm_dir, default_alt=default_alt
-    )
-
-    poly1, epsg1 = inputs.read_vector(shp1)
-    poly2, epsg2 = inputs.read_vector(shp2)
 
     inter_poly, (
         inter_xmin,
         inter_ymin,
         inter_xmax,
         inter_ymax,
-    ) = projection.ground_polygon_from_envelopes(
-        poly1, poly2, epsg1, epsg2, epsg1
+    ) = projection.ground_intersection_envelopes(
+        img1,
+        img2,
+        shp1,
+        shp2,
+        out_envelopes_intersection,
+        dem_dir=srtm_dir,
+        default_alt=default_alt,
     )
-
-    out_envelopes_intersection = os.path.join(
-        out_dir, "envelopes_intersection.gpkg"
-    )
-    outputs.write_vector([inter_poly], out_envelopes_intersection, epsg1)
 
     conf_out_dict = out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ]
-
+    conf_out_dict[output_prepare.LEFT_ENVELOPE_TAG] = shp1
+    conf_out_dict[output_prepare.RIGHT_ENVELOPE_TAG] = shp2
     conf_out_dict[
         output_prepare.ENVELOPES_INTERSECTION_TAG
     ] = out_envelopes_intersection
-
     conf_out_dict[output_prepare.ENVELOPES_INTERSECTION_BB_TAG] = [
         inter_xmin,
         inter_ymin,
@@ -318,6 +313,7 @@ def run(  # noqa: C901
 
     if check_inputs:
         logging.info("Checking DEM coverage")
+        _, epsg1 = inputs.read_vector(shp1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
             srtm_dir, inter_poly, epsg1
         )
@@ -390,7 +386,7 @@ def run(  # noqa: C901
         right_az,
         right_elev_angle,
         convergence_angle,
-    ) = preprocessing.get_ground_angles(img1, img2)
+    ) = projection.get_ground_angles(img1, img2)
 
     logging.info(
         "Left  satellite coverture: Azimuth angle : {:.1f}°, "
@@ -489,9 +485,9 @@ def run(  # noqa: C901
 
     # Write temporary grid
     tmp1 = os.path.join(out_dir, "tmp1.tif")
-    write.write_grid(grid1, tmp1, grid_origin, grid_spacing)
+    grids.write_grid(grid1, tmp1, grid_origin, grid_spacing)
     tmp2 = os.path.join(out_dir, "tmp2.tif")
-    write.write_grid(grid2, tmp2, grid_origin, grid_spacing)
+    grids.write_grid(grid2, tmp2, grid_origin, grid_spacing)
 
     # Compute margins for right region
     margins = [
@@ -686,14 +682,14 @@ than --epipolar_error_upper_bound = {} pix".format(
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ][output_prepare.LEFT_EPIPOLAR_GRID_TAG] = out_left_grid
-    write.write_grid(grid1, out_left_grid, grid_origin, grid_spacing)
+    grids.write_grid(grid1, out_left_grid, grid_origin, grid_spacing)
 
     # Export corrected right grid
     out_right_grid = os.path.join(out_dir, "right_epipolar_grid.tif")
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
     ][output_prepare.RIGHT_EPIPOLAR_GRID_TAG] = out_right_grid
-    write.write_grid(
+    grids.write_grid(
         corrected_right_grid, out_right_grid, grid_origin, grid_spacing
     )
 
@@ -707,7 +703,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][
         output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
     ] = out_right_grid_uncorrected
-    write.write_grid(
+    grids.write_grid(
         grid2, out_right_grid_uncorrected, grid_origin, grid_spacing
     )
 
@@ -733,7 +729,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
     )
 
-    dmin, dmax = filtering.compute_disparity_range(
+    dmin, dmax = sparse_matching.compute_disparity_range(
         corrected_matches,
         static_conf.get_disparity_outliers_rejection_percent(),
     )
@@ -768,10 +764,14 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][output_prepare.MATCHES_TAG] = matches_array_path
     np.save(matches_array_path, corrected_matches)
 
-    # Now compute low resolution DSM and its initial DEM counterpart
+    # Devibration part :
+    # 1. Compute low resolution DSM from sparse matching matches
+    # 2. Get Initial DEM (typically SRTM) on the same grid resolution
+    # 3. Correction estimation of  DSM difference (with splines)
+    # 4. Compute corrected low resolution DSM
+    #    and corrected disparity to use in compute_dsm pipeline align mode.
 
     # First, triangulate matches
-    logging.info("Generating low resolution DSM from matches")
     points_cloud_from_matches = triangulation.triangulate_matches(
         out_json, corrected_matches
     )
@@ -788,6 +788,13 @@ than --epipolar_error_upper_bound = {} pix".format(
     lowres_dsm_sizey = int(
         math.ceil((inter_ymax - inter_ymin) / lowres_dsm_resolution)
     )
+    logging.info(
+        "Generating low resolution ({}°) DSM"
+        " from matches ({}x{})".format(
+            lowres_dsm_resolution, lowres_dsm_sizex, lowres_dsm_sizey
+        )
+    )
+
     lowres_dsm = rasterization.simple_rasterization_dataset(
         [points_cloud_from_matches],
         lowres_dsm_resolution,
@@ -808,7 +815,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     ][output_prepare.LOWRES_DSM_TAG] = lowres_dsm_file
 
     # Now read the exact same grid on initial DEM
-    lowres_initial_dem = preprocessing.read_lowres_dem(
+    lowres_initial_dem = otb_pipelines.read_lowres_dem(
         startx=inter_xmin,
         starty=inter_ymax,
         sizex=lowres_dsm_sizex,
@@ -858,8 +865,8 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
 
         # First, we estimate direction of acquisition time for both images
-        vec1 = preprocessing.get_time_ground_direction(img1, dem=srtm_dir)
-        vec2 = preprocessing.get_time_ground_direction(img2, dem=srtm_dir)
+        vec1 = projection.get_time_ground_direction(img1, dem=srtm_dir)
+        vec2 = projection.get_time_ground_direction(img2, dem=srtm_dir)
         time_direction_vector = (vec1 + vec2) / 2
 
         def display_angle(vec):
@@ -907,21 +914,25 @@ than --epipolar_error_upper_bound = {} pix".format(
         ]
 
         # Then we estimate the correction splines
-        splines = preprocessing.lowres_initial_dem_splines_fit(
+        splines = devib.lowres_initial_dem_splines_fit(
             lowres_dsm,
             lowres_initial_dem,
             origin,
             time_direction_vector,
             ext=getattr(low_res_dsm_params, static_conf.low_res_dsm_ext_tag),
-            order=getattr(low_res_dsm_params, static_conf.low_res_dsm_ext_tag),
+            order=getattr(
+                low_res_dsm_params, static_conf.low_res_dsm_order_tag
+            ),
         )
 
     else:
         logging.warning(
             "Low resolution DSM is not large enough "
-            "(minimum size is 100x100) "
+            "(minimum size is {}x{}) "
             "to estimate correction "
-            "to fit initial DEM, skipping ..."
+            "to fit initial DEM, skipping ...".format(
+                cfg_low_res_dsm_min_sizex, cfg_low_res_dsm_min_sizey
+            )
         )
 
     if splines is not None:
@@ -942,7 +953,7 @@ than --epipolar_error_upper_bound = {} pix".format(
 
             # Estimate correction on point cloud from matches
             points_cloud_from_matches_z_correction = splines(
-                preprocessing.project_coordinates_on_line(
+                projection.project_coordinates_on_line(
                     points_cloud_from_matches.x,
                     points_cloud_from_matches.y,
                     origin,
@@ -980,6 +991,7 @@ than --epipolar_error_upper_bound = {} pix".format(
             corrected_lowres_dsm_file = os.path.join(
                 out_dir, "corrected_lowres_dsm_from_matches.nc"
             )
+
             # TODO add proper CRS info
             corrected_lowres_dsm.to_netcdf(corrected_lowres_dsm_file)
             out_json[output_prepare.PREPROCESSING_SECTION_TAG][

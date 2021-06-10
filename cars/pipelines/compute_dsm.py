@@ -21,7 +21,9 @@
 """
 Main 3D CARS Compute DSM pipeline module:
 contains all the functions associated with its cars subcommand.
+TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import print_function
@@ -46,7 +48,7 @@ from tqdm import tqdm
 
 # CARS imports
 from cars import __version__
-from cars.cluster.dask import (
+from cars.cluster.dask_mode import (
     ComputeDSMMemoryLogger,
     start_cluster,
     start_local_cluster,
@@ -61,8 +63,8 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
-from cars.io import output
-from cars.pipelines import wrappers
+from cars.externals import otb_pipelines
+from cars.pipelines import wrappers, write_dsm
 from cars.steps import rasterization
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import dense_matching
@@ -195,7 +197,7 @@ def write_dsm_by_tile(
     ]
 
     # write DSM tile as geoTIFF
-    output.write_geotiff_dsm(
+    write_dsm.write_geotiff_dsm(
         [dsm],
         tmp_dir,
         xsize,
@@ -620,7 +622,7 @@ def run(  # noqa: C901
                 corners, 4326, configuration, disp_min, disp_max
             )
 
-            epsg = projection.get_utm_zone_as_epsg_code(
+            epsg = otb_pipelines.get_utm_zone_as_epsg_code(
                 *np.mean(terrain_dispmin, axis=0)
             )
 
@@ -1296,7 +1298,7 @@ def run(  # noqa: C901
 
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        output.write_geotiff_dsm(
+        write_dsm.write_geotiff_dsm(
             future_dsm_tiles,
             out_dir,
             xsize,

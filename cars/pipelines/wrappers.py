@@ -42,8 +42,7 @@ from cars.core import constants as cst
 from cars.core import projection, tiling
 from cars.steps import triangulation
 from cars.steps.epi_rectif import resampling
-from cars.steps.matching import dense_matching, regularisation
-from cars.steps.sparse_matching import sift
+from cars.steps.matching import dense_matching, regularisation, sparse_matching
 
 
 def matching_wrapper(
@@ -128,7 +127,7 @@ def matching_wrapper(
 
     # Perform matching
     sift_params = static_conf.get_sift_params()
-    matches = sift.dataset_matching(
+    matches = sparse_matching.dataset_matching(
         left_ds,
         right_ds,
         matching_threshold=getattr(

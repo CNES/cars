@@ -38,8 +38,8 @@ from affine import Affine
 from osgeo import osr
 
 # CARS imports
-from cars.cluster.dask import start_local_cluster, stop_local_cluster
-from cars.io import output
+from cars.cluster.dask_mode import start_local_cluster, stop_local_cluster
+from cars.pipelines import write_dsm
 from cars.steps import rasterization
 
 # CARS Tests imports
@@ -75,7 +75,7 @@ def test_compute_output_window():
     tile = xr.Dataset({}, coords=raster_coords)
     bounds = (120, 150, 412.2, 511.8)
 
-    indices = output.compute_output_window(tile, bounds, resolution)
+    indices = write_dsm.compute_output_window(tile, bounds, resolution)
     assert indices == (-316, 1656, -17, 1905)
 
 
@@ -107,7 +107,7 @@ def test_rasterio_handles():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         dsm_file = os.path.join(directory, "dsm.tif")
         clr_file = os.path.join(directory, "clr.tif")
-        file_handles = output.rasterio_handles(
+        file_handles = write_dsm.rasterio_handles(
             ["hgt", "clr"],
             [dsm_file, clr_file],
             [rio_params, rio_params],
@@ -178,7 +178,7 @@ def test_write_geotiff_dsm():
         dsm_file = os.path.join(directory, "dsm.tif")
         clr_file = os.path.join(directory, "clr.tif")
         msk_file = os.path.join(directory, "msk.tif")
-        output.write_geotiff_dsm(
+        write_dsm.write_geotiff_dsm(
             future_dsm,
             directory,
             xsize,

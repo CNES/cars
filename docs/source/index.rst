@@ -9,7 +9,7 @@ CARS, a satellite multi view stereo pipeline
 ============================================
 
 **CARS** is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
-This Multiview stereo pipeline is intended for massive DSM production with a robust and performant design.
+This Multiview stereo pipeline is intended for massive :term:`DSM` production with a robust and performant design.
 
 
 .. |img1| image:: images/animation_sat.gif
@@ -33,7 +33,7 @@ Be aware that the project is new and is evolving to maturity with CNES usage roa
 
 It is composed of:
 
-- A **Python 3D API**, based on xarray, enabling to realize all the computation steps leading to a DSM.
+- A **Python 3D API**, based on xarray, enabling to realize all the computation steps leading to a :term:`DSM`.
 - An **end-to-end processing** chain based on this API.
 
 The chain can use dask (local or cluster with centralized GPFS files storage) or multiprocessing libraries to distribute the computations.
@@ -50,6 +50,7 @@ Table of Contents
    cli_usage
    notebooks
    developer
+   glossary
    apidoc/modules
 
 Indices and tables

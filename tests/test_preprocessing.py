@@ -19,15 +19,14 @@
 # limitations under the License.
 #
 """
-Test module for cars/preprocessing.py
+Test module for old cars/preprocessing.py
+TODO: Refactor with new src organization
 """
 
 # Standard imports
 from __future__ import absolute_import
 
-import os
 import pickle
-import tempfile
 from typing import Tuple
 
 # Third party imports
@@ -37,10 +36,12 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
-from cars import otb_pipelines, preprocessing
 from cars.core import constants as cst
+from cars.core import projection
+from cars.externals import otb_pipelines
+from cars.steps import devib
 from cars.steps.epi_rectif import grids, resampling
-from cars.steps.sparse_matching import filtering, sift
+from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
 from .utils import (
@@ -48,7 +49,6 @@ from .utils import (
     assert_same_datasets,
     otb_geoid_file_set,
     otb_geoid_file_unset,
-    temporary_dir,
 )
 
 
@@ -91,7 +91,7 @@ def test_dataset_matching():
         mask=mask2,
     )
 
-    matches = sift.dataset_matching(left, right)
+    matches = sparse_matching.dataset_matching(left, right)
 
     # Uncomment to update baseline
     # np.save(absolute_data_path("ref_output/matches.npy"), matches)
@@ -119,7 +119,7 @@ def test_dataset_matching():
         mask=mask1,
     )
 
-    matches = sift.dataset_matching(left, right)
+    matches = sparse_matching.dataset_matching(left, right)
 
     assert matches.shape == (0, 4)
 
@@ -284,7 +284,7 @@ def test_remove_epipolar_outliers():
 
     matches = np.load(matches_file)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2
@@ -301,8 +301,8 @@ def test_compute_disparity_range():
 
     matches = np.load(matches_file)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
-    dispmin, dispmax = filtering.compute_disparity_range(matches_filtered)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
+    dispmin, dispmax = sparse_matching.compute_disparity_range(matches_filtered)
 
     assert dispmin == -3.1239416122436525
     assert dispmax == 3.820396270751972
@@ -325,7 +325,7 @@ def test_correct_right_grid():
     matches = np.load(matches_file)
     matches = np.array(matches)
 
-    matches_filtered = filtering.remove_epipolar_outliers(matches)
+    matches_filtered = sparse_matching.remove_epipolar_outliers(matches)
 
     with rio.open(grid_file) as rio_grid:
         grid = rio_grid.read()
@@ -393,20 +393,6 @@ def test_correct_right_grid():
 
 
 @pytest.mark.unit_tests
-def test_image_envelope():
-    """
-    Test image_envelope function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        shp = os.path.join(directory, "envelope.gpkg")
-        preprocessing.image_envelope(img, shp, dem)
-        assert os.path.isfile(shp)
-
-
-@pytest.mark.unit_tests
 def test_read_lowres_dem():
     """
     Test read_lowres_dem function
@@ -417,7 +403,7 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
 
-    srtm_ds = preprocessing.read_lowres_dem(
+    srtm_ds = otb_pipelines.read_lowres_dem(
         startx, starty, sizex, sizey, dem=dem
     )
 
@@ -440,7 +426,7 @@ def test_get_time_ground_direction():
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    vec = preprocessing.get_time_ground_direction(img, dem=dem)
+    vec = projection.get_time_ground_direction(img, dem=dem)
 
     assert vec[0] == -0.03760314420222626
     assert vec[1] == 0.9992927516729553
@@ -455,7 +441,7 @@ def test_get_ground_angles():
     left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
     right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
 
-    angles = preprocessing.get_ground_angles(left_img, right_img)
+    angles = projection.get_ground_angles(left_img, right_img)
     angles = np.asarray(angles)  # transform tuple to array
 
     np.testing.assert_allclose(
@@ -476,7 +462,7 @@ def test_project_coordinates_on_line():
     x_coord = np.array([1, 2, 3])
     y_coord = np.array([1, 2, 3])
 
-    coords = preprocessing.project_coordinates_on_line(
+    coords = projection.project_coordinates_on_line(
         x_coord, y_coord, origin, vec
     )
 
@@ -501,7 +487,7 @@ def test_lowres_initial_dem_splines_fit():
     ]
     vec = [0, 1]
 
-    splines = preprocessing.lowres_initial_dem_splines_fit(
+    splines = devib.lowres_initial_dem_splines_fit(
         lowres_dsm_from_matches, lowres_initial_dem, origin, vec
     )
 
