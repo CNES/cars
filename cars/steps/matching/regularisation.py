@@ -27,7 +27,6 @@ contains matching outputs regularisation functions
 from typing import Union
 
 # Third party imports
-import numpy as np
 import xarray as xr
 
 # CARS imports
@@ -66,7 +65,7 @@ def update_disp_to_0(
             ref_ds[cst.EPI_MSK].values,
             mask_ref_classes,
             mask_classes.set_to_ref_alt_tag,
-            out_msk_dtype=np.bool,
+            out_msk_dtype=bool,
         )
 
         # crop mask to ROI
@@ -84,7 +83,7 @@ def update_disp_to_0(
             sec_ds[cst.EPI_MSK].values,
             mask_sec_classes,
             mask_classes.set_to_ref_alt_tag,
-            out_msk_dtype=np.bool,
+            out_msk_dtype=bool,
         )
 
         # crop mask to ROI
