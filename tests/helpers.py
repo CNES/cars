@@ -31,7 +31,20 @@ import os
 
 # Third party imports
 import numpy as np
+import pandora
 import rasterio as rio
+from pandora.check_json import (
+    check_pipeline_section,
+    concat_conf,
+    get_config_pipeline,
+)
+from pandora.state_machine import PandoraMachine
+
+# CARS imports
+from cars.externals.matching.correlator_configuration.corr_conf import (
+    check_input_section_custom_cars,
+    get_config_input_custom_cars,
+)
 
 
 def cars_path():
@@ -127,3 +140,52 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
         np.testing.assert_allclose(
             actual[key].values, expected[key].values, rtol=rtol, atol=atol
         )
+
+
+def create_corr_conf():
+    """
+    Create correlator configuration for stereo testing
+    TODO: put in CARS source code ? (external?)
+    """
+    user_cfg = {}
+    user_cfg["input"] = {}
+    user_cfg["pipeline"] = {}
+    user_cfg["pipeline"]["right_disp_map"] = {}
+    user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+    user_cfg["pipeline"]["matching_cost"] = {}
+    user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
+    user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
+    user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
+    user_cfg["pipeline"]["optimization"] = {}
+    user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
+    user_cfg["pipeline"]["optimization"]["P1"] = 8
+    user_cfg["pipeline"]["optimization"]["P2"] = 32
+    user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
+    user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
+    user_cfg["pipeline"]["optimization"]["overcounting"] = False
+    user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
+    user_cfg["pipeline"]["disparity"] = {}
+    user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
+    user_cfg["pipeline"]["disparity"]["invalid_disparity"] = 0
+    user_cfg["pipeline"]["refinement"] = {}
+    user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
+    user_cfg["pipeline"]["filter"] = {}
+    user_cfg["pipeline"]["filter"]["filter_method"] = "median"
+    user_cfg["pipeline"]["filter"]["filter_size"] = 3
+    user_cfg["pipeline"]["validation"] = {}
+    user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
+    user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
+    # Import plugins before checking configuration
+    pandora.import_plugin()
+    # Check configuration and update the configuration with default values
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
+    # check pipeline
+    user_cfg_pipeline = get_config_pipeline(user_cfg)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
+    # check a part of input section
+    user_cfg_input = get_config_input_custom_cars(user_cfg)
+    cfg_input = check_input_section_custom_cars(user_cfg_input)
+    # concatenate updated config
+    cfg = concat_conf([cfg_input, cfg_pipeline])
+    return cfg

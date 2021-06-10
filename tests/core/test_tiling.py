@@ -149,3 +149,26 @@ def test_snap_to_grid():
     Test snap_to_grid function
     """
     assert (0, 0, 11, 11) == tiling.snap_to_grid(0.1, 0.2, 10.1, 10.2, 1.0)
+
+
+# function parameters are fixtures set in conftest.py
+@pytest.mark.unit_tests
+def test_terrain_region_to_epipolar(
+    images_and_grids_conf,  # pylint: disable=redefined-outer-name
+    disparities_conf,  # pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test transform to epipolar method
+    """
+    configuration = images_and_grids_conf
+    configuration["preprocessing"]["output"].update(
+        disparities_conf["preprocessing"]["output"]
+    )
+    configuration["preprocessing"]["output"].update(
+        epipolar_sizes_conf["preprocessing"]["output"]
+    )
+
+    region = [5.1952, 44.205, 5.2, 44.208]
+    out_region = tiling.terrain_region_to_epipolar(region, configuration)
+    assert out_region == [0.0, 0.0, 612.0, 400.0]
