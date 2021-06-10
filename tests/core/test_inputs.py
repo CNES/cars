@@ -19,26 +19,18 @@
 # limitations under the License.
 #
 """
-Test module for cars/utils.py
+Test module for cars/core/inputs.py
 """
 
-# Standard imports
-import os
-import tempfile
-
 # Third party imports
-import fiona
-import numpy as np
 import pytest
-import xarray as xr
-import yaml
-from shapely.geometry import Polygon, shape
+from shapely.geometry import Polygon
 
 # CARS imports
-from cars.core import inputs, outputs, utils
+from cars.core import inputs
 
 # CARS Tests imports
-from .helpers import absolute_data_path, temporary_dir
+from ..helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
@@ -56,19 +48,6 @@ def test_rasterio_can_open():
     not_existing = "/stuff/dummy_file.doe"
     assert inputs.rasterio_can_open(existing)
     assert not inputs.rasterio_can_open(not_existing)
-
-
-@pytest.mark.unit_tests
-def test_get_elevation_range_from_metadata():
-    """
-    Test the get_elevation_range_from_metadata function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-
-    (min_elev, max_elev) = utils.get_elevation_range_from_metadata(img)
-
-    assert min_elev == 632.5
-    assert max_elev == 1517.5
 
 
 @pytest.mark.unit_tests
@@ -123,76 +102,5 @@ def test_read_vector():
 
     # test exception
     with pytest.raises(Exception) as read_error:
-        utils.read_vector("test.shp")
+        inputs.read_vector("test.shp")
         assert str(read_error) == "Impossible to read test.shp shapefile"
-
-
-@pytest.mark.unit_tests
-def test_write_vector():
-    """
-    Test if write_vector function works with testing Polygons
-    """
-    polys = [
-        Polygon([(1.0, 1.0), (1.0, 2.0), (2.0, 2.0), (2.0, 1.0)]),
-        Polygon([(2.0, 2.0), (2.0, 3.0), (3.0, 3.0), (3.0, 2.0)]),
-    ]
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        path_to_file = os.path.join(directory, "test.gpkg")
-        outputs.write_vector(polys, path_to_file, 4326)
-
-        assert os.path.exists(path_to_file)
-
-        nb_feat = 0
-        for feat in fiona.open(path_to_file):
-            poly = shape(feat["geometry"])
-            nb_feat += 1
-            assert poly in polys
-
-        assert nb_feat == 2
-
-
-@pytest.mark.unit_tests
-def test_angle_vectors():
-    """
-    Testing vectors and angle result reference
-    """
-    vector_1 = [1, 1, 1]
-    vector_2 = [-1, -1, -1]
-    angle_ref = np.pi
-
-    angle_result = utils.angle_vectors(vector_1, vector_2)
-
-    assert angle_result == angle_ref
-
-
-@pytest.mark.unit_tests
-def test_write_ply():
-    """
-    Test write ply file
-    """
-    points = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/points_ref.nc")
-    )
-    outputs.write_ply(os.path.join(temporary_dir(), "test.ply"), points)
-
-
-@pytest.mark.unit_tests
-def test_write_dask_config():
-    """
-    Test write used dask config
-    """
-    file_root_name = "test"
-    cfg_dask = {"key1": 2, "key2": {"key3": "string1", "key4": [1, 2, 4]}}
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        outputs.write_dask_config(cfg_dask, directory, file_root_name)
-
-        # test file existence and content
-        file_path = os.path.join(directory, file_root_name + ".yaml")
-
-        assert os.path.exists(file_path)
-
-        with open(file_path) as file:
-            cfg_dask_from_file = yaml.load(file)
-
-            assert cfg_dask == cfg_dask_from_file
