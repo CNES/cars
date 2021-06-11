@@ -119,6 +119,7 @@ DSM_NO_DATA_TAG = "dsm_no_data"
 COLOR_NO_DATA_TAG = "color_no_data"
 EPSG_TAG = "epsg"
 ALT_REFERENCE_TAG = "altimetric_reference"
+ALIGN_OPTION = "align_option"
 
 # tags from content.json of compute dsm pipeline
 COMPUTE_DSM_INPUTS_SECTION_TAG = "input_configurations"
@@ -144,6 +145,7 @@ COMPUTE_DSM_OUTPUT_SCHEMA = {
     OptionalKey(DSM_POINTS_IN_CELL_TAG): And(str, rasterio_can_open),
     EPSG_TAG: int,
     ALT_REFERENCE_TAG: str,
+    OptionalKey(ALIGN_OPTION): bool,
     OptionalKey(output_prepare.ENVELOPES_INTERSECTION_BB_TAG): list,
 }
 

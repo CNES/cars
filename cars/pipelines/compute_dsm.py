@@ -357,7 +357,9 @@ def run(  # noqa: C901
             in_params.STATIC_PARAMS_TAG: static_params[
                 static_conf.compute_dsm_tag
             ],
-            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {},
+            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {
+                output_compute_dsm.ALIGN_OPTION: align
+            },
         },
     }
 
@@ -949,6 +951,7 @@ def run(  # noqa: C901
                             "out_epsg": stereo_out_epsg,
                             "use_sec_disp": use_sec_disp,
                             "add_msk_info": write_msk,
+                            "align": align,
                         },
                         callback=update,
                     )
