@@ -34,7 +34,7 @@ import pytest
 from cars.cars import cars_parser, main_cli
 
 # CARS Tests imports
-from .utils import absolute_data_path, temporary_dir
+from .helpers import absolute_data_path, temporary_dir
 
 
 @pytest.fixture(scope="module")

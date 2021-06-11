@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-Test module for cars/configuration_correlator.py
+Test module for cars/externals/matching/correlator_configuratoin/
+                correlator_configuration.py
 """
 
 # Standard imports
@@ -33,7 +34,7 @@ import pytest
 from cars.externals.matching.correlator_configuration import corr_conf
 
 # CARS Tests imports
-from .utils import temporary_dir
+from ....helpers import temporary_dir
 
 
 @pytest.mark.unit_tests

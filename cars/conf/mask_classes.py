@@ -128,7 +128,7 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
         )
 
     # set these location to nan in order to discard them
-    msk_only_classes = msk.astype(np.float)
+    msk_only_classes = msk.astype(np.float64)
     msk_only_classes[msk_classes] = np.nan
 
     # check if mask has several classes
@@ -150,13 +150,13 @@ def create_msk_from_classes(
     :param classes_to_use: List of values to use to create the output mask
     :param out_msk_pix_value: pixel value to assign to the output mask
         in the locations of the required classes'
-    pixels. If the out_msk_dtype parameter is set to np.bool,
+    pixels. If the out_msk_dtype parameter is set to bool,
         this parameter will be automatically set to True.
     :param out_msk_dtype: numpy dtype of the output mask
     :return: the output mask
     """
     # initiate the required classes final mask
-    if out_msk_dtype == np.bool:
+    if out_msk_dtype == bool:
         not_msk_pix_value = False
     else:
         not_msk_pix_value = 0
@@ -165,7 +165,7 @@ def create_msk_from_classes(
     )
 
     # create boolean mask with the pixels of the required classes as True
-    msk_with_selected_classes = np.zeros(mc_msk.shape, dtype=np.bool)
+    msk_with_selected_classes = np.zeros(mc_msk.shape, dtype=bool)
 
     for i in classes_to_use:
         msk_with_selected_classes = np.logical_or(
@@ -204,7 +204,7 @@ def create_msk_from_tag(
         in the msk_classes_path json
     :param out_msk_pix_value: pixel value to assign
         to the output mask in the locations of the required classes' pixels.
-        If the out_msk_dtype parameter is set to np.bool,
+        If the out_msk_dtype parameter is set to bool,
         this parameter will be automatically set to True.
     :param out_msk_dtype: numpy dtype of the output mask
     :param mask_intern_no_data_val: boolean activating the masking of all values

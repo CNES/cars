@@ -32,7 +32,7 @@ import tempfile
 import pytest
 
 # CARS Tests imports
-from .utils import absolute_data_path, cars_path, temporary_dir
+from .helpers import absolute_data_path, cars_path, temporary_dir
 
 
 @pytest.mark.notebook_tests

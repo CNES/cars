@@ -19,39 +19,43 @@
 # limitations under the License.
 #
 """
-Test module for cars/cluster.py
+Test module for cars/core/utils.py
 """
-
-# Standard imports
-from __future__ import absolute_import
-
-import tempfile
+# TODO: refacto/clean/dispatch with utils cars module
 
 # Third party imports
+import numpy as np
 import pytest
 
 # CARS imports
-from cars.cluster import dask_mode
+from cars.core import utils
 
 # CARS Tests imports
-from .utils import temporary_dir
+from ..helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
-def test_local_dask_cluster():
+def test_get_elevation_range_from_metadata():
     """
-    Simple start and stop local cluster test
+    Test the get_elevation_range_from_metadata function
     """
-    clus, client = dask_mode.start_local_cluster(4)
-    dask_mode.stop_local_cluster(clus, client)
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+
+    (min_elev, max_elev) = utils.get_elevation_range_from_metadata(img)
+
+    assert min_elev == 632.5
+    assert max_elev == 1517.5
 
 
-@pytest.mark.pbs_cluster_tests
-def test_dask_cluster():
+@pytest.mark.unit_tests
+def test_angle_vectors():
     """
-    End to end dask_cluster management test
+    Testing vectors and angle result reference
     """
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        clus, client = dask_mode.start_cluster(2, "00:01:00", directory)
-        _ = dask_mode.get_dashboard_link(clus)
-        dask_mode.stop_cluster(clus, client)
+    vector_1 = [1, 1, 1]
+    vector_2 = [-1, -1, -1]
+    angle_ref = np.pi
+
+    angle_result = utils.angle_vectors(vector_1, vector_2)
+
+    assert angle_result == angle_ref

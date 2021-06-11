@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/mask_classes.py
+Test module for cars/conf/mask_classes.py
 """
 
 # Third party imports
@@ -30,7 +30,7 @@ import pytest
 from cars.conf import mask_classes
 
 # CARS Tests imports
-from .utils import absolute_data_path
+from ..helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
@@ -119,12 +119,12 @@ def test_get_msk_from_classes():
 
     # test boolean mask creation
     out_msk = mask_classes.create_msk_from_classes(
-        mc_msk, classes_to_use_for_msk, out_msk_dtype=np.bool
+        mc_msk, classes_to_use_for_msk, out_msk_dtype=bool
     )
 
     ref_msk = np.array(
         [[False, False, False], [True, False, True], [False, True, True]],
-        dtype=np.bool,
+        dtype=bool,
     )
 
     assert np.allclose(out_msk, ref_msk)

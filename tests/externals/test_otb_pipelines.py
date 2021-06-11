@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/otb_pipelines.py
+Test module for cars/externals/otb_pipelines.py
 """
 
 # Standard imports
@@ -28,19 +28,23 @@ from __future__ import absolute_import
 import os
 import tempfile
 from shutil import copy2
+from typing import Tuple
 
 # Third party imports
 import numpy as np
 import otbApplication
 import pytest
 import rasterio as rio
+import xarray as xr
 
 # CARS imports
+from cars.core import constants as cst
 from cars.externals import otb_pipelines
 
 # CARS Tests imports
-from .utils import (
+from ..helpers import (
     absolute_data_path,
+    assert_same_datasets,
     otb_geoid_file_set,
     otb_geoid_file_unset,
     temporary_dir,
@@ -479,3 +483,176 @@ def test_image_envelope():
         shp = os.path.join(directory, "envelope.gpkg")
         otb_pipelines.image_envelope(img, shp, dem)
         assert os.path.isfile(shp)
+
+
+def generate_epipolar_grids(
+    img1: str,
+    img2: str,
+    srtm_dir: str = None,
+    default_alt: float = None,
+    epi_step: float = 30,
+) -> Tuple[xr.Dataset, xr.Dataset, int, int, float]:
+    """
+    Generate epipolar resampling grids
+    as xarray.Dataset from a pair of images and srtm_dir
+
+    TODO: move in cars src code in grids.py as generic call for pipelines ?
+
+    :param img1: Path to the left image
+    :param img2: Path to right image
+    :param srtm_dir: Path to folder containing SRTM tiles
+    :param default_alt: Default altitude above ellipsoid
+    :epi_step: Step of the resampling grid
+    :return: Tuple containing :
+        left_grid_dataset, right_grid_dataset containing the resampling grids
+        epipolar_size_x, epipolar_size_y epipolar grids size
+        baseline  : (resolution * B/H)
+    """
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
+    # Launch OTB pipeline to get stero grids
+    (
+        grid1,
+        grid2,
+        __,
+        __,
+        epipolar_size_x,
+        epipolar_size_y,
+        baseline,
+    ) = otb_pipelines.build_stereorectification_grid_pipeline(
+        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step
+    )
+
+    col = np.array(range(0, grid1.shape[0] * epi_step, epi_step))
+    row = np.array(range(0, grid1.shape[1] * epi_step, epi_step))
+
+    left_grid_dataset = xr.Dataset(
+        {
+            cst.X: ([cst.ROW, cst.COL], grid1[:, :, 0]),
+            cst.Y: ([cst.ROW, cst.COL], grid1[:, :, 1]),
+        },
+        coords={cst.ROW: row, cst.COL: col},
+        attrs={
+            "epi_step": epi_step,
+            "epipolar_size_x": epipolar_size_x,
+            "epipolar_size_y": epipolar_size_y,
+        },
+    )
+
+    right_grid_dataset = xr.Dataset(
+        {
+            cst.X: ([cst.ROW, cst.COL], grid2[:, :, 0]),
+            cst.Y: ([cst.ROW, cst.COL], grid2[:, :, 1]),
+        },
+        coords={cst.ROW: row, cst.COL: col},
+        attrs={
+            "epi_step": epi_step,
+            "epipolar_size_x": epipolar_size_x,
+            "epipolar_size_y": epipolar_size_y,
+        },
+    )
+
+    # Unset geoid for the test to be standalone
+    otb_geoid_file_unset()
+
+    return (
+        left_grid_dataset,
+        right_grid_dataset,
+        epipolar_size_x,
+        epipolar_size_y,
+        baseline,
+    )
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids():
+    """
+    Test generate_epipolar_grids method
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    left_grid, right_grid, size_x, size_y, baseline = generate_epipolar_grids(
+        img1, img2, dem
+    )
+
+    assert size_x == 612
+    assert size_y == 612
+    assert baseline == 0.7039416432380676
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid.nc")
+    )
+    assert_same_datasets(left_grid, left_grid_ref)
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid.nc")
+    )
+    assert_same_datasets(right_grid, right_grid_ref)
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids_default_alt():
+    """
+    Test generate_epipolar_grids method
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = None
+    default_alt = 500
+
+    left_grid, right_grid, size_x, size_y, baseline = generate_epipolar_grids(
+        img1, img2, dem, default_alt
+    )
+
+    assert size_x == 612
+    assert size_y == 612
+    assert baseline == 0.7039446234703064
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path(
+    # "ref_output/left_grid_default_alt.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid_default_alt.nc")
+    )
+    assert_same_datasets(left_grid, left_grid_ref)
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path(
+    # "ref_output/right_grid_default_alt.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid_default_alt.nc")
+    )
+    assert_same_datasets(right_grid, right_grid_ref)
+
+
+@pytest.mark.unit_tests
+def test_read_lowres_dem():
+    """
+    Test read_lowres_dem function
+    """
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+    startx = 5.193458
+    starty = 44.206671
+    sizex = 100
+    sizey = 100
+
+    srtm_ds = otb_pipelines.read_lowres_dem(
+        startx, starty, sizex, sizey, dem=dem
+    )
+
+    # Uncomment to update baseline
+    # srtm_ds.to_netcdf(absolute_data_path("ref_output/srtm_xt.nc"))
+
+    srtm_ds_ref = xr.open_dataset(absolute_data_path("ref_output/srtm_xt.nc"))
+    assert_same_datasets(srtm_ds, srtm_ds_ref)

@@ -435,10 +435,10 @@ def compute_mask_to_use_in_pandora(
 
     # retrieve the unvalid and nodata pixels locations
     unvalid_pixels_mask = mask_classes.create_msk_from_classes(
-        dataset[msk_key].values, classes_to_ignore, out_msk_dtype=np.bool
+        dataset[msk_key].values, classes_to_ignore, out_msk_dtype=bool
     )
     nodata_pixels_mask = mask_classes.create_msk_from_classes(
-        dataset[msk_key].values, [nodata_pixels], out_msk_dtype=np.bool
+        dataset[msk_key].values, [nodata_pixels], out_msk_dtype=bool
     )
 
     # update the mask to use in pandora with the unvalid and
@@ -700,7 +700,7 @@ def estimate_color_from_disparity(
 
     # instantiate final image
     final_interp_color = np.zeros(
-        (nb_disp_row, nb_disp_col, nb_bands), dtype=np.float
+        (nb_disp_row, nb_disp_col, nb_bands), dtype=np.float64
     )
 
     # construct secondary color image pixels positions
@@ -717,7 +717,7 @@ def estimate_color_from_disparity(
 
     # construct the positions for which the interpolation has to be done
     interpolated_points = np.zeros(
-        (nb_disp_row * nb_disp_col, 2), dtype=np.float
+        (nb_disp_row * nb_disp_col, 2), dtype=np.float64
     )
     for i in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[0]):
         for j in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[1]):

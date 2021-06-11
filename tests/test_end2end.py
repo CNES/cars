@@ -48,7 +48,7 @@ from cars.externals.matching.correlator_configuration import corr_conf
 from cars.pipelines import compute_dsm, prepare
 
 # CARS Tests imports
-from .utils import absolute_data_path, assert_same_images, temporary_dir
+from .helpers import absolute_data_path, assert_same_images, temporary_dir
 
 
 @pytest.mark.end2end_tests

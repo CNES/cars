@@ -568,7 +568,7 @@ def compute_vector_raster_and_stats(
 
     out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
         cloud.loc[:, cloud_band].values,
-        data_valid.astype(np.bool),
+        data_valid.astype(bool),
         neighbors_id,
         start_ids,
         n_count,
