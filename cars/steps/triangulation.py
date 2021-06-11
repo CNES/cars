@@ -124,12 +124,12 @@ def triangulate(
     # Handle alignment with lowres DEM
     if (
         align
-        and output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG
+        and output_prepare.LOWRES_DEM_SPLINES_FIT_TAG
         in preprocessing_output_conf
     ):
         # Read splines file
         splines_file = preprocessing_output_conf[
-            output_compute_dsm.LOWRES_DEM_SPLINES_FIT_TAG
+            output_prepare.LOWRES_DEM_SPLINES_FIT_TAG
         ]
         splines_coefs = None
         with open(splines_file, "rb") as splines_file_reader:
@@ -138,18 +138,18 @@ def triangulate(
         # Read time direction line parameters
         time_direction_origin = [
             preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_X_TAG
+                output_prepare.TIME_DIRECTION_LINE_ORIGIN_X_TAG
             ],
             preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_ORIGIN_Y_TAG
+                output_prepare.TIME_DIRECTION_LINE_ORIGIN_Y_TAG
             ],
         ]
         time_direction_vector = [
             preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_X_TAG
+                output_prepare.TIME_DIRECTION_LINE_VECTOR_X_TAG
             ],
             preprocessing_output_conf[
-                output_compute_dsm.TIME_DIRECTION_LINE_VECTOR_Y_TAG
+                output_prepare.TIME_DIRECTION_LINE_VECTOR_Y_TAG
             ],
         ]
 

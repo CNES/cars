@@ -120,6 +120,7 @@ COLOR_NO_DATA_TAG = "color_no_data"
 EPSG_TAG = "epsg"
 ALT_REFERENCE_TAG = "altimetric_reference"
 ALIGN_OPTION = "align_option"
+SNAP_TO_IMG1_OPTION = "snap_to_img1"
 
 # tags from content.json of compute dsm pipeline
 COMPUTE_DSM_INPUTS_SECTION_TAG = "input_configurations"
@@ -146,6 +147,7 @@ COMPUTE_DSM_OUTPUT_SCHEMA = {
     EPSG_TAG: int,
     ALT_REFERENCE_TAG: str,
     OptionalKey(ALIGN_OPTION): bool,
+    OptionalKey(SNAP_TO_IMG1_OPTION): bool,
     OptionalKey(output_prepare.ENVELOPES_INTERSECTION_BB_TAG): list,
 }
 

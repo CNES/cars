@@ -358,7 +358,8 @@ def run(  # noqa: C901
                 static_conf.compute_dsm_tag
             ],
             output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {
-                output_compute_dsm.ALIGN_OPTION: align
+                output_compute_dsm.ALIGN_OPTION: align,
+                output_compute_dsm.SNAP_TO_IMG1_OPTION: snap_to_img1,
             },
         },
     }
@@ -951,6 +952,7 @@ def run(  # noqa: C901
                             "out_epsg": stereo_out_epsg,
                             "use_sec_disp": use_sec_disp,
                             "add_msk_info": write_msk,
+                            "snap_to_img1": snap_to_img1,
                             "align": align,
                         },
                         callback=update,
