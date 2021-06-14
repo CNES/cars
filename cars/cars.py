@@ -29,6 +29,7 @@ user main argparse wrapper to CARS 3D pipelines submodules
 # pylint: disable=import-outside-toplevel
 import argparse
 import os
+import re
 import warnings
 from typing import List, Tuple
 
@@ -40,6 +41,42 @@ from cars import __version__
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
+
+
+class StreamCapture:
+    """Filter stream (for stdout) with a re pattern
+    From https://stackoverflow.com/a/63662744
+    """
+
+    def __init__(self, stream, re_pattern):
+        """StreamCapture constructor: add pattern, triggered parameters"""
+        self.stream = stream
+        self.pattern = (
+            re.compile(re_pattern)
+            if isinstance(re_pattern, str)
+            else re_pattern
+        )
+        self.triggered = False
+
+    def __getattr__(self, attr_name):
+        """Redefine assignement"""
+        return getattr(self.stream, attr_name)
+
+    def write(self, data):
+        """Change write function of stream and deals \n for loops"""
+        if data == "\n" and self.triggered:
+            self.triggered = False
+        else:
+            if self.pattern.search(data) is None:
+                # Pattern not found, write normally
+                self.stream.write(data)
+                self.stream.flush()
+            else:
+                # caught pattern to filter, no writing.
+                self.triggered = True
+
+    def flush(self):
+        self.stream.flush()
 
 
 class CarsArgumentParser(argparse.ArgumentParser):
@@ -439,7 +476,6 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
 
     # Standard imports
     import logging
-    import re
     import sys
 
     # CARS imports
@@ -447,6 +483,10 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     from cars.conf import output_prepare
     from cars.externals.matching.correlator_configuration import corr_conf
     from cars.pipelines import compute_dsm, prepare
+
+    # Change stdout to clean (Os) OTB output from image_envelope app.
+    original_stdout = sys.stdout
+    sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # logging
     numeric_level = getattr(logging, args.loglevel.upper(), None)
@@ -692,6 +732,9 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     else:
         parser.print_help()
         sys.exit(1)
+
+    # Go back to original stdout
+    sys.stdout = original_stdout
 
 
 def main():
