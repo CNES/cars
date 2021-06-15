@@ -20,7 +20,7 @@ CARS_VERSION = $(shell python3 setup.py --version)
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 
 # TARGETS
-.PHONY: help venv install test lint format docs docker clean
+.PHONY: help check venv install-deps install install-notebook install-doc install-dev test test-ci test-end2end test-unit test-pbs-cluster test-notebook lint lint-ci format doc notebook docker clean
 
 help: ## this help
 	@echo "      CARS MAKE HELP"
@@ -47,14 +47,28 @@ install-deps: venv
 	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --no-binary numba numba
 
-install: install-deps  ## install and set env
+install: install-deps  ## install cars
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .
 	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@chmod +x ${VENV}/bin/register-python-argcomplete
 	@echo "CARS ${CARS_VERSION} installed"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
-install-dev: install-deps ## install cars in dev mode and set env
+install-notebook: install-deps  ## install cars with Jupyter notebooks packages
+	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .[notebook]
+	@echo "\n --> CARS installed in virtualenv ${VENV}"
+	@chmod +x ${VENV}/bin/register-python-argcomplete
+	@echo "CARS ${CARS_VERSION} installed with Jupyter notebook packages"
+	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
+
+install-doc: install-deps  ## install cars with Sphinx documentation dependencies
+	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .[doc]
+	@echo "\n --> CARS installed in virtualenv ${VENV}"
+	@chmod +x ${VENV}/bin/register-python-argcomplete
+	@echo "CARS ${CARS_VERSION} installed with Sphinx docs dependencies"
+	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
+
+install-dev: install-deps ## install cars in dev mode
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose -e .[dev]
 	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
@@ -103,8 +117,15 @@ format: install-dev  ## run black and isort (depends install)
 	@${VENV}/bin/isort cars tests
 	@${VENV}/bin/black cars tests
 
-docs:  ## build sphinx documentation (requires doc venv TODO)
-	@cd docs/ && make clean && make html && cd ..
+doc: install-doc ## build sphinx documentation
+	@${VENV}/bin/sphinx-build -M clean docs/source/ docs/build
+	@${VENV}/bin/sphinx-apidoc -o docs/source/apidoc/ cars
+	@${VENV}/bin/sphinx-build -M html docs/source/ docs/build
+
+notebook: install-notebook ## Install Jupyter notebook kernel with venv and cars install
+	@echo "\nInstall Jupyter Kernel and launch Jupyter notebooks environment"
+	@${VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-$(VENV) --display-name=cars-$(CARS_VERSION)
+	@jupyter notebook
 
 docker: ## Build docker image (and check Dockerfile)
 	@echo "Check Dockerfile with hadolint"
