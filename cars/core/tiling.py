@@ -429,13 +429,20 @@ def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
     s_max = tsearch(delaunay_max, terrain_grid * precision_factor)
 
     # Filter simplices on the edges
-    edges = np.ones(epipolar_regions_grid_size)
-    edges[1:-1, 1:-1] = 0
-    edges_ravel = np.ravel(edges)
-    s_min_edges = np.sum(edges_ravel[delaunay_min.simplices], axis=1) == 3
-    s_max_edges = np.sum(edges_ravel[delaunay_max.simplices], axis=1) == 3
-    s_min[s_min_edges[s_min]] = -1
-    s_max[s_max_edges[s_max]] = -1
+    edges = np.zeros((4, *epipolar_regions_grid_size))
+
+    # left, bottom, right, top
+    edges[0, :, 0] = 1
+    edges[1, -1, :] = 1
+    edges[2, :, -1] = 1
+    edges[3, 0, :] = 1
+
+    for idx in range(edges.shape[0]):
+        edges_ravel = np.ravel(edges[idx, :, :])
+        s_min_edges = np.sum(edges_ravel[delaunay_min.simplices], axis=1) == 3
+        s_max_edges = np.sum(edges_ravel[delaunay_max.simplices], axis=1) == 3
+        s_min[s_min_edges[s_min]] = -1
+        s_max[s_max_edges[s_max]] = -1
 
     points_disp_min = epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
 
