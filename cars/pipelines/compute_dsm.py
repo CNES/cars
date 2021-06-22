@@ -70,15 +70,6 @@ from cars.steps.epi_rectif import grids
 from cars.steps.matching import dense_matching
 
 
-# TODO move function refactor tiling
-def region_hash_string(region):
-    """
-    This lambda will allow to derive a key
-    to index region in the previous dictionnary
-    """
-    return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
-
-
 def write_3d_points(
     configuration, region, corr_config, tmp_dir, config_id, **kwargs
 ):
@@ -93,7 +84,7 @@ def write_3d_points(
     :param config_id: id of the pair to process
     """
     config_id_dir = os.path.join(tmp_dir, config_id)
-    hashed_region = region_hash_string(region)
+    hashed_region = tiling.region_hash_string(region)
     points_dir = os.path.join(config_id_dir, "points")
     color_dir = os.path.join(config_id_dir, "color")
 
@@ -181,7 +172,7 @@ def write_dsm_by_tile(
     color_nodata = kwargs.get("color_no_data")
     msk_nodata = kwargs.get("msk_no_data")
 
-    hashed_region = region_hash_string([xstart, ystart, xsize, ysize])
+    hashed_region = tiling.region_hash_string([xstart, ystart, xsize, ysize])
 
     # call to rasterization_wrapper
     dsm = rasterization_wrapper(
@@ -837,15 +828,6 @@ def run(  # noqa: C901
         optimal_terrain_tile_width,
         optimal_terrain_tile_width,
     )
-    number_of_terrain_splits = (terrain_grid.shape[0] - 1) * (
-        terrain_grid.shape[1] - 1
-    )
-
-    logging.info(
-        "Terrain bounding box will be processed in {} splits".format(
-            number_of_terrain_splits
-        )
-    )
 
     # Start dask cluster
     cluster = None
@@ -977,7 +959,7 @@ def run(  # noqa: C901
 
         # build list of epipolar region hashes
         configurations_data[config_id]["epipolar_regions_hash"] = [
-            region_hash_string(k) for k in conf["epipolar_regions"]
+            tiling.region_hash_string(k) for k in conf["epipolar_regions"]
         ]
 
         points_min, points_max = tiling.terrain_grid_to_epipolar(
@@ -1005,11 +987,15 @@ def run(  # noqa: C901
 
     logging.info("Number of bands in color image: {}".format(nb_bands))
 
-    rank = []
-
     # This list will contained the different raster tiles to be written by cars
     delayed_dsm_tiles = []
     number_of_epipolar_tiles_per_terrain_tiles = []
+
+    terrain_regions, corresponding_tiles, rank = tiling.get_corresponding_tiles(
+        terrain_grid, configurations_data
+    )
+
+    number_of_terrain_splits = len(terrain_regions)
 
     if not use_dask[mode]:
         # create progress bar with update callback
@@ -1024,130 +1010,9 @@ def run(  # noqa: C901
         # initialize a thread pool for multiprocessing mode
         pool = mp.Pool(nb_workers)  # pylint: disable=consider-using-with
 
-    # Loop on terrain regions and derive dependency to epipolar regions
-    for terrain_region_dix in tqdm(
-        range(number_of_terrain_splits),
-        total=number_of_terrain_splits,
-        desc="Delaunay look-up",
+    for terrain_region, required_point_clouds in zip(
+        terrain_regions, corresponding_tiles
     ):
-
-        j = int(terrain_region_dix / (terrain_grid.shape[1] - 1))
-        i = terrain_region_dix % (terrain_grid.shape[1] - 1)
-
-        logging.debug(
-            "Processing tile located at {},{} in tile grid".format(i, j)
-        )
-
-        terrain_region = [
-            terrain_grid[j, i, 0],
-            terrain_grid[j, i, 1],
-            terrain_grid[j + 1, i + 1, 0],
-            terrain_grid[j + 1, i + 1, 1],
-        ]
-
-        logging.debug("Corresponding terrain region: {}".format(terrain_region))
-
-        # This list will hold the required points clouds for this terrain tile
-        required_point_clouds = []
-
-        # For each stereo configuration
-        for _, conf in configurations_data.items():
-
-            epipolar_points_min = conf["epipolar_points_min"]
-            epipolar_points_max = conf["epipolar_points_max"]
-
-            tile_min = np.minimum(
-                np.minimum(
-                    np.minimum(
-                        epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
-                    ),
-                    np.minimum(
-                        epipolar_points_min[j + 1, i + 1],
-                        epipolar_points_min[j, i + 1],
-                    ),
-                ),
-                np.minimum(
-                    np.minimum(
-                        epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
-                    ),
-                    np.minimum(
-                        epipolar_points_max[j + 1, i + 1],
-                        epipolar_points_max[j, i + 1],
-                    ),
-                ),
-            )
-
-            tile_max = np.maximum(
-                np.maximum(
-                    np.maximum(
-                        epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
-                    ),
-                    np.maximum(
-                        epipolar_points_min[j + 1, i + 1],
-                        epipolar_points_min[j, i + 1],
-                    ),
-                ),
-                np.maximum(
-                    np.maximum(
-                        epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
-                    ),
-                    np.maximum(
-                        epipolar_points_max[j + 1, i + 1],
-                        epipolar_points_max[j, i + 1],
-                    ),
-                ),
-            )
-
-            # Bouding region of corresponding cell
-            epipolar_region_minx = tile_min[0]
-            epipolar_region_miny = tile_min[1]
-            epipolar_region_maxx = tile_max[0]
-            epipolar_region_maxy = tile_max[1]
-
-            # This mimics the previous code that was using
-            # terrain_region_to_epipolar
-            epipolar_region = [
-                epipolar_region_minx,
-                epipolar_region_miny,
-                epipolar_region_maxx,
-                epipolar_region_maxy,
-            ]
-
-            # Crop epipolar region to largest region
-            epipolar_region = tiling.crop(
-                epipolar_region, conf["largest_epipolar_region"]
-            )
-
-            logging.debug(
-                "Corresponding epipolar region: {}".format(epipolar_region)
-            )
-
-            # Check if the epipolar region contains any pixels to process
-            if tiling.empty(epipolar_region):
-                logging.debug(
-                    "Skipping terrain region "
-                    "because corresponding epipolar region is empty"
-                )
-            else:
-                # Loop on all epipolar tiles covered by epipolar region
-                for epipolar_tile in tiling.list_tiles(
-                    epipolar_region,
-                    conf["largest_epipolar_region"],
-                    conf["opt_epipolar_tile_size"],
-                ):
-
-                    cur_hash = region_hash_string(epipolar_tile)
-
-                    # Look for corresponding hash in delayed point clouds
-                    # dictionnary
-                    if cur_hash in conf["epipolar_regions_hash"]:
-
-                        # If hash can be found, append it to the required
-                        # clouds to compute for this terrain tile
-                        pos = conf["epipolar_regions_hash"].index(cur_hash)
-                        required_point_clouds.append(
-                            conf["delayed_point_clouds"][pos]
-                        )
 
         # start and size parameters for the rasterization function
         xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
@@ -1205,7 +1070,6 @@ def run(  # noqa: C901
 
                 # Keep track of delayed raster tiles
                 delayed_dsm_tiles.append(rasterized)
-                rank.append(i * i + j * j)
 
             else:
                 # prepare local args and kwds for write_dsm_by_tile()
