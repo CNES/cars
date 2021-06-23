@@ -125,7 +125,8 @@ doc: install-doc ## build sphinx documentation
 notebook: install-notebook ## Install Jupyter notebook kernel with venv and cars install
 	@echo "\nInstall Jupyter Kernel and launch Jupyter notebooks environment"
 	@${VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-$(VENV) --display-name=cars-$(CARS_VERSION)
-	@jupyter notebook
+	@echo "\n --> After CARS virtualenv activation, please use following command to launch local jupyter notebook to open CARS Notebooks:"
+	@echo "jupyter notebook"
 
 docker: ## Build docker image (and check Dockerfile)
 	@echo "Check Dockerfile with hadolint"
