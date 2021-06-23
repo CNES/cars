@@ -393,22 +393,24 @@ def terrain_region_to_epipolar(
     return epipolar_region
 
 
-def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
+def terrain_grid_to_epipolar(
+    terrain_grid, epipolar_regions_grid, configuration, disp_min, disp_max, epsg
+):
     """
     Transform terrain grid to epipolar region
     """
     # Compute disp_min and disp_max location for epipolar grid
     (epipolar_grid_min, epipolar_grid_max,) = compute_epipolar_grid_min_max(
-        conf["epipolar_regions_grid"],
+        epipolar_regions_grid,
         epsg,
-        conf["configuration"],
-        conf["disp_min"],
-        conf["disp_max"],
+        configuration,
+        disp_min,
+        disp_max,
     )
 
-    epipolar_regions_grid_size = np.shape(conf["epipolar_regions_grid"])[:2]
-    epipolar_regions_grid_flat = conf["epipolar_regions_grid"].reshape(
-        -1, conf["epipolar_regions_grid"].shape[-1]
+    epipolar_regions_grid_size = np.shape(epipolar_regions_grid)[:2]
+    epipolar_regions_grid_flat = epipolar_regions_grid.reshape(
+        -1, epipolar_regions_grid.shape[-1]
     )
 
     # in the following code a factor is used to increase the precision
@@ -559,6 +561,10 @@ def get_corresponding_tiles(terrain_grid, configurations_data):
 
             epipolar_points_min = conf["epipolar_points_min"]
             epipolar_points_max = conf["epipolar_points_max"]
+            largest_epipolar_region = conf["largest_epipolar_region"]
+            opt_epipolar_tile_size = conf["opt_epipolar_tile_size"]
+            epipolar_regions_hash = conf["epipolar_regions_hash"]
+            delayed_point_clouds = conf["delayed_point_clouds"]
 
             tile_min = np.minimum(
                 np.minimum(
@@ -618,9 +624,7 @@ def get_corresponding_tiles(terrain_grid, configurations_data):
             ]
 
             # Crop epipolar region to largest region
-            epipolar_region = crop(
-                epipolar_region, conf["largest_epipolar_region"]
-            )
+            epipolar_region = crop(epipolar_region, largest_epipolar_region)
 
             logging.debug(
                 "Corresponding epipolar region: {}".format(epipolar_region)
@@ -636,22 +640,20 @@ def get_corresponding_tiles(terrain_grid, configurations_data):
                 # Loop on all epipolar tiles covered by epipolar region
                 for epipolar_tile in list_tiles(
                     epipolar_region,
-                    conf["largest_epipolar_region"],
-                    conf["opt_epipolar_tile_size"],
+                    largest_epipolar_region,
+                    opt_epipolar_tile_size,
                 ):
 
                     cur_hash = region_hash_string(epipolar_tile)
 
                     # Look for corresponding hash in delayed point clouds
                     # dictionnary
-                    if cur_hash in conf["epipolar_regions_hash"]:
+                    if cur_hash in epipolar_regions_hash:
 
                         # If hash can be found, append it to the required
                         # clouds to compute for this terrain tile
-                        pos = conf["epipolar_regions_hash"].index(cur_hash)
-                        required_point_clouds.append(
-                            conf["delayed_point_clouds"][pos]
-                        )
+                        pos = epipolar_regions_hash.index(cur_hash)
+                        required_point_clouds.append(delayed_point_clouds[pos])
 
         corresponding_tiles.append(required_point_clouds)
         rank.append(i * i + j * j)

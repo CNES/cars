@@ -963,7 +963,12 @@ def run(  # noqa: C901
         ]
 
         points_min, points_max = tiling.terrain_grid_to_epipolar(
-            terrain_grid, conf, epsg
+            terrain_grid,
+            conf["epipolar_regions_grid"],
+            conf["configuration"],
+            conf["disp_min"],
+            conf["disp_max"],
+            epsg,
         )
         configurations_data[config_id]["epipolar_points_min"] = points_min
         configurations_data[config_id]["epipolar_points_max"] = points_max
