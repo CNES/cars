@@ -172,3 +172,64 @@ def test_terrain_region_to_epipolar(
     region = [5.1952, 44.205, 5.2, 44.208]
     out_region = tiling.terrain_region_to_epipolar(region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
+
+
+# function parameters are fixtures set in conftest.py
+@pytest.mark.unit_tests
+def test_tiles_pairing_one_tile_case(
+    images_and_grids_conf,  # pylint: disable=redefined-outer-name
+    disparities_conf,  # pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test terrain_grid_to_epipolar + get_corresponding_tiles (one tile case)
+    """
+
+    configuration = images_and_grids_conf
+    configuration["preprocessing"]["output"].update(
+        disparities_conf["preprocessing"]["output"]
+    )
+    configuration["preprocessing"]["output"].update(
+        epipolar_sizes_conf["preprocessing"]["output"]
+    )
+
+    terrain_region = [675248, 4897075, 675460.5, 4897173]
+    terrain_size = 425, 196
+    epipolar_size = 512, 512
+    disp_min, disp_max = -20, 15
+    epsg = 32631
+
+    terrain_grid = tiling.grid(*terrain_region, *terrain_size)
+
+    epipolar_regions_params = [0, 0, *epipolar_size, *epipolar_size]
+
+    epipolar_regions = tiling.split(*epipolar_regions_params)
+    epipolar_regions_grid = tiling.grid(*epipolar_regions_params)
+    epipolar_regions_hash = [
+        tiling.region_hash_string(k) for k in epipolar_regions
+    ]
+
+    points_min, points_max = tiling.terrain_grid_to_epipolar(
+        terrain_grid,
+        epipolar_regions_grid,
+        configuration,
+        disp_min,
+        disp_max,
+        epsg,
+    )
+
+    confdata = {}
+    confdata["c1"] = {}
+
+    confdata["c1"]["epipolar_points_min"] = points_min
+    confdata["c1"]["epipolar_points_max"] = points_max
+    confdata["c1"]["largest_epipolar_region"] = [0, 0, *epipolar_size]
+    confdata["c1"]["opt_epipolar_tile_size"] = epipolar_size[0]
+    confdata["c1"]["epipolar_regions_hash"] = epipolar_regions_hash
+    confdata["c1"]["delayed_point_clouds"] = epipolar_regions
+
+    __, corresp_tiles, __ = tiling.get_corresponding_tiles(
+        terrain_grid, confdata
+    )
+
+    assert len(corresp_tiles[0]) == 1
