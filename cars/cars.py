@@ -23,21 +23,28 @@ Main CARS Command Line Interface
 user main argparse wrapper to CARS 3D pipelines submodules
 """
 
-
 # Standard imports
 # TODO refactor but keep local functions for performance and remove pylint
-# pylint: disable=import-outside-toplevel
 import argparse
+import logging
 import os
 import re
+import sys
 import warnings
 from typing import List, Tuple
 
 # Third party imports
 import argcomplete
+import rasterio
 
 # CARS imports
 from cars import __version__
+from cars.conf import input_parameters as in_params
+from cars.conf import output_prepare
+from cars.conf.log_conf import setup_log
+from cars.core import inputs
+from cars.externals.matching.correlator_configuration import corr_conf
+from cars.pipelines import compute_dsm, prepare
 
 warnings.filterwarnings("ignore", category=FutureWarning)
 warnings.filterwarnings("ignore", category=DeprecationWarning)
@@ -405,18 +412,6 @@ def parse_roi_file(
     :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
     :rtype: Tuple with array of 4 floats and int
     """
-    # TODO : refactor in order to avoid a slow argparse
-    # Don't move the local function imports for now
-
-    # Standard imports
-    import logging
-
-    # Third party imports
-    import rasterio
-
-    # CARS imports
-    from cars.core import inputs
-
     # Declare output
     roi = None
 
@@ -471,34 +466,13 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
 
     :param check_inputs: activate only arguments checking
     """
-    # TODO : refactor in order to avoid a slow argparse
-    # Don't move the local function imports for now
-
-    # Standard imports
-    import logging
-    import sys
-
-    # CARS imports
-    from cars.conf import input_parameters as in_params
-    from cars.conf import output_prepare
-    from cars.externals.matching.correlator_configuration import corr_conf
-    from cars.pipelines import compute_dsm, prepare
-
     # Change stdout to clean (Os) OTB output from image_envelope app.
     original_stdout = sys.stdout
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
+    setup_log(args.loglevel.upper())
 
-    # logging
-    numeric_level = getattr(logging, args.loglevel.upper(), None)
-
-    if not isinstance(numeric_level, int):
-        raise ValueError("Invalid log level: %s" % args.loglevel)
-
-    logging.basicConfig(
-        level=numeric_level,
-        datefmt="%y-%m-%d %H:%M:%S",
-        format="%(asctime)s :: %(levelname)s :: %(message)s",
-    )
+    # Logging configuration with args Loglevel
+    setup_log(args.loglevel.upper())
 
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
@@ -574,7 +548,7 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
                 "Invalid parameters detected, please fix cars \
             prepare command-line."
             )
-            sys.exit(1)
+            raise SystemExit(1)
 
         # Read input json file
         in_json = in_params.read_input_parameters(args.injson)
@@ -685,7 +659,7 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
                 "Invalid parameters detected, please fix cars \
             compute_dsm command-line."
             )
-            sys.exit(1)
+            raise SystemExit(1)
 
         # Read input json files
         in_jsons = [
@@ -731,7 +705,7 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
 
     else:
         parser.print_help()
-        sys.exit(1)
+        raise SystemExit(1)
 
     # Go back to original stdout
     sys.stdout = original_stdout
@@ -742,9 +716,16 @@ def main():
     Main initial cars cli entry point
     Configure and launch parser before main_cli function
     """
+    # CARS parser
     parser = cars_parser()
     args = parser.parse_args()
-    main_cli(args, parser)
+
+    try:
+        main_cli(args, parser)
+    except BaseException:
+        # Catch all exceptions, show debug traceback and exit
+        logging.debug("Traceback {}".format(sys.exc_info()[0]), exc_info=True)
+        sys.exit(1)
 
 
 if __name__ == "__main__":

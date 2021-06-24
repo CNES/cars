@@ -24,9 +24,7 @@ contains some cars global shared general purpose functions
 """
 # Standard imports
 import errno
-import logging
 import os
-from datetime import datetime
 from typing import Tuple
 
 # Third party imports
@@ -143,32 +141,3 @@ def angle_vectors(vector_1: np.ndarray, vector_2: np.ndarray) -> float:
     vec_dot = np.dot(vector_1, vector_2)
     vec_norm = la.norm(np.cross(vector_1, vector_2))
     return np.arctan2(vec_norm, vec_dot)
-
-
-def add_log_file(out_dir, command):
-    """
-    Add dated file handler to the logger.
-
-    :param out_dir: output directory in which the log file will be created
-    :type out_dir: str
-    :param command: command name which will be part of the log file name
-    :type command: str
-    """
-    # set file log handler
-    now = datetime.now()
-    h_log_file = logging.FileHandler(
-        os.path.join(
-            out_dir,
-            "{}_{}.log".format(now.strftime("%y-%m-%d_%Hh%Mm"), command),
-        )
-    )
-    h_log_file.setLevel(logging.getLogger().getEffectiveLevel())
-
-    formatter = logging.Formatter(
-        fmt="%(asctime)s :: %(levelname)s :: %(message)s",
-        datefmt="%y-%m-%d %H:%M:%S",
-    )
-    h_log_file.setFormatter(formatter)
-
-    # add it to the logger
-    logging.getLogger().addHandler(h_log_file)

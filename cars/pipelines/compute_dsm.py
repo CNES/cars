@@ -56,6 +56,7 @@ from cars.cluster.dask_mode import (
 )
 from cars.conf import input_parameters as in_params
 from cars.conf import (
+    log_conf,
     mask_classes,
     output_compute_dsm,
     output_prepare,
@@ -336,7 +337,7 @@ def run(  # noqa: C901
             raise
     tmp_dir = os.path.join(out_dir, "tmp")
 
-    utils.add_log_file(out_dir, "compute_dsm")
+    log_conf.add_log_file(out_dir, "compute_dsm")
     logging.info(
         "Received {} stereo pairs configurations".format(len(in_jsons))
     )
