@@ -34,6 +34,8 @@ from osgeo import osr
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
+from shapely.geometry import box, mapping
+from shapely.geometry.multipolygon import MultiPolygon
 from tqdm import tqdm
 
 # CARS imports
@@ -659,3 +661,26 @@ def get_corresponding_tiles(terrain_grid, configurations_data):
         rank.append(i * i + j * j)
 
     return terrain_regions, corresponding_tiles, rank
+
+
+def get_paired_regions_as_geodict(terrain_regions, epipolar_regions):
+    """
+    Get paired regions (terrain/epipolar) as geodict
+    """
+    epi_geodict = {"type": "FeatureCollection", "features": []}
+    ter_geodict = {"type": "FeatureCollection", "features": []}
+
+    for idx, (ter, epi_list) in enumerate(
+        zip(terrain_regions, epipolar_regions)
+    ):
+        feature = {}
+        feature["type"] = "Feature"
+        feature["properties"] = {"id": idx, "nb_epi": len(epi_list)}
+        feature["geometry"] = mapping(box(*ter))
+        epi_geodict["features"].append(feature.copy())
+        feature["geometry"] = mapping(
+            MultiPolygon(map(lambda x: box(*x), epi_list))
+        )
+        ter_geodict["features"].append(feature.copy())
+
+    return ter_geodict, epi_geodict

@@ -25,11 +25,19 @@ Test module for cars/core/tiling.py
 # Standard imports
 from __future__ import absolute_import
 
+import json
+import os
+import tempfile
+
 # Third party imports
+import fiona
 import pytest
 
 # CARS imports
 from cars.core import tiling
+
+# CARS Tests import
+from ..helpers import temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -177,7 +185,7 @@ def test_terrain_region_to_epipolar(
 # function parameters are fixtures set in conftest.py
 @pytest.mark.unit_tests
 @pytest.mark.parametrize(
-    "terrain_tile_size,epipolar_tile_size,nb_corresp_tiles",
+    ",".join(["terrain_tile_size", "epipolar_tile_size", "nb_corresp_tiles"]),
     [[500, 512, 1], [45, 70, 6]],
 )
 def test_tiles_pairing(
@@ -239,9 +247,22 @@ def test_tiles_pairing(
     confdata["c1"]["delayed_point_clouds"] = epipolar_regions
 
     # get epipolar tiles corresponding to the terrain grid
-    __, corresp_tiles, __ = tiling.get_corresponding_tiles(
+    terrain_regions, corresp_tiles, __ = tiling.get_corresponding_tiles(
         terrain_grid, confdata
     )
 
     # count the number of epipolar tile for the first terrain tile
     assert len(corresp_tiles[0]) == nb_corresp_tiles
+
+    ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
+        terrain_regions, corresp_tiles
+    )
+
+    # check geodict writing
+    for geodict in ter_geodict, epi_geodict:
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+            tmp_filename = os.path.join(tmp_dir, "pairing.geojson")
+            with open(tmp_filename, "w") as writer:
+                writer.write(json.dumps(geodict))
+            with fiona.open(tmp_filename):
+                pass
