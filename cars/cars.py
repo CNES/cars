@@ -30,7 +30,6 @@ import logging
 import os
 import re
 import sys
-import warnings
 from typing import List, Tuple
 
 # Third party imports
@@ -45,9 +44,6 @@ from cars.conf.log_conf import setup_log
 from cars.core import inputs
 from cars.externals.matching.correlator_configuration import corr_conf
 from cars.pipelines import compute_dsm, prepare
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 class StreamCapture:
@@ -124,7 +120,7 @@ def cars_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--loglevel",
-        default="INFO",
+        default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
         help="Logger level (default: INFO. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
