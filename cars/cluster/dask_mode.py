@@ -343,7 +343,7 @@ def get_dashboard_link(cluster):
 
 def stop_cluster(cluster, client):
     """
-    This function stop a dask cluster.
+    This function stops a dask cluster.
 
     :param cluster: Dask cluster
     :type cluster: dask_jobqueue.PBSCluster
@@ -351,5 +351,13 @@ def stop_cluster(cluster, client):
     :type client: dask.distributed.Client
     """
     client.close()
-    cluster.close()
+    # Bug distributed on close cluster : Fail with AssertionError still running
+    try:
+        cluster.close()
+    except AssertionError as assert_error:
+        logging.warning(
+            "Dask cluster failed " "to stop properly: {}".format(assert_error)
+        )
+        # TODO Raise exception to exit globally in cars
+
     logging.info("Dask cluster correctly stopped")
