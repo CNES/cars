@@ -447,6 +447,240 @@ def parse_roi_file(
     return roi, stop_now
 
 
+def run_prepare(args, check_inputs=False):  # noqa: C901
+    """
+    Local function for running prepare pipeline from CLI
+    :param args: arguments for prepare pipeline
+    """
+    # Check remaining arguments
+    stop_now = False
+    if not os.path.exists(args.injson):
+        logging.error("File {} does not exist".format(args.injson))
+        stop_now = True
+    if args.epi_step < 1:
+        logging.error(
+            "{} is an invalid value for --epi_step parameter \
+        (should be > 1)".format(
+                args.epi_step
+            )
+        )
+        stop_now = True
+    if args.disparity_margin < 0 or args.disparity_margin > 1:
+        logging.error(
+            "{} is an invalid value for --disparity_margin parameter \
+        (should be in range [0,1])".format(
+                args.disparity_margin
+            )
+        )
+        stop_now = True
+    if args.epipolar_error_upper_bound <= 0:
+        logging.error(
+            "{} is an invalid value for --epipolar_error_upper_bound \
+        parameter (should be > 0)".format(
+                args.epipolar_error_upper_bound
+            )
+        )
+        stop_now = True
+    if args.epipolar_error_maximum_bias < 0:
+        logging.error(
+            "{} is an invalid value for --epipolar_error_maximum_bias \
+        parameter (should be >= 0)".format(
+                args.epipolar_error_maximum_bias
+            )
+        )
+        stop_now = True
+    if args.nb_workers < 1:
+        logging.error(
+            "{} is an invalid value for --nb_workers parameter \
+        (should be > 0)".format(
+                args.nb_workers
+            )
+        )
+        stop_now = True
+    if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
+        logging.error(
+            "{} is an invalid value for --walltime parameter \
+        (should match HH:MM:SS)".format(
+                args.walltime
+            )
+        )
+        stop_now = True
+    if args.elevation_delta_upper_bound <= args.elevation_delta_lower_bound:
+        logging.error(
+            "--elevation_delta_lower_bound = {} is greater than \
+        --elevation_delta_upper_bound = {}".format(
+                args.elevation_delta_lower_bound,
+                args.elevation_delta_upper_bound,
+            )
+        )
+        stop_now = True
+
+    # If there are invalid parameters, stop now
+    if stop_now:
+        logging.error(
+            "Invalid parameters detected, please fix cars \
+        prepare command-line."
+        )
+        raise SystemExit(1)
+
+    # Read input json file
+    in_json = in_params.read_input_parameters(args.injson)
+
+    if not check_inputs:
+        prepare.run(
+            in_json,
+            args.outdir,
+            epi_step=args.epi_step,
+            disparity_margin=args.disparity_margin,
+            epipolar_error_upper_bound=args.epipolar_error_upper_bound,
+            epipolar_error_maximum_bias=args.epipolar_error_maximum_bias,
+            elevation_delta_lower_bound=args.elevation_delta_lower_bound,
+            elevation_delta_upper_bound=args.elevation_delta_upper_bound,
+            mode=args.mode,
+            nb_workers=args.nb_workers,
+            walltime=args.walltime,
+            check_inputs=args.check_inputs,
+        )
+
+
+def run_compute_dsm(args, check_inputs=False):  # noqa: C901
+    """
+    Local function for running compute_dsm pipeline from CLI
+    :param args: arguments for compute_dsm pipeline
+    """
+    # Check remaining arguments
+    stop_now = False
+    if len(args.injsons) == 0:
+        logging.error("One input json file is at least required")
+        stop_now = True
+    for json_file in args.injsons:
+        if not os.path.exists(json_file):
+            logging.error("File {} does not exist".format(json_file))
+            stop_now = True
+    if args.sigma is not None and args.sigma < 0:
+        logging.error(
+            "{} is an invalid value for --sigma parameter \
+        (should be >= 0)".format(
+                args.sigma
+            )
+        )
+        stop_now = True
+    if args.dsm_radius < 0:
+        logging.error(
+            "{} is an invalid value for --dsm_radius parameter \
+        (should be >= 0)".format(
+                args.dsm_radius
+            )
+        )
+        stop_now = True
+    if args.resolution <= 0:
+        logging.error(
+            "{} is an invalid value for --resolution parameter \
+        (should be > 0)".format(
+                args.resolution
+            )
+        )
+        stop_now = True
+    if args.epsg is not None and args.epsg < 1:
+        logging.error(
+            "{} is an invalid value for --epsg parameter \
+        (should be > 0)".format(
+                args.epsg
+            )
+        )
+        stop_now = True
+    if args.corr_config is not None:
+        if not os.path.exists(args.corr_config):
+            logging.error("File {} does not exist".format(args.corr_config))
+            stop_now = True
+    if args.nb_workers < 1:
+        logging.error(
+            "{} is an invalid value for --nb_workers parameter \
+        (should be > 0)".format(
+                args.nb_workers
+            )
+        )
+        stop_now = True
+    if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
+        logging.error(
+            "{} is an invalid value for --walltime parameter \
+        (should match HH:MM:SS)".format(
+                args.walltime
+            )
+        )
+        stop_now = True
+    if (
+        args.max_elevation_offset is not None
+        and args.min_elevation_offset is not None
+        and args.max_elevation_offset <= args.min_elevation_offset
+    ):
+        logging.error(
+            "--min_elevation_offset = {} is greater than \
+        --max_elevation_offset = {}".format(
+                args.min_elevation_offset, args.max_elevation_offset
+            )
+        )
+        stop_now = True
+
+    # By default roi = None if no roi mutually exclusive options
+    roi = None
+    if args.roi_bbox is not None:
+        # if roi_bbox defined, roi = 4 floats bounding box + EPSG code=None
+        roi = (args.roi_bbox, None)
+    if args.roi_file is not None:
+        # If roi_file is defined, generate bouding box roi
+        roi, stop_now = parse_roi_file(args.roi_file, stop_now)
+
+    # If there are invalid parameters, stop now
+    if stop_now:
+        logging.error(
+            "Invalid parameters detected, please fix cars \
+            compute_dsm command-line."
+        )
+        raise SystemExit(1)
+
+    # Read input json files
+    in_jsons = [
+        output_prepare.read_preprocessing_content_file(f) for f in args.injsons
+    ]
+    # Configure correlator
+    corr_config = corr_conf.configure_correlator(args.corr_config)
+
+    if not check_inputs:
+        # Prepare options not tested in test_cars.py
+
+        # Inverse disable_cloud_small_components_filter
+        small_components = not args.disable_cloud_small_components_filter
+        # Inverse disable_cloud_statistical_outliers_filter
+        stat_outliers = not args.disable_cloud_statistical_outliers_filter
+
+        compute_dsm.run(
+            in_jsons,
+            args.outdir,
+            resolution=args.resolution,
+            min_elevation_offset=args.min_elevation_offset,
+            max_elevation_offset=args.max_elevation_offset,
+            epsg=args.epsg,
+            sigma=args.sigma,
+            dsm_radius=args.dsm_radius,
+            dsm_no_data=args.dsm_no_data,
+            color_no_data=args.color_no_data,
+            msk_no_data=args.msk_no_data,
+            corr_config=corr_config,
+            output_stats=args.output_stats,
+            mode=args.mode,
+            nb_workers=args.nb_workers,
+            walltime=args.walltime,
+            roi=roi,
+            use_geoid_alt=args.use_geoid_as_alt_ref,
+            snap_to_img1=args.snap_to_left_image,
+            align=args.align_with_lowres_dem,
+            cloud_small_components_filter=small_components,
+            cloud_statistical_outliers_filter=stat_outliers,
+            use_sec_disp=args.use_sec_disp,
+        )
+
+
 def main_cli(args, parser, check_inputs=False):  # noqa: C901
     """
     Main for command line management
@@ -464,238 +698,23 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
 
-    # main(s) for each command
-    if args.command == "prepare":
-        # Check remaining arguments
-        stop_now = False
-        if not os.path.exists(args.injson):
-            logging.error("File {} does not exist".format(args.injson))
-            stop_now = True
-        if args.epi_step < 1:
-            logging.error(
-                "{} is an invalid value for --epi_step parameter \
-            (should be > 1)".format(
-                    args.epi_step
-                )
-            )
-            stop_now = True
-        if args.disparity_margin < 0 or args.disparity_margin > 1:
-            logging.error(
-                "{} is an invalid value for --disparity_margin parameter \
-            (should be in range [0,1])".format(
-                    args.disparity_margin
-                )
-            )
-            stop_now = True
-        if args.epipolar_error_upper_bound <= 0:
-            logging.error(
-                "{} is an invalid value for --epipolar_error_upper_bound \
-            parameter (should be > 0)".format(
-                    args.epipolar_error_upper_bound
-                )
-            )
-            stop_now = True
-        if args.epipolar_error_maximum_bias < 0:
-            logging.error(
-                "{} is an invalid value for --epipolar_error_maximum_bias \
-            parameter (should be >= 0)".format(
-                    args.epipolar_error_maximum_bias
-                )
-            )
-            stop_now = True
-        if args.nb_workers < 1:
-            logging.error(
-                "{} is an invalid value for --nb_workers parameter \
-            (should be > 0)".format(
-                    args.nb_workers
-                )
-            )
-            stop_now = True
-        if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
-            logging.error(
-                "{} is an invalid value for --walltime parameter \
-            (should match HH:MM:SS)".format(
-                    args.walltime
-                )
-            )
-            stop_now = True
-        if args.elevation_delta_upper_bound <= args.elevation_delta_lower_bound:
-            logging.error(
-                "--elevation_delta_lower_bound = {} is greater than \
-            --elevation_delta_upper_bound = {}".format(
-                    args.elevation_delta_lower_bound,
-                    args.elevation_delta_upper_bound,
-                )
-            )
-            stop_now = True
-
-        # If there are invalid parameters, stop now
-        if stop_now:
-            logging.error(
-                "Invalid parameters detected, please fix cars \
-            prepare command-line."
-            )
+    # Main try/except to catch all program exceptions
+    try:
+        # main(s) for each command
+        if args.command == "prepare":
+            run_prepare(args, check_inputs)
+        elif args.command == "compute_dsm":
+            run_compute_dsm(args, check_inputs)
+        else:
+            parser.print_help()
             raise SystemExit(1)
-
-        # Read input json file
-        in_json = in_params.read_input_parameters(args.injson)
-
-        if not check_inputs:
-            prepare.run(
-                in_json,
-                args.outdir,
-                epi_step=args.epi_step,
-                disparity_margin=args.disparity_margin,
-                epipolar_error_upper_bound=args.epipolar_error_upper_bound,
-                epipolar_error_maximum_bias=args.epipolar_error_maximum_bias,
-                elevation_delta_lower_bound=args.elevation_delta_lower_bound,
-                elevation_delta_upper_bound=args.elevation_delta_upper_bound,
-                mode=args.mode,
-                nb_workers=args.nb_workers,
-                walltime=args.walltime,
-                check_inputs=args.check_inputs,
-            )
-
-    elif args.command == "compute_dsm":
-        # Check remaining arguments
-        stop_now = False
-        if len(args.injsons) == 0:
-            logging.error("One input json file is at least required")
-            stop_now = True
-        for json_file in args.injsons:
-            if not os.path.exists(json_file):
-                logging.error("File {} does not exist".format(json_file))
-                stop_now = True
-        if args.sigma is not None and args.sigma < 0:
-            logging.error(
-                "{} is an invalid value for --sigma parameter \
-            (should be >= 0)".format(
-                    args.sigma
-                )
-            )
-            stop_now = True
-        if args.dsm_radius < 0:
-            logging.error(
-                "{} is an invalid value for --dsm_radius parameter \
-            (should be >= 0)".format(
-                    args.dsm_radius
-                )
-            )
-            stop_now = True
-        if args.resolution <= 0:
-            logging.error(
-                "{} is an invalid value for --resolution parameter \
-            (should be > 0)".format(
-                    args.resolution
-                )
-            )
-            stop_now = True
-        if args.epsg is not None and args.epsg < 1:
-            logging.error(
-                "{} is an invalid value for --epsg parameter \
-            (should be > 0)".format(
-                    args.epsg
-                )
-            )
-            stop_now = True
-        if args.corr_config is not None:
-            if not os.path.exists(args.corr_config):
-                logging.error("File {} does not exist".format(args.corr_config))
-                stop_now = True
-        if args.nb_workers < 1:
-            logging.error(
-                "{} is an invalid value for --nb_workers parameter \
-            (should be > 0)".format(
-                    args.nb_workers
-                )
-            )
-            stop_now = True
-        if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
-            logging.error(
-                "{} is an invalid value for --walltime parameter \
-            (should match HH:MM:SS)".format(
-                    args.walltime
-                )
-            )
-            stop_now = True
-        if (
-            args.max_elevation_offset is not None
-            and args.min_elevation_offset is not None
-            and args.max_elevation_offset <= args.min_elevation_offset
-        ):
-            logging.error(
-                "--min_elevation_offset = {} is greater than \
-            --max_elevation_offset = {}".format(
-                    args.min_elevation_offset, args.max_elevation_offset
-                )
-            )
-            stop_now = True
-
-        # By default roi = None if no roi mutually exclusive options
-        roi = None
-        if args.roi_bbox is not None:
-            # if roi_bbox defined, roi = 4 floats bounding box + EPSG code=None
-            roi = (args.roi_bbox, None)
-        if args.roi_file is not None:
-            # If roi_file is defined, generate bouding box roi
-            roi, stop_now = parse_roi_file(args.roi_file, stop_now)
-
-        # If there are invalid parameters, stop now
-        if stop_now:
-            logging.error(
-                "Invalid parameters detected, please fix cars \
-                compute_dsm command-line."
-            )
-            raise SystemExit(1)
-
-        # Read input json files
-        in_jsons = [
-            output_prepare.read_preprocessing_content_file(f)
-            for f in args.injsons
-        ]
-        # Configure correlator
-        corr_config = corr_conf.configure_correlator(args.corr_config)
-
-        if not check_inputs:
-            # Prepare options not tested in test_cars.py
-
-            # Inverse disable_cloud_small_components_filter
-            small_components = not args.disable_cloud_small_components_filter
-            # Inverse disable_cloud_statistical_outliers_filter
-            stat_outliers = not args.disable_cloud_statistical_outliers_filter
-
-            compute_dsm.run(
-                in_jsons,
-                args.outdir,
-                resolution=args.resolution,
-                min_elevation_offset=args.min_elevation_offset,
-                max_elevation_offset=args.max_elevation_offset,
-                epsg=args.epsg,
-                sigma=args.sigma,
-                dsm_radius=args.dsm_radius,
-                dsm_no_data=args.dsm_no_data,
-                color_no_data=args.color_no_data,
-                msk_no_data=args.msk_no_data,
-                corr_config=corr_config,
-                output_stats=args.output_stats,
-                mode=args.mode,
-                nb_workers=args.nb_workers,
-                walltime=args.walltime,
-                roi=roi,
-                use_geoid_alt=args.use_geoid_as_alt_ref,
-                snap_to_img1=args.snap_to_left_image,
-                align=args.align_with_lowres_dem,
-                cloud_small_components_filter=small_components,
-                cloud_statistical_outliers_filter=stat_outliers,
-                use_sec_disp=args.use_sec_disp,
-            )
-
-    else:
-        parser.print_help()
-        raise SystemExit(1)
-
-    # Go back to original stdout
-    sys.stdout = original_stdout
+    except BaseException:
+        # Catch all exceptions, show debug traceback and exit
+        logging.debug("Traceback {}".format(sys.exc_info()[0]), exc_info=True)
+        sys.exit(1)
+    finally:
+        # Go back to original stdout
+        sys.stdout = original_stdout
 
 
 def main():
@@ -706,13 +725,7 @@ def main():
     # CARS parser
     parser = cars_parser()
     args = parser.parse_args()
-
-    try:
-        main_cli(args, parser)
-    except BaseException:
-        # Catch all exceptions, show debug traceback and exit
-        logging.debug("Traceback {}".format(sys.exc_info()[0]), exc_info=True)
-        sys.exit(1)
+    main_cli(args, parser)
 
 
 if __name__ == "__main__":
