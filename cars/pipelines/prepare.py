@@ -926,7 +926,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
 
     else:
-        logging.warning(
+        logging.info(
             "Low resolution DSM is not large enough "
             "(minimum size is {}x{}) "
             "to estimate correction "
