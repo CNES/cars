@@ -682,8 +682,8 @@ def get_paired_regions_as_geodict(terrain_regions, epipolar_regions):
     """
     Get paired regions (terrain/epipolar) as geodict
     """
-    epi_geodict = {"type": "FeatureCollection", "features": []}
     ter_geodict = {"type": "FeatureCollection", "features": []}
+    epi_geodict = {"type": "FeatureCollection", "features": []}
 
     for idx, (ter, epi_list) in enumerate(
         zip(terrain_regions, epipolar_regions)
@@ -692,10 +692,10 @@ def get_paired_regions_as_geodict(terrain_regions, epipolar_regions):
         feature["type"] = "Feature"
         feature["properties"] = {"id": idx, "nb_epi": len(epi_list)}
         feature["geometry"] = mapping(box(*ter))
-        epi_geodict["features"].append(feature.copy())
+        ter_geodict["features"].append(feature.copy())
         feature["geometry"] = mapping(
             MultiPolygon(map(lambda x: box(*x), epi_list))
         )
-        ter_geodict["features"].append(feature.copy())
+        epi_geodict["features"].append(feature.copy())
 
     return ter_geodict, epi_geodict
