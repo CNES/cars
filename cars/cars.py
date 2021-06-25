@@ -25,6 +25,7 @@ user main argparse wrapper to CARS 3D pipelines submodules
 
 # Standard imports
 # TODO refactor but keep local functions for performance and remove pylint
+# pylint: disable=import-outside-toplevel
 import argparse
 import logging
 import os
@@ -34,16 +35,9 @@ from typing import List, Tuple
 
 # Third party imports
 import argcomplete
-import rasterio
 
 # CARS imports
 from cars import __version__
-from cars.conf import input_parameters as in_params
-from cars.conf import output_prepare
-from cars.conf.log_conf import setup_log
-from cars.core import inputs
-from cars.externals.matching.correlator_configuration import corr_conf
-from cars.pipelines import compute_dsm, prepare
 
 
 class StreamCapture:
@@ -408,6 +402,15 @@ def parse_roi_file(
     :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
     :rtype: Tuple with array of 4 floats and int
     """
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
+
+    # Third party imports
+    import rasterio
+
+    # CARS imports
+    from cars.core import inputs
+
     # Declare output
     roi = None
 
@@ -452,6 +455,13 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
     Local function for running prepare pipeline from CLI
     :param args: arguments for prepare pipeline
     """
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
+
+    # CARS imports
+    from cars.conf import input_parameters
+    from cars.pipelines import prepare
+
     # Check remaining arguments
     stop_now = False
     if not os.path.exists(args.injson):
@@ -524,7 +534,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         raise SystemExit(1)
 
     # Read input json file
-    in_json = in_params.read_input_parameters(args.injson)
+    in_json = input_parameters.read_input_parameters(args.injson)
 
     if not check_inputs:
         prepare.run(
@@ -548,6 +558,14 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     Local function for running compute_dsm pipeline from CLI
     :param args: arguments for compute_dsm pipeline
     """
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
+
+    # CARS imports
+    from cars.conf import output_prepare
+    from cars.externals.matching.correlator_configuration import corr_conf
+    from cars.pipelines import compute_dsm
+
     # Check remaining arguments
     stop_now = False
     if len(args.injsons) == 0:
@@ -687,6 +705,12 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
 
     :param check_inputs: activate only arguments checking
     """
+    # TODO : refactor in order to avoid a slow argparse
+    # Don't move the local function imports for now
+
+    # CARS imports
+    from cars.conf.log_conf import setup_log
+
     # Change stdout to clean (Os) OTB output from image_envelope app.
     original_stdout = sys.stdout
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
