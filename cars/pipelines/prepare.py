@@ -50,9 +50,9 @@ from cars.cluster.dask_mode import (
     stop_cluster,
 )
 from cars.conf import input_parameters as in_params
-from cars.conf import mask_classes, output_prepare, static_conf
+from cars.conf import log_conf, mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
-from cars.core import inputs, outputs, projection, tiling, utils
+from cars.core import inputs, outputs, projection, tiling
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import devib, rasterization, triangulation
@@ -121,7 +121,7 @@ def run(  # noqa: C901
         else:
             raise
 
-    utils.add_log_file(out_dir, "prepare")
+    log_conf.add_log_file(out_dir, "prepare")
 
     if not check_inputs:
         logging.info(
