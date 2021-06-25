@@ -262,12 +262,18 @@ def test_tiles_pairing(
     )
 
     # check geodict writing
-    for geodict in ter_geodict, epi_geodict:
-        with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
-            tmp_filename = os.path.join(tmp_dir, "pairing.geojson")
-            with open(tmp_filename, "w") as writer:
-                writer.write(json.dumps(geodict))
-            with fiona.open(tmp_filename):
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+        ter_filename = f"terrain_tiles_{nb_corresp_tiles}.geojson"
+        epi_filename = f"epipolar_tiles_{nb_corresp_tiles}.geojson"
+        # CRS for all GeoJSON is epsg:4326: to convert for QGIS:
+        # > ogr2ogr -f "GeoJSON" out.geojson in.geojson \
+        # > -s_srs EPSG:32631 -t_srs EPSG:4326
+        with open(os.path.join(tmp_dir, ter_filename), "w") as writer:
+            writer.write(json.dumps(ter_geodict))
+        with open(os.path.join(tmp_dir, epi_filename), "w") as writer:
+            writer.write(json.dumps(epi_geodict))
+        for tmp_filename in [ter_filename, epi_filename]:
+            with fiona.open(os.path.join(tmp_dir, tmp_filename)):
                 pass
 
 
