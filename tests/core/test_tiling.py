@@ -254,7 +254,7 @@ def test_tiles_pairing(
         terrain_grid, confdata
     )
 
-    # count the number of epipolar tile for the first terrain tile
+    # count the number of epipolar tiles for the first terrain tile
     assert len(corresp_tiles[0]) == nb_corresp_tiles
 
     ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
@@ -295,9 +295,9 @@ def test_filter_simplices_on_the_edges():
             [0.75, 1.25],  # in a triangle
             [0.25, 1.75],  # in a triangle
             [2.05, 1.00],  # not in a triangle
-            [1.00, 0.25],
+            [1.00, 0.25],  # in a "edges" triangle
         ]
-    )  # in a "edges" triangle
+    )
 
     tri = Delaunay(projected_epipolar)
     simplices = tsearch(tri, terrain_grid)
