@@ -1,11 +1,43 @@
+=========
 Notebooks
 =========
 
-Some notebooks are available in the ``notebooks`` directory of the cars project. They can be used to compute intermediary results and statistics using the cars API.
+Some notebooks are available in the `notebooks` directory of the cars project. They can be used to compute intermediary results and statistics using the cars API.
 
-`Beware` : Notebooks needs preparation step's outputs that have to be generated first and inserted in the notebooks parameters at the beginning.
+Notebooks preparation
+=====================
+
+Cars has to be installed and a jupyter notebook configuration has be set up.
+
+Quick local installation
+------------------------
+
+Use the following automated make command line:
+
+.. code-block:: bash
+
+    make notebook
+
+Advanced installation
+---------------------
+
+The automated make command line installs a Jupyter kernel in the virtualenv with the following command:
+
+.. code-block:: bash
+
+    python -m ipykernel install  --sys-prefix --name=cars-venv
+
+and launch a local jupyter notebook environment:
+
+.. code-block:: bash
+
+    jupyter notebook
 
 
+Notebooks descriptions
+======================
+
+`Beware` : Following Notebooks needs preparation step's outputs that have to be generated first and inserted in the notebooks parameters at the beginning.
 
 Compute DSM memory monitoring
 -----------------------------
@@ -39,7 +71,7 @@ The following parameters have to be set :
 Step by step compute DSM
 ------------------------
 
-The ``step_by_step_compute_dsm.ipynb`` notebook explains how to run step by step :term:`:term:`DSM`` computation with CARS, starting from the prepare step ouptut folder.
+The ``step_by_step_compute_dsm.ipynb`` notebook explains how to run step by step :term:`DSM` computation with CARS, starting from the prepare step ouptut folder.
 
 The following parameters have to be set :
     * ``cars_home`` : Path to the cars folder.
