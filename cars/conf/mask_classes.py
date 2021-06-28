@@ -72,7 +72,7 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
             inputs.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
         except Exception as read_error:
-            logging.error(
+            logging.warning(
                 "Exception caught while trying to read file {}: {}".format(
                     mask_classes_path, read_error
                 )

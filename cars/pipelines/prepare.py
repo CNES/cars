@@ -595,8 +595,8 @@ def run(  # noqa: C901
     ]
 
     matches_discarded_message = "{} matches discarded \
-because their epipolar error is greater \
-than --epipolar_error_upper_bound = {} pix".format(
+        because their epipolar error is greater \
+        than --epipolar_error_upper_bound = {} pix".format(
         raw_nb_matches - matches.shape[0], epipolar_error_upper_bound
     )
 
@@ -631,7 +631,7 @@ than --epipolar_error_upper_bound = {} pix".format(
     # TODO: we could also make it a warning and continue with uncorrected grid
     # and default disparity range
     if nb_matches < 100:
-        logging.critical(
+        logging.error(
             "Insufficient amount of matches found (< 100), can not safely "
             "estimate epipolar error correction and disparity range"
         )
@@ -926,7 +926,7 @@ than --epipolar_error_upper_bound = {} pix".format(
         )
 
     else:
-        logging.warning(
+        logging.info(
             "Low resolution DSM is not large enough "
             "(minimum size is {}x{}) "
             "to estimate correction "

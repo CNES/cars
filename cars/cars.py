@@ -31,7 +31,6 @@ import logging
 import os
 import re
 import sys
-import warnings
 from typing import List, Tuple
 
 # Third party imports
@@ -39,9 +38,6 @@ import argcomplete
 
 # CARS imports
 from cars import __version__
-
-warnings.filterwarnings("ignore", category=FutureWarning)
-warnings.filterwarnings("ignore", category=DeprecationWarning)
 
 
 class StreamCapture:
@@ -118,7 +114,7 @@ def cars_parser() -> argparse.ArgumentParser:
     )
     parser.add_argument(
         "--loglevel",
-        default="INFO",
+        default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
         help="Logger level (default: INFO. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
@@ -422,19 +418,13 @@ def parse_roi_file(
 
     # test file existence
     if not os.path.exists(arg_roi_file):
-        logging.warning("{} does not exist".format(arg_roi_file))
+        logging.error("File {} does not exist".format(arg_roi_file))
         stop_now = True
     else:
         # if it is a vector file
         if extension in [".gpkg", ".shp", ".kml"]:
-            try:
-                roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
-                roi = (roi_poly.bounds, roi_epsg)
-            except BaseException:
-                logging.critical(
-                    "Impossible to read {} file".format(arg_roi_file)
-                )
-                stop_now = True
+            roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
+            roi = (roi_poly.bounds, roi_epsg)
 
         # if not, it is an image
         elif inputs.rasterio_can_open(arg_roi_file):
@@ -448,15 +438,12 @@ def parse_roi_file(
                 roi_epsg = data.crs.to_epsg()
                 roi = ([xmin, ymin, xmax, ymax], roi_epsg)
             except AttributeError as error:
-                logging.critical(
-                    "Impossible to read the ROI "
-                    "image epsg code: {}".format(error)
-                )
+                logging.error("ROI EPSG code {} not readable".format(error))
                 stop_now = True
 
         else:
-            logging.critical(
-                "{} has an unsupported file format".format(arg_roi_file)
+            logging.error(
+                "ROI file {} has an unsupported format".format(arg_roi_file)
             )
             stop_now = True
 
@@ -478,10 +465,10 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
     # Check remaining arguments
     stop_now = False
     if not os.path.exists(args.injson):
-        logging.critical("{} does not exist".format(args.injson))
+        logging.error("File {} does not exist".format(args.injson))
         stop_now = True
     if args.epi_step < 1:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --epi_step parameter \
         (should be > 1)".format(
                 args.epi_step
@@ -489,7 +476,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.disparity_margin < 0 or args.disparity_margin > 1:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --disparity_margin parameter \
         (should be in range [0,1])".format(
                 args.disparity_margin
@@ -497,7 +484,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.epipolar_error_upper_bound <= 0:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --epipolar_error_upper_bound \
         parameter (should be > 0)".format(
                 args.epipolar_error_upper_bound
@@ -505,7 +492,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.epipolar_error_maximum_bias < 0:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --epipolar_error_maximum_bias \
         parameter (should be >= 0)".format(
                 args.epipolar_error_maximum_bias
@@ -513,7 +500,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.nb_workers < 1:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --nb_workers parameter \
         (should be > 0)".format(
                 args.nb_workers
@@ -521,7 +508,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --walltime parameter \
         (should match HH:MM:SS)".format(
                 args.walltime
@@ -529,7 +516,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.elevation_delta_upper_bound <= args.elevation_delta_lower_bound:
-        logging.critical(
+        logging.error(
             "--elevation_delta_lower_bound = {} is greater than \
         --elevation_delta_upper_bound = {}".format(
                 args.elevation_delta_lower_bound,
@@ -540,7 +527,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
 
     # If there are invalid parameters, stop now
     if stop_now:
-        logging.critical(
+        logging.error(
             "Invalid parameters detected, please fix cars \
         prepare command-line."
         )
@@ -568,8 +555,8 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
 
 def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     """
-    Local function for running prepare pipeline from CLI
-    :param args: arguments for prepare pipeline
+    Local function for running compute_dsm pipeline from CLI
+    :param args: arguments for compute_dsm pipeline
     """
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
@@ -582,14 +569,14 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     # Check remaining arguments
     stop_now = False
     if len(args.injsons) == 0:
-        logging.critical("At least one input json file is required")
+        logging.error("One input json file is at least required")
         stop_now = True
     for json_file in args.injsons:
         if not os.path.exists(json_file):
-            logging.critical("{} does not exist".format(json_file))
+            logging.error("File {} does not exist".format(json_file))
             stop_now = True
     if args.sigma is not None and args.sigma < 0:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --sigma parameter \
         (should be >= 0)".format(
                 args.sigma
@@ -597,7 +584,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.dsm_radius < 0:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --dsm_radius parameter \
         (should be >= 0)".format(
                 args.dsm_radius
@@ -605,7 +592,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.resolution <= 0:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --resolution parameter \
         (should be > 0)".format(
                 args.resolution
@@ -613,7 +600,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if args.epsg is not None and args.epsg < 1:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --epsg parameter \
         (should be > 0)".format(
                 args.epsg
@@ -622,10 +609,10 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         stop_now = True
     if args.corr_config is not None:
         if not os.path.exists(args.corr_config):
-            logging.critical("{} does not exist".format(args.corr_config))
+            logging.error("File {} does not exist".format(args.corr_config))
             stop_now = True
     if args.nb_workers < 1:
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --nb_workers parameter \
         (should be > 0)".format(
                 args.nb_workers
@@ -633,7 +620,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         )
         stop_now = True
     if not re.match(r"[0-9]{2}:[0-9]{2}:[0-9]{2}", args.walltime):
-        logging.critical(
+        logging.error(
             "{} is an invalid value for --walltime parameter \
         (should match HH:MM:SS)".format(
                 args.walltime
@@ -645,7 +632,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         and args.min_elevation_offset is not None
         and args.max_elevation_offset <= args.min_elevation_offset
     ):
-        logging.critical(
+        logging.error(
             "--min_elevation_offset = {} is greater than \
         --max_elevation_offset = {}".format(
                 args.min_elevation_offset, args.max_elevation_offset
@@ -664,9 +651,9 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
 
     # If there are invalid parameters, stop now
     if stop_now:
-        logging.critical(
+        logging.error(
             "Invalid parameters detected, please fix cars \
-        compute_dsm command-line."
+            compute_dsm command-line."
         )
         raise SystemExit(1)
 
