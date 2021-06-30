@@ -27,7 +27,7 @@ import logging
 
 # Standard imports
 import math
-from typing import Tuple
+from typing import Dict, List, Tuple
 
 # Third party imports
 import numpy as np
@@ -529,18 +529,32 @@ def terrain_grid_to_epipolar(
     return points_min, points_max
 
 
-def region_hash_string(region):
+def region_hash_string(region: Tuple):
     """
     This lambda will allow to derive a key
     to index region in the previous dictionnary
+
+    :param region: region to hash
     """
     return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
 
 
-def get_corresponding_tiles(terrain_grid, configurations_data):
+def get_corresponding_tiles(
+    terrain_grid: np.ndarray, configurations_data: Dict
+) -> Tuple[List, List, List]:
     """
     This function allows to get required points cloud for each
     terrain region.
+
+    :param terrain_grid: terrain grid positions
+    :param configurations_data: dictionnary containing informations about
+    epipolar input tiles where keys are image pairs index and values are
+    epipolar_points_min, epipolar_points_max, largest_epipolar_region,
+    opt_epipolar_tile_size, epipolar_regions_hash and delayed_point_clouds
+
+    :returns: Terrain regions, Corresponding tiles selected from
+    delayed_point_clouds and Terrain regions "rank" allowing to sorting tiles
+    for dask processing
     """
     terrain_regions = []
     corresponding_tiles = []
@@ -689,10 +703,21 @@ def get_corresponding_tiles(terrain_grid, configurations_data):
     return terrain_regions, corresponding_tiles, rank
 
 
-def get_paired_regions_as_geodict(terrain_regions, epipolar_regions):
+def get_paired_regions_as_geodict(
+    terrain_regions: List, epipolar_regions: List
+) -> Tuple[Dict, Dict]:
     """
-    Get paired regions (terrain/epipolar) as geodict
+    Get paired regions (terrain/epipolar) as "geodictionnaries": theses
+    objects can be dumped into geojson files to be visualized.
+
+    :param terrain_regions: terrain region respecting cars tiling
+    :param epipolar_regions: corresponding epipolar regions
+
+    :returns: Terrain dictionnary and Epipolar dictionnary containing
+    respectively Terrain tiles in terrain projection and Epipolar tiles
+    in epipolar projection
     """
+
     ter_geodict = {"type": "FeatureCollection", "features": []}
     epi_geodict = {"type": "FeatureCollection", "features": []}
 
