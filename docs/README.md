@@ -1,18 +1,45 @@
 CARS Documentation generation
 =============================
 
+CARS documentation is based on (Sphinx)[https://www.sphinx-doc.org/] and is in `docs/source` directory.
+
+Use the following command line at CARS source code root directly
+
+```
+make doc
+```
+
+for automated CARS installation and documentation generation in `docs/build`
+
+Otherwise follow the steps below:
+
+
+CARS installation with Sphinx dependencies
+------------------------------------------
+
 First, create a virtualenv and install CARS  following [CARS Installation](./docs/source/install.rst)
+
+You can use the following command line at CARS root directory:
+
+```
+make install-doc
+```
+
+This install CARS in a virtualenv with sphinx documentation dependencies using : `pip install .[doc]`  
 
 The autodoc needs indeed CARS installed for modules API.
 
-Then, go to `docs` directory.
 
-Install CARS doc added requirements in requirements-doc.txt
+CARS Sphinx documentation
+-------------------------
+
+Go to `docs` directory from CARS source root directory.
+
 ```
-    $ pip install -r requirements-doc.txt
+cd docs
 ```
 
-For Autodoc generation in docs directory:
+First generate Autodoc generation in docs directory:
 ````
 sphinx-apidoc -o source/apidoc/ ../cars
 ````
@@ -24,7 +51,7 @@ make html
 
 For PDF generation :
 ```
-sphinx-build -b rinoh source _build/rinoh
+make latexpdf
 ```
 
 To clean generated documentation :

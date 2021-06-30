@@ -161,9 +161,9 @@ COMPUTE_DSM_PARAMETERS_SCHEMA = {
 
 COMPUTE_DSM_CLASSES_USAGE_SCHEMA = {
     MASK1_IGNORED_BY_CORR_TAG: Or([int], None),
-    MASK2_IGNORED_BY_CORR_TAG: Or([int], None),
+    OptionalKey(MASK2_IGNORED_BY_CORR_TAG): Or([int], None),
     MASK1_SET_TO_REF_ALT_TAG: Or([int], None),
-    MASK2_SET_TO_REF_ALT_TAG: Or([int], None),
+    OptionalKey(MASK2_SET_TO_REF_ALT_TAG): Or([int], None),
 }
 
 # Schema of the full json for compute dsm output

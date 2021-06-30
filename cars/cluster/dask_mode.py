@@ -358,6 +358,6 @@ def stop_cluster(cluster, client):
         logging.warning(
             "Dask cluster failed " "to stop properly: {}".format(assert_error)
         )
-        # TODO Raise exception to exit globally in cars
+        # not raising to not fail tests
 
     logging.info("Dask cluster correctly stopped")

@@ -183,7 +183,7 @@ def ncdf_can_open(file_path):
         with xr.open_dataset(file_path) as _:
             return True
     except Exception as read_error:
-        logging.error(
+        logging.warning(
             "Exception caught while trying to read file {}: {}".format(
                 file_path, read_error
             )
@@ -229,7 +229,7 @@ def otb_can_open(raster_file: str) -> bool:
                     or "height_scale" not in geom_dict
                     or "polynomial_format" not in geom_dict
                 ):
-                    logging.error(
+                    logging.warning(
                         "No RPC model set for image {}".format(geom_file_desc)
                     )
                     return False
@@ -237,12 +237,12 @@ def otb_can_open(raster_file: str) -> bool:
             os.remove("./otb_can_open_test.geom")
             return True
         # else
-        logging.error(
+        logging.warning(
             "{} does not have associated geom file".format(geom_file_desc)
         )
         return False
     except Exception as read_error:
-        logging.error(
+        logging.warning(
             "Exception caught while trying to read file {}: {}".format(
                 raster_file, read_error
             )

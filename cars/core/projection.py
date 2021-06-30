@@ -52,7 +52,7 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     Compute the intersection polygon between the defined dem regions
     and the reference polygon in input
 
-    :raise Exception when the input dem does not intersect the reference polygon
+    :raise Exception: when the input dem doesn't intersect the reference polygon
 
     :param srtm_dir: srtm directory
     :type srtm_dir: str
@@ -133,7 +133,7 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
                                     dem_poly = dem_poly.union(local_dem_poly)
 
                         except AttributeError as attribute_error:
-                            logging.error(
+                            logging.warning(
                                 "Impossible to read the SRTM"
                                 "tile epsg code: {}".format(attribute_error)
                             )
@@ -163,10 +163,11 @@ def polygon_projection(poly, from_epsg, to_epsg):
     :return: The polygon in the final projection
     :rtype: Polygon
     """
-    project = pyproj.Transformer.from_proj(
-        pyproj.Proj(init="epsg:{}".format(from_epsg)),
-        pyproj.Proj(init="epsg:{}".format(to_epsg)),
-    )
+    # Get CRS from input EPSG codes
+    from_crs = pyproj.CRS("EPSG:{}".format(from_epsg))
+    to_crs = pyproj.CRS("EPSG:{}".format(to_epsg))
+    # Project polygon between CRS (keep always_xy for compatibility)
+    project = pyproj.Transformer.from_crs(from_crs, to_crs, always_xy=True)
     poly = transform(project.transform, poly)
 
     return poly
