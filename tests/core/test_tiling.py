@@ -189,7 +189,7 @@ def test_terrain_region_to_epipolar(
 @pytest.mark.unit_tests
 @pytest.mark.parametrize(
     ",".join(["terrain_tile_size", "epipolar_tile_size", "nb_corresp_tiles"]),
-    [[500, 512, 1], [45, 70, 6]],
+    [[500, 612, 1], [45, 70, 15]],
 )
 def test_tiles_pairing(
     terrain_tile_size,
@@ -212,7 +212,7 @@ def test_tiles_pairing(
 
     # fill constants with final dsm footprint
     terrain_region = [675248, 4897075, 675460.5, 4897173]
-    largest_epipolar_region = [0, 0, 512, 512]
+    largest_epipolar_region = [0, 0, 612, 612]
     disp_min, disp_max = -20, 15
     epsg = 32631
     terrain_grid = tiling.grid(
