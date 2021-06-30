@@ -26,7 +26,10 @@ Test module for cars/core/tiling.py
 from __future__ import absolute_import
 
 # Third party imports
+import numpy as np
 import pytest
+from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
+from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
 # CARS imports
 from cars.core import tiling
@@ -172,3 +175,37 @@ def test_terrain_region_to_epipolar(
     region = [5.1952, 44.205, 5.2, 44.208]
     out_region = tiling.terrain_region_to_epipolar(region, configuration)
     assert out_region == [0.0, 0.0, 612.0, 400.0]
+
+
+@pytest.mark.unit_tests
+def test_filter_simplices_on_the_edges():
+    """
+    Test filter simplices on the edges
+    """
+    epipolar_grid = tiling.grid(0, 0, 2, 2, 1, 1)
+
+    # shift one point to obtain a concave hull
+    epipolar_grid[0, 1, 1] = 0.5
+    epipolar_grid_shape = epipolar_grid.shape[:2]
+    projected_epipolar = epipolar_grid.reshape(-1, 2)
+
+    terrain_grid = np.array(
+        [
+            [0.25, 0.25],  # in a triangle
+            [0.75, 1.25],  # in a triangle
+            [0.25, 1.75],  # in a triangle
+            [2.05, 1.00],  # not in a triangle
+            [1.00, 0.25],
+        ]
+    )  # in a "edges" triangle
+
+    tri = Delaunay(projected_epipolar)
+    simplices = tsearch(tri, terrain_grid)
+    original_simplices = simplices.copy()
+
+    tiling.filter_simplices_on_the_edges(epipolar_grid_shape, tri, simplices)
+
+    # only the last point must be filtered
+    (diff_indexes,) = np.where(original_simplices != simplices)
+    assert diff_indexes.tolist() == [4]
+    assert simplices[4] == -1

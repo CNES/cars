@@ -25,6 +25,7 @@ contains functions related to regions and tiles management
 
 # Standard imports
 import math
+from typing import Tuple
 
 # Third party imports
 import numpy as np
@@ -337,16 +338,16 @@ def terrain_region_to_epipolar(
     )
 
     # Build Delaunay triangulations
-    delaunay_min = Delaunay(epipolar_grid_min)
-    delaunay_max = Delaunay(epipolar_grid_max)
+    tri_min = Delaunay(epipolar_grid_min)
+    tri_max = Delaunay(epipolar_grid_max)
 
     # Build kdtrees
     tree_min = cKDTree(epipolar_grid_min)
     tree_max = cKDTree(epipolar_grid_max)
 
     # Look-up terrain grid with Delaunay
-    s_min = tsearch(delaunay_min, region_grid)
-    s_max = tsearch(delaunay_max, region_grid)
+    s_min = tsearch(tri_min, region_grid)
+    s_max = tsearch(tri_max, region_grid)
 
     points_list = []
     # For each corner
@@ -354,7 +355,7 @@ def terrain_region_to_epipolar(
         # If we are inside triangulation of s_min
         if s_min[i] != -1:
             # Add points from surrounding triangle
-            for point in epi_grid_flat[delaunay_min.simplices[s_min[i]]]:
+            for point in epi_grid_flat[tri_min.simplices[s_min[i]]]:
                 points_list.append(point)
         else:
             # else add nearest neighbor
@@ -363,7 +364,7 @@ def terrain_region_to_epipolar(
             # If we are inside triangulation of s_min
             if s_max[i] != -1:
                 # Add points from surrounding triangle
-                for point in epi_grid_flat[delaunay_max.simplices[s_max[i]]]:
+                for point in epi_grid_flat[tri_max.simplices[s_max[i]]]:
                     points_list.append(point)
             else:
                 # else add nearest neighbor
@@ -390,6 +391,36 @@ def terrain_region_to_epipolar(
     return epipolar_region
 
 
+def filter_simplices_on_the_edges(
+    original_grid_shape: Tuple, tri: Delaunay, simplices: np.ndarray
+):
+    """
+    Filter simplices on the edges which allows to cut triangles out of the
+    concave Delaunay triangulation.
+
+    :param original_grid_shape: shape of the original grid (almost regular) used
+    to create delaunay triangulation
+    :param tri: Delaunay triangulation
+    :param simplices: Selected simplices to filter: set -1 if selected simplex
+    is on the edges
+    """
+
+    # Filter simplices on the edges
+    edges = np.zeros((4, *original_grid_shape))
+
+    # left, bottom, right, top
+    edges[0, :, 0] = 1
+    edges[1, -1, :] = 1
+    edges[2, :, -1] = 1
+    edges[3, 0, :] = 1
+
+    for idx in range(edges.shape[0]):
+        edges_ravel = np.ravel(edges[idx, :, :])
+        # simplices filtered if all points are on an edge
+        edges_simplices = np.sum(edges_ravel[tri.simplices], axis=1) == 3
+        simplices[edges_simplices[simplices]] = -1
+
+
 def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
     """
     Transform terrain grid to epipolar region
@@ -403,7 +434,7 @@ def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
         conf["disp_max"],
     )
 
-    epipolar_regions_grid_size = np.shape(conf["epipolar_regions_grid"])[:2]
+    epipolar_regions_grid_shape = np.shape(conf["epipolar_regions_grid"])[:2]
     epipolar_regions_grid_flat = conf["epipolar_regions_grid"].reshape(
         -1, conf["epipolar_regions_grid"].shape[-1]
     )
@@ -417,29 +448,24 @@ def terrain_grid_to_epipolar(terrain_grid, conf, epsg):
         precision_factor = 1.0
 
     # Build delaunay_triangulation
-    delaunay_min = Delaunay(epipolar_grid_min * precision_factor)
-    delaunay_max = Delaunay(epipolar_grid_max * precision_factor)
+    tri_min = Delaunay(epipolar_grid_min * precision_factor)
+    tri_max = Delaunay(epipolar_grid_max * precision_factor)
 
     # Build kdtrees
     tree_min = cKDTree(epipolar_grid_min * precision_factor)
     tree_max = cKDTree(epipolar_grid_max * precision_factor)
 
     # Look-up terrain_grid with Delaunay
-    s_min = tsearch(delaunay_min, terrain_grid * precision_factor)
-    s_max = tsearch(delaunay_max, terrain_grid * precision_factor)
+    s_min = tsearch(tri_min, terrain_grid * precision_factor)
+    s_max = tsearch(tri_max, terrain_grid * precision_factor)
 
     # Filter simplices on the edges
-    edges = np.ones(epipolar_regions_grid_size)
-    edges[1:-1, 1:-1] = 0
-    edges_ravel = np.ravel(edges)
-    s_min_edges = np.sum(edges_ravel[delaunay_min.simplices], axis=1) == 3
-    s_max_edges = np.sum(edges_ravel[delaunay_max.simplices], axis=1) == 3
-    s_min[s_min_edges[s_min]] = -1
-    s_max[s_max_edges[s_max]] = -1
+    filter_simplices_on_the_edges(epipolar_regions_grid_shape, tri_min, s_min)
+    filter_simplices_on_the_edges(epipolar_regions_grid_shape, tri_max, s_max)
 
-    points_disp_min = epipolar_regions_grid_flat[delaunay_min.simplices[s_min]]
+    points_disp_min = epipolar_regions_grid_flat[tri_min.simplices[s_min]]
 
-    points_disp_max = epipolar_regions_grid_flat[delaunay_max.simplices[s_max]]
+    points_disp_max = epipolar_regions_grid_flat[tri_max.simplices[s_max]]
 
     nn_disp_min = epipolar_regions_grid_flat[
         tree_min.query(terrain_grid * precision_factor)[1]
