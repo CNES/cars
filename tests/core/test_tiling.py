@@ -25,7 +25,12 @@ Test module for cars/core/tiling.py
 # Standard imports
 from __future__ import absolute_import
 
+import json
+import os
+import tempfile
+
 # Third party imports
+import fiona
 import numpy as np
 import pytest
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
@@ -33,6 +38,9 @@ from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
 # CARS imports
 from cars.core import tiling
+
+# CARS Tests import
+from ..helpers import temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -177,6 +185,98 @@ def test_terrain_region_to_epipolar(
     assert out_region == [0.0, 0.0, 612.0, 400.0]
 
 
+# function parameters are fixtures set in conftest.py
+@pytest.mark.unit_tests
+@pytest.mark.parametrize(
+    ",".join(["terrain_tile_size", "epipolar_tile_size", "nb_corresp_tiles"]),
+    [[500, 612, 1], [45, 70, 15]],
+)
+def test_tiles_pairing(
+    terrain_tile_size,
+    epipolar_tile_size,
+    nb_corresp_tiles,
+    images_and_grids_conf,  # pylint: disable=redefined-outer-name
+    disparities_conf,  # pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test terrain_grid_to_epipolar + get_corresponding_tiles
+    """
+    configuration = images_and_grids_conf
+    configuration["preprocessing"]["output"].update(
+        disparities_conf["preprocessing"]["output"]
+    )
+    configuration["preprocessing"]["output"].update(
+        epipolar_sizes_conf["preprocessing"]["output"]
+    )
+
+    # fill constants with final dsm footprint
+    terrain_region = [675248, 4897075, 675460.5, 4897173]
+    largest_epipolar_region = [0, 0, 612, 612]
+    disp_min, disp_max = -20, 15
+    epsg = 32631
+    terrain_grid = tiling.grid(
+        *terrain_region, terrain_tile_size, terrain_tile_size
+    )
+    epipolar_regions_params = [
+        *largest_epipolar_region,
+        epipolar_tile_size,
+        epipolar_tile_size,
+    ]
+    epipolar_regions = tiling.split(*epipolar_regions_params)
+    epipolar_regions_grid = tiling.grid(*epipolar_regions_params)
+    epipolar_regions_hash = [
+        tiling.region_hash_string(k) for k in epipolar_regions
+    ]
+
+    # compute points min/max epipolar corresponding to terrain grid
+    points_min, points_max = tiling.terrain_grid_to_epipolar(
+        terrain_grid,
+        epipolar_regions_grid,
+        configuration,
+        disp_min,
+        disp_max,
+        epsg,
+    )
+
+    # Fill needed confdata with epipolar image information
+    confdata = {}
+    confdata["c1"] = {}
+    confdata["c1"]["epipolar_points_min"] = points_min
+    confdata["c1"]["epipolar_points_max"] = points_max
+    confdata["c1"]["largest_epipolar_region"] = largest_epipolar_region
+    confdata["c1"]["opt_epipolar_tile_size"] = epipolar_tile_size
+    confdata["c1"]["epipolar_regions_hash"] = epipolar_regions_hash
+    confdata["c1"]["delayed_point_clouds"] = epipolar_regions
+
+    # get epipolar tiles corresponding to the terrain grid
+    terrain_regions, corresp_tiles, __ = tiling.get_corresponding_tiles(
+        terrain_grid, confdata
+    )
+
+    # count the number of epipolar tiles for the first terrain tile
+    assert len(corresp_tiles[0]) == nb_corresp_tiles
+
+    ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
+        terrain_regions, corresp_tiles
+    )
+
+    # check geodict writing
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+        ter_filename = f"terrain_tiles_{nb_corresp_tiles}.geojson"
+        epi_filename = f"epipolar_tiles_{nb_corresp_tiles}.geojson"
+        # CRS for all GeoJSON is epsg:4326: to convert for QGIS:
+        # > ogr2ogr -f "GeoJSON" out.geojson in.geojson \
+        # > -s_srs EPSG:32631 -t_srs EPSG:4326
+        with open(os.path.join(tmp_dir, ter_filename), "w") as writer:
+            writer.write(json.dumps(ter_geodict))
+        with open(os.path.join(tmp_dir, epi_filename), "w") as writer:
+            writer.write(json.dumps(epi_geodict))
+        for tmp_filename in [ter_filename, epi_filename]:
+            with fiona.open(os.path.join(tmp_dir, tmp_filename)):
+                pass
+
+
 @pytest.mark.unit_tests
 def test_filter_simplices_on_the_edges():
     """
@@ -195,9 +295,9 @@ def test_filter_simplices_on_the_edges():
             [0.75, 1.25],  # in a triangle
             [0.25, 1.75],  # in a triangle
             [2.05, 1.00],  # not in a triangle
-            [1.00, 0.25],
+            [1.00, 0.25],  # in a "edges" triangle
         ]
-    )  # in a "edges" triangle
+    )
 
     tri = Delaunay(projected_epipolar)
     simplices = tsearch(tri, terrain_grid)
