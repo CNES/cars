@@ -25,6 +25,7 @@ contains functions related to regions and tiles management
 
 # Standard imports
 import math
+from typing import Tuple
 
 # Third party imports
 import numpy as np
@@ -390,10 +391,20 @@ def terrain_region_to_epipolar(
     return epipolar_region
 
 
-def filter_simplices_on_the_edges(original_grid_shape, tri, simplices):
+def filter_simplices_on_the_edges(
+    original_grid_shape: Tuple, tri: Delaunay, simplices: np.ndarray
+):
     """
-    Filter simplices on the edges
+    Filter simplices on the edges which allows to cut triangles out of the
+    concave Delaunay triangulation.
+
+    :param original_grid_shape: shape of the original grid (almost regular) used
+    to create delaunay triangulation
+    :param tri: Delaunay triangulation
+    :param simplices: Selected simplices to filter: set -1 if selected simplex
+    is on the edges
     """
+
     # Filter simplices on the edges
     edges = np.zeros((4, *original_grid_shape))
 
