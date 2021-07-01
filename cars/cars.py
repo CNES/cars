@@ -723,10 +723,13 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     # Main try/except to catch all program exceptions
     try:
         # main(s) for each command
-        if args.command == "prepare":
-            run_prepare(args, check_inputs)
-        elif args.command == "compute_dsm":
-            run_compute_dsm(args, check_inputs)
+        if args.command is not None:
+            if args.command == "prepare":
+                run_prepare(args, check_inputs)
+            elif args.command == "compute_dsm":
+                run_compute_dsm(args, check_inputs)
+            else:
+                raise SystemExit("CARS launched with wrong subcommand")
         else:
             parser.print_help()
     except BaseException:
