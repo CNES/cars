@@ -527,11 +527,10 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
 
     # If there are invalid parameters, stop now
     if stop_now:
-        logging.error(
-            "Invalid parameters detected, please fix cars \
-        prepare command-line."
+        raise SystemExit(
+            "Invalid parameters detected, please fix cars prepare "
+            "command-line."
         )
-        raise SystemExit(1)
 
     # Read input json file
     in_json = input_parameters.read_input_parameters(args.injson)
@@ -651,11 +650,10 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
 
     # If there are invalid parameters, stop now
     if stop_now:
-        logging.error(
-            "Invalid parameters detected, please fix cars \
-            compute_dsm command-line."
+        raise SystemExit(
+            "Invalid parameters detected, please fix cars "
+            "compute_dsm command-line."
         )
-        raise SystemExit(1)
 
     # Read input json files
     in_jsons = [
@@ -731,10 +729,9 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
             run_compute_dsm(args, check_inputs)
         else:
             parser.print_help()
-            raise SystemExit(1)
     except BaseException:
         # Catch all exceptions, show debug traceback and exit
-        logging.debug("Traceback {}".format(sys.exc_info()[0]), exc_info=True)
+        logging.exception("CARS terminated with following error")
         sys.exit(1)
     finally:
         # Go back to original stdout
