@@ -156,8 +156,7 @@ def check_tbb_installed() -> bool:
         subprocess.check_output(["numba", "-s"]).decode("utf8").strip()
     )
     for item in numba_output.split("\n"):
-        if "TBB Threading Layer Available" in item:
-            if "True" in item:
-                tbb_installed = True
-                return tbb_installed
+        if "TBB Threading Layer Available" in item and "True" in item:
+            tbb_installed = True
+            return tbb_installed
     return tbb_installed
