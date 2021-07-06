@@ -33,11 +33,16 @@ import numpy as np
 import xarray as xr
 
 # CARS imports
-from cars.conf import input_parameters, output_compute_dsm, output_prepare
+from cars.conf import (
+    input_parameters,
+    output_compute_dsm,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
 from cars.core import utils
 from cars.core.projection import project_coordinates_on_line
-from cars.externals import otb_pipelines
+from cars.plugins.triangulation.abstract import AbstractTriangulation
 
 
 def triangulate(
@@ -262,7 +267,11 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    llh = otb_pipelines.triangulation_matches(
+    triangulation_plugin = AbstractTriangulation(
+        static_conf.get_triangulation_plugin()
+    )
+
+    llh = triangulation_plugin.triangulate_matches(
         matches,
         grid1,
         grid2,
@@ -317,12 +326,16 @@ def compute_points_cloud(
     :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
+
     # Retrieve elevation range from imgs
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    # Build triangulation app
-    llh = otb_pipelines.triangulation(
+    triangulation_plugin = AbstractTriangulation(
+        static_conf.get_triangulation_plugin()
+    )
+
+    llh = triangulation_plugin.triangulate(
         data,
         roi_key,
         grid1,
@@ -426,7 +439,7 @@ def geoid_offset(points, geoid):
         <= geoid.lat_max
     ):
         raise RuntimeError(
-            "Geoid does not fully cover the area spanned by " "the point cloud."
+            "Geoid does not fully cover the area spanned by the point cloud."
         )
 
     # interpolate data

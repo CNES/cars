@@ -21,7 +21,7 @@
 """
 OTB Pipelines module:
 contains functions that builds Orfeo ToolBox pipelines used by CARS
-Refacto: Split function in generic externals calls through functional steps
+Refacto: Split function in generic plugins calls through functional steps
          interfaces (epipolar rectification, ...)
 """
 
@@ -357,7 +357,7 @@ def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
 def image_envelope(img, shp, dem=None, default_alt=None):
     """
     Export the image footprint to a shapefile
-    TODO: refacto with externals (OTB) and steps.
+    TODO: refacto with plugins (OTB) and steps.
 
     :param img: filename to image or OTB pointer to image
     :type img:  string or OTBImagePointer
@@ -443,7 +443,7 @@ def sensor_to_geo(
 def get_utm_zone_as_epsg_code(lon, lat):
     """
     Returns the EPSG code of the UTM zone where the lat, lon point falls in
-    TODO: refacto with externals (OTB)
+    TODO: refacto with plugins (OTB)
 
     :param lon: longitude of the point
     :type lon: float
@@ -549,113 +549,6 @@ def read_image(raster_path: str, out_kwl_path: str):
     read_im_app.ExecuteAndWriteOutput()
 
 
-def triangulation_matches(
-    matches: np.ndarray,
-    grid1: str,
-    grid2: str,
-    img1: str,
-    img2: str,
-    min_elev1: float,
-    max_elev1: float,
-    min_elev2: float,
-    max_elev2: float,
-) -> np.ndarray:
-    """
-    Performs triangulation from matches
-
-    :param matches: input matches to triangulate
-    :param grid1: path to epipolar grid of img1
-    :param grid2: path to epipolar grid of image 2
-    :param img1: path to image 1
-    :param img2: path to image 2
-    :param min_elev1: min elevation for image 1
-    :param max_elev1: max elevation fro image 1
-    :param min_elev2: min elevation for image 2
-    :param max_elev2: max elevation for image 2
-    :return: the long/lat/height numpy array in output of the triangulation
-    """
-    # Build triangulation app
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
-    )
-
-    triangulation_app.SetParameterString("mode", "sift")
-    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches", matches)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
-
-    return llh
-
-
-def triangulation(
-    data: xr.Dataset,
-    roi_key: str,
-    grid1: str,
-    grid2: str,
-    img1: str,
-    img2: str,
-    min_elev1: float,
-    max_elev1: float,
-    min_elev2: float,
-    max_elev2: float,
-) -> np.ndarray:
-    """
-    Performs triangulation from cars disparity dataset
-
-    :param data: cars disparity dataset
-    :param roi_key: dataset roi to use (can be cst.ROI or cst.ROI_WITH_MARGINS)
-    :param grid1: path to epipolar grid of img1
-    :param grid2: path to epipolar grid of image 2
-    :param img1: path to image 1
-    :param img2: path to image 2
-    :param min_elev1: min elevation for image 1
-    :param max_elev1: max elevation fro image 1
-    :param min_elev2: min elevation for image 2
-    :param max_elev2: max elevation for image 2
-    :return: the long/lat/height numpy array in output of the triangulation
-    """
-    # encode disparity for otb
-    disp = encode_to_otb(
-        data[cst.DISP_MAP].values,
-        data.attrs[cst.EPI_FULL_SIZE],
-        data.attrs[roi_key],
-    )
-
-    # Build triangulation application
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
-    )
-
-    triangulation_app.SetParameterString("mode", "disp")
-    triangulation_app.ImportImage("mode.disp.indisp", disp)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
-
-    return llh
-
-
 def epipolar_sparse_matching(
     ds1: xr.Dataset,
     roi1: List[int],
@@ -694,6 +587,8 @@ def epipolar_sparse_matching(
     :return: matches as numpy array
     """
     # Encode images for OTB
+    # TODO: remove encode_to_otb func when removing
+    # epipolar_sparse_matching func
     im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
     msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
     im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)

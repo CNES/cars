@@ -167,6 +167,11 @@ compute_dsm_params_schema = {
     output_tag: output_schema,
 }
 
+# ### plugins ####
+
+plugins_tag = "plugins"
+triangulation_plugin_tag = "triangulation"
+plugins_schema = {triangulation_plugin_tag: str}
 
 # ### final static conf file ####
 prepare_tag = "prepare"
@@ -174,8 +179,8 @@ compute_dsm_tag = "compute_dsm"
 static_conf_schema = {
     prepare_tag: prepare_params_schema,
     compute_dsm_tag: compute_dsm_params_schema,
+    plugins_tag: plugins_schema,
 }
-
 
 # ### namedTuple for parameters ####
 SiftParams = namedtuple("SiftParams", sift_parameters_schema.keys())
@@ -420,3 +425,17 @@ def get_color_image_encoding() -> dtype:
     ]
 
     return dtype(color_image_encoding)
+
+
+def get_triangulation_plugin() -> str:
+    """
+    Get the triangulation plugin to use
+
+    :returns: triangulation plugin name
+    """
+    if cfg is None:
+        load_cfg()
+
+    triangulation_plugin = cfg[plugins_tag][triangulation_plugin_tag]
+
+    return triangulation_plugin

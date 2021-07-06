@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS externals/matching test module init file
+CARS plugins test init file
 """

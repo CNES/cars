@@ -180,8 +180,10 @@ COMPUTE_DSM_CONTENT_SCHEMA = {
         COMPUTE_DSM_VERSION_TAG: str,
         COMPUTE_DSM_PARAMETERS_SECTION_TAG: COMPUTE_DSM_PARAMETERS_SCHEMA,
         # fmt: off
-        input_parameters.STATIC_PARAMS_TAG:
-            static_conf.compute_dsm_params_schema,
+        input_parameters.STATIC_PARAMS_TAG:{
+            static_conf.compute_dsm_tag: static_conf.compute_dsm_params_schema,
+            static_conf.plugins_tag: static_conf.plugins_schema,
+        },
         # fmt: on
         COMPUTE_DSM_OUTPUT_SECTION_TAG: COMPUTE_DSM_OUTPUT_SCHEMA,
     },

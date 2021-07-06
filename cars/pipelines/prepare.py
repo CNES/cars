@@ -53,8 +53,8 @@ from cars.conf import input_parameters as in_params
 from cars.conf import log_conf, mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling
-from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
+from cars.plugins import otb_pipelines
 from cars.steps import devib, rasterization, triangulation
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
@@ -156,7 +156,10 @@ def run(  # noqa: C901
                 elev_delta_low_bound_tag: elevation_delta_lower_bound,
                 elev_delta_up_bound_tag: elevation_delta_upper_bound,
             },
-            in_params.STATIC_PARAMS_TAG: static_params[static_conf.prepare_tag],
+            in_params.STATIC_PARAMS_TAG: {
+                static_conf.prepare_tag: static_params[static_conf.prepare_tag],
+                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+            },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
     }

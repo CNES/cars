@@ -65,8 +65,8 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
-from cars.externals import otb_pipelines
 from cars.pipelines import wrappers, write_dsm
+from cars.plugins import otb_pipelines
 from cars.steps import rasterization
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import dense_matching
@@ -347,9 +347,12 @@ def run(  # noqa: C901
                 output_compute_dsm.SIGMA_TAG: sigma,
                 output_compute_dsm.DSM_RADIUS_TAG: dsm_radius,
             },
-            in_params.STATIC_PARAMS_TAG: static_params[
-                static_conf.compute_dsm_tag
-            ],
+            in_params.STATIC_PARAMS_TAG: {
+                static_conf.compute_dsm_tag: static_params[
+                    static_conf.compute_dsm_tag
+                ],
+                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+            },
             output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {
                 output_compute_dsm.ALIGN_OPTION: align,
                 output_compute_dsm.SNAP_TO_IMG1_OPTION: snap_to_img1,
