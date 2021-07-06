@@ -21,7 +21,7 @@
 """
 OTB Pipelines module:
 contains functions that builds Orfeo ToolBox pipelines used by CARS
-Refacto: Split function in generic externals calls through functional steps
+Refacto: Split function in generic plugins calls through functional steps
          interfaces (epipolar rectification, ...)
 """
 
@@ -308,7 +308,7 @@ def build_image_resampling_pipeline(
 def image_envelope(img, shp, dem=None, default_alt=None):
     """
     Export the image footprint to a shapefile
-    TODO: refacto with externals (OTB) and steps.
+    TODO: refacto with plugins (OTB) and steps.
 
     :param img: filename to image or OTB pointer to image
     :type img:  string or OTBImagePointer
@@ -394,7 +394,7 @@ def sensor_to_geo(
 def get_utm_zone_as_epsg_code(lon, lat):
     """
     Returns the EPSG code of the UTM zone where the lat, lon point falls in
-    TODO: refacto with externals (OTB)
+    TODO: refacto with plugins (OTB)
 
     :param lon: longitude of the point
     :type lon: float
@@ -538,6 +538,8 @@ def epipolar_sparse_matching(
     :return: matches as numpy array
     """
     # Encode images for OTB
+    # TODO: remove encode_to_otb func when removing
+    # epipolar_sparse_matching func
     im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
     msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
     im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)

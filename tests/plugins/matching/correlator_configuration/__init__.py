@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-CARS externals/matching/correlator_configuration test module init file
+CARS plugins/matching/correlator_configuration test module init file
 """

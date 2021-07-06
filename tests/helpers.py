@@ -41,7 +41,7 @@ from pandora.check_json import (
 from pandora.state_machine import PandoraMachine
 
 # CARS imports
-from cars.externals.matching.correlator_configuration.corr_conf import (
+from cars.plugins.matching.correlator_configuration.corr_conf import (
     check_input_section_custom_cars,
     get_config_input_custom_cars,
 )
