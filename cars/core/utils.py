@@ -25,6 +25,7 @@ contains some cars global shared general purpose functions
 # Standard imports
 import errno
 import os
+import subprocess
 from typing import Tuple
 
 # Third party imports
@@ -141,3 +142,22 @@ def angle_vectors(vector_1: np.ndarray, vector_2: np.ndarray) -> float:
     vec_dot = np.dot(vector_1, vector_2)
     vec_norm = la.norm(np.cross(vector_1, vector_2))
     return np.arctan2(vec_norm, vec_dot)
+
+
+def check_tbb_installed() -> bool:
+    """
+    Check if numba finds tbb correctly installed
+    :return: tbb found
+    """
+
+    tbb_installed = False
+    # Get output of 'numba -s'
+    numba_output = (
+        subprocess.check_output(["numba", "-s"]).decode("utf8").strip()
+    )
+    for item in numba_output.split("\n"):
+        if "TBB Threading Layer Available" in item:
+            if "True" in item:
+                tbb_installed = True
+                return tbb_installed
+    return tbb_installed
