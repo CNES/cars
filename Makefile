@@ -31,7 +31,6 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
 	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
 	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
-	@[ "${GDAL_DATA}" ] || ( echo ">> GDAL_DATA is not set"; exit 1 )
 	@[ "${GDAL_VERSION}" ] || ( echo ">> GDAL_VERSION is not set"; exit 1 )
 	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
 

@@ -1,4 +1,4 @@
-FROM ubuntu:18.04
+FROM ubuntu:20.04
 LABEL maintainer="CNES"
 
 # Avoid apt install interactive questions.
@@ -6,43 +6,82 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
-    cmake-curses-gui=3.10.2-1ubuntu2.18.04.1 \
-    git=1:2.17.1-1ubuntu0.8 \
-    wget=1.19.4-1ubuntu2.2 \
-    file=1:5.32-2ubuntu0.4 \
-    apt-utils=1.6.12ubuntu0.2 \
-    gcc=4:7.4.0-1ubuntu2.3 \
-    g++=4:7.4.0-1ubuntu2.3 \
-    make=4.1-9.1ubuntu1 \
-    libpython3.6=3.6.9-1~18.04ubuntu1.4 \
-    python3.6-dev=3.6.9-1~18.04ubuntu1.4 \
-    libgl1=1.0.0-2ubuntu2.3 \
-    libglu1-mesa=9.0.0-2.1build1 \
-    libgl1-mesa-dev=20.0.8-0ubuntu1~18.04.1 \
-    libsm6=2:1.2.2-1 \
-    libxext6=2:1.3.3-1 \
+    cmake-curses-gui=3.16.3-1ubuntu1 \
+    git=1:2.25.1-1ubuntu3.1 \
+    wget=1.20.3-1ubuntu1 \
+    file=1:5.38-4 \
+    apt-utils=2.0.6 \
+    gcc=4:9.3.0-1ubuntu2 \
+    g++=4:9.3.0-1ubuntu2 \
+    make=4.2.1-1.2 \
+    libpython3.8=3.8.10-0ubuntu1~20.04 \
+    python3.8-dev=3.8.10-0ubuntu1~20.04 \
+    libgl1=1.3.2-1~ubuntu0.20.04.1 \
+    libglu1-mesa=9.0.1-1build1 \
+    libgl1-mesa-dev=20.2.6-0ubuntu0.20.04.1 \
+    libsm6=2:1.2.3-1 \
+    libxext6=2:1.3.4-0ubuntu1 \
     libxrender-dev=1:0.9.10-1 \
-    python3=3.6.7-1~18.04\
-    python3-pip=9.0.1-2.3~ubuntu1.18.04.4 \
-    python3-numpy=1:1.13.3-2ubuntu1 \
-    libgtk2.0-dev=2.24.32-1ubuntu1 \
+    python3=3.8.2-0ubuntu2 \
+    python3-pip=20.0.2-5ubuntu1.5 \
+    python3-numpy=1:1.17.4-5ubuntu3 \
+    libgtk2.0-dev=2.24.32-4ubuntu4 \
+    unzip=6.0-25ubuntu1 \
+    ninja-build=1.10.0-1build1 \
+    libboost-date-time-dev=1.71.0.0ubuntu2 \
+    libboost-filesystem-dev=1.71.0.0ubuntu2 \
+    libboost-graph-dev=1.71.0.0ubuntu2 \
+    libboost-program-options-dev=1.71.0.0ubuntu2 \
+    libboost-system-dev=1.71.0.0ubuntu2 \
+    libboost-thread-dev=1.71.0.0ubuntu2 \
+    libgdal-dev=3.0.4+dfsg-1build3 \
+    libinsighttoolkit4-dev=4.13.2-dfsg1-8 \
+    libopenthreads-dev=3.6.4+dfsg1-3build2 \
+    libossim-dev=2.9.1-2build1 \
+    libtinyxml-dev=2.6.2-4build1 \
+    libmuparser-dev=2.2.6.1+dfsg-1build1 \
+    libmuparserx-dev=4.0.7+dfsg-3build1 \
+    libsvm-dev=3.24+ds-3build1 \
+    libopencv-core-dev=4.2.0+dfsg-5 \
+    libopencv-ml-dev=4.2.0+dfsg-5 \
+    freeglut3-dev=2.8.1-3 \
+    libglfw3-dev=3.3.2-1 \
+    libgsl-dev=2.5+dfsg-6build1 \
+    libglew-dev=2.1.0-4 \
+    libqwt-qt5-dev=6.1.4-1.1build1 \
+    qtbase5-dev=5.12.8+dfsg-0ubuntu1 \
+    libqt5opengl5-dev=5.12.8+dfsg-0ubuntu1 \
+    qttools5-dev=5.12.8-0ubuntu1 \
+    swig=4.0.1-5build1 \
+    libfftw3-dev=3.3.8-2ubuntu1 \
+    python3-virtualenv=20.0.17-1ubuntu0.4 \
     && rm -rf /var/lib/apt/lists/*
 
 # install orfeo toolbox
 WORKDIR /opt/otb
-RUN wget -nv https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.2.0-Linux64.run \
-    && chmod +x OTB-7.2.0-Linux64.run \
-    && ./OTB-7.2.0-Linux64.run --target /usr/local/otb \
-    && /bin/bash -c 'source /usr/local/otb/otbenv.profile' \
-    && ctest -S /usr/local/otb/share/otb/swig/build_wrapping.cmake -VV \
-    && rm OTB-7.2.0-Linux64.run
-ENV LD_LIBRARY_PATH=/usr/local/otb/lib:$LD_LIBRARY_PATH \
-    OTB_APPLICATION_PATH=/usr/local/otb/lib/otb/applications:$OTB_APPLICATION_PATH \
+RUN wget -q https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.2.0.zip -O /tmp/OTB-7.2.0.zip && \
+    unzip -q /tmp/OTB-7.2.0.zip
+WORKDIR /opt/otb/build
+RUN cmake \
+    "-DBUILD_COOKBOOK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" "-DBUILD_SHARED_LIBS:BOOL=ON" \
+    "-DBUILD_TESTING:BOOL=OFF" "-DOTB_USE_6S:BOOL=ON" "-DOTB_USE_CURL:BOOL=ON" \
+    "-DOTB_USE_GLEW:BOOL=ON" "-DOTB_USE_GLFW:BOOL=ON" "-DOTB_USE_GLUT:BOOL=ON" \
+    "-DOTB_USE_GSL:BOOL=ON" "-DOTB_USE_LIBKML:BOOL=OFF" "-DOTB_USE_LIBSVM:BOOL=ON" \
+    "-DOTB_USE_MPI:BOOL=OFF" "-DOTB_USE_MUPARSER:BOOL=ON" "-DOTB_USE_MUPARSERX:BOOL=ON" \
+    "-DOTB_USE_OPENCV:BOOL=ON" "-DOTB_USE_OPENGL:BOOL=ON" "-DOTB_USE_OPENMP:BOOL=OFF" \
+    "-DOTB_USE_QT:BOOL=ON" "-DOTB_USE_QWT:BOOL=ON" "-DOTB_USE_SIFTFAST:BOOL=ON" \
+    "-DOTB_USE_SPTW:BOOL=ON" "-DOTB_USE_SSE_FLAGS:BOOL=ON" "-DOTB_WRAP_PYTHON:BOOL=ON" \
+    "-DCMAKE_BUILD_TYPE=Release"   "-DOTB_USE_SHARK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" \
+    -DCMAKE_INSTALL_PREFIX="/usr/local/otb" -GNinja .. && \
+    ninja install && \
+    rm -rf /opt/otb
+
+ENV OTB_APPLICATION_PATH=/usr/local/otb/lib/otb/applications \
+    LD_LIBRARY_PATH=/usr/local/otb/lib:$LD_LIBRARY_PATH \
     PATH=/usr/local/otb/bin/:$PATH \
-    PYTHONPATH=/usr/local/otb/lib/python:$PYTHONPATH \
-    GDAL_DATA=/usr/local/otb/share/gdal \
-    PROJ_LIB=/usr/local/otb/share/proj \
+    PYTHONPATH=/usr/local/otb/lib/otb/python:$PYTHONPATH \
     GEOTIFF_CSV=/usr/local/otb/share/epsg_csv
+
 COPY gdal-config /usr/local/otb/bin/
 
 # install vlfeat
@@ -50,44 +89,42 @@ WORKDIR /opt
 RUN git clone https://github.com/vlfeat/vlfeat.git vlfeat
 
 WORKDIR /opt/vlfeat
-RUN make \
+# https://github.com/vlfeat/vlfeat/issues/214
+RUN sed -i 's/default(none)//g' vl/kmeans.c \
+    && make \
     && cp bin/glnxa64/libvl.so /usr/local/lib \
     && mkdir -p /usr/local/include/vl \
     && cp -r vl/*.h /usr/local/include/vl
 WORKDIR /opt
 RUN rm -rf vlfeat
-ENV VLFEAT_INCLUDE_DIR=/usr/local/include
+ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
-
-# copy cars
+# copy and install cars
 WORKDIR /cars
 COPY . /cars/
-RUN make clean
+ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
+    C_INCLUDE_PATH=/usr/include/gdal
+RUN make clean && make install-dev
 
-# install cars
-RUN python3 -m pip --no-cache-dir install pip setuptools cython --upgrade
-RUN python3 -m pip --no-cache-dir install --no-binary fiona fiona
-RUN python3 -m pip --no-cache-dir install --no-binary rasterio rasterio
-RUN python3 -m pip --no-cache-dir install pygdal=="$(gdal-config --version).*"
+# source venv/bin/env_cars.sh
+ENV VIRTUAL_ENV='/cars/venv'
+ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-RUN python3 -m pip --no-cache-dir install /cars/.
-
-# source /usr/local/bin/env_cars.sh
-ENV OTB_APPLICATION_PATH=/usr/lib:/usr/local/lib:$OTB_APPLICATION_PATH \
-    LD_LIBRARY_PATH=/usr/local/lib:$LD_LIBRARY_PATH \
-    CARS_NB_WORKERS_PER_PBS_JOB=2 \
-    OMP_NUM_THREADS=4 \
-    OTB_MAX_RAM_HINT=2000 \
+# source venv/bin/env_cars.sh
+ENV OTB_APPLICATION_PATH=/cars/venv/lib/:$OTB_APPLICATION_PATH \
+    PATH=$PATH:/cars/venv/bin \
+    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cars/venv/lib \
     OTB_LOGGER_LEVEL=WARNING \
+    OTB_MAX_RAM_HINT=2000 \
+    OMP_NUM_THREADS=4 \
     GDAL_CACHEMAX=128 \
     ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1 \
-    CURL_CA_BUNDLE=/etc/ssl/certs/ca-certificates.crt
+    CARS_NB_WORKERS_PER_PBS_JOB=2
 
-ENV NUMBA_NUM_THREADS=$OMP_NUM_THREADS \
-    OPJ_NUM_THREADS=$OMP_NUM_THREADS \
-    GDAL_NUM_THREADS=$OMP_NUM_THREADS
-
-ENV OTB_MAX_RAM_HINT=1000
+ENV OPJ_NUM_THREADS=$OMP_NUM_THREADS \
+    GDAL_NUM_THREADS=$OMP_NUM_THREADS \
+    NUMBA_NUM_THREADS=$OMP_NUM_THREADS
 
 # launch cars
 ENTRYPOINT ["cars"]
