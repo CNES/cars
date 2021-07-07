@@ -103,18 +103,18 @@ def write_3d_points(
     # # output paths end with '_ref.nc' or '_sec.nc'
     out_points = {}
     out_colors = {}
-    for key in points:
+    for key, value in points.items():
         out_path = os.path.join(
             points_dir, "{}_{}.nc".format(hashed_region, key)
         )
-        points[key].to_netcdf(out_path)
+        value.to_netcdf(out_path)
         out_points[key] = out_path
 
-    for key in colors:
+    for key, value in colors.items():
         out_path = os.path.join(
             color_dir, "{}_{}.nc".format(hashed_region, key)
         )
-        colors[key].to_netcdf(out_path)
+        value.to_netcdf(out_path)
         out_colors[key] = out_path
 
     # outputs are the temporary files paths
@@ -954,12 +954,10 @@ def run(  # noqa: C901
             pool.close()
             pool.join()
 
-        configurations_data[config_id][
-            "delayed_point_clouds"
-        ] = delayed_point_clouds
+        conf["delayed_point_clouds"] = delayed_point_clouds
 
         # build list of epipolar region hashes
-        configurations_data[config_id]["epipolar_regions_hash"] = [
+        conf["epipolar_regions_hash"] = [
             tiling.region_hash_string(k) for k in conf["epipolar_regions"]
         ]
 
@@ -971,8 +969,8 @@ def run(  # noqa: C901
             conf["disp_max"],
             epsg,
         )
-        configurations_data[config_id]["epipolar_points_min"] = points_min
-        configurations_data[config_id]["epipolar_points_max"] = points_max
+        conf["epipolar_points_min"] = points_min
+        conf["epipolar_points_max"] = points_max
 
     # Retrieve number of bands
     if in_params.COLOR1_TAG in configuration[in_params.INPUT_SECTION_TAG]:
