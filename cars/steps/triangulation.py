@@ -30,7 +30,6 @@ from typing import Dict
 
 # Third party imports
 import numpy as np
-import otbApplication
 import xarray as xr
 
 # CARS imports
@@ -263,26 +262,17 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    # Build triangulation app
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
+    llh = otb_pipelines.triangulation_matches(
+        matches,
+        grid1,
+        grid2,
+        img1,
+        img2,
+        min_elev1,
+        max_elev1,
+        min_elev2,
+        max_elev2,
     )
-
-    triangulation_app.SetParameterString("mode", "sift")
-    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches", matches)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
 
     row = np.array(range(llh.shape[0]))
     col = np.array([0])
@@ -327,36 +317,23 @@ def compute_points_cloud(
     :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
-    disp = otb_pipelines.encode_to_otb(
-        data[cst.DISP_MAP].values,
-        data.attrs[cst.EPI_FULL_SIZE],
-        data.attrs[roi_key],
-    )
-
     # Retrieve elevation range from imgs
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
     # Build triangulation app
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
+    llh = otb_pipelines.triangulation(
+        data,
+        roi_key,
+        grid1,
+        grid2,
+        img1,
+        img2,
+        min_elev1,
+        max_elev1,
+        min_elev2,
+        max_elev2,
     )
-
-    triangulation_app.SetParameterString("mode", "disp")
-    triangulation_app.ImportImage("mode.disp.indisp", disp)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
 
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))

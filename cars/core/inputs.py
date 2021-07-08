@@ -33,11 +33,12 @@ from typing import Tuple
 # Third party imports
 import fiona
 import numpy as np
-import otbApplication
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
 from shapely.geometry import shape
+
+from cars.externals.otb_pipelines import read_image
 
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
@@ -199,14 +200,12 @@ def otb_can_open(raster_file: str) -> bool:
     :param raster_file: filename
     :return: True if the file can be used with the otb, False otherwise
     """
-    read_im_app = otbApplication.Registry.CreateApplication("ReadImageInfo")
-    read_im_app.SetParameterString("in", raster_file)
-    read_im_app.SetParameterString("outkwl", "./otb_can_open_test.geom")
-
+    can_open_status = False
     try:
-        read_im_app.ExecuteAndWriteOutput()
-        if os.path.exists("./otb_can_open_test.geom"):
-            with open("./otb_can_open_test.geom") as geom_file_desc:
+        geom_path = "./otb_can_open_test.geom"
+        read_image(raster_file, geom_path)
+        if os.path.exists(geom_path):
+            with open(geom_path) as geom_file_desc:
                 geom_dict = {}
                 for line in geom_file_desc:
                     key, val = line.split(": ")
@@ -232,22 +231,24 @@ def otb_can_open(raster_file: str) -> bool:
                     logging.warning(
                         "No RPC model set for image {}".format(geom_file_desc)
                     )
-                    return False
+                    can_open_status = False
 
             os.remove("./otb_can_open_test.geom")
-            return True
-        # else
-        logging.warning(
-            "{} does not have associated geom file".format(geom_file_desc)
-        )
-        return False
+            can_open_status = True
+        else:
+            logging.warning(
+                "{} does not have associated geom file".format(raster_file)
+            )
+            can_open_status = False
     except Exception as read_error:
         logging.warning(
             "Exception caught while trying to read file {}: {}".format(
                 raster_file, read_error
             )
         )
-        return False
+        can_open_status = False
+
+    return can_open_status
 
 
 def check_json(conf, schema):
