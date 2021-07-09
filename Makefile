@@ -12,8 +12,10 @@ CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
 CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
+CHECK_TBB = $(shell ${VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${VENV}/bin/python -m pip list|grep numba)
 
+TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' ' -f 1)
 
 GDAL_VERSION = $(shell gdal-config --version)
 CARS_VERSION = $(shell python3 setup.py --version)
@@ -45,7 +47,8 @@ install-deps: venv
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
-	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --no-binary numba numba
+	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
+	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
 
 install: install-deps  ## install cars
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .
