@@ -44,7 +44,7 @@ from shapely.ops import transform
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
-from cars.plugins import otb_pipelines
+from cars.externals import otb_pipelines
 
 
 def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
@@ -442,7 +442,7 @@ def ground_polygon_from_envelopes(
 ):
     """
     compute the ground polygon of the intersection of two envelopes
-    TODO: refacto with plugins (OTB) and steps.
+    TODO: refacto with externals (OTB) and steps.
 
     :raise: Exception when the envelopes don't intersect one to each other
 

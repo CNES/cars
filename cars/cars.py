@@ -569,8 +569,8 @@ def run_compute_dsm(args, dry_run=False):  # noqa: C901
 
     # CARS imports
     from cars.conf import output_prepare
+    from cars.externals.matching.correlator_configuration import corr_conf
     from cars.pipelines import compute_dsm
-    from cars.plugins.matching.correlator_configuration import corr_conf
 
     # Check remaining arguments
     stop_now = False

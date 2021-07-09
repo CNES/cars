@@ -26,7 +26,7 @@ import otbApplication
 import xarray as xr
 
 from cars.core import constants as cst
-from cars.plugins.triangulation.abstract import AbstractTriangulation
+from cars.steps.triangulation.abstract import AbstractTriangulation
 
 
 @AbstractTriangulation.register_subclass("OTBTriangulation")

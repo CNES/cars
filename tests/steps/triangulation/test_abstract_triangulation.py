@@ -19,19 +19,18 @@
 # limitations under the License.
 #
 """
-Test module for cars.plugins.triangulation.abstract
+Test module for cars.externals.triangulation.abstract
 """
 import pytest
 
-from cars.plugins.triangulation.abstract import (  # isort:skip;
-    # pylint: disable=wrong-import-order
-    AbstractTriangulation,
-)
-
-from ..dummy_plugins import (  # noqa; isort:skip; pylint: disable=unused-import
+from .dummy_abstract_classes import (  # noqa; isort:skip; pylint: disable=unused-import; pylint: disable=wrong-import-order
     NoDispTriangulationMethodClass,
     NoMatchesTriangulationMethodClass,
     NoTriangulationMethodClass,
+)
+
+from cars.steps.triangulation.abstract import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
+    AbstractTriangulation,
 )
 
 

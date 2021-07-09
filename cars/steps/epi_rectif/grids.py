@@ -44,7 +44,7 @@ from cars.core import constants as cst
 from cars.core import projection
 
 # TODO depends on another step (and a later one) : make it independent
-from cars.steps.triangulation import triangulate_matches
+from cars.steps.triangulation.triangulation import triangulate_matches
 
 
 def write_grid(grid, fname, origin, spacing):

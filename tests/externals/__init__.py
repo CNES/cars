@@ -19,8 +19,5 @@
 # limitations under the License.
 #
 """
-CARS plugins/triangulation module init file
+CARS externals test init file
 """
-
-from .otb import OTBTriangulation  # noqa; isort:skip
-from .abstract import AbstractTriangulation  # noqa; isort:skip
