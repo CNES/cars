@@ -32,7 +32,6 @@ from typing import Tuple
 
 # Third party imports
 import numpy as np
-import otbApplication
 import pytest
 import rasterio as rio
 import xarray as xr
@@ -206,11 +205,6 @@ def test_build_stereorectification_grid_pipeline_scaled_inputs():
         - scaled img1 and img2
         """
 
-        # create otb app to rescale input images
-        app = otbApplication.Registry.CreateApplication(
-            "RigidTransformResample"
-        )
-
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
             # manage negative scaling
             negative_scale_x = scalex < 0
@@ -243,16 +237,12 @@ def test_build_stereorectification_grid_pipeline_scaled_inputs():
                 img1 = img1_reversed
                 img2 = img2_reversed
 
-            app.SetParameterString("in", img1)
-            app.SetParameterString("transform.type", "id")
-            app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
-            app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
-            app.SetParameterString("out", img1_transform)
-            app.ExecuteAndWriteOutput()
-
-            app.SetParameterString("in", img2)
-            app.SetParameterString("out", img2_transform)
-            app.ExecuteAndWriteOutput()
+            otb_pipelines.rigid_transform_resample(
+                img1, scalex, scaley, img1_transform
+            )
+            otb_pipelines.rigid_transform_resample(
+                img2, scalex, scaley, img2_transform
+            )
 
             with rio.open(img1_transform, "r") as rio_dst:
                 pixel_size_x, pixel_size_y = (
