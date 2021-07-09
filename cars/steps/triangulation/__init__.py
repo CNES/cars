@@ -19,5 +19,7 @@
 # limitations under the License.
 #
 """
-CARS plugins/matching module init file
+CARS steps/triangulation module init file
 """
+
+from .otb import OTBTriangulation  # noqa

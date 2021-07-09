@@ -21,7 +21,7 @@
 """
 dummy CARS abstract classes
 """
-from cars.plugins.triangulation.abstract import AbstractTriangulation
+from cars.steps.triangulation.abstract import AbstractTriangulation
 
 
 @AbstractTriangulation.register_subclass("NoDispTriangulationMethodClass")

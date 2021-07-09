@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/plugins/otb_pipelines.py
+Test module for cars/externals/otb_pipelines.py
 """
 
 # Standard imports
@@ -38,7 +38,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-from cars.plugins import otb_pipelines
+from cars.externals import otb_pipelines
 
 # CARS Tests imports
 from ..helpers import (

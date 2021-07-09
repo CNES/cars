@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/steps/triangulation.py
+Test module for cars/steps/__init__.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
@@ -31,10 +31,10 @@ import xarray as xr
 # CARS imports
 from cars.core import constants as cst
 from cars.core.inputs import read_geoid_file
-from cars.steps import triangulation
+from cars.steps.triangulation import triangulation
 
 # CARS Tests imports
-from ..helpers import (
+from ...helpers import (
     absolute_data_path,
     assert_same_datasets,
     otb_geoid_file_set,

@@ -40,9 +40,9 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import projection, tiling
-from cars.steps import triangulation
 from cars.steps.epi_rectif import resampling
 from cars.steps.matching import dense_matching, regularisation, sparse_matching
+from cars.steps.triangulation import triangulation
 
 
 def matching_wrapper(

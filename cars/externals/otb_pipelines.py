@@ -21,7 +21,7 @@
 """
 OTB Pipelines module:
 contains functions that builds Orfeo ToolBox pipelines used by CARS
-Refacto: Split function in generic plugins calls through functional steps
+Refacto: Split function in generic externals calls through functional steps
          interfaces (epipolar rectification, ...)
 """
 
@@ -38,6 +38,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
+from cars.steps.triangulation import OTBTriangulation
 
 
 def build_stereorectification_grid_pipeline(
@@ -304,60 +305,10 @@ def build_image_resampling_pipeline(
     return resampled
 
 
-def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
-    """
-    This function encodes a numpy array with metadata
-    so that it can be used by the ImportImage method of otb applications
-
-    :param data_array: The numpy data array to encode
-    :type data_array: numpy array
-    :param largest_size: The size of the full image
-        (data_array can be a part of a bigger image)
-    :type largest_size: list of two int
-    :param roi: Region encoded in data array ([x_min,y_min,x_max,y_max])
-    :type roi: list of four int
-    :param origin: Origin of full image (default origin: (0, 0))
-    :type origin: list of two int
-    :param spacing: Spacing of full image (default spacing: (1,1))
-    :type spacing: list of two int
-    :returns: A dictionary of attributes ready to be imported by ImportImage
-    :rtype: dict
-    """
-
-    otb_origin = otbApplication.itkPoint()
-    otb_origin[0] = origin[0] if origin is not None else 0
-    otb_origin[1] = origin[1] if origin is not None else 0
-
-    otb_spacing = otbApplication.itkVector()
-    otb_spacing[0] = spacing[0] if spacing is not None else 1
-    otb_spacing[1] = spacing[1] if spacing is not None else 1
-
-    otb_largest_size = otbApplication.itkSize()
-    otb_largest_size[0] = int(largest_size[0])
-    otb_largest_size[1] = int(largest_size[1])
-
-    otb_roi_region = otbApplication.itkRegion()
-    otb_roi_region["size"][0] = int(roi[2] - roi[0])
-    otb_roi_region["size"][1] = int(roi[3] - roi[1])
-    otb_roi_region["index"][0] = int(roi[0])
-    otb_roi_region["index"][1] = int(roi[1])
-
-    output = {}
-
-    output["origin"] = otb_origin
-    output["spacing"] = otb_spacing
-    output["size"] = otb_largest_size
-    output["region"] = otb_roi_region
-    output["metadata"] = otbApplication.itkMetaDataDictionary()
-    output["array"] = data_array
-
-    return output
-
-
 def image_envelope(img, shp, dem=None, default_alt=None):
     """
     Export the image footprint to a shapefile
-    TODO: refacto with plugins (OTB) and steps.
+    TODO: refacto with externals (OTB) and steps.
 
     :param img: filename to image or OTB pointer to image
     :type img:  string or OTBImagePointer
@@ -443,7 +394,7 @@ def sensor_to_geo(
 def get_utm_zone_as_epsg_code(lon, lat):
     """
     Returns the EPSG code of the UTM zone where the lat, lon point falls in
-    TODO: refacto with plugins (OTB)
+    TODO: refacto with externals (OTB)
 
     :param lon: longitude of the point
     :type lon: float
@@ -587,12 +538,18 @@ def epipolar_sparse_matching(
     :return: matches as numpy array
     """
     # Encode images for OTB
-    # TODO: remove encode_to_otb func when removing
-    # epipolar_sparse_matching func
-    im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
-    msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
-    im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
-    msk2 = encode_to_otb(ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
+    im1 = OTBTriangulation.encode_to_otb(
+        ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1
+    )
+    msk1 = OTBTriangulation.encode_to_otb(
+        ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1
+    )
+    im2 = OTBTriangulation.encode_to_otb(
+        ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2
+    )
+    msk2 = OTBTriangulation.encode_to_otb(
+        ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2
+    )
 
     # create OTB matching application
     matching_app = otbApplication.Registry.CreateApplication(

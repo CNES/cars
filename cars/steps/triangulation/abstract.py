@@ -114,7 +114,6 @@ class AbstractTriangulation(metaclass=ABCMeta):
         :param max_elev2: max elevation for image 2
         :return: the long/lat/height numpy array in output of the triangulation
         """
-        raise NotImplementedError
 
     @staticmethod
     @abstractmethod
@@ -143,4 +142,3 @@ class AbstractTriangulation(metaclass=ABCMeta):
         :param max_elev2: max elevation for image 2
         :return: the long/lat/height numpy array in output of the triangulation
         """
-        raise NotImplementedError
