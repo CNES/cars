@@ -24,7 +24,7 @@ geometry plugins
 """
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -51,7 +51,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             logging.error(
                 "No geometry plugin named {} registered".format(plugin_to_use)
             )
-            raise KeyError
+            raise KeyError(
+                "No geometry plugin named {} registered".format(plugin_to_use)
+            )
 
         logging.info(
             "[The AbstractGeometry {} plugin will be used".format(plugin_to_use)
@@ -83,8 +85,8 @@ class AbstractGeometry(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def triangulate(
+        mode: str,
         data: xr.Dataset,
-        roi_key: str,
         grid1: str,
         grid2: str,
         img1: str,
@@ -93,13 +95,14 @@ class AbstractGeometry(metaclass=ABCMeta):
         max_elev1: float,
         min_elev2: float,
         max_elev2: float,
+        roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
-        Performs triangulation from cars disparity dataset
+        Performs triangulation from cars disparity or matches dataset
 
+        :param mode: triangulation mode
+        (constants.DISP_MODE or constants.MATCHES)
         :param data: cars disparity dataset
-        :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
         :param img1: path to image 1
@@ -108,33 +111,36 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param max_elev1: max elevation fro image 1
         :param min_elev2: min elevation for image 2
         :param max_elev2: max elevation for image 2
+        :param roi_key: dataset roi to use
+        (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
 
     @staticmethod
     @abstractmethod
-    def triangulate_matches(
-        matches: np.ndarray,
-        grid1: str,
-        grid2: str,
-        img1: str,
-        img2: str,
-        min_elev1: float,
-        max_elev1: float,
-        min_elev2: float,
-        max_elev2: float,
-    ) -> np.ndarray:
+    def generate_epipolar_grids(
+        left_img: str,
+        right_img: str,
+        dem: Union[None, str] = None,
+        default_alt: Union[None, float] = None,
+        epipolar_step: int = 30,
+    ) -> Tuple[
+        np.ndarray, np.ndarray, List[float], List[float], List[int], float
+    ]:
         """
-        Performs triangulation from matches
+        Computes the left and right epipolar grids
 
-        :param matches: input matches to triangulate
-        :param grid1: path to epipolar grid of img1
-        :param grid2: path to epipolar grid of image 2
-        :param img1: path to image 1
-        :param img2: path to image 2
-        :param min_elev1: min elevation for image 1
-        :param max_elev1: max elevation fro image 1
-        :param min_elev2: min elevation for image 2
-        :param max_elev2: max elevation for image 2
-        :return: the long/lat/height numpy array in output of the triangulation
+        :param left_img: path to left image
+        :param right_img: path to right image
+        :param dem: path to the dem folder
+        :param default_alt: default altitude to use in the missing dem regions
+        :param epipolar_step: step to use to construct the epipolar grids
+        :return: Tuple composed of :
+            - the left epipolar grid as a numpy array
+            - the right epipolar grid as a numpy array
+            - the left grid origin as a list of float
+            - the left grid spacing as a list of float
+            - the epipolar image size as a list of int
+            (x-axis size is given with the index 0, y-axis size with index 1)
+            - the disparity to altitude ratio as a float
         """

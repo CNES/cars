@@ -50,7 +50,6 @@ Table of Contents
    cli_usage
    notebooks
    developer
-   core_modules
    glossary
    apidoc/modules
 

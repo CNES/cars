@@ -25,9 +25,6 @@ Cars module init file
 # Standard imports
 import sys
 
-# CARS imports
-from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
-
 # ** VERSION **
 # pylint: disable=import-error,no-name-in-module
 # Depending on python version get importlib standard lib or backported package

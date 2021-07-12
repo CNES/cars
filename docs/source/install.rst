@@ -34,7 +34,7 @@ If dependencies are installed, CARS can be quickly installed with make command i
     $ cars -h
 
 Configuration
-==============
+=============
 Cars can be configured mainly through command line : Go to :ref:`cli_usage`
 
 A default `static configuration  <../../cars/conf/static_configuration.json>`_ is deployed with cars installation. This files enables to customize the parameters of the following algorithms:

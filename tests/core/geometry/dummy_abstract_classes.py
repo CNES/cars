@@ -24,58 +24,9 @@ dummy CARS abstract classes tests
 from cars.core.geometry import AbstractGeometry
 
 
-@AbstractGeometry.register_subclass("NoDispTriangulationMethodClass")
+@AbstractGeometry.register_subclass("NoMethodClass")
 # pylint: disable=abstract-method
-class NoDispTriangulationMethodClass(AbstractGeometry):
-    """
-    geometry class with no triangulate method
-    """
-
-    @staticmethod
-    def triangulate_matches(
-        matches,
-        grid1,
-        grid2,
-        img1,
-        img2,
-        min_elev1,
-        max_elev1,
-        min_elev2,
-        max_elev2,
-    ):
-        """
-        test func
-        """
-
-
-@AbstractGeometry.register_subclass("NoMatchesTriangulationMethodClass")
-# pylint: disable=abstract-method
-class NoMatchesTriangulationMethodClass(AbstractGeometry):
-    """
-    geometry class with no triangulate_matches method
-    """
-
-    @staticmethod
-    def triangulate(
-        data,
-        roi_key,
-        grid1,
-        grid2,
-        img1,
-        img2,
-        min_elev1,
-        max_elev1,
-        min_elev2,
-        max_elev2,
-    ):
-        """
-        test func
-        """
-
-
-@AbstractGeometry.register_subclass("NoTriangulationMethodClass")
-# pylint: disable=abstract-method
-class NoTriangulationMethodClass(AbstractGeometry):
+class NoMethodClass(AbstractGeometry):
     """
     geometry class without any abstract method
     """
