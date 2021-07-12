@@ -50,6 +50,6 @@
     }
     },
   "plugins":{
-    "triangulation": "OTBTriangulation"
+    "geometry": "OTBGeometry"
   }
 }

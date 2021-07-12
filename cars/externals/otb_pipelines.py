@@ -38,7 +38,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-from cars.steps.triangulation import OTBTriangulation
+from cars.core.otb_adapters import encode_to_otb
 
 
 def build_stereorectification_grid_pipeline(
@@ -538,18 +538,10 @@ def epipolar_sparse_matching(
     :return: matches as numpy array
     """
     # Encode images for OTB
-    im1 = OTBTriangulation.encode_to_otb(
-        ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1
-    )
-    msk1 = OTBTriangulation.encode_to_otb(
-        ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1
-    )
-    im2 = OTBTriangulation.encode_to_otb(
-        ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2
-    )
-    msk2 = OTBTriangulation.encode_to_otb(
-        ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2
-    )
+    im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
+    msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
+    im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
+    msk2 = encode_to_otb(ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
 
     # create OTB matching application
     matching_app = otbApplication.Registry.CreateApplication(

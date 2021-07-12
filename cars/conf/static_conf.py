@@ -170,8 +170,8 @@ compute_dsm_params_schema = {
 # ### plugins ####
 
 plugins_tag = "plugins"
-triangulation_plugin_tag = "triangulation"
-plugins_schema = {triangulation_plugin_tag: str}
+geometry_plugin_tag = "geometry"
+plugins_schema = {geometry_plugin_tag: str}
 
 # ### final static conf file ####
 prepare_tag = "prepare"
@@ -427,15 +427,15 @@ def get_color_image_encoding() -> dtype:
     return dtype(color_image_encoding)
 
 
-def get_triangulation_plugin() -> str:
+def get_geometry_plugin() -> str:
     """
-    Get the triangulation plugin to use
+    Get the geometry plugin to use
 
-    :returns: triangulation plugin name
+    :returns: geometry plugin name
     """
     if cfg is None:
         load_cfg()
 
-    triangulation_plugin = cfg[plugins_tag][triangulation_plugin_tag]
+    geometry_plugin = cfg[plugins_tag][geometry_plugin_tag]
 
-    return triangulation_plugin
+    return geometry_plugin

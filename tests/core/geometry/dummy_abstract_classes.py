@@ -19,16 +19,16 @@
 # limitations under the License.
 #
 """
-dummy CARS abstract classes
+dummy CARS abstract classes tests
 """
-from cars.steps.triangulation.abstract import AbstractTriangulation
+from cars.core.geometry import AbstractGeometry
 
 
-@AbstractTriangulation.register_subclass("NoDispTriangulationMethodClass")
+@AbstractGeometry.register_subclass("NoDispTriangulationMethodClass")
 # pylint: disable=abstract-method
-class NoDispTriangulationMethodClass(AbstractTriangulation):
+class NoDispTriangulationMethodClass(AbstractGeometry):
     """
-    triangulation class with no triangulate method
+    geometry class with no triangulate method
     """
 
     @staticmethod
@@ -48,11 +48,11 @@ class NoDispTriangulationMethodClass(AbstractTriangulation):
         """
 
 
-@AbstractTriangulation.register_subclass("NoMatchesTriangulationMethodClass")
+@AbstractGeometry.register_subclass("NoMatchesTriangulationMethodClass")
 # pylint: disable=abstract-method
-class NoMatchesTriangulationMethodClass(AbstractTriangulation):
+class NoMatchesTriangulationMethodClass(AbstractGeometry):
     """
-    triangulation class with no triangulate_matches method
+    geometry class with no triangulate_matches method
     """
 
     @staticmethod
@@ -73,11 +73,11 @@ class NoMatchesTriangulationMethodClass(AbstractTriangulation):
         """
 
 
-@AbstractTriangulation.register_subclass("NoTriangulationMethodClass")
+@AbstractGeometry.register_subclass("NoTriangulationMethodClass")
 # pylint: disable=abstract-method
-class NoTriangulationMethodClass(AbstractTriangulation):
+class NoTriangulationMethodClass(AbstractGeometry):
     """
-    triangulation class without any abstract method
+    geometry class without any abstract method
     """
 
     def wrong_func(self):

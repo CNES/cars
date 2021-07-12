@@ -19,28 +19,22 @@
 # limitations under the License.
 #
 """
-Test module for cars.externals.triangulation.abstract
+Test module for cars.core.geometry
 """
 import pytest
 
-from .dummy_abstract_classes import (  # noqa; isort:skip; pylint: disable=unused-import; pylint: disable=wrong-import-order
-    NoDispTriangulationMethodClass,
-    NoMatchesTriangulationMethodClass,
-    NoTriangulationMethodClass,
-)
-
-from cars.steps.triangulation.abstract import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
-    AbstractTriangulation,
+from cars.core.geometry import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
+    AbstractGeometry,
 )
 
 
 @pytest.mark.unit_tests
 def test_missing_abstract_methods():
     """
-    Test cars triangulation abstract class
+    Test cars geometry abstract class
     """
     with pytest.raises(Exception) as error:
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "NoDispTriangulationMethodClass"
         )
         assert (
@@ -50,7 +44,7 @@ def test_missing_abstract_methods():
         )
 
     with pytest.raises(Exception) as error:
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "NoMatchesTriangulationMethodClass"
         )
         assert (
@@ -60,7 +54,7 @@ def test_missing_abstract_methods():
         )
 
     with pytest.raises(Exception) as error:
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "NoTriangulationMethodClass"
         )
         assert (
@@ -73,12 +67,10 @@ def test_missing_abstract_methods():
 @pytest.mark.unit_tests
 def test_wrong_class_name():
     """
-    Test cars triangulation abstract class
+    Test cars geometry abstract class
     """
     with pytest.raises(Exception) as error:
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
-            "test"
-        )
+        AbstractGeometry("test")  # pylint: disable=abstract-class-instantiated
         assert (
             str(error.value) == "No triangulation plugin named test registered"
         )

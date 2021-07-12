@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-CARS steps/triangulation/triangulation module file
+Preprocessing module:
+contains functions used for triangulation
 """
 
 # Standard imports
@@ -40,9 +41,8 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import utils
+from cars.core.geometry import AbstractGeometry
 from cars.core.projection import project_coordinates_on_line
-
-from .abstract import AbstractTriangulation
 
 
 def triangulate(
@@ -267,13 +267,13 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    triangulation_plugin = (
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_triangulation_plugin()
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
         )
     )
 
-    llh = triangulation_plugin.triangulate_matches(
+    llh = geo_plugin.triangulate_matches(
         matches,
         grid1,
         grid2,
@@ -332,13 +332,13 @@ def compute_points_cloud(
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    triangulation_plugin = (
-        AbstractTriangulation(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_triangulation_plugin()
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
         )
     )
 
-    llh = triangulation_plugin.triangulate(
+    llh = geo_plugin.triangulate(
         data,
         roi_key,
         grid1,

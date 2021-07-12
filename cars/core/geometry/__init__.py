@@ -19,8 +19,8 @@
 # limitations under the License.
 #
 """
-this module contains the abstract triangulation class to use in the
-triangulation plugins
+this module contains the abstract geometry class to use in the
+geometry plugins
 """
 import logging
 from abc import ABCMeta, abstractmethod
@@ -30,9 +30,9 @@ import numpy as np
 import xarray as xr
 
 
-class AbstractTriangulation(metaclass=ABCMeta):
+class AbstractGeometry(metaclass=ABCMeta):
     """
-    AbstractTriangulation
+    AbstractGeometry
     """
 
     available_plugins: Dict = {}
@@ -49,19 +49,15 @@ class AbstractTriangulation(metaclass=ABCMeta):
 
         if plugin_to_use not in cls.available_plugins.keys():
             logging.error(
-                "No triangulation plugin named {} registered".format(
-                    plugin_to_use
-                )
+                "No geometry plugin named {} registered".format(plugin_to_use)
             )
             raise KeyError
 
         logging.info(
-            "[The AbstractTriangulation {} plugin will be used".format(
-                plugin_to_use
-            )
+            "[The AbstractGeometry {} plugin will be used".format(plugin_to_use)
         )
 
-        return super(AbstractTriangulation, cls).__new__(
+        return super(AbstractGeometry, cls).__new__(
             cls.available_plugins[plugin_to_use]
         )
 
