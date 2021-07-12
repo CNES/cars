@@ -727,3 +727,26 @@ def epipolar_sparse_matching(
         )
 
     return matches
+
+
+def rigid_transform_resample(
+    img: str, scalex: float, scaley: float, img_transformed: str
+):
+    """
+    Execute RigidTransformResample OTB application
+
+    :param img: path to the image to transform
+    :param scalex: scale factor to apply along x axis
+    :param scaley: scale factor to apply along y axis
+    :param img_transformed: output image path
+    """
+
+    # create otb app to rescale input images
+    app = otbApplication.Registry.CreateApplication("RigidTransformResample")
+
+    app.SetParameterString("in", img)
+    app.SetParameterString("transform.type", "id")
+    app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
+    app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
+    app.SetParameterString("out", img_transformed)
+    app.ExecuteAndWriteOutput()
