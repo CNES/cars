@@ -137,7 +137,7 @@ def test_missing_abstract_methods():
     """
     with pytest.raises(Exception) as error:
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "NoMethodClass"
+            "NoDispTriangulationMethodClass"
         )
     assert (
         str(error.value) == "Can't instantiate abstract class"

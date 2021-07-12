@@ -119,7 +119,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
-        Performs triangulation from cars disparity or matches dataset
+        Performs triangulation from cars disparity dataset
 
         :param mode: triangulation mode
         (constants.DISP_MODE or constants.MATCHES)
