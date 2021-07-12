@@ -55,10 +55,9 @@ from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
-from cars.steps import devib, rasterization
+from cars.steps import devib, rasterization, triangulation
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
-from cars.steps.triangulation import triangulation
 
 
 def run(  # noqa: C901
