@@ -738,7 +738,7 @@ def rigid_transform_resample(
     :param img: path to the image to transform
     :param scalex: scale factor to apply along x axis
     :param scaley: scale factor to apply along y axis
-    :param img_transform: output image path
+    :param img_transformed: output image path
     """
 
     # create otb app to rescale input images
