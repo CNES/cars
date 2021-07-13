@@ -60,7 +60,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
 # install orfeo toolbox
 WORKDIR /opt/otb
 RUN wget -q https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.2.0.zip -O /tmp/OTB-7.2.0.zip && \
-    unzip -q /tmp/OTB-7.2.0.zip
+    unzip -q /tmp/OTB-7.2.0.zip && rm /tmp/OTB-7.2.0.zip
 WORKDIR /opt/otb/build
 RUN cmake \
     "-DBUILD_COOKBOOK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" "-DBUILD_SHARED_LIBS:BOOL=ON" \
