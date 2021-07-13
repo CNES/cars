@@ -105,7 +105,8 @@ WORKDIR /cars
 COPY . /cars/
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal
-RUN make clean && make install-dev
+RUN make clean && make install
+RUN pip cache purge
 
 # source venv/bin/activate in docker mode
 ENV VIRTUAL_ENV='/cars/venv'
