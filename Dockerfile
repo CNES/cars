@@ -107,7 +107,7 @@ ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal
 RUN make clean && make install-dev
 
-# source venv/bin/env_cars.sh
+# source venv/bin/activate in docker mode
 ENV VIRTUAL_ENV='/cars/venv'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
