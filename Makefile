@@ -132,7 +132,7 @@ docker: ## Build docker image (and check Dockerfile)
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
 	@echo "Build Docker image CARS ${CARS_VERSION_MIN}"
-	@docker build -t cnes/cars:${CARS_VERSION_MIN} .
+	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest .
 
 clean: ## clean: remove venv, cars build, cache, ...
 	@rm -rf ${VENV}
