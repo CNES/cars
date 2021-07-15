@@ -54,6 +54,7 @@ from cars.cluster.dask_mode import (
     start_local_cluster,
     stop_cluster,
 )
+from cars.cluster.tbb import check_tbb_installed
 from cars.conf import input_parameters as in_params
 from cars.conf import (
     log_conf,
@@ -912,7 +913,16 @@ def run(  # noqa: C901
                 pbar.update()
 
             # create a multiprocessing thread pool
-            pool = mp.get_context("forkserver").Pool(
+            mp_mode = "fork"
+            if not check_tbb_installed():
+                mp_mode = "forkserver"
+                logging.warning(
+                    "Numba does not find TBB : "
+                    "Multiprocessing forced to forkserver mode. "
+                    "User might not get logs from workers."
+                )
+
+            pool = mp.get_context(mp_mode).Pool(
                 nb_workers
             )  # pylint: disable=consider-using-with
 
