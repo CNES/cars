@@ -105,11 +105,13 @@ WORKDIR /cars
 COPY . /cars/
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal
-RUN make clean && make install && pip cache purge
+RUN make clean && make install
 
 # source venv/bin/activate in docker mode
 ENV VIRTUAL_ENV='/cars/venv'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+# Clean pip cache
+RUN python -m pip cache purge
 
 # source venv/bin/env_cars.sh
 ENV OTB_APPLICATION_PATH=/cars/venv/lib/:$OTB_APPLICATION_PATH \
