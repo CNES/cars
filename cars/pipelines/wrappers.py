@@ -319,11 +319,11 @@ def images_pair_to_3d_points(
         )
 
     if geoid_data is not None:  # if user pass a geoid, use it a alt reference
-        for key in points:
-            points[key] = triangulation.geoid_offset(points[key], geoid_data)
+        for key, point in points.items():
+            points[key] = triangulation.geoid_offset(point, geoid_data)
 
     if out_epsg is not None:
-        for key in points:
-            projection.points_cloud_conversion_dataset(points[key], out_epsg)
+        for _, point in points.items():
+            projection.points_cloud_conversion_dataset(point, out_epsg)
 
     return points, colors
