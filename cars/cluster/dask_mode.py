@@ -30,6 +30,7 @@ import logging
 import math
 import os
 import time
+import warnings
 
 # Third-party imports
 import numpy as np
@@ -37,8 +38,22 @@ import psutil
 import xarray as xr
 from dask.distributed import Client, LocalCluster
 from dask.sizeof import sizeof as dask_sizeof
-from dask_jobqueue import PBSCluster
 from distributed.diagnostics.plugin import WorkerPlugin
+
+with warnings.catch_warnings():
+    # Ignore internal dask_jobqueue warnings to be corrected in:
+    # https://github.com/dask/dask-jobqueue/pull/506
+    warnings.filterwarnings(
+        "ignore",
+        category=FutureWarning,
+        message=".*format_bytes is deprecated.*",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        category=FutureWarning,
+        message=".*parse_bytes is deprecated.*",
+    )
+    from dask_jobqueue import PBSCluster
 
 
 @dask_sizeof.register_lazy("xarray")
