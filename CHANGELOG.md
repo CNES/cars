@@ -18,6 +18,7 @@ A new section Unreleased is opened then for next dev phase.
 - Update/Clean environment parameters [#166]
 - Move cars_cli.py from bin to cars. [#188]
 - Rename cars_cli to cars. [#188]
+- Allow multiprocessing fork mode. [#283]
 
 
 ### Fixed

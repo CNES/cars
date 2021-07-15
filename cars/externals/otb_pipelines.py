@@ -28,6 +28,8 @@ Refacto: Split function in generic externals calls through functional steps
 # Standard imports
 from __future__ import absolute_import
 
+from typing import List
+
 # Third party imports
 import numpy as np
 import otbApplication
@@ -524,3 +526,227 @@ def read_lowres_dem(
     dsm_as_ds[cst.RESOLUTION] = resolution
 
     return dsm_as_ds
+
+
+def read_image(raster_path: str, out_kwl_path: str):
+    """
+    use ReadImageInfo otb application with the .geom file dump
+
+    :param raster_path: path to the image
+    :param out_kwl_path: path to the output .geom file
+    """
+    read_im_app = otbApplication.Registry.CreateApplication("ReadImageInfo")
+    read_im_app.SetParameterString("in", raster_path)
+    read_im_app.SetParameterString("outkwl", out_kwl_path)
+
+    read_im_app.ExecuteAndWriteOutput()
+
+
+def triangulation_matches(
+    matches: np.ndarray,
+    grid1: str,
+    grid2: str,
+    img1: str,
+    img2: str,
+    min_elev1: float,
+    max_elev1: float,
+    min_elev2: float,
+    max_elev2: float,
+) -> np.ndarray:
+    """
+    Performs triangulation from matches
+
+    :param matches: input matches to triangulate
+    :param grid1: path to epipolar grid of img1
+    :param grid2: path to epipolar grid of image 2
+    :param img1: path to image 1
+    :param img2: path to image 2
+    :param min_elev1: min elevation for image 1
+    :param max_elev1: max elevation fro image 1
+    :param min_elev2: min elevation for image 2
+    :param max_elev2: max elevation for image 2
+    :return: the long/lat/height numpy array in output of the triangulation
+    """
+    # Build triangulation app
+    triangulation_app = otbApplication.Registry.CreateApplication(
+        "EpipolarTriangulation"
+    )
+
+    triangulation_app.SetParameterString("mode", "sift")
+    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches", matches)
+
+    triangulation_app.SetParameterString("leftgrid", grid1)
+    triangulation_app.SetParameterString("rightgrid", grid2)
+    triangulation_app.SetParameterString("leftimage", img1)
+    triangulation_app.SetParameterString("rightimage", img2)
+    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
+    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
+    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
+    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
+
+    triangulation_app.Execute()
+
+    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
+
+    return llh
+
+
+def triangulation(
+    data: xr.Dataset,
+    roi_key: str,
+    grid1: str,
+    grid2: str,
+    img1: str,
+    img2: str,
+    min_elev1: float,
+    max_elev1: float,
+    min_elev2: float,
+    max_elev2: float,
+) -> np.ndarray:
+    """
+    Performs triangulation from cars disparity dataset
+
+    :param data: cars disparity dataset
+    :param roi_key: dataset roi to use (can be cst.ROI or cst.ROI_WITH_MARGINS)
+    :param grid1: path to epipolar grid of img1
+    :param grid2: path to epipolar grid of image 2
+    :param img1: path to image 1
+    :param img2: path to image 2
+    :param min_elev1: min elevation for image 1
+    :param max_elev1: max elevation fro image 1
+    :param min_elev2: min elevation for image 2
+    :param max_elev2: max elevation for image 2
+    :return: the long/lat/height numpy array in output of the triangulation
+    """
+    # encode disparity for otb
+    disp = encode_to_otb(
+        data[cst.DISP_MAP].values,
+        data.attrs[cst.EPI_FULL_SIZE],
+        data.attrs[roi_key],
+    )
+
+    # Build triangulation application
+    triangulation_app = otbApplication.Registry.CreateApplication(
+        "EpipolarTriangulation"
+    )
+
+    triangulation_app.SetParameterString("mode", "disp")
+    triangulation_app.ImportImage("mode.disp.indisp", disp)
+
+    triangulation_app.SetParameterString("leftgrid", grid1)
+    triangulation_app.SetParameterString("rightgrid", grid2)
+    triangulation_app.SetParameterString("leftimage", img1)
+    triangulation_app.SetParameterString("rightimage", img2)
+    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
+    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
+    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
+    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
+
+    triangulation_app.Execute()
+
+    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
+
+    return llh
+
+
+def epipolar_sparse_matching(
+    ds1: xr.Dataset,
+    roi1: List[int],
+    size1: List[int],
+    origin1: List[float],
+    ds2: xr.Dataset,
+    roi2: List[int],
+    size2: List[int],
+    origin2: List[float],
+    matching_threshold: float,
+    n_octave: int,
+    n_scale_per_octave: int,
+    dog_threshold: int,
+    edge_threshold: int,
+    magnification: float,
+    backmatching: bool,
+) -> np.ndarray:
+    """
+    Compute SIFT using vlfeat and performs epipolar sparse matching
+
+    :param ds1: epipolar image 1 dataset
+    :param roi1: roi to use for image 1
+    :param size1: full epipolar image 1 size
+    :param origin1: origin of full epipolar image 1
+    :param ds2:  epipolar image 2 dataset
+    :param roi2: roi to use for image 2
+    :param size2: full epipolar image 2 size
+    :param origin2: origin of full epipolar image 2
+    :param matching_threshold: matching threshold to use in vlfeat
+    :param n_octave: number of octaves to use in vlfeat
+    :param n_scale_per_octave: number of scales per octave to use in vlfeat
+    :param dog_threshold: difference of gaussians threshold to use in vlfeat
+    :param edge_threshold: edge threshold to use in vlfeat
+    :param magnification: magnification value to use in vlfeat
+    :param backmatching: activation status of the back matching in vlfeat
+    :return: matches as numpy array
+    """
+    # Encode images for OTB
+    im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
+    msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
+    im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
+    msk2 = encode_to_otb(ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
+
+    # create OTB matching application
+    matching_app = otbApplication.Registry.CreateApplication(
+        "EpipolarSparseMatching"
+    )
+
+    matching_app.ImportImage("in1", im1)
+    matching_app.ImportImage("in2", im2)
+    matching_app.EnableParameter("inmask1")
+    matching_app.ImportImage("inmask1", msk1)
+    matching_app.EnableParameter("inmask2")
+    matching_app.ImportImage("inmask2", msk2)
+
+    matching_app.SetParameterInt("maskvalue", 0)
+    matching_app.SetParameterString("algorithm", "sift")
+    matching_app.SetParameterFloat("matching", matching_threshold)
+    matching_app.SetParameterInt("octaves", n_octave)
+    matching_app.SetParameterInt("scales", n_scale_per_octave)
+    matching_app.SetParameterFloat("tdog", dog_threshold)
+    matching_app.SetParameterFloat("tedge", edge_threshold)
+    matching_app.SetParameterFloat("magnification", magnification)
+    matching_app.SetParameterInt("backmatching", backmatching)
+    matching_app.Execute()
+
+    # Retrieve number of matches
+    nb_matches = matching_app.GetParameterInt("nbmatches")
+
+    matches = np.empty((0, 4))
+
+    if nb_matches > 0:
+        # Export result to numpy
+        matches = np.copy(
+            matching_app.GetVectorImageAsNumpyArray("out")[:, :, -1]
+        )
+
+    return matches
+
+
+def rigid_transform_resample(
+    img: str, scalex: float, scaley: float, img_transformed: str
+):
+    """
+    Execute RigidTransformResample OTB application
+
+    :param img: path to the image to transform
+    :param scalex: scale factor to apply along x axis
+    :param scaley: scale factor to apply along y axis
+    :param img_transformed: output image path
+    """
+
+    # create otb app to rescale input images
+    app = otbApplication.Registry.CreateApplication("RigidTransformResample")
+
+    app.SetParameterString("in", img)
+    app.SetParameterString("transform.type", "id")
+    app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
+    app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
+    app.SetParameterString("out", img_transformed)
+    app.ExecuteAndWriteOutput()

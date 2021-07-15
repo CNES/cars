@@ -30,10 +30,8 @@ import logging
 
 # Third party imports
 import numpy as np
-import otbApplication as otb
 
 # CARS imports
-from cars.core import constants as cst
 from cars.externals import otb_pipelines
 
 
@@ -77,51 +75,23 @@ def dataset_matching(
     roi2 = [0, 0, size2[0], size2[1]]
     origin2 = [float(ds2.attrs["region"][0]), float(ds2.attrs["region"][1])]
 
-    # Encode images for OTB
-    im1 = otb_pipelines.encode_to_otb(
-        ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1
+    matches = otb_pipelines.epipolar_sparse_matching(
+        ds1,
+        roi1,
+        size1,
+        origin1,
+        ds2,
+        roi2,
+        size2,
+        origin2,
+        matching_threshold,
+        n_octave,
+        n_scale_per_octave,
+        dog_threshold,
+        edge_threshold,
+        magnification,
+        backmatching,
     )
-    msk1 = otb_pipelines.encode_to_otb(
-        ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1
-    )
-    im2 = otb_pipelines.encode_to_otb(
-        ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2
-    )
-    msk2 = otb_pipelines.encode_to_otb(
-        ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2
-    )
-
-    # Build sift matching app
-    matching_app = otb.Registry.CreateApplication("EpipolarSparseMatching")
-
-    matching_app.ImportImage("in1", im1)
-    matching_app.ImportImage("in2", im2)
-    matching_app.EnableParameter("inmask1")
-    matching_app.ImportImage("inmask1", msk1)
-    matching_app.EnableParameter("inmask2")
-    matching_app.ImportImage("inmask2", msk2)
-
-    matching_app.SetParameterInt("maskvalue", 0)
-    matching_app.SetParameterString("algorithm", "sift")
-    matching_app.SetParameterFloat("matching", matching_threshold)
-    matching_app.SetParameterInt("octaves", n_octave)
-    matching_app.SetParameterInt("scales", n_scale_per_octave)
-    matching_app.SetParameterFloat("tdog", dog_threshold)
-    matching_app.SetParameterFloat("tedge", edge_threshold)
-    matching_app.SetParameterFloat("magnification", magnification)
-    matching_app.SetParameterInt("backmatching", backmatching)
-    matching_app.Execute()
-
-    # Retrieve number of matches
-    nb_matches = matching_app.GetParameterInt("nbmatches")
-
-    matches = np.empty((0, 4))
-
-    if nb_matches > 0:
-        # Export result to numpy
-        matches = np.copy(
-            matching_app.GetVectorImageAsNumpyArray("out")[:, :, -1]
-        )
 
     return matches
 
