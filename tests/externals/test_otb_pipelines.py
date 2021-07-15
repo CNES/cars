@@ -431,7 +431,7 @@ def test_build_mask_pipeline():
     mask = absolute_data_path("input/phr_reunion/left_mask.tif")
     roi = [100, 200, 300, 400]
     out_np = otb_pipelines.build_mask_pipeline(
-        img, grid, nodata, mask, 2387, 2387, roi
+        img, mask, nodata, 255, 0, grid, 2387, 2387, roi
     )
 
     assert out_np.shape == (200, 200)

@@ -275,7 +275,15 @@ def resample_image(
     msk = None
     if img_has_mask:
         msk = otb_pipelines.build_mask_pipeline(
-            img, grid, nodata, mask, largest_size[0], largest_size[1], region
+            img,
+            mask,
+            nodata,
+            mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            mask_classes.VALID_VALUE,
+            grid,
+            largest_size[0],
+            largest_size[1],
+            region,
         )
 
     # Build resampling pipelines for images
