@@ -37,7 +37,6 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
-from cars.conf import mask_classes
 from cars.core import constants as cst
 
 
@@ -147,20 +146,32 @@ def build_extract_roi_application(img, region):
 
 
 def build_mask_pipeline(
-    img, grid, nodata, mask, epipolar_size_x, epipolar_size_y, roi
+    input_img,
+    input_mask,
+    input_nodata,
+    out_nodata,
+    out_valid_value,
+    grid,
+    epipolar_size_x,
+    epipolar_size_y,
+    roi,
 ):
     """
     This function builds a pipeline that computes and
     resampled image mask in epipolar geometry
 
-    :param img: Path to the left image
+    :param input_img: Path to the left input image
     :type img: string
+    :param input_mask:  Path to left image mask or None
+    :type mask: string
+    :param input_nodata: Pixel value to be treated as nodata in image or None
+    :type input_nodata: float
+    :param out_nodata: Pixel value used for the ouput
+    :type out_nodata: float
+    :param out_valid_value: Pixel value for valid points in mask
+    :typ out_valid_value: float
     :param grid: The stereo-rectification resampling grid
     :type grid: otb::Image pointer or string
-    :param nodata: Pixel value to be treated as nodata in image or None
-    :type nodata: float
-    :param mask:  Path to left image mask or None
-    :type mask: string
     :param epipolar_size_x: Size of stereo-rectified images in x
     :type epipolar_size_x: int
     :param epipolar_size_y: Size of stereo-rectified images in y
@@ -172,16 +183,14 @@ def build_mask_pipeline(
     """
     mask_app = otbApplication.Registry.CreateApplication("BuildMask")
 
-    mask_app.SetParameterString("in", img)
-    if nodata is not None:
-        mask_app.SetParameterFloat("innodata", nodata)
-    if mask is not None:
-        mask_app.SetParameterString("inmask", mask)
+    mask_app.SetParameterString("in", input_img)
+    if input_nodata is not None:
+        mask_app.SetParameterFloat("innodata", input_nodata)
+    if input_mask is not None:
+        mask_app.SetParameterString("inmask", input_mask)
         mask_app.EnableParameter("inmask")
-    mask_app.SetParameterFloat(
-        "outnodata", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-    )
-    mask_app.SetParameterFloat("outvalid", mask_classes.VALID_VALUE)
+    mask_app.SetParameterFloat("outnodata", out_nodata)
+    mask_app.SetParameterFloat("outvalid", out_valid_value)
 
     mask_app.Execute()
 
@@ -201,9 +210,7 @@ def build_mask_pipeline(
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
     resampling_app.SetParameterString("interpolator", "nn")
-    resampling_app.SetParameterFloat(
-        "out.default", mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-    )
+    resampling_app.SetParameterFloat("out.default", out_nodata)
     resampling_app.Execute()
 
     # TODO: Dilate nodata mask to ensure that interpolated pixels are not

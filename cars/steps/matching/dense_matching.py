@@ -251,10 +251,10 @@ def get_masks_from_pandora(
 
     # Build final mask with 255 for valid points and 0 for invalid points
     # The mask is used by rasterize method (non zero are valid points)
-    for key in masks:
-        final_msk = np.ndarray(masks[key].shape, dtype=np.int16)
-        final_msk[masks[key]] = 255
-        final_msk[np.equal(masks[key], False)] = 0
+    for key, mask in masks.items():
+        final_msk = np.ndarray(mask.shape, dtype=np.int16)
+        final_msk[mask] = 255
+        final_msk[np.equal(mask, False)] = 0
         masks[key] = final_msk
 
     return masks

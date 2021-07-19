@@ -117,8 +117,8 @@ def test_rasterio_handles():
         with file_handles as rio_handles:
             assert isinstance(rio_handles, dict)
             assert "hgt" in rio_handles.keys() and "clr" in rio_handles.keys()
-            for key in rio_handles:
-                assert isinstance(rio_handles[key], rio.io.DatasetWriter)
+            for _, rio_handle in rio_handles.items():
+                assert isinstance(rio_handle, rio.io.DatasetWriter)
 
 
 @pytest.mark.unit_tests
