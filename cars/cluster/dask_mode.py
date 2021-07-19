@@ -41,13 +41,7 @@ from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
 
 with warnings.catch_warnings():
-    # Ignore internal dask_jobqueue warnings to be corrected in:
-    # https://github.com/dask/dask-jobqueue/pull/506
-    warnings.filterwarnings(
-        "ignore",
-        category=FutureWarning,
-        message=".*ignoring was deprecated in version 2021.06.1.*",
-    )
+    # Ignore some internal dask_jobqueue warnings
     warnings.filterwarnings(
         "ignore",
         category=FutureWarning,
@@ -373,7 +367,15 @@ def stop_cluster(cluster, client):
     client.close()
     # Bug distributed on close cluster : Fail with AssertionError still running
     try:
-        cluster.close()
+        with warnings.catch_warnings():
+            # Ignore internal dask_jobqueue warnings to be corrected in:
+            # https://github.com/dask/dask-jobqueue/pull/506
+            warnings.filterwarnings(
+                "ignore",
+                category=FutureWarning,
+                message=".*ignoring was deprecated in version 2021.06.1.*",
+            )
+            cluster.close()
     except AssertionError as assert_error:
         logging.warning(
             "Dask cluster failed " "to stop properly: {}".format(assert_error)
