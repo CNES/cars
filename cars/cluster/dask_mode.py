@@ -46,6 +46,11 @@ with warnings.catch_warnings():
     warnings.filterwarnings(
         "ignore",
         category=FutureWarning,
+        message=".*ignoring was deprecated in version 2021.06.1.*",
+    )
+    warnings.filterwarnings(
+        "ignore",
+        category=FutureWarning,
         message=".*format_bytes is deprecated.*",
     )
     warnings.filterwarnings(
