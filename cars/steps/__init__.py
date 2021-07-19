@@ -21,3 +21,6 @@
 """
 CARS steps module init file
 """
+
+# CARS imports
+from cars.core.geometry.otb_geometry import OTBGeometry  # noqa

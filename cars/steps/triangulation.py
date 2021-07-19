@@ -273,7 +273,8 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
         )
     )
 
-    llh = geo_plugin.triangulate_matches(
+    llh = geo_plugin.triangulate(
+        cst.MATCHES_MODE,
         matches,
         grid1,
         grid2,
@@ -339,8 +340,8 @@ def compute_points_cloud(
     )
 
     llh = geo_plugin.triangulate(
+        cst.DISP_MODE,
         data,
-        roi_key,
         grid1,
         grid2,
         img1,
@@ -349,6 +350,7 @@ def compute_points_cloud(
         max_elev1,
         min_elev2,
         max_elev2,
+        roi_key,
     )
 
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))

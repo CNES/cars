@@ -23,6 +23,10 @@ Test module for cars.core.geometry
 """
 import pytest
 
+from .dummy_abstract_classes import (  # noqa; pylint: disable=unused-import
+    NoTriangulationMethodClass,
+)
+
 from cars.core.geometry import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
     AbstractGeometry,
 )
@@ -35,33 +39,13 @@ def test_missing_abstract_methods():
     """
     with pytest.raises(Exception) as error:
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "NoDispTriangulationMethodClass"
-        )
-        assert (
-            str(error.value) == "Can't instantiate abstract class"
-            " NoDispTriangulationMethodClass with "
-            "abstract methods triangulate, triangulate_matches"
-        )
-
-    with pytest.raises(Exception) as error:
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "NoMatchesTriangulationMethodClass"
-        )
-        assert (
-            str(error.value) == "Can't instantiate abstract class"
-            " NoMatchesTriangulationMethodClass with "
-            "abstract methods triangulate, triangulate_matches"
-        )
-
-    with pytest.raises(Exception) as error:
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "NoTriangulationMethodClass"
         )
-        assert (
-            str(error.value) == "Can't instantiate abstract class"
-            " NoTriangulationMethodClass with "
-            "abstract methods triangulate, triangulate_matches"
-        )
+    assert (
+        str(error.value) == "Can't instantiate abstract class"
+        " NoTriangulationMethodClass with "
+        "abstract methods triangulate"
+    )
 
 
 @pytest.mark.unit_tests
@@ -69,8 +53,6 @@ def test_wrong_class_name():
     """
     Test cars geometry abstract class
     """
-    with pytest.raises(Exception) as error:
+    with pytest.raises(KeyError) as error:
         AbstractGeometry("test")  # pylint: disable=abstract-class-instantiated
-        assert (
-            str(error.value) == "No triangulation plugin named test registered"
-        )
+    assert str(error.value) == "'No geometry plugin named test registered'"
