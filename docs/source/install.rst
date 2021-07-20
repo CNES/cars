@@ -34,17 +34,30 @@ If dependencies are installed, CARS can be quickly installed with make command i
     $ cars -h
 
 Configuration
-==============
+=============
 Cars can be configured mainly through command line : Go to :ref:`cli_usage`
 
-A default `static configuration  <../../cars/static_configuration.json>`_ is deployed with cars installation.
+A default `static configuration  <../../cars/conf/static_configuration.json>`_ is deployed with cars installation. This files enables to customize the parameters of the following algorithms:
+
+* SIFTs computation
+* alignment on the input DEM
+* disparity range determination
+* the points cloud filters
+
+As well as some 3D chain parameters:
+
+* the epipolar tiling configuration
+* the grid divider factor of the rasterization step (to accelerate the neighbors searching using kd-tree)
+* the output color image format
+* the geometry module to use (fixed to internal `OTBGeometry`)
+
 This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
 
 A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
 It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``
 
 Advanced Manual Installation
-=============================
+============================
 The following steps are defined in Makefile for ``install`` command
 
 Virtualenv

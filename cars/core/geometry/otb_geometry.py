@@ -38,6 +38,9 @@ class OTBGeometry(AbstractGeometry):
     OTB geometry class
     """
 
+    # TODO: remove the hard-coded import in the steps/__init__.py if this class
+    # is removed from CARS
+
     @staticmethod
     def triangulate(
         mode: str,
