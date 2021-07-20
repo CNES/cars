@@ -557,14 +557,14 @@ def compute_disparity(
     pandora_machine = PandoraMachine()
 
     # check datasets
-    checked_left_dataset = check_dataset(left_dataset)
-    checked_right_dataset = check_dataset(right_dataset)
+    check_dataset(left_dataset)
+    check_dataset(right_dataset)
 
     # Run the Pandora pipeline
     ref, sec = pandora.run(
         pandora_machine,
-        checked_left_dataset,
-        checked_right_dataset,
+        left_dataset,
+        right_dataset,
         int(disp_min),
         int(disp_max),
         corr_cfg["pipeline"],
