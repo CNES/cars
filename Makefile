@@ -90,7 +90,7 @@ test: install-dev ## run all tests + coverage html
 
 test-ci: install-dev ## run unit and pbs tests + coverage for cars-ci
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 test-end2end: install-dev ## run end2end tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
