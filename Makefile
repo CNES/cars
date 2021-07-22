@@ -4,6 +4,11 @@
 # GLOBAL VARIABLES
 # Set Virtualenv directory name
 VENV = "venv"
+# Set LOGLEVEL if not defined in command line
+# Example: LOGLEVEL="DEBUG" make help
+ifndef LOGLEVEL
+	LOGLEVEL = "INFO"
+endif
 
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
@@ -25,7 +30,7 @@ CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 .PHONY: help check venv install-deps install install-notebook install-doc install-dev test test-ci test-end2end test-unit test-pbs-cluster test-notebook lint lint-ci format doc notebook docker clean
 
 help: ## this help
-	@echo "      CARS MAKE HELP"
+	@echo "      CARS MAKE HELP  LOGLEVEL=${LOGLEVEL}"
 	@echo "  Dependencies: Install OTB and VLFEAT before !\n"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'
 
@@ -81,27 +86,27 @@ install-dev: install-deps ## install cars in dev mode
 
 test: install-dev ## run all tests + coverage html
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -o log_cli=true -o log_cli_level=INFO --cov-config=.coveragerc --cov-report html --cov
+	@${VENV}/bin/pytest -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 test-ci: install-dev ## run unit and pbs tests + coverage for cars-ci
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+	@${VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 test-end2end: install-dev ## run end2end tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=INFO
+	@${VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 test-unit: install-dev ## run unit tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=INFO
+	@${VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 test-pbs-cluster: install-dev ## run pbs cluster tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=INFO
+	@${VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 test-notebook: install-dev ## run notebook tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
-	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=INFO
+	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 lint-ci: install-dev ## run lint tools for cars-ci
 	@${VENV}/bin/isort --check cars tests
