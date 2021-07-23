@@ -75,6 +75,9 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
 
+# Numpydoc otions
+numpydoc_show_class_members = False
+
 
 # -- Options for HTML output -------------------------------------------------
 
