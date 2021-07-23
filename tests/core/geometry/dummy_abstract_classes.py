@@ -19,10 +19,19 @@
 # limitations under the License.
 #
 """
-CARS steps module init file
+dummy CARS abstract classes tests
 """
+from cars.core.geometry import AbstractGeometry
 
-# CARS imports
-# TODO: remove the following import if the core/geometry/otb_geometry.py
-# file is removed from CARS
-from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
+
+@AbstractGeometry.register_subclass("NoTriangulationMethodClass")
+# pylint: disable=abstract-method
+class NoTriangulationMethodClass(AbstractGeometry):
+    """
+    geometry class without any abstract method
+    """
+
+    def wrong_func(self):
+        """
+        test func
+        """

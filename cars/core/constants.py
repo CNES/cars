@@ -82,3 +82,7 @@ RASTER_HGT_MEAN = "hgt_mean"
 RASTER_HGT_STD_DEV = "hgt_stdev"
 RASTER_BAND_MEAN = "band_mean"
 RASTER_BAND_STD_DEV = "band_stdev"
+
+# Geometry constants
+DISP_MODE = "disp"
+MATCHES_MODE = "matches"

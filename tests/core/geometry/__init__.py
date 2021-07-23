@@ -19,10 +19,5 @@
 # limitations under the License.
 #
 """
-CARS steps module init file
+CARS tests core/geometry module init file
 """
-
-# CARS imports
-# TODO: remove the following import if the core/geometry/otb_geometry.py
-# file is removed from CARS
-from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
