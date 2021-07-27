@@ -560,14 +560,6 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
 
-    # import tbb test and force numba library tbb | omp
-    from cars.cluster.tbb import check_tbb_installed
-
-    numba_threading_layer = "tbb"
-    if check_tbb_installed() and args.mode == "mp":
-        numba_threading_layer = "tbb"
-    os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
-
     # CARS imports
     from cars.conf import output_prepare
     from cars.externals.matching.correlator_configuration import corr_conf
@@ -727,6 +719,14 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
 
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
+
+    # import tbb test and force numba library tbb | omp
+    from cars.cluster.tbb import check_tbb_installed
+
+    numba_threading_layer = "omp"
+    if check_tbb_installed() and args.mode == "mp":
+        numba_threading_layer = "tbb"
+    os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
 
     # Main try/except to catch all program exceptions
     try:
