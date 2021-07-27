@@ -42,10 +42,11 @@ etc ...
 
 This modularity has to be well designed and document so as another developer can easily add other possibilities.
 
-Another modularity is the possibility to include other code
+Another modularity is the possibility to include other code between steps.
 Maybe with  the possibility to change static call graph ?  and sub functions between steps ?
 Maybe with some possibilities to add plugins in pipeline between steps ?
 
+Naming of the modularities. 
 
 Shareable
 ---------
