@@ -563,7 +563,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     # import tbb test and force numba library tbb | omp
     from cars.cluster.tbb import check_tbb_installed
 
-    numba_threading_layer = "omp"
+    numba_threading_layer = "tbb"
     if check_tbb_installed() and args.mode == "mp":
         numba_threading_layer = "tbb"
     os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
