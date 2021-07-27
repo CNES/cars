@@ -112,13 +112,6 @@ def cars_parser() -> argparse.ArgumentParser:
         action="version",
         version="%(prog)s {version}".format(version=__version__),
     )
-    parser.add_argument(
-        "--loglevel",
-        default="WARNING",
-        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO. Should be one of "
-        "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
-    )
 
     # Create subcommand parser for prepare and compute_dsm
     subparsers = parser.add_subparsers(dest="command")
@@ -212,6 +205,13 @@ def cars_parser() -> argparse.ArgumentParser:
     )
     prepare_parser.add_argument(
         "--check_inputs", action="store_true", help="Check inputs consistency"
+    )
+    prepare_parser.add_argument(
+        "--loglevel",
+        default="WARNING",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+        help="Logger level (default: INFO. Should be one of "
+        "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
     # Compute_dsm subcommand
@@ -382,6 +382,13 @@ def cars_parser() -> argparse.ArgumentParser:
         default="00:59:00",
         help="Walltime for one worker (default: 00:59:00). "
         "Should be formatted as HH:MM:SS)",
+    )
+    compute_dsm_parser.add_argument(
+        "--loglevel",
+        default="WARNING",
+        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+        help="Logger level (default: INFO. Should be one of "
+        "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
     # autocomplete
@@ -712,7 +719,6 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     # Change stdout to clean (Os) OTB output from image_envelope app.
     original_stdout = sys.stdout
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
-    setup_log(args.loglevel.upper())
 
     # Logging configuration with args Loglevel
     setup_log(args.loglevel.upper())
