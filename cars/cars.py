@@ -457,7 +457,7 @@ def parse_roi_file(
     return roi, stop_now
 
 
-def run_prepare(args, check_inputs=False):  # noqa: C901
+def run_prepare(args, dry_run=False):  # noqa: C901
     """
     Local function for running prepare pipeline from CLI
     :param args: arguments for prepare pipeline
@@ -542,7 +542,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
     # Read input json file
     in_json = input_parameters.read_input_parameters(args.injson)
 
-    if not check_inputs:
+    if not dry_run:
         prepare.run(
             in_json,
             args.outdir,
@@ -559,7 +559,7 @@ def run_prepare(args, check_inputs=False):  # noqa: C901
         )
 
 
-def run_compute_dsm(args, check_inputs=False):  # noqa: C901
+def run_compute_dsm(args, dry_run=False):  # noqa: C901
     """
     Local function for running compute_dsm pipeline from CLI
     :param args: arguments for compute_dsm pipeline
@@ -669,7 +669,7 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
     # Configure correlator
     corr_config = corr_conf.configure_correlator(args.corr_config)
 
-    if not check_inputs:
+    if not dry_run:
         # Prepare options not tested in test_cars.py
 
         # Inverse disable_cloud_small_components_filter
@@ -704,11 +704,11 @@ def run_compute_dsm(args, check_inputs=False):  # noqa: C901
         )
 
 
-def main_cli(args, parser, check_inputs=False):  # noqa: C901
+def main_cli(args, parser, dry_run=False):  # noqa: C901
     """
     Main for command line management
 
-    :param check_inputs: activate only arguments checking
+    :param dry_run: activate only arguments checking
     """
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
@@ -726,14 +726,23 @@ def main_cli(args, parser, check_inputs=False):  # noqa: C901
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
 
+    # import tbb test and force numba library tbb | omp
+    from cars.cluster.tbb import check_tbb_installed
+
+    numba_threading_layer = "omp"
+    if not dry_run:
+        if check_tbb_installed() and args.mode == "mp":
+            numba_threading_layer = "tbb"
+    os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
+
     # Main try/except to catch all program exceptions
     try:
         # main(s) for each command
         if args.command is not None:
             if args.command == "prepare":
-                run_prepare(args, check_inputs)
+                run_prepare(args, dry_run)
             elif args.command == "compute_dsm":
-                run_compute_dsm(args, check_inputs)
+                run_compute_dsm(args, dry_run)
             else:
                 raise SystemExit("CARS launched with wrong subcommand")
         else:

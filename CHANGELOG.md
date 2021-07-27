@@ -19,6 +19,7 @@ A new section Unreleased is opened then for next dev phase.
 - Move cars_cli.py from bin to cars. [#188]
 - Rename cars_cli to cars. [#188]
 - Allow multiprocessing fork mode. [#283]
+- Force OpenMP use in dask, and TBB in multiprocessing. [#304]
 
 
 ### Fixed

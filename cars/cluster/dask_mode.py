@@ -315,6 +315,7 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS",
         "GDAL_CACHEMAX",
         "DASK_CONFIG",
+        "NUMBA_THREADING_LAYER",
     ]
     names = [name for name in names if os.environ.get(name)]
     envs = ["export {}={}".format(name, os.environ[name]) for name in names]
