@@ -1,1 +1,1 @@
---loglevel CRITICAL prepare -i data_samples/input13.json -o data_samples/outprepare13/ --nb_workers=2
+prepare -i data_samples/input13.json -o data_samples/outprepare13/
