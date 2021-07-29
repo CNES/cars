@@ -106,7 +106,7 @@ def get_elevation_range_from_metadata(
 
     # If geom file exists
     if os.path.isfile(geom_file):
-        with open(geom_file, "r") as geom_file_desc:
+        with open(geom_file, "r", encoding="utf-8") as geom_file_desc:
             geom_height_offset = None
             geom_height_scale = None
 

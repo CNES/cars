@@ -92,7 +92,7 @@ def test_write_dask_config():
 
         assert os.path.exists(file_path)
 
-        with open(file_path) as file:
+        with open(file_path, encoding="utf-8") as file:
             cfg_dask_from_file = yaml.load(file, Loader=yaml.FullLoader)
 
             assert cfg_dask == cfg_dask_from_file

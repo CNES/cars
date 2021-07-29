@@ -58,7 +58,7 @@ def write_stereo_content_file(config, filename, indent=2):
     :param indent: indentations in output file
     :type indent: int
     """
-    with open(filename, "w") as fstream:
+    with open(filename, "w", encoding="utf-8") as fstream:
         # Make absolute path relative
         for tag in [
             DSM_TAG,

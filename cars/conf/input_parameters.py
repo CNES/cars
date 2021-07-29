@@ -21,8 +21,10 @@
 """
 This input module refers to parameters and configuration inputs
 """
-# Standard imports
 import json
+
+# Standard imports
+import logging
 import os
 from typing import Dict, Union
 
@@ -50,7 +52,7 @@ def read_input_parameters(filename):
     :rtype: dict
     """
     config = {}
-    with open(filename, "r") as fstream:
+    with open(filename, "r", encoding="utf-8") as fstream:
         # Load json file
         config = json.load(fstream)
         json_dir = os.path.abspath(os.path.dirname(filename))
@@ -72,12 +74,45 @@ def read_input_parameters(filename):
     return config
 
 
+def create_img_tag_from_product_key(product_key: str):
+    """
+    Create images tags from IMG_TAG_ROOT and the given product key
+    :param product_key: PRODUCT1_KEY or PRODUCT2_KEY
+    :return: IMG1_TAG or IMG2_TAG
+    """
+    if product_key not in [PRODUCT1_KEY, PRODUCT2_KEY]:
+        logger = logging.getLogger()
+        logger.warning(
+            "product_key shall be {} or {}".format(PRODUCT1_KEY, PRODUCT2_KEY)
+        )
+
+    return "{}{}".format(IMG_TAG_ROOT, product_key)
+
+
+def create_model_tag_from_product_key(product_key: str):
+    """
+    Create images tags from MODEL_TAG_ROOT and the given product key
+    :param product_key: PRODUCT1_KEY or PRODUCT2_KEY
+    :return: MODEL1_TAG or MODEL2_TAG
+    """
+    if product_key not in [PRODUCT1_KEY, PRODUCT2_KEY]:
+        logger = logging.getLogger()
+        logger.warning(
+            "product_key shall be {} or {}".format(PRODUCT1_KEY, PRODUCT2_KEY)
+        )
+    return "{}{}".format(MODEL_TAG_ROOT, product_key)
+
+
 # tags for input parameters
 INPUT_SECTION_TAG = "input"
-IMG1_TAG = "img1"
-IMG2_TAG = "img2"
-MODEL1_TAG = "model1"
-MODEL2_TAG = "model2"
+PRODUCT1_KEY = "1"
+PRODUCT2_KEY = "2"
+IMG_TAG_ROOT = "img"
+MODEL_TAG_ROOT = "model"
+IMG1_TAG = create_img_tag_from_product_key(PRODUCT1_KEY)
+IMG2_TAG = create_img_tag_from_product_key(PRODUCT2_KEY)
+MODEL1_TAG = "{}{}".format(MODEL_TAG_ROOT, PRODUCT1_KEY)
+MODEL2_TAG = "{}{}".format(MODEL_TAG_ROOT, PRODUCT2_KEY)
 MODEL_TYPE_TAG = "model_type"
 SRTM_DIR_TAG = "srtm_dir"
 COLOR1_TAG = "color1"

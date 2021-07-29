@@ -104,13 +104,24 @@ def triangulate(
     )
 
     if disp_sec is not None:
-        # reverse geometric models 1 and 2 to use the secondary disparity map
+        # reverse geometric models input_parameters.PRODUCT1_KEY and
+        # input_parameters.PRODUCT2_KEY to use the secondary disparity map
         reversed_input_configuration = {}
         for key, value in input_configuration.items():
-            if "1" in key:
-                reversed_input_configuration[key.replace("1", "2")] = value
-            elif "2" in key:
-                reversed_input_configuration[key.replace("2", "1")] = value
+            if input_parameters.PRODUCT1_KEY in key:
+                reversed_input_configuration[
+                    key.replace(
+                        input_parameters.PRODUCT1_KEY,
+                        input_parameters.PRODUCT2_KEY,
+                    )
+                ] = value
+            elif input_parameters.PRODUCT2_KEY in key:
+                reversed_input_configuration[
+                    key.replace(
+                        input_parameters.PRODUCT2_KEY,
+                        input_parameters.PRODUCT1_KEY,
+                    )
+                ] = value
             else:
                 reversed_input_configuration[key] = value
 
@@ -134,7 +145,7 @@ def triangulate(
             output_prepare.LOWRES_DEM_SPLINES_FIT_TAG
         ]
         splines_coefs = None
-        with open(splines_file, "rb") as splines_file_reader:
+        with open(splines_file, "rb", encoding="utf-8") as splines_file_reader:
             splines_coefs = pickle.load(splines_file_reader)
 
         # Read time direction line parameters

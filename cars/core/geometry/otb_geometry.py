@@ -111,7 +111,7 @@ class OTBGeometry(AbstractGeometry):
             if os.path.exists(geom_path):
                 can_open_status = True
 
-                with open(geom_path) as geom_file_desc:
+                with open(geom_path, encoding="utf-8") as geom_file_desc:
                     geom_dict = {}
                     for line in geom_file_desc:
                         key, val = line.split(": ")
@@ -355,3 +355,155 @@ class OTBGeometry(AbstractGeometry):
             [epipolar_size_x, epipolar_size_y],
             disp_to_alt_ratio,
         )
+
+    @staticmethod
+    def direct_loc(
+        conf,
+        product_key: str,
+        x_coord: float,
+        y_coord: float,
+        z_coord: float = None,
+        dem: str = None,
+        geoid: str = None,
+        default_elevation: float = None,
+    ) -> np.ndarray:
+        """
+        For a given image point, compute the latitude, longitude, altitude
+
+        Be careful: When SRTM is used, the default elevation (altitude)
+        doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
+        is called again. Check the values.
+
+        Advice: to be sure, use x,y,z inputs only
+
+        :param conf: cars input configuration dictionary
+        :param product_key: input_parameters.PRODUCT1_KEY or
+        input_parameters.PRODUCT2_KEY to identify which geometric model shall
+        be taken to perform the method
+        :param x_coord: X Coordinate in input image sensor
+        :param y_coord: Y Coordinate in input image sensor
+        :param z_coord: Z Altitude coordinate to take the image
+        :param dem: if z not defined, take this DEM directory input
+        :param geoid: if z and dem not defined, take GEOID directory input
+        :param default_elevation: if z, dem, geoid not defined, take default
+        elevation
+        :return: Latitude, Longitude, Altitude coordinates as a numpy array
+        """
+        # save os env
+        env_save = os.environ.copy()
+
+        # create OTB application
+        img = conf[
+            input_parameters.create_img_tag_from_product_key(product_key)
+        ]
+
+        s2c_app = otbApplication.Registry.CreateApplication(
+            "ConvertSensorToGeoPointFast"
+        )
+
+        s2c_app.SetParameterString("in", img)
+        s2c_app.SetParameterFloat("input.idx", x_coord)
+        s2c_app.SetParameterFloat("input.idy", y_coord)
+
+        if z_coord is not None:
+            s2c_app.SetParameterFloat("input.idz", z_coord)
+        if dem is not None:
+            s2c_app.SetParameterString("elevation.dem", dem)
+        if geoid is not None:
+            s2c_app.SetParameterString("elevation.geoid", geoid)
+            # set OTB_GEOID_FILE environment variable to the geoid path to
+            # handle OTB internal geoid management
+            os.environ["OTB_GEOID_FILE"] = geoid
+        elif "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "No geoid file given in input of "
+                "the generate_epipolar_grids function but "
+                "OTB_GEOID_FILE is set in the os environment. "
+                "OTB_GEOID_FILE will not be used to generate "
+                "the grids."
+            )
+            del os.environ["OTB_GEOID_FILE"]
+        if default_elevation is not None:
+            s2c_app.SetParameterFloat("elevation.default", default_elevation)
+        # else ConvertSensorToGeoPointFast have only X, Y and OTB
+        # configured GEOID
+
+        s2c_app.Execute()
+
+        lon = s2c_app.GetParameterFloat("output.idx")
+        lat = s2c_app.GetParameterFloat("output.idy")
+        alt = s2c_app.GetParameterFloat("output.idz")
+
+        # restore environment variables
+        if "OTB_GEOID_FILE" in env_save.keys():
+            os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+        elif geoid is not None:
+            del os.environ["OTB_GEOID_FILE"]
+
+        return np.array([lat, lon, alt])
+
+    def image_envelope(
+        self,
+        conf,
+        product_key: str,
+        shp,
+        dem=None,
+        default_alt=None,
+        geoid=None,
+    ):
+        """
+        Export the image footprint to a shapefile
+
+        :param conf: cars input configuration dictionary
+        :param product_key: input_parameters.PRODUCT1_KEY or
+        input_parameters.PRODUCT2_KEY to identify which geometric model shall
+        be taken to perform the method
+        :param shp: Path to the output shapefile
+        :param dem: Directory containing DEM tiles
+        :param default_alt: Default altitude above ellipsoid
+        :param geoid: path to geoid file
+        """
+        # save os env
+        env_save = os.environ.copy()
+
+        # create OTB application
+        img = conf[
+            input_parameters.create_img_tag_from_product_key(product_key)
+        ]
+
+        app = otbApplication.Registry.CreateApplication("ImageEnvelope")
+
+        if isinstance(img, str):
+            app.SetParameterString("in", img)
+        else:
+            app.SetParameterInputImage("in", img)
+
+        if dem is not None:
+            app.SetParameterString("elev.dem", dem)
+
+        if default_alt is not None:
+            app.SetParameterFloat("elev.default", default_alt)
+
+        if geoid is not None:
+            app.SetParameterString("elev.geoid", geoid)
+            # set OTB_GEOID_FILE environment variable to the geoid path to
+            # handle OTB internal geoid management
+            os.environ["OTB_GEOID_FILE"] = geoid
+        elif "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "No geoid file given in input of "
+                "the generate_epipolar_grids function but "
+                "OTB_GEOID_FILE is set in the os environment. "
+                "OTB_GEOID_FILE will not be used to generate "
+                "the grids."
+            )
+            del os.environ["OTB_GEOID_FILE"]
+
+        app.SetParameterString("out", shp)
+        app.ExecuteAndWriteOutput()
+
+        # restore environment variables
+        if "OTB_GEOID_FILE" in env_save.keys():
+            os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+        elif geoid is not None:
+            del os.environ["OTB_GEOID_FILE"]

@@ -291,8 +291,7 @@ def run(  # noqa: C901
         inter_xmax,
         inter_ymax,
     ) = projection.ground_intersection_envelopes(
-        img1,
-        img2,
+        config,
         shp1,
         shp2,
         out_envelopes_intersection,
@@ -389,7 +388,7 @@ def run(  # noqa: C901
         right_az,
         right_elev_angle,
         convergence_angle,
-    ) = projection.get_ground_angles(img1, img2)
+    ) = projection.get_ground_angles(config)
 
     logging.info(
         "Left  satellite coverture: Azimuth angle : {:.1f}°, "
@@ -868,25 +867,8 @@ def run(  # noqa: C901
         )
 
         # First, we estimate direction of acquisition time for both images
-        vec1 = projection.get_time_ground_direction(img1, dem=srtm_dir)
-        vec2 = projection.get_time_ground_direction(img2, dem=srtm_dir)
-        time_direction_vector = (vec1 + vec2) / 2
-
-        def display_angle(vec):
-            """
-            Display angle in degree from a vector x
-            :param vec: vector to display
-            :rtype: angle in degree
-            """
-            return 180 * math.atan2(vec[1], vec[0]) / math.pi
-
-        logging.info(
-            "Time direction average azimuth: "
-            "{}° (img1: {}°, img2: {}°)".format(
-                display_angle(time_direction_vector),
-                display_angle(vec1),
-                display_angle(vec2),
-            )
+        time_direction_vector, _, _ = devib.acquisition_direction(
+            config, srtm_dir
         )
 
         origin = [
@@ -944,7 +926,9 @@ def run(  # noqa: C901
             out_dir, "lowres_dem_splines_fit.pck"
         )
 
-        with open(lowres_dem_splines_fit_file, "wb") as splines_fit_file_reader:
+        with open(
+            lowres_dem_splines_fit_file, "wb", encoding="utf-8"
+        ) as splines_fit_file_reader:
             pickle.dump(splines, splines_fit_file_reader)
             out_json[output_prepare.PREPROCESSING_SECTION_TAG][
                 output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG

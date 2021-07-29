@@ -62,8 +62,8 @@ def test_lowres_initial_dem_splines_fit():
     )
 
     # Uncomment to update reference
-    # with open(absolute_data_path(
-    #                   "ref_output/splines_ref.pck"),'wb') as splines_files:
+    # with open(absolute_data_path("ref_output/splines_ref.pck"), 'wb')\
+    #         as splines_file:
     #     pickle.dump(splines, splines_file)
 
     with open(

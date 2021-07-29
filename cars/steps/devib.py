@@ -23,9 +23,11 @@ Devib module:
 contains functions for DEM devibration step in prepare and compute_dsm pipeline.
 """
 
-# Standard imports
 import logging
 import math
+
+# Standard imports
+from typing import Tuple
 
 # Third party imports
 import numpy as np
@@ -34,7 +36,8 @@ from scipy import interpolate
 from scipy.signal import butter, filtfilt, lfilter, lfilter_zi
 
 # CARS imports
-from cars.core.projection import project_coordinates_on_line
+from cars.conf import input_parameters
+from cars.core import projection
 
 
 def lowres_initial_dem_splines_fit(
@@ -73,7 +76,7 @@ def lowres_initial_dem_splines_fit(
     # Project coordinates on the line
     # of increasing acquisition time to form 1D coordinates
     # If there are sensor oscillations, they will occur in this direction
-    linear_coords = project_coordinates_on_line(
+    linear_coords = projection.project_coordinates_on_line(
         x_values_2d, y_values_2d, origin, time_direction_vector
     )
 
@@ -184,3 +187,44 @@ def lowres_initial_dem_splines_fit(
 
     # Return estimated spline
     return splines
+
+
+def acquisition_direction(conf, dem: str) -> Tuple[np.ndarray]:
+    """
+    Computes the mean acquisition of the input images pair
+
+    :param conf: cars input configuration dictionary
+    :param dem: path to the dem directory
+    :return: a tuple composed of :
+        - the mean acquisition direction as a numpy array
+        - the acquisition direction of the first product in the configuration
+        as a numpy array
+        - the acquisition direction of the second product in the configuration
+        as a numpy array
+    """
+    vec1 = projection.get_time_ground_direction(
+        conf, input_parameters.PRODUCT1_KEY, dem=dem
+    )
+    vec2 = projection.get_time_ground_direction(
+        conf, input_parameters.PRODUCT2_KEY, dem=dem
+    )
+    time_direction_vector = (vec1 + vec2) / 2
+
+    def display_angle(vec):
+        """
+        Display angle in degree from a vector x
+        :param vec: vector to display
+        :return: angle in degree
+        """
+        return 180 * math.atan2(vec[1], vec[0]) / math.pi
+
+    logging.info(
+        "Time direction average azimuth: "
+        "{}° (img1: {}°, img2: {}°)".format(
+            display_angle(time_direction_vector),
+            display_angle(vec1),
+            display_angle(vec2),
+        )
+    )
+
+    return time_direction_vector, vec1, vec2

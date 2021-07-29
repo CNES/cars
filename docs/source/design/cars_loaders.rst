@@ -179,13 +179,48 @@ Currently, the `AbstractGeometry` class requires the implementation of the follo
             - the disparity to altitude ratio as a float
         """
 
+* `direct_loc` which performs direct localization operations
+
+.. code-block:: python
+
+    def direct_loc(
+        conf,
+        product_key: str,
+        x_coord: float,
+        y_coord: float,
+        z_coord: float = None,
+        dem: str = None,
+        geoid: str = None,
+        default_elevation: float = None,
+    ) -> np.ndarray:
+        """
+        For a given image point, compute the latitude, longitude, altitude
+
+        Advice: to be sure, use x,y,z inputs only
+
+        :param conf: cars input configuration dictionary
+        :param product_key: input_parameters.PRODUCT1_KEY or
+        input_parameters.PRODUCT2_KEY to identify which geometric model shall
+        be taken to perform the method
+        :param x_coord: X Coordinate in input image sensor
+        :param y_coord: Y Coordinate in input image sensor
+        :param z_coord: Z Altitude coordinate to take the image
+        :param dem: if z not defined, take this DEM directory input
+        :param geoid: if z and dem not defined, take GEOID directory input
+        :param default_elevation: if z, dem, geoid not defined, take default
+        elevation
+        :return: Latitude, Longitude, Altitude coordinates as a numpy array
+        """
+
 Where `constants` corresponds to the `cars/core/constants.py` module.
 
 Available methods
 ^^^^^^^^^^^^^^^^^
 
 Some methods are available in the `AbstractGeometry` class that might be useful for any geometry loader which would only perform the triangulation using sensor coordinates.
-CARS' API only provides as inputs of the geometry loader triangulation method the epipolar coordinates for each image of the pair. Thus the `matches_to_sensor_coords` method enables any laoder to convert those coordinates into the corresponding sensor ones.
+CARS' API only provides as inputs of the geometry loader triangulation method the epipolar coordinates for each image of the pair. Thus the `matches_to_sensor_coords` method enables any loader to convert those coordinates into the corresponding sensor ones.
+
+`AbstractGeometry` implements the method `image_envelope`. It computes the ground footprint of an image in sensor geometry by projecting its four corners using the direct localization method. This method can be overloaded by any geometry loader if necessary.
 
 Matching loader
 ===============

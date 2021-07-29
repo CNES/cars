@@ -48,7 +48,7 @@ def write_preprocessing_content_file(config, filename, indent=2):
     :param indent: indentations in output file
     :type indent: int
     """
-    with open(filename, "w") as fstream:
+    with open(filename, "w", encoding="utf-8") as fstream:
         # Make absolute path relative
         for tag in [
             LEFT_EPIPOLAR_GRID_TAG,
@@ -98,7 +98,7 @@ def read_preprocessing_content_file(filename):
     :rtype: dict
     """
     config = {}
-    with open(filename, "r") as fstream:
+    with open(filename, "r", encoding="utf-8") as fstream:
         config = json.load(fstream)
         json_dir = os.path.abspath(os.path.dirname(filename))
         # Make relative path absolute

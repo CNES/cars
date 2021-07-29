@@ -25,9 +25,6 @@ Test module for cars/externals/otb_pipelines.py
 # Standard imports
 from __future__ import absolute_import
 
-import os
-import tempfile
-
 # Third party imports
 import pytest
 import xarray as xr
@@ -41,7 +38,6 @@ from ..helpers import (
     assert_same_datasets,
     otb_geoid_file_set,
     otb_geoid_file_unset,
-    temporary_dir,
 )
 
 
@@ -101,20 +97,6 @@ def test_get_utm_zone_as_epsg_code():
     """
     epsg = otb_pipelines.get_utm_zone_as_epsg_code(1.442299, 43.600764)
     assert epsg == 32631
-
-
-@pytest.mark.unit_tests
-def test_image_envelope():
-    """
-    Test image_envelope function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        shp = os.path.join(directory, "envelope.gpkg")
-        otb_pipelines.image_envelope(img, shp, dem)
-        assert os.path.isfile(shp)
 
 
 @pytest.mark.unit_tests

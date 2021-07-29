@@ -425,6 +425,28 @@ def test_generate_epipolar_grids_scaled_inputs():
 
 
 @pytest.mark.unit_tests
+def test_image_envelope():
+    """
+    Test image_envelope function
+    """
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    conf = {input_parameters.IMG1_TAG: img}
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader = (
+            AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                "OTBGeometry"
+            )
+        )
+        geo_loader.image_envelope(conf, input_parameters.PRODUCT1_KEY, shp, dem)
+
+        assert os.path.isfile(shp)
+
+
+@pytest.mark.unit_tests
 def test_check_consistency():
     """
     Test otb_can_open() with different geom configurations

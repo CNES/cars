@@ -66,7 +66,7 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
     :return: True if the json file validates the msk_classes_json_schema,
         False otherwise
     """
-    with open(mask_classes_path, "r") as mask_classes_file:
+    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
         try:
             inputs.check_json(classes_usage_dict, msk_classes_json_schema)
@@ -90,7 +90,7 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
     """
     classes_usage_dict = {}
 
-    with open(mask_classes_path, "r") as mask_classes_file:
+    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
 
     # check that required values are not protected for CARS internal usage
