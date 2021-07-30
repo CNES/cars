@@ -1,14 +1,63 @@
-.. _cli_usage:
+.. _user_manual:
 
-==================
-Command line usage
-==================
+===========
+User Manual
+===========
 
-`cars  <../../cars/cars.py>`_ is the unique entry point for CARS command line usage.
+Before using :ref:`cars_cli`, input data have to be checked.
+
+Input data
+==========
+
+Images and Geometric models
+---------------------------
+
+CARS supports the following official sensors raster products:
+* Pléiades (PHR)
+* Spot 6/7
+* DigitalGlobe
+
+More generally, all rasters for which `GDAL`_ can interpret the image geometric model through RPC coefficients may work.
+For now however, CARS has been mainly tested on Pléiades products.
+
+.. warning::
+  Please check input rasters and associated **geometric model** are well read with  `OTB ReadImageInfo application <https://www.orfeo-toolbox.org/CookBook/Applications/app_ReadImageInfo.html>`_
+
+Considering the raster images with a Dimap format (Pléiades, Spot 6/7), it is possible to directly use the XML DIMAP files. This enables to avoid a potential sub-grid division of the products, or an impeding geo-referencing of the image files (usually done for the official products), which would degrade the restitution.
+
+An additional image can be provided to be projected on the same grid as the one of the final DSM (ortho-image).
+
+CARS also supports the products' extracts done with the `otbcli_ExtractROI <https://www.orfeo-toolbox.org/CookBook/Applications/app_ExtractROI.html>`_ OTB application.
+See :ref:`faq` for details.
+
+Initial Input Digital Elevation Model
+-------------------------------------
+
+For now, CARS uses an initial input Digital Elevation Model which is integrated in the stereo-rectification to minimize the disparity intervals to explore. Any geotiff file can be used. If needed, the ``otbcli_DownloadSRTMTiles`` OTB command enables to download the SRTM data corresponding to the zone to process.
+
+Typically, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ can be used through `OTB DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook/Applications/app_DownloadSRTMTiles.html>`_
+
+Classification Masks
+--------------------
+
+CARS can use a classification mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
+
+The masks can be "two-states" ones: 0 values will be considered as valid data, while any other value will be considered as unvalid data and thus will be masked during the 3D restitution process.
+
+The masks can also be multi-classes ones: they contain several values, one for each class (forest, water, cloud...). To use a multi-classes mask, a json file has to be indicated by the user in the configuration file. See the :ref:`cars_cli` for more details.
+
+**Warning** : The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
+
+.. _cars_cli:
+
+CARS CLI
+=========
+
+`cars` is the unique entry point for CARS command line interface (CLI).
 
 It enables two main steps : `prepare` and `compute_dsm` described in the following sections.
 
-.. code-block:: bash
+.. code-block:: console
 
     usage: cars [options] <command> [<args>]
 
@@ -21,44 +70,35 @@ It enables two main steps : `prepare` and `compute_dsm` described in the followi
 
     The options are :
       -h, --help            show this help message and exit
-      --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                            Logger level (default: INFO. Should be one of (DEBUG,
-                            INFO, WARNING, ERROR, CRITICAL)
+      --version, -v         show program's version number and exit
 
-Arguments in a file
-===================
+Arguments on a file
+-------------------
+
 Sometimes, for example when dealing with a particularly long argument lists, it may make sense to keep the list of arguments in a file rather than typing it out at the command line.
 With CARS, the `@` character can be used to define a file containing arguments to be used.
 
-.. code-block:: bash
+.. code-block:: console
 
     cars @args.txt
 
 Example of arguments list in @args.txt file:
 
-.. code-block:: bash
+.. code-block:: console
 
-    --loglevel CRITICAL prepare  -i data_samples/input12.json -o  data_samples/outprepare12 --nb_workers 2
+    prepare  -i data_samples/input12.json -o  data_samples/outprepare12 --nb_workers 2 --loglevel INFO
 
-Examples files with `demo data  <demo/data_samples.tar.bz2>` can be found in demo directory of cars documentation.
+Examples files and data can be found in `demo directory <https://github.com/CNES/cars/tree/master/docs/source/demo>`_ in source code.
 
+.. _prepare_cli:
 
-Prepare DSM production
-======================
-
-The prepare part will perform the following steps:
-
-1. Compute the stereo-rectification grids of the input pair's images
-2. Compute sift matches between the left and right images in epipolar geometry
-3. Derive an optimal disparity range from the matches
-4. Derive a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error
-5. Apply the estimated correction to the right grid
-6. Export the left and corrected right grids
+Prepare pipeline CLI
+====================
 
 Command Description
 -------------------
 
-.. code-block:: bash
+.. code-block:: console
 
         usage: cars prepare [-h] -i INJSON -o OUTDIR [--epi_step EPI_STEP]
                                    [--disparity_margin DISPARITY_MARGIN]
@@ -72,31 +112,25 @@ Command Description
 
         optional arguments:
           -h, --help            show this help message and exit
-          --epi_step EPI_STEP   Step of the deformation grid in nb. of pixels
-                                (default: 30, should be > 1)
+          --epi_step EPI_STEP   Step of the deformation grid in nb. of pixels (default: 30, should be > 1)
           --disparity_margin DISPARITY_MARGIN
-                                Add a margin to min and max disparity as percent of
-                                the disparity range (default: 0.02, should be in range
-                                [0,1])
+                                Add a margin to min and max disparity as percent of the disparity range (default: 0.02, should be in range [0,1])
           --epipolar_error_upper_bound EPIPOLAR_ERROR_UPPER_BOUND
-                                Expected upper bound for epipolar error in pixels
-                                (default: 10, should be > 0)
+                                Expected upper bound for epipolar error in pixels (default: 10, should be > 0)
           --epipolar_error_maximum_bias EPIPOLAR_ERROR_MAXIMUM_BIAS
-                                Maximum bias for epipolar error in pixels (default: 0,
-                                should be >= 0)
+                                Maximum bias for epipolar error in pixels (default: 0, should be >= 0)
           --elevation_delta_lower_bound ELEVATION_DELTA_LOWER_BOUND
-                                Expected lower bound for elevation delta with respect
-                                to input low resolution DTM in meters (default: -1000)
+                                Expected lower bound for elevation delta with respect to input low resolution DTM in meters (default: -1000)
           --elevation_delta_upper_bound ELEVATION_DELTA_UPPER_BOUND
-                                Expected upper bound for elevation delta with respect
-                                to input low resolution DTM in meters (default: 1000)
+                                Expected upper bound for elevation delta with respect to input low resolution DTM in meters (default: 1000)
           --mode {pbs_dask,local_dask}
                                 Parallelization mode (default: local_dask)
           --nb_workers NB_WORKERS
-                                Number of workers (default: 8, should be > 0)
-          --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
-                                formatted as HH:MM:SS)
+                                Number of workers (default: 2, should be > 0)
+          --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be formatted as HH:MM:SS)
           --check_inputs        Check inputs consistency
+          --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                                Logger level (default: INFO. Should be one of (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
         mandatory arguments:
           -i INJSON, --injson INJSON
@@ -108,7 +142,7 @@ Command Description
 Command line usage
 ------------------
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cars prepare -i preproc_input.json -o outdir
 
@@ -133,6 +167,7 @@ The prepare input file (``preproc_input.json``) file is formatted as follows:
         "nodata1": 0,
         "nodata2": 0
     }
+
 
 
 The mandatory fields of the input json file are:
@@ -179,7 +214,7 @@ Usage in the ``prepare`` step:
 Usage in the ``compute_dsm`` step:
 
 * The classes listed in ``ignored_by_correlation`` will be masked at the correlation step (pandora).
-* The classes listed in ``set_to_ref_alt`` will be set to the reference altitude (srtm or scalar). To do so, these pixels' disparity will be set to 0.
+* The classes listed in ``set_to_ref_alt`` will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
 
 Input optional parameters
@@ -194,7 +229,9 @@ Some optional parameters of the command line impact the matching:
 * ``elevation_delta_lower_bound`` parameter: expected lower bound of the altitude discrepancy with the input DEM (in meters).
 * ``elevation_delta_upper_bound`` parameter: expected upper bound of the altitude discrepancy with the input DEM (in meters).
 
-During its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks' execution in real time. The parameters ``nb_workers`` and ``walltime`` configures respectively dask cluster workers number and the maximum time of execution.
+During its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``).
+In the logs, an internet address is displayed.
+It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time. The parameters ``nb_workers`` and ``walltime`` configures respectively dask cluster workers number and the maximum time of execution.
 
 ``cars prepare`` has also a ``--check_inputs`` option which enables the check of the input data consistency, it is to say that:
 
@@ -215,7 +252,7 @@ Output contents
 
 After its execution, the ``outdir`` folder contains the following elements:
 
-.. code-block:: bash
+.. code-block:: console
 
     ls outdir/
     yy-MM-dd_HHhmmm_prepare.log  dask_log                     left_envelope.prj  left_epipolar_grid.tif      lowres_initial_dem.nc  right_envelope.dbf  right_envelope.shx
@@ -321,32 +358,26 @@ The other files are:
 * ``right_epipolar_grid.tif`` : right image epipolar grid with correction
 * ``left_envelope.shp`` : left image envelope
 * ``right_envelope.shp`` : right image envelope
-* ``envelopes_intersection.gpkg`` : intersection of the right and left images' envelopes
+* ``envelopes_intersection.gpkg`` : intersection of the right and left images's envelopes
 * ``ground_positions_grid.tif`` : image with the same geometry as the epipolar grid and for which each point has for value the ground position (lat/lon) of the corresponding point in the epipolar grid
 * ``matches.npy`` : matches list after filtering
-* ``raw_matches.npy`` : initial matches list
+* ``raw_matches.npy`` : initial raw matches list
 * ``lowres_dsm_from_matches.nc`` : low resolution :term:`DSM` computed from the matches
 * ``lowres_elevation_diff.nc`` : difference between the low resolution :term:`DSM` computed from the matches and the initial DEM in input of the prepare step
-* ``lowres_initial_dem.nc`` : initial DEM in input of the prepare step corresponding to the two images envelopes' intersection zone
+* ``lowres_initial_dem.nc`` : initial DEM in input of the prepare step corresponding to the two images envelopes's intersection zone
 * ``corrected_lowres_dsm_from_matches.nc`` :  Corrected low resolution :term:`DSM` from matches if low resolution :term:`DSM` is large enough (minimum size is 100x100)
 * ``corrected_lowres_elevation_diff.nc`` : difference between the initial DEM in input of the prepare step  and the corrected low resolution :term:`DSM`. if low resolution :term:`DSM` is large enough (minimum size is 100x100)
 * ``dask_config_prepare.yaml`` : the dask configuration used (only for ``local_dask`` and ``pbs_dask`` modes)
 
-DSM production with compute\_dsm
-================================
+.. _compute_dsm_cli:
 
-Once the prepare preprocessing step is done, the ``compute_dsm`` program will be in charge of:
-
-1. **resampling the images pairs in epipolar geometry** (corrected one for the right image) by using SRTM in order to reduce the disparity intervals to explore,
-2. **correlating the images pairs** in epipolar geometry
-3. **triangulating the sights** and get for each point of the reference image a latitude, longitude, altitude point
-4. **filtering the 3D points cloud** via two consecutive filters. The first one removes the small groups of 3D points. The second filters the points which have the most scattered neighbors. Those two filters are activated by default.
-5. **projecting these altitudes on a regular grid** as well as the associated color
+Compute DSM pipeline CLI
+========================
 
 Command Description
 -------------------
 
-.. code-block:: bash
+.. code-block:: console
 
         usage: cars compute_dsm [-h] -i [INJSONS [INJSONS ...]] -o OUTDIR
                                        [--sigma SIGMA] [--dsm_radius DSM_RADIUS]
@@ -366,62 +397,47 @@ Command Description
                                        [--nb_workers NB_WORKERS] [--walltime WALLTIME]
 
         optional arguments:
-          -h, --help            show this help message and exit
-          --sigma SIGMA         Sigma for rasterization in fraction of pixels
-                                (default: None, should be >= 0)
-          --dsm_radius DSM_RADIUS
-                                Radius for rasterization in pixels (default: 1, should
-                                be >= 0)
-          --resolution RESOLUTION
-                                Digital Surface Model resolution (default: 0.5, should
-                                be > 0)
-          --epsg EPSG           EPSG code (default: None, should be > 0)
-          --roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX
-                                DSM ROI in final projection [xmin ymin xmax ymax] (it
-                                has to be in final projection)
-          --roi_file ROI_FILE   DSM ROI file (vector file or image which footprint
-                                will be taken as ROI).
-          --dsm_no_data DSM_NO_DATA
-                                No data value to use in the final DSM file (default:
-                                -32768)
-          --color_no_data COLOR_NO_DATA
-                                No data value to use in the final color image
-                                (default: 0)
-          --corr_config CORR_CONFIG
-                                Correlator config (json file)
-          --min_elevation_offset MIN_ELEVATION_OFFSET
-                                Override minimum disparity from prepare step with this
-                                offset in meters
-          --max_elevation_offset MAX_ELEVATION_OFFSET
-                                Override maximum disparity from prepare step with this
-                                offset in meters
-          --output_stats        Outputs dsm as a netCDF file embedding quality
-                                statistics.
-          --use_geoid_as_alt_ref
-                                Use geoid grid as altimetric reference.
-          --use_sec_disp        Use the points cloudGenerated from the secondary
-                                disparity map.
-          --snap_to_left_image  This mode can be used if all pairs share the same left
-                                image. It will then modify lines of sights of
-                                secondary images so that they all cross those of the
-                                reference image.
-          --align_with_lowres_dem
-                                If this mode is used, during triangulation, points
-                                will be corrected using the estimated correction from
-                                the prepare step in order to align 3D points with the
-                                low resolution initial DEM.
-          --disable_cloud_small_components_filter
-                                This mode deactivates the points cloud filtering of
-                                small components.
-          --disable_cloud_statistical_outliers_filter
-                                This mode deactivates the points cloud filtering of
-                                statistical outliers.
-          --mode {pbs_dask,local_dask,mp}
-                                Parallelization mode (default: local_dask)
-          --nb_workers NB_WORKERS
-                                Number of workers (default: 32, should be > 0)
-          --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be
-                                formatted as HH:MM:SS)
+        -h, --help            show this help message and exit
+        --sigma SIGMA         Sigma for rasterization in fraction of pixels (default: None, should be >= 0)
+        --dsm_radius DSM_RADIUS
+                              Radius for rasterization in pixels (default: 1, should be >= 0)
+        --resolution RESOLUTION
+                              Digital Surface Model resolution (default: 0.5, should be > 0)
+        --epsg EPSG           EPSG code (default: None, should be > 0)
+        --roi_bbox ROI_BBOX ROI_BBOX ROI_BBOX ROI_BBOX
+                              DSM ROI in final projection [xmin ymin xmax ymax] (it has to be in final projection)
+        --roi_file ROI_FILE   DSM ROI file (vector file or image which footprint will be taken as ROI).
+        --dsm_no_data DSM_NO_DATA
+                              No data value to use in the final DSM file (default: -32768)
+        --color_no_data COLOR_NO_DATA
+                              No data value to use in the final color image (default: 0)
+        --msk_no_data MSK_NO_DATA
+                              No data value to use in the final mask image (default: 65535)
+        --corr_config CORR_CONFIG
+                              Correlator config (json file)
+        --min_elevation_offset MIN_ELEVATION_OFFSET
+                              Override minimum disparity from prepare step with this offset in meters
+        --max_elevation_offset MAX_ELEVATION_OFFSET
+                              Override maximum disparity from prepare step with this offset in meters
+        --output_stats        Outputs dsm as a netCDF file embedding quality statistics.
+        --use_geoid_as_alt_ref
+                              Use geoid grid as altimetric reference.
+        --use_sec_disp        Use the points cloudGenerated from the secondary disparity map.
+        --snap_to_left_image  This mode can be used if all pairs share the same left image. It will then modify lines of sights of secondary images so that they all cross those of the reference image.
+        --align_with_lowres_dem
+                              If this mode is used, during triangulation, points will be corrected using the estimated correction from the prepare step in order to align 3D points with the low resolution initial
+                              DEM.
+        --disable_cloud_small_components_filter
+                              This mode deactivates the points cloud filtering of small components.
+        --disable_cloud_statistical_outliers_filter
+                              This mode deactivates the points cloud filtering of statistical outliers.
+        --mode {pbs_dask,local_dask,mp}
+                              Parallelization mode (default: local_dask)
+        --nb_workers NB_WORKERS
+                              Number of workers (default: 2, should be > 0)
+        --walltime WALLTIME   Walltime for one worker (default: 00:59:00). Should be formatted as HH:MM:SS)
+        --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
+                              Logger level (default: INFO. Should be one of (DEBUG, INFO, WARNING, ERROR, CRITICAL)
 
         mandatory arguments:
           -i [INJSONS [INJSONS ...]], --injsons [INJSONS [INJSONS ...]]
@@ -433,7 +449,7 @@ Command Description
 Command line usage:
 -------------------
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cars compute_dsm -i content.json content2.json ... -o outdir
 
@@ -443,7 +459,7 @@ Its output is the path to the folder which will contain the results of the stere
 Input optional parameters
 -------------------------
 
-Some optional parameters enable to modify the regular grid:
+Some optional parameters:
 
 * ``sigma``: controls the influence radius of each point of the cloud during the rasterization
 * ``dsm_radius``: number of pixel rings to take into account in order to define the altitude of the current pixel
@@ -456,7 +472,7 @@ Some optional parameters enable to modify the regular grid:
 * ``dsm_no_data``: no data value of the final dsm
 * ``color_no_data``: no data value of the final color ortho-image
 * ``corr``: correlator to use ('pandora' (version V1.B))
-* ``corr_config``: correlator's configuration file (for pandora)
+* ``corr_config``: correlator configuration file (for pandora)
 * ``min_elevation_offset``: minimum offset in meter to use for the correlation. This parameter is converted in minimum of disparity using the disp_to_alt_ratio computed in the prepare step.
 * ``max_elevation_offset``: maximum offset in meter to use for the correlation. This parameter is converted in maximum of disparity using the disp_to_alt_ratio computed in the prepare step.
 * ``use_geoid_as_alt_ref``: controls the altimetric reference used to compute altitudes. If activated, the function uses the geoid file defined by the ```OTB_GEOID_FILE``` environment variable.
@@ -472,7 +488,7 @@ As the prepare part, during its execution, this program creates a distributed da
 The following parameters can be used :
 * ``mode``: parallelisation mode (``pbs_dask``, ``local_dask`` or ``mp`` for multiprocessing)
 * ``nb_workers``: number of nodes to use for the computation
-* ``walltime``: nodes' allocation time
+* ``walltime``: nodes allocation time
 
 To know the number of used cores, the program rests on the ``OMP_NUM_THREADS`` environment variable.
 In intern, the tile size is estimated from the value of the ``OTB_MAX_RAM_HINT`` variable (expressed in MB) times the memory amount reserved for a node, it is to say ``OMP_NUM_THREADS x 5 Gb``.
@@ -492,7 +508,7 @@ Output contents
 
 The output folder contains a content.json file, the computed dsm, the color ortho-image (if the ``color1`` field is not set in the input configuration file then the ``img1`` is used) and, if dask is used, the dask configuration.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ls
     yy-MM-dd_HHhmmm_compute_dsm.log  clr.tif  content.json  dask_config_compute_dsm.yaml  dask_log
@@ -500,7 +516,7 @@ The output folder contains a content.json file, the computed dsm, the color orth
 
 If the ``--output_stats`` is activated, the output directory will contain tiff images corresponding to different statistics computed during the rasterization.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ ls
     yy-MM-dd_HHhmmm_compute_dsm.log  clr.tif  content.json  dask_config_compute_dsm.yaml  dask_log  dsm_mean.tif  dsm_n_pts.tif  dsm_pts_in_cell.tif  dsm_std.tif  dsm.tif
@@ -508,8 +524,8 @@ If the ``--output_stats`` is activated, the output directory will contain tiff i
 Those statistics are:
 
 * The number of 3D points used to compute each cell (``dsm_n_pts.tif``)
-* The elevations' mean of the 3D points used to compute each cell (``dsm_mean.tif``)
-* The elevations' standard deviation of the 3D points used to compute each cell (``dsm_std.tif``)
+* The elevations's mean of the 3D points used to compute each cell (``dsm_mean.tif``)
+* The elevations's standard deviation of the 3D points used to compute each cell (``dsm_std.tif``)
 * The number of 3D points strictly contained in each cell (``dsm_pts_in_cell.tif``)
 
 
@@ -673,3 +689,31 @@ Once the computation is done, the output folder also contains a ``content.json``
         }
       }
     }
+
+Static Configuration
+====================
+
+A default `static configuration  <../../cars/static_configuration.json>`_ is deployed with CARS :ref:`install`.
+This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
+
+A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
+It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``
+
+
+Output data
+===========
+
+In fine, CARS produces a geotiff file which contains the Digital Surface Model in the required cartographic projection and at the resolution defined by the user.
+
+If the user provided an additional image, an ortho-image is also produced. The latter is stackable to the DSM.
+
+Those two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
+
+Considering bulky files, it is recommended to generate an overview file with `GDAL`_ before opening it with QGIS:
+
+.. code-block:: console
+
+    $ gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
+
+
+.. _`GDAL`: https://gdal.org/

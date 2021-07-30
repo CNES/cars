@@ -8,9 +8,7 @@
 CARS, a satellite multi view stereo pipeline
 ============================================
 
-**CARS** is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
-This Multiview stereo pipeline is intended for massive :term:`DSM` production with a robust and performant design.
-
+:term:`CARS` is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 
 .. |img1| image:: images/animation_sat.gif
    :width: 100%
@@ -23,39 +21,25 @@ This Multiview stereo pipeline is intended for massive :term:`DSM` production wi
 | |img1|             | |img2|                                      |
 +--------------------+---------------------------------------------+
 
+This Multiview stereo pipeline is intended for massive :term:`DSM` production with a robust and performant design.
 
-CARS means CNES Algorithms to Reconstruct Surface (or Chaîne Automatique de Restitution Stéréoscopique in french)
-
-Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
-
-- `CO3D project <https://co3d.cnes.fr/en/co3d-0>`_
-- `AI4GEO project <https://www.ai4geo.eu/>`_
-
-It is composed of:
-
-- A **Python 3D API**, based on xarray, enabling to realize all the computation steps leading to a :term:`DSM`.
-- An **end-to-end processing** chain based on this API.
-
-The chain can use dask (local or cluster with centralized GPFS files storage) or multiprocessing libraries to distribute the computations.
-
-Table of Contents
-=================
+Be aware that CARS is new and evolving to maturity with CNES roadmaps and `CO3D <https://co3d.cnes.fr/en/co3d-0>`_
+and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
 
-   generalities
+   getting_started
    install
-   cli_usage
+   user_manual
    notebooks
+   architecture
    developer
+   faq
    glossary
-   apidoc/modules
 
-Indices and tables
-==================
+* :ref:`Generated index <genindex>`
 
-* :ref:`modindex`
-* :ref:`genindex`
-* :ref:`search`
+..
+
+  comment to add for autoapi module * :ref:`modindex`

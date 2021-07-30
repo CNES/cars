@@ -1,8 +1,8 @@
-=====================
-Developer guide
-=====================
+================
+Developer manual
+================
 
-CARS is an open source software : don't hesitate to hack it and contribute.
+CARS is an open source software : don't hesitate to hack it and contribute !
 
 Please see `the GitHub repository`_ for code and more documentation,
 and the `official CARS Documentation`_ for user documentation.
@@ -14,67 +14,70 @@ Please contact cars AT cnes.fr if needed.
 Getting started
 ===============
 
-First, you need to install `OTB`_ and `VLFeat`_: see :ref:`dependencies` steps.
+* Install `OTB`_ and `VLFeat`_: see :ref:`dependencies`.
 
 Obviously, we recommend to use a `virtual environment`_, so that cars and its
 dependencies do not interfere with other packages installed on your
-machine.
+system.
 
-Clone the **cars** repository from GitHub and use **make** command :
+* Clone CARS repository from GitHub :
 
 .. code-block:: console
 
-    git clone https://github.com/CNES/cars.git
-    cd cars
-    make install-dev
-    source venv/bin/activate
-    source venv/bin/env_cars.sh
+    $ git clone https://github.com/CNES/cars.git
+    $ cd cars
 
-The Makefile file describes the proposed developer installation method which can be changed at will.
-It uses  the following pip installation in a `virtual environment`_
+* Install CARS in a `virtual environment`_ in developer mode
+
+.. code-block:: console
+
+    $ make install-dev # CARS installed in ``venv`` virtualenv
+
+* Run CARS in virtualenv
+
+.. code-block:: console
+
+    $ source venv/bin/activate
+    $ source venv/bin/env_cars.sh
+    $ cars -h
+
+The dev install method is described in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_
+It uses the following pip editable install:
 
 .. code-block:: console
 
     pip install -e .[dev]
 
-Now, in the virtual environment, ``cars`` is pointing at installed local copy, so
-when changes are made, their effect can be easily seen.
-
-.. code-block:: console
-
-    cars -h
+Source code modifications directly impacts ``cars`` installed command line.
 
 Code quality
 =============
-We use pylint as quality code checking.
-Black, isort and flake8 are also installed in developer environment.
+CARS use `isort <https://pycqa.github.io/isort/>`_, `black <https://black.readthedocs.io/>`_, `flake8 <https://flake8.pycqa.org/>`_ and `pylint <http://pylint.pycqa.org/>`_ quality code checking.
 
-Use the following command to check the code with previous tool
+Use the following command in CARS virtualenv to check the code with these tools:
 
 .. code-block:: console
 
-    make lint
+    $ make lint
 
 Use the following command to format the code with isort and black:
 
 .. code-block:: console
 
-    make format
+    $ make format
 
 Tests
 ======
 
 CARS includes a set of tests which can be executed with ``pytest`` to validate an installation or a development.
 
-You can easily launch test in virtualenv using make after developer installation above :
+To launch test:
 
 .. code-block:: console
 
-    source venv/bin/activate
-    source venv/bin/env_cars.sh
     make test
 
-They launch only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
+It launche only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
 
 Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use ``/tmp``).
 
