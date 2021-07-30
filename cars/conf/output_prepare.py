@@ -286,7 +286,10 @@ PREPROCESSING_CONTENT_SCHEMA = {
     PREPROCESSING_SECTION_TAG: {
         PREPROCESSING_VERSION_TAG: str,
         PREPROCESSING_PARAMETERS_SECTION_TAG: PREPROCESSING_PARAMETERS_SCHEMA,
-        input_parameters.STATIC_PARAMS_TAG: static_conf.prepare_params_schema,
+        input_parameters.STATIC_PARAMS_TAG: {
+            static_conf.prepare_tag: static_conf.prepare_params_schema,
+            static_conf.plugins_tag: static_conf.plugins_schema,
+        },
         PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA,
     },
 }

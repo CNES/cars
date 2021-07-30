@@ -49,7 +49,6 @@ Quick install
 
 Advanced Install
 ================
-
 The following steps are defined in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_  ``install`` command.
 
 Virtualenv
@@ -100,7 +99,7 @@ Then, to install CARS:
     $ cd project_root
     $ pip install .
 
-Follow :ref:`user_manual` to run CARS. 
+Follow :ref:`user_manual` to run CARS.
 
 CARS OTB Application Compilation
 --------------------------------

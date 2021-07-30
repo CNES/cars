@@ -56,7 +56,6 @@ def test_split():
     Test split terrain method
     """
     splits = tiling.split(0, 0, 500, 500, 100, 100)
-    print(splits)
     assert len(splits) == 25
 
 

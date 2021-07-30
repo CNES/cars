@@ -156,7 +156,10 @@ def run(  # noqa: C901
                 elev_delta_low_bound_tag: elevation_delta_lower_bound,
                 elev_delta_up_bound_tag: elevation_delta_upper_bound,
             },
-            in_params.STATIC_PARAMS_TAG: static_params[static_conf.prepare_tag],
+            in_params.STATIC_PARAMS_TAG: {
+                static_conf.prepare_tag: static_params[static_conf.prepare_tag],
+                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+            },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
     }
