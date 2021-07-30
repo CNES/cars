@@ -73,10 +73,6 @@ if on_rtd:
     plantuml = (
         "java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar"
     )
-else:
-    plantuml = "java -jar {}".format(
-        os.path.join(os.path.dirname(__file__), "utils", "plantuml.jar")
-    )
 
 plantuml_output_format = "svg"
 
