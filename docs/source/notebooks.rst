@@ -14,7 +14,7 @@ Quick local installation
 
 Use the following automated make command line:
 
-.. code-block:: bash
+.. code-block:: console
 
     make notebook
 
@@ -23,13 +23,13 @@ Advanced installation
 
 The automated make command line installs a Jupyter kernel in the virtualenv with the following command:
 
-.. code-block:: bash
+.. code-block:: console
 
     python -m ipykernel install  --sys-prefix --name=cars-venv
 
 and launch a local jupyter notebook environment:
 
-.. code-block:: bash
+.. code-block:: console
 
     jupyter notebook
 

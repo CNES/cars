@@ -26,6 +26,8 @@ This Multiview stereo pipeline is intended for massive :term:`DSM` production wi
 Be aware that CARS is new and evolving to maturity with CNES roadmaps and `CO3D <https://co3d.cnes.fr/en/co3d-0>`_
 and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
 
+**Contact:** cars AT cnes.fr
+
 .. toctree::
    :maxdepth: 2
 
@@ -37,9 +39,3 @@ and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
    developer
    faq
    glossary
-
-* :ref:`Generated index <genindex>`
-
-..
-
-  comment to add for autoapi module * :ref:`modindex`

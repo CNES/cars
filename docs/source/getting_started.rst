@@ -1,10 +1,12 @@
 .. _getting_started:
 
 ===============
-Getting started
+Getting Started
 ===============
 
 To get CARS started quickly, this tutorial uses Docker to simplify CARS :ref:`install`.
+
+Data samples from this tutorial can be used under `open licence <https://www.etalab.gouv.fr/licence-ouverte-open-licence>`_.
 
 Quick start
 ===========
@@ -15,15 +17,15 @@ Quick start
 
     $ wget https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh
 
-* Launch quick_start.sh script
+* Run this quick_start.sh script
 
 .. code-block:: console
 
     $ ./quick_start.sh
 
-Go to the `data_samples/outcompute/` output directory to get a DSM from the downloaded sample data images.
+Go to the ``data_samples/outcompute/`` output directory to get a :term:`DSM` from the downloaded sample data images.
 
-Open the `dsm.tif` and `color.tif` in `QGIS <https://www.qgis.org/>`_ software.
+Open the ``dsm.tif`` and ``color.tif`` in `QGIS <https://www.qgis.org/>`_ software.
 
 Steps by steps
 ==============

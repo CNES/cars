@@ -6,6 +6,30 @@ User Manual
 
 Before using :ref:`cars_cli`, input data have to be checked.
 
+.. uml::
+
+
+  (Images) as img
+  (Geometric Models) as geom
+  (Input Data) as input
+  (Masks) as masks
+  (Input DEM) as dem
+  (CARS Pipelines) as cars #red
+  (Output data) as output
+  (dsm.tif) as dsm
+  (color.tif) as color
+  (Output stats) as output_stats
+
+  img --> input
+  geom --> input
+  input --> cars
+  masks .right.> cars
+  dem .right.> cars
+  cars--> output
+  output --> dsm
+  output ..> color
+  cars -right-> output_stats
+
 Input data
 ==========
 
@@ -50,12 +74,12 @@ The masks can also be multi-classes ones: they contain several values, one for e
 
 .. _cars_cli:
 
-CARS CLI
-=========
+Main CLI
+========
 
-`cars` is the unique entry point for CARS command line interface (CLI).
+``cars`` is the unique entry point for CARS command line interface (CLI).
 
-It enables two main steps : `prepare` and `compute_dsm` described in the following sections.
+It enables two main steps : ``prepare`` and ``compute_dsm`` described in the following sections.
 
 .. code-block:: console
 

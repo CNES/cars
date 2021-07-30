@@ -29,8 +29,8 @@ Quick install
 
 .. code-block:: console
 
-    $ git clone https://github.com/CNES/cars.git # For latest version
-    $ git clone --branch LAST_TAG https://github.com/CNES/cars.git # For last stable version
+    $ git clone --depth 1 https://github.com/CNES/cars.git # For latest version
+    $ git clone --depth 1 --branch LAST_TAG https://github.com/CNES/cars.git # For last stable version
 
 * Install CARS
 
@@ -55,7 +55,7 @@ Virtualenv
 ----------
 First create a virtualenv and upgrade main pip packages.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ virtualenv -p python venv/
     $ source venv/bin/activate
@@ -71,7 +71,7 @@ CARS python package requires some python packages to be installed before:
 
 Here are the correspondent commands to install these prior dependencies:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ virtualenv -p python venv/
     $ source venv/bin/activate
@@ -94,7 +94,7 @@ CARS manual install
 
 Then, to install CARS:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd project_root
     $ pip install .
@@ -107,7 +107,7 @@ This compilation is automatically done through CARS pip install.
 
 Nonetheless, CARS internal OTB remote modules can be built manually if needed:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ mkdir -p project_root/build
     $ cd project_root/build
