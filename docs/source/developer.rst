@@ -1,24 +1,22 @@
 ================
-Developer manual
+Developer Manual
 ================
 
 CARS is an open source software : don't hesitate to hack it and contribute !
 
-Please see `the GitHub repository`_ for code and more documentation,
-and the `official CARS Documentation`_ for user documentation.
+Please go to `the GitHub repository`_  for source code.
 
-Read also `CARS Contribution guide`_ , especially LICENCE and Contributor Licence Agreement.
+Read also `CARS Contribution guide`_ with `LICENCE <https://raw.githubusercontent.com/CNES/cars/master/LICENSE>`_ and `Contributor Licence Agrements <https://github.com/CNES/cars/tree/master/docs/source/CLA>`_.
 
-Please contact cars AT cnes.fr if needed.
+**Contact:** cars AT cnes.fr
 
-Getting started
-===============
+Developer Install
+=================
+:ref:`Install` procedure is globally followed but adapted to get CARS development environment.
+Obviously, we recommend to use a `virtualenv`_ environment, so that :term:`CARS` do not interfere with other packages installed on your
+system.
 
 * Install `OTB`_ and `VLFeat`_: see :ref:`dependencies`.
-
-Obviously, we recommend to use a `virtual environment`_, so that cars and its
-dependencies do not interfere with other packages installed on your
-system.
 
 * Clone CARS repository from GitHub :
 
@@ -27,13 +25,13 @@ system.
     $ git clone https://github.com/CNES/cars.git
     $ cd cars
 
-* Install CARS in a `virtual environment`_ in developer mode
+* Install CARS in a `virtualenv`_ in developer mode
 
 .. code-block:: console
 
     $ make install-dev # CARS installed in ``venv`` virtualenv
 
-* Run CARS in virtualenv
+* Run CARS in `virtualenv`_
 
 .. code-block:: console
 
@@ -41,20 +39,61 @@ system.
     $ source venv/bin/env_cars.sh
     $ cars -h
 
-The dev install method is described in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_
-It uses the following pip editable install:
+The detailed development install method is described in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_
+
+Particularly, it uses the following pip editable install:
 
 .. code-block:: console
 
     pip install -e .[dev]
 
-Source code modifications directly impacts ``cars`` installed command line.
+With this pip install mode, source code modifications directly impacts ``cars`` command line.
+
+Coding guide
+============
+
+Here are some rules to apply when developing a new functionality:
+
+* **Comments:** Include a comments ratio high enough and use explicit variables names. A comment by code block of several lines is necessary to explain a new functionality.
+* **Test**: Each new functionality shall have a corresponding test in its module's test file. This test shall, if possible, check the function's outputs and the corresponding degraded cases.
+* **Documentation**: All functions shall be documented (object, parameters, return values).
+* **Use type hints**: Use the type hints provided by the `typing` python module.
+* **Use doctype**: Follow sphinx default doctype for automatic API
+* **Quality code**: Correct project quality code errors with pre-commit automatic workflow (see below)
+* **Factorization**: Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the cars python modules.
+* **Be careful with user interface upgrade":** If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
+* **Logging and no print**: The usage of the `print()` function is forbidden: use the `logging` python standard module instead.
+* **Limit classes**: If possible, limit the use of classes as much as possible and opt for a functional approach. The classes are reserved for data modelling if it is impossible to do so using `xarray` and for the good level of modularity.
+* **Limit new dependencies**: Do not add new dependencies unless it is absolutely necessary, and only if it has a **permissive license**.
+
+Pre-commit validation
+=====================
+
+A pre-commit validation is installed with code quality tools (see below).
+It is installed automatically by `make install-dev` command.
+
+Here is the way to install it manually:
+
+.. code-block:: console
+
+  $ pre-commit install
+
+This installs the pre-commit hook in `.git/hooks/pre-commit`  from `.pre-commit-config.yaml <https://raw.githubusercontent.com/CNES/cars/master/.pre-commit-config.yaml>`_ file configuration.
+
+It is possible to test pre-commit before commiting:
+
+.. code-block:: console
+
+  $ pre-commit run --all-files                # Run all hooks on all files
+  $ pre-commit run --files cars/__init__.py   # Run all hooks on one file
+  $ pre-commit run pylint                     # Run only pylint hook
+
 
 Code quality
 =============
-CARS use `isort <https://pycqa.github.io/isort/>`_, `black <https://black.readthedocs.io/>`_, `flake8 <https://flake8.pycqa.org/>`_ and `pylint <http://pylint.pycqa.org/>`_ quality code checking.
+CARS uses `Isort`_, `Black`_, `Flake8`_ and `Pylint`_ quality code checking.
 
-Use the following command in CARS virtualenv to check the code with these tools:
+Use the following command in CARS `virtualenv`_ to check the code with these tools:
 
 .. code-block:: console
 
@@ -66,12 +105,82 @@ Use the following command to format the code with isort and black:
 
     $ make format
 
+Isort
+-----
+`Isort`_ is a Python utility / library to sort imports alphabetically, and automatically separated into sections and by type.
+
+CARS ``isort`` configuration is done in `pyproject.toml`_
+
+`Isort`_ manual usage examples:
+
+.. code-block:: console
+
+    $ cd CARS_HOME
+    $ isort --check cars tests  # Check code with isort, does nothing
+    $ isort --diff cars tests   # Show isort diff modifications
+    $ isort cars tests          # Apply modifications
+
+`Isort`_ messages can be avoided when really needed with **"# isort:skip"** on the incriminated line.
+
+Black
+-----
+`Black`_ is a quick and deterministic code formatter to help focus on the content.
+
+CARS ``black`` configuration is done in `pyproject.toml`_
+
+If necessary, Black doesn’t reformat blocks that start with "# fmt: off" and end with # fmt: on, or lines that ends with "# fmt: skip". "# fmt: on/off" have to be on the same level of indentation.
+
+`Black`_ manual usage examples:
+
+.. code-block:: console
+
+    $ cd CARS_HOME
+    $ black --check cars tests  # Check code with black with no modifications
+    $ black --diff cars tests   # Show black diff modifications
+    $ black cars tests          # Apply modifications
+
+Flake8
+------
+`Flake8`_ is a command-line utility for enforcing style consistency across Python projects. By default it includes lint checks provided by the PyFlakes project, PEP-0008 inspired style checks provided by the PyCodeStyle project, and McCabe complexity checking provided by the McCabe project. It will also run third-party extensions if they are found and installed.
+
+CARS ``flake8`` configuration is done in `setup.cfg <http://https://raw.githubusercontent.com/CNES/cars/master/setup.cfg>`_
+
+`Flake8`_ messages can be avoided (in particular cases !) adding "# noqa" in the file or line for all messages.
+It is better to choose filter message with "# noqa: E731" (with E371 example being the error number).
+Look at examples in source code.
+
+Flake8 manual usage examples:
+
+.. code-block:: console
+
+  $ cd CARS_HOME
+  $ flake8 cars tests           # Run all flake8 tests
+
+
+Pylint
+------
+`Pylint`_ is a global linting tool which helps to have many information on source code.
+
+CARS ``pylint`` configuration is done in dedicated `.pylintrc <http://https://raw.githubusercontent.com/CNES/cars/master/.pylintrc>`_ file.
+
+`Pylint`_ messages can be avoided (in particular cases !) adding "# pylint: disable=error-message-name" in the file or line.
+Look at examples in source code.
+
+Pylint manual usage examples:
+
+.. code-block:: console
+
+  $ cd CARS_HOME
+  $ pylint tests carsdocs       # Run all pylint tests
+  $ pylint --list-msgs          # Get pylint detailed errors informations
+
+
 Tests
 ======
 
-CARS includes a set of tests which can be executed with ``pytest`` to validate an installation or a development.
+CARS includes a set of tests executed with ``pytest`` tool.
 
-To launch test:
+To launch tests:
 
 .. code-block:: console
 
@@ -82,73 +191,78 @@ It launche only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
 Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use ``/tmp``).
 
 Several kinds of tests are identified by specific pytest markers:
-- the unit tests defined by the ``unit_tests`` marker
-- the PBS cluster tests defined by the ``pbs_cluster_tests`` marker
-- the Jupyter notebooks test defined by the ``notebook_tests`` marker
+
+- the unit tests defined by the ``unit_tests`` marker: ``make test-unit``
+- the PBS cluster tests defined by the ``pbs_cluster_tests`` marker: ``make test-pbs-cluster``
+- the Jupyter notebooks test defined by the ``notebook_tests`` marker: ``make test-notebook``
 
 Advanced testing
 ----------------
 
 To execute the tests manually, use ``pytest`` at the CARS projects's root (after initializing the environment):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ python -m pytest
 
 To run only the unit tests:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ pytest -m unit_tests
 
 To run only the PBS cluster tests:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ pytest -m pbs_cluster_tests
 
 To run only the Jupyter notebooks tests:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ pytest -m notebook_tests
 
 It is possible to obtain the code coverage level of the tests by installing the ``pytest-cov`` module and use the ``--cov`` option.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ python -m pytest --cov=cars
 
 It is also possible to execute only a specific part of the test, either by indicating the test file to run:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ python -m pytest tests/test_tiling.py
 
 Or by using the ``-k`` option which will execute the tests which names contain the option's value:
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ python -m pytest -k end2end
 
 By default, ``pytest`` does not display the traces generated by the tests but only the tests' status (passed or failed). To get all traces, the following options have to be added to the command line (which can be combined with the previous options):
 
-.. code-block:: bash
+.. code-block:: console
 
     $ cd cars/
     $ python -m pytest -s -o log_cli=true -o log_cli_level=INFO
 
 
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook/Installation.html
-.. _`VLFeat`: https://github.com/vlfeat/vlfeat
+.. _`VLFeat`: https://www.vlfeat.org/compiling-unix.html
 .. _`the GitHub repository`: https://github.com/CNES/cars
 .. _`CARS Contribution guide`: https://github.com/CNES/cars/blob/master/CONTRIBUTING.md
-.. _`official CARS Documentation`: https://cars.readthedocs.io
-.. _`virtual environment`: https://packaging.python.org/guides/installing-using-pip-and-virtual-environments/
+.. _`virtualenv`: https://virtualenv.pypa.io/
+.. _`Isort`: https://pycqa.github.io/isort/
+.. _`Black`: https://black.readthedocs.io/
+.. _`Flake8`: https://flake8.pycqa.org/
+.. _`Pylint`: http://pylint.pycqa.org/
+.. _`pyproject.toml`: https://raw.githubusercontent.com/CNES/cars/master/pyproject.toml
