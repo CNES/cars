@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" contentScriptType="application/ecmascript" contentStyleType="text/css" height="414px" preserveAspectRatio="none" style="width:558px;height:414px;" version="1.1" viewBox="0 0 558 414" width="558px" zoomAndPan="magnify"><defs><filter height="300%" id="f1sv12yn709eql" width="300%" x="-1" y="-1"><feGaussianBlur result="blurOut" stdDeviation="2.0"/><feColorMatrix in="blurOut" result="blurOut2" type="matrix" values="0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .4 0"/><feOffset dx="4.0" dy="4.0" in="blurOut2" result="blurOut3"/><feBlend in="SourceGraphic" in2="blurOut3" mode="normal"/></filter></defs><g><ellipse cx="242.8553" cy="26.0236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="38.3553" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="50" x="217.8553" y="30.6721">Images</text><ellipse cx="395.0262" cy="26.0052" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="78.0262" ry="18.0052" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="126" x="332.0262" y="30.6537">Geometric Models</text><ellipse cx="319.2046" cy="118.5236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="53.2046" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="71" x="283.7046" y="123.1721">Input Data</text><ellipse cx="40.1127" cy="209.0236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="34.1127" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="44" x="18.1127" y="213.6721">Masks</text><ellipse cx="162.2046" cy="209.0236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="53.2046" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="71" x="126.7046" y="213.6721">Input DEM</text><ellipse cx="319.06" cy="209.212" fill="#FF0000" filter="url(#f1sv12yn709eql)" rx="69.06" ry="16.212" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="104" x="267.06" y="213.8604">CARS Pipelines</text><ellipse cx="318.8007" cy="299.5601" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="60.8007" ry="14.5601" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="82" x="277.8007" y="304.2086">Output data</text><ellipse cx="265.0269" cy="388.5236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="35.5269" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="46" x="242.0269" y="393.1721">dsm.tif</text><ellipse cx="373.8553" cy="388.5236" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="38.3553" ry="14.5236" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="50" x="348.8553" y="393.1721">color.tif</text><ellipse cx="485.2362" cy="208.8472" fill="#FEFECE" filter="url(#f1sv12yn709eql)" rx="62.2362" ry="14.8472" style="stroke: #A80036; stroke-width: 1.5;"/><text fill="#000000" font-family="sans-serif" font-size="14" lengthAdjust="spacingAndGlyphs" textLength="86" x="442.2362" y="213.4957">Output stats</text><!--link img to input--><path d="M253.89,39.97 C267.13,55.74 289.54,82.42 304.31,100 " fill="none" id="img-input" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="307.88,104.26,305.1566,94.7952,304.665,100.4306,299.0296,99.9391,307.88,104.26" style="stroke: #A80036; stroke-width: 1.0;"/><!--link geom to input--><path d="M380.7,44.02 C367.23,60.07 347.13,84.01 333.56,100.16 " fill="none" id="geom-input" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="330.26,104.09,339.1198,99.7884,333.4833,100.2677,333.0041,94.6311,330.26,104.09" style="stroke: #A80036; stroke-width: 1.0;"/><!--link input to cars--><path d="M319,133.33 C319,147.83 319,170.78 319,187.41 " fill="none" id="input-cars" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="319,192.79,323,183.79,319,187.79,315,183.79,319,192.79" style="stroke: #A80036; stroke-width: 1.0;"/><!--link masks to cars--><path d="M54.16,195.75 C67.16,184.57 87.53,169.39 108.5,163 C153.57,149.27 168.4,153.3 214.5,163 C240.83,168.54 268.62,181.14 288.91,191.75 " fill="none" id="masks-cars" style="stroke: #A80036; stroke-width: 1.0; stroke-dasharray: 7.0,7.0;"/><polygon fill="#A80036" points="293.39,194.12,287.3155,186.3675,288.9735,191.776,283.5651,193.4339,293.39,194.12" style="stroke: #A80036; stroke-width: 1.0;"/><!--link dem to cars--><path d="M215.05,209 C224.96,209 234.87,209 244.79,209 " fill="none" id="dem-cars" style="stroke: #A80036; stroke-width: 1.0; stroke-dasharray: 7.0,7.0;"/><polygon fill="#A80036" points="249.97,209,240.97,205,244.97,209,240.97,213,249.97,209" style="stroke: #A80036; stroke-width: 1.0;"/><!--link cars to output--><path d="M319,225.01 C319,240.08 319,263.32 319,279.63 " fill="none" id="cars-output" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="319,284.87,323,275.87,319,279.87,315,275.87,319,284.87" style="stroke: #A80036; stroke-width: 1.0;"/><!--link output to dsm--><path d="M310.56,314.09 C301.24,329.12 286.18,353.38 275.95,369.86 " fill="none" id="output-dsm" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="273.2,374.29,281.3318,368.7336,275.8269,370.0356,274.5248,364.5307,273.2,374.29" style="stroke: #A80036; stroke-width: 1.0;"/><!--link output to color--><path d="M327.59,314.09 C337.09,329.12 352.43,353.38 362.85,369.86 " fill="none" id="output-color" style="stroke: #A80036; stroke-width: 1.0; stroke-dasharray: 7.0,7.0;"/><polygon fill="#A80036" points="365.65,374.29,364.2099,364.547,362.973,370.067,357.4531,368.8301,365.65,374.29" style="stroke: #A80036; stroke-width: 1.0;"/><!--link cars to output_stats--><path d="M388.06,209 C397.95,209 407.84,209 417.73,209 " fill="none" id="cars-output_stats" style="stroke: #A80036; stroke-width: 1.0;"/><polygon fill="#A80036" points="422.9,209,413.9,205,417.9,209,413.9,213,422.9,209" style="stroke: #A80036; stroke-width: 1.0;"/><!--
+@startuml 
+
+
+  (Images) as img
+  (Geometric Models) as geom
+  (Input Data) as input
+  (Masks) as masks
+  (Input DEM) as dem
+  (CARS Pipelines) as cars #red
+  (Output data) as output
+  (dsm.tif) as dsm
+  (color.tif) as color
+  (Output stats) as output_stats
+
+  img - -> input
+  geom - -> input
+  input - -> cars
+  masks .right.> cars
+  dem .right.> cars
+  cars- -> output
+  output - -> dsm
+  output ..> color
+  cars -right-> output_stats
+  
+  @enduml
+
+PlantUML version 1.2018.13(Mon Nov 26 18:11:51 CET 2018)
+(GPL source distribution)
+Java Runtime: OpenJDK Runtime Environment
+JVM: OpenJDK 64-Bit Server VM
+Java Version: 11.0.11+9-Ubuntu-0ubuntu2.20.04
+Operating System: Linux
+OS Version: 5.4.0-80-generic
+Default Encoding: UTF-8
+Language: fr
+Country: FR
+--></g></svg>

@@ -4,14 +4,14 @@
 Getting Started
 ===============
 
-To get CARS started quickly, this tutorial uses Docker to simplify CARS :ref:`install`.
+.. note::
 
-Data samples from this tutorial can be used under `open licence <https://www.etalab.gouv.fr/licence-ouverte-open-licence>`_.
+  Data samples from this tutorial can be used under `open licence <https://www.etalab.gouv.fr/licence-ouverte-open-licence>`_.
 
-Quick start
+Quick Start
 ===========
 * Install `Docker <https://docs.docker.com/get-docker/>`_
-* Download `CARS Quick start  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh>`_
+* Download `CARS Quick Start  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh>`_
 
 .. code-block:: console
 
@@ -23,9 +23,22 @@ Quick start
 
     $ ./quick_start.sh
 
-Go to the ``data_samples/outcompute/`` output directory to get a :term:`DSM` from the downloaded sample data images.
+Go to the ``data_samples/outcompute/`` output directory to get a :term:`DSM` and color image associated.
 
-Open the ``dsm.tif`` and ``color.tif`` in `QGIS <https://www.qgis.org/>`_ software.
+Open the ``dsm.tif`` DSM and ``clr.tif`` color image in `QGIS`_ software.
+
+.. |dsm| image:: images/dsm.png
+  :width: 100%
+.. |clr| image:: images/clr.png
+  :width: 100%
+.. |dsmclr| image:: images/dsm_clr.png
+  :width: 100%
+
++--------------+-------------+-------------+
+|   dsm.tif    |   clr.tif   | `QGIS`_ Mix |
++--------------+-------------+-------------+
+| |dsm|        | |clr|       |  |dsmclr|   |
++--------------+-------------+-------------+
 
 Steps by steps
 ==============
@@ -42,7 +55,7 @@ Steps by steps
 
     $ docker pull cnes/cars
 
-* Get and extract data samples from CARS repository:"
+* Get and extract data samples from CARS repository:
 
 .. code-block:: console
 
@@ -81,4 +94,24 @@ Steps by steps
 
     $ ls -l data_samples/outcompute/
 
-To go further, follow :ref:`install` and :ref:`user_manual`.
+
+.. warning::
+
+	This first tutorial uses Docker to avoid CARS installation. To go further, follow :ref:`install` and :ref:`user_manual`.
+
+
+Advanced Quick Start
+====================
+
+1. :ref:`install` CARS on your system.
+
+2. Follow now `CARS Advanced Quick Start script  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start_advanced.sh>`_ with the same steps than previous quick start.
+
+You need to get command line options files with the script:
+
+- `CARS prepare img1-img2 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare12.txt>`_
+- `CARS prepare img1-img3 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare13.txt>`_
+- `CARS compute_dsm configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_compute.txt>`_
+
+
+.. _`QGIS`: https://www.qgis.org/

@@ -12,13 +12,13 @@ CARS depends on `OTB installation <https://www.orfeo-toolbox.org/CookBook/Instal
 
 * Check OTB install:
 
-  * OTB environment have to be setup : otb applications working, ``OTB_APPLICATION_PATH`` set
-  * ``gdal-config`` command have to work : If not present in your particular OTB install, copy the provided one in your OTB install path.
+  * OTB environment have to be setup: otb applications working, ``OTB_APPLICATION_PATH`` set.
+  * ``gdal-config`` command have to work: If not present in your particular OTB install, copy the provided one in your OTB install path.
 
 * Check Vlfeat install with following global environment variables:
 
   * ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
-  * ``VLFEAT_LIBRARY`` : should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
+  * ``VLFEAT_LIBRARY``: should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
 
 See `CARS Dockerfile <https://raw.githubusercontent.com/CNES/cars/master/Dockerfile>`_ example for detailed steps.
 
@@ -66,8 +66,8 @@ Required python packages
 
 CARS python package requires some python packages to be installed before:
 
-* **numpy** and **cython** package has to be installed separately otherwise some dependencies won't be correctly installed.
-* Also, on some systems, **fiona**, **rasterio** and **pygdal** have to be installed from source to fit local GDAL version.
+* **numpy**, **cython**: They have to be installed separately otherwise some dependencies won't be correctly installed.
+* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from source to fit local GDAL version.
 
 Here are the correspondent commands to install these prior dependencies:
 
@@ -85,7 +85,7 @@ To manually install CARS core correlator, see the `Pandora documentation <https:
 Environment variables
 ---------------------
 
-In order to work, `env_cars.sh <https://raw.githubusercontent.com/CNES/cars/master/env_cars.sh>`_ sets several environment variables impacting dask, ITK, OTB, numba and gdal configurations.
+The script `env_cars.sh <https://raw.githubusercontent.com/CNES/cars/master/env_cars.sh>`_ sets several environment variables impacting dask, ITK, OTB, numba and GDAL configurations.
 
 For CARS internal OTB remote modules, the ``PATH``, ``PYTHONPATH``, ``LD_LIBRARY_PATH`` and ``OTB_APPLICATION_PATH`` environment variables have also to be set.
 
@@ -99,7 +99,7 @@ Then, to install CARS:
     $ cd project_root
     $ pip install .
 
-Follow :ref:`user_manual` to run CARS.
+Follow :ref:`user_manual` to run and configure CARS.
 
 CARS OTB Application Compilation
 --------------------------------

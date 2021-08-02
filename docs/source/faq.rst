@@ -32,3 +32,26 @@ The application will automatically look for the zone corresponding to ``img1_xt.
 It is possible to use the ``-elev.dem srtm/`` option to use the DEM during this search in order to be more accurate.
 
 It is to be noted that the ``-mode.fit.vec`` option also exists. It accepts a vector file (for example a shapefile or a kml) which enables the image extraction from a footprint.
+
+
+How to generate input images in epipolar geometry from grids ?
+---------------------------------------------------------------
+
+To generate the images in epipolar geometry from the grids computed by cars and the original images, one can refer to the Orfeo Toolbox documentation `here <https://www.orfeo-toolbox.org/CookBook/recipes/stereo.html#resample-images-in-epipolar-geometry>`_ .
+
+
+Output data
+===========
+
+How to generate output files overview ?
+---------------------------------------
+
+Considering bulky files, it can be recommended to generate an overview file with `GDAL`_ before opening it with QGIS:
+
+.. code-block:: console
+
+    $ gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
+
+
+
+.. _`GDAL`: https://gdal.org/

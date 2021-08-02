@@ -51,14 +51,26 @@ The masks can also be multi-classes ones: they contain several values, one for e
 
 **Warning** : The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
 
+
+Output data
+===========
+
+In fine, CARS produces a geotiff file ``dsm.tif`` which contains the Digital Surface Model in the required cartographic projection and at the resolution defined by the user.
+
+If the user provides an additional input image, an ortho-image ``clr.tif`` is also produced. The latter is stackable to the DSM (See :ref:`getting_started`).
+
+Those two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
+
+CARS generates also a lot of stats described below.
+
 .. _cars_cli:
 
 Main CLI
 ========
 
-``cars`` is the unique entry point for CARS command line interface (CLI).
+``cars`` is the unique entry point for CARS command line interface (CLI) to run 3D pipelines.
 
-It enables two main steps : ``prepare`` and ``compute_dsm`` described in the following sections.
+It enables two main pipelines : ``prepare`` and ``compute_dsm`` described in the following sections.
 
 .. code-block:: console
 
@@ -245,10 +257,6 @@ It can be opened with firefox and displays a dashboard which enables to follow t
 
 By default this option is **deactivated** because it can be potentially time-consuming.
 
-Input images
-------------
-
-To generate the images in epipolar geometry from the grids computed by cars and the original images, one can refer to the Orfeo Toolbox documentation `here <https://www.orfeo-toolbox.org/CookBook/recipes/stereo.html#resample-images-in-epipolar-geometry>`_ .
 
 Output contents
 ---------------
@@ -485,8 +493,9 @@ Some optional parameters:
 * ``disable_cloud_small_components_filter``: Deactivate the filtering of small 3D points groups. The filtered groups are composed of less than 50 points, the distance between two "linked" points is less than 3.
 * ``disable_cloud_statistical_outliers_filter``: Deactivate the statistical filtering of the 3D points. For this filter the examined statistic is the mean distance of each point to its 50 nearest neighbors. The filtered points have a mean distance superior than this statistic's mean + 5 * this statistic's standard deviation.
 
-DASK parameters
----------------
+Cluster parameters
+------------------
+
 As the prepare part, during its execution, this program creates a distributed dask cluster (except if the ``mode`` option is different than ``pbs_dask`` or ``local_dask``). In the logs, an internet address is displayed. It can be opened with firefox and displays a dashboard which enables to follow the tasks execution in real time.
 The following parameters can be used :
 * ``mode``: parallelisation mode (``pbs_dask``, ``local_dask`` or ``mp`` for multiprocessing)
@@ -716,22 +725,6 @@ Geoid Configuration
 
 A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
 It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``
-
-
-Output data
-===========
-
-In fine, CARS produces a geotiff file which contains the Digital Surface Model in the required cartographic projection and at the resolution defined by the user.
-
-If the user provided an additional image, an ortho-image is also produced. The latter is stackable to the DSM.
-
-Those two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
-
-Considering bulky files, it is recommended to generate an overview file with `GDAL`_ before opening it with QGIS:
-
-.. code-block:: console
-
-    $ gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
 
 
 .. _`GDAL`: https://gdal.org/

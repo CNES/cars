@@ -34,8 +34,17 @@ and launch a local jupyter notebook environment:
     jupyter notebook
 
 
-Notebooks descriptions
-======================
+CARS pipelines notebook
+=======================
+
+The ``cars_pipelines.ipynb`` and ``cars_generic.ipynb`` notebooks show a complete CARS 3D run.
+From Cars demo data, It executes the prepare and compute_dsm pipelines from pipeline API.
+
+`Beware` : This notebook needs the whole cars kernel as described before to be launched
+
+
+Specific Notebooks
+==================
 
 `Beware` : Following Notebooks needs preparation step's outputs that have to be generated first and inserted in the notebooks parameters at the beginning.
 
@@ -58,7 +67,7 @@ The following parameters have to be set :
     * ``cars_home`` : Path to the cars folder.
     * ``content_dir`` :  Path to the directory containing the content.json file of the prepare step output.
 
-low resolution DSM fitting
+Low resolution DSM fitting
 --------------------------
 
 The ``lowres_dem_fit.ipynb`` notebook details how to estimate and apply the transform to fit A :term:`DSM` to the low resolution initial DEM. This method is currently implemented in cars.
