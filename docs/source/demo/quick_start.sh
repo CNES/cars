@@ -41,18 +41,18 @@ echo " "
 # CARS Docker Run
 
 echo "- Launch CARS PREPARE step for img1 and img2 pair:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=2"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL prepare -i /data/input12.json -o /data/outprepare12 --nb_workers=2
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12
 echo " "
 
 echo "- Launch CARS PREPARE step for img1 and img3 pair:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=2"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL prepare -i /data/input13.json -o /data/outprepare13 --nb_workers=2
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13
 echo " "
 
 echo "- Launch CARS COMPUTE DSM step:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json -o /data/outcompute/ --nb_workers=2"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars --loglevel CRITICAL compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/ --nb_workers=2
+echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json -o /data/outcompute/"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/
 echo " "
 
 # Clean rights on generated data. Otherwise, data cannot be deleted without root access.
