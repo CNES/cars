@@ -6,29 +6,8 @@ User Manual
 
 Before using :ref:`cars_cli`, input data have to be checked.
 
-.. uml::
-
-
-  (Images) as img
-  (Geometric Models) as geom
-  (Input Data) as input
-  (Masks) as masks
-  (Input DEM) as dem
-  (CARS Pipelines) as cars #red
-  (Output data) as output
-  (dsm.tif) as dsm
-  (color.tif) as color
-  (Output stats) as output_stats
-
-  img --> input
-  geom --> input
-  input --> cars
-  masks .right.> cars
-  dem .right.> cars
-  cars--> output
-  output --> dsm
-  output ..> color
-  cars -right-> output_stats
+.. image:: diagrams/cars_inputs_outputs.svg
+   :target: _images/cars_inputs_outputs.svg
 
 Input data
 ==========

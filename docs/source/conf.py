@@ -51,7 +51,6 @@ extensions = [
     "sphinx.ext.ifconfig",  # add if config possibility in rst files
     "sphinx.ext.intersphinx",  # other projects automatic links to doc
     "sphinx.ext.mathjax",  # Add rst math capabilities with :math:
-    "sphinxcontrib.plantuml",  # Add plantuml support
     "sphinx.ext.autodoc",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
 ]
@@ -66,15 +65,6 @@ exclude_patterns = ["_build", "Thumbs.db", ".DS_Store"]
 
 # The name of the Pygments (syntax highlighting) style to use.
 pygments_style = "sphinx"
-
-# PlantUML configuration (readthedocs and local)
-on_rtd = os.environ.get("READTHEDOCS") == "True"
-if on_rtd:
-    plantuml = (
-        "java -Djava.awt.headless=true -jar /usr/share/plantuml/plantuml.jar"
-    )
-
-plantuml_output_format = "svg"
 
 # -- Options for HTML output -------------------------------------------------
 

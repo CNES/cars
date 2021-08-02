@@ -58,3 +58,16 @@ To clean generated documentation :
 ```
 make clean
 ```
+
+Plantuml diagrams
+-----------------
+
+To generate/update CARS [plantUML](https://plantuml.com/) documentation diagrams:
+* Install plantuml on your system.
+* Go to diagram directory
+* Use following command line to generate in SVG:
+```
+plantuml -tsvg diagram.pu
+```
+
+Diagrams source and associated SVG are in `docs/source/diagrams/` directory
