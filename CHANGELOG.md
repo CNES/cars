@@ -18,10 +18,10 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Changed 
 
-- Update/Clean package setup (add Makefile, clean requirements) [#210, #193]
+- Update/Clean package setup (add Makefile, clean requirements) [#210, #193, #305, #197]
 - Make pip install -e work [#207]
-- Update/Clean environment parameters [#166]
-- Move cars_cli.py from bin to cars. [#188]
+- Update/Clean environment parameters [#166, #251]
+- Move cars_cli.py from bin to cars. [#188, #203]
 - Rename cars_cli to cars. [#188]
 - Change default nb_workers to 2 [#218]
 - Allow multiprocessing fork mode. [#283]
@@ -38,7 +38,13 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
-- Fix epipolar size. [#206]
+- Fix epipolar size. [#206, #237, #248]
+- Fix and clean tbb support [#267, #276, #304]
+- Fix align_with_lowres_dem in mp mode [#286]
+- Fix Delaunay algorithm between epi and terrain tiles [#277]
+- Fix dask ComputeDSMMemoryLogger api [#202]
+- Handle margins when setting the disparity to 0 [#201]
+- Fix car cli with setuptools_scm version [#199]
 
 
 ## 0.3.0 Multi-classes mask management (December 2020)
