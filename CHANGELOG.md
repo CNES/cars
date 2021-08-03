@@ -10,6 +10,11 @@ A new section Unreleased is opened then for next dev phase.
 ### Added
 
 - Write used dask configuration in output directory. [#224]
+- Add argparse file option @"opts.txt" + doc [#265]
+- Add Contributor Licence Agreement [#257]
+- Add quality code tools isort, black, flake8 [#247, #269, #271]
+- Add prepare/compute_dsm notebook [#246]
+- Add sonarqube configuration [#198]
 
 ### Changed 
 
@@ -18,8 +23,17 @@ A new section Unreleased is opened then for next dev phase.
 - Update/Clean environment parameters [#166]
 - Move cars_cli.py from bin to cars. [#188]
 - Rename cars_cli to cars. [#188]
+- Change default nb_workers to 2 [#218]
 - Allow multiprocessing fork mode. [#283]
 - Force OpenMP use in dask, and TBB in multiprocessing. [#304]
+- Change loglevel argument API to pipeline level [#310, #311]
+- Upgrade and fix pandora dependency [#235, #267, #274, #273, #309, #188]
+- Clean quality code pylint and sonarqube conf [#302, #209]
+- Change CARS loglevel default to WARNING + clean output [#239, #300, #143]
+- Refactoring CARS file/module organization [#216, #259]
+- Clean Documentation + ReadTheDocs [#160, #258]
+- Dockerfile update [#219]
+- Update/Clean README [#200]
 
 
 ### Fixed
