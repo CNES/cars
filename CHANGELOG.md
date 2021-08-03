@@ -1,11 +1,10 @@
 # Changelog
 
-Only the first "Unreleased" section of this file corresponding of next release can be updated along the development of each new, changed and fixed features. 
-When publication of a new release, the section "Unreleased" is blocked to the next chosen version and name of the milestone at a given date. 
-A new section Unreleased is opened then for next dev phase. 
+Only the first "Unreleased" section of this file corresponding of next release can be updated along the development of each new, changed and fixed features.
+When publication of a new release, the section "Unreleased" is blocked to the next chosen version and name of the milestone at a given date.
+A new section Unreleased is opened then for next dev phase.
 
-
-## Unreleased 
+## Unreleased
 
 ### Added
 
@@ -16,7 +15,7 @@ A new section Unreleased is opened then for next dev phase.
 - Add prepare/compute_dsm notebook [#246]
 - Add sonarqube configuration [#198]
 
-### Changed 
+### Changed
 
 - Update/Clean package setup (add Makefile, clean requirements) [#210, #193, #305, #197]
 - Make pip install -e work [#207]
@@ -35,7 +34,6 @@ A new section Unreleased is opened then for next dev phase.
 - Dockerfile update [#219]
 - Update/Clean README [#200]
 
-
 ### Fixed
 
 - Fix epipolar size. [#206, #237, #248]
@@ -45,7 +43,6 @@ A new section Unreleased is opened then for next dev phase.
 - Fix dask ComputeDSMMemoryLogger api [#202]
 - Handle margins when setting the disparity to 0 [#201]
 - Fix car cli with setuptools_scm version [#199]
-
 
 ## 0.3.0 Multi-classes mask management (December 2020)
 
@@ -57,24 +54,20 @@ A new section Unreleased is opened then for next dev phase.
 - Satellite angles information on prepare step [#58, #190]
 - Changelog added [#185]
 
-### Changed 
+### Changed
 - Update rasterization tests [#177]
 - Integrate a new memory estimation method [#158]
 - Version handling with setuptools_scm [#194]
-
 
 ### Fixed
 - Fix CLI parsing for ROI option : **CLI API changes** (-i for input json file and -o for output directory) [#93, #174]
 - Pylint code clean [#191]
 - Add constants.py file [#172]
 
-
 ## 0.2.0 First Open Source Official Release (July 2020)
 
 - 3D functionnal pipeline : Python3 and C++ OTB modules
-- Python API 
-- CLI command 
+- Python API
+- CLI command
 - Documentation basics
-- Continuous Integration on unit tests 
-
-
+- Continuous Integration on unit tests
