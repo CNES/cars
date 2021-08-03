@@ -34,13 +34,14 @@ import xarray as xr
 
 # CARS imports
 from cars.conf import (
+    geo_parameters,
     input_parameters,
     output_compute_dsm,
     output_prepare,
     static_conf,
 )
 from cars.core import constants as cst
-from cars.core import utils
+from cars.core import inputs, utils
 from cars.core.geometry import AbstractGeometry
 from cars.core.projection import project_coordinates_on_line
 
@@ -95,6 +96,7 @@ def triangulate(
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
+    geom_models = geo_parameters.extract_geo_conf(input_configuration)
 
     grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
     grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
@@ -108,6 +110,7 @@ def triangulate(
         disp_ref,
         img1,
         img2,
+        geom_models,
         grid1,
         grid2,
         roi_key=cst.ROI,
@@ -115,10 +118,20 @@ def triangulate(
     )
 
     if disp_sec is not None:
+        reverse_geom_models = {}
+        for key, value in geom_models.items():
+            if "1" in key:
+                reverse_geom_models[key.replace("1", "2")] = value
+            elif "2" in key:
+                reverse_geom_models[key.replace("2", "1")] = value
+            else:
+                reverse_geom_models[key] = value
+
         point_clouds[cst.STEREO_SEC] = compute_points_cloud(
             disp_sec,
             img2,
             img1,
+            reverse_geom_models,
             grid2,
             grid1,
             roi_key=cst.ROI_WITH_MARGINS,
@@ -185,8 +198,9 @@ def triangulate(
         )
 
         # Triangulate again
+        geom_models = inputs.extract_geo_conf(input_configuration)
         point_clouds[cst.STEREO_REF] = compute_points_cloud(
-            disp_ref, img1, img2, grid1, grid2, roi_key=cst.ROI
+            disp_ref, img1, img2, geom_models, grid1, grid2, roi_key=cst.ROI
         )
 
         # TODO handle sec case
@@ -217,7 +231,13 @@ def triangulate(
 
             # Triangulate again
             point_clouds[cst.STEREO_SEC] = compute_points_cloud(
-                disp_sec, img2, img1, grid2, grid1, roi_key=cst.ROI_WITH_MARGINS
+                disp_sec,
+                img2,
+                img1,
+                reverse_geom_models,
+                grid2,
+                grid1,
+                roi_key=cst.ROI_WITH_MARGINS,
             )
 
     return point_clouds
@@ -251,6 +271,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
+    geom_models = geo_parameters.extract_geo_conf(input_configuration)
 
     grid1 = preprocessing_output_configuration[
         output_prepare.LEFT_EPIPOLAR_GRID_TAG
@@ -260,7 +281,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     ]
     if snap_to_img1:
         grid2 = preprocessing_output_configuration[
-            output_compute_dsm.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
+            output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
         ]
 
     # Retrieve elevation range from imgs
@@ -278,8 +299,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
         matches,
         grid1,
         grid2,
-        img1,
-        img2,
+        geom_models,
         min_elev1,
         max_elev1,
         min_elev2,
@@ -307,8 +327,9 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
 def compute_points_cloud(
     data: xr.Dataset,
-    img1: xr.Dataset,
-    img2: xr.Dataset,
+    img1: str,
+    img2: str,
+    geom_models_conf: Dict[str, str],
     grid1: str,
     grid2: str,
     roi_key: str,
@@ -319,8 +340,9 @@ def compute_points_cloud(
     Compute points cloud
 
     :param data: The reference to disparity map dataset
-    :param img1: reference image dataset
-    :param img2: secondary image dataset
+    :param img1: reference image path
+    :param img2: secondary image path
+    :param geom_models_conf:
     :param grid1: path to the reference image grid file
     :param grid2: path to the secondary image grid file
     :param roi_key: roi of the disparity map key
@@ -344,8 +366,7 @@ def compute_points_cloud(
         data,
         grid1,
         grid2,
-        img1,
-        img2,
+        geom_models_conf,
         min_elev1,
         max_elev1,
         min_elev2,

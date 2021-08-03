@@ -84,17 +84,38 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
+    def geo_conf_schema():
+        """
+        Returns the input configuration fields required by the geometry loader
+        as a json checker schema. The available fields are defined in the
+        cars/conf/input_parameters.py file
+
+        :return: the geo configuration schema
+        """
+
+    @staticmethod
+    @abstractmethod
+    def check_products_consistency(geo_conf: Dict[str, str]) -> bool:
+        """
+        Test if the product is readable by the geometry loader
+
+        :param: the geometry configuration as requested by the geometry loader
+        schema
+        :return: True if the products are readable, False otherwise
+        """
+
+    @staticmethod
+    @abstractmethod
     def triangulate(
         mode: str,
         data: xr.Dataset,
         grid1: str,
         grid2: str,
-        img1: str,
-        img2: str,
-        min_elev1: float,
-        max_elev1: float,
-        min_elev2: float,
-        max_elev2: float,
+        geo_conf: Dict[str, str],
+        min_elev1: float = None,
+        max_elev1: float = None,
+        min_elev2: float = None,
+        max_elev2: float = None,
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -105,8 +126,8 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param data: cars disparity dataset
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
-        :param img1: path to image 1
-        :param img2: path to image 2
+        :param geo_conf: dictionary with the fields requested in the schema
+        given by the geo_conf_schema() method
         :param min_elev1: min elevation for image 1
         :param max_elev1: max elevation fro image 1
         :param min_elev2: min elevation for image 2

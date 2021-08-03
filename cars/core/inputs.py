@@ -35,10 +35,7 @@ import fiona
 import numpy as np
 import rasterio as rio
 import xarray as xr
-from json_checker import Checker
 from shapely.geometry import shape
-
-from cars.externals.otb_pipelines import read_image
 
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
@@ -190,79 +187,3 @@ def ncdf_can_open(file_path):
             )
         )
         return False
-
-
-def otb_can_open(raster_file: str) -> bool:
-    """
-    Test if file can be open by otb
-    and that it has a correct geom file associated
-
-    :param raster_file: filename
-    :return: True if the file can be used with the otb, False otherwise
-    """
-    can_open_status = False
-    try:
-        geom_path = "./otb_can_open_test.geom"
-        read_image(raster_file, geom_path)
-        if os.path.exists(geom_path):
-            with open(geom_path) as geom_file_desc:
-                geom_dict = {}
-                for line in geom_file_desc:
-                    key, val = line.split(": ")
-                    geom_dict[key] = val
-                # pylint: disable=too-many-boolean-expressions
-                if (
-                    "line_den_coeff_00" not in geom_dict
-                    or "samp_den_coeff_00" not in geom_dict
-                    or "line_num_coeff_00" not in geom_dict
-                    or "samp_num_coeff_00" not in geom_dict
-                    or "line_off" not in geom_dict
-                    or "line_scale" not in geom_dict
-                    or "samp_off" not in geom_dict
-                    or "samp_scale" not in geom_dict
-                    or "lat_off" not in geom_dict
-                    or "lat_scale" not in geom_dict
-                    or "long_off" not in geom_dict
-                    or "long_scale" not in geom_dict
-                    or "height_off" not in geom_dict
-                    or "height_scale" not in geom_dict
-                    or "polynomial_format" not in geom_dict
-                ):
-                    logging.warning(
-                        "No RPC model set for image {}".format(geom_file_desc)
-                    )
-                    can_open_status = False
-
-            os.remove("./otb_can_open_test.geom")
-            can_open_status = True
-        else:
-            logging.warning(
-                "{} does not have associated geom file".format(raster_file)
-            )
-            can_open_status = False
-    except Exception as read_error:
-        logging.warning(
-            "Exception caught while trying to read file {}: {}".format(
-                raster_file, read_error
-            )
-        )
-        can_open_status = False
-
-    return can_open_status
-
-
-def check_json(conf, schema):
-    """
-    Check a dictionary with respect to a schema
-
-    :param conf: The dictionary to check
-    :type conf: dict
-    :param schema: The schema to use
-    :type schema: dict
-
-    :returns: conf if check succeeds (else raises CheckerError)
-    :rtype: dict
-    """
-    schema_validator = Checker(schema)
-    checked_conf = schema_validator.validate(conf)
-    return checked_conf

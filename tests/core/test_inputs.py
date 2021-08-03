@@ -51,22 +51,6 @@ def test_rasterio_can_open():
 
 
 @pytest.mark.unit_tests
-def test_otb_can_open():
-    """
-    Test otb_can_open() with different geom configurations
-    """
-    # existing
-    existing_with_geom = absolute_data_path("input/phr_ventoux/left_image.tif")
-    # existing with no geom file
-    existing_no_geom = absolute_data_path("input/utils_input/im1.tif")
-    not_existing = "/stuff/dummy_file.doe"
-
-    assert inputs.otb_can_open(existing_with_geom)
-    assert not inputs.otb_can_open(existing_no_geom)
-    assert not inputs.otb_can_open(not_existing)
-
-
-@pytest.mark.unit_tests
 def test_fix_shapely():
     """
     Test read_vector fix shapely with poly.gpkg example

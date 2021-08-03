@@ -31,7 +31,12 @@ from typing import Dict, Union
 from json_checker import And, OptionalKey, Or
 
 # CARS imports
-from cars.conf import input_parameters, mask_classes, static_conf
+from cars.conf import (
+    geo_parameters,
+    input_parameters,
+    mask_classes,
+    static_conf,
+)
 from cars.core.inputs import rasterio_can_open
 from cars.core.utils import make_relative_path_absolute
 
@@ -280,7 +285,9 @@ PREPROCESSING_PARAMETERS_SCHEMA = {
 PreprocessingParametersType = Dict[str, Union[float, int]]
 
 # Schema of the full content.json for preprocessing output
-IN_CONF_SCHEMA = input_parameters.INPUT_CONFIGURATION_SCHEMA  # local variable
+IN_CONF_SCHEMA = (
+    geo_parameters.get_input_schema_with_geo_info()
+)  # local variable
 PREPROCESSING_CONTENT_SCHEMA = {
     input_parameters.INPUT_SECTION_TAG: IN_CONF_SCHEMA,
     PREPROCESSING_SECTION_TAG: {

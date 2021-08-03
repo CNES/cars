@@ -405,7 +405,7 @@ def run(  # noqa: C901
         config_id = "config_{}".format(config_idx)
 
         # Check configuration with respect to schema
-        configuration = inputs.check_json(
+        configuration = utils.check_json(
             in_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA
         )
 
@@ -1291,9 +1291,8 @@ def run(  # noqa: C901
 
     # Write the output json
     out_json_path = os.path.join(out_dir, "content.json")
-
     try:
-        inputs.check_json(
+        utils.check_json(
             out_json, output_compute_dsm.COMPUTE_DSM_CONTENT_SCHEMA
         )
     except CheckerError as check_error:

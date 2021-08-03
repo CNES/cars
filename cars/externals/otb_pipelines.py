@@ -407,20 +407,6 @@ def read_lowres_dem(
     return dsm_as_ds
 
 
-def read_image(raster_path: str, out_kwl_path: str):
-    """
-    use ReadImageInfo otb application with the .geom file dump
-
-    :param raster_path: path to the image
-    :param out_kwl_path: path to the output .geom file
-    """
-    read_im_app = otbApplication.Registry.CreateApplication("ReadImageInfo")
-    read_im_app.SetParameterString("in", raster_path)
-    read_im_app.SetParameterString("outkwl", out_kwl_path)
-
-    read_im_app.ExecuteAndWriteOutput()
-
-
 def epipolar_sparse_matching(
     ds1: xr.Dataset,
     roi1: List[int],

@@ -33,7 +33,7 @@ from json_checker import OptionalKey
 
 # CARS imports
 # TODO refacto module conf depends on module core
-from cars.core import inputs
+from cars.core import utils
 
 # Specific values
 # 0 = valid pixels
@@ -69,7 +69,7 @@ def mask_classes_can_open(mask_classes_path: str) -> bool:
     with open(mask_classes_path, "r") as mask_classes_file:
         classes_usage_dict = json.load(mask_classes_file)
         try:
-            inputs.check_json(classes_usage_dict, msk_classes_json_schema)
+            utils.check_json(classes_usage_dict, msk_classes_json_schema)
             return True
         except Exception as read_error:
             logging.warning(

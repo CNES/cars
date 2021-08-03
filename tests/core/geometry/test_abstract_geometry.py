@@ -43,8 +43,8 @@ def test_missing_abstract_methods():
         )
     assert (
         str(error.value) == "Can't instantiate abstract class"
-        " NoMethodClass with abstract methods "
-        "generate_epipolar_grids, triangulate"
+        " NoMethodClass with abstract methods check_products_consistency, "
+        "generate_epipolar_grids, geo_conf_schema, triangulate"
     )
 
 

@@ -31,6 +31,7 @@ from typing import Tuple
 import numpy as np
 import numpy.linalg as la
 import rasterio as rio
+from json_checker import Checker
 
 
 def safe_makedirs(directory):
@@ -141,3 +142,21 @@ def angle_vectors(vector_1: np.ndarray, vector_2: np.ndarray) -> float:
     vec_dot = np.dot(vector_1, vector_2)
     vec_norm = la.norm(np.cross(vector_1, vector_2))
     return np.arctan2(vec_norm, vec_dot)
+
+
+def check_json(conf, schema):
+    """
+    Check a dictionary with respect to a schema
+
+    :param conf: The dictionary to check
+    :type conf: dict
+    :param schema: The schema to use
+    :type schema: dict
+
+    :returns: conf if check succeeds (else raises CheckerError)
+    :rtype: dict
+    """
+
+    schema_validator = Checker(schema, soft=False)
+    checked_conf = schema_validator.validate(conf)
+    return checked_conf

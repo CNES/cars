@@ -411,3 +411,26 @@ def test_generate_epipolar_grids_scaled_inputs():
 
     # unset otb geoid file
     otb_geoid_file_unset()
+
+
+@pytest.mark.unit_tests
+def test_check_consistency():
+    """
+    Test otb_can_open() with different geom configurations
+    """
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry"
+        )
+    )
+
+    # existing
+    existing_with_geom = absolute_data_path("input/phr_ventoux/left_image.tif")
+    # existing with no geom file
+    existing_no_geom = absolute_data_path("input/utils_input/im1.tif")
+    not_existing = "/stuff/dummy_file.doe"
+
+    assert geo_plugin.check_geom_consistency(existing_with_geom)
+    assert not geo_plugin.check_geom_consistency(existing_no_geom)
+    assert not geo_plugin.check_geom_consistency(not_existing)
