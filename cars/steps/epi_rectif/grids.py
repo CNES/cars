@@ -23,14 +23,12 @@ Grids module:
 contains functions used for epipolar grid creation and correction
 """
 
-# TODO Refactor : we should have an abstract class definition with otb,
-#      shareloc & libgeo as possible instances
-
 # Standard imports
 from __future__ import absolute_import
 
 import logging
 import math
+from typing import Union
 
 # Third party imports
 import numpy as np
@@ -39,12 +37,69 @@ from affine import Affine
 from scipy import interpolate
 
 # CARS imports
-from cars.conf import output_prepare
+from cars.conf import output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import projection
+from cars.core.geometry import AbstractGeometry
 
 # TODO depends on another step (and a later one) : make it independent
 from cars.steps.triangulation import triangulate_matches
+
+
+def generate_epipolar_grids(
+    left_img: str,
+    right_img: str,
+    dem: Union[None, str],
+    default_alt: Union[None, float],
+    epipolar_step: int,
+):
+    """
+    Computes the left and right epipolar grids
+
+    :param left_img: path to left image
+    :param right_img: path to right image
+    :param dem: path to the dem folder
+    :param default_alt: default altitude to use in the missing dem regions
+    :param epipolar_step: step to use to construct the epipolar grids
+    :return: Tuple composed of :
+        - the left epipolar grid as a numpy array
+        - the right epipolar grid as a numpy array
+        - the left grid origin as a list of float
+        - the left grid spacing as a list of float
+        - the epipolar image size as a list of int
+        (x-axis size is given with the index 0, y-axis size with index 1)
+        - the disparity to altitude ratio as a float
+    """
+    logging.info("Generating epipolar rectification grid ...")
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
+        )
+    )
+
+    (
+        left_grid_as_array,
+        right_grid_as_array,
+        origin,
+        spacing,
+        epipolar_size,
+        disp_to_alt_ratio,
+    ) = geo_plugin.generate_epipolar_grids(
+        left_img,
+        right_img,
+        dem=dem,
+        default_alt=default_alt,
+        epipolar_step=epipolar_step,
+    )
+
+    return (
+        left_grid_as_array,
+        right_grid_as_array,
+        origin,
+        spacing,
+        epipolar_size,
+        disp_to_alt_ratio,
+    )
 
 
 def write_grid(grid, fname, origin, spacing):

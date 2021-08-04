@@ -24,7 +24,7 @@ Test module for cars.core.geometry
 import pytest
 
 from .dummy_abstract_classes import (  # noqa; pylint: disable=unused-import
-    NoTriangulationMethodClass,
+    NoMethodClass,
 )
 
 from cars.core.geometry import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
@@ -39,12 +39,12 @@ def test_missing_abstract_methods():
     """
     with pytest.raises(Exception) as error:
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "NoTriangulationMethodClass"
+            "NoMethodClass"
         )
     assert (
         str(error.value) == "Can't instantiate abstract class"
-        " NoTriangulationMethodClass with "
-        "abstract methods triangulate"
+        " NoMethodClass with abstract methods "
+        "generate_epipolar_grids, triangulate"
     )
 
 

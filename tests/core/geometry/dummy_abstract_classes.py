@@ -24,9 +24,9 @@ dummy CARS abstract classes tests
 from cars.core.geometry import AbstractGeometry
 
 
-@AbstractGeometry.register_subclass("NoTriangulationMethodClass")
+@AbstractGeometry.register_subclass("NoMethodClass")
 # pylint: disable=abstract-method
-class NoTriangulationMethodClass(AbstractGeometry):
+class NoMethodClass(AbstractGeometry):
     """
     geometry class without any abstract method
     """

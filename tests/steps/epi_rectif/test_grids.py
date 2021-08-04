@@ -29,13 +29,18 @@ from __future__ import absolute_import
 import numpy as np
 import pytest
 import rasterio as rio
+import xarray as xr
 
 # CARS imports
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
-from ...helpers import absolute_data_path
+from ...helpers import (
+    absolute_data_path,
+    otb_geoid_file_set,
+    otb_geoid_file_unset,
+)
 
 
 @pytest.mark.unit_tests
@@ -120,3 +125,101 @@ def test_correct_right_grid():
             np.fabs(np.mean(corrected_matches[:, 1] - corrected_matches[:, 3]))
             < 0.1
         )
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids_default_alt():
+    """
+    Test generate_epipolar_grids method with default alt and no dem
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = None
+    default_alt = 500
+
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
+    (
+        left_grid,
+        right_grid,
+        _,
+        _,
+        epi_size,
+        baseline,
+    ) = grids.generate_epipolar_grids(
+        img1, img2, dem, default_alt, epipolar_step=30
+    )
+    # Unset geoid for the test to be standalone
+    otb_geoid_file_unset()
+
+    assert epi_size == [612, 612]
+    assert baseline == 1 / 0.7039446234703064
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path(
+    # "ref_output/left_grid_default_alt.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid_default_alt.nc")
+    )
+    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
+    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path(
+    # "ref_output/right_grid_default_alt.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid_default_alt.nc")
+    )
+    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
+    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids():
+    """
+    Test generate_epipolar_grids method
+    """
+    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    # Set the geoid file from code source
+    otb_geoid_file_set()
+
+    (
+        left_grid,
+        right_grid,
+        _,
+        _,
+        epi_size,
+        baseline,
+    ) = grids.generate_epipolar_grids(
+        img1, img2, dem, default_alt=None, epipolar_step=30
+    )
+
+    # Unset geoid for the test to be standalone
+    otb_geoid_file_unset()
+
+    assert epi_size == [612, 612]
+    assert baseline == 1 / 0.7039416432380676
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid.nc")
+    )
+    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
+    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid.nc")
+    )
+    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
+    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])

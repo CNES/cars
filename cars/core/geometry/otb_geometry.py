@@ -22,9 +22,11 @@
 this module contains the otb geometry class
 """
 import logging
+from typing import List, Tuple, Union
 
 import numpy as np
 import otbApplication
+import rasterio as rio
 import xarray as xr
 
 from cars.core import constants as cst
@@ -132,3 +134,87 @@ class OTBGeometry(AbstractGeometry):
         llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
 
         return llh
+
+    @staticmethod
+    def generate_epipolar_grids(
+        left_img: str,
+        right_img: str,
+        dem: Union[None, str] = None,
+        default_alt: Union[None, float] = None,
+        epipolar_step: int = 30,
+    ) -> Tuple[
+        np.ndarray, np.ndarray, List[float], List[float], List[int], float
+    ]:
+        """
+        Computes the left and right epipolar grids
+
+        :param left_img: path to left image
+        :param right_img: path to right image
+        :param dem: path to the dem folder
+        :param default_alt: default altitude to use in the missing dem regions
+        :param epipolar_step: step to use to construct the epipolar grids
+        :return: Tuple composed of :
+            - the left epipolar grid as a numpy array
+            - the right epipolar grid as a numpy array
+            - the left grid origin as a list of float
+            - the left grid spacing as a list of float
+            - the epipolar image size as a list of int
+            (x-axis size is given with the index 0, y-axis size with index 1)
+            - the disparity to altitude ratio as a float
+        """
+        stereo_app = otbApplication.Registry.CreateApplication(
+            "StereoRectificationGridGenerator"
+        )
+
+        stereo_app.SetParameterString("io.inleft", left_img)
+        stereo_app.SetParameterString("io.inright", right_img)
+        stereo_app.SetParameterInt("epi.step", epipolar_step)
+        if dem is not None:
+            stereo_app.SetParameterString("epi.elevation.dem", dem)
+        if default_alt is not None:
+            stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
+
+        stereo_app.Execute()
+
+        # Export grids to numpy
+        left_grid_as_array = np.copy(
+            stereo_app.GetVectorImageAsNumpyArray("io.outleft")
+        )
+        right_grid_as_array = np.copy(
+            stereo_app.GetVectorImageAsNumpyArray("io.outright")
+        )
+
+        epipolar_size_x, epipolar_size_y, baseline = (
+            stereo_app.GetParameterInt("epi.rectsizex"),
+            stereo_app.GetParameterInt("epi.rectsizey"),
+            stereo_app.GetParameterFloat("epi.baseline"),
+        )
+
+        origin = stereo_app.GetImageOrigin("io.outleft")
+        spacing = stereo_app.GetImageSpacing("io.outleft")
+
+        # Convert epipolar size depending on the pixel size
+        # TODO: remove this patch when OTB issue
+        # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
+        # is resolved
+        with rio.open(left_img, "r") as rio_dst:
+            pixel_size_x, pixel_size_y = (
+                rio_dst.transform[0],
+                rio_dst.transform[4],
+            )
+
+        mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
+        epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
+        epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
+
+        # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
+        disp_to_alt_ratio = 1 / baseline
+
+        return (
+            left_grid_as_array,
+            right_grid_as_array,
+            origin,
+            spacing,
+            [epipolar_size_x, epipolar_size_y],
+            disp_to_alt_ratio,
+        )

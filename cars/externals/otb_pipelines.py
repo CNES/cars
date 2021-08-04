@@ -33,90 +33,11 @@ from typing import List
 # Third party imports
 import numpy as np
 import otbApplication
-import rasterio as rio
 import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
 from cars.core.otb_adapters import encode_to_otb
-
-
-def build_stereorectification_grid_pipeline(
-    img1, img2, dem=None, default_alt=None, epi_step=30
-):
-    """
-    This function builds the stereo-rectification pipeline and
-    return it along with grids and sizes
-
-    :param img1: Path to the left image
-    :type img1: string
-    :param img2: Path to right image
-    :type img2: string
-    :param dem: Path to DEM directory
-    :type dem: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    :param epi_step: Step of the stereo-rectification grid
-    :type epi_step: int
-    :returns: (left_grid, right_grid,
-            epipolar_size_x, epipolar_size_y, pipeline) tuple
-    :rtype: left grid and right_grid as numpy arrays,
-            origin as two float,
-            spacing as two float,
-            epipolar_size_xy  as int,
-            baseline_ratio (resolution * B/H) as float,
-    """
-    stereo_app = otbApplication.Registry.CreateApplication(
-        "StereoRectificationGridGenerator"
-    )
-
-    stereo_app.SetParameterString("io.inleft", img1)
-    stereo_app.SetParameterString("io.inright", img2)
-    stereo_app.SetParameterInt("epi.step", epi_step)
-    if dem is not None:
-        stereo_app.SetParameterString("epi.elevation.dem", dem)
-    if default_alt is not None:
-        stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
-
-    stereo_app.Execute()
-
-    # Export grids to numpy
-    left_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outleft")
-    )
-    right_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outright")
-    )
-
-    epipolar_size_x, epipolar_size_y, baseline = (
-        stereo_app.GetParameterInt("epi.rectsizex"),
-        stereo_app.GetParameterInt("epi.rectsizey"),
-        stereo_app.GetParameterFloat("epi.baseline"),
-    )
-
-    origin = stereo_app.GetImageOrigin("io.outleft")
-    spacing = stereo_app.GetImageSpacing("io.outleft")
-
-    # Convert epipolar size depending on the pixel size
-    # TODO: remove this patch when OTB issue
-    # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
-    # is resolved
-    with rio.open(img1, "r") as rio_dst:
-        pixel_size_x, pixel_size_y = rio_dst.transform[0], rio_dst.transform[4]
-
-    mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
-    epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
-    epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
-
-    return (
-        left_grid_as_array,
-        right_grid_as_array,
-        origin,
-        spacing,
-        epipolar_size_x,
-        epipolar_size_y,
-        baseline,
-    )
 
 
 def build_extract_roi_application(img, region):
@@ -578,26 +499,3 @@ def epipolar_sparse_matching(
         )
 
     return matches
-
-
-def rigid_transform_resample(
-    img: str, scalex: float, scaley: float, img_transformed: str
-):
-    """
-    Execute RigidTransformResample OTB application
-
-    :param img: path to the image to transform
-    :param scalex: scale factor to apply along x axis
-    :param scaley: scale factor to apply along y axis
-    :param img_transformed: output image path
-    """
-
-    # create otb app to rescale input images
-    app = otbApplication.Registry.CreateApplication("RigidTransformResample")
-
-    app.SetParameterString("in", img)
-    app.SetParameterString("transform.type", "id")
-    app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
-    app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
-    app.SetParameterString("out", img_transformed)
-    app.ExecuteAndWriteOutput()

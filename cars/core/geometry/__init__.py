@@ -24,7 +24,7 @@ geometry plugins
 """
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Dict
+from typing import Dict, List, Tuple, Union
 
 import numpy as np
 import xarray as xr
@@ -95,7 +95,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         max_elev1: float,
         min_elev2: float,
         max_elev2: float,
-        roi_key: str = None,
+        roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
@@ -114,4 +114,33 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
+        """
+
+    @staticmethod
+    @abstractmethod
+    def generate_epipolar_grids(
+        left_img: str,
+        right_img: str,
+        dem: Union[None, str] = None,
+        default_alt: Union[None, float] = None,
+        epipolar_step: int = 30,
+    ) -> Tuple[
+        np.ndarray, np.ndarray, List[float], List[float], List[int], float
+    ]:
+        """
+        Computes the left and right epipolar grids
+
+        :param left_img: path to left image
+        :param right_img: path to right image
+        :param dem: path to the dem folder
+        :param default_alt: default altitude to use in the missing dem regions
+        :param epipolar_step: step to use to construct the epipolar grids
+        :return: Tuple composed of :
+            - the left epipolar grid as a numpy array
+            - the right epipolar grid as a numpy array
+            - the left grid origin as a list of float
+            - the left grid spacing as a list of float
+            - the epipolar image size as a list of int
+            (x-axis size is given with the index 0, y-axis size with index 1)
+            - the disparity to altitude ratio as a float
         """
