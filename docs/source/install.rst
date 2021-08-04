@@ -1,70 +1,63 @@
-============
-Installation
-============
+.. _install:
+
+=======
+Install
+=======
 .. _dependencies:
 
 Dependencies
 =============
 
-CARS is based on the implementation of some algorithms furnished by the `Orfeo Toolbox <https://www.orfeo-toolbox.org>`_ and the `VLFeat <http://www.vlfeat.org/>`_ library.
-Thus, they have to be installed in order to use CARS. See:
+CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
 
-* `OTB installation <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_
-* `VLFeat installation <https://github.com/vlfeat/vlfeat>`_
+* Check OTB install:
 
-After OTB installation, the following have to checked:
-* all OTB environment have to be setup (otb applications working, ``OTB_APPLICATION_PATH`` set, ...)
-* gdal-config have to work : If not present in your particular OTB install, copy the provided one in your OTB install path.
+  * OTB environment has to be setup:
 
-After Vlfeat installation, the following environment variable have to be set:
-* ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
-* ``VLFEAT_LIBRARY`` : should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
+    * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
+    * ``OTB_APPLICATION_PATH`` is set.
 
-Quick installation
-==================
-If dependencies are installed, CARS can be quickly installed with make command in a virtualenv environment
+* Check Vlfeat install with following global environment variables:
 
-.. code-block:: bash
+  * ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
+  * ``VLFEAT_LIBRARY``: should be set with the path of the ``libvl.so`` file obtained after the VLFeat library compilation.
 
-    $ git clone https://github.com/CNES/cars.git
+See `CARS Dockerfile <https://raw.githubusercontent.com/CNES/cars/master/Dockerfile>`_ example for detailed steps.
+
+Quick install
+=============
+
+* Clone CARS Source code (choose version)
+
+.. code-block:: console
+
+    $ git clone --depth 1 https://github.com/CNES/cars.git # For latest version
+    $ git clone --depth 1 --branch LAST_TAG https://github.com/CNES/cars.git # For last stable version
+
+* Install CARS
+
+.. code-block:: console
+
     $ cd cars
-    $ make install
+    $ make install  # Cars is installed in `venv` directory
+
+* Run CARS in virtualenv
+
+.. code-block:: console
+
     $ source venv/bin/activate
     $ source venv/bin/env_cars.sh
     $ cars -h
 
-Configuration
-=============
-Cars can be configured mainly through command line : Go to :ref:`cli_usage`
-
-A default `static configuration  <../../cars/conf/static_configuration.json>`_ is deployed with cars installation. This files enables to customize the parameters of the following algorithms:
-
-* SIFTs computation
-* alignment on the input DEM
-* disparity range determination
-* the points cloud filters
-
-As well as some 3D chain parameters:
-
-* the epipolar tiling configuration
-* the grid divider factor of the rasterization step (to accelerate the neighbors searching using kd-tree)
-* the output color image format
-* the geometry module to use (fixed to internal `OTBGeometry`)
-
-This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
-
-A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
-It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``
-
-Advanced Manual Installation
-============================
-The following steps are defined in Makefile for ``install`` command
+Advanced Install
+================
+The following steps are defined in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_  ``install`` command.
 
 Virtualenv
 ----------
-First create a virtualenv and update pip
+First create a virtualenv and upgrade main pip packages.
 
-.. code-block:: bash
+.. code-block:: console
 
     $ virtualenv -p python venv/
     $ source venv/bin/activate
@@ -73,13 +66,14 @@ First create a virtualenv and update pip
 Required python packages
 ------------------------
 
-The use of CARS requires the prior installation of the some Python packages listed in the ``setup.cfg`` file and automatically installed with pip install.
-But the **numpy** and **cython** package has to be installed separately otherwise some dependencies won't be correctly installed.
-Also, on some installations, **fiona**, **rasterio** and **pygdal** have to be installed from source to fit local GDAL version.
+CARS python package requires some python packages to be installed before:
 
-See ``Makefile`` file for details.
+* **numpy**, **cython**: They have to be installed separately otherwise some dependencies won't be correctly installed.
+* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from source to fit local GDAL version.
 
-.. code-block:: bash
+Here are the correspondent commands to install these prior dependencies:
+
+.. code-block:: console
 
     $ virtualenv -p python venv/
     $ source venv/bin/activate
@@ -88,35 +82,36 @@ See ``Makefile`` file for details.
     $ python3 -m pip install --no-binary rasterio rasterio
     $ python3 -m pip install pygdal=="$(gdal-config --version).*"
 
-It is also possible to manually install CARS correlator Pandora with different plugins and configuration: see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
+To manually install CARS core correlator, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
 
 Environment variables
 ---------------------
 
-In order to work, several environment variables impacting the dask, ITK, OTB, numba and gdal configurations are set by default in the ``env_cars.sh`` script.
+The script `env_cars.sh <https://raw.githubusercontent.com/CNES/cars/master/env_cars.sh>`_ sets several environment variables impacting dask, ITK, OTB, numba and GDAL configurations.
 
-For OTB CARS applications, the ``PATH``, ``PYTHONPATH``, ``LD_LIBRARY_PATH`` and ``OTB_APPLICATION_PATH`` environment variables have to be set to use the Python API as well as the OTB applications on which they depend.
+For CARS internal OTB remote modules, the ``PATH``, ``PYTHONPATH``, ``LD_LIBRARY_PATH`` and ``OTB_APPLICATION_PATH`` environment variables have also to be set.
 
-CARS OTB Application  Compilation
----------------------------------
+CARS manual install
+-------------------
 
-CARS OTB remote modules can be built manually (as in setup.py automatically in pip install):
+Then, to install CARS:
 
-.. code-block:: bash
+.. code-block:: console
+
+    $ cd project_root
+    $ pip install .
+
+Follow :ref:`user_manual` to run and configure CARS.
+
+CARS OTB Application Compilation
+--------------------------------
+This compilation is automatically done through CARS pip install.
+
+Nonetheless, CARS internal OTB remote modules can be built manually if needed:
+
+.. code-block:: console
 
     $ mkdir -p project_root/build
     $ cd project_root/build
     $ cmake -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release -DVLFEAT_INCLUDE_DIR=$VLFEAT_INCLUDE_DIR ../otb_remote_module
     $ make
-
-CARS manual installation
-------------------------
-
-Then, to install CARS:
-
-.. code-block:: bash
-
-    $ cd project_root
-    $ pip install .
-
-The main programs are in Python and thus can be used as they are.

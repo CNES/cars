@@ -9,6 +9,9 @@ Glossary
 To update, follow `glossary sphinx documentation`_ in RST source documentation.
 
 .. glossary::
+    CARS
+      means CNES Algorithms to Reconstruct Surface (ou Chaîne Automatique de Restitution Stéréoscopique en français)
+
     core
       Means the internal CARS function used as the engine core for steps and pipelines.
 
@@ -16,8 +19,7 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
       The short version of "disparity"
 
     disparity
-      the difference in image location of the same 3D point when projected under
-      perspective to two different cameras. d = xleft - xright
+      The column difference between a pixel in the left image and its homologous pixel in the right image.
 
     DEM
       `Digital Elevation Model`_. Usually means all elevation models in raster: DSM, DTM,...

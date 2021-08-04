@@ -1,4 +1,3 @@
 sphinx
 sphinx-rtd-theme
-numpydoc
 graphviz
