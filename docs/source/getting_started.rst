@@ -107,7 +107,7 @@ Advanced Quick Start
 
 2. Follow now `CARS Advanced Quick Start script  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start_advanced.sh>`_ with the same steps than previous quick start.
 
-You need to get command line options files with the script:
+You need to get these command line options files to run the script:
 
 - `CARS prepare img1-img2 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare12.txt>`_
 - `CARS prepare img1-img3 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare13.txt>`_

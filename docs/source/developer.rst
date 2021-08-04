@@ -61,7 +61,7 @@ Here are some rules to apply when developing a new functionality:
 * **Use doctype**: Follow sphinx default doctype for automatic API
 * **Quality code**: Correct project quality code errors with pre-commit automatic workflow (see below)
 * **Factorization**: Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the cars python modules.
-* **Be careful with user interface upgrade":** If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
+* **Be careful with user interface upgrade:** If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
 * **Logging and no print**: The usage of the `print()` function is forbidden: use the `logging` python standard module instead.
 * **Limit classes**: If possible, limit the use of classes as much as possible and opt for a functional approach. The classes are reserved for data modelling if it is impossible to do so using `xarray` and for the good level of modularity.
 * **Limit new dependencies**: Do not add new dependencies unless it is absolutely necessary, and only if it has a **permissive license**.
@@ -171,14 +171,14 @@ Pylint manual usage examples:
 .. code-block:: console
 
   $ cd CARS_HOME
-  $ pylint tests carsdocs       # Run all pylint tests
+  $ pylint tests cars       # Run all pylint tests
   $ pylint --list-msgs          # Get pylint detailed errors informations
 
 
 Tests
 ======
 
-CARS includes a set of tests executed with ``pytest`` tool.
+CARS includes a set of tests executed with `pytest <https://docs.pytest.org/>`_ tool.
 
 To launch tests:
 
@@ -186,7 +186,7 @@ To launch tests:
 
     make test
 
-It launche only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
+It launches only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
 
 Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use ``/tmp``).
 
@@ -203,7 +203,6 @@ To execute the tests manually, use ``pytest`` at the CARS projects's root (after
 
 .. code-block:: console
 
-    $ cd cars/
     $ python -m pytest
 
 To run only the unit tests:

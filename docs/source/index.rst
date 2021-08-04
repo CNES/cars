@@ -35,7 +35,7 @@ and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
    install
    user_manual
    notebooks
-   architecture
+   main_principles
    developer
    faq
    glossary

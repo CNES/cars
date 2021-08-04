@@ -8,12 +8,14 @@ Install
 Dependencies
 =============
 
-CARS depends on `OTB installation <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat installation <https://www.vlfeat.org/compiling-unix.html>`_
+CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
 
 * Check OTB install:
 
-  * OTB environment have to be setup: otb applications working, ``OTB_APPLICATION_PATH`` set.
-  * ``gdal-config`` command have to work: If not present in your particular OTB install, copy the provided one in your OTB install path.
+  * OTB environment has to be setup:
+
+    * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
+    * ``OTB_APPLICATION_PATH`` is set.
 
 * Check Vlfeat install with following global environment variables:
 
