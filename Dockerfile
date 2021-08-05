@@ -18,12 +18,12 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     python3.8-dev=3.8.10-0ubuntu1~20.04 \
     libgl1=1.3.2-1~ubuntu0.20.04.1 \
     libglu1-mesa=9.0.1-1build1 \
-    libgl1-mesa-dev=20.2.6-0ubuntu0.20.04.1 \
+    libgl1-mesa-dev=21.0.3-0ubuntu0.2~20.04.1 \
     libsm6=2:1.2.3-1 \
     libxext6=2:1.3.4-0ubuntu1 \
     libxrender-dev=1:0.9.10-1 \
     python3=3.8.2-0ubuntu2 \
-    python3-pip=20.0.2-5ubuntu1.5 \
+    python3-pip=20.0.2-5ubuntu1.6 \
     python3-numpy=1:1.17.4-5ubuntu3 \
     libgtk2.0-dev=2.24.32-4ubuntu4 \
     unzip=6.0-25ubuntu1 \
