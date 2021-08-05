@@ -156,7 +156,10 @@ def run(  # noqa: C901
                 elev_delta_low_bound_tag: elevation_delta_lower_bound,
                 elev_delta_up_bound_tag: elevation_delta_upper_bound,
             },
-            in_params.STATIC_PARAMS_TAG: static_params[static_conf.prepare_tag],
+            in_params.STATIC_PARAMS_TAG: {
+                static_conf.prepare_tag: static_params[static_conf.prepare_tag],
+                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+            },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
     }
@@ -326,29 +329,28 @@ def run(  # noqa: C901
             )
 
     # Generate rectification grids
-    logging.info("Generating epipolar rectification grid ...")
     (
         grid1,
         grid2,
         grid_origin,
         grid_spacing,
-        epipolar_size_x,
-        epipolar_size_y,
-        alt_to_disp_ratio,
-    ) = otb_pipelines.build_stereorectification_grid_pipeline(
-        img1, img2, dem=srtm_dir, default_alt=default_alt, epi_step=epi_step
+        epipolar_size,
+        disp_to_alt_ratio,
+    ) = grids.generate_epipolar_grids(
+        img1,
+        img2,
+        dem=srtm_dir,
+        default_alt=default_alt,
+        epipolar_step=epi_step,
     )
 
-    # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
-    disp_to_alt_ratio = 1 / alt_to_disp_ratio
+    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
+        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
+    ][output_prepare.EPIPOLAR_SIZE_X_TAG] = epipolar_size[0]
 
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.EPIPOLAR_SIZE_X_TAG] = epipolar_size_x
-
-    out_json[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ][output_prepare.EPIPOLAR_SIZE_Y_TAG] = epipolar_size_y
+    ][output_prepare.EPIPOLAR_SIZE_Y_TAG] = epipolar_size[1]
 
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][
         output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
@@ -372,7 +374,7 @@ def run(  # noqa: C901
 
     logging.info(
         "Size of epipolar images: {}x{} pixels".format(
-            epipolar_size_x, epipolar_size_y
+            epipolar_size[0], epipolar_size[1]
         )
     )
     logging.info(
@@ -452,7 +454,7 @@ def run(  # noqa: C901
     )
 
     regions = tiling.split(
-        0, 0, epipolar_size_x, epipolar_size_y, region_size, region_size
+        0, 0, epipolar_size[0], epipolar_size[1], region_size, region_size
     )
 
     logging.info(
@@ -525,7 +527,7 @@ def run(  # noqa: C901
             # Pad with margin and crop to largest region
             right_region = tiling.crop(
                 tiling.pad(right_region, margins),
-                [0, 0, epipolar_size_x, epipolar_size_y],
+                [0, 0, epipolar_size[0], epipolar_size[1]],
             )
 
             # Avoid empty regions
@@ -545,8 +547,8 @@ def run(  # noqa: C901
                         mask2_classes,
                         nodata1,
                         nodata2,
-                        epipolar_size_x,
-                        epipolar_size_y,
+                        epipolar_size[0],
+                        epipolar_size[1],
                     )
                 )
 

@@ -33,11 +33,16 @@ import numpy as np
 import xarray as xr
 
 # CARS imports
-from cars.conf import input_parameters, output_compute_dsm, output_prepare
+from cars.conf import (
+    input_parameters,
+    output_compute_dsm,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
 from cars.core import utils
+from cars.core.geometry import AbstractGeometry
 from cars.core.projection import project_coordinates_on_line
-from cars.externals import otb_pipelines
 
 
 def triangulate(
@@ -63,7 +68,7 @@ def triangulate(
     :param snap_to_img1: If True, Lines of Sight of img2 are moved so as to
                          cross those of img1
     :param snap_to_img1: bool
-    :param align: If True, apply correction to point after triangulation to
+    :param align: If True, apply the correction to point after triangulation to
                   align with lowres DEM (if available. If not, no correction
                   is applied)
     :param align: bool
@@ -262,7 +267,14 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    llh = otb_pipelines.triangulation_matches(
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
+        )
+    )
+
+    llh = geo_plugin.triangulate(
+        cst.MATCHES_MODE,
         matches,
         grid1,
         grid2,
@@ -321,10 +333,15 @@ def compute_points_cloud(
     (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
     (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
 
-    # Build triangulation app
-    llh = otb_pipelines.triangulation(
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
+        )
+    )
+
+    llh = geo_plugin.triangulate(
+        cst.DISP_MODE,
         data,
-        roi_key,
         grid1,
         grid2,
         img1,
@@ -333,6 +350,7 @@ def compute_points_cloud(
         max_elev1,
         min_elev2,
         max_elev2,
+        roi_key,
     )
 
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
@@ -426,7 +444,7 @@ def geoid_offset(points, geoid):
         <= geoid.lat_max
     ):
         raise RuntimeError(
-            "Geoid does not fully cover the area spanned by " "the point cloud."
+            "Geoid does not fully cover the area spanned by the point cloud."
         )
 
     # interpolate data

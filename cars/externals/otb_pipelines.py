@@ -33,89 +33,11 @@ from typing import List
 # Third party imports
 import numpy as np
 import otbApplication
-import rasterio as rio
 import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-
-
-def build_stereorectification_grid_pipeline(
-    img1, img2, dem=None, default_alt=None, epi_step=30
-):
-    """
-    This function builds the stereo-rectification pipeline and
-    return it along with grids and sizes
-
-    :param img1: Path to the left image
-    :type img1: string
-    :param img2: Path to right image
-    :type img2: string
-    :param dem: Path to DEM directory
-    :type dem: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    :param epi_step: Step of the stereo-rectification grid
-    :type epi_step: int
-    :returns: (left_grid, right_grid,
-            epipolar_size_x, epipolar_size_y, pipeline) tuple
-    :rtype: left grid and right_grid as numpy arrays,
-            origin as two float,
-            spacing as two float,
-            epipolar_size_xy  as int,
-            baseline_ratio (resolution * B/H) as float,
-    """
-    stereo_app = otbApplication.Registry.CreateApplication(
-        "StereoRectificationGridGenerator"
-    )
-
-    stereo_app.SetParameterString("io.inleft", img1)
-    stereo_app.SetParameterString("io.inright", img2)
-    stereo_app.SetParameterInt("epi.step", epi_step)
-    if dem is not None:
-        stereo_app.SetParameterString("epi.elevation.dem", dem)
-    if default_alt is not None:
-        stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
-
-    stereo_app.Execute()
-
-    # Export grids to numpy
-    left_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outleft")
-    )
-    right_grid_as_array = np.copy(
-        stereo_app.GetVectorImageAsNumpyArray("io.outright")
-    )
-
-    epipolar_size_x, epipolar_size_y, baseline = (
-        stereo_app.GetParameterInt("epi.rectsizex"),
-        stereo_app.GetParameterInt("epi.rectsizey"),
-        stereo_app.GetParameterFloat("epi.baseline"),
-    )
-
-    origin = stereo_app.GetImageOrigin("io.outleft")
-    spacing = stereo_app.GetImageSpacing("io.outleft")
-
-    # Convert epipolar size depending on the pixel size
-    # TODO: remove this patch when OTB issue
-    # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
-    # is resolved
-    with rio.open(img1, "r") as rio_dst:
-        pixel_size_x, pixel_size_y = rio_dst.transform[0], rio_dst.transform[4]
-
-    mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
-    epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
-    epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
-
-    return (
-        left_grid_as_array,
-        right_grid_as_array,
-        origin,
-        spacing,
-        epipolar_size_x,
-        epipolar_size_y,
-        baseline,
-    )
+from cars.core.otb_adapters import encode_to_otb
 
 
 def build_extract_roi_application(img, region):
@@ -302,56 +224,6 @@ def build_image_resampling_pipeline(
     resampled = np.copy(extract_app.GetVectorImageAsNumpyArray("out"))
 
     return resampled
-
-
-def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
-    """
-    This function encodes a numpy array with metadata
-    so that it can be used by the ImportImage method of otb applications
-
-    :param data_array: The numpy data array to encode
-    :type data_array: numpy array
-    :param largest_size: The size of the full image
-        (data_array can be a part of a bigger image)
-    :type largest_size: list of two int
-    :param roi: Region encoded in data array ([x_min,y_min,x_max,y_max])
-    :type roi: list of four int
-    :param origin: Origin of full image (default origin: (0, 0))
-    :type origin: list of two int
-    :param spacing: Spacing of full image (default spacing: (1,1))
-    :type spacing: list of two int
-    :returns: A dictionary of attributes ready to be imported by ImportImage
-    :rtype: dict
-    """
-
-    otb_origin = otbApplication.itkPoint()
-    otb_origin[0] = origin[0] if origin is not None else 0
-    otb_origin[1] = origin[1] if origin is not None else 0
-
-    otb_spacing = otbApplication.itkVector()
-    otb_spacing[0] = spacing[0] if spacing is not None else 1
-    otb_spacing[1] = spacing[1] if spacing is not None else 1
-
-    otb_largest_size = otbApplication.itkSize()
-    otb_largest_size[0] = int(largest_size[0])
-    otb_largest_size[1] = int(largest_size[1])
-
-    otb_roi_region = otbApplication.itkRegion()
-    otb_roi_region["size"][0] = int(roi[2] - roi[0])
-    otb_roi_region["size"][1] = int(roi[3] - roi[1])
-    otb_roi_region["index"][0] = int(roi[0])
-    otb_roi_region["index"][1] = int(roi[1])
-
-    output = {}
-
-    output["origin"] = otb_origin
-    output["spacing"] = otb_spacing
-    output["size"] = otb_largest_size
-    output["region"] = otb_roi_region
-    output["metadata"] = otbApplication.itkMetaDataDictionary()
-    output["array"] = data_array
-
-    return output
 
 
 def image_envelope(img, shp, dem=None, default_alt=None):
@@ -549,113 +421,6 @@ def read_image(raster_path: str, out_kwl_path: str):
     read_im_app.ExecuteAndWriteOutput()
 
 
-def triangulation_matches(
-    matches: np.ndarray,
-    grid1: str,
-    grid2: str,
-    img1: str,
-    img2: str,
-    min_elev1: float,
-    max_elev1: float,
-    min_elev2: float,
-    max_elev2: float,
-) -> np.ndarray:
-    """
-    Performs triangulation from matches
-
-    :param matches: input matches to triangulate
-    :param grid1: path to epipolar grid of img1
-    :param grid2: path to epipolar grid of image 2
-    :param img1: path to image 1
-    :param img2: path to image 2
-    :param min_elev1: min elevation for image 1
-    :param max_elev1: max elevation fro image 1
-    :param min_elev2: min elevation for image 2
-    :param max_elev2: max elevation for image 2
-    :return: the long/lat/height numpy array in output of the triangulation
-    """
-    # Build triangulation app
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
-    )
-
-    triangulation_app.SetParameterString("mode", "sift")
-    triangulation_app.SetImageFromNumpyArray("mode.sift.inmatches", matches)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
-
-    return llh
-
-
-def triangulation(
-    data: xr.Dataset,
-    roi_key: str,
-    grid1: str,
-    grid2: str,
-    img1: str,
-    img2: str,
-    min_elev1: float,
-    max_elev1: float,
-    min_elev2: float,
-    max_elev2: float,
-) -> np.ndarray:
-    """
-    Performs triangulation from cars disparity dataset
-
-    :param data: cars disparity dataset
-    :param roi_key: dataset roi to use (can be cst.ROI or cst.ROI_WITH_MARGINS)
-    :param grid1: path to epipolar grid of img1
-    :param grid2: path to epipolar grid of image 2
-    :param img1: path to image 1
-    :param img2: path to image 2
-    :param min_elev1: min elevation for image 1
-    :param max_elev1: max elevation fro image 1
-    :param min_elev2: min elevation for image 2
-    :param max_elev2: max elevation for image 2
-    :return: the long/lat/height numpy array in output of the triangulation
-    """
-    # encode disparity for otb
-    disp = encode_to_otb(
-        data[cst.DISP_MAP].values,
-        data.attrs[cst.EPI_FULL_SIZE],
-        data.attrs[roi_key],
-    )
-
-    # Build triangulation application
-    triangulation_app = otbApplication.Registry.CreateApplication(
-        "EpipolarTriangulation"
-    )
-
-    triangulation_app.SetParameterString("mode", "disp")
-    triangulation_app.ImportImage("mode.disp.indisp", disp)
-
-    triangulation_app.SetParameterString("leftgrid", grid1)
-    triangulation_app.SetParameterString("rightgrid", grid2)
-    triangulation_app.SetParameterString("leftimage", img1)
-    triangulation_app.SetParameterString("rightimage", img2)
-    triangulation_app.SetParameterFloat("leftminelev", min_elev1)
-    triangulation_app.SetParameterFloat("leftmaxelev", max_elev1)
-    triangulation_app.SetParameterFloat("rightminelev", min_elev2)
-    triangulation_app.SetParameterFloat("rightmaxelev", max_elev2)
-
-    triangulation_app.Execute()
-
-    llh = np.copy(triangulation_app.GetVectorImageAsNumpyArray("out"))
-
-    return llh
-
-
 def epipolar_sparse_matching(
     ds1: xr.Dataset,
     roi1: List[int],
@@ -734,26 +499,3 @@ def epipolar_sparse_matching(
         )
 
     return matches
-
-
-def rigid_transform_resample(
-    img: str, scalex: float, scaley: float, img_transformed: str
-):
-    """
-    Execute RigidTransformResample OTB application
-
-    :param img: path to the image to transform
-    :param scalex: scale factor to apply along x axis
-    :param scaley: scale factor to apply along y axis
-    :param img_transformed: output image path
-    """
-
-    # create otb app to rescale input images
-    app = otbApplication.Registry.CreateApplication("RigidTransformResample")
-
-    app.SetParameterString("in", img)
-    app.SetParameterString("transform.type", "id")
-    app.SetParameterFloat("transform.type.id.scalex", abs(scalex))
-    app.SetParameterFloat("transform.type.id.scaley", abs(scaley))
-    app.SetParameterString("out", img_transformed)
-    app.ExecuteAndWriteOutput()

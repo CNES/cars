@@ -1,0 +1,28 @@
+@startuml 
+
+rectangle "Input Data" {
+(Stereo Images) as img
+(Geometric Models) as geom
+(Masks) as masks
+(Input DEM) as dem
+}
+(Prepare pipeline) as cars_prepare #red
+(Compute_dsm pipeline) as cars_compute #red
+rectangle "Output Data" {
+(dsm.tif) as dsm
+(color.tif) as color
+(Output stats) as output_stats
+}
+
+img --> cars_prepare
+geom --> cars_prepare
+masks ..> cars_prepare
+dem ..> cars_prepare
+cars_prepare ..> cars_prepare : X times
+cars_prepare --> cars_compute : content1.json
+cars_prepare ..> cars_compute : content2.json, ... contentX.json
+cars_compute --> dsm
+cars_compute --> color
+cars_compute --> output_stats
+
+@enduml

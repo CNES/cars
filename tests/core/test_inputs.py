@@ -103,4 +103,4 @@ def test_read_vector():
     # test exception
     with pytest.raises(Exception) as read_error:
         inputs.read_vector("test.shp")
-        assert str(read_error) == "Impossible to read test.shp shapefile"
+    assert str(read_error.value) == "Impossible to read test.shp file"

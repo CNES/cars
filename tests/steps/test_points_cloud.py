@@ -381,10 +381,10 @@ def test_create_combined_cloud():
             radius=1,
             with_coords=True,
         )
-        assert (
-            str(test_error) == "There shall be as many cloud elements "
-            "as color ones"
-        )
+    assert (
+        str(test_error.value) == "There shall be as many cloud elements "
+        "as color ones"
+    )
 
 
 @pytest.mark.unit_tests
@@ -566,11 +566,11 @@ def test_add_cloud_filtering_msk():
         points_cloud.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
-        assert (
-            str(index_error) == "Index indicated in the elt_pos_infos "
-            "pandas.DataFrame is not coherent with the clouds "
-            "list given in input"
-        )
+    assert (
+        str(index_error.value) == "Index indicated in the elt_pos_infos "
+        "pandas. DataFrame is not coherent with the clouds "
+        "list given in input"
+    )
 
     with pytest.raises(Exception) as index_error:
         np_pos = np.array([[1, 2, -1], [2, 2, 1]])
@@ -581,11 +581,11 @@ def test_add_cloud_filtering_msk():
         points_cloud.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
-        assert (
-            str(index_error) == "Index indicated in the elt_pos_infos "
-            "pandas.DataFrame is not coherent "
-            "with the clouds list given in input"
-        )
+    assert (
+        str(index_error.value) == "Index indicated in the elt_pos_infos "
+        "pandas. DataFrame is not coherent "
+        "with the clouds list given in input"
+    )
 
     with pytest.raises(Exception) as index_error:
         np_pos = np.array([[11, 2, 0]])
@@ -596,7 +596,7 @@ def test_add_cloud_filtering_msk():
         points_cloud.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
-        assert (
-            str(index_error) == "Point at location (11,2) is not "
-            "accessible in an image of size (5,10)"
-        )
+    assert (
+        str(index_error.value) == "Point at location (11,2) is not "
+        "accessible in an image of size (5,10)"
+    )
