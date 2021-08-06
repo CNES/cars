@@ -158,7 +158,7 @@ class OTBGeometry(AbstractGeometry):
     @staticmethod
     def triangulate(
         mode: str,
-        data: xr.Dataset,
+        data: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
         geo_conf: Dict[str, str],
@@ -173,7 +173,7 @@ class OTBGeometry(AbstractGeometry):
 
         :param mode: triangulation mode
         (cst.DISP_MODE or cst.MATCHES)
-        :param data: cars disparity dataset
+        :param data: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
         :param geo_conf: dictionary with the fields requested by the
