@@ -6,6 +6,7 @@ CARS Design
 
 CARS is a new tool which works but still needs refactoring.
 This document does not describe the current CARS design but the intended one.
+The document is updated with refactoring design evolution.
 
 The main goals to this new design are:
 

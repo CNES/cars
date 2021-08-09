@@ -14,6 +14,9 @@ The goals are:
 - ease 3D studies and definition/test of new algorithms
 - simplify evolution when a library is becoming obsolete
 
+In CARS, we call "loader" the generic way to include 
+
+The loaders implementations can be internal or external.
 
 General loader design
 =====================

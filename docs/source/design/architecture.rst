@@ -2,6 +2,28 @@
 CARS Main architecture
 ======================
 
+
+
+
+Data representation
+===================
+
+CARS dataset image
+------------------
+
+core/dataset.py
+
+geometric model
+---------------
+CARS representation ? link with modularity of geometric framework.
+One CARS internal representation ? external ?
+
+
+
+
+Module organization.
+====================
+
 - cars main CLI API
 - cars pipelines
 - CARS steps :
