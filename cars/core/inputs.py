@@ -35,6 +35,7 @@ import fiona
 import numpy as np
 import rasterio as rio
 import xarray as xr
+from json_checker import Checker
 from shapely.geometry import shape
 
 # Filter rasterio warning when image is not georeferenced
@@ -187,3 +188,20 @@ def ncdf_can_open(file_path):
             )
         )
         return False
+
+
+def check_json(conf, schema):
+    """
+    Check a dictionary with respect to a schema
+
+    :param conf: The dictionary to check
+    :type conf: dict
+    :param schema: The schema to use
+    :type schema: dict
+
+    :returns: conf if check succeeds (else raises CheckerError)
+    :rtype: dict
+    """
+    schema_validator = Checker(schema)
+    checked_conf = schema_validator.validate(conf)
+    return checked_conf

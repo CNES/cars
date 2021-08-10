@@ -24,6 +24,7 @@ geometry plugins
 """
 import logging
 from abc import ABCMeta, abstractmethod
+from copy import copy
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -31,6 +32,7 @@ import rasterio as rio
 import xarray as xr
 from scipy import interpolate
 
+from cars.conf import input_parameters, static_conf
 from cars.core import constants as cst
 
 
@@ -291,3 +293,65 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
         return sensor_positions
+
+
+def geo_conf_schema() -> Dict[str, str]:
+    """
+    Retrieve the geometry loader configuration schema
+
+    :return: a json checker schema
+    """
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
+        )
+    )
+    return geo_plugin.geo_conf_schema()
+
+
+def extract_geo_conf(conf) -> Dict[str, str]:
+    """
+    Extract from the input configuration the fields required by the geometry
+    loader
+
+    :param conf: CARS input configuration dictionary
+    :return: the geometry loader configuration
+    """
+    geo_model = {}
+
+    required_geo_conf = geo_conf_schema()
+
+    for key in required_geo_conf.keys():
+        geo_model[key] = conf[key]
+    return geo_model
+
+
+def geo_loader_can_open(conf) -> bool:
+    """
+    Check if the pair given in the configuration have valid geometric models
+
+    :param conf: CARS input configuration
+    :return:  True if the pair has valid geometrical models, False otherwise
+    """
+    geo_conf = extract_geo_conf(conf)
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            static_conf.get_geometry_plugin()
+        )
+    )
+    return geo_plugin.check_products_consistency(geo_conf)
+
+
+def get_input_schema_with_geo_info() -> input_parameters.InputConfigurationType:
+    """
+    Retrieve input configuration with the geometry loader specific features
+
+    :return: the input configuration dictionary
+    """
+    # copy cars minimal configuration dictionary
+    schema = copy(input_parameters.INPUT_CONFIGURATION_SCHEMA)
+
+    # update it with the configuration required by the geometry loader
+    schema.update(geo_conf_schema())
+
+    return schema

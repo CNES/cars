@@ -33,7 +33,7 @@ from json_checker import Or
 from numpy import dtype
 
 # CARS imports
-from cars.core import utils
+from cars.core import inputs
 from cars.steps import points_cloud
 
 # TODO : Refacto Conf with unitary and independent steps
@@ -268,7 +268,7 @@ def load_cfg():
     with open(os.environ.get("CARS_STATIC_CONFIGURATION"), "r") as conf_file:
         global cfg
         cfg = json.load(conf_file)
-        utils.check_json(cfg, static_conf_schema)
+        inputs.check_json(cfg, static_conf_schema)
 
 
 def get_cfg():

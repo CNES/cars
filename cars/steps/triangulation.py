@@ -34,7 +34,6 @@ import xarray as xr
 
 # CARS imports
 from cars.conf import (
-    geo_parameters,
     input_parameters,
     output_compute_dsm,
     output_prepare,
@@ -42,7 +41,7 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, utils
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry import AbstractGeometry, extract_geo_conf
 from cars.core.projection import project_coordinates_on_line
 
 
@@ -96,7 +95,7 @@ def triangulate(
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
-    geom_models = geo_parameters.extract_geo_conf(input_configuration)
+    geom_models = extract_geo_conf(input_configuration)
 
     grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
     grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
@@ -271,7 +270,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
     img1 = input_configuration[input_parameters.IMG1_TAG]
     img2 = input_configuration[input_parameters.IMG2_TAG]
-    geom_models = geo_parameters.extract_geo_conf(input_configuration)
+    geom_models = extract_geo_conf(input_configuration)
 
     grid1 = preprocessing_output_configuration[
         output_prepare.LEFT_EPIPOLAR_GRID_TAG

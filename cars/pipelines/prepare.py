@@ -49,11 +49,14 @@ from cars.cluster.dask_mode import (
     start_local_cluster,
     stop_cluster,
 )
-from cars.conf import geo_parameters
 from cars.conf import input_parameters as in_params
 from cars.conf import log_conf, mask_classes, output_prepare, static_conf
 from cars.core import constants as cst
-from cars.core import inputs, outputs, projection, tiling, utils
+from cars.core import inputs, outputs, projection, tiling
+from cars.core.geometry import (
+    geo_loader_can_open,
+    get_input_schema_with_geo_info,
+)
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import devib, rasterization, triangulation
@@ -132,9 +135,7 @@ def run(  # noqa: C901
         )
 
     # Check configuration dict
-    config = utils.check_json(
-        in_json, geo_parameters.get_input_schema_with_geo_info()
-    )
+    config = inputs.check_json(in_json, get_input_schema_with_geo_info())
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
@@ -270,7 +271,7 @@ def run(  # noqa: C901
                 )
 
     # Check geometric models consistency
-    if not geo_parameters.geo_loader_can_open(config):
+    if not geo_loader_can_open(config):
         raise Exception("Problem while reading the left image geometric model")
 
     # Check that the envelopes intersect one another
@@ -1017,7 +1018,7 @@ def run(  # noqa: C901
 
     # Write the output json
     try:
-        utils.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
+        inputs.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error)
