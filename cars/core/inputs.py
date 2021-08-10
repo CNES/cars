@@ -83,7 +83,8 @@ def read_vector(path_to_file):
 def read_geoid_file():
     """
     Read geoid height from OTB geoid file
-    Geoid is defined by the $OTB_GEOID_FILE global environement variable.
+
+    Geoid is defined by the $OTB_GEOID_FILE global environment variable.
 
     A default CARS geoid is deployed in setup.py and
     configured in conf/static_conf.py

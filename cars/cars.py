@@ -56,7 +56,7 @@ class StreamCapture:
         self.triggered = False
 
     def __getattr__(self, attr_name):
-        """Redefine assignement"""
+        """Redefine assignment"""
         return getattr(self.stream, attr_name)
 
     def write(self, data):
@@ -219,7 +219,7 @@ def cars_parser() -> argparse.ArgumentParser:
     # Prepare subparser creation
     compute_dsm_parser = subparsers.add_parser(
         "compute_dsm",
-        help="Tile-based, concurent resampling "
+        help="Tile-based, concurrent resampling "
         "in epipolar geometry, disparity "
         "estimation, triangulation and rasterization",
     )
@@ -652,7 +652,7 @@ def run_compute_dsm(args, dry_run=False):  # noqa: C901
         # if roi_bbox defined, roi = 4 floats bounding box + EPSG code=None
         roi = (args.roi_bbox, None)
     if args.roi_file is not None:
-        # If roi_file is defined, generate bouding box roi
+        # If roi_file is defined, generate bounding box roi
         roi, stop_now = parse_roi_file(args.roi_file, stop_now)
 
     # If there are invalid parameters, stop now

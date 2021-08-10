@@ -75,7 +75,7 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     Open a context containing a series of rasterio handles. All input
     lists. Must have the same length.
 
-    :param names: List of names to index the output dictionnary
+    :param names: List of names to index the output dictionary
     :type names: list
     :param files: List of path to files
     :type files: List
@@ -85,7 +85,7 @@ def rasterio_handles(names, files, params, nodata_values, nb_bands):
     :type nodata_values: List
     :param nb_bands: List of number of bands
     :type nb_bands: List
-    :return: A dicionary of rasterio handles
+    :return: A dictionary of rasterio handles
         that can be used as a context manager, indexed by names
     :rtype: Dict
     """
@@ -140,10 +140,10 @@ def write_geotiff_dsm(
     :param nb_bands: number of band in the color layer.
     :param dsm_no_data: value to fill no data in height layer.
     :param color_no_data: value to fill no data in color layer(s).
-    :param write_color: bolean enabling the ortho-image's writting
+    :param write_color: boolean enabling the ortho-image's writing
     :param color_dtype: type to use for the ortho-image
-    :param write_stats: bolean enabling the rasterization statistics' writting
-    :param write_msk: boolean enabling the rasterized mask's writting
+    :param write_stats: boolean enabling the rasterization statistics' writing
+    :param write_msk: boolean enabling the rasterized mask's writing
     :param msk_no_data: no data to use in for the rasterized mask
     :param prefix: written filenames prefix
 
@@ -277,7 +277,7 @@ def write_geotiff_dsm(
                 )
             )
 
-            # window is speficied as origin & size
+            # window is specified as origin & size
             window = rio.windows.Window(x_0, y_0, x_1 - x_0 + 1, y_1 - y_0 + 1)
 
             rio_handles["dsm"].write_band(

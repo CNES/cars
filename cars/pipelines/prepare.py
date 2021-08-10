@@ -662,7 +662,7 @@ def run(  # noqa: C901
         )
     )
 
-    # Commpute correction for right grid
+    # Compute correction for right grid
     logging.info("Generating correction for right epipolar grid ...")
     corrected_right_grid, corrected_matches, __, __ = grids.correct_right_grid(
         matches, grid2, grid_origin, grid_spacing

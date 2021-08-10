@@ -108,7 +108,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param img1: path to image 1
         :param img2: path to image 2
         :param min_elev1: min elevation for image 1
-        :param max_elev1: max elevation fro image 1
+        :param max_elev1: max elevation for image 1
         :param min_elev2: min elevation for image 2
         :param max_elev2: max elevation for image 2
         :param roi_key: dataset roi to use

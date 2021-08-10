@@ -143,7 +143,7 @@ def write_dsm_by_tile(
     :param nb_bands: number of bands in color image
     :param color_dtype: type to use for the ortho-image
     :param output_stats: True if we save statistics with DSM tiles
-    :param write_msk: boolean enabling the rasterized mask's writting
+    :param write_msk: boolean enabling the rasterized mask's writing
     :param kwargs: all the keyword arguments passed to rasterization_wrapper
     :return the region hash string
     """
@@ -298,7 +298,7 @@ def run(  # noqa: C901
     :param color_no_data: No data value to use in the final colored image
     :param msk_no_data: No data value to use in the final mask image
     :param corr_config: Correlator configuration
-    :param output_stats: Ouput DSM associated quality statistics flag boolean
+    :param output_stats: Output DSM associated quality statistics flag boolean
     :param mode: Parallelization mode
     :param nb_workers: Number of dask workers to use for the sift matching step
     :param walltime: Walltime of the dask workers
@@ -337,7 +337,7 @@ def run(  # noqa: C901
     # Retrieve static parameters (rasterization and cloud filtering)
     static_params = static_conf.get_cfg()
 
-    # Initiate ouptut json dictionary
+    # Initiate output json dictionary
     out_json = {
         output_compute_dsm.COMPUTE_DSM_INPUTS_SECTION_TAG: [],
         output_compute_dsm.COMPUTE_DSM_SECTION_TAG: {
@@ -469,7 +469,7 @@ def run(  # noqa: C901
                     "--snap_to_left_image mode is used but input "
                     "configurations have different images as their "
                     "left image in pair. This may result in "
-                    "increasing registration discrepencies between pairs"
+                    "increasing registration discrepancies between pairs"
                 )
 
         # If mask1 and/or mask2 are set in the prepare input configuration json
@@ -514,7 +514,7 @@ def run(  # noqa: C901
             if user_disp_min > disp_min:
                 logging.warning(
                     (
-                        "Overriden disparity minimum "
+                        "Overridden disparity minimum "
                         "= {:.3f} pix. (= {:.3f} m.) "
                         "is greater than disparity minimum estimated "
                         "in prepare step = {:.3f} pix. (or {:.3f} m.) "
@@ -535,7 +535,7 @@ def run(  # noqa: C901
             if user_disp_max < disp_max:
                 logging.warning(
                     (
-                        "Overriden disparity maximum "
+                        "Overridden disparity maximum "
                         "= {:.3f} pix. (or {:.3f} m.) "
                         "is lower than disparity maximum estimated "
                         "in prepare step = {:.3f} pix. (or {:.3f} m.) "
@@ -1179,7 +1179,7 @@ def run(  # noqa: C901
         )
 
         # Transform all delayed raster tiles to futures (computation starts
-        # immediatly on workers, assynchronously)
+        # immediately on workers, assynchronously)
         future_dsm_tiles = client.compute(delayed_dsm_tiles)
 
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
@@ -1214,7 +1214,7 @@ def run(  # noqa: C901
             for delayed_tile in delayed_dsm_tiles
         ]
 
-        # closing the tread pool after computation
+        # closing the thread pool after computation
         pool.close()
         pool.join()
 
