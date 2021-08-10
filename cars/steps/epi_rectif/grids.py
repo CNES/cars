@@ -336,7 +336,7 @@ def correct_right_grid(matches, grid, origin, spacing):
         sensor_matches_perfect_y - sensor_matches_corrected_y
     )
 
-    # Ouptut corrected epipolar error stats for monitoring
+    # Output corrected epipolar error stats for monitoring
     mean_corrected_epipolar_error = [
         np.mean(corrected_epipolar_error_x),
         np.mean(corrected_epipolar_error_y),
@@ -402,13 +402,13 @@ def compute_epipolar_grid_min_max(
     :type grid: np.ndarray of shape (N,M,2)
     :param epsg: EPSG code of the terrain projection
     :type epsg: Int
-    :param conf: Configuration dictionnary from prepare step
+    :param conf: Configuration dictionary from prepare step
     :type conf: Dict
     :param disp_min: Minimum disparity
-                     (if None, read from configuration dictionnary)
+                     (if None, read from configuration dictionary)
     :type disp_min: Float or None
     :param disp_max: Maximum disparity
-                     (if None, read from configuration dictionnary)
+                     (if None, read from configuration dictionary)
     :type disp_max: Float or None
     :returns: a tuple of location grid at disp_min and disp_max
     :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param

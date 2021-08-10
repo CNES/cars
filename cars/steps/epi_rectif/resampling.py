@@ -149,7 +149,7 @@ def epipolar_rectify_images(configuration, region, margins):
                 "Left mask seems to have several classes but no "
                 "classes usage json file has been indicated in the "
                 "configuration file. All classes will be "
-                "considered as unvalid data."
+                "considered as invalid data."
             )
 
     # Update attributes
@@ -178,7 +178,7 @@ def epipolar_rectify_images(configuration, region, margins):
                 "Right mask seems to have several classes but no "
                 "classes usage json file has been indicated in the "
                 "configuration file. All classes will be "
-                "considered as unvalid data."
+                "considered as invalid data."
             )
 
     # Update attributes
@@ -242,7 +242,7 @@ def resample_image(
     :type grid: string
     :param largest_size: Size of full output image
     :type largest_size: list of two int
-    :param region: A subset of the ouptut image to produce
+    :param region: A subset of the output image to produce
     :type region: None (full output is produced) or array of four floats
                   [xmin,ymin,xmax,ymax]
     :param nodata: Nodata value to use (both for input and output)

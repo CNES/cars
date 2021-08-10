@@ -58,7 +58,7 @@ def configure_correlator(corr_file_path=None):
     # Read the user configuration file
     user_cfg = None
     if corr_file_path is None:
-        # Defaut Pandora configuration:
+        # Default Pandora configuration:
         #  * Census with 5 X 5 window
         #  * SGM
         user_cfg = {}
@@ -94,7 +94,7 @@ def configure_correlator(corr_file_path=None):
     else:
         user_cfg = pandora.read_config_file(corr_file_path)
 
-    # Import plugins before checking confifuration
+    # Import plugins before checking configuration
     pandora.import_plugin()
     # Check configuration and update the configuration with default values
     # Instantiate pandora state machine

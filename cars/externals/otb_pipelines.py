@@ -88,7 +88,7 @@ def build_mask_pipeline(
     :type mask: string
     :param input_nodata: Pixel value to be treated as nodata in image or None
     :type input_nodata: float
-    :param out_nodata: Pixel value used for the ouput
+    :param out_nodata: Pixel value used for the output
     :type out_nodata: float
     :param out_valid_value: Pixel value for valid points in mask
     :typ out_valid_value: float
@@ -319,7 +319,7 @@ def get_utm_zone_as_epsg_code(lon, lat):
 
     :param lon: longitude of the point
     :type lon: float
-    :param lat: lattitude of the point
+    :param lat: latitude of the point
     :type lat: float
     :returns: The EPSG code corresponding to the UTM zone
     :rtype: int

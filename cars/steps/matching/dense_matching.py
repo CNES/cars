@@ -122,7 +122,7 @@ def get_masks_from_pandora(
     #  * Bit 8: Pixel located in an occlusion region
     #  * Bit 9: Fake match
     validity_mask_cropped = disp["validity_mask"].values
-    # Mask intialization to false (all is invalid)
+    # Mask initialization to false (all is invalid)
     msk = np.full(validity_mask_cropped.shape, False)
     # Identify valid points
     msk[

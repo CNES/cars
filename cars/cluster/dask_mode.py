@@ -136,7 +136,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         total_rasters_in_memory = 0
         total_rasters_nbytes = 0
 
-        # Measure ellapsed time for the state change
+        # Measure elapsed time for the state change
         elapsed_time = time.time() - self.start_time
 
         # Walk the worker known memory
@@ -280,7 +280,7 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
     nb_cpus = nb_workers_per_job * omp_num_threads
     # Cluster nodes have 5GB per core
     memory = nb_cpus * 5000
-    # Ressource string for PBS
+    # Resource string for PBS
     resource = "select=1:ncpus={}:mem={}mb".format(nb_cpus, memory)
 
     nb_jobs = int(math.ceil(nb_workers / nb_workers_per_job))
