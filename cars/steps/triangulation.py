@@ -33,15 +33,8 @@ import numpy as np
 import xarray as xr
 
 # CARS imports
-from cars.conf import (
-    input_parameters,
-    output_compute_dsm,
-    output_prepare,
-    static_conf,
-)
+from cars.conf import input_parameters, output_prepare, static_conf
 from cars.core import constants as cst
-from cars.core import inputs, utils
-from cars.core.geometry import AbstractGeometry, extract_geo_conf
 from cars.core.projection import project_coordinates_on_line
 
 
@@ -93,10 +86,6 @@ def triangulate(
         output_prepare.PREPROCESSING_SECTION_TAG
     ][output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
-    img1 = input_configuration[input_parameters.IMG1_TAG]
-    img2 = input_configuration[input_parameters.IMG2_TAG]
-    geom_models = extract_geo_conf(input_configuration)
-
     grid1 = preprocessing_output_conf[output_prepare.LEFT_EPIPOLAR_GRID_TAG]
     grid2 = preprocessing_output_conf[output_prepare.RIGHT_EPIPOLAR_GRID_TAG]
     if snap_to_img1:
@@ -107,9 +96,7 @@ def triangulate(
     point_clouds = {}
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
         disp_ref,
-        img1,
-        img2,
-        geom_models,
+        input_configuration,
         grid1,
         grid2,
         roi_key=cst.ROI,
@@ -117,20 +104,19 @@ def triangulate(
     )
 
     if disp_sec is not None:
-        reverse_geom_models = {}
-        for key, value in geom_models.items():
+        # reverse geometric models 1 and 2 to use the secondary disparity map
+        reversed_input_configuration = {}
+        for key, value in input_configuration.items():
             if "1" in key:
-                reverse_geom_models[key.replace("1", "2")] = value
+                reversed_input_configuration[key.replace("1", "2")] = value
             elif "2" in key:
-                reverse_geom_models[key.replace("2", "1")] = value
+                reversed_input_configuration[key.replace("2", "1")] = value
             else:
-                reverse_geom_models[key] = value
+                reversed_input_configuration[key] = value
 
         point_clouds[cst.STEREO_SEC] = compute_points_cloud(
             disp_sec,
-            img2,
-            img1,
-            reverse_geom_models,
+            reversed_input_configuration,
             grid2,
             grid1,
             roi_key=cst.ROI_WITH_MARGINS,
@@ -170,7 +156,7 @@ def triangulate(
         ]
 
         disp_to_alt_ratio = preprocessing_output_conf[
-            output_compute_dsm.DISP_TO_ALT_RATIO_TAG
+            output_prepare.DISP_TO_ALT_RATIO_TAG
         ]
 
         # Interpolate correction
@@ -197,9 +183,8 @@ def triangulate(
         )
 
         # Triangulate again
-        geom_models = inputs.extract_geo_conf(input_configuration)
         point_clouds[cst.STEREO_REF] = compute_points_cloud(
-            disp_ref, img1, img2, geom_models, grid1, grid2, roi_key=cst.ROI
+            disp_ref, input_configuration, grid1, grid2, roi_key=cst.ROI
         )
 
         # TODO handle sec case
@@ -228,12 +213,10 @@ def triangulate(
                 disp_sec[cst.DISP_MAP] + point_cloud_disp_correction
             )
 
-            # Triangulate again
+            # Triangulate again with reversed geometric models
             point_clouds[cst.STEREO_SEC] = compute_points_cloud(
                 disp_sec,
-                img2,
-                img1,
-                reverse_geom_models,
+                reversed_input_configuration,
                 grid2,
                 grid1,
                 roi_key=cst.ROI_WITH_MARGINS,
@@ -268,10 +251,6 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
         output_prepare.PREPROCESSING_SECTION_TAG
     ][output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG]
 
-    img1 = input_configuration[input_parameters.IMG1_TAG]
-    img2 = input_configuration[input_parameters.IMG2_TAG]
-    geom_models = extract_geo_conf(input_configuration)
-
     grid1 = preprocessing_output_configuration[
         output_prepare.LEFT_EPIPOLAR_GRID_TAG
     ]
@@ -283,26 +262,13 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
             output_prepare.RIGHT_EPIPOLAR_UNCORRECTED_GRID_TAG
         ]
 
-    # Retrieve elevation range from imgs
-    (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
-    (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
-
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_geometry_plugin()
-        )
-    )
-
-    llh = geo_plugin.triangulate(
+    geometry_loader = static_conf.get_geometry_loader()
+    llh = geometry_loader.triangulate(
         cst.MATCHES_MODE,
         matches,
         grid1,
         grid2,
-        geom_models,
-        min_elev1,
-        max_elev1,
-        min_elev2,
-        max_elev2,
+        input_configuration,
     )
 
     row = np.array(range(llh.shape[0]))
@@ -326,8 +292,6 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
 def compute_points_cloud(
     data: xr.Dataset,
-    img1: str,
-    img2: str,
     geom_models_conf: Dict[str, str],
     grid1: str,
     grid2: str,
@@ -339,8 +303,6 @@ def compute_points_cloud(
     Compute points cloud
 
     :param data: The reference to disparity map dataset
-    :param img1: reference image path
-    :param img2: secondary image path
     :param geom_models_conf:
     :param grid1: path to the reference image grid file
     :param grid2: path to the secondary image grid file
@@ -350,26 +312,13 @@ def compute_points_cloud(
     :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
-    # Retrieve elevation range from imgs
-    (min_elev1, max_elev1) = utils.get_elevation_range_from_metadata(img1)
-    (min_elev2, max_elev2) = utils.get_elevation_range_from_metadata(img2)
-
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_geometry_plugin()
-        )
-    )
-
-    llh = geo_plugin.triangulate(
+    geometry_loader = static_conf.get_geometry_loader()
+    llh = geometry_loader.triangulate(
         cst.DISP_MODE,
         data,
         grid1,
         grid2,
         geom_models_conf,
-        min_elev1,
-        max_elev1,
-        min_elev2,
-        max_elev2,
         roi_key,
     )
 

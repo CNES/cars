@@ -40,7 +40,6 @@ from scipy import interpolate
 from cars.conf import output_prepare, static_conf
 from cars.core import constants as cst
 from cars.core import projection
-from cars.core.geometry import AbstractGeometry
 
 # TODO depends on another step (and a later one) : make it independent
 from cars.steps.triangulation import triangulate_matches
@@ -71,12 +70,8 @@ def generate_epipolar_grids(
         - the disparity to altitude ratio as a float
     """
     logging.info("Generating epipolar rectification grid ...")
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_geometry_plugin()
-        )
-    )
 
+    geometry_loader = static_conf.get_geometry_loader()
     (
         left_grid_as_array,
         right_grid_as_array,
@@ -84,7 +79,7 @@ def generate_epipolar_grids(
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_plugin.generate_epipolar_grids(
+    ) = geometry_loader.generate_epipolar_grids(
         left_img,
         right_img,
         dem=dem,

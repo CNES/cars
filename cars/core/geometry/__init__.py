@@ -24,7 +24,6 @@ geometry plugins
 """
 import logging
 from abc import ABCMeta, abstractmethod
-from copy import copy
 from typing import Dict, List, Tuple, Union
 
 import numpy as np
@@ -32,7 +31,6 @@ import rasterio as rio
 import xarray as xr
 from scipy import interpolate
 
-from cars.conf import input_parameters, static_conf
 from cars.core import constants as cst
 
 
@@ -41,32 +39,32 @@ class AbstractGeometry(metaclass=ABCMeta):
     AbstractGeometry
     """
 
-    available_plugins: Dict = {}
+    available_loaders: Dict = {}
 
-    def __new__(cls, plugin_to_use):
+    def __new__(cls, loader_to_use):
         """
-        Return the required plugin
+        Return the required loader
         :raises:
-         - KeyError when the required plugin is not registered
+         - KeyError when the required loader is not registered
 
-        :param plugin_to_use: plugin name to instantiate
-        :return: a plugin_to_use object
+        :param loader_to_use: loader name to instantiate
+        :return: a loader_to_use object
         """
 
-        if plugin_to_use not in cls.available_plugins.keys():
+        if loader_to_use not in cls.available_loaders.keys():
             logging.error(
-                "No geometry plugin named {} registered".format(plugin_to_use)
+                "No geometry loader named {} registered".format(loader_to_use)
             )
             raise KeyError(
-                "No geometry plugin named {} registered".format(plugin_to_use)
+                "No geometry loader named {} registered".format(loader_to_use)
             )
 
         logging.info(
-            "[The AbstractGeometry {} plugin will be used".format(plugin_to_use)
+            "[The AbstractGeometry {} loader will be used".format(loader_to_use)
         )
 
         return super(AbstractGeometry, cls).__new__(
-            cls.available_plugins[plugin_to_use]
+            cls.available_loaders[loader_to_use]
         )
 
     @classmethod
@@ -83,14 +81,14 @@ class AbstractGeometry(metaclass=ABCMeta):
             :param subclass: the subclass to be registered
             :type subclass: object
             """
-            cls.available_plugins[short_name] = subclass
+            cls.available_loaders[short_name] = subclass
             return subclass
 
         return decorator
 
-    @staticmethod
+    @property
     @abstractmethod
-    def geo_conf_schema():
+    def conf_schema(self):
         """
         Returns the input configuration fields required by the geometry loader
         as a json checker schema. The available fields are defined in the
@@ -114,14 +112,10 @@ class AbstractGeometry(metaclass=ABCMeta):
     @abstractmethod
     def triangulate(
         mode: str,
-        data: Union[xr.Dataset, np.ndarray],
+        matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
         geo_conf: Dict[str, str],
-        min_elev1: float = None,
-        max_elev1: float = None,
-        min_elev2: float = None,
-        max_elev2: float = None,
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -129,15 +123,11 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param mode: triangulation mode
         (constants.DISP_MODE or constants.MATCHES)
-        :param data: cars disparity dataset or matches as numpy array
+        :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
         :param geo_conf: dictionary with the fields requested in the schema
         given by the geo_conf_schema() method
-        :param min_elev1: min elevation for image 1
-        :param max_elev1: max elevation fro image 1
-        :param min_elev2: min elevation for image 2
-        :param max_elev2: max elevation for image 2
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -173,32 +163,61 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
 
     @staticmethod
-    def matching_data_to_sensor_coords(grid1, grid2, data, data_type):
+    def matches_to_sensor_coords(
+        grid1: str,
+        grid2: str,
+        matches: Union[xr.Dataset, np.ndarray],
+        matches_type: str,
+    ) -> Tuple[np.ndarray, np.ndarray]:
         """
+        Convert matches (sparse and dense matches) given in epipolar
+        coordinates to sensor coordinates. This function is available for
+        loaders if the required the matches in sensor coordinates to perform
+        the triangulation.
 
-        :param grid1:
-        :param grid2:
-        :param data:
-        :param data_type:
-        :return:
+        This function returns a tuple composed of left and right sensor
+        coordinates as numpy arrays. For each original image, the sensor
+        coordinates are arranged as follows :
+            * if the matches: a numpy array of size [number of matches, 2] .
+            The last index indicates the 'x' coordinate (index 0) or
+            the 'y' coordinate (index 1).
+            * if matches is a cars disparity dataset: a numpy array of size
+            [nb_epipolar_line, nb_epipolar_col, 2]. Where
+            [nb_epipolar_line, nb_epipolar_col] is the size of the disparity
+            map. The last index indicates the 'x' coordinate (index 0) or
+             the 'y' coordinate (index 1).
+
+        :param grid1: path to epipolar grid of image 1
+        :param grid2: path to epipolar grid of image 2
+        :param matches: cars disparity dataset or matches as numpy array
+        :param matches_type: matches type (cst.DISP_MODE or cst.MATCHES)
+        :return: a tuple of numpy array. The first array corresponds to the
+        left matches in sensor coordinates, the second one is the right
+        matches in sensor coordinates.
         """
         vec_epi_pos_left = None
         vec_epi_pos_right = None
 
-        if data_type == cst.MATCHES_MODE:
-            vec_epi_pos_left = data[:, 0:2]
-            vec_epi_pos_right = data[:, 2:4]
-        elif data_type == cst.DISP_MODE:
-            epi_pos_left_x, epi_pos_left_y = np.meshgrid(data.col, data.row)
+        if matches_type == cst.MATCHES_MODE:
+            # retrieve left and right matches
+            vec_epi_pos_left = matches[:, 0:2]
+            vec_epi_pos_right = matches[:, 2:4]
+        elif matches_type == cst.DISP_MODE:
+            # convert disparity to matches
+            epi_pos_left_x, epi_pos_left_y = np.meshgrid(
+                matches.col, matches.row
+            )
             epi_pos_left_x = epi_pos_left_x.astype(np.float64)
             epi_pos_left_y = epi_pos_left_y.astype(np.float64)
-            disp_map = data[cst.DISP_MAP].values
-            disp_msk = data[cst.DISP_MSK].values
+            disp_map = matches[cst.DISP_MAP].values
+            disp_msk = matches[cst.DISP_MSK].values
             epi_pos_right_y = np.copy(epi_pos_left_y)
             epi_pos_right_x = np.copy(epi_pos_left_x)
             epi_pos_right_x[np.where(disp_msk == 255)] += disp_map[
                 np.where(disp_msk == 255)
             ]
+
+            # vectorize matches
             vec_epi_pos_left = np.transpose(
                 np.vstack([epi_pos_left_x.ravel(), epi_pos_left_y.ravel()])
             )
@@ -206,6 +225,7 @@ class AbstractGeometry(metaclass=ABCMeta):
                 np.vstack([epi_pos_right_x.ravel(), epi_pos_right_y.ravel()])
             )
 
+        # convert epipolar matches to sensor coordinates
         sensor_pos_left = AbstractGeometry.sensor_position_from_grid(
             grid1, vec_epi_pos_left
         )
@@ -213,8 +233,9 @@ class AbstractGeometry(metaclass=ABCMeta):
             grid2, vec_epi_pos_right
         )
 
-        if data_type == cst.DISP_MODE:
-            disp_msk = data[cst.DISP_MSK].values
+        if matches_type == cst.DISP_MODE:
+            # rearrange matches in the original epipolar geometry
+            disp_msk = matches[cst.DISP_MSK].values
 
             sensor_pos_left_x = sensor_pos_left[:, 0].reshape(disp_msk.shape)
             sensor_pos_left_x[np.where(disp_msk != 255)] = np.nan
@@ -240,21 +261,31 @@ class AbstractGeometry(metaclass=ABCMeta):
         return sensor_pos_left, sensor_pos_right
 
     @staticmethod
-    def sensor_position_from_grid(grid, positions):
+    def sensor_position_from_grid(
+        grid: str, positions: np.ndarray
+    ) -> np.ndarray:
+        """
+        Interpolate the positions given as inputs using the grid
+
+        :param grid: path to epipolar grid
+        :param positions: epipolar positions to interpolate given as a numpy
+        array of size [number of points, 2]. The last index indicates the 'x'
+         coordinate (index 0) or the 'y' coordinate (index 1).
+        :return: sensors positions as a numpy array of size
+        [number of points, 2]. The last index indicates the 'x' coordinate
+        (index 0) or the 'y' coordinate (index 1).
         """
 
-        :param grid:
-        :param positions:
-        :return:
-        """
+        # open epipolar grid
         ds_grid = rio.open(grid)
 
+        # retrieve grid step
         transform = ds_grid.transform
         step_col = transform[0]
         step_row = transform[4]
 
-        # 0 or 0.5
-        [ori_col, ori_row] = transform * (0.5, 0.5)  # positions au centre pixel
+        # center-pixel positions
+        [ori_col, ori_row] = transform * (0.5, 0.5)
 
         last_col = ori_col + step_col * ds_grid.width
         last_row = ori_row + step_row * ds_grid.height
@@ -266,6 +297,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         cols = np.arange(ori_col, last_col, step_col)
         rows = np.arange(ori_row, last_row, step_row)
 
+        # create regular grid points positions
         points = (cols, rows)
         grid_row, grid_col = np.mgrid[
             ori_row:last_row:step_row, ori_col:last_col:step_col
@@ -291,67 +323,6 @@ class AbstractGeometry(metaclass=ABCMeta):
             fill_value=None,
         )
 
+        # stack both coordinates
         sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
         return sensor_positions
-
-
-def geo_conf_schema() -> Dict[str, str]:
-    """
-    Retrieve the geometry loader configuration schema
-
-    :return: a json checker schema
-    """
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_geometry_plugin()
-        )
-    )
-    return geo_plugin.geo_conf_schema()
-
-
-def extract_geo_conf(conf) -> Dict[str, str]:
-    """
-    Extract from the input configuration the fields required by the geometry
-    loader
-
-    :param conf: CARS input configuration dictionary
-    :return: the geometry loader configuration
-    """
-    geo_model = {}
-
-    required_geo_conf = geo_conf_schema()
-
-    for key in required_geo_conf.keys():
-        geo_model[key] = conf[key]
-    return geo_model
-
-
-def geo_loader_can_open(conf) -> bool:
-    """
-    Check if the pair given in the configuration have valid geometric models
-
-    :param conf: CARS input configuration
-    :return:  True if the pair has valid geometrical models, False otherwise
-    """
-    geo_conf = extract_geo_conf(conf)
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            static_conf.get_geometry_plugin()
-        )
-    )
-    return geo_plugin.check_products_consistency(geo_conf)
-
-
-def get_input_schema_with_geo_info() -> input_parameters.InputConfigurationType:
-    """
-    Retrieve input configuration with the geometry loader specific features
-
-    :return: the input configuration dictionary
-    """
-    # copy cars minimal configuration dictionary
-    schema = copy(input_parameters.INPUT_CONFIGURATION_SCHEMA)
-
-    # update it with the configuration required by the geometry loader
-    schema.update(geo_conf_schema())
-
-    return schema

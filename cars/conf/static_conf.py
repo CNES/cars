@@ -34,6 +34,7 @@ from numpy import dtype
 
 # CARS imports
 from cars.core import inputs
+from cars.core.geometry import AbstractGeometry
 from cars.steps import points_cloud
 
 # TODO : Refacto Conf with unitary and independent steps
@@ -48,6 +49,7 @@ from cars.steps import points_cloud
 
 # pylint: disable=invalid-name
 cfg = None
+geometry_loader = None
 
 # ### Prepare ####
 
@@ -167,11 +169,11 @@ compute_dsm_params_schema = {
     output_tag: output_schema,
 }
 
-# ### plugins ####
+# ### loaders ####
 
-plugins_tag = "plugins"
-geometry_plugin_tag = "geometry"
-plugins_schema = {geometry_plugin_tag: str}
+loaders_tag = "loaders"
+geometry_loader_tag = "geometry"
+loaders_schema = {geometry_loader_tag: str}
 
 # ### final static conf file ####
 prepare_tag = "prepare"
@@ -179,7 +181,7 @@ compute_dsm_tag = "compute_dsm"
 static_conf_schema = {
     prepare_tag: prepare_params_schema,
     compute_dsm_tag: compute_dsm_params_schema,
-    plugins_tag: plugins_schema,
+    loaders_tag: loaders_schema,
 }
 
 # ### namedTuple for parameters ####
@@ -427,15 +429,28 @@ def get_color_image_encoding() -> dtype:
     return dtype(color_image_encoding)
 
 
-def get_geometry_plugin() -> str:
+def get_geometry_loader() -> AbstractGeometry:
     """
-    Get the geometry plugin to use
+    Get the geometry loader to use
 
-    :returns: geometry plugin name
+    :returns: geometry loader
     """
-    if cfg is None:
-        load_cfg()
+    global geometry_loader
+    if geometry_loader is None:
 
-    geometry_plugin = cfg[plugins_tag][geometry_plugin_tag]
+        if cfg is None:
+            print("load cfg for loader")
+            load_cfg()
 
-    return geometry_plugin
+        loader_to_use = cfg[loaders_tag][geometry_loader_tag]
+
+        geometry_loader = (
+            AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                loader_to_use
+            )
+        )
+        print("instantiate loader !")
+    else:
+        print("just get loader")
+
+    return geometry_loader

@@ -22,7 +22,12 @@
 CARS steps module init file
 """
 
+from pkg_resources import iter_entry_points
+
 # CARS imports
 # TODO: remove the following import if the core/geometry/otb_geometry.py
 # file is removed from CARS
 from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
+
+for entry_point in iter_entry_points(group="geometryLoader"):
+    entry_point.load()

@@ -131,7 +131,7 @@ def test_missing_abstract_methods():
     assert (
         str(error.value) == "Can't instantiate abstract class"
         " NoMethodClass with abstract methods check_products_consistency, "
-        "generate_epipolar_grids, geo_conf_schema, triangulate"
+        "conf_schema, generate_epipolar_grids, triangulate"
     )
 
 
@@ -142,7 +142,7 @@ def test_wrong_class_name():
     """
     with pytest.raises(KeyError) as error:
         AbstractGeometry("test")  # pylint: disable=abstract-class-instantiated
-    assert str(error.value) == "'No geometry plugin named test registered'"
+    assert str(error.value) == "'No geometry loader named test registered'"
 
 
 @pytest.mark.unit_tests
@@ -196,7 +196,7 @@ def test_disp_to_sensor_coords(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matching_data_to_sensor_coords(
+    ) = AbstractGeometry.matches_to_sensor_coords(
         grid1, grid2, disp_ds, cst.DISP_MODE
     )
 
@@ -241,7 +241,7 @@ def test_matches_to_sensor_coords(
     (
         sensor_pos_left,
         sensor_pos_right,
-    ) = AbstractGeometry.matching_data_to_sensor_coords(
+    ) = AbstractGeometry.matches_to_sensor_coords(
         grid1, grid2, matches, cst.MATCHES_MODE
     )
 

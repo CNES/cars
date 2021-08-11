@@ -50,13 +50,15 @@ from cars.cluster.dask_mode import (
     stop_cluster,
 )
 from cars.conf import input_parameters as in_params
-from cars.conf import log_conf, mask_classes, output_prepare, static_conf
+from cars.conf import (
+    json_schema,
+    log_conf,
+    mask_classes,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling
-from cars.core.geometry import (
-    geo_loader_can_open,
-    get_input_schema_with_geo_info,
-)
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import devib, rasterization, triangulation
@@ -135,7 +137,7 @@ def run(  # noqa: C901
         )
 
     # Check configuration dict
-    config = inputs.check_json(in_json, get_input_schema_with_geo_info())
+    config = inputs.check_json(in_json, json_schema.input_conf_schema())
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
@@ -162,7 +164,7 @@ def run(  # noqa: C901
             },
             in_params.STATIC_PARAMS_TAG: {
                 static_conf.prepare_tag: static_params[static_conf.prepare_tag],
-                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+                static_conf.loaders_tag: static_params[static_conf.loaders_tag],
             },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
@@ -271,7 +273,7 @@ def run(  # noqa: C901
                 )
 
     # Check geometric models consistency
-    if not geo_loader_can_open(config):
+    if not static_conf.get_geometry_loader().check_products_consistency(config):
         raise Exception("Problem while reading the left image geometric model")
 
     # Check that the envelopes intersect one another

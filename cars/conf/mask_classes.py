@@ -32,6 +32,7 @@ import numpy as np
 from json_checker import OptionalKey
 
 # CARS imports
+# TODO refacto module conf depends on module core
 from cars.core import inputs
 
 # Specific values

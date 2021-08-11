@@ -36,6 +36,7 @@ from cars.core import constants as cst
 from cars.core import inputs
 from cars.core.geometry import AbstractGeometry
 from cars.core.otb_adapters import encode_to_otb
+from cars.core.utils import get_elevation_range_from_metadata
 
 
 @AbstractGeometry.register_subclass("OTBGeometry")
@@ -47,8 +48,8 @@ class OTBGeometry(AbstractGeometry):
     # TODO: remove the hard-coded import in the steps/__init__.py if this class
     # is removed from CARS
 
-    @staticmethod
-    def geo_conf_schema():
+    @property
+    def conf_schema(self):
         """
         Returns the input configuration fields required by the geometry loader
         as a json checker schema. The available fields are defined in the
@@ -158,14 +159,10 @@ class OTBGeometry(AbstractGeometry):
     @staticmethod
     def triangulate(
         mode: str,
-        data: Union[xr.Dataset, np.ndarray],
+        matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
         geo_conf: Dict[str, str],
-        min_elev1: float = None,
-        max_elev1: float = None,
-        min_elev2: float = None,
-        max_elev2: float = None,
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -173,15 +170,11 @@ class OTBGeometry(AbstractGeometry):
 
         :param mode: triangulation mode
         (cst.DISP_MODE or cst.MATCHES)
-        :param data: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of img1
+        :param matches: cars disparity dataset or matches as numpy array
+        :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
         :param geo_conf: dictionary with the fields requested by the
         loader schema
-        :param min_elev1: min elevation for image 1
-        :param max_elev1: max elevation fro image 1
-        :param min_elev2: min elevation for image 2
-        :param max_elev2: max elevation for image 2
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -189,6 +182,10 @@ class OTBGeometry(AbstractGeometry):
 
         img1 = geo_conf[input_parameters.IMG1_TAG]
         img2 = geo_conf[input_parameters.IMG2_TAG]
+
+        # Retrieve elevation range from imgs
+        (min_elev1, max_elev1) = get_elevation_range_from_metadata(img1)
+        (min_elev2, max_elev2) = get_elevation_range_from_metadata(img2)
 
         # Build triangulation app
         triangulation_app = otbApplication.Registry.CreateApplication(
@@ -209,9 +206,9 @@ class OTBGeometry(AbstractGeometry):
 
             # encode disparity for otb
             disp = encode_to_otb(
-                data[cst.DISP_MAP].values,
-                data.attrs[cst.EPI_FULL_SIZE],
-                data.attrs[roi_key],
+                matches[cst.DISP_MAP].values,
+                matches.attrs[cst.EPI_FULL_SIZE],
+                matches.attrs[roi_key],
             )
 
             # set disparity mode
@@ -221,7 +218,7 @@ class OTBGeometry(AbstractGeometry):
             # set matches mode
             triangulation_app.SetParameterString("mode", "sift")
             triangulation_app.SetImageFromNumpyArray(
-                "mode.sift.inmatches", data
+                "mode.sift.inmatches", matches
             )
         else:
             worker_logger = logging.getLogger("distributed.worker")

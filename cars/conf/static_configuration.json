@@ -49,7 +49,7 @@
         "color_image_encoding": "uint16"
     }
     },
-  "plugins":{
+  "loaders":{
     "geometry": "OTBGeometry"
   }
 }

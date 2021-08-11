@@ -351,7 +351,7 @@ def run(  # noqa: C901
                 static_conf.compute_dsm_tag: static_params[
                     static_conf.compute_dsm_tag
                 ],
-                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+                static_conf.loaders_tag: static_params[static_conf.loaders_tag],
             },
             output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {
                 output_compute_dsm.ALIGN_OPTION: align,
