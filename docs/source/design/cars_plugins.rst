@@ -11,9 +11,7 @@ The difficulty is the optimization vs the modularity of the code.
 Design:
 - `Hooks <https://en.wikipedia.org/wiki/Hooking>`_ could be added between pipelines steps.
 - Plugin could add external functionalities using the hooks API. (Example new cloud filtering after triangulation )
-- Static cluster scheduling could be defined and added in parallel with the plugin 
-
-
+- Static cluster scheduling could be defined and added in parallel with the plugin
 
 
 

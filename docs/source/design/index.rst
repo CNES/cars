@@ -4,9 +4,10 @@ CARS Design
 
 **DOCUMENT IN PROGRESS**
 
-CARS is a new tool which works but still needs refactoring.
+CARS is a new 3D tool with refactoring needs.
 This document does not describe the current CARS design but the intended one.
 The document is updated with refactoring design evolution.
+Don't hesitate to complete with refactoring developments.
 
 The main goals to this new design are:
 

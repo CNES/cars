@@ -11,10 +11,6 @@ Two levels:
 CARS Main High level pipeline API
 =================================
 
-From this level, the following figure show the main possibilities:
-
-TODO:
-
 
 Main High level scenarii
 ------------------------
@@ -112,7 +108,6 @@ CARS 3D Functional User interfaces
 This API is for a user to be able to launch CARS 3D specific algorithms for study, debug, test, ...
 
 
-
 User scenarii
 -------------
 
@@ -147,7 +142,6 @@ TODO: Definition to finish, clarify
 3. triangulate : which level ?
 4. Filter point_cloud ? plugin ?
 5. Rasterize
-
 
 
 Questions:

@@ -67,7 +67,6 @@ Design requirements
 
 - Easy install in software and python standards
 - Easy configuration
-
 - Have a clean and efficient code organization coherent with design architecture.
 - Keep functional steps independent to ease evolution and simplify maintenance.
 - Be able to activate only some parts with one common configuration file.
@@ -87,9 +86,10 @@ Here are several needs for future CARS:
 - Matching step : be able to call several matching tool. Pandora has to be called in a generic way with clean API.
 - Input data library : be able to input several type of images. Only rasterio possible ? or plugins also here ?
 - Cluster Scheduling libraries: be able to use different load distribution libraries (dask, multiprocessing, sequential, ...)
-etc ...
 
-Naming proposition : ``loader``
+Other ?
+
+Naming : ``loader`` and ``loader_type``
 
 Pipeline Steps modularity
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -100,7 +100,7 @@ TODO
 Maybe with  the possibility to change static call graph ?  and sub functions between steps ?
 Maybe with some possibilities to add plugins in pipeline between steps ?
 
-Naming proposition: ``plugin``
+Naming : ``plugin`` and ``plugin_type``
 
 
 Shareable
@@ -109,4 +109,4 @@ The software has to be easily shareable and developed by other people.
 Needs clean design, documentation, examples, notebooks, ...
 
 
-TODO: add requirements.
+TODO: add missing requirements.
