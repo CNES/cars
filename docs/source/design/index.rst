@@ -24,8 +24,9 @@ CARS is a dedicated and open source 3D tool to produce Digital Surface Models fr
 This Multiview stereo pipeline is intended for massive DSM production with a robust and performant design.
 
 This tool has indeed two main targets:
-- be a performant and stable tool in projects ground segment: stability, performance, ...
-- be an engineering tool to test new algorithms for study : evolutivity, modularity, documentation, ...
+
+- be a performant and stable tool in projects ground segment: stability, performance.
+- be an engineering tool to test new algorithms for study : evolutivity, modularity, documentation.
 
 For this two contexts, CARS has to be well designed and refactored.
 
@@ -44,3 +45,4 @@ For this two contexts, CARS has to be well designed and refactored.
     cars_cluster
     cars_loaders
     cars_plugins
+    cars_roi

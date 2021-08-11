@@ -15,7 +15,7 @@ core/dataset.py
 
 geometric model
 ---------------
-CARS representation ? link with modularity of geometric framework.
+CARS representation ? link with modularity of geometric loaders. 
 One CARS internal representation ? external ?
 
 

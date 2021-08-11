@@ -116,6 +116,7 @@ User scenarii
 - Be able to launch image resample:
 
 .. code-block:: console
+
     import cars.core.inputs
     import cars.core.geometry
     import cars.steps.rectification
