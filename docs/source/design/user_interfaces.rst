@@ -4,7 +4,7 @@ User interfaces
 
 Two levels:
 
-- A main high level pipeline user level : run CARS pipeline with a possible configuration. From command line or Python API. Automatic mode.
+- A main high level pipeline user level: run CARS pipeline with a possible configuration. From command line or Python API. Automatic mode.
 - A specific low level 3D API with all functions exposed: works by tile. Advanced mode.
 
 
@@ -50,11 +50,11 @@ Here are several main high level scenarii:
 CARS Main Python API
 --------------------
 
-1. cars.run() : Main Python API for cars. Parameters:
+1. cars.run(): Main Python API for cars. Parameters:
 
-    - inputs : 1 pair only ?, N pairs, N images ?, mask, srtm, ? One format in a class ?
-    - output : default : Default local directory. point_cloud ?, dsm ? an output.json file describing several elements ?
-    - configuration: parameters of each step, core libs, ... kwargs ?
+    - inputs: 1 pair only?, N pairs, N images?, mask, srtm,? One format in a class?
+    - output: default: Default local directory. point_cloud?, dsm? an output.json file describing several elements?
+    - configuration: parameters of each step, core libs, ... kwargs?
 
 2. Sub pipelines
 
@@ -84,9 +84,9 @@ CARS Main Python API
 
 Questions:
 
-- Inputs format : a json file / Input format Class ? Yaml --> if possible multi possibities (see cars_conf.rst)
-- Output format : not only an output directory but also a json file / Output format class ? the same than input incremented ? Can be a default one configurable ?
-- Configuration : separation static_conf and dynamic parameters ? have only one dynamic and static conf ? --> see cars_conf.rst
+- Inputs format: a json file / Input format Class? Yaml --> if possible multi possibities (see cars_conf.rst)
+- Output format: not only an output directory but also a json file / Output format class? the same than input incremented? Can be a default one configurable?
+- Configuration: separation static_conf and dynamic parameters? have only one dynamic and static conf? --> see cars_conf.rst
 - Rename compute_dsm in compute (not only dsm)
 
 CARS Command Line Interface
@@ -122,7 +122,7 @@ User scenarii
     import cars.steps.rectification
 
     img_dataset = inputs.open(img_path)
-    img_geom = geometry.open(img_geom_path ??)
+    img_geom = geometry.open(img_geom_path??)
 
     resampled_dataset = rectification.resample_image(img_dataset, img_geom, grid_dataset, largest_size, region, nodata, mask)
 
@@ -130,21 +130,21 @@ TODO: Update when an evolution is done.
 
 Steps
 -----
-Question: A step is a standardized API function in cars/steps ?
+Question: A step is a standardized API function in cars/steps?
 TODO: Definition to finish, clarify
 
-1.  rectification or generate_grid ?
+1.  rectification or generate_grid?
 
-2.  matching :
+2.  matching:
 
-  2.a sparse_matching a step ?
-  3.b dense_matching a step ?
+    a. sparse_matching a step?
+    b. dense_matching a step?
 
-3. triangulate : which level ?
-4. Filter point_cloud ? plugin ?
-5. Rasterize
+3. triangulate: which level?
+4. filter point_cloud? plugin?
+5. rasterize
 
 
 Questions:
-- Prepare steps AND compute steps ? or only compute pipeline ?
--
+
+- Prepare steps AND compute steps? or only compute pipeline?

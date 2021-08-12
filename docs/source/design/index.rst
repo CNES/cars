@@ -26,7 +26,7 @@ This Multiview stereo pipeline is intended for massive DSM production with a rob
 This tool has indeed two main targets:
 
 - be a performant and stable tool in projects ground segment: stability, performance.
-- be an engineering tool to test new algorithms for study : evolutivity, modularity, documentation.
+- be an engineering tool to test new algorithms for study: evolutivity, modularity, documentation.
 
 For this two contexts, CARS has to be well designed and refactored.
 

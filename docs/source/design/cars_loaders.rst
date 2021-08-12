@@ -3,14 +3,16 @@ CARS loaders
 =================
 
 
-CARS modularities aims at :
-- Be able to load different geometry libraries
-- Be able to load different matching libraries
-- Be able to use different opening image tools
-- Be able to use different cluster scheduling strategy/tools
+CARS modularities aims at:
+
+- Be able to load several geometry libraries
+- Be able to load several matching libraries
+- Be able to use several opening image tools
+- Be able to use several cluster scheduling strategy/tools
 
 The goals are:
-- answer different project and user goals.
+
+- answer several project and user goals.
 - ease 3D studies and definition/test of new algorithms
 - simplify evolution when a library is becoming obsolete
 
@@ -28,12 +30,12 @@ Define how the loader are used in CARS.
 - How to call/use the abstract class
 - Link with configuration dynamic registration.
 
-The different loader types below are declined from this general way.
+The several loader types below are declined from this general way.
 
 Geometry loader
 ===============
 
-This geometry loader aims to be able to use different geometry libraries, typically OTB, libgeo and shareloc.
+This geometry loader aims to be able to use several geometry libraries, typically OTB, libGEO and shareloc.
 
 Describe here how to interact with geometric models in CARS design.
 
@@ -48,9 +50,3 @@ Cluster loader
 ==============
 
 TODO
-
-
-Image IO Loader
-===============
-
-Needed ? or only rasterio possibilities ?
