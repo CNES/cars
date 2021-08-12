@@ -12,7 +12,7 @@ Here are some high level 3D requirements:
 - Be able to use input multi functional masks to use in the 3D pipeline (typically water masks)
 
 - Automatic pipeline: Be able to run a 3D pipeline with the minimal parameters
-- Configurable pipeline: Be able to configure the different internal steps with common 3D parameters (example: disparity range)
+- Configurable pipeline: Be able to configure several internal steps with common 3D parameters (example: disparity range)
 - Open pipeline: be able to have insights on internal algorithms and intermediate results and stats.
 - Be able to launch easily each 3D step with a stabilized API.
 
@@ -22,27 +22,29 @@ Input data requirements
 -----------------------
 Here are some input sensor image requirements:
 
-* Be able to open Pléiades (PHR), Spot 6/7, DigitalGlobe, ... ??
+* Be able to open Pléiades (PHR), Spot 6/7, DigitalGlobe, ...??
 * Be able to open tif or jp2 image format.
 
 Here are some input sensor geometric model requirement
 
-* Be able to open RPC models, grid models or physical model ?
-* Be able to open internal geometric ?
+* Be able to open RPC models, grid models or physical model?
+* Be able to open internal geometric?
 
 Other input data:
 
 * Be able to open a reference input DEM to optimize the pipeline.
-* Be able to open masks (format ?) and multi class definition configuration.
+* Be able to open masks (format?) and multi class definition configuration.
 
 Output data requirements
 ------------------------
 
 On DSM:
+
 - geotif format
 
 On Point cloud:
-- which format ?
+
+- which format?
 
 
 Code requirements
@@ -54,9 +56,9 @@ Code requirements
 
 - Ease new developers integration in code. Debug mode
 
-- Documentation : user, developer, advanced, auto API.
+- Documentation: user, developer, advanced, auto API.
 
-- Complete testing of all cases : unit tests, reliability tests, end2end test.
+- Complete testing of all cases: unit tests, reliability tests, end2end test.
 
 - Standard Code quality check with common python tools (isort, black, flake8, pylint, mypy).
 
@@ -82,14 +84,14 @@ Libraries modularities
 
 Here are several needs for future CARS:
 
-- Geometric core library : be able to have OTB, shareloc, libgeo, ... internal and by plugins
-- Matching step : be able to call several matching tool. Pandora has to be called in a generic way with clean API.
-- Input data library : be able to input several type of images. Only rasterio possible ? or plugins also here ?
-- Cluster Scheduling libraries: be able to use different load distribution libraries (dask, multiprocessing, sequential, ...)
+- Geometric core library: be able to have OTB, shareloc, libGEO, ... internal and by plugins
+- Matching step: be able to call several matching tool. Pandora has to be called in a generic way with clean API.
+- Input data library: be able to input several type of images. Only rasterio possible? or plugins also here?
+- Cluster Scheduling libraries: be able to use several load distribution libraries (dask, multiprocessing, sequential, ...)
 
-Other ?
+Other?
 
-Naming : ``loader`` and ``loader_type``
+Naming: ``loader`` and ``loader_type``
 
 Pipeline Steps modularity
 %%%%%%%%%%%%%%%%%%%%%%%%%
@@ -97,10 +99,10 @@ Pipeline Steps modularity
 Another modularity is the possibility to include other code between steps.
 
 TODO
-Maybe with  the possibility to change static call graph ?  and sub functions between steps ?
-Maybe with some possibilities to add plugins in pipeline between steps ?
+Maybe with  the possibility to change static call graph?  and sub functions between steps?
+Maybe with some possibilities to add plugins in pipeline between steps?
 
-Naming : ``plugin`` and ``plugin_type``
+Naming: ``plugin`` and ``plugin_type``
 
 
 Shareable

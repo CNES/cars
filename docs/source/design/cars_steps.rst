@@ -24,6 +24,6 @@ The current steps are
     - rasterization()
 
 
-Questions :
+Questions:
 
-- prepare steps functions ?
+- prepare steps functions?

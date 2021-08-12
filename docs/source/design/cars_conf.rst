@@ -1,5 +1,5 @@
 ================================
-CARS configuration : conf module
+CARS configuration: conf module
 ================================
 
 
@@ -17,7 +17,7 @@ Solutions
 ----------
 
 Framework to use:
-- Hydra ?
+- Hydra? Seems not the good choice.
 - Click (see rasterio)
 - Omega only `Slides omega <https://docs.google.com/presentation/d/e/2PACX-1vT_UIV7hCnquIbLUm4NnkUpXvPEh33IKiUEvPRF850WKA8opOlZOszjKdZ3tPmf8u7hGNP6HpqS-NT5/pub?start=false&loop=false&delayms=3000#slide=id.p>`_
 
@@ -34,7 +34,7 @@ Definition of a single all in one configuration (yaml omega example):
 
     prepare:
 
-      generate_epipolar_grids: #step1: a function ? a sub
+      generate_epipolar_grids: #step1: a function? a sub
           param1:
       sparse_matching:
           param1:
@@ -43,7 +43,7 @@ Definition of a single all in one configuration (yaml omega example):
       ...
 
     compute_dsm:
-      rectification:  #step1 >>> function ?
+      rectification:  #step1 >>> function?
         rectification_internal_param1:  # set to read-only
         rectification_external_param2:  # can be exposed to user
 
@@ -64,7 +64,7 @@ Example of definition in a pipeline:
 
     prepare:
 
-      generate_epipolar_grids: #step1: a function ? a sub
+      generate_epipolar_grids: #step1: a function? a sub
           param1:
       sparse_matching:
           param1:
@@ -76,6 +76,6 @@ Example of definition in a step:
 
 .. code-block:: console
 
-    rectification:  #step1 >>> function ?
+    rectification:  #step1 >>> function?
       rectification_internal_param1:  # set to read-only
       rectification_external_param2:  # can be exposed to user
