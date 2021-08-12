@@ -25,7 +25,7 @@ Module organization.
 ====================
 
 - CARS main CLI API
-- cars pipelines
+- CARS pipelines
 - CARS steps :
 - CARS core :
 - CARS conf :
