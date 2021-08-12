@@ -39,7 +39,7 @@ Here is the file organization accordingly:
 * core: CARS General usage functions
 * pipelines:
     - prepare: corrected grid creation with disparity min/max estimation
-    - compute_dsm: Main 3D pipeline
+    - compute_dsm: dsm generation chaining time consuming steps (rectification, dense matching, triangulation, rasterization)
 * steps:
     - rectification:
     - matching:
