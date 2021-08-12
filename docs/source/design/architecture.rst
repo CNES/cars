@@ -24,7 +24,7 @@ One CARS internal representation ? external ?
 Module organization.
 ====================
 
-- cars main CLI API
+- CARS main CLI API
 - cars pipelines
 - CARS steps :
 - CARS core :
