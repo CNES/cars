@@ -73,6 +73,10 @@ pygments_style = "sphinx"
 #
 html_theme = "sphinx_rtd_theme"
 
+# Title
+html_title = "CARS Documentation"
+html_short_title = "CARS Documentation"
+
 # Logo
 html_logo = "images/picto_transparent_mini.png"
 
