@@ -38,7 +38,7 @@ Here is the file organization accordingly:
 * conf: CARS configuration capabilities
 * core: CARS General usage functions
 * pipelines:
-    - prepare: first general 3D preparation pipeline
+    - prepare: corrected grid creation with disparity min/max estimation
     - compute_dsm: Main 3D pipeline
 * steps:
     - rectification:
