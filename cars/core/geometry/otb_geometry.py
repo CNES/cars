@@ -23,7 +23,7 @@ this module contains the otb geometry class
 """
 import logging
 import os
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import otbApplication
@@ -66,17 +66,16 @@ class OTBGeometry(AbstractGeometry):
         return geo_conf_schema
 
     @staticmethod
-    def check_products_consistency(geo_conf: Dict[str, str]) -> bool:
+    def check_products_consistency(cars_conf) -> bool:
         """
         Test if the product is readable by the OTB
 
-        :param: the geometry configuration as requested by the geometry loader
-        schema
+        :param: cars_conf: cars input configuration
         :return: True if the products are readable, False otherwise
         """
         # get images paths
-        img1 = geo_conf[input_parameters.IMG1_TAG]
-        img2 = geo_conf[input_parameters.IMG2_TAG]
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
 
         # test if both images have associated RPC
         status = False
@@ -162,7 +161,7 @@ class OTBGeometry(AbstractGeometry):
         matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
-        geo_conf: Dict[str, str],
+        cars_conf,
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -173,15 +172,14 @@ class OTBGeometry(AbstractGeometry):
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
-        :param geo_conf: dictionary with the fields requested by the
-        loader schema
+        :param cars_conf: cars input configuration
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
 
-        img1 = geo_conf[input_parameters.IMG1_TAG]
-        img2 = geo_conf[input_parameters.IMG2_TAG]
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
 
         # Retrieve elevation range from imgs
         (min_elev1, max_elev1) = get_elevation_range_from_metadata(img1)
@@ -248,8 +246,7 @@ class OTBGeometry(AbstractGeometry):
 
     @staticmethod
     def generate_epipolar_grids(
-        left_img: str,
-        right_img: str,
+        cars_conf,
         dem: Union[None, str] = None,
         default_alt: Union[None, float] = None,
         epipolar_step: int = 30,
@@ -259,8 +256,7 @@ class OTBGeometry(AbstractGeometry):
         """
         Computes the left and right epipolar grids
 
-        :param left_img: path to left image
-        :param right_img: path to right image
+        :param cars_conf: cars input configuration
         :param dem: path to the dem folder
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
@@ -273,12 +269,16 @@ class OTBGeometry(AbstractGeometry):
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
+
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
+
         stereo_app = otbApplication.Registry.CreateApplication(
             "StereoRectificationGridGenerator"
         )
 
-        stereo_app.SetParameterString("io.inleft", left_img)
-        stereo_app.SetParameterString("io.inright", right_img)
+        stereo_app.SetParameterString("io.inleft", img1)
+        stereo_app.SetParameterString("io.inright", img2)
         stereo_app.SetParameterInt("epi.step", epipolar_step)
         if dem is not None:
             stereo_app.SetParameterString("epi.elevation.dem", dem)
@@ -308,7 +308,7 @@ class OTBGeometry(AbstractGeometry):
         # TODO: remove this patch when OTB issue
         # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
         # is resolved
-        with rio.open(left_img, "r") as rio_dst:
+        with rio.open(img1, "r") as rio_dst:
             pixel_size_x, pixel_size_y = (
                 rio_dst.transform[0],
                 rio_dst.transform[4],

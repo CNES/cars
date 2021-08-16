@@ -33,6 +33,7 @@ import pytest
 import rasterio as rio
 
 # CARS imports
+from cars.conf import input_parameters
 from cars.core.geometry import AbstractGeometry
 
 # CARS Tests imports
@@ -72,8 +73,14 @@ def test_generate_epipolar_grids():
     """
     Test if the pipeline is correctly built and produces consistent grids
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
@@ -93,7 +100,7 @@ def test_generate_epipolar_grids():
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(img1, img2, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(conf, dem, epipolar_step=step)
 
     assert epipolar_size == [612, 612]
     assert left_grid_as_array.shape == (15, 15, 2)
@@ -132,6 +139,7 @@ def test_generate_epipolar_grids_scaled_inputs():
     """
     img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {input_parameters.IMG1_TAG: img1, input_parameters.IMG2_TAG: img2}
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
@@ -152,7 +160,7 @@ def test_generate_epipolar_grids_scaled_inputs():
         _,
         ref_epipolar_size,
         ref_disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(img1, img2, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(conf, dem, epipolar_step=step)
 
     # define negative scale transform
     def create_negative_transform(srs_img, dst_img, reverse_x, reverse_y):
@@ -284,6 +292,10 @@ def test_generate_epipolar_grids_scaled_inputs():
             )
 
             # img1_transform / img2_transform
+            conf = {
+                input_parameters.IMG1_TAG: img1_transform,
+                input_parameters.IMG2_TAG: img2_transform,
+            }
             (
                 _,
                 _,
@@ -292,13 +304,14 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                img1_transform, img2_transform, dem, epipolar_step=step
+                conf, dem, epipolar_step=step
             )
 
             assert epipolar_size == ref_epipolar_size
             assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
 
             # img1_transform / img2
+            conf[input_parameters.IMG2_TAG] = img2
             (
                 _,
                 _,
@@ -307,13 +320,15 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                img1_transform, img2, dem, epipolar_step=step
+                conf, dem, epipolar_step=step
             )
 
             assert epipolar_size == ref_epipolar_size
             assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
 
             # img1 / img2_transform
+            conf[input_parameters.IMG1_TAG] = img1
+            conf[input_parameters.IMG2_TAG] = img2_transform
             (
                 _,
                 _,
@@ -322,7 +337,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                img1_transform, img2, dem, epipolar_step=step
+                conf, dem, epipolar_step=step
             )
 
             assert epipolar_size == ref_epipolar_size

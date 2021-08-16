@@ -20,7 +20,7 @@
 #
 """
 This module handles the cars input schema as well as loaders ones to construct
-the final configuration json schema
+the user final configuration json schema
 """
 
 from copy import copy
@@ -30,12 +30,12 @@ from cars.conf import input_parameters, static_conf
 
 def input_conf_schema():
     """
-    Retrieve cars input configuration.
+    Retrieve user input configuration.
     This function merges the loaders schema with the basic configuration
     required by cars (INPUT_CONFIGURATION_SCHEMA
     defined in the input_parameters module)
 
-    :return: the cars input configuration schema
+    :return: the user input configuration schema
     """
     # copy cars minimal configuration schema
     schema = copy(input_parameters.INPUT_CONFIGURATION_SCHEMA)

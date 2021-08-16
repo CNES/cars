@@ -337,8 +337,7 @@ def run(  # noqa: C901
         epipolar_size,
         disp_to_alt_ratio,
     ) = grids.generate_epipolar_grids(
-        img1,
-        img2,
+        config,
         dem=srtm_dir,
         default_alt=default_alt,
         epipolar_step=epi_step,

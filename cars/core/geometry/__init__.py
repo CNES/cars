@@ -99,12 +99,11 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def check_products_consistency(geo_conf: Dict[str, str]) -> bool:
+    def check_products_consistency(cars_conf) -> bool:
         """
         Test if the product is readable by the geometry loader
 
-        :param: the geometry configuration as requested by the geometry loader
-        schema
+        :param: cars_conf: cars input configuration
         :return: True if the products are readable, False otherwise
         """
 
@@ -115,7 +114,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
-        geo_conf: Dict[str, str],
+        cars_conf,
         roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
@@ -126,8 +125,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
-        :param geo_conf: dictionary with the fields requested in the schema
-        given by the geo_conf_schema() method
+        :param cars_conf: cars input configuration
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -136,8 +134,7 @@ class AbstractGeometry(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def generate_epipolar_grids(
-        left_img: str,
-        right_img: str,
+        cars_conf,
         dem: Union[None, str] = None,
         default_alt: Union[None, float] = None,
         epipolar_step: int = 30,
@@ -147,8 +144,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Computes the left and right epipolar grids
 
-        :param left_img: path to left image
-        :param right_img: path to right image
+        :param cars_conf: cars input configuration
         :param dem: path to the dem folder
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
@@ -170,22 +166,23 @@ class AbstractGeometry(metaclass=ABCMeta):
         matches_type: str,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
-        Convert matches (sparse and dense matches) given in epipolar
+        Convert matches (sparse or dense matches) given in epipolar
         coordinates to sensor coordinates. This function is available for
-        loaders if the required the matches in sensor coordinates to perform
+        loaders if it requires matches in sensor coordinates to perform
         the triangulation.
 
-        This function returns a tuple composed of left and right sensor
-        coordinates as numpy arrays. For each original image, the sensor
+        This function returns a tuple composed of the matches left and right
+        sensor coordinates as numpy arrays. For each original image, the sensor
         coordinates are arranged as follows :
-            * if the matches: a numpy array of size [number of matches, 2] .
-            The last index indicates the 'x' coordinate (index 0) or
-            the 'y' coordinate (index 1).
+            * if the matches are a vector of matching points: a numpy array of
+            size [number of matches, 2].
+            The last index indicates the 'x' coordinate (last index set to 0) or
+            the 'y' coordinate (last index set to 1).
             * if matches is a cars disparity dataset: a numpy array of size
             [nb_epipolar_line, nb_epipolar_col, 2]. Where
             [nb_epipolar_line, nb_epipolar_col] is the size of the disparity
-            map. The last index indicates the 'x' coordinate (index 0) or
-             the 'y' coordinate (index 1).
+            map. The last index indicates the 'x' coordinate (last index set
+            to 0) or the 'y' coordinate (last index set to 1).
 
         :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
@@ -270,10 +267,11 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param grid: path to epipolar grid
         :param positions: epipolar positions to interpolate given as a numpy
         array of size [number of points, 2]. The last index indicates the 'x'
-         coordinate (index 0) or the 'y' coordinate (index 1).
+         coordinate (last index set to 0) or the 'y' coordinate
+         (last index set to 1).
         :return: sensors positions as a numpy array of size
         [number of points, 2]. The last index indicates the 'x' coordinate
-        (index 0) or the 'y' coordinate (index 1).
+        (last index set to 0) or the 'y' coordinate (last index set to 1).
         """
 
         # open epipolar grid

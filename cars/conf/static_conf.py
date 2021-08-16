@@ -439,7 +439,6 @@ def get_geometry_loader() -> AbstractGeometry:
     if geometry_loader is None:
 
         if cfg is None:
-            print("load cfg for loader")
             load_cfg()
 
         loader_to_use = cfg[loaders_tag][geometry_loader_tag]
@@ -449,8 +448,5 @@ def get_geometry_loader() -> AbstractGeometry:
                 loader_to_use
             )
         )
-        print("instantiate loader !")
-    else:
-        print("just get loader")
 
     return geometry_loader

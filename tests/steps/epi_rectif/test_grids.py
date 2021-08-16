@@ -32,6 +32,7 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
+from cars.conf import input_parameters
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
 
@@ -132,8 +133,14 @@ def test_generate_epipolar_grids_default_alt():
     """
     Test generate_epipolar_grids method with default alt and no dem
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = None
     default_alt = 500
 
@@ -147,9 +154,7 @@ def test_generate_epipolar_grids_default_alt():
         _,
         epi_size,
         baseline,
-    ) = grids.generate_epipolar_grids(
-        img1, img2, dem, default_alt, epipolar_step=30
-    )
+    ) = grids.generate_epipolar_grids(conf, dem, default_alt, epipolar_step=30)
     # Unset geoid for the test to be standalone
     otb_geoid_file_unset()
 
@@ -182,8 +187,14 @@ def test_generate_epipolar_grids():
     """
     Test generate_epipolar_grids method
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     # Set the geoid file from code source
@@ -197,7 +208,7 @@ def test_generate_epipolar_grids():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        img1, img2, dem, default_alt=None, epipolar_step=30
+        conf, dem, default_alt=None, epipolar_step=30
     )
 
     # Unset geoid for the test to be standalone

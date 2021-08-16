@@ -46,8 +46,7 @@ from cars.steps.triangulation import triangulate_matches
 
 
 def generate_epipolar_grids(
-    left_img: str,
-    right_img: str,
+    conf,
     dem: Union[None, str],
     default_alt: Union[None, float],
     epipolar_step: int,
@@ -55,8 +54,7 @@ def generate_epipolar_grids(
     """
     Computes the left and right epipolar grids
 
-    :param left_img: path to left image
-    :param right_img: path to right image
+    :param conf: input configuration
     :param dem: path to the dem folder
     :param default_alt: default altitude to use in the missing dem regions
     :param epipolar_step: step to use to construct the epipolar grids
@@ -80,8 +78,7 @@ def generate_epipolar_grids(
         epipolar_size,
         disp_to_alt_ratio,
     ) = geometry_loader.generate_epipolar_grids(
-        left_img,
-        right_img,
+        conf,
         dem=dem,
         default_alt=default_alt,
         epipolar_step=epipolar_step,
