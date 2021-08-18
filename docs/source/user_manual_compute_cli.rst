@@ -322,7 +322,11 @@ Once the computation is done, the output folder also contains a ``content.json``
           },
           "output": {
             "color_image_encoding": "uint16"
-          }
+          },
+          "loaders":{
+            "geometry": "OTBGeometry"
+          },
+          "geoid_path": 'path/to/geoid'
         },
         "output": {
           "altimetric_reference": "ellipsoid",

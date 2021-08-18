@@ -32,16 +32,12 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
-from cars.conf import input_parameters
+from cars.conf import input_parameters, static_conf
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
-from ...helpers import (
-    absolute_data_path,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-)
+from ...helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
@@ -144,9 +140,6 @@ def test_generate_epipolar_grids_default_alt():
     dem = None
     default_alt = 500
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
     (
         left_grid,
         right_grid,
@@ -154,9 +147,13 @@ def test_generate_epipolar_grids_default_alt():
         _,
         epi_size,
         baseline,
-    ) = grids.generate_epipolar_grids(conf, dem, default_alt, epipolar_step=30)
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
+    ) = grids.generate_epipolar_grids(
+        conf,
+        dem,
+        default_alt,
+        epipolar_step=30,
+        geoid=static_conf.get_geoid_path(),
+    )
 
     assert epi_size == [612, 612]
     assert baseline == 1 / 0.7039446234703064
@@ -197,9 +194,6 @@ def test_generate_epipolar_grids():
     }
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
     (
         left_grid,
         right_grid,
@@ -208,11 +202,12 @@ def test_generate_epipolar_grids():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        conf, dem, default_alt=None, epipolar_step=30
+        conf,
+        dem,
+        default_alt=None,
+        epipolar_step=30,
+        geoid=static_conf.get_geoid_path(),
     )
-
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
 
     assert epi_size == [612, 612]
     assert baseline == 1 / 0.7039416432380676

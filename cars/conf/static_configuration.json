@@ -51,5 +51,8 @@
     },
   "loaders":{
     "geometry": "OTBGeometry"
+  },
+  "geoid":{
+    "use_cars_geoid": true
   }
 }

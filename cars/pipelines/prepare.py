@@ -165,6 +165,7 @@ def run(  # noqa: C901
             in_params.STATIC_PARAMS_TAG: {
                 static_conf.prepare_tag: static_params[static_conf.prepare_tag],
                 static_conf.loaders_tag: static_params[static_conf.loaders_tag],
+                static_conf.geoid_path_tag: static_conf.get_geoid_path(),
             },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
@@ -274,7 +275,7 @@ def run(  # noqa: C901
 
     # Check geometric models consistency
     if not static_conf.get_geometry_loader().check_products_consistency(config):
-        raise Exception("Problem while reading the left image geometric model")
+        raise Exception("Problem while reading the geometric models")
 
     # Check that the envelopes intersect one another
     logging.info("Computing images envelopes and their intersection")
@@ -341,6 +342,7 @@ def run(  # noqa: C901
         dem=srtm_dir,
         default_alt=default_alt,
         epipolar_step=epi_step,
+        geoid=static_conf.get_geoid_path(),
     )
 
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][

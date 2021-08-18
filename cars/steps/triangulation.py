@@ -292,7 +292,7 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
 def compute_points_cloud(
     data: xr.Dataset,
-    geom_models_conf: Dict[str, str],
+    cars_conf,
     grid1: str,
     grid2: str,
     roi_key: str,
@@ -303,7 +303,7 @@ def compute_points_cloud(
     Compute points cloud
 
     :param data: The reference to disparity map dataset
-    :param geom_models_conf:
+    :param cars_conf: cars input configuration dictionary
     :param grid1: path to the reference image grid file
     :param grid2: path to the secondary image grid file
     :param roi_key: roi of the disparity map key
@@ -318,7 +318,7 @@ def compute_points_cloud(
         data,
         grid1,
         grid2,
-        geom_models_conf,
+        cars_conf,
         roi_key,
     )
 

@@ -33,16 +33,11 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars.conf import input_parameters
+from cars.conf import input_parameters, static_conf
 from cars.core.geometry import AbstractGeometry
 
 # CARS Tests imports
-from ...helpers import (
-    absolute_data_path,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-    temporary_dir,
-)
+from ...helpers import absolute_data_path, temporary_dir
 
 
 def rigid_transform_resample(
@@ -84,9 +79,6 @@ def test_generate_epipolar_grids():
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
     geo_loader = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry"
@@ -100,7 +92,9 @@ def test_generate_epipolar_grids():
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(conf, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(
+        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+    )
 
     assert epipolar_size == [612, 612]
     assert left_grid_as_array.shape == (15, 15, 2)
@@ -128,9 +122,6 @@ def test_generate_epipolar_grids():
     )
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
-    # unset otb geoid file
-    otb_geoid_file_unset()
-
 
 @pytest.mark.unit_tests
 def test_generate_epipolar_grids_scaled_inputs():
@@ -142,9 +133,6 @@ def test_generate_epipolar_grids_scaled_inputs():
     conf = {input_parameters.IMG1_TAG: img1, input_parameters.IMG2_TAG: img2}
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
-
-    # Set the geoid file from code source
-    otb_geoid_file_set()
 
     geo_loader = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
@@ -160,7 +148,9 @@ def test_generate_epipolar_grids_scaled_inputs():
         _,
         ref_epipolar_size,
         ref_disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(conf, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(
+        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+    )
 
     # define negative scale transform
     def create_negative_transform(srs_img, dst_img, reverse_x, reverse_y):
@@ -304,7 +294,10 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                conf, dem, epipolar_step=step
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -320,7 +313,10 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                conf, dem, epipolar_step=step
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -337,7 +333,10 @@ def test_generate_epipolar_grids_scaled_inputs():
                 epipolar_size,
                 disp_to_alt_ratio,
             ) = geo_loader.generate_epipolar_grids(
-                conf, dem, epipolar_step=step
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -423,9 +422,6 @@ def test_generate_epipolar_grids_scaled_inputs():
         scalex=-1.0,
         scaley=-2.0,
     )
-
-    # unset otb geoid file
-    otb_geoid_file_unset()
 
 
 @pytest.mark.unit_tests

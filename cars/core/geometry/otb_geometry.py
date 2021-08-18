@@ -70,7 +70,7 @@ class OTBGeometry(AbstractGeometry):
         """
         Test if the product is readable by the OTB
 
-        :param: cars_conf: cars input configuration
+        :param: cars_conf: cars input configuration dictionary
         :return: True if the products are readable, False otherwise
         """
         # get images paths
@@ -109,6 +109,8 @@ class OTBGeometry(AbstractGeometry):
 
             # check geom consistency
             if os.path.exists(geom_path):
+                can_open_status = True
+
                 with open(geom_path) as geom_file_desc:
                     geom_dict = {}
                     for line in geom_file_desc:
@@ -140,7 +142,6 @@ class OTBGeometry(AbstractGeometry):
                         can_open_status = False
 
                 os.remove("./otb_can_open_test.geom")
-                can_open_status = True
             else:
                 logging.warning(
                     "{} does not have associated geom file".format(img)
@@ -172,7 +173,7 @@ class OTBGeometry(AbstractGeometry):
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
-        :param cars_conf: cars input configuration
+        :param cars_conf: cars input configuration dictionary
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -248,6 +249,7 @@ class OTBGeometry(AbstractGeometry):
     def generate_epipolar_grids(
         cars_conf,
         dem: Union[None, str] = None,
+        geoid: Union[None, str] = None,
         default_alt: Union[None, float] = None,
         epipolar_step: int = 30,
     ) -> Tuple[
@@ -256,8 +258,9 @@ class OTBGeometry(AbstractGeometry):
         """
         Computes the left and right epipolar grids
 
-        :param cars_conf: cars input configuration
+        :param cars_conf: cars input configuration dictionary
         :param dem: path to the dem folder
+        :param geoid: path to the geoid file
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
@@ -269,7 +272,10 @@ class OTBGeometry(AbstractGeometry):
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
+        # save os env
+        env_save = os.environ.copy()
 
+        # create OTB application
         img1 = cars_conf[input_parameters.IMG1_TAG]
         img2 = cars_conf[input_parameters.IMG2_TAG]
 
@@ -284,6 +290,20 @@ class OTBGeometry(AbstractGeometry):
             stereo_app.SetParameterString("epi.elevation.dem", dem)
         if default_alt is not None:
             stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
+        if geoid is not None:
+            stereo_app.SetParameterString("epi.elevation.geoid", geoid)
+            # set OTB_GEOID_FILE environment variable to the geoid path to
+            # handle OTB internal geoid management
+            os.environ["OTB_GEOID_FILE"] = geoid
+        elif "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "No geoid file given in input of "
+                "the generate_epipolar_grids function but "
+                "OTB_GEOID_FILE is set in the os environment. "
+                "OTB_GEOID_FILE will not be used to generate "
+                "the grids."
+            )
+            del os.environ["OTB_GEOID_FILE"]
 
         stereo_app.Execute()
 
@@ -320,6 +340,12 @@ class OTBGeometry(AbstractGeometry):
 
         # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
         disp_to_alt_ratio = 1 / baseline
+
+        # restore environment variables
+        if "OTB_GEOID_FILE" in env_save.keys():
+            os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+        elif geoid is not None:
+            del os.environ["OTB_GEOID_FILE"]
 
         return (
             left_grid_as_array,

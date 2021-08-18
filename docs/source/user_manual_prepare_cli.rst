@@ -241,7 +241,11 @@ The ``content.json`` file lists the generated files and some numerical elements:
           },
           "disparity_range": {
             "disparity_outliers_rejection_percent": 0.1
-          }
+          },
+          "loaders":{
+            "geometry": "OTBGeometry"
+          },
+          "geoid_path": 'path/to/geoid'
         },
         "output": {
           "left_envelope": "left_envelope.shp",

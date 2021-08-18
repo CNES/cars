@@ -289,6 +289,7 @@ PREPROCESSING_CONTENT_SCHEMA = {
         input_parameters.STATIC_PARAMS_TAG: {
             static_conf.prepare_tag: static_conf.prepare_params_schema,
             static_conf.loaders_tag: static_conf.loaders_schema,
+            static_conf.geoid_path_tag: Or(str, None),
         },
         PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA,
     },

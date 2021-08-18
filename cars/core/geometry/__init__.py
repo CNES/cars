@@ -23,6 +23,7 @@ this module contains the abstract geometry class to use in the
 geometry plugins
 """
 import logging
+import struct
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
 
@@ -103,7 +104,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Test if the product is readable by the geometry loader
 
-        :param: cars_conf: cars input configuration
+        :param: cars_conf: cars input configuration dictionary
         :return: True if the products are readable, False otherwise
         """
 
@@ -125,7 +126,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
-        :param cars_conf: cars input configuration
+        :param cars_conf: cars input configuration dictionary
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -136,6 +137,7 @@ class AbstractGeometry(metaclass=ABCMeta):
     def generate_epipolar_grids(
         cars_conf,
         dem: Union[None, str] = None,
+        geoid: Union[None, str] = None,
         default_alt: Union[None, float] = None,
         epipolar_step: int = 30,
     ) -> Tuple[
@@ -144,8 +146,9 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Computes the left and right epipolar grids
 
-        :param cars_conf: cars input configuration
+        :param cars_conf: cars input configuration dictionary
         :param dem: path to the dem folder
+        :param geoid: path to the geoid file
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
@@ -162,8 +165,10 @@ class AbstractGeometry(metaclass=ABCMeta):
     def matches_to_sensor_coords(
         grid1: str,
         grid2: str,
-        matches: Union[xr.Dataset, np.ndarray],
+        matches: np.ndarray,
         matches_type: str,
+        matches_msk: np.ndarray = None,
+        ul_matches_shift: Tuple[int, int] = None,
     ) -> Tuple[np.ndarray, np.ndarray]:
         """
         Convert matches (sparse or dense matches) given in epipolar
@@ -188,6 +193,10 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param grid2: path to epipolar grid of image 2
         :param matches: cars disparity dataset or matches as numpy array
         :param matches_type: matches type (cst.DISP_MODE or cst.MATCHES)
+        :param matches_msk: matches mask to provide for cst.DISP_MODE
+        :param ul_matches_shift: coordinates (x, y) of the upper left corner of
+        the matches map (for cst.DISP_MODE) in the original epipolar geometry
+        (use this if the map have been cropped)
         :return: a tuple of numpy array. The first array corresponds to the
         left matches in sensor coordinates, the second one is the right
         matches in sensor coordinates.
@@ -200,18 +209,27 @@ class AbstractGeometry(metaclass=ABCMeta):
             vec_epi_pos_left = matches[:, 0:2]
             vec_epi_pos_right = matches[:, 2:4]
         elif matches_type == cst.DISP_MODE:
+
+            if matches_msk is None:
+                logger = logging.getLogger()
+                logger.error("No disparity mask given in input")
+                raise Exception("No disparity mask given in input")
+
+            if ul_matches_shift is None:
+                ul_matches_shift = (0, 0)
+
             # convert disparity to matches
-            epi_pos_left_x, epi_pos_left_y = np.meshgrid(
-                matches.col, matches.row
-            )
+            epi_pos_left_y, epi_pos_left_x = np.mgrid[
+                ul_matches_shift[0] : ul_matches_shift[0] + matches.shape[0],
+                ul_matches_shift[1] : ul_matches_shift[1] + matches.shape[1],
+            ]
+
             epi_pos_left_x = epi_pos_left_x.astype(np.float64)
             epi_pos_left_y = epi_pos_left_y.astype(np.float64)
-            disp_map = matches[cst.DISP_MAP].values
-            disp_msk = matches[cst.DISP_MSK].values
             epi_pos_right_y = np.copy(epi_pos_left_y)
             epi_pos_right_x = np.copy(epi_pos_left_x)
-            epi_pos_right_x[np.where(disp_msk == 255)] += disp_map[
-                np.where(disp_msk == 255)
+            epi_pos_right_x[np.where(matches_msk == 255)] += matches[
+                np.where(matches_msk == 255)
             ]
 
             # vectorize matches
@@ -232,25 +250,27 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         if matches_type == cst.DISP_MODE:
             # rearrange matches in the original epipolar geometry
-            disp_msk = matches[cst.DISP_MSK].values
+            sensor_pos_left_x = sensor_pos_left[:, 0].reshape(matches_msk.shape)
+            sensor_pos_left_x[np.where(matches_msk != 255)] = np.nan
+            sensor_pos_left_y = sensor_pos_left[:, 1].reshape(matches_msk.shape)
+            sensor_pos_left_y[np.where(matches_msk != 255)] = np.nan
 
-            sensor_pos_left_x = sensor_pos_left[:, 0].reshape(disp_msk.shape)
-            sensor_pos_left_x[np.where(disp_msk != 255)] = np.nan
-            sensor_pos_left_y = sensor_pos_left[:, 1].reshape(disp_msk.shape)
-            sensor_pos_left_y[np.where(disp_msk != 255)] = np.nan
-
-            sensor_pos_right_x = sensor_pos_right[:, 0].reshape(disp_msk.shape)
-            sensor_pos_right_x[np.where(disp_msk != 255)] = np.nan
-            sensor_pos_right_y = sensor_pos_right[:, 1].reshape(disp_msk.shape)
-            sensor_pos_right_y[np.where(disp_msk != 255)] = np.nan
+            sensor_pos_right_x = sensor_pos_right[:, 0].reshape(
+                matches_msk.shape
+            )
+            sensor_pos_right_x[np.where(matches_msk != 255)] = np.nan
+            sensor_pos_right_y = sensor_pos_right[:, 1].reshape(
+                matches_msk.shape
+            )
+            sensor_pos_right_y[np.where(matches_msk != 255)] = np.nan
 
             sensor_pos_left = np.zeros(
-                (disp_msk.shape[0], disp_msk.shape[1], 2)
+                (matches_msk.shape[0], matches_msk.shape[1], 2)
             )
             sensor_pos_left[:, :, 0] = sensor_pos_left_x
             sensor_pos_left[:, :, 1] = sensor_pos_left_y
             sensor_pos_right = np.zeros(
-                (disp_msk.shape[0], disp_msk.shape[1], 2)
+                (matches_msk.shape[0], matches_msk.shape[1], 2)
             )
             sensor_pos_right[:, :, 0] = sensor_pos_right_x
             sensor_pos_right[:, :, 1] = sensor_pos_right_y
@@ -324,3 +344,49 @@ class AbstractGeometry(metaclass=ABCMeta):
         # stack both coordinates
         sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
         return sensor_positions
+
+
+def read_geoid_file(geoid_path: str) -> xr.Dataset:
+    """
+    Read geoid height from the given path
+    Geoid is defined in the static configuration.
+
+    Geoid is returned as an xarray.Dataset and height is stored in the `hgt`
+    variable, which is indexed by `lat` and `lon` coordinates. Dataset
+    attributes contain geoid bounds geodetic coordinates and
+    latitude/longitude step spacing.
+
+    :return: the geoid height array in meter.
+    """
+    with open(geoid_path, mode="rb") as in_grd:  # reading binary data
+        # first header part, 4 float of 4 bytes -> 16 bytes to read
+        # Endianness seems to be Big-Endian.
+        lat_min, lat_max, lon_min, lon_max = struct.unpack(
+            ">ffff", in_grd.read(16)
+        )
+        lat_step, lon_step = struct.unpack(">ff", in_grd.read(8))
+
+        n_lats = int(np.ceil((lat_max - lat_min)) / lat_step) + 1
+        n_lons = int(np.ceil((lon_max - lon_min)) / lon_step) + 1
+
+        # read height grid.
+        geoid_height = np.fromfile(in_grd, ">f4").reshape(n_lats, n_lons)
+
+        # create output Dataset
+        geoid = xr.Dataset(
+            {"hgt": (("lat", "lon"), geoid_height)},
+            coords={
+                "lat": np.linspace(lat_max, lat_min, n_lats),
+                "lon": np.linspace(lon_min, lon_max, n_lons),
+            },
+            attrs={
+                "lat_min": lat_min,
+                "lat_max": lat_max,
+                "lon_min": lon_min,
+                "lon_max": lon_max,
+                "d_lat": lat_step,
+                "d_lon": lon_step,
+            },
+        )
+
+        return geoid
