@@ -210,7 +210,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "--loglevel",
         default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO. Should be one of "
+        help="Logger level (default: WARNING. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
@@ -387,7 +387,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "--loglevel",
         default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO. Should be one of "
+        help="Logger level (default: WARNING. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
