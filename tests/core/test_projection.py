@@ -35,9 +35,8 @@ import pytest
 from shapely.affinity import translate
 from shapely.geometry import Polygon
 
-from cars.conf import input_parameters
-
 # CARS imports
+from cars.conf import input_parameters
 from cars.core import inputs, projection
 
 # CARS Tests imports

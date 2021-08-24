@@ -35,6 +35,7 @@ import rasterio as rio
 # CARS imports
 from cars.conf import input_parameters, static_conf
 from cars.core.geometry import AbstractGeometry
+from cars.core.inputs import read_vector
 
 # CARS Tests imports
 from ...helpers import absolute_data_path, temporary_dir
@@ -433,17 +434,48 @@ def test_image_envelope():
     conf = {input_parameters.IMG1_TAG: img}
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry"
+        )
+    )
+
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
-        geo_loader = (
-            AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                "OTBGeometry"
-            )
-        )
         geo_loader.image_envelope(conf, input_parameters.PRODUCT1_KEY, shp, dem)
 
         assert os.path.isfile(shp)
+
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
+
+    # test image_envelope function defined in AbstractGeometry using the
+    # OTBGeometry direct_loc
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.shp")
+        super(type(geo_loader), geo_loader).image_envelope(
+            conf, input_parameters.PRODUCT1_KEY, shp, dem
+        )
+
+        assert os.path.isfile(shp)
+
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406105041504, 44.20805740356445),
+            (5.1965651512146, 44.20809555053711),
+            (5.196654319763184, 44.205902099609375),
+            (5.193485260009766, 44.205841064453125),
+            (5.193406105041504, 44.20805740356445),
+        ]
 
 
 @pytest.mark.unit_tests

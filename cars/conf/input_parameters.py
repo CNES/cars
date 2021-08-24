@@ -21,9 +21,8 @@
 """
 This input module refers to parameters and configuration inputs
 """
-import json
-
 # Standard imports
+import json
 import logging
 import os
 from typing import Dict, Union

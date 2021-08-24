@@ -23,10 +23,9 @@ Devib module:
 contains functions for DEM devibration step in prepare and compute_dsm pipeline.
 """
 
+# Standard imports
 import logging
 import math
-
-# Standard imports
 from typing import Tuple
 
 # Third party imports

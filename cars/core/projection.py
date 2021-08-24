@@ -41,9 +41,8 @@ from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
 
-from cars.conf import input_parameters, static_conf
-
 # CARS imports
+from cars.conf import input_parameters, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
 
