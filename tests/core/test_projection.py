@@ -36,7 +36,7 @@ from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 # CARS imports
-from cars.conf import input_parameters
+from cars.conf import input_parameters, static_conf
 from cars.core import inputs, projection
 
 # CARS Tests imports
@@ -255,13 +255,6 @@ def test_get_time_ground_direction():
     """
     Test the get_time_ground_direction
     """
-    # Bug OTB elevation: ref1 when launch standalone
-    ref1_vec_0 = -0.03747366058909428
-    ref1_vec_1 = 0.9992976157091807
-    # Bug OTB elevation: ref2 when all unit_tests launched (otb apps before)
-    ref2_vec_0 = -0.03760314420222626
-    ref2_vec_1 = 0.9992927516729553
-
     # Force use of DEM if test is ran standalone
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
@@ -271,12 +264,21 @@ def test_get_time_ground_direction():
             input_parameters.PRODUCT1_KEY
         ): img
     }
-    vec = projection.get_time_ground_direction(
-        conf, input_parameters.PRODUCT1_KEY, dem=dem
-    )
 
-    assert vec[0] == ref1_vec_0 or ref2_vec_0
-    assert vec[1] == ref1_vec_1 or ref2_vec_1
+    vec = projection.get_time_ground_direction(
+        conf, input_parameters.PRODUCT1_KEY, geoid=static_conf.get_geoid_path()
+    )
+    assert vec[0] == -0.02356248001209794
+    assert vec[1] == 0.999722366227584
+
+    vec = projection.get_time_ground_direction(
+        conf,
+        input_parameters.PRODUCT1_KEY,
+        dem=dem,
+        geoid=static_conf.get_geoid_path(),
+    )
+    assert vec[0] == -0.03760314420222626
+    assert vec[1] == 0.9992927516729553
 
 
 @pytest.mark.unit_tests

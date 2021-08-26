@@ -68,22 +68,6 @@ def get_geoid_path():
     return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
 
 
-def otb_geoid_file_set():
-    """
-    Set global environment variable OTB_GEOID_FILE
-    """
-    # Set the geoid file from code source
-    # Change with packaging reorganization
-    os.environ["OTB_GEOID_FILE"] = os.path.join(get_geoid_path())
-
-
-def otb_geoid_file_unset():
-    """
-    Unset global environment variable OTB_GEOID_FILE
-    """
-    del os.environ["OTB_GEOID_FILE"]
-
-
 def temporary_dir():
     """
     Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment

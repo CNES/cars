@@ -214,7 +214,6 @@ def set_env():
     """
     Set CARS needed global environment variables :
     - CARS_STATIC_CONFIGURATION : path of json CARS static configuration file
-    - OTB_GEOID_FILE : path to the GEOID file.
 
     By default, deployed by cars.
     But can be defined externally by user.

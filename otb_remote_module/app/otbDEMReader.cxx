@@ -82,7 +82,7 @@ private:
   }
 
   void DoExecute()
-  {  
+  {
     auto output = FloatImageType::New();
     FloatImageType::SizeType size;
     size[0] = this->GetParameterInt("sizex");

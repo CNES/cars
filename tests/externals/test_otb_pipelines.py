@@ -33,12 +33,7 @@ import xarray as xr
 from cars.externals import otb_pipelines
 
 # CARS Tests imports
-from ..helpers import (
-    absolute_data_path,
-    assert_same_datasets,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-)
+from ..helpers import absolute_data_path, assert_same_datasets, get_geoid_path
 
 
 @pytest.mark.unit_tests
@@ -110,15 +105,9 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
     srtm_ds = otb_pipelines.read_lowres_dem(
-        startx, starty, sizex, sizey, dem=dem
+        startx, starty, sizex, sizey, dem=dem, geoid=get_geoid_path()
     )
-
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
 
     # Uncomment to update baseline
     # srtm_ds.to_netcdf(absolute_data_path("ref_output/srtm_xt.nc"))

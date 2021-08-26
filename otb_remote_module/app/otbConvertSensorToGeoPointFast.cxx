@@ -121,6 +121,10 @@ private:
 
   void DoUpdateParameters() override
   {
+    // Clear and reset the DEM Handler
+    otb::DEMHandler::Instance()->ClearDEMs();
+    otb::Wrapper::ElevationParametersHandler::SetupDEMHandlerFromElevationParameters(this, "elevation");
+
   }
 
   void DoExecute() override

@@ -305,7 +305,6 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
         "CARS_STATIC_CONFIGURATION",
         "LD_LIBRARY_PATH",
         "OTB_APPLICATION_PATH",
-        "OTB_GEOID_FILE",
         "OMP_NUM_THREADS",
         "NUMBA_NUM_THREADS",
         "OPJ_NUM_THREADS",

@@ -23,9 +23,3 @@ This file enables to customize the parameters of the following algorithms:
 * the geoid to use in CARS (optional). The user can choose to use CARS internal geoid file by setting `use_cars_geoid` to true or provides his own geoid via the `geoid_path` key. To not use any geoid file, the user have to set `use_cars_geoid` to false and fix the `geoid_path` to `None` or not set it at all.
 
 This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
-
-Geoid Configuration
-===================
-
-A default geoid file is installed with CARS and ``OTB_GEOID_FILE`` environment variable is automatically set.
-It is possible to use another geoid by changing the location of the geoid file in ``OTB_GEOID_FILE``

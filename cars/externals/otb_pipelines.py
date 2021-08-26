@@ -28,6 +28,8 @@ Refacto: Split function in generic externals calls through functional steps
 # Standard imports
 from __future__ import absolute_import
 
+import logging
+import os
 from typing import List
 
 # Third party imports
@@ -256,6 +258,7 @@ def read_lowres_dem(
     sizey,
     dem=None,
     default_alt=None,
+    geoid=None,
     resolution=0.000277777777778,
 ):
     """
@@ -274,12 +277,24 @@ def read_lowres_dem(
     :type dem: string
     :param default_alt: Default altitude above ellipsoid
     :type default_alt: float
+    :param geoid: path to geoid file
+    :type geoid: str
     :param resolution: Resolution (in degrees) of output raster
     :type resolution: float
     :return: The extract of the lowres DEM as an xarray.Dataset
     :rtype: xarray.Dataset
     """
+    # save os env
+    env_save = os.environ.copy()
 
+    if "OTB_GEOID_FILE" in os.environ:
+        logging.warning(
+            "The OTB_GEOID_FILE environment variable is set by the user,"
+            " it might disturbed the read_lowres_dem function geoid management"
+        )
+        del os.environ["OTB_GEOID_FILE"]
+
+    # create OTB application
     app = otbApplication.Registry.CreateApplication("DEMReader")
 
     if dem is not None:
@@ -287,6 +302,9 @@ def read_lowres_dem(
 
     if default_alt is not None:
         app.SetParameterFloat("elev.default", default_alt)
+
+    if geoid is not None:
+        app.SetParameterString("elev.geoid", geoid)
 
     app.SetParameterFloat("originx", startx)
     app.SetParameterFloat("originy", starty)
@@ -317,6 +335,10 @@ def read_lowres_dem(
     )
     dsm_as_ds[cst.EPSG] = 4326
     dsm_as_ds[cst.RESOLUTION] = resolution
+
+    # restore environment variables
+    if "OTB_GEOID_FILE" in env_save.keys():
+        os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
 
     return dsm_as_ds
 

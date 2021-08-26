@@ -824,6 +824,7 @@ def run(  # noqa: C901
         sizey=lowres_dsm_sizey,
         dem=srtm_dir,
         default_alt=default_alt,
+        geoid=static_conf.get_geoid_path(),
         resolution=lowres_dsm_resolution,
     )
     lowres_initial_dem_file = os.path.join(out_dir, "lowres_initial_dem.nc")

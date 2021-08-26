@@ -275,6 +275,13 @@ class OTBGeometry(AbstractGeometry):
         # save os env
         env_save = os.environ.copy()
 
+        if "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "The OTB_GEOID_FILE environment variable is set by the user,"
+                " it might disturbed the OTBGeometry geoid management"
+            )
+            del os.environ["OTB_GEOID_FILE"]
+
         # create OTB application
         img1 = cars_conf[input_parameters.IMG1_TAG]
         img2 = cars_conf[input_parameters.IMG2_TAG]
@@ -292,18 +299,6 @@ class OTBGeometry(AbstractGeometry):
             stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
         if geoid is not None:
             stereo_app.SetParameterString("epi.elevation.geoid", geoid)
-            # set OTB_GEOID_FILE environment variable to the geoid path to
-            # handle OTB internal geoid management
-            os.environ["OTB_GEOID_FILE"] = geoid
-        elif "OTB_GEOID_FILE" in os.environ:
-            logging.warning(
-                "No geoid file given in input of "
-                "the generate_epipolar_grids function but "
-                "OTB_GEOID_FILE is set in the os environment. "
-                "OTB_GEOID_FILE will not be used to generate "
-                "the grids."
-            )
-            del os.environ["OTB_GEOID_FILE"]
 
         stereo_app.Execute()
 
@@ -344,8 +339,6 @@ class OTBGeometry(AbstractGeometry):
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
-        elif geoid is not None:
-            del os.environ["OTB_GEOID_FILE"]
 
         return (
             left_grid_as_array,
@@ -392,6 +385,13 @@ class OTBGeometry(AbstractGeometry):
         # save os env
         env_save = os.environ.copy()
 
+        if "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "The OTB_GEOID_FILE environment variable is set by the user,"
+                " it might disturbed the OTBGeometry geoid management"
+            )
+            del os.environ["OTB_GEOID_FILE"]
+
         # create OTB application
         img = conf[
             input_parameters.create_img_tag_from_product_key(product_key)
@@ -411,22 +411,9 @@ class OTBGeometry(AbstractGeometry):
             s2c_app.SetParameterString("elevation.dem", dem)
         if geoid is not None:
             s2c_app.SetParameterString("elevation.geoid", geoid)
-            # set OTB_GEOID_FILE environment variable to the geoid path to
-            # handle OTB internal geoid management
-            os.environ["OTB_GEOID_FILE"] = geoid
-        elif "OTB_GEOID_FILE" in os.environ:
-            logging.warning(
-                "No geoid file given in input of "
-                "the generate_epipolar_grids function but "
-                "OTB_GEOID_FILE is set in the os environment. "
-                "OTB_GEOID_FILE will not be used to generate "
-                "the grids."
-            )
-            del os.environ["OTB_GEOID_FILE"]
         if default_elevation is not None:
             s2c_app.SetParameterFloat("elevation.default", default_elevation)
         # else ConvertSensorToGeoPointFast have only X, Y and OTB
-        # configured GEOID
 
         s2c_app.Execute()
 
@@ -437,8 +424,6 @@ class OTBGeometry(AbstractGeometry):
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
-        elif geoid is not None:
-            del os.environ["OTB_GEOID_FILE"]
 
         return np.array([lat, lon, alt])
 
@@ -466,6 +451,13 @@ class OTBGeometry(AbstractGeometry):
         # save os env
         env_save = os.environ.copy()
 
+        if "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "The OTB_GEOID_FILE environment variable is set by the user,"
+                " it might disturbed the OTBGeometry geoid management"
+            )
+            del os.environ["OTB_GEOID_FILE"]
+
         # create OTB application
         img = conf[
             input_parameters.create_img_tag_from_product_key(product_key)
@@ -486,18 +478,6 @@ class OTBGeometry(AbstractGeometry):
 
         if geoid is not None:
             app.SetParameterString("elev.geoid", geoid)
-            # set OTB_GEOID_FILE environment variable to the geoid path to
-            # handle OTB internal geoid management
-            os.environ["OTB_GEOID_FILE"] = geoid
-        elif "OTB_GEOID_FILE" in os.environ:
-            logging.warning(
-                "No geoid file given in input of "
-                "the generate_epipolar_grids function but "
-                "OTB_GEOID_FILE is set in the os environment. "
-                "OTB_GEOID_FILE will not be used to generate "
-                "the grids."
-            )
-            del os.environ["OTB_GEOID_FILE"]
 
         app.SetParameterString("out", shp)
         app.ExecuteAndWriteOutput()
@@ -505,5 +485,3 @@ class OTBGeometry(AbstractGeometry):
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
-        elif geoid is not None:
-            del os.environ["OTB_GEOID_FILE"]

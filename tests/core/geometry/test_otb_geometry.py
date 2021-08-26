@@ -86,6 +86,7 @@ def test_generate_epipolar_grids():
         )
     )
 
+    # test with geoid
     (
         left_grid_as_array,
         right_grid_as_array,
@@ -106,7 +107,8 @@ def test_generate_epipolar_grids():
     assert np.isclose(disp_to_alt_ratio, 1 / 0.7, 0.01)
 
     # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/left_grid.npy"), left_grid_np)
+    # np.save(absolute_data_path("ref_output/left_grid.npy"),
+    #         left_grid_as_array)
 
     left_grid_np_reference = np.load(
         absolute_data_path("ref_output/left_grid.npy")
@@ -116,10 +118,53 @@ def test_generate_epipolar_grids():
     assert right_grid_as_array.shape == (15, 15, 2)
 
     # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/right_grid.npy"), right_grid_np)
+    # np.save(absolute_data_path("ref_output/right_grid.npy"),
+    #         right_grid_as_array)
 
     right_grid_np_reference = np.load(
         absolute_data_path("ref_output/right_grid.npy")
+    )
+    np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
+
+    # test without geoid
+    (
+        left_grid_as_array,
+        right_grid_as_array,
+        origin,
+        spacing,
+        epipolar_size,
+        disp_to_alt_ratio,
+    ) = geo_loader.generate_epipolar_grids(
+        conf,
+        dem,
+        epipolar_step=step,
+    )
+
+    assert epipolar_size == [612, 612]
+    assert left_grid_as_array.shape == (15, 15, 2)
+    assert origin[0] == 0
+    assert origin[1] == 0
+    assert spacing[0] == step
+    assert spacing[1] == step
+    assert np.isclose(disp_to_alt_ratio, 1 / 0.7, 0.01)
+
+    # Uncomment to update baseline
+    # np.save(absolute_data_path("ref_output/left_grid_no_geoid.npy"),
+    #         left_grid_as_array)
+
+    left_grid_np_reference = np.load(
+        absolute_data_path("ref_output/left_grid_no_geoid.npy")
+    )
+    np.testing.assert_allclose(left_grid_as_array, left_grid_np_reference)
+
+    assert right_grid_as_array.shape == (15, 15, 2)
+
+    # Uncomment to update baseline
+    # np.save(absolute_data_path("ref_output/right_grid_no_geoid.npy"),
+    #         right_grid_as_array)
+
+    right_grid_np_reference = np.load(
+        absolute_data_path("ref_output/right_grid_no_geoid.npy")
     )
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
@@ -443,10 +488,57 @@ def test_image_envelope():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
-        geo_loader.image_envelope(conf, input_parameters.PRODUCT1_KEY, shp, dem)
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+        )
 
         assert os.path.isfile(shp)
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
 
+    # test with dem
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            dem,
+        )
+
+        assert os.path.isfile(shp)
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
+
+    # test with geoid
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            geoid=static_conf.get_geoid_path(),
+        )
+
+        assert os.path.isfile(shp)
         poly, epsg = read_vector(shp)
         assert epsg == 4326
         assert list(poly.exterior.coords) == [
@@ -459,10 +551,15 @@ def test_image_envelope():
 
     # test image_envelope function defined in AbstractGeometry using the
     # OTBGeometry direct_loc
+
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.shp")
         super(type(geo_loader), geo_loader).image_envelope(
-            conf, input_parameters.PRODUCT1_KEY, shp, dem
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            dem,
+            geoid=static_conf.get_geoid_path(),
         )
 
         assert os.path.isfile(shp)
