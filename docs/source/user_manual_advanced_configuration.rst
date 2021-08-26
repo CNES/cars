@@ -19,7 +19,8 @@ This file enables to customize the parameters of the following algorithms:
 * the epipolar tiling configuration
 * the grid divider factor of the rasterization step (to accelerate the neighbors searching using kd-tree)
 * the output color image format
-* the geometry module to use (fixed to internal `OTBGeometry`)
+* the geometry loader to use (fixed to internal `OTBGeometry`)
+* the geoid to use in CARS (optional). The user can choose to use CARS internal geoid file by setting `use_cars_geoid` to true or provides his own geoid via the `geoid_path` key. To not use any geoid file, the user have to set `use_cars_geoid` to false and fix the `geoid_path` to `None` or not set it at all.
 
 This file can be copied and changed with the ``CARS_STATIC_CONFIGURATION`` environment variable, which represents the full path of the changed file.
 

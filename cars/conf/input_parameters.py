@@ -58,6 +58,8 @@ def read_input_parameters(filename):
         for tag in [
             IMG1_TAG,
             IMG2_TAG,
+            MODEL1_TAG,
+            MODEL2_TAG,
             MASK1_TAG,
             MASK2_TAG,
             MASK1_CLASSES_TAG,
@@ -74,6 +76,9 @@ def read_input_parameters(filename):
 INPUT_SECTION_TAG = "input"
 IMG1_TAG = "img1"
 IMG2_TAG = "img2"
+MODEL1_TAG = "model1"
+MODEL2_TAG = "model2"
+MODEL_TYPE_TAG = "model_type"
 SRTM_DIR_TAG = "srtm_dir"
 COLOR1_TAG = "color1"
 MASK1_TAG = "mask1"

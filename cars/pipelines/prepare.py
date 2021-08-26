@@ -50,7 +50,13 @@ from cars.cluster.dask_mode import (
     stop_cluster,
 )
 from cars.conf import input_parameters as in_params
-from cars.conf import log_conf, mask_classes, output_prepare, static_conf
+from cars.conf import (
+    json_schema,
+    log_conf,
+    mask_classes,
+    output_prepare,
+    static_conf,
+)
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling
 from cars.externals import otb_pipelines
@@ -131,7 +137,7 @@ def run(  # noqa: C901
         )
 
     # Check configuration dict
-    config = inputs.check_json(in_json, in_params.INPUT_CONFIGURATION_SCHEMA)
+    config = inputs.check_json(in_json, json_schema.input_conf_schema())
 
     # Retrieve static parameters (sift and low res dsm)
     static_params = static_conf.get_cfg()
@@ -158,7 +164,8 @@ def run(  # noqa: C901
             },
             in_params.STATIC_PARAMS_TAG: {
                 static_conf.prepare_tag: static_params[static_conf.prepare_tag],
-                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+                static_conf.loaders_tag: static_params[static_conf.loaders_tag],
+                static_conf.geoid_path_tag: static_conf.get_geoid_path(),
             },
             output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG: {},
         },
@@ -250,16 +257,6 @@ def run(  # noqa: C901
                     "do not have the same size".format(img2, mask2)
                 )
 
-        if not inputs.otb_can_open(img1):
-            raise Exception(
-                "Problem while opening image {} with the otb".format(img1)
-            )
-
-        if not inputs.otb_can_open(img2):
-            raise Exception(
-                "Problem while opening image {} with the otb".format(img1)
-            )
-
         with rio.open(img1) as img1_reader:
             trans = img1_reader.transform
             if trans.e < 0:
@@ -275,6 +272,10 @@ def run(  # noqa: C901
                     "{} seems to have an incoherent pixel size. "
                     "Input images has to be in sensor geometry.".format(img2)
                 )
+
+    # Check geometric models consistency
+    if not static_conf.get_geometry_loader().check_products_consistency(config):
+        raise Exception("Problem while reading the geometric models")
 
     # Check that the envelopes intersect one another
     logging.info("Computing images envelopes and their intersection")
@@ -337,11 +338,11 @@ def run(  # noqa: C901
         epipolar_size,
         disp_to_alt_ratio,
     ) = grids.generate_epipolar_grids(
-        img1,
-        img2,
+        config,
         dem=srtm_dir,
         default_alt=default_alt,
         epipolar_step=epi_step,
+        geoid=static_conf.get_geoid_path(),
     )
 
     out_json[output_prepare.PREPROCESSING_SECTION_TAG][

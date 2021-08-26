@@ -65,6 +65,7 @@ from cars.conf import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, outputs, projection, tiling, utils
+from cars.core.geometry import read_geoid_file
 from cars.externals import otb_pipelines
 from cars.pipelines import wrappers, write_dsm
 from cars.steps import rasterization
@@ -351,7 +352,8 @@ def run(  # noqa: C901
                 static_conf.compute_dsm_tag: static_params[
                     static_conf.compute_dsm_tag
                 ],
-                static_conf.plugins_tag: static_params[static_conf.plugins_tag],
+                static_conf.loaders_tag: static_params[static_conf.loaders_tag],
+                static_conf.geoid_path_tag: static_conf.get_geoid_path(),
             },
             output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG: {
                 output_compute_dsm.ALIGN_OPTION: align,
@@ -361,10 +363,17 @@ def run(  # noqa: C901
     }
 
     if use_geoid_alt:
-        geoid_data = inputs.read_geoid_file()
-        out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
-            output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG
-        ][output_compute_dsm.ALT_REFERENCE_TAG] = "geoid"
+        geoid_path = static_conf.get_geoid_path()
+        if geoid_path is None:
+            logging.error(
+                "use_geoid_alt option is activated but no geoid file "
+                "has been defined in the static configuration"
+            )
+        else:
+            geoid_data = read_geoid_file(geoid_path)
+            out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][
+                output_compute_dsm.COMPUTE_DSM_OUTPUT_SECTION_TAG
+            ][output_compute_dsm.ALT_REFERENCE_TAG] = "geoid"
     else:
         geoid_data = None
         out_json[output_compute_dsm.COMPUTE_DSM_SECTION_TAG][

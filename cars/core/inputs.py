@@ -25,20 +25,15 @@ contains some CARS global shared general purpose inputs functions
 
 # Standard imports
 import logging
-import os
-import struct
 import warnings
 from typing import Tuple
 
 # Third party imports
 import fiona
-import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
 from shapely.geometry import shape
-
-from cars.externals.otb_pipelines import read_image
 
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
@@ -78,59 +73,6 @@ def read_vector(path_to_file):
 
     logging.info("No feature is present in the {} file".format(path_to_file))
     return None
-
-
-def read_geoid_file():
-    """
-    Read geoid height from OTB geoid file
-    Geoid is defined by the $OTB_GEOID_FILE global environement variable.
-
-    A default CARS geoid is deployed in setup.py and
-    configured in conf/static_conf.py
-
-    Geoid is returned as an xarray.Dataset and height is stored in the `hgt`
-    variable, which is indexed by `lat` and `lon` coordinates. Dataset
-    attributes contain geoid bounds geodetic coordinates and
-    latitude/longitude step spacing.
-
-    :return: the geoid height array in meter.
-    :rtype: xarray.Dataset
-    """
-    # Set geoid path from OTB_GEOID_FILE
-    geoid_path = os.environ.get("OTB_GEOID_FILE")
-
-    with open(geoid_path, mode="rb") as in_grd:  # reading binary data
-        # first header part, 4 float of 4 bytes -> 16 bytes to read
-        # Endianness seems to be Big-Endian.
-        lat_min, lat_max, lon_min, lon_max = struct.unpack(
-            ">ffff", in_grd.read(16)
-        )
-        lat_step, lon_step = struct.unpack(">ff", in_grd.read(8))
-
-        n_lats = int(np.ceil((lat_max - lat_min)) / lat_step) + 1
-        n_lons = int(np.ceil((lon_max - lon_min)) / lon_step) + 1
-
-        # read height grid.
-        geoid_height = np.fromfile(in_grd, ">f4").reshape(n_lats, n_lons)
-
-        # create output Dataset
-        geoid = xr.Dataset(
-            {"hgt": (("lat", "lon"), geoid_height)},
-            coords={
-                "lat": np.linspace(lat_max, lat_min, n_lats),
-                "lon": np.linspace(lon_min, lon_max, n_lons),
-            },
-            attrs={
-                "lat_min": lat_min,
-                "lat_max": lat_max,
-                "lon_min": lon_min,
-                "lon_max": lon_max,
-                "d_lat": lat_step,
-                "d_lon": lon_step,
-            },
-        )
-
-        return geoid
 
 
 def rasterio_get_nb_bands(raster_file: str) -> int:
@@ -190,65 +132,6 @@ def ncdf_can_open(file_path):
             )
         )
         return False
-
-
-def otb_can_open(raster_file: str) -> bool:
-    """
-    Test if file can be open by otb
-    and that it has a correct geom file associated
-
-    :param raster_file: filename
-    :return: True if the file can be used with the otb, False otherwise
-    """
-    can_open_status = False
-    try:
-        geom_path = "./otb_can_open_test.geom"
-        read_image(raster_file, geom_path)
-        if os.path.exists(geom_path):
-            with open(geom_path) as geom_file_desc:
-                geom_dict = {}
-                for line in geom_file_desc:
-                    key, val = line.split(": ")
-                    geom_dict[key] = val
-                # pylint: disable=too-many-boolean-expressions
-                if (
-                    "line_den_coeff_00" not in geom_dict
-                    or "samp_den_coeff_00" not in geom_dict
-                    or "line_num_coeff_00" not in geom_dict
-                    or "samp_num_coeff_00" not in geom_dict
-                    or "line_off" not in geom_dict
-                    or "line_scale" not in geom_dict
-                    or "samp_off" not in geom_dict
-                    or "samp_scale" not in geom_dict
-                    or "lat_off" not in geom_dict
-                    or "lat_scale" not in geom_dict
-                    or "long_off" not in geom_dict
-                    or "long_scale" not in geom_dict
-                    or "height_off" not in geom_dict
-                    or "height_scale" not in geom_dict
-                    or "polynomial_format" not in geom_dict
-                ):
-                    logging.warning(
-                        "No RPC model set for image {}".format(geom_file_desc)
-                    )
-                    can_open_status = False
-
-            os.remove("./otb_can_open_test.geom")
-            can_open_status = True
-        else:
-            logging.warning(
-                "{} does not have associated geom file".format(raster_file)
-            )
-            can_open_status = False
-    except Exception as read_error:
-        logging.warning(
-            "Exception caught while trying to read file {}: {}".format(
-                raster_file, read_error
-            )
-        )
-        can_open_status = False
-
-    return can_open_status
 
 
 def check_json(conf, schema):

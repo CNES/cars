@@ -34,7 +34,7 @@ Prepare pipeline
 ================
 
 Each stereo images pair is pre-processed independently via prepare pipeline. Each pipeline execution generates refined epipolar resampling grids and an estimation of the disparity range to calibrate the heavy intensive computing part.
-This pipeline process uses an approximate geoid (typically SRTM).
+This pipeline process uses an approximated dem (typically SRTM).
 As shown in the figure above, the workflow is organized in sequential steps from input pairs (and metadata) to output data, except for the computation of sparse matches (performed tile-wise and distributed among Dask workers).
 
 The prepare part will perform the following steps:

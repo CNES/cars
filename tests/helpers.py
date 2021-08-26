@@ -64,15 +64,17 @@ def absolute_data_path(data_path):
     return os.path.join(data_folder, data_path)
 
 
+def get_geoid_path():
+    return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
+
+
 def otb_geoid_file_set():
     """
     Set global environment variable OTB_GEOID_FILE
     """
     # Set the geoid file from code source
     # Change with packaging reorganization
-    os.environ["OTB_GEOID_FILE"] = os.path.join(
-        cars_path(), "cars/conf/geoid/egm96.grd"
-    )
+    os.environ["OTB_GEOID_FILE"] = os.path.join(get_geoid_path())
 
 
 def otb_geoid_file_unset():

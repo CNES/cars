@@ -32,15 +32,12 @@ import rasterio as rio
 import xarray as xr
 
 # CARS imports
+from cars.conf import input_parameters, static_conf
 from cars.steps.epi_rectif import grids
 from cars.steps.matching import sparse_matching
 
 # CARS Tests imports
-from ...helpers import (
-    absolute_data_path,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-)
+from ...helpers import absolute_data_path
 
 
 @pytest.mark.unit_tests
@@ -132,13 +129,16 @@ def test_generate_epipolar_grids_default_alt():
     """
     Test generate_epipolar_grids method with default alt and no dem
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = None
     default_alt = 500
-
-    # Set the geoid file from code source
-    otb_geoid_file_set()
 
     (
         left_grid,
@@ -148,10 +148,12 @@ def test_generate_epipolar_grids_default_alt():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        img1, img2, dem, default_alt, epipolar_step=30
+        conf,
+        dem,
+        default_alt,
+        epipolar_step=30,
+        geoid=static_conf.get_geoid_path(),
     )
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
 
     assert epi_size == [612, 612]
     assert baseline == 1 / 0.7039446234703064
@@ -182,12 +184,15 @@ def test_generate_epipolar_grids():
     """
     Test generate_epipolar_grids method
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    # Set the geoid file from code source
-    otb_geoid_file_set()
 
     (
         left_grid,
@@ -197,11 +202,12 @@ def test_generate_epipolar_grids():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        img1, img2, dem, default_alt=None, epipolar_step=30
+        conf,
+        dem,
+        default_alt=None,
+        epipolar_step=30,
+        geoid=static_conf.get_geoid_path(),
     )
-
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
 
     assert epi_size == [612, 612]
     assert baseline == 1 / 0.7039416432380676

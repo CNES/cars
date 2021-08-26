@@ -182,7 +182,8 @@ COMPUTE_DSM_CONTENT_SCHEMA = {
         # fmt: off
         input_parameters.STATIC_PARAMS_TAG: {
             static_conf.compute_dsm_tag: static_conf.compute_dsm_params_schema,
-            static_conf.plugins_tag: static_conf.plugins_schema,
+            static_conf.loaders_tag: static_conf.loaders_schema,
+            static_conf.geoid_path_tag: Or(str, None),
         },
         # fmt: on
         COMPUTE_DSM_OUTPUT_SECTION_TAG: COMPUTE_DSM_OUTPUT_SCHEMA,

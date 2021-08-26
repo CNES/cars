@@ -22,16 +22,21 @@
 this module contains the otb geometry class
 """
 import logging
+import os
 from typing import List, Tuple, Union
 
 import numpy as np
 import otbApplication
 import rasterio as rio
 import xarray as xr
+from json_checker import And
 
+from cars.conf import input_parameters
 from cars.core import constants as cst
+from cars.core import inputs
 from cars.core.geometry import AbstractGeometry
 from cars.core.otb_adapters import encode_to_otb
+from cars.core.utils import get_elevation_range_from_metadata
 
 
 @AbstractGeometry.register_subclass("OTBGeometry")
@@ -43,38 +48,143 @@ class OTBGeometry(AbstractGeometry):
     # TODO: remove the hard-coded import in the steps/__init__.py if this class
     # is removed from CARS
 
+    @property
+    def conf_schema(self):
+        """
+        Returns the input configuration fields required by the geometry loader
+        as a json checker schema. The available fields are defined in the
+        cars/conf/input_parameters.py file
+
+        :return: the geo configuration schema
+        """
+
+        geo_conf_schema = {
+            input_parameters.IMG1_TAG: And(str, inputs.rasterio_can_open),
+            input_parameters.IMG2_TAG: And(str, inputs.rasterio_can_open),
+        }
+
+        return geo_conf_schema
+
+    @staticmethod
+    def check_products_consistency(cars_conf) -> bool:
+        """
+        Test if the product is readable by the OTB
+
+        :param: cars_conf: cars input configuration dictionary
+        :return: True if the products are readable, False otherwise
+        """
+        # get images paths
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
+
+        # test if both images have associated RPC
+        status = False
+        if OTBGeometry.check_geom_consistency(
+            img1
+        ) and OTBGeometry.check_geom_consistency(img2):
+            status = True
+
+        return status
+
+    @staticmethod
+    def check_geom_consistency(img: str) -> bool:
+        """
+        Check if the image have RPC information readable by the OTB
+
+        :param img: path to the image
+        :return: True if the RPC are readable, False otherwise
+        """
+        can_open_status = False
+        try:
+            geom_path = "./otb_can_open_test.geom"
+
+            # try to dump .geom with ReadImageInfo app
+            read_im_app = otbApplication.Registry.CreateApplication(
+                "ReadImageInfo"
+            )
+            read_im_app.SetParameterString("in", img)
+            read_im_app.SetParameterString("outkwl", geom_path)
+
+            read_im_app.ExecuteAndWriteOutput()
+
+            # check geom consistency
+            if os.path.exists(geom_path):
+                can_open_status = True
+
+                with open(geom_path) as geom_file_desc:
+                    geom_dict = {}
+                    for line in geom_file_desc:
+                        key, val = line.split(": ")
+                        geom_dict[key] = val
+                    # pylint: disable=too-many-boolean-expressions
+                    if (
+                        "line_den_coeff_00" not in geom_dict
+                        or "samp_den_coeff_00" not in geom_dict
+                        or "line_num_coeff_00" not in geom_dict
+                        or "samp_num_coeff_00" not in geom_dict
+                        or "line_off" not in geom_dict
+                        or "line_scale" not in geom_dict
+                        or "samp_off" not in geom_dict
+                        or "samp_scale" not in geom_dict
+                        or "lat_off" not in geom_dict
+                        or "lat_scale" not in geom_dict
+                        or "long_off" not in geom_dict
+                        or "long_scale" not in geom_dict
+                        or "height_off" not in geom_dict
+                        or "height_scale" not in geom_dict
+                        or "polynomial_format" not in geom_dict
+                    ):
+                        logging.warning(
+                            "No RPC model set for image {}".format(
+                                geom_file_desc
+                            )
+                        )
+                        can_open_status = False
+
+                os.remove("./otb_can_open_test.geom")
+            else:
+                logging.warning(
+                    "{} does not have associated geom file".format(img)
+                )
+                can_open_status = False
+        except Exception as read_error:
+            logging.warning(
+                "Exception caught while trying to read file {}: {}".format(
+                    img, read_error
+                )
+            )
+            can_open_status = False
+        return can_open_status
+
     @staticmethod
     def triangulate(
         mode: str,
-        data: xr.Dataset,
+        matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
         grid2: str,
-        img1: str,
-        img2: str,
-        min_elev1: float,
-        max_elev1: float,
-        min_elev2: float,
-        max_elev2: float,
-        roi_key: str = None,
+        cars_conf,
+        roi_key: Union[None, str] = None,
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
 
         :param mode: triangulation mode
         (cst.DISP_MODE or cst.MATCHES)
-        :param data: cars disparity dataset
-        :param grid1: path to epipolar grid of img1
+        :param matches: cars disparity dataset or matches as numpy array
+        :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
-        :param img1: path to image 1
-        :param img2: path to image 2
-        :param min_elev1: min elevation for image 1
-        :param max_elev1: max elevation fro image 1
-        :param min_elev2: min elevation for image 2
-        :param max_elev2: max elevation for image 2
+        :param cars_conf: cars input configuration dictionary
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
+
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
+
+        # Retrieve elevation range from imgs
+        (min_elev1, max_elev1) = get_elevation_range_from_metadata(img1)
+        (min_elev2, max_elev2) = get_elevation_range_from_metadata(img2)
 
         # Build triangulation app
         triangulation_app = otbApplication.Registry.CreateApplication(
@@ -95,9 +205,9 @@ class OTBGeometry(AbstractGeometry):
 
             # encode disparity for otb
             disp = encode_to_otb(
-                data[cst.DISP_MAP].values,
-                data.attrs[cst.EPI_FULL_SIZE],
-                data.attrs[roi_key],
+                matches[cst.DISP_MAP].values,
+                matches.attrs[cst.EPI_FULL_SIZE],
+                matches.attrs[roi_key],
             )
 
             # set disparity mode
@@ -107,7 +217,7 @@ class OTBGeometry(AbstractGeometry):
             # set matches mode
             triangulation_app.SetParameterString("mode", "sift")
             triangulation_app.SetImageFromNumpyArray(
-                "mode.sift.inmatches", data
+                "mode.sift.inmatches", matches
             )
         else:
             worker_logger = logging.getLogger("distributed.worker")
@@ -137,9 +247,9 @@ class OTBGeometry(AbstractGeometry):
 
     @staticmethod
     def generate_epipolar_grids(
-        left_img: str,
-        right_img: str,
+        cars_conf,
         dem: Union[None, str] = None,
+        geoid: Union[None, str] = None,
         default_alt: Union[None, float] = None,
         epipolar_step: int = 30,
     ) -> Tuple[
@@ -148,9 +258,9 @@ class OTBGeometry(AbstractGeometry):
         """
         Computes the left and right epipolar grids
 
-        :param left_img: path to left image
-        :param right_img: path to right image
+        :param cars_conf: cars input configuration dictionary
         :param dem: path to the dem folder
+        :param geoid: path to the geoid file
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
@@ -162,17 +272,38 @@ class OTBGeometry(AbstractGeometry):
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
+        # save os env
+        env_save = os.environ.copy()
+
+        # create OTB application
+        img1 = cars_conf[input_parameters.IMG1_TAG]
+        img2 = cars_conf[input_parameters.IMG2_TAG]
+
         stereo_app = otbApplication.Registry.CreateApplication(
             "StereoRectificationGridGenerator"
         )
 
-        stereo_app.SetParameterString("io.inleft", left_img)
-        stereo_app.SetParameterString("io.inright", right_img)
+        stereo_app.SetParameterString("io.inleft", img1)
+        stereo_app.SetParameterString("io.inright", img2)
         stereo_app.SetParameterInt("epi.step", epipolar_step)
         if dem is not None:
             stereo_app.SetParameterString("epi.elevation.dem", dem)
         if default_alt is not None:
             stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
+        if geoid is not None:
+            stereo_app.SetParameterString("epi.elevation.geoid", geoid)
+            # set OTB_GEOID_FILE environment variable to the geoid path to
+            # handle OTB internal geoid management
+            os.environ["OTB_GEOID_FILE"] = geoid
+        elif "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "No geoid file given in input of "
+                "the generate_epipolar_grids function but "
+                "OTB_GEOID_FILE is set in the os environment. "
+                "OTB_GEOID_FILE will not be used to generate "
+                "the grids."
+            )
+            del os.environ["OTB_GEOID_FILE"]
 
         stereo_app.Execute()
 
@@ -197,7 +328,7 @@ class OTBGeometry(AbstractGeometry):
         # TODO: remove this patch when OTB issue
         # https://gitlab.orfeo-toolbox.org/orfeotoolbox/otb/-/issues/2176
         # is resolved
-        with rio.open(left_img, "r") as rio_dst:
+        with rio.open(img1, "r") as rio_dst:
             pixel_size_x, pixel_size_y = (
                 rio_dst.transform[0],
                 rio_dst.transform[4],
@@ -209,6 +340,12 @@ class OTBGeometry(AbstractGeometry):
 
         # we want disp_to_alt_ratio = resolution/(B/H), in m.pixel^-1
         disp_to_alt_ratio = 1 / baseline
+
+        # restore environment variables
+        if "OTB_GEOID_FILE" in env_save.keys():
+            os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+        elif geoid is not None:
+            del os.environ["OTB_GEOID_FILE"]
 
         return (
             left_grid_as_array,

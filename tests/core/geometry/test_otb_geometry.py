@@ -33,15 +33,11 @@ import pytest
 import rasterio as rio
 
 # CARS imports
+from cars.conf import input_parameters, static_conf
 from cars.core.geometry import AbstractGeometry
 
 # CARS Tests imports
-from ...helpers import (
-    absolute_data_path,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-    temporary_dir,
-)
+from ...helpers import absolute_data_path, temporary_dir
 
 
 def rigid_transform_resample(
@@ -72,15 +68,18 @@ def test_generate_epipolar_grids():
     """
     Test if the pipeline is correctly built and produces consistent grids
     """
-    img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {
+        input_parameters.IMG1_TAG: absolute_data_path(
+            "input/phr_ventoux/left_image.tif"
+        ),
+        input_parameters.IMG2_TAG: absolute_data_path(
+            "input/phr_ventoux/right_image.tif"
+        ),
+    }
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
-    geo_plugin = (
+    geo_loader = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry"
         )
@@ -93,7 +92,9 @@ def test_generate_epipolar_grids():
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_plugin.generate_epipolar_grids(img1, img2, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(
+        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+    )
 
     assert epipolar_size == [612, 612]
     assert left_grid_as_array.shape == (15, 15, 2)
@@ -121,9 +122,6 @@ def test_generate_epipolar_grids():
     )
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
-    # unset otb geoid file
-    otb_geoid_file_unset()
-
 
 @pytest.mark.unit_tests
 def test_generate_epipolar_grids_scaled_inputs():
@@ -132,13 +130,11 @@ def test_generate_epipolar_grids_scaled_inputs():
     """
     img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf = {input_parameters.IMG1_TAG: img1, input_parameters.IMG2_TAG: img2}
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
-    geo_plugin = (
+    geo_loader = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry"
         )
@@ -152,7 +148,9 @@ def test_generate_epipolar_grids_scaled_inputs():
         _,
         ref_epipolar_size,
         ref_disp_to_alt_ratio,
-    ) = geo_plugin.generate_epipolar_grids(img1, img2, dem, epipolar_step=step)
+    ) = geo_loader.generate_epipolar_grids(
+        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+    )
 
     # define negative scale transform
     def create_negative_transform(srs_img, dst_img, reverse_x, reverse_y):
@@ -277,13 +275,17 @@ def test_generate_epipolar_grids_scaled_inputs():
                 assert pixel_size_x == 1 / scalex
                 assert pixel_size_y == 1 / scaley
 
-            geo_plugin = (
+            geo_loader = (
                 AbstractGeometry(  # pylint: disable=abstract-class-instantiated
                     "OTBGeometry"
                 )
             )
 
             # img1_transform / img2_transform
+            conf = {
+                input_parameters.IMG1_TAG: img1_transform,
+                input_parameters.IMG2_TAG: img2_transform,
+            }
             (
                 _,
                 _,
@@ -291,14 +293,18 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_plugin.generate_epipolar_grids(
-                img1_transform, img2_transform, dem, epipolar_step=step
+            ) = geo_loader.generate_epipolar_grids(
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
             assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
 
             # img1_transform / img2
+            conf[input_parameters.IMG2_TAG] = img2
             (
                 _,
                 _,
@@ -306,14 +312,19 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_plugin.generate_epipolar_grids(
-                img1_transform, img2, dem, epipolar_step=step
+            ) = geo_loader.generate_epipolar_grids(
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
             assert abs(disp_to_alt_ratio - ref_disp_to_alt_ratio) < 1e-06
 
             # img1 / img2_transform
+            conf[input_parameters.IMG1_TAG] = img1
+            conf[input_parameters.IMG2_TAG] = img2_transform
             (
                 _,
                 _,
@@ -321,8 +332,11 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_plugin.generate_epipolar_grids(
-                img1_transform, img2, dem, epipolar_step=step
+            ) = geo_loader.generate_epipolar_grids(
+                conf,
+                dem,
+                epipolar_step=step,
+                geoid=static_conf.get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -409,5 +423,25 @@ def test_generate_epipolar_grids_scaled_inputs():
         scaley=-2.0,
     )
 
-    # unset otb geoid file
-    otb_geoid_file_unset()
+
+@pytest.mark.unit_tests
+def test_check_consistency():
+    """
+    Test otb_can_open() with different geom configurations
+    """
+
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry"
+        )
+    )
+
+    # existing
+    existing_with_geom = absolute_data_path("input/phr_ventoux/left_image.tif")
+    # existing with no geom file
+    existing_no_geom = absolute_data_path("input/utils_input/im1.tif")
+    not_existing = "/stuff/dummy_file.doe"
+
+    assert geo_loader.check_geom_consistency(existing_with_geom)
+    assert not geo_loader.check_geom_consistency(existing_no_geom)
+    assert not geo_loader.check_geom_consistency(not_existing)

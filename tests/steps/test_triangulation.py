@@ -30,16 +30,11 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core.inputs import read_geoid_file
+from cars.core.geometry import read_geoid_file
 from cars.steps import triangulation
 
 # CARS Tests imports
-from ..helpers import (
-    absolute_data_path,
-    assert_same_datasets,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-)
+from ..helpers import absolute_data_path, assert_same_datasets, get_geoid_path
 
 
 @pytest.mark.unit_tests
@@ -110,15 +105,10 @@ def test_geoid_offset():
     )
 
     # Set the geoid file from code source
-    otb_geoid_file_set()
-
-    geoid = read_geoid_file()
+    geoid = read_geoid_file(get_geoid_path())
 
     computed_geoid = triangulation.geoid_offset(points, geoid)
 
     assert np.allclose(
         geoid_ref.z.values, computed_geoid.z.values, atol=1e-3, rtol=1e-12
     )
-
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()

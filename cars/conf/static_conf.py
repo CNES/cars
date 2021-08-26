@@ -27,13 +27,15 @@ import json
 import logging
 import os
 from collections import namedtuple
+from typing import Union
 
 # Third party imports
-from json_checker import Or
+from json_checker import And, OptionalKey, Or
 from numpy import dtype
 
 # CARS imports
 from cars.core import inputs
+from cars.core.geometry import AbstractGeometry
 from cars.steps import points_cloud
 
 # TODO : Refacto Conf with unitary and independent steps
@@ -48,6 +50,7 @@ from cars.steps import points_cloud
 
 # pylint: disable=invalid-name
 cfg = None
+geometry_loader = None
 
 # ### Prepare ####
 
@@ -167,11 +170,20 @@ compute_dsm_params_schema = {
     output_tag: output_schema,
 }
 
-# ### plugins ####
+# ### loaders ####
 
-plugins_tag = "plugins"
-geometry_plugin_tag = "geometry"
-plugins_schema = {geometry_plugin_tag: str}
+loaders_tag = "loaders"
+geometry_loader_tag = "geometry"
+loaders_schema = {geometry_loader_tag: str}
+
+# ### geoid
+geoid_tag = "geoid"
+use_cars_geoid_tag = "use_cars_geoid"
+geoid_path_tag = "geoid_path"
+geoid_schema = {
+    use_cars_geoid_tag: bool,
+    OptionalKey(geoid_path_tag): And(str, os.path.isdir),
+}
 
 # ### final static conf file ####
 prepare_tag = "prepare"
@@ -179,7 +191,8 @@ compute_dsm_tag = "compute_dsm"
 static_conf_schema = {
     prepare_tag: prepare_params_schema,
     compute_dsm_tag: compute_dsm_params_schema,
-    plugins_tag: plugins_schema,
+    loaders_tag: loaders_schema,
+    geoid_tag: geoid_schema,
 }
 
 # ### namedTuple for parameters ####
@@ -265,7 +278,9 @@ def load_cfg():
     set_env()
 
     # Open cars static configuration file set in setenv() if not defined by user
-    with open(os.environ.get("CARS_STATIC_CONFIGURATION"), "r") as conf_file:
+    with open(
+        os.environ.get("CARS_STATIC_CONFIGURATION"), "r", encoding="utf-8"
+    ) as conf_file:
         global cfg
         cfg = json.load(conf_file)
         inputs.check_json(cfg, static_conf_schema)
@@ -427,15 +442,73 @@ def get_color_image_encoding() -> dtype:
     return dtype(color_image_encoding)
 
 
-def get_geometry_plugin() -> str:
+def load_geometry_loader():
     """
-    Get the geometry plugin to use
-
-    :returns: geometry plugin name
+    Instantiate geometry_loader from the static configuration
     """
     if cfg is None:
         load_cfg()
 
-    geometry_plugin = cfg[plugins_tag][geometry_plugin_tag]
+    loader_to_use = cfg[loaders_tag][geometry_loader_tag]
 
-    return geometry_plugin
+    global geometry_loader
+    geometry_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            loader_to_use
+        )
+    )
+
+
+def get_geometry_loader() -> AbstractGeometry:
+    """
+    Get the geometry loader to use
+
+    :returns: geometry loader
+    """
+    if geometry_loader is None:
+        load_geometry_loader()
+
+    return geometry_loader
+
+
+def get_geoid_path() -> Union[None, str]:
+    """
+    Get geoid file path to use
+
+    :return: the path to the geoid file
+    """
+    geoid_path = None
+
+    logger = logging.getLogger()
+
+    if cfg is None:
+        load_cfg()
+
+    if (
+        cfg[geoid_tag][use_cars_geoid_tag]
+        and cfg.get(geoid_path_tag, None) is not None
+    ):
+        logging.warning(
+            "Both use_cars_geoid and geoid_path keys are set in "
+            "the static configuration. "
+            "Only one geoid file will be used"
+        )
+
+    if cfg[geoid_tag][use_cars_geoid_tag]:
+        logging.info("CARS will use its own internal file as geoid reference")
+        # Get root package directory
+        package_path = os.path.dirname(__file__)
+        geoid_path = os.path.join(package_path, CARS_GEOID_PATH)
+    elif cfg.get(geoid_path_tag, None) is not None:
+        logging.info("CARS will use {} as geoid reference".format(geoid_path))
+        geoid_path = cfg[geoid_tag][geoid_path_tag]
+
+    if geoid_path is not None:
+        if not os.path.isfile(geoid_path):
+            logger.error(
+                "Geoid path {} cannot be retrieved."
+                "The geoid will not be used in CARS.".format(geoid_path)
+            )
+            geoid_path = None
+
+    return geoid_path
