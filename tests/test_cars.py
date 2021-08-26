@@ -94,6 +94,16 @@ def compute_dsm_default_args():
 
 
 @pytest.mark.unit_tests
+def test_cars_command():
+    """
+    Cars command pytest with no argument
+    """
+    parser = cars_parser()
+    args = parser.parse_args([])
+    main_cli(args, parser, dry_run=True)
+
+
+@pytest.mark.unit_tests
 def test_command():
     """
     Cars command pytest with wrong subcommand

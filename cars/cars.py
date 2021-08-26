@@ -210,7 +210,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "--loglevel",
         default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO. Should be one of "
+        help="Logger level (default: WARNING. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
@@ -387,7 +387,7 @@ def cars_parser() -> argparse.ArgumentParser:
         "--loglevel",
         default="WARNING",
         choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
-        help="Logger level (default: INFO. Should be one of "
+        help="Logger level (default: WARNING. Should be one of "
         "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
     )
 
@@ -721,7 +721,7 @@ def main_cli(args, parser, dry_run=False):  # noqa: C901
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # Logging configuration with args Loglevel
-    setup_log(args.loglevel.upper())
+    setup_log(getattr(args, "loglevel", "WARNING").upper())
 
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
@@ -731,7 +731,10 @@ def main_cli(args, parser, dry_run=False):  # noqa: C901
 
     numba_threading_layer = "omp"
     if not dry_run:
-        if check_tbb_installed() and args.mode == "mp":
+        if (
+            check_tbb_installed()
+            and getattr(args, "mode", "local_dask") == "mp"
+        ):
             numba_threading_layer = "tbb"
     os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
 
