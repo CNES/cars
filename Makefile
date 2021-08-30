@@ -27,7 +27,7 @@ CARS_VERSION = $(shell python3 setup.py --version)
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 
 # TARGETS
-.PHONY: help check venv install-deps install install-notebook install-doc install-dev test test-ci test-end2end test-unit test-pbs-cluster test-notebook lint lint-ci format doc notebook docker clean
+.PHONY: help check venv install-deps install install-notebook install-doc install-dev test test-ci test-end2end test-unit test-pbs-cluster test-notebook lint format doc notebook docker clean
 
 help: ## this help
 	@echo "      CARS MAKE HELP  LOGLEVEL=${LOGLEVEL}"
@@ -108,19 +108,18 @@ test-notebook: install-dev ## run notebook tests only
 	@echo "Please source ${VENV}/bin/env_cars.sh before launching tests\n"
 	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
-lint-ci: install-dev ## run lint tools for cars-ci
+lint: install-dev ## run lint tools (depends install-dev)
+	@echo "CARS linting isort check"
 	@${VENV}/bin/isort --check cars tests
+	@echo "CARS linting black check"
 	@${VENV}/bin/black --check cars tests
+	@echo "CARS linting flake8 check"
 	@${VENV}/bin/flake8 cars tests
-	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable > pylint-report.txt || cat pylint-report.txt
+	@echo "CARS linting pylint check"
+	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable > pylint-report.txt 
+	@cat pylint-report.txt
 
-lint: install-dev  ## run lint tools (depends install)
-	@${VENV}/bin/isort --check cars tests
-	@${VENV}/bin/black --check cars tests
-	@${VENV}/bin/flake8 cars tests
-	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc
-
-format: install-dev  ## run black and isort (depends install)
+format: install-dev  ## run black and isort formatting (depends install-dev)
 	@${VENV}/bin/isort cars tests
 	@${VENV}/bin/black cars tests
 
