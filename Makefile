@@ -2,6 +2,8 @@
 # see: https://marmelab.com/blog/2016/02/29/auto-documented-makefile.html
 
 # GLOBAL VARIABLES
+# Set shell to BASH
+SHELL := /bin/bash
 # Set Virtualenv directory name
 VENV = "venv"
 # Set LOGLEVEL if not defined in command line
@@ -116,8 +118,7 @@ lint: install-dev ## run lint tools (depends install-dev)
 	@echo "CARS linting flake8 check"
 	@${VENV}/bin/flake8 cars tests
 	@echo "CARS linting pylint check"
-	@${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable > pylint-report.txt 
-	@cat pylint-report.txt
+	@set -o pipefail; ${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
 
 format: install-dev  ## run black and isort formatting (depends install-dev)
 	@${VENV}/bin/isort cars tests
