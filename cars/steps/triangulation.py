@@ -275,11 +275,11 @@ def triangulate_matches(configuration, matches, snap_to_img1=False):
 
     geometry_loader = static_conf.get_geometry_loader()
     llh = geometry_loader.triangulate(
+        input_configuration,
         cst.MATCHES_MODE,
         matches,
         grid1,
         grid2,
-        input_configuration,
     )
 
     row = np.array(range(llh.shape[0]))
@@ -325,11 +325,11 @@ def compute_points_cloud(
     """
     geometry_loader = static_conf.get_geometry_loader()
     llh = geometry_loader.triangulate(
+        cars_conf,
         cst.DISP_MODE,
         data,
         grid1,
         grid2,
-        cars_conf,
         roi_key,
     )
 

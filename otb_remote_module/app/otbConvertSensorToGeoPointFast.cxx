@@ -129,6 +129,13 @@ private:
 
   void DoExecute() override
   {
+
+    // Handle elevation automatically with geoid, srtm or default elevation
+    // respectively : elevation.geoid, elevation.dem, elevation.default
+    otb::DEMHandler::Instance()->ClearDEMs();
+    otb::Wrapper::ElevationParametersHandler::\
+        SetupDEMHandlerFromElevationParameters(this,"elevation");
+
     // Get Input image
     FloatVectorImageType::Pointer inImage = GetParameterImage("in"); //Image
 
@@ -186,12 +193,6 @@ private:
       {
         itkGenericExceptionMacro(<< "Unable to create a model");
       }
-
-      // Handle elevation automatically with geoid, srtm or default elevation
-      // respectively : elevation.geoid, elevation.dem, elevation.default
-      otb::DEMHandler::Instance()->ClearDEMs();
-      otb::Wrapper::ElevationParametersHandler::\
-          SetupDEMHandlerFromElevationParameters(this,"elevation");
 
       // Declare OutputPoint
       ModelTypeXY::OutputPointType outputPoint;

@@ -35,6 +35,8 @@ for entry_point in iter_entry_points(group="geometryLoader"):
     entry_point.load()
 
 
+# TODO: find a new emplacement for the points cloud filterings parameters
+# structures (see issue https://gitlab.cnes.fr/cars/cars/-/issues/323)
 # ##### Parameters structures ######
 
 # Cloud small components filtering parameters :

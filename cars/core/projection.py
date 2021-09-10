@@ -22,6 +22,7 @@
 Projection module:
 contains some general purpose functions using polygons and data projections
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 import logging
@@ -47,7 +48,9 @@ from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
 
 
-def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
+def compute_dem_intersection_with_poly(
+    srtm_dir: str, ref_poly: Polygon, ref_epsg: int
+) -> Polygon:
     """
     Compute the intersection polygon between the defined dem regions
     and the reference polygon in input
@@ -55,14 +58,10 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     :raise Exception: when the input dem doesn't intersect the reference polygon
 
     :param srtm_dir: srtm directory
-    :type srtm_dir: str
     :param ref_poly: reference polygon
-    :type ref_poly: Polygon
     :param ref_epsg: reference epsg code
-    :type ref_epsg: int
     :return: The intersection polygon between the defined dem regions
         and the reference polygon in input
-    :rtype Polygon
     """
     dem_poly = None
     for _, _, srtm_files in os.walk(srtm_dir):
@@ -150,18 +149,14 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     return dem_cover, area_cover / area_inter * 100.0
 
 
-def polygon_projection(poly, from_epsg, to_epsg):
+def polygon_projection(poly: Polygon, from_epsg: int, to_epsg: int) -> Polygon:
     """
     Projects a polygon from an initial epsg code to another
 
     :param poly: poly to project
-    :type poly: Polygon
     :param from_epsg: initial epsg code
-    :type from_epsg: int
     :param to_epsg: final epsg code
-    :type to_epsg: int
     :return: The polygon in the final projection
-    :rtype: Polygon
     """
     # Get CRS from input EPSG codes
     from_crs = pyproj.CRS("EPSG:{}".format(from_epsg))
@@ -630,6 +625,48 @@ def get_time_ground_direction(
     vec = vec / np.linalg.norm(vec)
 
     return vec
+
+
+def display_angle(vec):
+    """
+    Display angle in degree from a vector x
+    :param vec: vector to display
+    :return: angle in degree
+    """
+    return 180 * math.atan2(vec[1], vec[0]) / math.pi
+
+
+def acquisition_direction(conf, dem: str) -> Tuple[np.ndarray]:
+    """
+    Computes the mean acquisition of the input images pair
+
+    :param conf: cars input configuration dictionary
+    :param dem: path to the dem directory
+    :return: a tuple composed of :
+        - the mean acquisition direction as a numpy array
+        - the acquisition direction of the first product in the configuration
+        as a numpy array
+        - the acquisition direction of the second product in the configuration
+        as a numpy array
+    """
+    vec1 = get_time_ground_direction(
+        conf, input_parameters.PRODUCT1_KEY, dem=dem
+    )
+    vec2 = get_time_ground_direction(
+        conf, input_parameters.PRODUCT2_KEY, dem=dem
+    )
+    time_direction_vector = (vec1 + vec2) / 2
+
+    logging.info(
+        "Time direction average azimuth: "
+        "{}° (img1: {}°, img2: {}°)".format(
+            display_angle(time_direction_vector),
+            display_angle(vec1),
+            display_angle(vec2),
+        )
+    )
+
+    return time_direction_vector, vec1, vec2
 
 
 def get_ground_direction(

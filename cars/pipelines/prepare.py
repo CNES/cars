@@ -868,7 +868,7 @@ def run(  # noqa: C901
         )
 
         # First, we estimate direction of acquisition time for both images
-        time_direction_vector, _, _ = devib.acquisition_direction(
+        time_direction_vector, _, _ = projection.acquisition_direction(
             config, srtm_dir
         )
 

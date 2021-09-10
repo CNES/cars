@@ -103,36 +103,36 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
+    def triangulate(
+        cars_conf,
+        mode: str,
+        matches: Union[xr.Dataset, np.ndarray],
+        grid1: str,
+        grid2: str,
+        roi_key: Union[None, str] = None,
+    ) -> np.ndarray:
+        """
+        Performs triangulation from cars disparity or matches dataset
+
+        :param cars_conf: cars input configuration dictionary
+        :param mode: triangulation mode
+        (constants.DISP_MODE or constants.MATCHES)
+        :param matches: cars disparity dataset or matches as numpy array
+        :param grid1: path to epipolar grid of img1
+        :param grid2: path to epipolar grid of image 2
+        :param roi_key: dataset roi to use
+        (can be cst.ROI or cst.ROI_WITH_MARGINS)
+        :return: the long/lat/height numpy array in output of the triangulation
+        """
+
+    @staticmethod
+    @abstractmethod
     def check_products_consistency(cars_conf) -> bool:
         """
         Test if the product is readable by the geometry loader
 
         :param: cars_conf: cars input configuration dictionary
         :return: True if the products are readable, False otherwise
-        """
-
-    @staticmethod
-    @abstractmethod
-    def triangulate(
-        mode: str,
-        matches: Union[xr.Dataset, np.ndarray],
-        grid1: str,
-        grid2: str,
-        cars_conf,
-        roi_key: Union[None, str] = None,
-    ) -> np.ndarray:
-        """
-        Performs triangulation from cars disparity or matches dataset
-
-        :param mode: triangulation mode
-        (constants.DISP_MODE or constants.MATCHES)
-        :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of img1
-        :param grid2: path to epipolar grid of image 2
-        :param cars_conf: cars input configuration dictionary
-        :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
-        :return: the long/lat/height numpy array in output of the triangulation
         """
 
     @staticmethod
@@ -351,7 +351,7 @@ class AbstractGeometry(metaclass=ABCMeta):
     @staticmethod
     @abstractmethod
     def direct_loc(
-        conf,
+        cars_conf,
         product_key: str,
         x_coord: float,
         y_coord: float,
@@ -365,7 +365,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         Advice: to be sure, use x,y,z inputs only
 
-        :param conf: cars input configuration dictionary
+        :param cars_conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
         input_parameters.PRODUCT2_KEY to identify which geometric model shall
         be taken to perform the method
