@@ -22,6 +22,8 @@
 CARS steps module init file
 """
 
+from collections import namedtuple
+
 from pkg_resources import iter_entry_points
 
 # CARS imports
@@ -31,3 +33,66 @@ from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
 
 for entry_point in iter_entry_points(group="geometryLoader"):
     entry_point.load()
+
+
+# TODO: find a new emplacement for the points cloud filterings parameters
+# structures (see issue https://gitlab.cnes.fr/cars/cars/-/issues/323)
+# ##### Parameters structures ######
+
+# Cloud small components filtering parameters :
+# ---------------------------------------------
+#   * on_ground_margin:
+#           margin added to the on ground region to not filter points clusters
+#           that were incomplete because they were on the edges
+#
+#   * pts_connection_dist:
+#           distance to use to consider that two points are connected
+#
+#   * nb_pts_threshold:
+#           points clusters that have less than this number of points
+#           will be filtered
+#
+#   * dist_between_clusters:
+#           distance to use to consider that two points clusters
+#           are far from each other or not.
+#       If a small points cluster is near to another one, it won't be filtered.
+#          (None = deactivated)
+#
+#   * construct_removed_elt_msk:
+#           if True, the removed points mask will be added to the cloud datasets
+#           in input of the simple_rasterization_dataset
+#
+#   * mask_value:
+#           value to use to identify the removed points in the mask
+#
+SmallComponentsFilterParams = namedtuple(
+    "SmallComponentsFilterParams",
+    [
+        "on_ground_margin",
+        "connection_val",
+        "nb_pts_threshold",
+        "clusters_distance_threshold",
+        "filtered_elt_msk",
+        "msk_value",
+    ],
+)
+
+# Cloud statistical filtering :
+# ------------------------------
+#   * k:
+#       number of neighbors
+#
+#   * stdev_factor:
+#       factor to apply in the distance threshold computation
+#
+#   * construct_removed_elt_msk:
+#       if True, the removed points mask will be added to the cloud datasets
+#       in input of the simple_rasterization_dataset
+#
+#   * mask_value:
+#       value to use to identify the removed points in the mask
+#
+StatisticalFilterParams = namedtuple(
+    "StatisticalFilterParams",
+    ["k", "std_dev_factor", "filtered_elt_msk", "msk_value"],
+)

@@ -91,11 +91,11 @@ private:
 
     // Output with Output Role
     AddParameter(ParameterType_Group, "output", "Geographic Coordinates");
-    AddParameter(ParameterType_Float, "output.idx", "Output Point Longitude");
+    AddParameter(ParameterType_Double, "output.idx", "Output Point Longitude");
     SetParameterDescription("output.idx", "Output point longitude coordinate.");
-    AddParameter(ParameterType_Float, "output.idy", "Output Point Latitude");
+    AddParameter(ParameterType_Double, "output.idy", "Output Point Latitude");
     SetParameterDescription("output.idy", "Output point latitude coordinate.");
-    AddParameter(ParameterType_Float, "output.idz", "Output Point altitude");
+    AddParameter(ParameterType_Double, "output.idz", "Output Point altitude");
     SetParameterDescription("output.idz", "Output point altitude coordinate.");
 
     AddParameter(ParameterType_String, "output.town", "Main town near the coordinates computed");
@@ -121,10 +121,21 @@ private:
 
   void DoUpdateParameters() override
   {
+    // Clear and reset the DEM Handler
+    otb::DEMHandler::Instance()->ClearDEMs();
+    otb::Wrapper::ElevationParametersHandler::SetupDEMHandlerFromElevationParameters(this, "elevation");
+
   }
 
   void DoExecute() override
   {
+
+    // Handle elevation automatically with geoid, srtm or default elevation
+    // respectively : elevation.geoid, elevation.dem, elevation.default
+    otb::DEMHandler::Instance()->ClearDEMs();
+    otb::Wrapper::ElevationParametersHandler::\
+        SetupDEMHandlerFromElevationParameters(this,"elevation");
+
     // Get Input image
     FloatVectorImageType::Pointer inImage = GetParameterImage("in"); //Image
 
@@ -166,9 +177,9 @@ private:
       outputPoint = model->TransformPoint(pointXYZ);
 
       // Set the value computed
-      SetParameterFloat("output.idx", outputPoint[0]);
-      SetParameterFloat("output.idy", outputPoint[1]);
-      SetParameterFloat("output.idz", outputPoint[2]);
+      SetParameterDouble("output.idx", outputPoint[0]);
+      SetParameterDouble("output.idy", outputPoint[1]);
+      SetParameterDouble("output.idz", outputPoint[2]);
     }
     else
     {
@@ -183,12 +194,6 @@ private:
         itkGenericExceptionMacro(<< "Unable to create a model");
       }
 
-      // Handle elevation automatically with geoid, srtm or default elevation
-      // respectively : elevation.geoid, elevation.dem, elevation.default
-      otb::DEMHandler::Instance()->ClearDEMs();
-      otb::Wrapper::ElevationParametersHandler::\
-          SetupDEMHandlerFromElevationParameters(this,"elevation");
-
       // Declare OutputPoint
       ModelTypeXY::OutputPointType outputPoint;
 
@@ -196,9 +201,9 @@ private:
       outputPoint = model->TransformPoint(pointXY);
 
       // Set the value computed
-      SetParameterFloat("output.idx", outputPoint[0]);
-      SetParameterFloat("output.idy", outputPoint[1]);
-      SetParameterFloat("output.idz", outputPoint[2]);
+      SetParameterDouble("output.idx", outputPoint[0]);
+      SetParameterDouble("output.idy", outputPoint[1]);
+      SetParameterDouble("output.idz", outputPoint[2]);
 
     }
   }

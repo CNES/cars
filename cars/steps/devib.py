@@ -34,7 +34,7 @@ from scipy import interpolate
 from scipy.signal import butter, filtfilt, lfilter, lfilter_zi
 
 # CARS imports
-from cars.core.projection import project_coordinates_on_line
+from cars.core import projection
 
 
 def lowres_initial_dem_splines_fit(
@@ -73,7 +73,7 @@ def lowres_initial_dem_splines_fit(
     # Project coordinates on the line
     # of increasing acquisition time to form 1D coordinates
     # If there are sensor oscillations, they will occur in this direction
-    linear_coords = project_coordinates_on_line(
+    linear_coords = projection.project_coordinates_on_line(
         x_values_2d, y_values_2d, origin, time_direction_vector
     )
 

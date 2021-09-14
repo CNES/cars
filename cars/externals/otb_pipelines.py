@@ -28,6 +28,8 @@ Refacto: Split function in generic externals calls through functional steps
 # Standard imports
 from __future__ import absolute_import
 
+import logging
+import os
 from typing import List
 
 # Third party imports
@@ -226,92 +228,6 @@ def build_image_resampling_pipeline(
     return resampled
 
 
-def image_envelope(img, shp, dem=None, default_alt=None):
-    """
-    Export the image footprint to a shapefile
-    TODO: refacto with externals (OTB) and steps.
-
-    :param img: filename to image or OTB pointer to image
-    :type img:  string or OTBImagePointer
-    :param shp: Path to the output shapefile
-    :type shp: string
-    :param dem: Directory containing DEM tiles
-    :type dem: string
-    :param default_alt: Default altitude above ellipsoid
-    :type default_alt: float
-    """
-
-    app = otbApplication.Registry.CreateApplication("ImageEnvelope")
-
-    if isinstance(img, str):
-        app.SetParameterString("in", img)
-    else:
-        app.SetParameterInputImage("in", img)
-
-    if dem is not None:
-        app.SetParameterString("elev.dem", dem)
-
-    if default_alt is not None:
-        app.SetParameterFloat("elev.default", default_alt)
-
-    app.SetParameterString("out", shp)
-    app.ExecuteAndWriteOutput()
-
-
-def sensor_to_geo(
-    img: str,
-    x_coord: float,
-    y_coord: float,
-    z_coord: float = None,
-    dem: str = None,
-    geoid: str = None,
-    default_elevation: float = None,
-) -> np.ndarray:
-    """
-    For a given image point, compute the latitude, longitude, altitude
-
-    Be careful: When SRTM is used, the default elevation (altitude)
-    doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
-    is called again. Check the values.
-
-    Advice: to be sure, use x,y,z inputs only
-
-    :param img: Path to an image
-    :param x_coord: X Coordinate in input image sensor
-    :param y_coord: Y Coordinate in input image sensor
-    :param z_coord: Z Altitude coordinate to take the image
-    :param dem: if z not defined, take this DEM directory input
-    :param geoid: if z and dem not defined, take GEOID directory input
-    :param elevation: if z, dem, geoid not defined, take default elevation
-    :return: Latitude, Longitude, Altitude coordinates as a numpy array
-    """
-    s2c_app = otbApplication.Registry.CreateApplication(
-        "ConvertSensorToGeoPointFast"
-    )
-
-    s2c_app.SetParameterString("in", img)
-    s2c_app.SetParameterFloat("input.idx", x_coord)
-    s2c_app.SetParameterFloat("input.idy", y_coord)
-
-    if z_coord is not None:
-        s2c_app.SetParameterFloat("input.idz", z_coord)
-    elif dem is not None:
-        s2c_app.SetParameterString("elevation.dem", dem)
-    elif geoid is not None:
-        s2c_app.SetParameterString("elevation.geoid", geoid)
-    elif default_elevation is not None:
-        s2c_app.SetParameterFloat("elevation.default", default_elevation)
-    # else ConvertSensorToGeoPointFast have only X, Y and OTB configured GEOID
-
-    s2c_app.Execute()
-
-    lon = s2c_app.GetParameterFloat("output.idx")
-    lat = s2c_app.GetParameterFloat("output.idy")
-    alt = s2c_app.GetParameterFloat("output.idz")
-
-    return np.array([lat, lon, alt])
-
-
 def get_utm_zone_as_epsg_code(lon, lat):
     """
     Returns the EPSG code of the UTM zone where the lat, lon point falls in
@@ -342,6 +258,7 @@ def read_lowres_dem(
     sizey,
     dem=None,
     default_alt=None,
+    geoid=None,
     resolution=0.000277777777778,
 ):
     """
@@ -360,12 +277,24 @@ def read_lowres_dem(
     :type dem: string
     :param default_alt: Default altitude above ellipsoid
     :type default_alt: float
+    :param geoid: path to geoid file
+    :type geoid: str
     :param resolution: Resolution (in degrees) of output raster
     :type resolution: float
     :return: The extract of the lowres DEM as an xarray.Dataset
     :rtype: xarray.Dataset
     """
+    # save os env
+    env_save = os.environ.copy()
 
+    if "OTB_GEOID_FILE" in os.environ:
+        logging.warning(
+            "The OTB_GEOID_FILE environment variable is set by the user,"
+            " it might disturbed the read_lowres_dem function geoid management"
+        )
+        del os.environ["OTB_GEOID_FILE"]
+
+    # create OTB application
     app = otbApplication.Registry.CreateApplication("DEMReader")
 
     if dem is not None:
@@ -373,6 +302,9 @@ def read_lowres_dem(
 
     if default_alt is not None:
         app.SetParameterFloat("elev.default", default_alt)
+
+    if geoid is not None:
+        app.SetParameterString("elev.geoid", geoid)
 
     app.SetParameterFloat("originx", startx)
     app.SetParameterFloat("originy", starty)
@@ -403,6 +335,10 @@ def read_lowres_dem(
     )
     dsm_as_ds[cst.EPSG] = 4326
     dsm_as_ds[cst.RESOLUTION] = resolution
+
+    # restore environment variables
+    if "OTB_GEOID_FILE" in env_save.keys():
+        os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
 
     return dsm_as_ds
 

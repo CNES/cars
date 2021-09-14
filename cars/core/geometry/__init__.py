@@ -31,8 +31,11 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from scipy import interpolate
+from shapely.geometry import Polygon
 
+from cars.conf import input_parameters
 from cars.core import constants as cst
+from cars.core import inputs, outputs
 
 
 class AbstractGeometry(metaclass=ABCMeta):
@@ -100,36 +103,36 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
+    def triangulate(
+        cars_conf,
+        mode: str,
+        matches: Union[xr.Dataset, np.ndarray],
+        grid1: str,
+        grid2: str,
+        roi_key: Union[None, str] = None,
+    ) -> np.ndarray:
+        """
+        Performs triangulation from cars disparity or matches dataset
+
+        :param cars_conf: cars input configuration dictionary
+        :param mode: triangulation mode
+        (constants.DISP_MODE or constants.MATCHES)
+        :param matches: cars disparity dataset or matches as numpy array
+        :param grid1: path to epipolar grid of img1
+        :param grid2: path to epipolar grid of image 2
+        :param roi_key: dataset roi to use
+        (can be cst.ROI or cst.ROI_WITH_MARGINS)
+        :return: the long/lat/height numpy array in output of the triangulation
+        """
+
+    @staticmethod
+    @abstractmethod
     def check_products_consistency(cars_conf) -> bool:
         """
         Test if the product is readable by the geometry loader
 
         :param: cars_conf: cars input configuration dictionary
         :return: True if the products are readable, False otherwise
-        """
-
-    @staticmethod
-    @abstractmethod
-    def triangulate(
-        mode: str,
-        matches: Union[xr.Dataset, np.ndarray],
-        grid1: str,
-        grid2: str,
-        cars_conf,
-        roi_key: Union[None, str] = None,
-    ) -> np.ndarray:
-        """
-        Performs triangulation from cars disparity or matches dataset
-
-        :param mode: triangulation mode
-        (constants.DISP_MODE or constants.MATCHES)
-        :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of img1
-        :param grid2: path to epipolar grid of image 2
-        :param cars_conf: cars input configuration dictionary
-        :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
-        :return: the long/lat/height numpy array in output of the triangulation
         """
 
     @staticmethod
@@ -344,6 +347,117 @@ class AbstractGeometry(metaclass=ABCMeta):
         # stack both coordinates
         sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
         return sensor_positions
+
+    @staticmethod
+    @abstractmethod
+    def direct_loc(
+        cars_conf,
+        product_key: str,
+        x_coord: float,
+        y_coord: float,
+        z_coord: float = None,
+        dem: str = None,
+        geoid: str = None,
+        default_elevation: float = None,
+    ) -> np.ndarray:
+        """
+        For a given image point, compute the latitude, longitude, altitude
+
+        Advice: to be sure, use x,y,z inputs only
+
+        :param cars_conf: cars input configuration dictionary
+        :param product_key: input_parameters.PRODUCT1_KEY or
+        input_parameters.PRODUCT2_KEY to identify which geometric model shall
+        be taken to perform the method
+        :param x_coord: X Coordinate in input image sensor
+        :param y_coord: Y Coordinate in input image sensor
+        :param z_coord: Z Altitude coordinate to take the image
+        :param dem: if z not defined, take this DEM directory input
+        :param geoid: if z and dem not defined, take GEOID directory input
+        :param default_elevation: if z, dem, geoid not defined, take default
+        elevation
+        :return: Latitude, Longitude, Altitude coordinates as a numpy array
+        """
+
+    def image_envelope(
+        self,
+        conf,
+        product_key: str,
+        shp: str,
+        dem: str = None,
+        default_alt: float = None,
+        geoid: str = None,
+    ):
+        """
+        Export the image footprint to a shapefile
+
+        :param conf: cars input configuration dictionary
+        :param product_key: input_parameters.PRODUCT1_KEY or
+        input_parameters.PRODUCT2_KEY to identify which geometric model shall
+        be taken to perform the method
+        :param shp: Path to the output shapefile
+        :param dem: Directory containing DEM tiles
+        :param default_alt: Default altitude above ellipsoid
+        :param geoid: path to geoid file
+        """
+        # retrieve image size
+        img = conf[
+            input_parameters.create_img_tag_from_product_key(product_key)
+        ]
+        img_size_x, img_size_y = inputs.rasterio_get_size(img)
+
+        # compute corners ground coordinates
+        shift_x = -0.5
+        shift_y = -0.5
+        lat_upper_left, lon_upper_left, _ = self.direct_loc(
+            conf,
+            product_key,
+            shift_x,
+            shift_y,
+            dem=dem,
+            default_elevation=default_alt,
+            geoid=geoid,
+        )
+        lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
+            conf,
+            product_key,
+            img_size_x + shift_x,
+            shift_y,
+            dem=dem,
+            default_elevation=default_alt,
+            geoid=geoid,
+        )
+        lat_upper_right, lon_upper_right, _ = self.direct_loc(
+            conf,
+            product_key,
+            shift_x,
+            img_size_y + shift_y,
+            dem=dem,
+            default_elevation=default_alt,
+            geoid=geoid,
+        )
+        lat_bottom_right, lon_bottom_right, _ = self.direct_loc(
+            conf,
+            product_key,
+            img_size_x + shift_x,
+            img_size_y + shift_y,
+            dem=dem,
+            default_elevation=default_alt,
+            geoid=geoid,
+        )
+
+        # create envelope polygon and save it as a shapefile
+        poly_bb = Polygon(
+            [
+                (lon_upper_left, lat_upper_left),
+                (lon_upper_right, lat_upper_right),
+                (lon_bottom_right, lat_bottom_right),
+                (lon_bottom_left, lat_bottom_left),
+                (lon_upper_left, lat_upper_left),
+            ]
+        )
+
+        outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
 
 
 def read_geoid_file(geoid_path: str) -> xr.Dataset:

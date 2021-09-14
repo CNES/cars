@@ -44,7 +44,11 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 # CARS imports
 from cars.core import constants as cst
 from cars.core import projection
-from cars.steps import points_cloud
+from cars.steps import (
+    SmallComponentsFilterParams,
+    StatisticalFilterParams,
+    points_cloud,
+)
 
 warnings.filterwarnings("ignore", category=NumbaPerformanceWarning)
 
@@ -101,12 +105,8 @@ def simple_rasterization_dataset(
     color_no_data: int = np.nan,
     msk_no_data: int = 65535,
     grid_points_division_factor: int = None,
-    small_cpn_filter_params: Union[
-        None, points_cloud.SmallComponentsFilterParams
-    ] = None,
-    statistical_filter_params: Union[
-        None, points_cloud.StatisticalFilterParams
-    ] = None,
+    small_cpn_filter_params: Union[None, SmallComponentsFilterParams] = None,
+    statistical_filter_params: Union[None, StatisticalFilterParams] = None,
     dump_filter_cloud: bool = False,
 ) -> Union[xr.Dataset, Tuple[xr.Dataset, pandas.DataFrame]]:
     """

@@ -22,6 +22,7 @@
 Projection module:
 contains some general purpose functions using polygons and data projections
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 import logging
@@ -42,12 +43,14 @@ from shapely.geometry import Polygon, shape
 from shapely.ops import transform
 
 # CARS imports
+from cars.conf import input_parameters, static_conf
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
-from cars.externals import otb_pipelines
 
 
-def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
+def compute_dem_intersection_with_poly(
+    srtm_dir: str, ref_poly: Polygon, ref_epsg: int
+) -> Polygon:
     """
     Compute the intersection polygon between the defined dem regions
     and the reference polygon in input
@@ -55,14 +58,10 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     :raise Exception: when the input dem doesn't intersect the reference polygon
 
     :param srtm_dir: srtm directory
-    :type srtm_dir: str
     :param ref_poly: reference polygon
-    :type ref_poly: Polygon
     :param ref_epsg: reference epsg code
-    :type ref_epsg: int
     :return: The intersection polygon between the defined dem regions
         and the reference polygon in input
-    :rtype Polygon
     """
     dem_poly = None
     for _, _, srtm_files in os.walk(srtm_dir):
@@ -150,18 +149,14 @@ def compute_dem_intersection_with_poly(srtm_dir, ref_poly, ref_epsg):
     return dem_cover, area_cover / area_inter * 100.0
 
 
-def polygon_projection(poly, from_epsg, to_epsg):
+def polygon_projection(poly: Polygon, from_epsg: int, to_epsg: int) -> Polygon:
     """
     Projects a polygon from an initial epsg code to another
 
     :param poly: poly to project
-    :type poly: Polygon
     :param from_epsg: initial epsg code
-    :type from_epsg: int
     :param to_epsg: final epsg code
-    :type to_epsg: int
     :return: The polygon in the final projection
-    :rtype: Polygon
     """
     # Get CRS from input EPSG codes
     from_crs = pyproj.CRS("EPSG:{}".format(from_epsg))
@@ -317,18 +312,16 @@ def geo_to_aer(
     return enu_to_aer(x_east, y_north, z_up)
 
 
-def points_cloud_conversion(cloud_in, epsg_in, epsg_out):
+def points_cloud_conversion(
+    cloud_in: np.ndarray, epsg_in: int, epsg_out: int
+) -> np.ndarray:
     """
     Convert a point cloud from a SRS to another one.
 
     :param cloud_in: cloud to project
-    :type cloud_in: numpy array
     :param epsg_in: EPSG code of the input SRS
-    :type epsg_in: int
     :param epsg_out: EPSG code of the ouptut SRS
-    :type epsg_out: int
-    :returns: Projected point cloud
-    :rtype: numpy array
+    :return: Projected point cloud
     """
     srs_in = osr.SpatialReference()
     srs_in.ImportFromEPSG(epsg_in)
@@ -399,7 +392,7 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     TODO: add test
 
     :param cloud: cloud to project
-    :param epsg_out: EPSG code of the ouptut SRS
+    :param epsg_out: EPSG code of the output SRS
     """
 
     if cloud.attrs[cst.EPSG] != epsg_out:
@@ -438,8 +431,12 @@ def points_cloud_conversion_dataframe(
 
 
 def ground_polygon_from_envelopes(
-    poly_envelope1, poly_envelope2, epsg1, epsg2, tgt_epsg=4326
-):
+    poly_envelope1: Polygon,
+    poly_envelope2: Polygon,
+    epsg1: int,
+    epsg2: int,
+    tgt_epsg: int = 4326,
+) -> Tuple[Polygon, Tuple[int, int, int, int]]:
     """
     compute the ground polygon of the intersection of two envelopes
     TODO: refacto with externals (OTB) and steps.
@@ -447,20 +444,14 @@ def ground_polygon_from_envelopes(
     :raise: Exception when the envelopes don't intersect one to each other
 
     :param poly_envelope1: path to the first envelope
-    :type poly_envelope1: Polygon
     :param poly_envelope2: path to the second envelope
-    :type poly_envelope2: Polygon
     :param epsg1: EPSG code of poly_envelope1
-    :type epsg1: int
     :param epsg2: EPSG code of poly_envelope2
-    :type epsg2: int
     :param tgt_epsg: EPSG code of the new projection
         (default value is set to 4326)
-    :type tgt_epsg: int
     :return: a tuple with the shapely polygon of the intersection
         and the intersection's bounding box
         (described by a tuple (minx, miny, maxx, maxy))
-    :rtype: Tuple[polygon, Tuple[int, int, int, int]]
     """
     # project to the correct epsg if necessary
     if epsg1 != tgt_epsg:
@@ -479,8 +470,7 @@ def ground_polygon_from_envelopes(
 
 
 def ground_intersection_envelopes(
-    img1_path: str,
-    img2_path: str,
+    conf,
     shp1_path: str,
     shp2_path: str,
     out_intersect_path: str,
@@ -498,24 +488,34 @@ def ground_intersection_envelopes(
 
     :raise: Exception when the envelopes don't intersect one to each other
 
-    :param img1: filename to image 1 (left)
-    :param img2: filename to image 2 (right)
-    :param shp1: Path to the output shapefile left
-    :param shp2: Path to the output shapefile right
+    :param conf: cars input configuration dictionary
+    :param shp1_path: Path to the output shapefile left
+    :param shp2_path: Path to the output shapefile right
     :param dem_dir: Directory containing DEM tiles
     :param default_alt: Default altitude above ellipsoid
     :param out_intersect_path: out vector file path to create
     :return: a tuple with the shapely polygon of the intersection
         and the intersection's bounding box
         (described by a tuple (minx, miny, maxx, maxy))
-    :rtype: Tuple[polygon, Tuple[int, int, int, int]]
     """
     # Create left, right envelopes from images and dem, default_alt
-    otb_pipelines.image_envelope(
-        img1_path, shp1_path, dem=dem_dir, default_alt=default_alt
+    geo_loader = static_conf.get_geometry_loader()
+
+    geo_loader.image_envelope(
+        conf,
+        input_parameters.PRODUCT1_KEY,
+        shp1_path,
+        dem=dem_dir,
+        default_alt=default_alt,
+        geoid=static_conf.get_geoid_path(),
     )
-    otb_pipelines.image_envelope(
-        img2_path, shp2_path, dem=dem_dir, default_alt=default_alt
+    geo_loader.image_envelope(
+        conf,
+        input_parameters.PRODUCT2_KEY,
+        shp2_path,
+        dem=dem_dir,
+        default_alt=default_alt,
+        geoid=static_conf.get_geoid_path(),
     )
 
     # Read vectors shapefiles
@@ -529,6 +529,7 @@ def ground_intersection_envelopes(
         inter_xmax,
         inter_ymax,
     ) = ground_polygon_from_envelopes(poly1, poly2, epsg1, epsg2, epsg1)
+
     # Write intersection file vector from inter_poly
     outputs.write_vector([inter_poly], out_intersect_path, epsg1)
 
@@ -538,24 +539,19 @@ def ground_intersection_envelopes(
 def project_coordinates_on_line(
     x_coord: Union[float, np.ndarray],
     y_coord: Union[float, np.ndarray],
-    origin: np.ndarray,
-    vec: np.ndarray,
-) -> np.ndarray:
+    origin: Union[List[float], np.ndarray],
+    vec: Union[List[float], np.ndarray],
+) -> Union[float, np.ndarray]:
     """
     Project coordinates (x,y) on a line starting from origin with a
     direction vector vec, and return the euclidean distances between
     projected points and origin.
 
     :param x_coord: scalar or vector of coordinates x
-    :type x_coord: float or np.array(float) of shape [n]
     :param y_coord: scalar or vector of coordinates x
-    :type y_coord: float or np.array(float) of shape [n]
     :param origin: coordinates of origin point for line
-    :type origin: list(float) or np.array(float) of size 2
     :param vec: direction vector of line
-    :type vec: list(float) or np.array(float) of size 2
     :return: vector of distances of projected points to origin
-    :rtype: numpy array of float
     """
     assert len(x_coord) == len(y_coord)
     assert len(origin) == 2
@@ -572,27 +568,33 @@ def project_coordinates_on_line(
 
 
 def get_time_ground_direction(
-    img: str,
+    conf,
+    product_key: str,
     x_loc: float = None,
     y_loc: float = None,
     y_offset: float = None,
     dem: str = None,
+    geoid: str = None,
 ) -> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
     time on ground.
-    Done by two "img" localizations at "y" and "y+y_offset" values.
+    Done by two localizations at "y" and "y+y_offset" values.
 
-    :param img: Path to an image
+    :param conf: cars input configuration dictionary
+    :param product_key: input_parameters.PRODUCT1_KEY or
+    input_parameters.PRODUCT2_KEY to identify which geometric model shall
+    be taken to perform the method
     :param x_loc: x location in image for estimation (default=center)
     :param y_loc: y location in image for estimation (default=1/4)
     :param y_offset: y location in image for estimation (default=1/2)
     :param dem: DEM for direct localisation function
+    :param geoid: path to geoid file
     :return: normalized direction vector as a numpy array
     """
-    # Define x: image center,
-    #        y: 1/4 of image,
+    # Define x: image center, y: 1/4 of image,
     # y_offset: 3/4 of image if not defined
+    img = conf[input_parameters.create_img_tag_from_product_key(product_key)]
     img_size_x, img_size_y = inputs.rasterio_get_size(img)
     if x_loc is None:
         x_loc = img_size_x / 2
@@ -609,11 +611,13 @@ def get_time_ground_direction(
     assert y_offset > 0
     assert y_loc + y_offset <= img_size_y
 
-    # Get first coordinates of time direction vector
-    lat1, lon1, __ = otb_pipelines.sensor_to_geo(img, x_loc, y_loc, dem=dem)
-    # Get second coordinates of time direction vector
-    lat2, lon2, __ = otb_pipelines.sensor_to_geo(
-        img, x_loc, y_loc + y_offset, dem=dem
+    # Get coordinates of time direction vectors
+    geometry_loader = static_conf.get_geometry_loader()
+    lat1, lon1, __ = geometry_loader.direct_loc(
+        conf, product_key, x_loc, y_loc, dem=dem, geoid=geoid
+    )
+    lat2, lon2, __ = geometry_loader.direct_loc(
+        conf, product_key, x_loc, y_loc + y_offset, dem=dem, geoid=geoid
     )
 
     # Create and normalize the time direction vector
@@ -623,33 +627,86 @@ def get_time_ground_direction(
     return vec
 
 
+def display_angle(vec):
+    """
+    Display angle in degree from a vector x
+    :param vec: vector to display
+    :return: angle in degree
+    """
+    return 180 * math.atan2(vec[1], vec[0]) / math.pi
+
+
+def acquisition_direction(conf, dem: str) -> Tuple[np.ndarray]:
+    """
+    Computes the mean acquisition of the input images pair
+
+    :param conf: cars input configuration dictionary
+    :param dem: path to the dem directory
+    :return: a tuple composed of :
+        - the mean acquisition direction as a numpy array
+        - the acquisition direction of the first product in the configuration
+        as a numpy array
+        - the acquisition direction of the second product in the configuration
+        as a numpy array
+    """
+    vec1 = get_time_ground_direction(
+        conf, input_parameters.PRODUCT1_KEY, dem=dem
+    )
+    vec2 = get_time_ground_direction(
+        conf, input_parameters.PRODUCT2_KEY, dem=dem
+    )
+    time_direction_vector = (vec1 + vec2) / 2
+
+    logging.info(
+        "Time direction average azimuth: "
+        "{}° (img1: {}°, img2: {}°)".format(
+            display_angle(time_direction_vector),
+            display_angle(vec1),
+            display_angle(vec2),
+        )
+    )
+
+    return time_direction_vector, vec1, vec2
+
+
 def get_ground_direction(
-    img: str,
+    conf,
+    product_key: str,
     x_coord: float = None,
     y_coord: float = None,
     z0_coord: float = None,
     z_coord: float = None,
+    dem: str = None,
+    geoid: str = None,
 ) -> np.ndarray:
     """
     For a given image (x,y) point, compute the direction vector to ground
-    The function use otb_pipelines.sensor_to_geo and make a z variation to get
-    a ground direction vector.
-    By default, (x,y) is put at image center and z0, z at RPC geometric model
-    limits.
+    The function uses the direct localization operation and makes a z
+    variation to get a ground direction vector.
+    By default, (x,y) is put at image center and z0, z at RPC geometric
+    model limits.
 
-    :param img: Path to an image
-    :param x: X Coordinate in input image sensor
-    :param y: Y Coordinate in input image sensor
-    :param z0: Z altitude reference coordinate
-    :param z: Z Altitude coordinate to take the image
+    :param conf: cars input configuration dictionary
+    :param product_key: input_parameters.PRODUCT1_KEY or
+    input_parameters.PRODUCT2_KEY to identify which geometric model shall
+    be taken to perform the method
+    :param x_coord: X Coordinate in input image sensor
+    :param y_coord: Y Coordinate in input image sensor
+    :param z0_coord: Z altitude reference coordinate
+    :param z_coord: Z Altitude coordinate to take the image
+    :param dem: path to the dem directory
+    :param geoid: path to the geoid file
     :return: (lat0,lon0,alt0, lat,lon,alt) origin and end vector coordinates
     """
     # Define x, y in image center if not defined
+    img = conf[input_parameters.create_img_tag_from_product_key(product_key)]
     img_size_x, img_size_y = inputs.rasterio_get_size(img)
+
     if x_coord is None:
         x_coord = img_size_x / 2
     if y_coord is None:
         y_coord = img_size_y / 2
+
     # Check x, y to be in image
     assert x_coord >= 0
     assert x_coord <= img_size_x
@@ -662,6 +719,7 @@ def get_ground_direction(
         z0_coord = min_alt
     if z_coord is None:
         z_coord = max_alt
+
     # Check z0 and z to be in RPC constraints
     assert z0_coord >= min_alt
     assert z0_coord <= max_alt
@@ -669,20 +727,32 @@ def get_ground_direction(
     assert z_coord <= max_alt
 
     # Get origin vector coordinate with z0 altitude
-    lat0, lon0, alt0 = otb_pipelines.sensor_to_geo(
-        img, x_coord, y_coord, z_coord=z0_coord
+    geometry_loader = static_conf.get_geometry_loader()
+    lat0, lon0, alt0 = geometry_loader.direct_loc(
+        conf,
+        product_key,
+        x_coord,
+        y_coord,
+        z_coord=z0_coord,
+        dem=dem,
+        geoid=geoid,
     )
     # Get end vector coordinate with z altitude
-    lat, lon, alt = otb_pipelines.sensor_to_geo(
-        img, x_coord, y_coord, z_coord=z_coord
+    lat, lon, alt = geometry_loader.direct_loc(
+        conf,
+        product_key,
+        x_coord,
+        y_coord,
+        z_coord=z_coord,
+        dem=dem,
+        geoid=geoid,
     )
 
     return np.array([lat0, lon0, alt0, lat, lon, alt])
 
 
 def get_ground_angles(
-    img1: str,
-    img2: str,
+    conf,
     x1_coord: float = None,
     y1_coord: float = None,
     z1_0_coord: float = None,
@@ -710,8 +780,7 @@ def get_ground_angles(
 
     Perspectives: get bisector  elevation (BIE), and asymmetry angle
 
-    :param img1: Path to left image1
-    :param img2: Path to right image2
+    :param conf: cars input configuration dictionary
     :param x1_coord: X Coordinate in input left image1  sensor
     :param y1_coord: Y Coordinate in input left image1 sensor
     :param z1_0_coord: Left image1 Z altitude origin coordinate
@@ -727,10 +796,15 @@ def get_ground_angles(
     :return: Left Azimuth, Left Elevation Angle,
             Right Azimuth, Right Elevation Angle, Convergence Angle
     """
-
     # Get image1 <-> satellite vector from image2 metadata geometric model
     lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(
-        img1, x1_coord, y1_coord, z1_0_coord, z1_coord
+        conf,
+        input_parameters.PRODUCT1_KEY,
+        x1_coord,
+        y1_coord,
+        z1_0_coord,
+        z1_coord,
+        geoid=static_conf.get_geoid_path(),
     )
     # Get East North Up vector for left image1
     x1_e, y1_n, y1_u = enu1 = geo_to_enu(
@@ -741,7 +815,13 @@ def get_ground_angles(
 
     # Get image2 <-> satellite vector from image2 metadata geometric model
     lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(
-        img2, x2_coord, y2_coord, z2_0_coord, z2_coord
+        conf,
+        input_parameters.PRODUCT2_KEY,
+        x2_coord,
+        y2_coord,
+        z2_0_coord,
+        z2_coord,
+        geoid=static_conf.get_geoid_path(),
     )
     # Get East North Up vector for right image2
     x2_e, y2_n, y2_u = enu2 = geo_to_enu(

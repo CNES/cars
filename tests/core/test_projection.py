@@ -36,6 +36,7 @@ from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 # CARS imports
+from cars.conf import input_parameters, static_conf
 from cars.core import inputs, projection
 
 # CARS Tests imports
@@ -175,6 +176,14 @@ def test_ground_intersection_envelopes():
     # test on paca
     img1 = absolute_data_path("input/phr_paca/left_image.tif")
     img2 = absolute_data_path("input/phr_paca/right_image.tif")
+    conf = {
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT1_KEY
+        ): img1,
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT2_KEY
+        ): img2,
+    }
     srtm_dir = absolute_data_path("input/phr_paca/srtm")
     # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
     intersect_xymin_xymax_ref_1 = (
@@ -197,7 +206,7 @@ def test_ground_intersection_envelopes():
         out_intersect = os.path.join(tmp_dir, "envelopes_intersection.gpkg")
 
         _, intersect_xymin_xymax = projection.ground_intersection_envelopes(
-            img1, img2, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+            conf, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
         )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -212,6 +221,11 @@ def test_ground_intersection_envelopes():
 
     # test paca and ventoux for no intersection
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    conf[
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT2_KEY
+        )
+    ] = img2
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
         out_shp1 = os.path.join(tmp_dir, "left_envelope_void.shp")
         out_shp2 = os.path.join(tmp_dir, "right_envelope_void.shp")
@@ -222,7 +236,7 @@ def test_ground_intersection_envelopes():
                 _,
                 intersect_xymin_xymax,
             ) = projection.ground_intersection_envelopes(
-                img1, img2, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+                conf, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
             )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -241,21 +255,30 @@ def test_get_time_ground_direction():
     """
     Test the get_time_ground_direction
     """
-    # Bug OTB elevation: ref1 when launch standalone
-    ref1_vec_0 = -0.03747366058909428
-    ref1_vec_1 = 0.9992976157091807
-    # Bug OTB elevation: ref2 when all unit_tests launched (otb apps before)
-    ref2_vec_0 = -0.03760314420222626
-    ref2_vec_1 = 0.9992927516729553
-
     # Force use of DEM if test is ran standalone
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
     img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    vec = projection.get_time_ground_direction(img, dem=dem)
+    conf = {
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT1_KEY
+        ): img
+    }
 
-    assert vec[0] == ref1_vec_0 or ref2_vec_0
-    assert vec[1] == ref1_vec_1 or ref2_vec_1
+    vec = projection.get_time_ground_direction(
+        conf, input_parameters.PRODUCT1_KEY, geoid=static_conf.get_geoid_path()
+    )
+    assert vec[0] == -0.02356248001209794
+    assert vec[1] == 0.999722366227584
+
+    vec = projection.get_time_ground_direction(
+        conf,
+        input_parameters.PRODUCT1_KEY,
+        dem=dem,
+        geoid=static_conf.get_geoid_path(),
+    )
+    assert vec[0] == -0.03760314420222626
+    assert vec[1] == 0.9992927516729553
 
 
 @pytest.mark.unit_tests
@@ -267,7 +290,15 @@ def test_get_ground_angles():
     left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
     right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
 
-    angles = projection.get_ground_angles(left_img, right_img)
+    conf = {
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT1_KEY
+        ): left_img,
+        input_parameters.create_img_tag_from_product_key(
+            input_parameters.PRODUCT2_KEY
+        ): right_img,
+    }
+    angles = projection.get_ground_angles(conf)
     angles = np.asarray(angles)  # transform tuple to array
 
     np.testing.assert_allclose(

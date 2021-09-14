@@ -84,7 +84,7 @@ def test_end2end_ventoux_unique():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, "r") as preproc_json_file:
+        with open(preproc_json, "r", encoding="utf-8") as preproc_json_file:
             preproc_data = json.load(preproc_json_file)
             assert (
                 preproc_data["preprocessing"]["output"]["epipolar_size_x"]
@@ -300,7 +300,7 @@ def test_prepare_ventoux_bias():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, "r") as preproc_json_file:
+        with open(preproc_json, "r", encoding="utf-8") as preproc_json_file:
             preproc_data = json.load(preproc_json_file)
             preproc_output = preproc_data["preprocessing"]["output"]
             assert preproc_output["epipolar_size_x"] == 612
@@ -353,7 +353,7 @@ def test_end2end_ventoux_with_color():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, "r") as preproc_json_file:
+        with open(preproc_json, "r", encoding="utf-8") as preproc_json_file:
             preproc_data = json.load(preproc_json_file)
             preproc_output = preproc_data["preprocessing"]["output"]
             assert preproc_output["epipolar_size_x"] == 612
@@ -635,7 +635,7 @@ def test_end2end_quality_stats():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, "r") as preproc_json_file:
+        with open(preproc_json, "r", encoding="utf-8") as preproc_json_file:
             preproc_data = json.load(preproc_json_file)
             preproc_output = preproc_data["preprocessing"]["output"]
             assert preproc_output["epipolar_size_x"] == 612
@@ -763,7 +763,7 @@ def test_end2end_ventoux_egm96_geoid():
         preproc_json = os.path.join(out_preproc, "content.json")
         assert os.path.isfile(preproc_json)
 
-        with open(preproc_json, "r") as preproc_json_file:
+        with open(preproc_json, "r", encoding="utf-8") as preproc_json_file:
             preproc_data = json.load(preproc_json_file)
             preproc_output = preproc_data["preprocessing"]["output"]
             assert preproc_output["epipolar_size_x"] == 612

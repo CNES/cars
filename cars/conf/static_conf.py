@@ -36,7 +36,7 @@ from numpy import dtype
 # CARS imports
 from cars.core import inputs
 from cars.core.geometry import AbstractGeometry
-from cars.steps import points_cloud
+from cars.steps import SmallComponentsFilterParams, StatisticalFilterParams
 
 # TODO : Refacto Conf with unitary and independent steps
 # TODO : not use a global cfg variable ?
@@ -214,7 +214,6 @@ def set_env():
     """
     Set CARS needed global environment variables :
     - CARS_STATIC_CONFIGURATION : path of json CARS static configuration file
-    - OTB_GEOID_FILE : path to the GEOID file.
 
     By default, deployed by cars.
     But can be defined externally by user.
@@ -244,24 +243,6 @@ def set_env():
         log_msg = "The file indicated {} does not exist".format(
             os.environ["CARS_STATIC_CONFIGURATION"]
         )
-        logger.critical(log_msg)
-        raise Exception(log_msg)
-
-    # ### OTB configuration
-
-    # OTB_GEOID_FILE
-    if "OTB_GEOID_FILE" not in os.environ:
-        # set local geoid path (with resolved path from setup install)
-        os.environ["OTB_GEOID_FILE"] = os.path.join(
-            package_path, CARS_GEOID_PATH
-        )
-        logger.debug(
-            "OTB_GEOID_FILE not defined."
-            " Set to CARS internal: {}".format(os.environ["OTB_GEOID_FILE"])
-        )
-
-    if not os.path.exists(os.environ.get("OTB_GEOID_FILE")):
-        log_msg = "OTB_GEOID_FILE environment variable is not set"
         logger.critical(log_msg)
         raise Exception(log_msg)
 
@@ -378,9 +359,9 @@ def get_rasterization_params() -> RasterizationParams:
 
 # fmt: off
 def get_small_components_filter_params() \
-        -> points_cloud.SmallComponentsFilterParams:
+        -> SmallComponentsFilterParams:
     """
-    Construct the points_cloud.SmallComponentParams namedtuple
+    Construct the SmallComponentParams namedtuple
     from the static configuration file
 
     :return: the small components filter parameters
@@ -395,16 +376,16 @@ def get_small_components_filter_params() \
     if small_cpn_filter_dict is None:
         return None
 
-    small_cpn_filter_params = points_cloud.SmallComponentsFilterParams(
+    small_cpn_filter_params = SmallComponentsFilterParams(
         *small_cpn_filter_dict.values()
     )
     return small_cpn_filter_params
 
 
 def get_statistical_outliers_filter_params() \
-        -> points_cloud.StatisticalFilterParams:
+        -> StatisticalFilterParams:
     """
-    Construct the points_cloud.StatisticalFilterParams namedtuple
+    Construct the StatisticalFilterParams namedtuple
     from the static configuration file
 
     :return: the statistical outliers filter parameters
@@ -419,7 +400,7 @@ def get_statistical_outliers_filter_params() \
     if stat_filter_dict is None:
         return None
 
-    stat_filter_params = points_cloud.StatisticalFilterParams(
+    stat_filter_params = StatisticalFilterParams(
         *stat_filter_dict.values()
     )
     return stat_filter_params

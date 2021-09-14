@@ -82,7 +82,11 @@ private:
   }
 
   void DoExecute()
-  {  
+  {
+   // Clear and reset the DEM Handler
+    otb::DEMHandler::Instance()->ClearDEMs();
+    otb::Wrapper::ElevationParametersHandler::SetupDEMHandlerFromElevationParameters(this, "elev");
+
     auto output = FloatImageType::New();
     FloatImageType::SizeType size;
     size[0] = this->GetParameterInt("sizex");

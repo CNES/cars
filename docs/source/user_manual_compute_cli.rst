@@ -108,7 +108,7 @@ Some optional parameters:
 * ``corr_config``: correlator configuration file (for pandora)
 * ``min_elevation_offset``: minimum offset in meter to use for the correlation. This parameter is converted in minimum of disparity using the disp_to_alt_ratio computed in the prepare step.
 * ``max_elevation_offset``: maximum offset in meter to use for the correlation. This parameter is converted in maximum of disparity using the disp_to_alt_ratio computed in the prepare step.
-* ``use_geoid_as_alt_ref``: controls the altimetric reference used to compute altitudes. If activated, the function uses the geoid file defined by the ```OTB_GEOID_FILE``` environment variable.
+* ``use_geoid_as_alt_ref``: controls the altimetric reference used to compute altitudes. If activated, the function uses the geoid file defined by the geoid defined in the static configuration.
 * ``use_sec_disp`` : enables to use the secondary disparity map to densify the 3D points cloud.
 * ``snap_to_left_image`` : each 3D point is snapped to line of sight from left reference image (instead of using mid-point). This increases the coherence between several pairs if left image is the same image for all pairs.
 * ``align_with_lowres_dem``: During prepare step, a cubic splines correction is computed so as to align :term:`DSM` from a pair with the initial low resolution DEM. If this mode is used, the correction estimated for each pair is applied. This will increases coherency between pairs and with the initial low resolution DEM.

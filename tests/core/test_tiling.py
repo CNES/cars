@@ -267,9 +267,13 @@ def test_tiles_pairing(
         # CRS for all GeoJSON is epsg:4326: to convert for QGIS:
         # > ogr2ogr -f "GeoJSON" out.geojson in.geojson \
         # > -s_srs EPSG:32631 -t_srs EPSG:4326
-        with open(os.path.join(tmp_dir, ter_filename), "w") as writer:
+        with open(
+            os.path.join(tmp_dir, ter_filename), "w", encoding="utf-8"
+        ) as writer:
             writer.write(json.dumps(ter_geodict))
-        with open(os.path.join(tmp_dir, epi_filename), "w") as writer:
+        with open(
+            os.path.join(tmp_dir, epi_filename), "w", encoding="utf-8"
+        ) as writer:
             writer.write(json.dumps(epi_geodict))
         for tmp_filename in [ter_filename, epi_filename]:
             with fiona.open(os.path.join(tmp_dir, tmp_filename)):

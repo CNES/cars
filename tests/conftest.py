@@ -42,7 +42,9 @@ def images_and_grids_conf():  # pylint: disable=redefined-outer-name
     Returns images (img1 and img2) and grids (left, right) configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["images_and_grids"]
 
@@ -65,7 +67,9 @@ def color1_conf():  # pylint: disable=redefined-outer-name
     Returns color1 configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["color1"]
 
@@ -82,7 +86,9 @@ def color_pxs_conf():  # pylint: disable=redefined-outer-name
     Returns color_pxs configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["color_pxs"]
 
@@ -99,7 +105,9 @@ def no_data_conf():  # pylint: disable=redefined-outer-name
     Returns no data configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["no_data"]
 
@@ -112,7 +120,9 @@ def epipolar_sizes_conf():  # pylint: disable=redefined-outer-name
     Returns epipolar size configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["epipolar_sizes"]
 
@@ -125,7 +135,9 @@ def epipolar_origins_spacings_conf():  # pylint: disable=redefined-outer-name
     Returns epipolar spacing configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["epipolar_origins_spacings"]
 
@@ -138,7 +150,9 @@ def disparities_conf():  # pylint: disable=redefined-outer-name
     Returns disparities configuration
     """
     json_path = "input/stereo_input/tests_configurations.json"
-    with open(absolute_data_path(json_path), "r") as json_file:
+    with open(
+        absolute_data_path(json_path), "r", encoding="utf-8"
+    ) as json_file:
         json_dict = json.load(json_file)
         configuration = json_dict["disparities"]
 

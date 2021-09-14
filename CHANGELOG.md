@@ -14,6 +14,8 @@ A new section Unreleased is opened then for next dev phase.
 - Add quality code tools isort, black, flake8 [#247, #269, #271]
 - Add prepare/compute_dsm notebook [#246]
 - Add sonarqube configuration [#198]
+- Add Geometry Loader mechanism [#287]
+- Add OTBGeometry loader [#287]
 
 ### Changed
 
@@ -33,6 +35,7 @@ A new section Unreleased is opened then for next dev phase.
 - Clean Documentation + ReadTheDocs [#160, #258]
 - Dockerfile update [#219]
 - Update/Clean README [#200]
+- Geoid file indicated via the static configuration [#287]
 
 ### Fixed
 

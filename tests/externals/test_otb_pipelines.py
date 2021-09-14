@@ -25,9 +25,6 @@ Test module for cars/externals/otb_pipelines.py
 # Standard imports
 from __future__ import absolute_import
 
-import os
-import tempfile
-
 # Third party imports
 import pytest
 import xarray as xr
@@ -36,13 +33,7 @@ import xarray as xr
 from cars.externals import otb_pipelines
 
 # CARS Tests imports
-from ..helpers import (
-    absolute_data_path,
-    assert_same_datasets,
-    otb_geoid_file_set,
-    otb_geoid_file_unset,
-    temporary_dir,
-)
+from ..helpers import absolute_data_path, assert_same_datasets, get_geoid_path
 
 
 @pytest.mark.unit_tests
@@ -104,20 +95,6 @@ def test_get_utm_zone_as_epsg_code():
 
 
 @pytest.mark.unit_tests
-def test_image_envelope():
-    """
-    Test image_envelope function
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        shp = os.path.join(directory, "envelope.gpkg")
-        otb_pipelines.image_envelope(img, shp, dem)
-        assert os.path.isfile(shp)
-
-
-@pytest.mark.unit_tests
 def test_read_lowres_dem():
     """
     Test read_lowres_dem function
@@ -128,15 +105,9 @@ def test_read_lowres_dem():
     sizex = 100
     sizey = 100
 
-    # Set the geoid file from code source
-    otb_geoid_file_set()
-
     srtm_ds = otb_pipelines.read_lowres_dem(
-        startx, starty, sizex, sizey, dem=dem
+        startx, starty, sizex, sizey, dem=dem, geoid=get_geoid_path()
     )
-
-    # Unset geoid for the test to be standalone
-    otb_geoid_file_unset()
 
     # Uncomment to update baseline
     # srtm_ds.to_netcdf(absolute_data_path("ref_output/srtm_xt.nc"))

@@ -99,7 +99,7 @@ def test_configure_pandora_with_file():
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         json_path = os.path.join(directory, "corr.json")
-        with open(json_path, "w") as json_file:
+        with open(json_path, "w", encoding="utf-8") as json_file:
             json_file.write(json_content)
 
         corr_config = corr_conf.configure_correlator(json_path)

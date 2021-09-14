@@ -50,7 +50,7 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     or a pandas.DataFrame as used in the rasterization
     """
 
-    with open(path_ply_file, "w") as ply_file:
+    with open(path_ply_file, "w", encoding="utf-8") as ply_file:
         if isinstance(cloud, xr.Dataset):
             nb_points = int(
                 cloud[cst.POINTS_CLOUD_CORR_MSK]
@@ -132,5 +132,5 @@ def write_dask_config(dask_config: dict, output_dir: str, file_name: str):
 
     # file path where to store the dask config
     dask_config_path = os.path.join(output_dir, file_name + ".yaml")
-    with open(dask_config_path, "w") as dask_config_file:
+    with open(dask_config_path, "w", encoding="utf-8") as dask_config_file:
         yaml.dump(dask_config, dask_config_file)

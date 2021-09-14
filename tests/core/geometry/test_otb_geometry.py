@@ -35,6 +35,7 @@ import rasterio as rio
 # CARS imports
 from cars.conf import input_parameters, static_conf
 from cars.core.geometry import AbstractGeometry
+from cars.core.inputs import read_vector
 
 # CARS Tests imports
 from ...helpers import absolute_data_path, temporary_dir
@@ -85,6 +86,7 @@ def test_generate_epipolar_grids():
         )
     )
 
+    # test with geoid
     (
         left_grid_as_array,
         right_grid_as_array,
@@ -105,7 +107,8 @@ def test_generate_epipolar_grids():
     assert np.isclose(disp_to_alt_ratio, 1 / 0.7, 0.01)
 
     # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/left_grid.npy"), left_grid_np)
+    # np.save(absolute_data_path("ref_output/left_grid.npy"),
+    #         left_grid_as_array)
 
     left_grid_np_reference = np.load(
         absolute_data_path("ref_output/left_grid.npy")
@@ -115,10 +118,53 @@ def test_generate_epipolar_grids():
     assert right_grid_as_array.shape == (15, 15, 2)
 
     # Uncomment to update baseline
-    # np.save(absolute_data_path("ref_output/right_grid.npy"), right_grid_np)
+    # np.save(absolute_data_path("ref_output/right_grid.npy"),
+    #         right_grid_as_array)
 
     right_grid_np_reference = np.load(
         absolute_data_path("ref_output/right_grid.npy")
+    )
+    np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
+
+    # test without geoid
+    (
+        left_grid_as_array,
+        right_grid_as_array,
+        origin,
+        spacing,
+        epipolar_size,
+        disp_to_alt_ratio,
+    ) = geo_loader.generate_epipolar_grids(
+        conf,
+        dem,
+        epipolar_step=step,
+    )
+
+    assert epipolar_size == [612, 612]
+    assert left_grid_as_array.shape == (15, 15, 2)
+    assert origin[0] == 0
+    assert origin[1] == 0
+    assert spacing[0] == step
+    assert spacing[1] == step
+    assert np.isclose(disp_to_alt_ratio, 1 / 0.7, 0.01)
+
+    # Uncomment to update baseline
+    # np.save(absolute_data_path("ref_output/left_grid_no_geoid.npy"),
+    #         left_grid_as_array)
+
+    left_grid_np_reference = np.load(
+        absolute_data_path("ref_output/left_grid_no_geoid.npy")
+    )
+    np.testing.assert_allclose(left_grid_as_array, left_grid_np_reference)
+
+    assert right_grid_as_array.shape == (15, 15, 2)
+
+    # Uncomment to update baseline
+    # np.save(absolute_data_path("ref_output/right_grid_no_geoid.npy"),
+    #         right_grid_as_array)
+
+    right_grid_np_reference = np.load(
+        absolute_data_path("ref_output/right_grid_no_geoid.npy")
     )
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
@@ -422,6 +468,111 @@ def test_generate_epipolar_grids_scaled_inputs():
         scalex=-1.0,
         scaley=-2.0,
     )
+
+
+@pytest.mark.unit_tests
+def test_image_envelope():
+    """
+    Test image_envelope function
+    """
+    img = absolute_data_path("input/phr_ventoux/left_image.tif")
+    conf = {input_parameters.IMG1_TAG: img}
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry"
+        )
+    )
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+        )
+
+        assert os.path.isfile(shp)
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
+
+    # test with dem
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            dem,
+        )
+
+        assert os.path.isfile(shp)
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
+
+    # test with geoid
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.gpkg")
+
+        geo_loader.image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            geoid=static_conf.get_geoid_path(),
+        )
+
+        assert os.path.isfile(shp)
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
+        ]
+
+    # test image_envelope function defined in AbstractGeometry using the
+    # OTBGeometry direct_loc
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        shp = os.path.join(directory, "envelope.shp")
+        super(type(geo_loader), geo_loader).image_envelope(
+            conf,
+            input_parameters.PRODUCT1_KEY,
+            shp,
+            dem,
+            geoid=static_conf.get_geoid_path(),
+        )
+
+        assert os.path.isfile(shp)
+
+        poly, epsg = read_vector(shp)
+        assert epsg == 4326
+        assert list(poly.exterior.coords) == [
+            (5.193406105041504, 44.20805740356445),
+            (5.1965651512146, 44.20809555053711),
+            (5.196654319763184, 44.205902099609375),
+            (5.193485260009766, 44.205841064453125),
+            (5.193406105041504, 44.20805740356445),
+        ]
 
 
 @pytest.mark.unit_tests
