@@ -33,6 +33,7 @@ import json
 import math
 import os
 import tempfile
+from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
 # Third party imports
 import pyproj

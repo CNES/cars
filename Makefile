@@ -58,32 +58,28 @@ install-deps: venv
 
 install: install-deps  ## install cars
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .
-	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@chmod +x ${VENV}/bin/register-python-argcomplete
-	@echo "CARS ${CARS_VERSION} installed"
+	@echo "CARS ${CARS_VERSION} installed in virtualenv ${VENV}"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 install-notebook: install-deps  ## install cars with Jupyter notebooks packages
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .[notebook]
-	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@chmod +x ${VENV}/bin/register-python-argcomplete
-	@echo "CARS ${CARS_VERSION} installed with Jupyter notebook packages"
+	@echo "CARS ${CARS_VERSION} installed in virtualenv ${VENV} with Jupyter notebook packages"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 install-doc: install-deps  ## install cars with Sphinx documentation dependencies
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose .[doc]
-	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@chmod +x ${VENV}/bin/register-python-argcomplete
-	@echo "CARS ${CARS_VERSION} installed with Sphinx docs dependencies"
+	@echo "CARS ${CARS_VERSION} in virtualenv ${VENV} installed with Sphinx docs dependencies"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 install-dev: install-deps ## install cars in dev mode
 	@test -f ${VENV}/bin/cars || ${VENV}/bin/pip install --verbose -e .[dev]
-	@echo "\n --> CARS installed in virtualenv ${VENV}"
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${VENV}/bin/pre-commit install -t pre-commit
 	@chmod +x ${VENV}/bin/register-python-argcomplete
-	@echo "CARS ${CARS_VERSION} installed in dev mode"
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${VENV}"
 	@echo "CARS venv usage : source ${VENV}/bin/activate; source ${VENV}/bin/env_cars.sh; cars -h"
 
 test: install-dev ## run all tests + coverage html
@@ -111,16 +107,18 @@ test-notebook: install-dev ## run notebook tests only
 	@${VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 lint: install-dev ## run lint tools (depends install-dev)
-	@echo "CARS linting isort check"
+	@echo "## Linting checks ##"
+	@echo "Isort check"
 	@${VENV}/bin/isort --check cars tests
-	@echo "CARS linting black check"
+	@echo "Black check"
 	@${VENV}/bin/black --check cars tests
-	@echo "CARS linting flake8 check"
+	@echo "Flake8 check"
 	@${VENV}/bin/flake8 cars tests
-	@echo "CARS linting pylint check"
+	@echo "Pylint check"
 	@set -o pipefail; ${VENV}/bin/pylint cars tests --rcfile=.pylintrc --output-format=parseable | tee pylint-report.txt # pipefail to propagate pylint exit code in bash
 
 format: install-dev  ## run black and isort formatting (depends install-dev)
+	@echo "## isort and black formatting ##"
 	@${VENV}/bin/isort cars tests
 	@${VENV}/bin/black cars tests
 

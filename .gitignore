@@ -14,3 +14,6 @@ pylint-report.xml
 *.aux.xml
 htmlcov/
 venv/
+.eggs/
+cars.egg-info/
+pylint-report.txt
