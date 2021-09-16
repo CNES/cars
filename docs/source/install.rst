@@ -69,7 +69,7 @@ Required python packages
 CARS python package requires some python packages to be installed before:
 
 * **numpy**, **cython**: They have to be installed separately otherwise some dependencies won't be correctly installed.
-* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from source to fit local GDAL version.
+* **fiona**, **rasterio**, **gdal**: On some systems, they have to be installed from source to fit local GDAL version.
 
 Here are the correspondent commands to install these prior dependencies:
 
@@ -80,7 +80,7 @@ Here are the correspondent commands to install these prior dependencies:
     $ python3 -m pip install --upgrade cython numpy
     $ python3 -m pip install --no-binary fiona fiona
     $ python3 -m pip install --no-binary rasterio rasterio
-    $ python3 -m pip install pygdal=="$(gdal-config --version).*"
+    $ python3 -m pip install gdal=="$(gdal-config --version).*"
 
 To manually install CARS core correlator, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
 

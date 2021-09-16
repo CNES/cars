@@ -18,7 +18,7 @@ CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
 CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
-CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
+CHECK_GDAL = $(shell ${VENV}/bin/python -m pip list|grep gdal)
 CHECK_TBB = $(shell ${VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${VENV}/bin/python -m pip list|grep numba)
 
@@ -52,7 +52,7 @@ install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
+	@[ "${CHECK_GDAL}" ] ||${VENV}/bin/python -m pip install gdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
 
