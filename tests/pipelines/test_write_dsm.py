@@ -116,7 +116,7 @@ def test_rasterio_handles():
 
         with file_handles as rio_handles:
             assert isinstance(rio_handles, dict)
-            assert "hgt" in rio_handles.keys() and "clr" in rio_handles.keys()
+            assert "hgt" in rio_handles and "clr" in rio_handles
             for _, rio_handle in rio_handles.items():
                 assert isinstance(rio_handle, rio.io.DatasetWriter)
 
