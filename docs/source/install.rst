@@ -16,6 +16,7 @@ CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`
 
     * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
     * ``OTB_APPLICATION_PATH`` is set.
+    * GDAL must work (gdal-config --version must be available)
 
 * Check Vlfeat install with following global environment variables:
 
@@ -69,7 +70,7 @@ Required python packages
 CARS python package requires some python packages to be installed before:
 
 * **numpy**, **cython**: They have to be installed separately otherwise some dependencies won't be correctly installed.
-* **fiona**, **rasterio**, **gdal**: On some systems, they have to be installed from source to fit local GDAL version.
+* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from source to fit local GDAL version.
 
 Here are the correspondent commands to install these prior dependencies:
 
@@ -80,7 +81,7 @@ Here are the correspondent commands to install these prior dependencies:
     $ python3 -m pip install --upgrade cython numpy
     $ python3 -m pip install --no-binary fiona fiona
     $ python3 -m pip install --no-binary rasterio rasterio
-    $ python3 -m pip install gdal=="$(gdal-config --version).*"
+    $ python3 -m pip install pygdal=="$(gdal-config --version).*"
 
 To manually install CARS core correlator, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
 

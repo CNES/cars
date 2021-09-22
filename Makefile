@@ -15,10 +15,11 @@ endif
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
 
+CHECK_SETUPTOOLS = $(shell ${VENV}/bin/python -m pip list|grep setuptools)
 CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
-CHECK_GDAL = $(shell ${VENV}/bin/python -m pip list|grep gdal)
+CHECK_GDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${VENV}/bin/python -m pip list|grep numba)
 
@@ -45,14 +46,15 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 
 venv: check ## create virtualenv in "venv" dir if not exists
 	@test -d ${VENV} || virtualenv -p `which python3` ${VENV}
-	@${VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
+	@${VENV}/bin/python -m pip install --upgrade pip # no check to upgrade each time
 	@touch ${VENV}/bin/activate
 
 install-deps: venv
+	@[ "${CHECK_SETUPTOOLS}" ] ||${VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
 	@[ "${CHECK_NUMPY}" ] ||${VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_GDAL}" ] ||${VENV}/bin/python -m pip install gdal==$(GDAL_VERSION).*
+	@[ "${CHECK_GDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
 
