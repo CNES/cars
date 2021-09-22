@@ -45,15 +45,15 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
 
 venv: check ## create virtualenv in "venv" dir if not exists
-	@test -d ${VENV} || virtualenv -p `which python3` ${VENV}
+	@test -d ${VENV} || python3 -m venv ${VENV}
 	@${VENV}/bin/python -m pip install --upgrade pip # no check to upgrade each time
 	@touch ${VENV}/bin/activate
 
 install-deps: venv
-	@[ "${CHECK_SETUPTOOLS}" ] ||${VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
 	@[ "${CHECK_NUMPY}" ] ||${VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
+	@[ "${CHECK_SETUPTOOLS}" ] ||${VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
 	@[ "${CHECK_GDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
