@@ -19,7 +19,7 @@ CHECK_SETUPTOOLS = $(shell ${VENV}/bin/python -m pip list|grep setuptools)
 CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
-CHECK_GDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
+CHECK_PYGDAL = $(shell ${VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${VENV}/bin/python -m pip list|grep numba)
 
@@ -54,7 +54,7 @@ install-deps: venv
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_SETUPTOOLS}" ] ||${VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
-	@[ "${CHECK_GDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
+	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
 
