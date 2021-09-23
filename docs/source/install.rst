@@ -16,6 +16,7 @@ CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`
 
     * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
     * ``OTB_APPLICATION_PATH`` is set.
+    * GDAL must work (gdal-config --version must be available)
 
 * Check Vlfeat install with following global environment variables:
 
