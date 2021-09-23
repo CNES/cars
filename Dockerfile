@@ -16,6 +16,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     make=4.2.1-1.2 \
     libpython3.8=3.8.10-0ubuntu1~20.04 \
     python3.8-dev=3.8.10-0ubuntu1~20.04 \
+    python3.8-venv=3.8.10-0ubuntu1~20.04 \
     libgl1=1.3.2-1~ubuntu0.20.04.1 \
     libglu1-mesa=9.0.1-1build1 \
     libgl1-mesa-dev=21.0.3-0ubuntu0.3~20.04.1 \
