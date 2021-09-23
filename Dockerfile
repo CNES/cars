@@ -17,16 +17,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libpython3.8=3.8.10-0ubuntu1~20.04 \
     python3.8-dev=3.8.10-0ubuntu1~20.04 \
     python3.8-venv=3.8.10-0ubuntu1~20.04 \
-    libgl1=1.3.2-1~ubuntu0.20.04.1 \
-    libglu1-mesa=9.0.1-1build1 \
-    libgl1-mesa-dev=21.0.3-0ubuntu0.3~20.04.1 \
-    libsm6=2:1.2.3-1 \
-    libxext6=2:1.3.4-0ubuntu1 \
-    libxrender-dev=1:0.9.10-1 \
     python3=3.8.2-0ubuntu2 \
     python3-pip=20.0.2-5ubuntu1.6 \
     python3-numpy=1:1.17.4-5ubuntu3 \
-    libgtk2.0-dev=2.24.32-4ubuntu4 \
     unzip=6.0-25ubuntu1 \
     ninja-build=1.10.0-1build1 \
     libboost-date-time-dev=1.71.0.0ubuntu2 \
@@ -43,16 +36,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libmuparser-dev=2.2.6.1+dfsg-1build1 \
     libmuparserx-dev=4.0.7+dfsg-3build1 \
     libsvm-dev=3.24+ds-3build1 \
-    libopencv-core-dev=4.2.0+dfsg-5 \
-    libopencv-ml-dev=4.2.0+dfsg-5 \
-    freeglut3-dev=2.8.1-3 \
-    libglfw3-dev=3.3.2-1 \
-    libgsl-dev=2.5+dfsg-6build1 \
-    libglew-dev=2.1.0-4 \
-    libqwt-qt5-dev=6.1.4-1.1build1 \
-    qtbase5-dev=5.12.8+dfsg-0ubuntu1 \
-    libqt5opengl5-dev=5.12.8+dfsg-0ubuntu1 \
-    qttools5-dev=5.12.8-0ubuntu1 \
     swig=4.0.1-5build1 \
     libfftw3-dev=3.3.8-2ubuntu1 \
     python3-virtualenv=20.0.17-1ubuntu0.4 \
@@ -65,14 +48,14 @@ RUN wget -q https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.4.0.zip -O
 WORKDIR /opt/otb/build
 RUN cmake \
     "-DBUILD_COOKBOOK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" "-DBUILD_SHARED_LIBS:BOOL=ON" \
-    "-DBUILD_TESTING:BOOL=OFF" "-DOTB_USE_6S:BOOL=ON" "-DOTB_USE_CURL:BOOL=ON" \
-    "-DOTB_USE_GLEW:BOOL=ON" "-DOTB_USE_GLFW:BOOL=ON" "-DOTB_USE_GLUT:BOOL=ON" \
-    "-DOTB_USE_GSL:BOOL=ON" "-DOTB_USE_LIBKML:BOOL=OFF" "-DOTB_USE_LIBSVM:BOOL=ON" \
+    "-DBUILD_TESTING:BOOL=OFF" "-DOTB_USE_6S:BOOL=OFF" "-DOTB_USE_CURL:BOOL=ON" \
+    "-DOTB_USE_GLEW:BOOL=OFF" "-DOTB_USE_GLFW:BOOL=OFF" "-DOTB_USE_GLUT:BOOL=OFF" \
+    "-DOTB_USE_GSL:BOOL=OFF" "-DOTB_USE_LIBKML:BOOL=OFF" "-DOTB_USE_LIBSVM:BOOL=ON" \
     "-DOTB_USE_MPI:BOOL=OFF" "-DOTB_USE_MUPARSER:BOOL=ON" "-DOTB_USE_MUPARSERX:BOOL=ON" \
-    "-DOTB_USE_OPENCV:BOOL=ON" "-DOTB_USE_OPENGL:BOOL=ON" "-DOTB_USE_OPENMP:BOOL=OFF" \
-    "-DOTB_USE_QT:BOOL=ON" "-DOTB_USE_QWT:BOOL=ON" "-DOTB_USE_SIFTFAST:BOOL=ON" \
-    "-DOTB_USE_SPTW:BOOL=ON" "-DOTB_USE_SSE_FLAGS:BOOL=ON" "-DOTB_WRAP_PYTHON:BOOL=ON" \
-    "-DCMAKE_BUILD_TYPE=Release"   "-DOTB_USE_SHARK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" \
+    "-DOTB_USE_OPENCV:BOOL=OFF" "-DOTB_USE_OPENGL:BOOL=OFF" "-DOTB_USE_OPENMP:BOOL=OFF" \
+    "-DOTB_USE_QT:BOOL=OFF" "-DOTB_USE_QWT:BOOL=OFF" "-DOTB_USE_SIFTFAST:BOOL=ON" \
+    "-DOTB_USE_SPTW:BOOL=OFF" "-DOTB_WRAP_PYTHON:BOOL=ON" "-DCMAKE_BUILD_TYPE=Release" \
+    "-DOTB_USE_SHARK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" \
     -DCMAKE_INSTALL_PREFIX="/usr/local/otb" -GNinja .. && \
     ninja install && \
     rm -rf /opt/otb
