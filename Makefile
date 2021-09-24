@@ -16,6 +16,7 @@ CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
 
 CHECK_SETUPTOOLS = $(shell ${VENV}/bin/python -m pip list|grep setuptools)
+CHECK_SETUPTOOLS_SCM = $(shell ${VENV}/bin/python -m pip list|grep setuptools-scm)
 CHECK_NUMPY = $(shell ${VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${VENV}/bin/python -m pip list|grep rasterio)
@@ -54,6 +55,7 @@ install-deps: venv
 	@[ "${CHECK_FIONA}" ] ||${VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_SETUPTOOLS}" ] ||${VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
+	@[ "${CHECK_SETUPTOOLS_SCM}" ] ||${VENV}/bin/python -m pip install setuptools-scm
 	@[ "${CHECK_PYGDAL}" ] ||${VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${VENV}/bin/python -m pip install --upgrade numba
