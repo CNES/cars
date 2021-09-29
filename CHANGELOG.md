@@ -5,6 +5,11 @@ When publication of a new release, the section "Unreleased" is set to the next c
 A new section Unreleased is opened then for next dev phase.
 
 ## Unreleased
+### Added
+### Changed
+### Fixed
+
+## 0.4.0 Geometry Loader (September 2021)
 
 ### Added
 
