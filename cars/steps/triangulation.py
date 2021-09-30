@@ -145,7 +145,7 @@ def triangulate(
             output_prepare.LOWRES_DEM_SPLINES_FIT_TAG
         ]
         splines_coefs = None
-        with open(splines_file, "rb", encoding="utf-8") as splines_file_reader:
+        with open(splines_file, "rb") as splines_file_reader:
             splines_coefs = pickle.load(splines_file_reader)
 
         # Read time direction line parameters
