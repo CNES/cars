@@ -498,14 +498,14 @@ def test_image_envelope():
         poly, epsg = read_vector(shp)
         assert epsg == 4326
         assert list(poly.exterior.coords) == [
-            (5.193406138843349, 44.20805805252155),
-            (5.1965650939582435, 44.20809526197842),
-            (5.196654349708835, 44.205901416036546),
-            (5.193485218293437, 44.205842790578764),
-            (5.193406138843349, 44.20805805252155),
+            (5.193078704737658, 44.207395924036454),
+            (5.19624740770905, 44.20744798617616),
+            (5.196301073780709, 44.205180098419376),
+            (5.193132520720433, 44.20512807053881),
+            (5.193078704737658, 44.207395924036454),
         ]
 
-    # test with dem
+    # test with dem + geoid
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
@@ -513,7 +513,8 @@ def test_image_envelope():
             conf,
             input_parameters.PRODUCT1_KEY,
             shp,
-            dem,
+            dem=dem,
+            geoid=static_conf.get_geoid_path(),
         )
 
         assert os.path.isfile(shp)
@@ -527,7 +528,9 @@ def test_image_envelope():
             (5.193406138843349, 44.20805805252155),
         ]
 
-    # test with geoid
+    # test with dem
+    # Note: as the geoid can't be reset, results should be identic
+    # to the dem+geoid case.
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
@@ -535,7 +538,7 @@ def test_image_envelope():
             conf,
             input_parameters.PRODUCT1_KEY,
             shp,
-            geoid=static_conf.get_geoid_path(),
+            dem,
         )
 
         assert os.path.isfile(shp)
