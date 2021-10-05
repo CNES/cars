@@ -927,9 +927,7 @@ def run(  # noqa: C901
             out_dir, "lowres_dem_splines_fit.pck"
         )
 
-        with open(
-            lowres_dem_splines_fit_file, "wb", encoding="utf-8"
-        ) as splines_fit_file_reader:
+        with open(lowres_dem_splines_fit_file, "wb") as splines_fit_file_reader:
             pickle.dump(splines, splines_fit_file_reader)
             out_json[output_prepare.PREPROCESSING_SECTION_TAG][
                 output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
