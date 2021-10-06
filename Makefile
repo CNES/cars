@@ -56,7 +56,7 @@ install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_SETUPTOOLS}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
+	@[ "${CHECK_SETUPTOOLS}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade "setuptools"
 	@[ "${CHECK_SETUPTOOLS_SCM}" ] ||${CARS_VENV}/bin/python -m pip install setuptools-scm
 	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
