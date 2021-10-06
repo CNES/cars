@@ -87,6 +87,7 @@ private:
     SetDefaultParameterFloat("input.idy", 0.0);
     AddParameter(ParameterType_Float,"input.idz", "Z altitude value of desired point above geoid");
     SetParameterDescription("input.idz", "Z altitude value of desired point above geoid");
+    MandatoryOff("input.idz");
 
 
     // Output with Output Role
@@ -97,11 +98,6 @@ private:
     SetParameterDescription("output.idy", "Output point latitude coordinate.");
     AddParameter(ParameterType_Double, "output.idz", "Output Point altitude");
     SetParameterDescription("output.idz", "Output point altitude coordinate.");
-
-    AddParameter(ParameterType_String, "output.town", "Main town near the coordinates computed");
-    SetParameterDescription("output.town", "Nearest main town of the computed geographic point.");
-    AddParameter(ParameterType_String, "output.country", "Country of the image");
-    SetParameterDescription("output.country", "Country of the input image");
 
     // Set the parameter role for the output parameters
     SetParameterRole("output.idx", Role_Output);
@@ -129,10 +125,12 @@ private:
 
   void DoExecute() override
   {
-
     // Handle elevation automatically with geoid, srtm or default elevation
     // respectively : elevation.geoid, elevation.dem, elevation.default
     otb::DEMHandler::Instance()->ClearDEMs();
+    // the following needs OSSIM >= 2.0
+    //~ ossimGeoidManager::instance()->clear();
+
     otb::Wrapper::ElevationParametersHandler::\
         SetupDEMHandlerFromElevationParameters(this,"elevation");
 
@@ -150,7 +148,7 @@ private:
     // Convert X, Y coordinates with img origin and spacing information
     inImage->TransformContinuousIndexToPhysicalPoint(inIndex, pointXY);
 
-    if ( HasValue("input.idz") )
+    if ( IsParameterEnabled("input.idz") && HasValue("input.idz") )
     {
 
       otbAppLogINFO("ConvertSensorToGeoPointFast with X,Y,Z inputs");

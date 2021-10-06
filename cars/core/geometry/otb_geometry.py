@@ -463,6 +463,16 @@ class OTBGeometry(AbstractGeometry):
             input_parameters.create_img_tag_from_product_key(product_key)
         ]
 
+        # reset OTB DEMHandler
+        loc_app = otbApplication.Registry.CreateApplication(
+            "ConvertSensorToGeoPointFast"
+        )
+        loc_app.SetParameterString("in", img)
+        loc_app.SetParameterFloat("input.idx", 0.0)
+        loc_app.SetParameterFloat("input.idy", 0.0)
+        loc_app.SetParameterFloat("input.idz", 0.0)
+        loc_app.Execute()
+
         app = otbApplication.Registry.CreateApplication("ImageEnvelope")
 
         if isinstance(img, str):
