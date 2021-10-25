@@ -536,7 +536,7 @@ def run(  # noqa: C901
                         config_id,
                     )
                 )
-                disp_min = user_disp_min
+            disp_min = user_disp_min
 
         # Check if we need to override disp_max
         if max_elevation_offset is not None:

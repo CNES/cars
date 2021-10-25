@@ -9,6 +9,9 @@ A new section Unreleased is opened then for next dev phase.
 ### Changed
 ### Fixed
 
+- Fix min_elevation_offset option when user_disp_min is greater than disp_min [#348]
+
+
 ## 0.4.0 Geometry Loader (September 2021)
 
 ### Added
