@@ -52,6 +52,11 @@ with warnings.catch_warnings():
         category=FutureWarning,
         message=".*parse_bytes is deprecated.*",
     )
+    warnings.filterwarnings(
+        "ignore",
+        category=FutureWarning,
+        message=".*tmpfile is deprecated.*",
+    )
     from dask_jobqueue import PBSCluster
 
 
