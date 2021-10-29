@@ -1,0 +1,15 @@
+ENVI
+samples = 1441
+lines   = 721
+bands   = 1
+header offset = 24
+file type = ENVI Standard
+data type = 4
+interleave = bsq
+sensor type = Unknown
+byte order = 1
+wavelength units = Unknown
+map info = {Geographic Lat/Lon, 1, 1,-0.125, 90.125, 0.25, 0.25,WGS-84}
+coordinate system string = {GEOGCS["GCS_WGS_1984",DATUM["D_WGS_1984",SPHEROID["WGS_1984",6378137,298.257223563]],PRIMEM["Greenwich",0],UNIT["Degree",0.017453292519943295]]}
+band names = {
+Band 1}
