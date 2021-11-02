@@ -31,7 +31,7 @@ from copy import copy
 import pytest
 
 # CARS imports
-from cars.cars import cars_parser, main_cli
+from cars.cars import CarsArgumentParser, cars_parser, main_cli
 
 # CARS Tests imports
 from .helpers import absolute_data_path, temporary_dir
@@ -94,28 +94,42 @@ def compute_dsm_default_args():
 
 
 @pytest.mark.unit_tests
-def test_cars_command():
+def test_cars_parser():
     """
-    Cars command pytest with no argument
+    Cars parser test
     """
     parser = cars_parser()
-    args = parser.parse_args([])
-    main_cli(args, parser, dry_run=True)
+
+    assert isinstance(parser, CarsArgumentParser)
+    assert parser.prog == "cars"
 
 
 @pytest.mark.unit_tests
-def test_command():
+def test_main_no_argument():
     """
-    Cars command pytest with wrong subcommand
+    Cars main_cli pytest with no argument
     """
-    parser = cars_parser()
+    args = argparse.Namespace()
+    args.command = None
+
+    with pytest.raises(SystemExit) as exit_error:
+        main_cli(args, dry_run=True)
+    assert exit_error.type == SystemExit
+    assert exit_error.value.code == 1
+
+
+@pytest.mark.unit_tests
+def test_main_wrong_subcommand():
+    """
+    Cars main_cli pytest with wrong subcommand
+    """
 
     args = argparse.Namespace()
     args.loglevel = "INFO"
     args.command = "test"
 
     with pytest.raises(SystemExit) as exit_error:
-        main_cli(args, parser, dry_run=True)
+        main_cli(args, dry_run=True)
     assert exit_error.type == SystemExit
     assert exit_error.value.code == 1
 
@@ -132,16 +146,14 @@ def test_prepare_args(
     """
     Cars prepare arguments test with default and degraded cases
     """
-    parser = cars_parser()
-
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         prepare_default_args.outdir = directory
 
         # test default args
-        main_cli(prepare_default_args, parser, dry_run=True)
+        main_cli(prepare_default_args, dry_run=True)
 
         prepare_default_args.loglevel = "INFO"
-        main_cli(prepare_default_args, parser, dry_run=True)
+        main_cli(prepare_default_args, dry_run=True)
 
         # degraded cases injson
         args_bad_json = copy(prepare_default_args)
@@ -149,7 +161,7 @@ def test_prepare_args(
             args_bad_json.injson = absolute_data_path(
                 "input/cars_input/test.json"
             )
-            main_cli(args_bad_json, parser, dry_run=True)
+            main_cli(args_bad_json, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -157,13 +169,13 @@ def test_prepare_args(
         args_bad_disp_margin = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_disp_margin.disparity_margin = -1.0
-            main_cli(args_bad_disp_margin, parser, dry_run=True)
+            main_cli(args_bad_disp_margin, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
             args_bad_disp_margin.disparity_margin = 1.5
-            main_cli(args_bad_disp_margin, parser, dry_run=True)
+            main_cli(args_bad_disp_margin, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -172,7 +184,7 @@ def test_prepare_args(
         args_bad_elev_delta_bounds.elevation_delta_lower_bound = 50
         args_bad_elev_delta_bounds.elevation_delta_upper_bound = -50
         with pytest.raises(SystemExit) as exit_error:
-            main_cli(args_bad_elev_delta_bounds, parser, dry_run=True)
+            main_cli(args_bad_elev_delta_bounds, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -180,7 +192,7 @@ def test_prepare_args(
         args_bad_epi_step = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_epi_step.epi_step = 0
-            main_cli(args_bad_epi_step, parser, dry_run=True)
+            main_cli(args_bad_epi_step, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -188,7 +200,7 @@ def test_prepare_args(
         args_bad_epi_error_bound = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_epi_error_bound.epipolar_error_upper_bound = -10
-            main_cli(args_bad_epi_error_bound, parser, dry_run=True)
+            main_cli(args_bad_epi_error_bound, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -196,13 +208,13 @@ def test_prepare_args(
         args_bad_loglevel = copy(prepare_default_args)
         with pytest.raises(ValueError):
             args_bad_loglevel.loglevel = "TEST"
-            main_cli(args_bad_loglevel, parser, dry_run=True)
+            main_cli(args_bad_loglevel, dry_run=True)
 
         # degraded cases number of workers
         args_bad_nb_workers = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_nb_workers.nb_workers = -1
-            main_cli(args_bad_nb_workers, parser, dry_run=True)
+            main_cli(args_bad_nb_workers, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -210,13 +222,13 @@ def test_prepare_args(
         args_bad_wall_time = copy(prepare_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_wall_time.walltime = "000:00:00"
-            main_cli(args_bad_wall_time, parser, dry_run=True)
+            main_cli(args_bad_wall_time, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
             args_bad_wall_time.walltime = "bb:bb:bb"
-            main_cli(args_bad_wall_time, parser, dry_run=True)
+            main_cli(args_bad_wall_time, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -233,36 +245,34 @@ def test_dsm_compute_arg(
     """
     Cars compute_dsm arguments test with default and degraded cases
     """
-    parser = cars_parser()
-
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         compute_dsm_default_args.outdir = directory
 
         # test with default args
-        main_cli(compute_dsm_default_args, parser, dry_run=True)
+        main_cli(compute_dsm_default_args, dry_run=True)
 
         # test with mp mode (multiprocessing)
         args_mode_mp = copy(compute_dsm_default_args)
         args_mode_mp.mode = "mp"
-        main_cli(args_mode_mp, parser, dry_run=True)
+        main_cli(args_mode_mp, dry_run=True)
 
         # test [xmin, ymin, xmax, ymax] roi argument
         args_roi_bbox = copy(compute_dsm_default_args)
         args_roi_bbox.roi_bbox = ["1.0", "2.0", "3.0", "4.0"]
-        main_cli(args_roi_bbox, parser, dry_run=True)
+        main_cli(args_roi_bbox, dry_run=True)
 
         # test image roi argument
         args_roi_file = copy(compute_dsm_default_args)
         args_roi_file.roi_file = absolute_data_path(
             "input/cars_input/roi_image.tif"
         )
-        main_cli(args_roi_file, parser, dry_run=True)
+        main_cli(args_roi_file, dry_run=True)
 
         # test vector roi argument
         args_roi_file.roi_file = absolute_data_path(
             "input/cars_input/roi_vector.gpkg"
         )
-        main_cli(args_roi_file, parser, dry_run=True)
+        main_cli(args_roi_file, dry_run=True)
 
         # degraded cases input jsons
         args_bad_jsons = copy(compute_dsm_default_args)
@@ -270,13 +280,13 @@ def test_dsm_compute_arg(
             args_bad_jsons.injsons = [
                 absolute_data_path("input/cars_input/test.txt")
             ]
-            main_cli(args_bad_jsons, parser, dry_run=True)
+            main_cli(args_bad_jsons, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         with pytest.raises(SystemExit) as exit_error:
             args_bad_jsons.injsons = []
-            main_cli(args_bad_jsons, parser, dry_run=True)
+            main_cli(args_bad_jsons, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -284,7 +294,7 @@ def test_dsm_compute_arg(
         args_bad_sigma = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_sigma.sigma = -10
-            main_cli(args_bad_sigma, parser, dry_run=True)
+            main_cli(args_bad_sigma, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -292,7 +302,7 @@ def test_dsm_compute_arg(
         args_bad_dsm_radius = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_dsm_radius.dsm_radius = -10
-            main_cli(args_bad_dsm_radius, parser, dry_run=True)
+            main_cli(args_bad_dsm_radius, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -300,14 +310,14 @@ def test_dsm_compute_arg(
         args_bad_resolution = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_resolution.resolution = 0
-            main_cli(args_bad_resolution, parser, dry_run=True)
+            main_cli(args_bad_resolution, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
         args_bad_resolution = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_resolution.resolution = -1
-            main_cli(args_bad_resolution, parser, dry_run=True)
+            main_cli(args_bad_resolution, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -315,7 +325,7 @@ def test_dsm_compute_arg(
         args_bad_epsg = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_epsg.epsg = -1
-            main_cli(args_bad_epsg, parser, dry_run=True)
+            main_cli(args_bad_epsg, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -325,7 +335,7 @@ def test_dsm_compute_arg(
             args_bad_roi_file.roi_file = absolute_data_path(
                 "input/cars_input/test.txt"
             )
-            main_cli(args_bad_roi_file, parser, dry_run=True)
+            main_cli(args_bad_roi_file, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -333,7 +343,7 @@ def test_dsm_compute_arg(
             args_bad_roi_file.roi_file = absolute_data_path(
                 "input/phr_ventoux/preproc_output/content.json"
             )
-            main_cli(args_bad_roi_file, parser, dry_run=True)
+            main_cli(args_bad_roi_file, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -341,7 +351,7 @@ def test_dsm_compute_arg(
             args_bad_roi_file.roi_file = absolute_data_path(
                 "input/phr_ventoux/left_image.tif"
             )
-            main_cli(args_bad_roi_file, parser, dry_run=True)
+            main_cli(args_bad_roi_file, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -351,7 +361,7 @@ def test_dsm_compute_arg(
             args_bad_correlator_conf.corr_config = absolute_data_path(
                 "input/cars_input/test.txt"
             )
-            main_cli(args_bad_correlator_conf, parser, dry_run=True)
+            main_cli(args_bad_correlator_conf, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -360,7 +370,7 @@ def test_dsm_compute_arg(
         with pytest.raises(SystemExit) as exit_error:
             args_bad_elevation_offsets.min_elevation_offset = 10
             args_bad_elevation_offsets.max_elevation_offset = -10
-            main_cli(args_bad_elevation_offsets, parser, dry_run=True)
+            main_cli(args_bad_elevation_offsets, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -368,13 +378,13 @@ def test_dsm_compute_arg(
         args_bad_loglevel = copy(compute_dsm_default_args)
         with pytest.raises(ValueError):
             args_bad_loglevel.loglevel = "TEST"
-            main_cli(args_bad_loglevel, parser, dry_run=True)
+            main_cli(args_bad_loglevel, dry_run=True)
 
         # degraded cases number of workers
         args_bad_nb_workers = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_nb_workers.nb_workers = -1
-            main_cli(args_bad_nb_workers, parser, dry_run=True)
+            main_cli(args_bad_nb_workers, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
 
@@ -382,6 +392,6 @@ def test_dsm_compute_arg(
         args_bad_wall_time = copy(compute_dsm_default_args)
         with pytest.raises(SystemExit) as exit_error:
             args_bad_wall_time.walltime = "000:00:00"
-            main_cli(args_bad_wall_time, parser, dry_run=True)
+            main_cli(args_bad_wall_time, dry_run=True)
         assert exit_error.type == SystemExit
         assert exit_error.value.code == 1
