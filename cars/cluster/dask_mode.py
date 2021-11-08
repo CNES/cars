@@ -36,6 +36,9 @@ import warnings
 import numpy as np
 import psutil
 import xarray as xr
+import yaml
+from dask.config import global_config as global_dask_config
+from dask.config import set as dask_config_set
 from dask.distributed import Client, LocalCluster
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
@@ -236,24 +239,24 @@ def stop_local_cluster(cluster, client):
     logging.info("Local cluster correctly stopped")
 
 
-def start_cluster(nb_workers, walltime, out_dir, timeout=600):
+def start_pbs_cluster(nb_workers, walltime, out_dir, timeout=600):
     """
     This function create a dask cluster.
     Each worker has nb_cpus cpus.
     Only one python process is started on each worker.
 
     Threads number:
-    start_cluster will use OMP_NUM_THREADS environment variable to determine
+    start_pbs_cluster will use OMP_NUM_THREADS environment variable to determine
     how many threads might be used by a worker when running C/C++ code.
     (default to 1)
 
     Workers number:
-    start_cluster will use CARS_NB_WORKERS_PER_PBS_JOB environment variable
+    start_pbs_cluster will use CARS_NB_WORKERS_PER_PBS_JOB environment variable
     to determine how many workers should be started by a single PBS job.
     (default to 1)
 
     Queue worker:
-    start_cluster will use CARS_PBS_QUEUE to determine
+    start_pbs_cluster will use CARS_PBS_QUEUE to determine
     in which queue worker jobs should be posted.
 
     :param nb_workers: Number of dask workers
@@ -360,7 +363,7 @@ def get_dashboard_link(cluster):
     return template.format(host=host, port=port)
 
 
-def stop_cluster(cluster, client):
+def stop_pbs_cluster(cluster, client):
     """
     This function stops a dask cluster.
 
@@ -387,4 +390,45 @@ def stop_cluster(cluster, client):
         )
         # not raising to not fail tests
 
-    logging.info("Dask cluster correctly stopped")
+
+def set_dask_config():
+    """
+    Set particular DASK config such as:
+    - scheduler
+    """
+    # TODO: export API to prepare.run and compute_dsm.run()
+    # dask_config_set(scheduler='single-threaded')
+    dask_config_set(scheduler="processes")
+
+
+def save_dask_config(output_dir, file_name):
+    """
+    Save dask global config
+    """
+
+    write_yaml_config(global_dask_config, output_dir, file_name)
+
+
+def write_yaml_config(yaml_config: dict, output_dir: str, file_name: str):
+    """
+    Writes the dask config used in yaml format.
+
+    :param dask_config: Dask config used (default, take dask one)
+    :type dask_config: dict
+    :param output_dir: output directory path
+    :type dask_config: dict
+    :param output_dir: output directory path
+    """
+
+    # warning
+    logging.info(
+        "Dask will merge several config files"
+        " located at default locations such as"
+        " ~/.config/dask/ .\n Dask config in "
+        " $DASK_DIR will be used with the highest priority."
+    )
+
+    # file path where to store the dask config
+    yaml_config_path = os.path.join(output_dir, file_name + ".yaml")
+    with open(yaml_config_path, "w", encoding="utf-8") as yaml_config_file:
+        yaml.dump(yaml_config, yaml_config_file)

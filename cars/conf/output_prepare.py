@@ -215,10 +215,6 @@ PREPROCESSING_OUTPUT_SECTION_TAG = "output"
 PREPROCESSING_PARAMETERS_SECTION_TAG = "parameters"
 PREPROCESSING_VERSION_TAG = "version"
 
-# tags for dask configuration file
-# TODO : Move to a class parameter as not changeable by user.
-# TODO: in dask orchestration ?
-PREPROCESSING_DASK_CONFIG_TAG = "dask_config_prepare"
 
 # Schema of preprocessing/output section
 PREPROCESSING_OUTPUT_SCHEMA = {

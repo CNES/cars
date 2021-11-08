@@ -23,8 +23,6 @@ Outputs module:
 contains some CARS global shared general purpose output functions
 """
 # Standard imports
-import logging
-import os
 from typing import Union
 
 # Third party imports
@@ -32,7 +30,6 @@ import fiona
 import numpy as np
 import pandas
 import xarray as xr
-import yaml
 from fiona.crs import from_epsg
 from shapely.geometry import mapping
 
@@ -109,28 +106,3 @@ def write_vector(polys, path_to_file, epsg, driver="GPKG"):
                 "properties": {"Type": "Polygon"},
             }
             vector_file.write(poly_dict)
-
-
-def write_dask_config(dask_config: dict, output_dir: str, file_name: str):
-    """
-    Writes the dask config used in yaml format.
-
-    :param dask_config: Dask config used
-    :type dask_config: dict
-    :param output_dir: output directory path
-    :type dask_config: dict
-    :param output_dir: output directory path
-    """
-
-    # warning
-    logging.info(
-        "Dask will merge several config files"
-        " located at default locations such as"
-        " ~/.config/dask/ .\n Dask config in "
-        " $DASK_DIR will be used with the highest priority."
-    )
-
-    # file path where to store the dask config
-    dask_config_path = os.path.join(output_dir, file_name + ".yaml")
-    with open(dask_config_path, "w", encoding="utf-8") as dask_config_file:
-        yaml.dump(dask_config, dask_config_file)

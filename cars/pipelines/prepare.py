@@ -44,11 +44,7 @@ from tqdm import tqdm
 
 # CARS imports
 from cars import __version__
-from cars.cluster.dask_mode import (
-    start_cluster,
-    start_local_cluster,
-    stop_cluster,
-)
+from cars.cluster import start_cluster, stop_cluster
 from cars.conf import input_parameters as in_params
 from cars.conf import (
     json_schema,
@@ -58,7 +54,7 @@ from cars.conf import (
     static_conf,
 )
 from cars.core import constants as cst
-from cars.core import inputs, outputs, projection, tiling
+from cars.core import inputs, projection, tiling
 from cars.externals import otb_pipelines
 from cars.pipelines.wrappers import matching_wrapper
 from cars.steps import devib, rasterization, triangulation
@@ -463,27 +459,13 @@ def run(  # noqa: C901
         )
     )
 
-    cluster = None
-    client = None
-
-    # TODO: prepare mp mode
-
-    # Use dask
-
-    # Save dask config used
-    dask_config_used = dask.config.config
-    outputs.write_dask_config(
-        dask_config_used, out_dir, output_prepare.PREPROCESSING_DASK_CONFIG_TAG
+    # Start cluster and client
+    # TODO: implement prepare mp mode to be symetric with compute_dsm.
+    if mode == "mp":
+        raise NotImplementedError("{} mode is not implemented yet".format(mode))
+    cluster, client, _ = start_cluster(
+        mode, nb_workers, walltime, out_dir, "prepare"
     )
-
-    use_dask = {"local_dask": True, "pbs_dask": True}
-    if mode not in use_dask.keys():
-        raise NotImplementedError("{} mode is not implemented".format(mode))
-
-    if mode == "local_dask":
-        cluster, client = start_local_cluster(nb_workers)
-    else:
-        cluster, client = start_cluster(nb_workers, walltime, out_dir)
 
     # Write temporary grid
     tmp1 = os.path.join(out_dir, "tmp1.tif")
@@ -638,7 +620,7 @@ def run(  # noqa: C901
             "estimate epipolar error correction and disparity range"
         )
         # stop cluster
-        stop_cluster(cluster, client)
+        stop_cluster(mode, cluster, client)
         # Exit immediately
         return
 
@@ -1014,4 +996,4 @@ def run(  # noqa: C901
     output_prepare.write_preprocessing_content_file(out_json, out_json_path)
 
     # stop cluster
-    stop_cluster(cluster, client)
+    stop_cluster(mode, cluster, client)

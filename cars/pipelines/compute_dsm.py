@@ -48,12 +48,7 @@ from tqdm import tqdm
 
 # CARS imports
 from cars import __version__
-from cars.cluster.dask_mode import (
-    ComputeDSMMemoryLogger,
-    start_cluster,
-    start_local_cluster,
-    stop_cluster,
-)
+from cars.cluster import start_cluster, stop_cluster
 from cars.cluster.tbb import check_tbb_installed
 from cars.conf import input_parameters as in_params
 from cars.conf import (
@@ -64,7 +59,7 @@ from cars.conf import (
     static_conf,
 )
 from cars.core import constants as cst
-from cars.core import inputs, outputs, projection, tiling, utils
+from cars.core import inputs, projection, tiling, utils
 from cars.core.geometry import read_geoid_file
 from cars.externals import otb_pipelines
 from cars.pipelines import wrappers, write_dsm
@@ -843,32 +838,13 @@ def run(  # noqa: C901
         optimal_terrain_tile_width,
     )
 
-    # Start dask cluster
-    cluster = None
-    client = None
+    # Start cars cluster
+    cluster, client, use_dask = start_cluster(
+        mode, nb_workers, walltime, out_dir
+    )
 
     # Use dask
-
-    use_dask = {"local_dask": True, "pbs_dask": True, "mp": False}
-    if mode not in use_dask.keys():
-        raise NotImplementedError("{} mode is not implemented".format(mode))
-
-    if use_dask[mode]:
-        dask_config_used = dask.config.config
-        outputs.write_dask_config(
-            dask_config_used,
-            out_dir,
-            output_compute_dsm.COMPUTE_DSM_DASK_CONFIG_TAG,
-        )
-
-        if mode == "local_dask":
-            cluster, client = start_local_cluster(nb_workers)
-        else:
-            cluster, client = start_cluster(nb_workers, walltime, out_dir)
-
-        # Add plugin to monitor memory of workers
-        plugin = ComputeDSMMemoryLogger(out_dir)
-        client.register_worker_plugin(plugin)
+    if use_dask:
 
         geoid_data_futures = None
         if geoid_data is not None:
@@ -890,7 +866,7 @@ def run(  # noqa: C901
         # processed as points cloud
         delayed_point_clouds = []
 
-        if use_dask[mode]:
+        if use_dask:
             # Use Dask delayed
             for region in conf["epipolar_regions"]:
                 delayed_point_clouds.append(
@@ -1023,7 +999,7 @@ def run(  # noqa: C901
 
     number_of_terrain_splits = len(terrain_regions)
 
-    if not use_dask[mode]:
+    if not use_dask:
         # create progress bar with update callback
         pbar = tqdm(
             total=number_of_terrain_splits,
@@ -1073,7 +1049,7 @@ def run(  # noqa: C901
                 )
             )
 
-            if use_dask[mode]:
+            if use_dask:
                 # Delayed call to rasterization operations using all required
                 # point clouds
                 rasterized = dask.delayed(rasterization_wrapper)(
@@ -1174,7 +1150,7 @@ def run(  # noqa: C901
     out_dsm_n_pts = os.path.join(out_dir, "dsm_n_pts.tif")
     out_dsm_points_in_cell = os.path.join(out_dir, "dsm_pts_in_cell.tif")
 
-    if use_dask[mode]:
+    if use_dask:
         # Sort tiles according to rank
         delayed_dsm_tiles = [
             delayed
@@ -1212,7 +1188,7 @@ def run(  # noqa: C901
         )
 
         # stop cluster
-        stop_cluster(cluster, client)
+        stop_cluster(mode, cluster, client)
 
     else:
         logging.info("Computing DSM tiles ...")
