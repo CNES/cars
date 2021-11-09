@@ -98,8 +98,8 @@ def start_cluster(
 
     else:
         if mode == "mp":
+            # TODO: start_mp_cluster() for mp mode in cluster/mp_mode.py
             pass
-            # cluster, client = start_mp_cluster()
 
     logging.info("Start CARS cluster in {} mode".format(mode))
 
