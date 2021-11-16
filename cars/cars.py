@@ -90,7 +90,7 @@ class CarsArgumentParser(argparse.ArgumentParser):
         return arg_line.split()
 
 
-def cars_parser() -> argparse.ArgumentParser:
+def cars_parser() -> CarsArgumentParser:
     """
     Main CLI argparse parser function
     It builds argparse objects and constructs CLI interfaces parameters.
@@ -704,7 +704,7 @@ def run_compute_dsm(args, dry_run=False):  # noqa: C901
         )
 
 
-def main_cli(args, parser, dry_run=False):  # noqa: C901
+def main_cli(args, dry_run=False):  # noqa: C901
     """
     Main for command line management
 
@@ -747,9 +747,9 @@ def main_cli(args, parser, dry_run=False):  # noqa: C901
             elif args.command == "compute_dsm":
                 run_compute_dsm(args, dry_run)
             else:
-                raise SystemExit("CARS launched with wrong subcommand")
+                raise SystemExit("CARS wrong subcommand. Use cars --help")
         else:
-            parser.print_help()
+            raise SystemExit("CARS wrong subcommand. Use cars --help")
     except BaseException:
         # Catch all exceptions, show debug traceback and exit
         logging.exception("CARS terminated with following error")
@@ -766,8 +766,8 @@ def main():
     """
     # CARS parser
     parser = cars_parser()
-    args = parser.parse_args()
-    main_cli(args, parser)
+    args = parser.parse_args(args=None if sys.argv[1:] else ["--help"])
+    main_cli(args)
 
 
 if __name__ == "__main__":

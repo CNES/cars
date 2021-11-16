@@ -17,7 +17,6 @@ endif
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
 
-CHECK_SETUPTOOLS = $(shell ${CARS_VENV}/bin/python -m pip list|grep setuptools)
 CHECK_SETUPTOOLS_SCM = $(shell ${CARS_VENV}/bin/python -m pip list|grep setuptools-scm)
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
@@ -49,14 +48,13 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 
 venv: check ## create virtualenv in "venv" dir if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade pip # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
 install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_SETUPTOOLS}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade "setuptools<58.0.0"
 	@[ "${CHECK_SETUPTOOLS_SCM}" ] ||${CARS_VENV}/bin/python -m pip install setuptools-scm
 	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
