@@ -223,8 +223,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
             # convert disparity to matches
             epi_pos_left_y, epi_pos_left_x = np.mgrid[
-                ul_matches_shift[0] : ul_matches_shift[0] + matches.shape[0],
-                ul_matches_shift[1] : ul_matches_shift[1] + matches.shape[1],
+                ul_matches_shift[1] : ul_matches_shift[1] + matches.shape[0],
+                ul_matches_shift[0] : ul_matches_shift[0] + matches.shape[1],
             ]
 
             epi_pos_left_x = epi_pos_left_x.astype(np.float64)
