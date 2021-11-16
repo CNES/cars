@@ -228,10 +228,10 @@ def test_disp_to_sensor_coords(
         sensor_pos_right[:, :, 1], ref_sensor_pos_right_y, equal_nan=True
     )
 
-    # test with a cropped disparity map
+    # test with a cropped disparity map (ul_corner is expressed as (X,Y))
     ul_corner_crop = (1, 2)
-    disp_map = disp_map[ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col]
-    disp_msk = disp_msk[ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col]
+    disp_map = disp_map[ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col]
+    disp_msk = disp_msk[ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col]
 
     (
         sensor_pos_left,
@@ -246,10 +246,10 @@ def test_disp_to_sensor_coords(
     )
 
     ref_sensor_pos_left_x = ref_sensor_pos_left_x[
-        ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col
+        ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col
     ]
     ref_sensor_pos_left_y = ref_sensor_pos_left_y[
-        ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col
+        ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col
     ]
 
     assert np.allclose(
@@ -260,10 +260,10 @@ def test_disp_to_sensor_coords(
     )
 
     ref_sensor_pos_right_x = ref_sensor_pos_right_x[
-        ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col
+        ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col
     ]
     ref_sensor_pos_right_y = ref_sensor_pos_right_y[
-        ul_corner_crop[0] : nb_row, ul_corner_crop[1] : nb_col
+        ul_corner_crop[1] : nb_row, ul_corner_crop[0] : nb_col
     ]
     assert np.allclose(
         sensor_pos_right[:, :, 0], ref_sensor_pos_right_x, equal_nan=True
