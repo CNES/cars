@@ -1004,7 +1004,7 @@ def run(  # noqa: C901
 
     # Write the output json
     try:
-        inputs.check_json(out_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA)
+        inputs.check_json(out_json, output_prepare.content_schema())
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error)
