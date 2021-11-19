@@ -31,6 +31,7 @@ import math
 import os
 import time
 import warnings
+from typing import Tuple
 
 # Third-party imports
 import numpy as np
@@ -110,7 +111,6 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         """
         Constructor
         :param outdir: output directory
-        :type outdir: string
         """
         self.outdir = outdir
 
@@ -207,16 +207,15 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         np.save(file, self.data)
 
 
-def start_local_cluster(nb_workers, timeout=600):
+def start_local_cluster(
+    nb_workers: int, timeout: int = 600
+) -> Tuple[LocalCluster, Client]:
     """
     Start a local cluster
 
     :param nb_workers: Number of dask workers
-    :type nb_workers: int
     :param timeout: Connection timeout
-    :type timeout: int
     :return: Local cluster and Dask client
-    :rtype: (dask.distributed.LocalCluster, dask.distributed.Client) tuple
     """
     logging.info("Local cluster with {} workers started".format(nb_workers))
     cluster = LocalCluster(n_workers=nb_workers, threads_per_worker=1)
@@ -225,21 +224,21 @@ def start_local_cluster(nb_workers, timeout=600):
     return cluster, client
 
 
-def stop_local_cluster(cluster, client):
+def stop_local_cluster(cluster: LocalCluster, client: Client):
     """
     Stop a local cluster
 
     :param cluster: Local cluster
-    :type cluster: dask.distributed.LocalCluster
     :param client: Dask client
-    :type client: dask.distributed.Client
     """
     client.close()
     cluster.close()
     logging.info("Local cluster correctly stopped")
 
 
-def start_pbs_cluster(nb_workers, walltime, out_dir, timeout=600):
+def start_pbs_cluster(
+    nb_workers: int, walltime: str, out_dir: str, timeout: str = 600
+) -> Tuple[PBSCluster, Client]:
     """
     This function create a dask cluster.
     Each worker has nb_cpus cpus.
@@ -260,13 +259,9 @@ def start_pbs_cluster(nb_workers, walltime, out_dir, timeout=600):
     in which queue worker jobs should be posted.
 
     :param nb_workers: Number of dask workers
-    :type nb_workers: int
     :param walltime: Walltime for each dask worker
-    :type walltime: string
     :param out_dir: Output directory
-    :type out_dir: string
     :return: Dask cluster and dask client
-    :rtype: (dask_jobqueue.PBSCluster, dask.distributed.Client) tuple
     """
     # Retrieve multi-threading factor for C/C++ code if available
     omp_num_threads = 1
@@ -348,14 +343,12 @@ def start_pbs_cluster(nb_workers, walltime, out_dir, timeout=600):
     return cluster, client
 
 
-def get_dashboard_link(cluster):
+def get_dashboard_link(cluster: PBSCluster) -> str:
     """
     This function returns the dashboard address.
 
     :param cluster: Dask cluster
-    :type cluster: dask_jobqueue.PBSCluster
     :return: Link to the dashboard
-    :rtype: string
     """
     template = "http://{host}:{port}/status"
     host = cluster.scheduler.address.split("://")[1].split(":")[0]
@@ -363,14 +356,12 @@ def get_dashboard_link(cluster):
     return template.format(host=host, port=port)
 
 
-def stop_pbs_cluster(cluster, client):
+def stop_pbs_cluster(cluster: PBSCluster, client: Client):
     """
     This function stops a dask cluster.
 
     :param cluster: Dask cluster
-    :type cluster: dask_jobqueue.PBSCluster
     :param client: Dask client
-    :type client: dask.distributed.Client
     """
     client.close()
     # Bug distributed on close cluster : Fail with AssertionError still running
@@ -391,7 +382,7 @@ def stop_pbs_cluster(cluster, client):
         # not raising to not fail tests
 
 
-def set_dask_config():
+def set_config():
     """
     Set particular DASK config such as:
     - scheduler
@@ -401,33 +392,30 @@ def set_dask_config():
     dask_config_set(scheduler="processes")
 
 
-def save_dask_config(output_dir, file_name):
+def save_config(output_dir: str, file_name: str):
     """
-    Save dask global config
-    """
+    Save DASK global config
 
+    :param output_dir: output directory path
+    :param file_name: output file name
+
+    """
+    logging.info(
+        "Save DASK global merged config for debug "
+        "(1: $DASK_DIR if exists, 2: ~/.config/dask/, ... ) "
+    )
+    # write global merged DASK config in YAML
     write_yaml_config(global_dask_config, output_dir, file_name)
 
 
 def write_yaml_config(yaml_config: dict, output_dir: str, file_name: str):
     """
-    Writes the dask config used in yaml format.
+    Writes a YAML config to disk.
 
-    :param dask_config: Dask config used (default, take dask one)
-    :type dask_config: dict
+    :param yaml_config: YAML config to write
     :param output_dir: output directory path
-    :type dask_config: dict
-    :param output_dir: output directory path
+    :param file_name: output file name
     """
-
-    # warning
-    logging.info(
-        "Dask will merge several config files"
-        " located at default locations such as"
-        " ~/.config/dask/ .\n Dask config in "
-        " $DASK_DIR will be used with the highest priority."
-    )
-
     # file path where to store the dask config
     yaml_config_path = os.path.join(output_dir, file_name + ".yaml")
     with open(yaml_config_path, "w", encoding="utf-8") as yaml_config_file:

@@ -32,21 +32,12 @@ from distributed import Client
 from distributed.deploy import Cluster
 
 # CARS imports
-from cars.cluster.dask_mode import (
-    ComputeDSMMemoryLogger,
-    save_dask_config,
-    set_dask_config,
-    start_local_cluster,
-    start_pbs_cluster,
-    stop_local_cluster,
-    stop_pbs_cluster,
-)
+from cars.cluster import dask_mode
 
-# General variable of CARS cluster module
+#  Cluster module constants
 
 # Cluster modes possibilities
-# True when DASK, False when not.
-CLUSTER_MODES = {"local_dask": True, "pbs_dask": True, "mp": False}
+CLUSTER_MODES = ["local_dask", "pbs_dask", "mp"]
 
 
 def start_cluster(
@@ -54,74 +45,87 @@ def start_cluster(
     nb_workers: int = None,
     walltime: str = None,
     out_dir: str = None,
-    pipeline_name: str = "unknown",
+    config_name: str = "unknown",
 ) -> Tuple[Cluster, Client, bool]:
     """
-    Cars start generic cluster function
+    CARS start generic cluster function
 
     This function:
     - checks mode in args possibilities
-    - save config
+    - save config (with config_name)
     - call sub functions depending on the mode.
 
     :param mode: Parallelization mode Must be "local_dask", "pbs_dask" or "mp"
     :param nb_workers: Number of dask workers to use for the sift matching step
     :param walltime: Walltime of the dask workers
     :param out_dir: Output directory
-    :return: Dask cluster or Mpcluster, Dask client, use dask boolean
+    :param config_name: Name set in config saved file for dask mode.
+    :return: Dask cluster or Mpcluster(TODO), Dask client, use dask boolean
     """
     # Check mode in args possibilities
-    if mode not in CLUSTER_MODES.keys():
+    if mode not in CLUSTER_MODES:
         raise NotImplementedError("{} mode is not implemented".format(mode))
 
+    logging.info("Start CARS cluster in {} mode".format(mode))
+
+    # Prepare outputs
     cluster = None
     client = None
+    use_dask = None
 
-    if CLUSTER_MODES[mode]:
+    if "dask" in mode:
         # DASK mode
+        use_dask = True
 
-        # Set particular config TODO.
-        set_dask_config()
+        # Set DASK CARS specific config TODO.
+        dask_mode.set_config()
 
         # Save dask config used
-        save_dask_config(out_dir, "dask_config_" + pipeline_name)
+        dask_mode.save_config(out_dir, "dask_config_" + config_name)
 
-        #
+        # Choose different cluster start depending on mode
+        # TODO: do it with class polymorphism in refacto
         if mode == "local_dask":
-            cluster, client = start_local_cluster(nb_workers)
+            cluster, client = dask_mode.start_local_cluster(nb_workers)
         elif mode == "pbs_dask":
-            cluster, client = start_pbs_cluster(nb_workers, walltime, out_dir)
+            cluster, client = dask_mode.start_pbs_cluster(
+                nb_workers, walltime, out_dir
+            )
 
         # Add plugin to monitor memory of workers
-        plugin = ComputeDSMMemoryLogger(out_dir)
+        plugin = dask_mode.ComputeDSMMemoryLogger(out_dir)
         client.register_worker_plugin(plugin)
 
     else:
+        # No DASK mode
+        use_dask = False
+
         if mode == "mp":
             # TODO: start_mp_cluster() for mp mode in cluster/mp_mode.py
             pass
 
-    logging.info("Start CARS cluster in {} mode".format(mode))
-
-    return cluster, client, CLUSTER_MODES[mode]
+    return cluster, client, use_dask
 
 
-def stop_cluster(mode, cluster, client):
+def stop_cluster(mode: str, cluster: Cluster, client: Client):
     """
     Stop cluster
+    :param mode: Parallelization mode Must be "local_dask", "pbs_dask" or "mp"
+    :param cluster: cluster to stop (only DASK for now)
+    :param client: client to stop (DASK only for now)
     """
     # Check mode in args possibilities
-    if mode not in CLUSTER_MODES.keys():
+    if mode not in CLUSTER_MODES:
         raise NotImplementedError("{} mode is not implemented".format(mode))
 
-    # TODO:
-
+    # Choose different cluster stop depending on mode
+    # TODO: do it with class polymorphism in refacto
     if mode == "local_dask":
-        stop_local_cluster(cluster, client)
+        dask_mode.stop_local_cluster(cluster, client)
     elif mode == "pbs_dask":
-        stop_pbs_cluster(cluster, client)
+        dask_mode.stop_pbs_cluster(cluster, client)
     elif mode == "mp":
         pass
         # TODO: clean mp cluster ?
 
-    logging.info("CARS cluster in {} mode stopped".format(mode))
+    logging.info("Stop CARS cluster in {} mode".format(mode))
