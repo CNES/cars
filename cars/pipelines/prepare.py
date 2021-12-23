@@ -477,7 +477,7 @@ def run(  # noqa: C901
     )
 
     use_dask = {"local_dask": True, "pbs_dask": True}
-    if mode not in use_dask.keys():
+    if mode not in use_dask:
         raise NotImplementedError("{} mode is not implemented".format(mode))
 
     if mode == "local_dask":

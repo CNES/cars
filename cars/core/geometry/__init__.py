@@ -55,7 +55,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :return: a loader_to_use object
         """
 
-        if loader_to_use not in cls.available_loaders.keys():
+        if loader_to_use not in cls.available_loaders:
             logging.error(
                 "No geometry loader named {} registered".format(loader_to_use)
             )
