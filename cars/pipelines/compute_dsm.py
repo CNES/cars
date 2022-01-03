@@ -410,7 +410,7 @@ def run(  # noqa: C901
 
         # Check configuration with respect to schema
         configuration = inputs.check_json(
-            in_json, output_prepare.PREPROCESSING_CONTENT_SCHEMA
+            in_json, output_prepare.content_schema()
         )
 
         # retrieve masks classes usages
@@ -1278,9 +1278,7 @@ def run(  # noqa: C901
     out_json_path = os.path.join(out_dir, "content.json")
 
     try:
-        inputs.check_json(
-            out_json, output_compute_dsm.COMPUTE_DSM_CONTENT_SCHEMA
-        )
+        inputs.check_json(out_json, output_compute_dsm.content_schema())
     except CheckerError as check_error:
         logging.warning(
             "content.json does not comply with schema: {}".format(check_error)

@@ -276,9 +276,7 @@ PREPROCESSING_PARAMETERS_SCHEMA = {
 PreprocessingParametersType = Dict[str, Union[float, int]]
 
 # Schema of the full content.json for preprocessing output
-IN_CONF_SCHEMA = json_schema.input_conf_schema()  # local variable
 PREPROCESSING_CONTENT_SCHEMA = {
-    input_parameters.INPUT_SECTION_TAG: IN_CONF_SCHEMA,
     PREPROCESSING_SECTION_TAG: {
         PREPROCESSING_VERSION_TAG: str,
         PREPROCESSING_PARAMETERS_SECTION_TAG: PREPROCESSING_PARAMETERS_SCHEMA,
@@ -290,6 +288,23 @@ PREPROCESSING_CONTENT_SCHEMA = {
         PREPROCESSING_OUTPUT_SECTION_TAG: PREPROCESSING_OUTPUT_SCHEMA,
     },
 }
+
+
+def content_schema():
+    """
+    Retrieve preprocessing content schema.
+    This function merges the loaders schema with the basic configuration
+    required by cars (PREPROCESSING_CONTENT_SCHEMA)
+
+    :return: the 'prepare_out/content.json' schema
+    """
+    # copy cars minimal configuration schema
+    schema = PREPROCESSING_CONTENT_SCHEMA.copy()
+
+    # update it with the configuration required by the geometry loader
+    schema[input_parameters.INPUT_SECTION_TAG] = json_schema.input_conf_schema()
+
+    return schema
 
 
 # Type of the full content.json for preprocessing output

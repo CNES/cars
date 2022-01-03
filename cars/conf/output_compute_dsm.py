@@ -186,3 +186,22 @@ COMPUTE_DSM_CONTENT_SCHEMA = {
         COMPUTE_DSM_OUTPUT_SECTION_TAG: COMPUTE_DSM_OUTPUT_SCHEMA,
     },
 }
+
+
+def content_schema():
+    """
+    Retrieve compute_dsm content schema.
+    This function merges the preprocessing schema with the basic configuration
+    required by cars (COMPUTE_DSM_CONTENT_SCHEMA)
+
+    :return: the 'compute_out/content.json' schema
+    """
+    # copy cars minimal configuration schema
+    schema = COMPUTE_DSM_CONTENT_SCHEMA.copy()
+
+    # update it with the configuration required by the geometry loader
+    schema[COMPUTE_DSM_INPUTS_SECTION_TAG][0][
+        COMPUTE_DSM_INPUT_TAG
+    ] = output_prepare.content_schema()
+
+    return schema

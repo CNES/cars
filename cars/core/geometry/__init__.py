@@ -55,7 +55,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :return: a loader_to_use object
         """
 
-        if loader_to_use not in cls.available_loaders.keys():
+        if loader_to_use not in cls.available_loaders:
             logging.error(
                 "No geometry loader named {} registered".format(loader_to_use)
             )
@@ -223,8 +223,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
             # convert disparity to matches
             epi_pos_left_y, epi_pos_left_x = np.mgrid[
-                ul_matches_shift[0] : ul_matches_shift[0] + matches.shape[0],
-                ul_matches_shift[1] : ul_matches_shift[1] + matches.shape[1],
+                ul_matches_shift[1] : ul_matches_shift[1] + matches.shape[0],
+                ul_matches_shift[0] : ul_matches_shift[0] + matches.shape[1],
             ]
 
             epi_pos_left_x = epi_pos_left_x.astype(np.float64)
@@ -312,8 +312,8 @@ class AbstractGeometry(metaclass=ABCMeta):
         last_row = ori_row + step_row * ds_grid.height
 
         # transform dep to positions
-        row_dep = ds_grid.read(2).transpose()
-        col_dep = ds_grid.read(1).transpose()
+        row_dep = ds_grid.read(2)
+        col_dep = ds_grid.read(1)
 
         cols = np.arange(ori_col, last_col, step_col)
         rows = np.arange(ori_row, last_row, step_row)
@@ -329,7 +329,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         # interpolate sensor positions
         interp_row = interpolate.interpn(
             (cols, rows),
-            sensor_row_positions,
+            sensor_row_positions.transpose(),
             positions,
             method="linear",
             bounds_error=False,
@@ -337,7 +337,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         )
         interp_col = interpolate.interpn(
             points,
-            sensor_col_positions,
+            sensor_col_positions.transpose(),
             positions,
             method="linear",
             bounds_error=False,
