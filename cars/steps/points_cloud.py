@@ -156,12 +156,10 @@ def create_combined_cloud(  # noqa: C901
     nb_data = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
 
     # check if the input mask values are present in the dataset
-    nb_data_msk = 0
     for cloud_list_item in cloud_list:
         ds_values_list = [key for key, _ in cloud_list_item.items()]
         if cst.POINTS_CLOUD_MSK in ds_values_list:
             nb_data.append(cst.POINTS_CLOUD_MSK)
-            nb_data_msk = 1
             break
 
     if color_list is not None:
@@ -245,9 +243,9 @@ def create_combined_cloud(  # noqa: C901
         c_cloud = np.zeros(
             (len(nb_data), (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1))
         )
-        c_cloud[1, :] = np.ravel(c_x)
-        c_cloud[2, :] = np.ravel(c_y)
-        c_cloud[3, :] = np.ravel(c_z)
+        c_cloud[nb_data.index(cst.X), :] = np.ravel(c_x)
+        c_cloud[nb_data.index(cst.Y), :] = np.ravel(c_y)
+        c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
 
         ds_values_list = [key for key, _ in cloud_list_item.items()]
 
@@ -255,7 +253,7 @@ def create_combined_cloud(  # noqa: C901
             c_msk = cloud_list_item[cst.POINTS_CLOUD_MSK].values[
                 bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
             ]
-            c_cloud[4, :] = np.ravel(c_msk)
+            c_cloud[nb_data.index(cst.POINTS_CLOUD_MSK), :] = np.ravel(c_msk)
 
         # add data valid mask
         # (points that are not in the border of the epipolar image)
@@ -283,7 +281,9 @@ def create_combined_cloud(  # noqa: C901
         c_epipolar_margin_mask = epipolar_margin_mask[
             bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
         ]
-        c_cloud[0, :] = np.ravel(c_epipolar_margin_mask)
+        c_cloud[nb_data.index(cst.POINTS_CLOUD_VALID_DATA), :] = np.ravel(
+            c_epipolar_margin_mask
+        )
 
         # add the color information to the current cloud
         if color_list is not None:
@@ -292,9 +292,12 @@ def create_combined_cloud(  # noqa: C901
             ]
 
             for band in range(nb_band_clr):
-                c_cloud[4 + nb_data_msk + band, :] = np.ravel(
-                    c_color[band, :, :]
-                )
+                c_cloud[
+                    nb_data.index(
+                        "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
+                    ),
+                    :,
+                ] = np.ravel(c_color[band, :, :])
 
         # add the original image coordinates information to the current cloud
         if with_coords:
@@ -302,9 +305,15 @@ def create_combined_cloud(  # noqa: C901
             coords_col = np.linspace(bbox[1], bbox[3], bbox[3] - bbox[1] + 1)
             coords_col, coords_line = np.meshgrid(coords_col, coords_line)
 
-            c_cloud[4 + nb_data_msk + nb_band_clr, :] = np.ravel(coords_line)
-            c_cloud[4 + nb_data_msk + nb_band_clr + 1, :] = np.ravel(coords_col)
-            c_cloud[4 + nb_data_msk + nb_band_clr + 2, :] = cloud_list_idx
+            c_cloud[
+                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
+            ] = np.ravel(coords_line)
+            c_cloud[
+                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_J), :
+            ] = np.ravel(coords_col)
+            c_cloud[
+                nb_data.index(cst.POINTS_CLOUD_IDX_IM_EPI), :
+            ] = cloud_list_idx
 
         # remove masked data (pandora + out of the terrain tile points)
         c_terrain_tile_data_msk = (
