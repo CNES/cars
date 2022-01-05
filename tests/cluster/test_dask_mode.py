@@ -19,16 +19,18 @@
 # limitations under the License.
 #
 """
-Test module for cars/cluster/cluster.py
+Test module for cars/cluster/dask_mode.py
 """
 
 # Standard imports
 from __future__ import absolute_import
 
+import os
 import tempfile
 
 # Third party imports
 import pytest
+import yaml
 
 # CARS imports
 from cars.cluster import dask_mode
@@ -42,8 +44,8 @@ def test_local_dask_cluster():
     """
     Simple start and stop local cluster test
     """
-    clus, client = dask_mode.start_local_cluster(4)
-    dask_mode.stop_local_cluster(clus, client)
+    cluster, client = dask_mode.start_local_cluster(4)
+    dask_mode.stop_local_cluster(cluster, client)
 
 
 @pytest.mark.pbs_cluster_tests
@@ -52,6 +54,27 @@ def test_dask_cluster():
     End to end dask_cluster management test
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        clus, client = dask_mode.start_cluster(2, "00:01:00", directory)
-        _ = dask_mode.get_dashboard_link(clus)
-        dask_mode.stop_cluster(clus, client)
+        cluster, client = dask_mode.start_pbs_cluster(2, "00:01:00", directory)
+        _ = dask_mode.get_dashboard_link(cluster)
+        dask_mode.stop_pbs_cluster(cluster, client)
+
+
+@pytest.mark.unit_tests
+def test_write_yaml_config():
+    """
+    Test save used dask config
+    """
+    file_root_name = "test"
+    cfg_yaml = {"key1": 2, "key2": {"key3": "string1", "key4": [1, 2, 4]}}
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        dask_mode.write_yaml_config(cfg_yaml, directory, file_root_name)
+
+        # test file existence and content
+        file_path = os.path.join(directory, file_root_name + ".yaml")
+
+        assert os.path.exists(file_path)
+
+        with open(file_path, encoding="utf-8") as file:
+            cfg_yaml_from_file = yaml.load(file, Loader=yaml.FullLoader)
+
+            assert cfg_yaml == cfg_yaml_from_file

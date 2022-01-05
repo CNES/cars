@@ -130,9 +130,6 @@ COMPUTE_DSM_OUTPUT_SECTION_TAG = "output"
 COMPUTE_DSM_PARAMETERS_SECTION_TAG = "parameters"
 COMPUTE_DSM_VERSION_TAG = "version"
 
-# tags for dask configuration file
-COMPUTE_DSM_DASK_CONFIG_TAG = "dask_config_compute_dsm"
-
 # Schema of the output section of compute dsm content.json
 COMPUTE_DSM_OUTPUT_SCHEMA = {
     DSM_TAG: And(str, Or(rasterio_can_open, ncdf_can_open)),

@@ -30,7 +30,6 @@ import tempfile
 import fiona
 import pytest
 import xarray as xr
-import yaml
 from shapely.geometry import Polygon, shape
 
 # CARS imports
@@ -74,25 +73,3 @@ def test_write_ply():
         absolute_data_path("input/intermediate_results/points_ref.nc")
     )
     outputs.write_ply(os.path.join(temporary_dir(), "test.ply"), points)
-
-
-@pytest.mark.unit_tests
-def test_write_dask_config():
-    """
-    Test write used dask config
-    TODO: move to cluster/test_dask_mode with refacto
-    """
-    file_root_name = "test"
-    cfg_dask = {"key1": 2, "key2": {"key3": "string1", "key4": [1, 2, 4]}}
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        outputs.write_dask_config(cfg_dask, directory, file_root_name)
-
-        # test file existence and content
-        file_path = os.path.join(directory, file_root_name + ".yaml")
-
-        assert os.path.exists(file_path)
-
-        with open(file_path, encoding="utf-8") as file:
-            cfg_dask_from_file = yaml.load(file, Loader=yaml.FullLoader)
-
-            assert cfg_dask == cfg_dask_from_file
