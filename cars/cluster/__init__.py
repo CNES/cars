@@ -52,7 +52,7 @@ def start_cluster(
 
     This function:
     - checks mode in args possibilities
-    - save config (with config_name)
+    - saves config (with config_name)
     - call sub functions depending on the mode.
 
     :param mode: Parallelization mode Must be "local_dask", "pbs_dask" or "mp"
