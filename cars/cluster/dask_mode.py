@@ -387,8 +387,10 @@ def set_config():
     Set particular DASK config such as:
     - scheduler
     """
-    # TODO: export API to prepare.run and compute_dsm.run()
-    # dask_config_set(scheduler='single-threaded')
+    # TODO: export API to prepare.run and compute_dsm.run() to set scheduler
+    # example mode debug: dask_config_set(scheduler='single-threaded')
+    # example mode multithread: dask_config_set(scheduler='threads')
+    # Here set Multiprocess mode instead multithread because of GIL blocking
     dask_config_set(scheduler="processes")
 
 
@@ -411,6 +413,7 @@ def save_config(output_dir: str, file_name: str):
 def write_yaml_config(yaml_config: dict, output_dir: str, file_name: str):
     """
     Writes a YAML config to disk.
+    TODO: put in global file if needed elsewhere than DASK conf save.
 
     :param yaml_config: YAML config to write
     :param output_dir: output directory path

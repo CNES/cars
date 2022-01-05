@@ -55,6 +55,8 @@ def start_cluster(
     - saves config (with config_name)
     - calls sub functions depending on the mode.
 
+    TODO: config_name kept for historic reason, but must be cleaned with refacto
+
     :param mode: Parallelization mode Must be "local_dask", "pbs_dask" or "mp"
     :param nb_workers: Number of dask workers to use for the sift matching step
     :param walltime: Walltime of the dask workers
@@ -77,7 +79,8 @@ def start_cluster(
         # DASK mode
         use_dask = True
 
-        # Set DASK CARS specific config TODO.
+        # Set DASK CARS specific config
+        # TODO: update with adequate configuration through tests
         dask_mode.set_config()
 
         # Save dask config used
