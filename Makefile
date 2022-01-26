@@ -93,7 +93,7 @@ test: install-dev ## run all tests + coverage html
 test-ci: install-dev ## run unit and pbs tests + coverage for cars-ci
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest --cache-show 
-	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 test-end2end: install-dev ## run end2end tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
