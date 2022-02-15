@@ -710,7 +710,7 @@ def mask_interp(
         distances = np.sqrt(np.sum(neighbors_vec * neighbors_vec, axis=1))
 
         # score computation
-        weights = np.exp(-(distances ** 2) / (2 * sigma ** 2))
+        weights = np.exp(-(distances**2) / (2 * sigma**2))
 
         val = []
         val_cum_weight = []
@@ -834,7 +834,7 @@ def gaussian_interp(
 
         # interpolation weights computation
         min_dist = np.amin(distances)
-        weights = np.exp(-((distances - min_dist) ** 2) / (2 * sigma ** 2))
+        weights = np.exp(-((distances - min_dist) ** 2) / (2 * sigma**2))
         total_weight = np.sum(weights)
 
         n_pts[i_grid] = neighbors_vec.shape[0]
