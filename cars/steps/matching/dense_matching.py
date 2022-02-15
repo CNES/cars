@@ -653,7 +653,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     tot += confidence + 2 * cv_ + nan_ + cv_uint + penal + img_crop
     import_ = 200  # MiB
 
-    row_or_col = float(((memory - import_) * 2 ** 23)) / tot
+    row_or_col = float(((memory - import_) * 2**23)) / tot
 
     if row_or_col <= 0:
         logging.warning(
