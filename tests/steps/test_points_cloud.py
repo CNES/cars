@@ -392,20 +392,24 @@ def test_detect_small_components():
     """
     Create fake cloud to process and test detect_small_components
     """
-    x_coord = np.zeros((5, 5))
-    x_coord[4, 4] = 20
-    x_coord[0, 4] = 19.55
-    x_coord[0, 3] = 19.10
-    y_coord = np.zeros((5, 5))
+    # Create random init fake cloud x,y,z coords structure.
+    x_coord_init = np.zeros((5, 5))
+    x_coord_init[4, 4] = 20
+    x_coord_init[0, 4] = 19.55
+    x_coord_init[0, 3] = 19.10
 
-    z_coord = np.zeros((5, 5))
-    z_coord[0:2, 0:2] = 10
-    z_coord[1, 1] = 12
+    y_coord_init = np.zeros((5, 5))
+
+    z_coord_init = np.zeros((5, 5))
+    z_coord_init[0:2, 0:2] = 10
+    z_coord_init[1, 1] = 12
 
     cloud_arr = np.concatenate(
         [
             np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
-            for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+            for x_coord, y_coord, z_coord in zip(
+                x_coord_init, y_coord_init, z_coord_init
+            )
         ],
         axis=0,
     )
@@ -427,24 +431,27 @@ def test_detect_statistical_outliers():
     """
     Create fake cloud to process and test detect_statistical_outliers
     """
-    x_coord = np.zeros((5, 6))
+    # Create fake cloud init 3D structure
+    x_coord_init = np.zeros((5, 6))
     off = 0
     for line in range(5):
         # x[line,:] = np.arange(off, off+(line+1)*5, line+1)
         last_val = off + 5
-        x_coord[line, :5] = np.arange(off, last_val)
+        x_coord_init[line, :5] = np.arange(off, last_val)
         off += (line + 2 + 1) * 5
 
         # outlier
-        x_coord[line, 5] = (off + last_val - 1) / 2
+        x_coord_init[line, 5] = (off + last_val - 1) / 2
 
-    y_coord = np.zeros((5, 6))
-    z_coord = np.zeros((5, 6))
+    y_coord_init = np.zeros((5, 6))
+    z_coord_init = np.zeros((5, 6))
 
     ref_cloud = np.concatenate(
         [
             np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
-            for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+            for x_coord, y_coord, z_coord in zip(
+                x_coord_init, y_coord_init, z_coord_init
+            )
         ],
         axis=0,
     )
