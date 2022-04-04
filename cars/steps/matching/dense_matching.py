@@ -284,6 +284,7 @@ def create_disp_dataset(
 
     # retrieve masks
     masks = get_masks_from_pandora(disp, verbose)
+
     if check_roi_in_sec:
         masks["inside_sec_roi"] = create_inside_sec_roi_mask(
             disp_map, masks["mask"], sec_dataset
@@ -305,10 +306,8 @@ def create_disp_dataset(
             ),
         ]
         disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-        for key in masks:
-            masks[key] = masks[key][
-                ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-            ]
+        for key, mask in masks.items():
+            masks[key] = mask[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
     # Fill disparity array with 0 value for invalid points
     disp_map[masks["mask"] == 0] = 0
