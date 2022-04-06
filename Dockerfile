@@ -14,9 +14,9 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     gcc=4:9.3.0-1ubuntu2 \
     g++=4:9.3.0-1ubuntu2 \
     make=4.2.1-1.2 \
-    libpython3.8=3.8.10-0ubuntu1~20.04.2 \
-    python3.8-dev=3.8.10-0ubuntu1~20.04.2 \
-    python3.8-venv=3.8.10-0ubuntu1~20.04.2 \
+    libpython3.8=3.8.10-0ubuntu1~20.04.4 \
+    python3.8-dev=3.8.10-0ubuntu1~20.04.4 \
+    python3.8-venv=3.8.10-0ubuntu1~20.04.4 \
     python3=3.8.2-0ubuntu2 \
     python3-pip=20.0.2-5ubuntu1.6 \
     python3-numpy=1:1.17.4-5ubuntu3 \
