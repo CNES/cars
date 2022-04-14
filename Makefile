@@ -24,6 +24,7 @@ CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
 CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
+CHECK_CLICK = $(shell ${CARS_VENV}/bin/python -m pip list|grep click) # # temporary fix: force click version to avoid dask.distributed pbs cluster trouble, see issue #383 
 
 TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' ' -f 1)
 
@@ -59,6 +60,7 @@ install-deps: venv
 	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
+	@[ "${CHECK_CLICK}" ] ||${CARS_VENV}/bin/python -m pip install click==8.0.4 # temporary fix: force click version to avoid dask.distributed pbs cluster trouble , see issue #383
 
 install: install-deps  ## install cars
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install --verbose .

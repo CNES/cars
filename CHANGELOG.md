@@ -10,7 +10,7 @@ A new section Unreleased is opened then for next dev phase.
 ### Fixed
 
 - Fix min_elevation_offset option when user_disp_min is greater than disp_min [#348]
-
+- Temporary bugfix by forcing click version to avoid dask.distributed pbs cluster trouble [#383]
 
 ## 0.4.0 Geometry Loader (September 2021)
 
