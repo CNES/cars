@@ -7,7 +7,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     cmake-curses-gui=3.16.3-1ubuntu1 \
-    git=1:2.25.1-1ubuntu3.2 \
+    git=1:2.25.1-1ubuntu3.3 \
     wget=1.20.3-1ubuntu1 \
     file=1:5.38-4 \
     apt-utils=2.0.6 \
