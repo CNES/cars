@@ -729,9 +729,7 @@ def get_paired_regions_as_geodict(
         feature["properties"] = {"id": idx, "nb_epi": len(epi_list)}
         feature["geometry"] = mapping(box(*ter))
         ter_geodict["features"].append(feature.copy())
-        feature["geometry"] = mapping(
-            MultiPolygon(map(lambda x: box(*x), epi_list))
-        )
+        feature["geometry"] = mapping(MultiPolygon(box(*x) for x in epi_list))
         epi_geodict["features"].append(feature.copy())
 
     return ter_geodict, epi_geodict
