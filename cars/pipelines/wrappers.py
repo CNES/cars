@@ -285,7 +285,7 @@ def images_pair_to_3d_points(
         else:
             worker_logger = logging.getLogger("distributed.worker")
             worker_logger.warning(
-                "Left image does not have a " "mask to rasterize"
+                "Left image does not have a mask to rasterize"
             )
         if cst.STEREO_SEC in disp:
             sec_values_list = [key for key, _ in right.items()]
@@ -294,7 +294,7 @@ def images_pair_to_3d_points(
             else:
                 worker_logger = logging.getLogger("distributed.worker")
                 worker_logger.warning(
-                    "Right image does not have a " "mask to rasterize"
+                    "Right image does not have a mask to rasterize"
                 )
 
     # Triangulate

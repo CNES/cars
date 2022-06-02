@@ -425,16 +425,15 @@ def detect_small_components(
     # extract connected components
     processed = [False] * len(cloud_xyz)
     connected_components = []
-    for idx, _ in enumerate(cloud_xyz):
+
+    for idx, xyz_point in enumerate(cloud_xyz):
 
         # if point has already been added to a cluster
         if processed[idx]:
             continue
 
         # get point neighbors
-        neighbors_list = cloud_tree.query_ball_point(
-            cloud_xyz[idx], connection_val
-        )
+        neighbors_list = cloud_tree.query_ball_point(xyz_point, connection_val)
 
         # add them to the current cluster
         seed = []
@@ -466,15 +465,14 @@ def detect_small_components(
 
     # determine clusters to remove
     cluster_to_remove = []
-    for connected_components_idx, connected_components_item in enumerate(
-        connected_components
-    ):
+
+    for _, connected_components_item in enumerate(connected_components):
         if len(connected_components_item) < nb_pts_threshold:
             if clusters_distance_threshold is not None:
                 # search if the current cluster has any neighbors
                 # in the clusters_distance_threshold radius
                 all_neighbors = cloud_tree.query_ball_point(
-                    cloud_xyz[connected_components[connected_components_idx]],
+                    cloud_xyz[connected_components_item],
                     clusters_distance_threshold,
                 )
 
