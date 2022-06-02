@@ -182,10 +182,10 @@ def union(regions):
     :rtype: list of 4 float
     """
 
-    xmin = min([r[0] for r in regions])
-    xmax = max([r[2] for r in regions])
-    ymin = min([r[1] for r in regions])
-    ymax = max([r[3] for r in regions])
+    xmin = min((r[0] for r in regions))
+    xmax = max((r[2] for r in regions))
+    ymin = min((r[1] for r in regions))
+    ymax = max((r[3] for r in regions))
 
     return xmin, ymin, xmax, ymax
 
