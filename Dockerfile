@@ -10,7 +10,6 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     git=1:2.25.1-1ubuntu3.4 \
     wget=1.20.3-1ubuntu1 \
     file=1:5.38-4 \
-    apt-utils=2.0.8 \
     gcc=4:9.3.0-1ubuntu2 \
     g++=4:9.3.0-1ubuntu2 \
     make=4.2.1-1.2 \
