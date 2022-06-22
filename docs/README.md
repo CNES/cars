@@ -6,7 +6,7 @@ CARS documentation is based on (Sphinx)[https://www.sphinx-doc.org/] and is in `
 Use the following command line at CARS source code root directly
 
 ```
-make doc
+make docs
 ```
 
 for automated CARS installation and documentation generation in `docs/build`
@@ -22,7 +22,7 @@ First, create a virtualenv and install CARS  following [CARS Installation](./doc
 You can use the following command line at CARS root directory:
 
 ```
-make install-doc
+make install
 ```
 
 This install CARS in a virtualenv with sphinx documentation dependencies using : `pip install .[doc]`  
