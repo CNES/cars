@@ -1,4 +1,4 @@
-Préconisations générales: 
+Préconisations générales:
 1. Pensez à bien mettre un **titre** d'issue explicite par rapport au bug
 2. Pensez à essayer au maximum d'aider le support (best effort) avec des informations les plus claires et précises
 3. Mettre le bon label
@@ -12,19 +12,19 @@ Préconisations générales:
 ### Contexte
 (ce qui permet de rejouer le bug)
 
-- Version de cars utilisée (cars --version): 
+- Version utilisée (cars --version):
 
-- Contexte d'utilisation (module load, cars-hal, source, ...): 
+- Contexte d'utilisation: module, cars-hal, source
 
-- Commande utilisée
+- Commande utilisée:
 
-#### Configuration et données utilisées 
+#### Configuration et données utilisées
 
 *Copier le input.json(prepare) ou le content.json (compute_dsm) (si applicable)*
 
 *Pensez à vérifier l'accès par les autres à la donnée en entrée ou copiez dans*
 
-#### Environnement 
+#### Environnement
 *Copier l'environnement python*
 
 ```
@@ -33,12 +33,10 @@ pip freeze
 *Lister l'environnement modules*
 ```
 module list
-``` 
+```
 
 
 ### Pistes potentielles pouvant expliquer l'origine du bug
 
 
 ### Pistes potentielles pouvant corriger le bug
-
-

@@ -9,7 +9,7 @@
 
 ### Proposition
 
-**Résumé**  
+**Résumé**
 
 *Pensez à ajouter les labels associés à la proposition*
 
