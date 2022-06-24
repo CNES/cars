@@ -5,12 +5,42 @@ When publication of a new release, the section "Unreleased" is set to the next c
 A new section Unreleased is opened then for next dev phase.
 
 ## Unreleased
+
 ### Added
+
 ### Changed
+
+### Fixed
+
+
+## 0.4.1 Stabilization - Upgrade Pandora 1.2.* (June 2022)
+
+### Added
+
+- Add Authors file for contributors [#400]
+
+### Changed
+
+- Upgrade to pandora 1.2.* [#371]
+- Improve performance of CARS cli with no argument [#357]
+- Add egm96 internal geoid hdr header [#335]
+- Cluster dask code structure evolution [#355]
+- Clean : remove hard coded indexes in the cloud fusion [#394]
+- Gitlab template evolution [#399]
+- Makefile evolution and clean [#391]
+
 ### Fixed
 
 - Fix min_elevation_offset option when user_disp_min is greater than disp_min [#348]
 - Temporary bugfix by forcing click version to avoid dask.distributed pbs cluster trouble [#383]
+- Fix CI errors with pylint upgrades and docker apt package ubuntu upgrades  [#390, #388, #385, #384, #380, #379, #376, #369, #368, #339]
+- Monitor pytest CI performance with debug information [#373]
+- Fix shapely version upgrade bug [#349]
+- Fix pygdal setuptools version upgrade bug [#333]
+- Fix OTB geometry plugin bugs [#393, #396]
+- Fix Loader geometry bug: non static schemas management [#395]
+- Filter useless verbose dask warning [#353]
+
 
 ## 0.4.0 Geometry Loader (September 2021)
 
