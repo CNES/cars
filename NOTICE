@@ -1,7 +1,11 @@
-CARS Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
+CARS Copyright (c) 2022 Centre National d'Etudes Spatiales (CNES).
 
 This software is distributed under the Apache Software License (ASL) v2.0, see
 LICENSE file or http://www.apache.org/licenses/LICENSE-2.0 for details.
+
+------------------
+CARS Dependencies
+------------------
 
 GNU C Library (libc6)
 Copyright (C) 2009 Free Software Foundation, Inc.
@@ -91,7 +95,7 @@ Copyright (c) 2014, Sean C. Gillies
 Website: https://github.com/sgillies/affine
 License: BSD 3 Clause.
 
-Fiona: reads and writes geographic data files 
+Fiona: reads and writes geographic data files
 Copyright (c) 2007, Sean C. Gillies
 Website: https://github.com/Toblerity/Fiona
 Version : non définie

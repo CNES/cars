@@ -58,9 +58,8 @@ Agreement](./docs/source/CLA/CCLA-CARS.doc) (CCLA) form if you are
 contributing on behalf of your company or another entity which retains copyright
 for your contribution.
 
-The copyright owner (or owner's agent) must be mentioned in headers of all
-modified source files and also added to the [NOTICE
-file](./NOTICE).
+The copyright owner (or owner's agent) must be mentioned in headers of all modified source files and also added to the [AUTHORS.md
+file](./AUTHORS.md).
 
 
 # Merge request acceptation process
@@ -68,10 +67,8 @@ file](./NOTICE).
 The Merge Request will be merged into master after being reviewed by CARS steering committee (core committers) composed of:
 * David Youssefi (CNES)
 * Emmanuelle Sarrazin (CNES)
-* Julien Michel (CNES CESBIO)
-* Fabrice Buffe (CNES)
-* Aurélie Emilien (CS Group)
 * Emmanuel Dubois (CNES)
+* Quentin Fardet (CS Group)
 
 Only the members of this committee can merge into master.
 
