@@ -24,7 +24,7 @@ From stereo images  |  CARS produces a Digital Surface Model (DSM)
 <img src="docs/source/images/animation_sat.gif" alt="drawing" width="400"/> |  <img src="docs/source/images/overview_dsm_3d.gif" alt="drawing" width="400"/>
 
 
-**CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.  
+**CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 This Multiview Stereo Pipeline is intended for massive DSM production with a robust and performant design.
 
 Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
@@ -72,13 +72,18 @@ You're at a dead end? This [quick start script](https://raw.githubusercontent.co
 
 ## Documentation
 
-Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest)  
+Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest)
 See [CARS generation README](docs/README.md) to rebuild documentation.
 
 ## Contribution
 
-To do a bug report or a contribution, see the [**Contribution Guide**](CONTRIBUTING.md).  
+To do a bug report or a contribution, see the [**Contribution Guide**](CONTRIBUTING.md).
 For project evolution, see [**Changelog**](CHANGELOG.md)
+
+## Credits
+
+See [Authors file](AUTHORS.md)
+
 
 ## References
 
