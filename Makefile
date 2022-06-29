@@ -40,6 +40,9 @@ CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
 TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' ' -f 1)
 
+# Check Docker
+CHECK_DOCKER = $(shell docker -v)
+
 # CARS version from setup.py
 CARS_VERSION = $(shell python3 setup.py --version)
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
@@ -199,6 +202,7 @@ dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebo
 
 .PHONY: docker
 docker: ## Build docker image (and check Dockerfile)
+	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Check Dockerfile with hadolint"
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
@@ -263,6 +267,7 @@ clean-dask:
 
 .PHONY: clean-docker
 clean-docker: ## clean docker image
-		@echo "Clean Docker image {{ cookiecutter.project_slug}} ${VERSION_MIN}"
-		@docker image rm {{ cookiecutter.author.lower() }}/{{ cookiecutter.project_slug}}:${VERSION_MIN}
-		@docker image rm {{ cookiecutter.author.lower() }}/{{ cookiecutter.project_slug}}:latest
+	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
+	@echo "Clean Docker image cnes/cars ${CARS_VERSION_MIN}"
+	@docker image rm cnes/cars:${CARS_VERSION_MIN}
+	@docker image rm cnes/cars:latest
