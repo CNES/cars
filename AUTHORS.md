@@ -16,17 +16,17 @@ This file keeps track of authors contributions.
 * Emmanuel Dubois <emmanuel.dubois@cnes.fr>
 * Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
 * Quentin Fardet <quentin.fardet@csgroup.eu>
-* Yoann Steux <yoann.steux@c-s.fr>
+* Yoann Steux <yoann.steux@csgroup.eu>
 
 ## Contributors
 
 * Julien Michel <julien.michel@cnes.fr>
-* Aurélie Emilien <aurelie.emilien@c-s.fr>
-* Loïc Dumas <loic.dumas@c-s.fr>
+* Aurélie Emilien <aurelie.emilien@csgroup.eu>
+* Loïc Dumas <loic.dumas@csgroup.eu>
 * Marina Bertolino <marina.bertolino@csgroup.eu>
-* Guillaume Pasero <guillaume.pasero@c-s.fr>
-* Jonathan Guinet <jonathan.guinet@c-s.fr>
-* Jasmin Siefert <jasmin.siefert@c-s.fr>
+* Guillaume Pasero <guillaume.pasero@csgroup.eu>
+* Jonathan Guinet <jonathan.guinet@csgroup.eu>
+* Jasmin Siefert <jasmin.siefert@csgroup.eu>
 
 Update here with new contributors.
 
@@ -37,10 +37,10 @@ Update here with new contributors.
 * Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
 * Myriam Cournet <myriam.cournet@cnes.fr>
 * Fabrice Buffe <fabrice.buffe@cnes.fr>
-* Aurélie Emilien <aurelie.emilien@c-s.fr>
+* Aurélie Emilien <aurelie.emilien@csgroup.eu>
 * Jean-Marc Delvit <jean-marc.delvit@cnes.fr>
 * Olivier Melet <olivier.melet@cnes.fr>
-* Celine L'helgen <celine.l-helgen@cnes.fr>
+* Céline L'Helguen <celine.l-helguen@cnes.fr>
 * Julien Bosman <julien.bosman@csgroup.eu>
 
  See [README References](README.md#documentation)
