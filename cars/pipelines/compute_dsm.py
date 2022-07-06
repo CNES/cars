@@ -898,7 +898,7 @@ def run(  # noqa: C901
             pbar = tqdm(total=len(conf["epipolar_regions"]))
 
             def update(args):  # pylint: disable=unused-argument
-                pbar.update()
+                pbar.update()  # noqa: B023
 
             # create a multiprocessing thread pool
             mp_mode = "fork"
