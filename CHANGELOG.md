@@ -13,6 +13,14 @@ A new section Unreleased is opened then for next dev phase.
 ### Fixed
 
 
+## 0.4.2 OTB/GDAL upgrade (July 2022)
+
+### Fixed
+
+- Fix gdal-config dependency in docker with rasterio upgrade [#404]
+- Upgrade OTB to 7.4.1 in Dockerfile [#404]
+
+
 ## 0.4.1 Stabilization - Upgrade Pandora 1.2.* (June 2022)
 
 ### Added
