@@ -4,6 +4,13 @@ LABEL maintainer="CNES"
 # Avoid apt install interactive questions.
 ARG DEBIAN_FRONTEND=noninteractive
 
+# add ubuntuGIS stable for rasterio last version which needs GDAL>3.1
+RUN apt-get update \
+    && apt-get install --no-install-recommends -y --quiet software-properties-common=0.99.9.8 \
+    && rm -rf /var/lib/apt/lists/* \
+    && add-apt-repository -y ppa:ubuntugis/ppa \
+    && apt-get update
+
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     cmake-curses-gui=3.16.3-1ubuntu1 \
@@ -16,9 +23,10 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libpython3.8=3.8.10-0ubuntu1~20.04.4 \
     python3.8-dev=3.8.10-0ubuntu1~20.04.4 \
     python3.8-venv=3.8.10-0ubuntu1~20.04.4 \
-    python3=3.8.2-0ubuntu2 \
+    python3.8=3.8.10-0ubuntu1~20.04.4 \
     python3-pip=20.0.2-5ubuntu1.6 \
     python3-numpy=1:1.17.4-5ubuntu3 \
+    python3-virtualenv=20.0.17-1ubuntu0.4 \
     unzip=6.0-25ubuntu1 \
     ninja-build=1.10.0-1build1 \
     libboost-date-time-dev=1.71.0.0ubuntu2 \
@@ -27,23 +35,22 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libboost-program-options-dev=1.71.0.0ubuntu2 \
     libboost-system-dev=1.71.0.0ubuntu2 \
     libboost-thread-dev=1.71.0.0ubuntu2 \
-    libgdal-dev=3.0.4+dfsg-1build3 \
+    libgdal-dev=3.3.2+dfsg-2~focal2 \
     libinsighttoolkit4-dev=4.13.2-dfsg1-8 \
-    libopenthreads-dev=3.6.4+dfsg1-3build2 \
-    libossim-dev=2.9.1-2build1 \
+    libopenthreads-dev=3.6.5+dfsg1-6~focal2 \
+    libossim-dev=2.9.1-2build3 \
     libtinyxml-dev=2.6.2-4build1 \
     libmuparser-dev=2.2.6.1+dfsg-1build1 \
     libmuparserx-dev=4.0.7+dfsg-3build1 \
     libsvm-dev=3.24+ds-3build1 \
     swig=4.0.1-5build1 \
     libfftw3-dev=3.3.8-2ubuntu1 \
-    python3-virtualenv=20.0.17-1ubuntu0.4 \
     && rm -rf /var/lib/apt/lists/*
 
 # install orfeo toolbox
 WORKDIR /opt/otb
-RUN wget -q https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.4.0.zip -O /tmp/OTB-7.4.0.zip && \
-    unzip -q /tmp/OTB-7.4.0.zip && rm /tmp/OTB-7.4.0.zip
+RUN wget -q https://www.orfeo-toolbox.org/packages/archives/OTB/OTB-7.4.1.zip -O /tmp/OTB-7.4.1.zip && \
+    unzip -q /tmp/OTB-7.4.1.zip && rm /tmp/OTB-7.4.1.zip
 WORKDIR /opt/otb/build
 RUN cmake \
     "-DBUILD_COOKBOOK:BOOL=OFF" "-DBUILD_EXAMPLES:BOOL=OFF" "-DBUILD_SHARED_LIBS:BOOL=ON" \
@@ -65,7 +72,8 @@ ENV OTB_APPLICATION_PATH=/usr/local/otb/lib/otb/applications \
     PYTHONPATH=/usr/local/otb/lib/otb/python:$PYTHONPATH \
     GEOTIFF_CSV=/usr/local/otb/share/epsg_csv
 
-COPY gdal-config /usr/local/otb/bin/
+# Use only when OTB installs gdal: gdal-config is already installed with gdal ubuntu package here.
+#COPY gdal-config /usr/local/otb/bin/
 
 # install vlfeat
 WORKDIR /opt

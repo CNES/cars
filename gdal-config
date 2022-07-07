@@ -1,33 +1,50 @@
 #!/bin/sh
-CONFIG_LIBS="-L/usr/local/otb/lib -lgdal"
-CONFIG_DEP_LIBS=" -L/usr/local/otb/lib -lgeos_c -L/usr/local/otb/lib -lsqlite3 -L/usr/local/otb/lib -lexpat -L/usr/local/otb/lib -lopenjp2   -L/usr/local/otb/lib -lnetcdf -lmfhdfalt -ldfalt -lhdf5_hl -lhdf5 -ldl -lm -lz -lcurl -L/usr/local/otb/lib -lhdf5  -L/usr/local/otb/lib -lmfhdfalt -ldfalt -L/usr/local/otb -L/usr/local/otb/lib -ljpeg -L/usr/local/otb/lib -lgeotiff -L/usr/local/otb/lib -ltiff -L/usr/local/otb -L/usr/local/otb/lib -lpng -lz -L/usr/local/otb -L/usr/local/otb/lib -lpthread -lm -lrt -ldl    -L/usr/local/otb/lib -lcurl                 "
-CONFIG_PREFIX="/usr/local/otb/"
-CONFIG_CFLAGS="-I/usr/local/otb/include"
-CONFIG_DATA="/usr/local/otb/share/gdal"
-CONFIG_VERSION="3.0.4"
+# Dummy gdal-config file taken from S1 Tiling in order to help
+# installing gdal python bindings on top of OTB binary releases.
+#
+# https://gitlab.orfeo-toolbox.org/s1-tiling/s1tiling/-/blob/develop/s1tiling/resources/gdal-config
+#
+CONFIG_PREFIX="$(dirname "$(dirname "$(readlink -f "$0")")")"
+CONFIG_LIBS="-L${CONFIG_PREFIX}/lib -lgdal"
+CONFIG_DEP_LIBS=" -lIlmImf -lImath -lHalf -lIex -lIexMath -lIlmThread -lpthread -lcrypto -L${CONFIG_PREFIX}/lib -lgeos_c -lsqlite3 -lexpat -lopenjp2 -lnetcdf -lhdf5  -lmfhdfalt -ldfalt -ljpeg -lgeotiff -ltiff -lpng -lproj -lsqlite3  -lz -lpthread -lm -lrt -ldl    -lcurl                  "
+CONFIG_CFLAGS="-I${CONFIG_PREFIX}/include"
+CONFIG_DATA="${CONFIG_PREFIX}/share/gdal"
+# Automatically extract version number from gdal_version.h shipped with OTB
+# Test 1. gdal-config prefix + include/gdal_version-h (normal OTB install)
+# and  2. gdal-config prefix + include/gdal/gdal_version-h (gdal ubuntu package install)
+# Or setup a default version > 3.1 (to be updated with local gdal install version)
+GDAL_VERSION_FILE1="${CONFIG_PREFIX}/include/gdal_version.h"
+GDAL_VERSION_FILE2="${CONFIG_PREFIX}/include/gdal/gdal_version.h"
+if [ -f "$GDAL_VERSION_FILE1" ]; then
+		CONFIG_VERSION="$(awk '/define GDAL_RELEASE_NAME/ {gsub(/"/, "", $4); print $4}' "${GDAL_VERSION_FILE1}")"
+elif [ -f "$GDAL_VERSION_FILE2" ]; then
+		CONFIG_VERSION="$(awk '/define GDAL_RELEASE_NAME/ {gsub(/"/, "", $4); print $4}' "${GDAL_VERSION_FILE2}")"
+else
+		CONFIG_VERSION="3.2.2"
+fi
 CONFIG_OGR_ENABLED=yes
 CONFIG_GNM_ENABLED=yes
-CONFIG_FORMATS=" gxf gtiff hfa aigrid aaigrid ceos ceos2 iso8211 xpm sdts raw dted mem jdem envisat elas fit vrt usgsdem l1b nitf bmp airsar rs2 ilwis rmf leveller sgi srtmhgt idrisi gsg ingr ers jaxapalsar dimap gff cosar pds adrg coasp tsx terragen blx msgn til r northwood saga xyz hf2 kmlsuperoverlay ctg e00grid zmap ngsgeoid iris map cals safe sentinel2 derived prf sigdem ignfheightasciigrid mrf wcs wms plmosaic wmts rda eeda grib bsb openjpeg netcdf hdf5 hdf4 jpeg png  pcidsk rik ozi pdf rasterlite mbtiles arg"
+CONFIG_FORMATS="derived gtiff hfa mem vrt  aaigrid adrg aigrid airsar arg blx bmp bsb cals ceos ceos2 coasp cosar ctg dimap dted e00grid elas envisat ers fit gff gsg gxf hf2 idrisi ignfheightasciigrid ilwis ingr iris iso8211 jaxapalsar jdem kmlsuperoverlay l1b leveller map mrf msgn ngsgeoid nitf northwood pds prf r raw rmf rs2 safe saga sdts sentinel2 sgi sigdem srtmhgt terragen til tsx usgsdem xpm xyz zmap rik ozi grib eeda plmosaic rda wcs wms wmts daas rasterlite mbtiles pdf exr openjpeg netcdf hdf5 hdf4 jpeg png  pcidsk"
 usage()
 {
-        cat <<EOF
+	cat <<EOF
 Usage: gdal-config [OPTIONS]
 Options:
-        [--prefix[=DIR]]
-        [--libs]
-        [--dep-libs]
-        [--cflags]
-        [--datadir]
-        [--version]
-        [--ogr-enabled]
-        [--gnm-enabled]
-        [--formats]
+	[--prefix[=DIR]]
+	[--libs]
+	[--dep-libs]
+	[--cflags]
+	[--datadir]
+	[--version]
+	[--ogr-enabled]
+	[--gnm-enabled]
+	[--formats]
 EOF
-        exit $1
+	exit $1
 }
 
 if test $# -eq 0; then
-        usage 1 1>&2
+	usage 1 1>&2
 fi
 
 case $1 in
