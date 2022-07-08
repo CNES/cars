@@ -29,8 +29,10 @@ from typing import Union
 import fiona
 import numpy as np
 import pandas
+import rasterio as rio
 import xarray as xr
 from fiona.crs import from_epsg
+from rasterio.profiles import DefaultGTiffProfile
 from shapely.geometry import mapping
 
 # CARS imports
@@ -44,7 +46,7 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     :param path: path to the ply file to write
     :param cloud: cloud to write,
         it can be a xr.Dataset as the ones given in output of the triangulation
-    or a pandas.DataFrame as used in the rasterization
+        or a pandas.DataFrame as used in the rasterization
     """
 
     with open(path_ply_file, "w", encoding="utf-8") as ply_file:
@@ -106,3 +108,57 @@ def write_vector(polys, path_to_file, epsg, driver="GPKG"):
                 "properties": {"Type": "Polygon"},
             }
             vector_file.write(poly_dict)
+
+
+def rasterio_write_georaster(
+    raster_file: str,
+    data: np.ndarray,
+    profile: dict = None,
+    window: rio.windows.Window = None,
+    descriptor=None,
+):
+    """
+    Write a raster file from array
+
+    :param raster_file: Image file
+    :param data: image data
+    :param profile: rasterio profile
+    """
+
+    def write_data(data, window=None, descriptor=None):
+        """
+        Write data through descriptor
+        :param data: data to write on disk
+        :param window: window
+        :param descriptor: descriptor
+        :return:
+        """
+
+        if len(data.shape) == 2:
+            descriptor.write(data, 1, window=window)
+        else:
+            if data.shape[2] < 5:
+                # wrong convention : cols, rows, bands
+                # revert axis to bands, cols, rows
+                data = np.moveaxis(data, [0, 1, 2], [2, 0, 1])
+
+            descriptor.write(data, window=window)
+
+    if descriptor is not None:
+        write_data(data, window=window, descriptor=descriptor)
+
+    else:
+        count = 1
+        width, height = data.shape[0], data.shape[1]
+        if len(data.shape) > 2:
+            count = data.shape[0]
+            width, height = data.shape[1], data.shape[2]
+
+        if profile is None:
+            profile = DefaultGTiffProfile(count=count)
+            profile["height"] = height
+            profile["width"] = width
+            profile["dtype"] = "float32"
+
+        with rio.open(raster_file, "w", **profile) as new_descriptor:
+            write_data(data, window=window, descriptor=new_descriptor)

@@ -1,0 +1,206 @@
+.. _main_pipeline:
+
+============================
+Main pipeline to produce dsm
+============================
+
+Based on CARS 3D framework introduced in :ref:`overview`,
+the *sensor_to_full_resolution_dsm* is the one that computes dsm from stereo images
+
+Overview
+=========
+
+.. figure:: ../images/pipeline_full_res_dsm.png
+    :align: center
+
+As shown in the figure above, the workflow is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
+
+The pipeline will perform the following steps:
+
+1. Compute the stereo-rectification grids of the input pair's images.
+2. Resampling the images pairs in epipolar geometry.
+3. Compute sift matches between the left and right images in epipolar geometry.
+4. Derive an optimal disparity range from the matches and a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
+5. Resampling the images pairs in epipolar geometry (corrected one for the right image) by using SRTM in order to reduce the disparity intervals to explore.
+6. Compute disparity for each image pair in epipolar geometry.
+7. Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude point.
+8. Merge point clouds coming from each stereo pairs.
+9. Filtering the 3D points cloud via two consecutive filters. The first one removes the small groups of 3D points. The second filters the points which have the most scattered neighbors.
+10. Projecting these altitudes on a regular grid as well as the associated color.
+
+
+Configuration
+=============
+
+Let's see :ref:`overview` for general information.
+
+Next sections describe specific information related to this pipeline:
+
+
+Inputs
+^^^^^^
+
++-------------------------------------------------------------------------------------------+-----------------------+----------------------+----------+
+| Name                | Description                                                         | Type                  | Default value        | Required |
++=====================+=====================================================================+=======================+======================+==========+
+| *sensor*            | Stereo sensor images                                                | See next section      |                      | Yes      |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *pairing*           | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *epsg*              | EPSG code                                                           | int, should be > 0    | None                 | No       |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *initial_elevation* | Field contains the path to the folder in which are located          |                       | None                 | No       |
+|                     | the srtm tiles covering the production                              |                       |                      |          |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *default_alt*       | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
+|                     | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *roi*               | Dsm roi file or bouding box                                         | string, list or tuple | None                 | No       |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *check_inputs*      | Check inputs consistency                                            | Boolean               | False                | No       |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+| *geoid*             | geoid path                                                          | string                | Cars internal geoid  | No       |
++---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+.. _sensor:
+
+Sensor
+******
+
+For each sensor images, give a particular name (what you want):
+
+.. sourcecode:: text
+
+    {
+      "my_name_for_this_image":
+        {
+            "image" : "path_to_image.tif",
+            "color" : "path_to_color.tif",
+            "mask" : "path_to_mask.tif",
+            "mask_classes" : {...}
+            "nodata": 0
+        }
+    }
+
+
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+| Name         | Description                                                                              | Type   | Default value | Required |
++==============+==========================================================================================+========+===============+==========+
+| *image*      | Path to the image                                                                        | string |               | Yes      |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+| *color*      | image stackable to image used to create an ortho-image corresponding to the produced dsm | string |               | No       |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+| *no_data*    | no data value of the image                                                               | int    | -9999         | No       |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+| *geomodel*   | geomodel associated to the image                                                         | string |               | Yes      |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+| *mask*       | external mask of the image                                                               | string | None          | No       |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+|*mask_classes*| mask's classes usage (see next section for more details)                                 | dict   |               | No       |
++--------------+------------------------------------------------------------------------------------------+--------+---------------+----------+
+
+.. note::
+    - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
+    - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as unvalid data.
+    - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
+
+
+CARS mask multi-classes structure
+---------------------------------
+
+Multi-classes masks have a unified CARS  format enabling the use of several mask information into the API.
+The classes can be used in different ways depending on the tag used in the dict defined below.
+
+Dict is given in the *mask_classes* fields of sensor (see previous section).
+This dict indicate the masks's classes usage and is structured as follows :
+
+.. sourcecode:: text
+
+    {
+        "ignored_by_correlation": [1, 2],
+        "set_to_ref_alt": [1, 3, 4],
+        "ignored_by_sift_matching": [2]
+    }
+
+
+* The classes listed in *ignored_by_sift_matching* will be masked at the sparse matching step.
+* The classes listed in *ignored_by_correlation* will be masked at the correlation step.
+* The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
+
+
+Example
+*******
+
+.. sourcecode:: text
+
+    {
+
+            "inputs": {
+                "sensors" : {
+                    "one": {
+                        "image": "img1.tif",
+                        "geomodel": "img1.geom",
+                        "no_data": 0
+                    },
+                    "two": {
+                        "image": "img2.tif",
+                        "geomodel": "img2.geom",
+                        "no_data": 0
+
+                    },
+                    "three": {
+                        "image": "img3.tif",
+                        "geomodel": "img3.geom",
+                        "no_data": 0
+                    }
+                },
+                "pairing": [["one", "two"],["one", "three"]],
+                "initial_elevation": "srtm_dir"
+            },
+
+
+Output
+^^^^^^
+
++----------------+-------------------------------------------------------------+--------+----------------+----------+
+| Name           | Description                                                 | Type   | Default value  | Required |
++================+=============================================================+========+================+==========+
+| out_dir        | Output folder where results are stored                      | string | No             | Yes      |
++----------------+-------------------------------------------------------------+--------+----------------+----------+
+| dsm_basename   | base name for dsm                                           | string | "dsm.tif"      | No       |
++----------------+-------------------------------------------------------------+--------+----------------+----------+
+| color_basename | base name for  ortho-image                                  | string | "color.tif     | No       |
++----------------+-------------------------------------------------------------+--------+----------------+----------+
+| info_basename  | base name for file containing information about computation | string | "content.json" | No       |
++----------------+-------------------------------------------------------------+--------+----------------+----------+
+
+
+Example
+*******
+
+.. sourcecode:: text
+
+        "output": {
+              "out_dir": "myoutputfolder",
+              "dsm_basename": "mydsm.tif"
+        }
+
+
+Output contents
+===============
+
+The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
+
+* the dsm
+* color image (if *color image* has been given)
+* information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
+* subfolder for each defined pair which can contains intermediate data
+
+
+References
+==========
+For more details, here are the reference papers:
+
+- Youssefi D., Michel, J., Sarrazin, E., Buffe, F., Cournet, M., Delvit, J., L’Helguen, C., Melet, O., Emilien, A., Bosman, J., 2020. **CARS: A photogrammetry pipeline using dask graphs to construct a global 3d model**. IGARSS - IEEE International Geoscience and Remote Sensing Symposium.(`https://ieeexplore.ieee.org/document/9324020 <https://ieeexplore.ieee.org/document/9324020>`_)
+- Michel, J., Sarrazin, E., Youssefi, D., Cournet, M., Buffe, F., Delvit, J., Emilien, A., Bosman, J., Melet, O., L’Helguen, C., 2020. **A new satellite imagery stereo pipeline designed for scalability, robustness and performance.** ISPRS - International Archives of the Photogrammetry, Remote Sensing and Spatial Information Sciences.(`https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/V-2-2020/171/2020/ <https://www.isprs-ann-photogramm-remote-sens-spatial-inf-sci.net/V-2-2020/171/2020/>`_)

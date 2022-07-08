@@ -1,0 +1,33 @@
+{
+    "inputs": { 
+        "sensors" : {
+            "left": {
+                "image": "left_image.tif",
+                "geomodel": "left_image.geom",
+                "no_data": 0,
+                "mask": "left_multiclass_msk.tif",
+                "mask_classes": {
+                    "ignored_by_dense_mathing": [1],
+                    "set_to_ref_alt": [150],
+                    "ignored_by_sparse_mathing": [1]
+                }
+                
+                
+            },
+            "right": {
+                "image": "right_image.tif",
+                "geomodel": "right_image.geom",
+                "no_data": 0,
+                "mask": "right_multiclass_msk.tif",
+                "mask_classes": {
+                    "ignored_by_dense_mathing": [1],
+                    "set_to_ref_alt": [1, 150],
+                    "ignored_by_sparse_mathing": [1]
+                }
+
+            }   
+        },
+        "pairing": [["left", "right"]],
+        "initial_elevation": "srtm"
+    }
+}

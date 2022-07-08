@@ -40,24 +40,14 @@ echo " "
 
 # CARS Docker Run
 
-echo "- Launch CARS PREPARE step for img1 and img2 pair:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12
-echo " "
-
-echo "- Launch CARS PREPARE step for img1 and img3 pair:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13
-echo " "
-
-echo "- Launch CARS COMPUTE DSM step:"
-echo "  # docker run -v \"\$(pwd)\"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json -o /data/outcompute/"
-docker run -v "$(pwd)"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/
+echo " Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:"
+echo "  # docker run -v "$(pwd)"/data_samples:/data cnes/cars /data/configfile.json"
+docker run -v "$(pwd)"/data_samples:/data cnes/cars /data/configfile.json
 echo " "
 
 # Clean rights on generated data. Otherwise, data cannot be deleted without root access.
 docker run -it -v "$(pwd)"/data_samples:/data --entrypoint /bin/bash cnes/cars -c "chown -R '$(id -u):$(id -g)' /data/"
 
 echo "- Show resulting DSM:"
-echo "  # ls -l data_samples/outcompute/"
-ls -l data_samples/outcompute/
+echo "  # ls -l data_samples/outresults/"
+ls -l data_samples/outresults/

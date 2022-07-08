@@ -37,11 +37,11 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 from shapely.geometry import box, mapping
 from shapely.geometry.multipolygon import MultiPolygon
-from tqdm import tqdm
+
+from cars.applications.grid_generation import grids
 
 # CARS imports
-from cars.conf import output_prepare
-from cars.steps.epi_rectif.grids import compute_epipolar_grid_min_max
+from cars.core import former_confs_utils
 
 
 def grid(
@@ -57,8 +57,10 @@ def grid(
     :param ymax : ymax of the bounding box of the region to split
     :param xsplit: width of splits
     :param ysplit: height of splits
-    :returns: The output ndarray grid with nb_ysplits splits in first direction
-        and nb_xsplits in second direction for 2 dimensions 0:x, 1:y
+
+    :return: The output ndarray grid with nb_ysplits splits in first direction
+             and nb_xsplits in second direction for 2 dimensions 0:x, 1:y
+    :rtype: numpy array
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
     nb_ysplits = math.ceil((ymax - ymin) / ysplit)
@@ -92,9 +94,10 @@ def split(xmin, ymin, xmax, ymax, xsplit, ysplit):
     :type xsplit: int
     :param ysplit: height of splits
     :type ysplit: int
-    :returns: A list of splits represented
-        by arrays of 4 elements [xmin, ymin, xmax, ymax]
-    :type list of 4 float
+
+    :return: A list of splits represented
+             by arrays of 4 elements [xmin, ymin, xmax, ymax]
+    :rtype: list of 4 float
     """
     nb_xsplits = math.ceil((xmax - xmin) / xsplit)
     nb_ysplits = math.ceil((ymax - ymin) / ysplit)
@@ -125,10 +128,11 @@ def crop(region1, region2):
     :param region1: The region to crop as an array [xmin, ymin, xmax, ymax]
     :type region1: list of four float
     :param region2: The region used for cropping
-        as an array [xmin, ymin, xmax, ymax]
+           as an array [xmin, ymin, xmax, ymax]
     :type region2: list of four float
-    :returns: The cropped regiona as an array [xmin, ymin, xmax, ymax].
-        If region1 is outside region2, might result in inconsistent region
+
+    :return: The cropped regiona as an array [xmin, ymin, xmax, ymax].
+             If region1 is outside region2, might result in inconsistent region
     :rtype: list of four float
     """
     out = region1[:]
@@ -148,7 +152,7 @@ def pad(region, margins):
     :type region: list of four floats
     :param margins: Margin to add
     :type margins: list of four floats
-    :returns: padded region
+    :return: padded region
     :rtype: list of four float
     """
     out = region[:]
@@ -166,8 +170,8 @@ def empty(region):
 
     :param region: region as an array [xmin, ymin, xmax, ymax]
     :type region: list of four float
-    :returns: True if the region is considered empty (no pixels inside),
-        False otherwise
+    :return: True if the region is considered empty (no pixels inside),
+             False otherwise
     :rtype: bool"""
     return region[0] >= region[2] or region[1] >= region[3]
 
@@ -178,7 +182,7 @@ def union(regions):
 
     :param regions: list of region as an array [xmin, ymin, xmax, ymax]
     :type regions: list of list of four float
-    :returns: xmin, ymin, xmax, ymax
+    :return: xmin, ymin, xmax, ymax
     :rtype: list of 4 float
     """
 
@@ -203,8 +207,8 @@ def list_tiles(region, largest_region, tile_size, margin=1):
     :type tile_size: int
     :param margin: Also include margin neighboring tiles
     :type margin: int
-    :returns: A list of tiles as arrays of [xmin, ymin, xmax, ymax]
-    :rtype: list of 4 float
+    :return: A list of tiles as dicts containing idx and idy
+    :rtype: list of dict
     """
     # Find tile indices covered by region
     min_tile_idx_x = int(math.floor(region[0] / tile_size))
@@ -237,7 +241,7 @@ def list_tiles(region, largest_region, tile_size, margin=1):
 
             # Check if tile is emtpy
             if not empty(tile):
-                out.append(tile)
+                out.append({"idx": tile_idx_x, "idy": tile_idx_y, "tile": tile})
 
     return out
 
@@ -254,7 +258,7 @@ def roi_to_start_and_size(region, resolution):
     :type region: list of four float
     :param resolution: The resolution to use to determine sizes
     :type resolution: float
-    :returns: xstart, ystart, xsize, ysize tuple
+    :return: xstart, ystart, xsize, ysize tuple
     :rtype: list of two float + two int
     """
     xstart = region[0]
@@ -280,8 +284,8 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
     :type ymax: float
     :param resolution: size of cells for snapping
     :type resolution: float
-    :returns: xmin, ymin, xmax, ymax snapped tuple
-    :type: list of four float
+    :return: xmin, ymin, xmax, ymax snapped tuple
+    :rtype: list of four float
     """
     xmin = math.floor(xmin / resolution) * resolution
     xmax = math.ceil(xmax / resolution) * resolution
@@ -292,21 +296,31 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
 
 
 def terrain_region_to_epipolar(
-    region, conf, epsg=4326, disp_min=None, disp_max=None, step=100
+    geometry_loader,
+    region,
+    conf,
+    epsg=4326,
+    disp_min=None,
+    disp_max=None,
+    step=100,
 ):
     """
     Transform terrain region to epipolar region
     """
+    # UNUSED TODO remove ?
+
     # Retrieve disp min and disp max if needed
-    preprocessing_output_conf = conf[output_prepare.PREPROCESSING_SECTION_TAG][
-        output_prepare.PREPROCESSING_OUTPUT_SECTION_TAG
-    ]
-    minimum_disparity = preprocessing_output_conf[
-        output_prepare.MINIMUM_DISPARITY_TAG
-    ]
-    maximum_disparity = preprocessing_output_conf[
-        output_prepare.MAXIMUM_DISPARITY_TAG
-    ]
+    (
+        minimum_disparity,
+        maximum_disparity,
+    ) = former_confs_utils.get_disp_min_max(conf)
+    # retrieve epipolar sizes from conf
+    (
+        epi_size_x,
+        epi_size_y,
+    ) = former_confs_utils.get_epi_sizes_from_cars_post_prepare_configuration(
+        conf
+    )
 
     if disp_min is None:
         disp_min = int(math.floor(minimum_disparity))
@@ -330,16 +344,21 @@ def terrain_region_to_epipolar(
     epipolar_grid = grid(
         0,
         0,
-        preprocessing_output_conf[output_prepare.EPIPOLAR_SIZE_X_TAG],
-        preprocessing_output_conf[output_prepare.EPIPOLAR_SIZE_Y_TAG],
+        epi_size_x,
+        epi_size_y,
         step,
         step,
     )
 
     epi_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
 
-    epipolar_grid_min, epipolar_grid_max = compute_epipolar_grid_min_max(
-        epipolar_grid, epsg, conf, disp_min, disp_max
+    epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
+        geometry_loader,
+        epipolar_grid,
+        epsg,
+        conf,
+        disp_min=disp_min,
+        disp_max=disp_max,
     )
 
     # Build Delaunay triangulations
@@ -404,10 +423,10 @@ def filter_simplices_on_the_edges(
     concave Delaunay triangulation.
 
     :param original_grid_shape: shape of the original grid (almost regular) used
-    to create delaunay triangulation
+           to create delaunay triangulation
     :param tri: Delaunay triangulation
     :param simplices: Selected simplices to filter: set -1 if selected simplex
-    is on the edges
+           is on the edges
     """
 
     # Filter simplices on the edges
@@ -427,19 +446,15 @@ def filter_simplices_on_the_edges(
 
 
 def terrain_grid_to_epipolar(
-    terrain_grid, epipolar_regions_grid, configuration, disp_min, disp_max, epsg
+    terrain_grid,
+    epipolar_regions_grid,
+    epipolar_grid_min,
+    epipolar_grid_max,
+    epsg,
 ):
     """
     Transform terrain grid to epipolar region
     """
-    # Compute disp_min and disp_max location for epipolar grid
-    (epipolar_grid_min, epipolar_grid_max,) = compute_epipolar_grid_min_max(
-        epipolar_regions_grid,
-        epsg,
-        configuration,
-        disp_min,
-        disp_max,
-    )
 
     epipolar_regions_grid_shape = np.shape(epipolar_regions_grid)[:2]
     epipolar_regions_grid_flat = epipolar_regions_grid.reshape(
@@ -539,168 +554,162 @@ def region_hash_string(region: Tuple):
     return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
 
 
-def get_corresponding_tiles(
-    terrain_grid: np.ndarray, configurations_data: Dict
+def get_corresponding_tiles_row_col(
+    terrain_grid: np.ndarray,
+    row: int,
+    col: int,
+    list_points_clouds_left: list,
+    list_points_clouds_right: list,
+    list_epipolar_points_min: list,
+    list_epipolar_points_max: list,
 ) -> Tuple[List, List, List]:
     """
     This function allows to get required points cloud for each
     terrain region.
 
     :param terrain_grid: terrain grid positions
-    :param configurations_data: dictionnary containing informations about
-    epipolar input tiles where keys are image pairs index and values are
-    epipolar_points_min, epipolar_points_max, largest_epipolar_region,
-    opt_epipolar_tile_size, epipolar_regions_hash and delayed_point_clouds
+    :param row: row
+    :param col: column
+           epipolar input tiles where keys are image pairs index and values are
+           epipolar_points_min, epipolar_points_max, largest_epipolar_region,
+           opt_epipolar_tile_size
 
-    :returns: Terrain regions, Corresponding tiles selected from
-    delayed_point_clouds and Terrain regions "rank" allowing to sorting tiles
-    for dask processing
+    :return: Terrain regions, Corresponding tiles selected from
+             delayed_point_clouds and Terrain regions "rank" allowing to
+             sorting tiles for dask processing
     """
-    terrain_regions = []
-    corresponding_tiles = []
-    rank = []
 
-    number_of_terrain_splits = (terrain_grid.shape[0] - 1) * (
-        terrain_grid.shape[1] - 1
-    )
+    j = row
+    i = col
 
-    logging.info(
-        "Terrain bounding box will be processed in {} splits".format(
-            number_of_terrain_splits
-        )
-    )
+    logging.debug("Processing tile located at {},{} in tile grid".format(i, j))
 
-    # Loop on terrain regions and derive dependency to epipolar regions
-    for terrain_region_dix in tqdm(
-        range(number_of_terrain_splits),
-        total=number_of_terrain_splits,
-        desc="Delaunay look-up",
+    terrain_region = [
+        terrain_grid[j, i, 0],
+        terrain_grid[j, i, 1],
+        terrain_grid[j + 1, i + 1, 0],
+        terrain_grid[j + 1, i + 1, 1],
+    ]
+
+    logging.debug("Corresponding terrain region: {}".format(terrain_region))
+
+    # This list will hold the required points clouds for this terrain tile
+    required_point_clouds_left = []
+    required_point_clouds_right = []
+
+    # This list contains indexes of tiles (debug purpose)
+    list_indexes = []
+
+    # For each stereo configuration
+    for (pc_left, pc_right, epipolar_points_min, epipolar_points_max) in zip(
+        list_points_clouds_left,
+        list_points_clouds_right,
+        list_epipolar_points_min,
+        list_epipolar_points_max,
     ):
+        largest_epipolar_region = pc_left.attributes["largest_epipolar_region"]
+        opt_epipolar_tile_size = pc_left.attributes["opt_epipolar_tile_size"]
 
-        j = int(terrain_region_dix / (terrain_grid.shape[1] - 1))
-        i = terrain_region_dix % (terrain_grid.shape[1] - 1)
-
-        logging.debug(
-            "Processing tile located at {},{} in tile grid".format(i, j)
+        tile_min = np.minimum(
+            np.minimum(
+                np.minimum(
+                    epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
+                ),
+                np.minimum(
+                    epipolar_points_min[j + 1, i + 1],
+                    epipolar_points_min[j, i + 1],
+                ),
+            ),
+            np.minimum(
+                np.minimum(
+                    epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
+                ),
+                np.minimum(
+                    epipolar_points_max[j + 1, i + 1],
+                    epipolar_points_max[j, i + 1],
+                ),
+            ),
         )
 
-        terrain_region = [
-            terrain_grid[j, i, 0],
-            terrain_grid[j, i, 1],
-            terrain_grid[j + 1, i + 1, 0],
-            terrain_grid[j + 1, i + 1, 1],
+        tile_max = np.maximum(
+            np.maximum(
+                np.maximum(
+                    epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
+                ),
+                np.maximum(
+                    epipolar_points_min[j + 1, i + 1],
+                    epipolar_points_min[j, i + 1],
+                ),
+            ),
+            np.maximum(
+                np.maximum(
+                    epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
+                ),
+                np.maximum(
+                    epipolar_points_max[j + 1, i + 1],
+                    epipolar_points_max[j, i + 1],
+                ),
+            ),
+        )
+
+        # Bouding region of corresponding cell
+        epipolar_region_minx = tile_min[0]
+        epipolar_region_miny = tile_min[1]
+        epipolar_region_maxx = tile_max[0]
+        epipolar_region_maxy = tile_max[1]
+
+        # This mimics the previous code that was using
+        # terrain_region_to_epipolar
+        epipolar_region = [
+            epipolar_region_minx,
+            epipolar_region_miny,
+            epipolar_region_maxx,
+            epipolar_region_maxy,
         ]
 
-        terrain_regions.append(terrain_region)
+        # Crop epipolar region to largest region
+        epipolar_region = crop(epipolar_region, largest_epipolar_region)
 
-        logging.debug("Corresponding terrain region: {}".format(terrain_region))
+        logging.debug(
+            "Corresponding epipolar region: {}".format(epipolar_region)
+        )
 
-        # This list will hold the required points clouds for this terrain tile
-        required_point_clouds = []
-
-        # For each stereo configuration
-        for _, conf in configurations_data.items():
-
-            epipolar_points_min = conf["epipolar_points_min"]
-            epipolar_points_max = conf["epipolar_points_max"]
-            largest_epipolar_region = conf["largest_epipolar_region"]
-            opt_epipolar_tile_size = conf["opt_epipolar_tile_size"]
-            epipolar_regions_hash = conf["epipolar_regions_hash"]
-            delayed_point_clouds = conf["delayed_point_clouds"]
-
-            tile_min = np.minimum(
-                np.minimum(
-                    np.minimum(
-                        epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
-                    ),
-                    np.minimum(
-                        epipolar_points_min[j + 1, i + 1],
-                        epipolar_points_min[j, i + 1],
-                    ),
-                ),
-                np.minimum(
-                    np.minimum(
-                        epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
-                    ),
-                    np.minimum(
-                        epipolar_points_max[j + 1, i + 1],
-                        epipolar_points_max[j, i + 1],
-                    ),
-                ),
-            )
-
-            tile_max = np.maximum(
-                np.maximum(
-                    np.maximum(
-                        epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
-                    ),
-                    np.maximum(
-                        epipolar_points_min[j + 1, i + 1],
-                        epipolar_points_min[j, i + 1],
-                    ),
-                ),
-                np.maximum(
-                    np.maximum(
-                        epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
-                    ),
-                    np.maximum(
-                        epipolar_points_max[j + 1, i + 1],
-                        epipolar_points_max[j, i + 1],
-                    ),
-                ),
-            )
-
-            # Bouding region of corresponding cell
-            epipolar_region_minx = tile_min[0]
-            epipolar_region_miny = tile_min[1]
-            epipolar_region_maxx = tile_max[0]
-            epipolar_region_maxy = tile_max[1]
-
-            # This mimics the previous code that was using
-            # terrain_region_to_epipolar
-            epipolar_region = [
-                epipolar_region_minx,
-                epipolar_region_miny,
-                epipolar_region_maxx,
-                epipolar_region_maxy,
-            ]
-
-            # Crop epipolar region to largest region
-            epipolar_region = crop(epipolar_region, largest_epipolar_region)
-
+        # Check if the epipolar region contains any pixels to process
+        if empty(epipolar_region):
             logging.debug(
-                "Corresponding epipolar region: {}".format(epipolar_region)
+                "Skipping terrain region "
+                "because corresponding epipolar region is empty"
             )
+        else:
+            # Loop on all epipolar tiles covered by epipolar region
+            for epipolar_tile in list_tiles(
+                epipolar_region,
+                largest_epipolar_region,
+                opt_epipolar_tile_size,
+            ):
 
-            # Check if the epipolar region contains any pixels to process
-            if empty(epipolar_region):
-                logging.debug(
-                    "Skipping terrain region "
-                    "because corresponding epipolar region is empty"
-                )
-            else:
-                # Loop on all epipolar tiles covered by epipolar region
-                for epipolar_tile in list_tiles(
-                    epipolar_region,
-                    largest_epipolar_region,
-                    opt_epipolar_tile_size,
+                id_x = epipolar_tile["idx"]
+                id_y = epipolar_tile["idy"]
+
+                epi_grid_shape = pc_left.tiling_grid.shape
+
+                if (
+                    0 <= id_x < epi_grid_shape[1]
+                    and 0 <= id_y < epi_grid_shape[0]
                 ):
+                    required_point_clouds_left.append(pc_left[id_y, id_x])
+                    required_point_clouds_right.append(pc_right[id_y, id_x])
+                    list_indexes.append([id_y, id_x])
 
-                    cur_hash = region_hash_string(epipolar_tile)
+    rank = i * i + j * j
 
-                    # Look for corresponding hash in delayed point clouds
-                    # dictionnary
-                    if cur_hash in epipolar_regions_hash:
-
-                        # If hash can be found, append it to the required
-                        # clouds to compute for this terrain tile
-                        pos = epipolar_regions_hash.index(cur_hash)
-                        required_point_clouds.append(delayed_point_clouds[pos])
-
-        corresponding_tiles.append(required_point_clouds)
-        rank.append(i * i + j * j)
-
-    return terrain_regions, corresponding_tiles, rank
+    return (
+        terrain_region,
+        required_point_clouds_left,
+        required_point_clouds_right,
+        rank,
+        list_indexes,
+    )
 
 
 def get_paired_regions_as_geodict(
@@ -713,9 +722,9 @@ def get_paired_regions_as_geodict(
     :param terrain_regions: terrain region respecting cars tiling
     :param epipolar_regions: corresponding epipolar regions
 
-    :returns: Terrain dictionnary and Epipolar dictionnary containing
-    respectively Terrain tiles in terrain projection and Epipolar tiles
-    in epipolar projection
+    :return: Terrain dictionnary and Epipolar dictionnary containing
+             respectively Terrain tiles in terrain projection and Epipolar tiles
+             in epipolar projection
     """
 
     ter_geodict = {"type": "FeatureCollection", "features": []}
@@ -730,6 +739,7 @@ def get_paired_regions_as_geodict(
         feature["geometry"] = mapping(box(*ter))
         ter_geodict["features"].append(feature.copy())
         feature["geometry"] = mapping(MultiPolygon(box(*x) for x in epi_list))
+
         epi_geodict["features"].append(feature.copy())
 
     return ter_geodict, epi_geodict

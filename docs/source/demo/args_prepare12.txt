@@ -1,1 +1,0 @@
-prepare -i data_samples/input12.json -o data_samples/outprepare12

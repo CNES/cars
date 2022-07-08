@@ -42,10 +42,10 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
       Stereo matching or disparity estimation is the process of finding the pixels
       in the multiscopic views that correspond to the same 3D point in the scene.
 
-    pipelines
+    pipeline
       In computing, a pipeline, also known as a data pipeline is a set of data
       processing elements connected in series, where the output of one element
-      is the input of the next one. In CARS, pipeline orchestrates functions
+      is the input of the next one. In CARS, pipeline orchestrates applications/functions
       to chain 3D steps to produce DSM.
 
     rectification
@@ -56,9 +56,6 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
       `Region of Interest`_ means a subpart of the `DSM` raster in CARS.
       It can be defined by a file or a bounding box.
 
-
-    steps
-      In CARS, it represents all functional steps in the 3D prepare and compute_dsm pipelines.
 
 .. _`Digital Elevation Model`: https://en.wikipedia.org/wiki/Digital_elevation_model
 .. _`Digital Surface Model`: https://en.wikipedia.org/wiki/Digital_elevation_model

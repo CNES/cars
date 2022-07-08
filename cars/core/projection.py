@@ -42,10 +42,12 @@ from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
 
-# CARS imports
-from cars.conf import input_parameters, static_conf
+from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
+
+# CARS imports
+from cars.core.geometry import AbstractGeometry
 
 
 def compute_dem_intersection_with_poly(
@@ -448,10 +450,10 @@ def ground_polygon_from_envelopes(
     :param epsg1: EPSG code of poly_envelope1
     :param epsg2: EPSG code of poly_envelope2
     :param tgt_epsg: EPSG code of the new projection
-        (default value is set to 4326)
+           (default value is set to 4326)
     :return: a tuple with the shapely polygon of the intersection
-        and the intersection's bounding box
-        (described by a tuple (minx, miny, maxx, maxy))
+             and the intersection's bounding box
+             (described by a tuple (minx, miny, maxx, maxy))
     """
     # project to the correct epsg if necessary
     if epsg1 != tgt_epsg:
@@ -471,9 +473,11 @@ def ground_polygon_from_envelopes(
 
 def ground_intersection_envelopes(
     conf,
+    geometry_loader_to_use: str,
     shp1_path: str,
     shp2_path: str,
     out_intersect_path: str,
+    geoid: str = None,
     dem_dir: str = None,
     default_alt: float = None,
 ) -> Tuple[Polygon, Tuple[int, int, int, int]]:
@@ -489,17 +493,22 @@ def ground_intersection_envelopes(
     :raise: Exception when the envelopes don't intersect one to each other
 
     :param conf: cars input configuration dictionary
+    :param geometry_loader_to_use: name of geometry loader to use
     :param shp1_path: Path to the output shapefile left
     :param shp2_path: Path to the output shapefile right
     :param dem_dir: Directory containing DEM tiles
     :param default_alt: Default altitude above ellipsoid
     :param out_intersect_path: out vector file path to create
     :return: a tuple with the shapely polygon of the intersection
-        and the intersection's bounding box
-        (described by a tuple (minx, miny, maxx, maxy))
+             and the intersection's bounding box
+             (described by a tuple (minx, miny, maxx, maxy))
     """
     # Create left, right envelopes from images and dem, default_alt
-    geo_loader = static_conf.get_geometry_loader()
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            geometry_loader_to_use
+        )
+    )
 
     geo_loader.image_envelope(
         conf,
@@ -507,7 +516,7 @@ def ground_intersection_envelopes(
         shp1_path,
         dem=dem_dir,
         default_alt=default_alt,
-        geoid=static_conf.get_geoid_path(),
+        geoid=geoid,
     )
     geo_loader.image_envelope(
         conf,
@@ -515,7 +524,7 @@ def ground_intersection_envelopes(
         shp2_path,
         dem=dem_dir,
         default_alt=default_alt,
-        geoid=static_conf.get_geoid_path(),
+        geoid=geoid,
     )
 
     # Read vectors shapefiles
@@ -569,6 +578,7 @@ def project_coordinates_on_line(
 
 def get_time_ground_direction(
     conf,
+    geometry_loader_to_use: str,
     product_key: str,
     x_loc: float = None,
     y_loc: float = None,
@@ -582,9 +592,10 @@ def get_time_ground_direction(
     Done by two localizations at "y" and "y+y_offset" values.
 
     :param conf: cars input configuration dictionary
+    :param geometry_loader_to_use: name of geometry loader to use
     :param product_key: input_parameters.PRODUCT1_KEY or
-    input_parameters.PRODUCT2_KEY to identify which geometric model shall
-    be taken to perform the method
+           input_parameters.PRODUCT2_KEY to identify which geometric model shall
+           be taken to perform the method
     :param x_loc: x location in image for estimation (default=center)
     :param y_loc: y location in image for estimation (default=1/4)
     :param y_offset: y location in image for estimation (default=1/2)
@@ -612,7 +623,11 @@ def get_time_ground_direction(
     assert y_loc + y_offset <= img_size_y
 
     # Get coordinates of time direction vectors
-    geometry_loader = static_conf.get_geometry_loader()
+    geometry_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            geometry_loader_to_use
+        )
+    )
     lat1, lon1, __ = geometry_loader.direct_loc(
         conf, product_key, x_loc, y_loc, dem=dem, geoid=geoid
     )
@@ -636,24 +651,29 @@ def display_angle(vec):
     return 180 * math.atan2(vec[1], vec[0]) / math.pi
 
 
-def acquisition_direction(conf, dem: str) -> Tuple[np.ndarray]:
+def acquisition_direction(
+    conf, geometry_loader_to_use, dem: str
+) -> Tuple[np.ndarray]:
     """
     Computes the mean acquisition of the input images pair
 
     :param conf: cars input configuration dictionary
+    :param geometry_loader_to_use: name of geometry loader to use
     :param dem: path to the dem directory
     :return: a tuple composed of :
+
         - the mean acquisition direction as a numpy array
         - the acquisition direction of the first product in the configuration
-        as a numpy array
+          as a numpy array
         - the acquisition direction of the second product in the configuration
-        as a numpy array
+          as a numpy array
     """
+    # TODO remove ? usused
     vec1 = get_time_ground_direction(
-        conf, input_parameters.PRODUCT1_KEY, dem=dem
+        conf, geometry_loader_to_use, input_parameters.PRODUCT1_KEY, dem=dem
     )
     vec2 = get_time_ground_direction(
-        conf, input_parameters.PRODUCT2_KEY, dem=dem
+        conf, geometry_loader_to_use, input_parameters.PRODUCT2_KEY, dem=dem
     )
     time_direction_vector = (vec1 + vec2) / 2
 
@@ -671,6 +691,7 @@ def acquisition_direction(conf, dem: str) -> Tuple[np.ndarray]:
 
 def get_ground_direction(
     conf,
+    geometry_loader_to_use: str,
     product_key: str,
     x_coord: float = None,
     y_coord: float = None,
@@ -687,9 +708,10 @@ def get_ground_direction(
     model limits.
 
     :param conf: cars input configuration dictionary
+    :param geometry_loader_to_use: name of geometry loader to use
     :param product_key: input_parameters.PRODUCT1_KEY or
-    input_parameters.PRODUCT2_KEY to identify which geometric model shall
-    be taken to perform the method
+           input_parameters.PRODUCT2_KEY to identify which geometric model shall
+           be taken to perform the method
     :param x_coord: X Coordinate in input image sensor
     :param y_coord: Y Coordinate in input image sensor
     :param z0_coord: Z altitude reference coordinate
@@ -727,7 +749,11 @@ def get_ground_direction(
     assert z_coord <= max_alt
 
     # Get origin vector coordinate with z0 altitude
-    geometry_loader = static_conf.get_geometry_loader()
+    geometry_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            geometry_loader_to_use
+        )
+    )
     lat0, lon0, alt0 = geometry_loader.direct_loc(
         conf,
         product_key,
@@ -753,6 +779,8 @@ def get_ground_direction(
 
 def get_ground_angles(
     conf,
+    geometry_loader_to_use,
+    geoid: str = None,
     x1_coord: float = None,
     y1_coord: float = None,
     z1_0_coord: float = None,
@@ -781,30 +809,34 @@ def get_ground_angles(
     Perspectives: get bisector  elevation (BIE), and asymmetry angle
 
     :param conf: cars input configuration dictionary
+    :param geometry_loader_to_use: name of geometry loader to use
     :param x1_coord: X Coordinate in input left image1  sensor
     :param y1_coord: Y Coordinate in input left image1 sensor
     :param z1_0_coord: Left image1 Z altitude origin coordinate
-        for ground direction vector
+           for ground direction vector
     :param z1_coord:  Left image1 Z altitude end coordinate
-        for ground direction vector
+           for ground direction vector
     :param x2_coord: X Coordinate in input right image2 sensor
     :param y2_coord: Y Coordinate in input right image2 sensor
     :param z2_0_coord: Right image2 Z altitude origin coordinate
-        for ground direction vector
+           for ground direction vector
     :param z2_coord: Right image2 Z altitude end coordinate
-        for ground direction vector
+           for ground direction vector
     :return: Left Azimuth, Left Elevation Angle,
-            Right Azimuth, Right Elevation Angle, Convergence Angle
+             Right Azimuth, Right Elevation Angle, Convergence Angle
     """
+    # TODO remove ? unused
+
     # Get image1 <-> satellite vector from image2 metadata geometric model
     lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(
         conf,
+        geometry_loader_to_use,
         input_parameters.PRODUCT1_KEY,
         x1_coord,
         y1_coord,
         z1_0_coord,
         z1_coord,
-        geoid=static_conf.get_geoid_path(),
+        geoid=geoid,
     )
     # Get East North Up vector for left image1
     x1_e, y1_n, y1_u = enu1 = geo_to_enu(
@@ -816,12 +848,13 @@ def get_ground_angles(
     # Get image2 <-> satellite vector from image2 metadata geometric model
     lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(
         conf,
+        geometry_loader_to_use,
         input_parameters.PRODUCT2_KEY,
         x2_coord,
         y2_coord,
         z2_0_coord,
         z2_coord,
-        geoid=static_conf.get_geoid_path(),
+        geoid=geoid,
     )
     # Get East North Up vector for right image2
     x2_e, y2_n, y2_u = enu2 = geo_to_enu(

@@ -33,9 +33,8 @@ and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
 
    getting_started
    install
-   user_manual
-   notebooks
-   main_principles
-   developer
+   userguide
+   developer_guide
+   api_reference/index.rst
    faq
    glossary

@@ -102,7 +102,7 @@ Then, to install CARS:
     $ cd project_root
     $ pip install .
 
-Follow :ref:`user_manual` to run and configure CARS.
+Follow :ref:`userguide` to run and configure CARS.
 
 CARS OTB Application Compilation
 --------------------------------

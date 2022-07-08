@@ -26,10 +26,11 @@ contains some CARS global shared general purpose inputs functions
 # Standard imports
 import logging
 import warnings
-from typing import Tuple
+from typing import Dict, Tuple
 
 # Third party imports
 import fiona
+import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
@@ -79,8 +80,8 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
     """
     Get the number of bands in an image file
 
-    :param f: Image file
-    :returns: The number of bands
+    :param raster_file: Image file
+    :return: The number of bands
     """
     with rio.open(raster_file, "r") as descriptor:
         return descriptor.count
@@ -91,10 +92,40 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     Get the size of an image (file)
 
     :param raster_file: Image file
-    :returns: The size (width, height)
+    :return: The size (width, height)
     """
     with rio.open(raster_file, "r") as descriptor:
         return (descriptor.width, descriptor.height)
+
+
+def rasterio_read_as_array(
+    raster_file: str, window: rio.windows.Window = None
+) -> Tuple[np.ndarray, dict]:
+    """
+    Get the data of an image file, and its profile
+
+    :param raster_file: Image file
+    :param window: Window to get data from
+    :return: The array, its profile
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        if descriptor.count == 1:
+            data = descriptor.read(1, window=window)
+        else:
+            data = descriptor.read(window=window)
+
+        return data, descriptor.profile
+
+
+def rasterio_get_profile(raster_file: str) -> Dict:
+    """
+    Get the profile of an image file
+
+    :param raster_file: Image file
+    :return: The profile of the given image
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.profile
 
 
 def rasterio_can_open(raster_file: str) -> bool:
@@ -102,7 +133,7 @@ def rasterio_can_open(raster_file: str) -> bool:
     Test if a file can be open by rasterio
 
     :param raster_file: File to test
-    :returns: True if rasterio can open file and False otherwise
+    :return: True if rasterio can open file and False otherwise
     """
     try:
         rio.open(raster_file)
@@ -143,7 +174,7 @@ def check_json(conf, schema):
     :param schema: The schema to use
     :type schema: dict
 
-    :returns: conf if check succeeds (else raises CheckerError)
+    :return: conf if check succeeds (else raises CheckerError)
     :rtype: dict
     """
     schema_validator = Checker(schema)

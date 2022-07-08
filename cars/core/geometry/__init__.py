@@ -116,12 +116,12 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param cars_conf: cars input configuration dictionary
         :param mode: triangulation mode
-        (constants.DISP_MODE or constants.MATCHES)
+               (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
         :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
+               (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
 
@@ -155,11 +155,12 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
+
             - the left epipolar grid as a numpy array
             - the right epipolar grid as a numpy array
             - the left grid origin as a list of float
             - the left grid spacing as a list of float
-            - the epipolar image size as a list of int
+            - the epipolar image size as a list of int \
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
@@ -182,14 +183,15 @@ class AbstractGeometry(metaclass=ABCMeta):
         This function returns a tuple composed of the matches left and right
         sensor coordinates as numpy arrays. For each original image, the sensor
         coordinates are arranged as follows :
-            * if the matches are a vector of matching points: a numpy array of
-            size [number of matches, 2].
-            The last index indicates the 'x' coordinate (last index set to 0) or
+
+            - if the matches are a vector of matching points: a numpy array of\
+            size [number of matches, 2].\
+            The last index indicates the 'x' coordinate(last index set to 0) or\
             the 'y' coordinate (last index set to 1).
-            * if matches is a cars disparity dataset: a numpy array of size
-            [nb_epipolar_line, nb_epipolar_col, 2]. Where
-            [nb_epipolar_line, nb_epipolar_col] is the size of the disparity
-            map. The last index indicates the 'x' coordinate (last index set
+            - if matches is a cars disparity dataset: a numpy array of size \
+            [nb_epipolar_line, nb_epipolar_col, 2]. Where\
+            [nb_epipolar_line, nb_epipolar_col] is the size of the disparity \
+            map. The last index indicates the 'x' coordinate (last index set \
             to 0) or the 'y' coordinate (last index set to 1).
 
         :param grid1: path to epipolar grid of image 1
@@ -198,11 +200,11 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param matches_type: matches type (cst.DISP_MODE or cst.MATCHES)
         :param matches_msk: matches mask to provide for cst.DISP_MODE
         :param ul_matches_shift: coordinates (x, y) of the upper left corner of
-        the matches map (for cst.DISP_MODE) in the original epipolar geometry
-        (use this if the map have been cropped)
+               the matches map (for cst.DISP_MODE) in the original epipolar
+               geometry (use this if the map have been cropped)
         :return: a tuple of numpy array. The first array corresponds to the
-        left matches in sensor coordinates, the second one is the right
-        matches in sensor coordinates.
+                 left matches in sensor coordinates, the second one is the right
+                 matches in sensor coordinates.
         """
         vec_epi_pos_left = None
         vec_epi_pos_right = None
@@ -289,12 +291,13 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param grid: path to epipolar grid
         :param positions: epipolar positions to interpolate given as a numpy
-        array of size [number of points, 2]. The last index indicates the 'x'
-         coordinate (last index set to 0) or the 'y' coordinate
-         (last index set to 1).
+               array of size [number of points, 2]. The last index indicates
+               the 'x' coordinate (last index set to 0) or the 'y' coordinate
+               (last index set to 1).
         :return: sensors positions as a numpy array of size
-        [number of points, 2]. The last index indicates the 'x' coordinate
-        (last index set to 0) or the 'y' coordinate (last index set to 1).
+                 [number of points, 2]. The last index indicates the 'x'
+                 coordinate (last index set to 0) or
+                 the 'y' coordinate (last index set to 1).
         """
 
         # open epipolar grid
@@ -367,15 +370,15 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param cars_conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
-        input_parameters.PRODUCT2_KEY to identify which geometric model shall
-        be taken to perform the method
+               input_parameters.PRODUCT2_KEY to identify which geometric model
+               shall be taken to perform the method
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
         :param dem: if z not defined, take this DEM directory input
         :param geoid: if z and dem not defined, take GEOID directory input
         :param default_elevation: if z, dem, geoid not defined, take default
-        elevation
+               elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
 
@@ -393,8 +396,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
-        input_parameters.PRODUCT2_KEY to identify which geometric model shall
-        be taken to perform the method
+               input_parameters.PRODUCT2_KEY to identify which geometric model
+               shall be taken to perform the method
         :param shp: Path to the output shapefile
         :param dem: Directory containing DEM tiles
         :param default_alt: Default altitude above ellipsoid

@@ -39,11 +39,6 @@ Go to `docs` directory from CARS source root directory.
 cd docs
 ```
 
-First generate Autodoc generation in docs directory:
-````
-sphinx-apidoc -o source/apidoc/ ../cars
-````
-
 For HTML documentation generation:
 ```
 make html
