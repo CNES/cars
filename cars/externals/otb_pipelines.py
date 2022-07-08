@@ -22,7 +22,7 @@
 OTB Pipelines module:
 contains functions that builds Orfeo ToolBox pipelines used by CARS
 Refacto: Split function in generic externals calls through functional steps
-         interfaces (epipolar rectification, ...)
+interfaces (epipolar rectification, ...)
 """
 
 # Standard imports
@@ -50,7 +50,7 @@ def build_extract_roi_application(img, region):
     :type img: otb::Image pointer
     :param region: Extraction region
     :type region: list of 4 int (xmin, ymin, xmax, ymax)
-    :returns: (extracted image, roi application) tuple
+    :return: (extracted image, roi application) tuple
     :rtype: ready to use instance of the ExtractROI application
     """
     extract_app = otbApplication.Registry.CreateApplication("ExtractROI")
@@ -94,7 +94,7 @@ def build_mask_pipeline(
     :type out_nodata: float
     :param out_valid_value: Pixel value for valid points in mask
     :typ out_valid_value: float
-    :param grid: The stereo-rectification resampling grid
+    :param grid: The stereo-rectification rectification grid
     :type grid: otb::Image pointer or string
     :param epipolar_size_x: Size of stereo-rectified images in x
     :type epipolar_size_x: int
@@ -102,7 +102,7 @@ def build_mask_pipeline(
     :type epipolar_size_y: int
     :param roi: Region over which to compute epipolar mask or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
-    :returns: mask
+    :return: mask
     :rtype: resampled mask as numpy array
     """
     mask_app = otbApplication.Registry.CreateApplication("BuildMask")
@@ -155,7 +155,7 @@ def build_bundletoperfectsensor_pipeline(pan_img, ms_img):
     :type pan_img: string
     :param ms_img: Path to the multispectral image
     :type ms_img: string
-    :returns: resample_image
+    :return: resample_image
     :rtype: otb application
     """
     pansharpening_app = otbApplication.Registry.CreateApplication(
@@ -178,7 +178,7 @@ def build_image_resampling_pipeline(
 
     :param img: Path to the left image
     :type img: string
-    :param grid: The stereo-rectification resampling grid
+    :param grid: The stereo-rectification rectification grid
     :type grid: otb::Image pointer or string
     :param epipolar_size_x: Size of stereo-rectified images in x
     :type epipolar_size_x: int
@@ -187,8 +187,8 @@ def build_image_resampling_pipeline(
     :param roi: Region over which to compute epipolar images, or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
     :param lowres_color: Path to the low resolution color image
-    ;type lowres_color: string
-    :returns: resampled image
+    :type lowres_color: string
+    :return: resampled image
     :rtype: resampled image as numpy array
     """
 
@@ -237,7 +237,7 @@ def get_utm_zone_as_epsg_code(lon, lat):
     :type lon: float
     :param lat: lattitude of the point
     :type lat: float
-    :returns: The EPSG code corresponding to the UTM zone
+    :return: The EPSG code corresponding to the UTM zone
     :rtype: int
     """
     utm_app = otbApplication.Registry.CreateApplication(

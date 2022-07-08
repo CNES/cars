@@ -1,0 +1,35 @@
+{
+    "input": {},
+    "pipeline": {
+        "right_disp_map": {
+            "method": "accurate"
+        },
+        "matching_cost" : {
+            "matching_cost_method": "mc_cnn",
+            "window_size": 11,
+            "subpix": 1,
+            "mc_cnn_arch": "fast",
+            "model_path": "UPDATE/mc_cnn_fast_mb_weights.pt"
+        },
+        "optimization" : {
+            "optimization_method": "sgm",
+            "overcounting": false,
+            "penalty_method": "mc_cnn_fast_penalty"
+        },
+        "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "NaN"
+        },
+        "refinement": {
+            "refinement_method": "vfit"
+        },
+        "filter" : {
+            "filter_method": "median",
+            "filter_size": 3
+        },
+        "validation" : {
+            "validation_method": "cross_checking",
+            "cross_checking_threshold": 1
+        }
+    }
+}

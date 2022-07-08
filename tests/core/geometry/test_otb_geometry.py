@@ -33,12 +33,12 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars.conf import input_parameters, static_conf
+from cars.conf import input_parameters
 from cars.core.geometry import AbstractGeometry
 from cars.core.inputs import read_vector
 
 # CARS Tests imports
-from ...helpers import absolute_data_path, temporary_dir
+from ...helpers import absolute_data_path, get_geoid_path, temporary_dir
 
 
 def rigid_transform_resample(
@@ -95,7 +95,7 @@ def test_generate_epipolar_grids():
         epipolar_size,
         disp_to_alt_ratio,
     ) = geo_loader.generate_epipolar_grids(
-        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+        conf, dem, epipolar_step=step, geoid=get_geoid_path()
     )
 
     assert epipolar_size == [612, 612]
@@ -195,7 +195,7 @@ def test_generate_epipolar_grids_scaled_inputs():
         ref_epipolar_size,
         ref_disp_to_alt_ratio,
     ) = geo_loader.generate_epipolar_grids(
-        conf, dem, epipolar_step=step, geoid=static_conf.get_geoid_path()
+        conf, dem, epipolar_step=step, geoid=get_geoid_path()
     )
 
     # define negative scale transform
@@ -343,7 +343,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 conf,
                 dem,
                 epipolar_step=step,
-                geoid=static_conf.get_geoid_path(),
+                geoid=get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -362,7 +362,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 conf,
                 dem,
                 epipolar_step=step,
-                geoid=static_conf.get_geoid_path(),
+                geoid=get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -382,7 +382,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 conf,
                 dem,
                 epipolar_step=step,
-                geoid=static_conf.get_geoid_path(),
+                geoid=get_geoid_path(),
             )
 
             assert epipolar_size == ref_epipolar_size
@@ -514,7 +514,7 @@ def test_image_envelope():
             input_parameters.PRODUCT1_KEY,
             shp,
             dem=dem,
-            geoid=static_conf.get_geoid_path(),
+            geoid=get_geoid_path(),
         )
 
         assert os.path.isfile(shp)
@@ -562,7 +562,7 @@ def test_image_envelope():
             input_parameters.PRODUCT1_KEY,
             shp,
             dem,
-            geoid=static_conf.get_geoid_path(),
+            geoid=get_geoid_path(),
         )
 
         assert os.path.isfile(shp)

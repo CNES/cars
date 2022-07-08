@@ -30,23 +30,6 @@ import pytest
 from cars.conf import mask_classes
 
 # CARS Tests imports
-from ..helpers import absolute_data_path
-
-
-@pytest.mark.unit_tests
-def test_mask_classes_can_open():
-    """
-    Test mask_classes_can_open function with right and wrong input files
-    """
-    mask_classes_path = absolute_data_path(
-        "input/phr_paca/left_msk_classes.json"
-    )
-    assert mask_classes.mask_classes_can_open(mask_classes_path) is True
-
-    wrong_mask_classes_path = absolute_data_path(
-        "input/mask_input/msk_wrong_json.json"
-    )
-    assert mask_classes.mask_classes_can_open(wrong_mask_classes_path) is False
 
 
 @pytest.mark.unit_tests
@@ -126,72 +109,5 @@ def test_get_msk_from_classes():
         [[False, False, False], [True, False, True], [False, True, True]],
         dtype=bool,
     )
-
-    assert np.allclose(out_msk, ref_msk)
-
-
-@pytest.mark.unit_tests
-def test_get_msk_from_tag():
-    """
-    Create fake masks and test create_msk_from_tag function in
-    different configurations
-    """
-
-    mc_msk = np.array(
-        [
-            [0, 0, mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION],
-            [1, 0, 100],
-            [2, 100, 200],
-        ]
-    )
-
-    # test default mask creation
-    out_msk = mask_classes.create_msk_from_tag(
-        mc_msk,
-        absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_corr_tag,
-    )
-
-    ref_msk = np.array(
-        [[0, 0, 0], [255, 0, 255], [0, 255, 255]], dtype=np.uint16
-    )
-
-    assert np.allclose(out_msk, ref_msk)
-
-    # test with non existing tag in the json
-    out_msk = mask_classes.create_msk_from_tag(
-        mc_msk,
-        absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_sift_matching_tag,
-    )
-
-    ref_msk = np.array([[0, 0, 0], [0, 0, 0], [0, 0, 0]], dtype=np.uint16)
-
-    assert np.allclose(out_msk, ref_msk)
-
-    # test with mask_intern_no_data_val option on
-    out_msk = mask_classes.create_msk_from_tag(
-        mc_msk,
-        absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_corr_tag,
-        mask_intern_no_data_val=True,
-    )
-
-    ref_msk = np.array(
-        [[0, 0, 255], [255, 0, 255], [0, 255, 255]], dtype=np.uint16
-    )
-
-    assert np.allclose(out_msk, ref_msk)
-
-    # test with non existing tag in the json and with
-    # mask_intern_no_data_val option on
-    out_msk = mask_classes.create_msk_from_tag(
-        mc_msk,
-        absolute_data_path("input/mask_input/msk_classes.json"),
-        mask_classes.ignored_by_sift_matching_tag,
-        mask_intern_no_data_val=True,
-    )
-
-    ref_msk = np.array([[0, 0, 255], [0, 0, 0], [0, 0, 0]], dtype=np.uint16)
 
     assert np.allclose(out_msk, ref_msk)

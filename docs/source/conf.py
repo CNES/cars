@@ -51,8 +51,20 @@ extensions = [
     "sphinx.ext.ifconfig",  # add if config possibility in rst files
     "sphinx.ext.intersphinx",  # other projects automatic links to doc
     "sphinx.ext.mathjax",  # Add rst math capabilities with :math:
-    "sphinx.ext.autodoc",  # apidoc automatic generation
+    "autoapi.extension",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
+]
+
+autoapi_dirs = ["../../cars"]
+autoapi_root = "api_reference"
+autoapi_keep_files = True
+autoapi_options = [
+    "members",
+    "undoc-members",
+    "private-members",
+    "show-inheritance",
+    "show-module-summary",
+    "special-members",
 ]
 
 # Add any paths that contain templates here, relative to this directory.

@@ -170,12 +170,12 @@ class OTBGeometry(AbstractGeometry):
 
         :param cars_conf: cars input configuration dictionary
         :param mode: triangulation mode
-        (cst.DISP_MODE or cst.MATCHES)
+               (cst.DISP_MODE or cst.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of image 1
         :param grid2: path to epipolar grid of image 2
         :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
+               (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
         """
 
@@ -264,11 +264,12 @@ class OTBGeometry(AbstractGeometry):
         :param default_alt: default altitude to use in the missing dem regions
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
+
             - the left epipolar grid as a numpy array
             - the right epipolar grid as a numpy array
             - the left grid origin as a list of float
             - the left grid spacing as a list of float
-            - the epipolar image size as a list of int
+            - the epipolar image size as a list of int \
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
@@ -371,15 +372,15 @@ class OTBGeometry(AbstractGeometry):
 
         :param cars_conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
-        input_parameters.PRODUCT2_KEY to identify which geometric model shall
-        be taken to perform the method
+               input_parameters.PRODUCT2_KEY to identify which geometric model
+               shall be taken to perform the method
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
         :param dem: if z not defined, take this DEM directory input
         :param geoid: if z and dem not defined, take GEOID directory input
         :param default_elevation: if z, dem, geoid not defined, take default
-        elevation
+               elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
         # save os env
@@ -441,8 +442,8 @@ class OTBGeometry(AbstractGeometry):
 
         :param conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
-        input_parameters.PRODUCT2_KEY to identify which geometric model shall
-        be taken to perform the method
+               input_parameters.PRODUCT2_KEY to identify which geometric model
+               shall be taken to perform the method
         :param shp: Path to the output shapefile
         :param dem: Directory containing DEM tiles
         :param default_alt: Default altitude above ellipsoid

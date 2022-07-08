@@ -40,7 +40,7 @@ def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
     :type origin: list of two int
     :param spacing: Spacing of full image (default spacing: (1,1))
     :type spacing: list of two int
-    :returns: A dictionary of attributes ready to be imported by ImportImage
+    :return: A dictionary of attributes ready to be imported by ImportImage
     :rtype: dict
     """
 

@@ -130,7 +130,7 @@ test-pbs-cluster: install ## run pbs cluster tests only
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
-	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
+	# @${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 ## Code quality, linting section
 
@@ -179,7 +179,6 @@ lint/pylint: ## check linting with pylint
 .PHONY: docs
 docs: install ## build sphinx documentation
 	@${CARS_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
-	@${CARS_VENV}/bin/sphinx-apidoc -o docs/source/apidoc/ cars
 	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build
 
 ## Notebook section
@@ -253,7 +252,6 @@ clean-docs:
 	@echo "+ $@"
 	@rm -rf docs/build/
 	@rm -rf docs/source/api_reference/
-	@rm -rf docs/source/apidoc/
 
 .PHONY: clean-notebook
 clean-notebook:

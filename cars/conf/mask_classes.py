@@ -23,21 +23,18 @@ CARS mask classes module
 """
 
 # Standard imports
-import json
 import logging
-from typing import Dict, List
+import warnings
+from typing import List
 
 # Third party imports
 import numpy as np
-from json_checker import OptionalKey
 
 # CARS imports
-# TODO refacto module conf depends on module core
-from cars.core import inputs
 
 # Specific values
 # 0 = valid pixels
-# 255 = value used as no data during the resampling in the epipolar geometry
+# 255 = value used as no data during the rectification in the epipolar geometry
 VALID_VALUE = 0
 NO_DATA_IN_EPIPOLAR_RECTIFICATION = 255
 PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]
@@ -49,54 +46,20 @@ ignored_by_sift_matching_tag = (  # pylint: disable=invalid-name
     "ignored_by_sift_matching"
 )
 
-# Schema for mask json
-msk_classes_json_schema = {
-    OptionalKey(ignored_by_corr_tag): [int],
-    OptionalKey(set_to_ref_alt_tag): [int],
-    OptionalKey(ignored_by_sift_matching_tag): [int],
-}
 
-
-def mask_classes_can_open(mask_classes_path: str) -> bool:
+def check_mask_classes(mask_classes_dict: dict):
     """
-    Check if the json file describing the mask classes usage
-    in the CARS API has the right format.
+    Check if mask classes use protected key,
+    and logs a warning
 
-    :param mask_classes_path: path to the json file
-    :return: True if the json file validates the msk_classes_json_schema,
-        False otherwise
+    :param mask_classes_dict: dictionary of the mask classes to use in CARS
     """
-    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
-        classes_usage_dict = json.load(mask_classes_file)
-        try:
-            inputs.check_json(classes_usage_dict, msk_classes_json_schema)
-            return True
-        except Exception as read_error:
-            logging.warning(
-                "Exception caught while trying to read file {}: {}".format(
-                    mask_classes_path, read_error
-                )
-            )
-            return False
-
-
-def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
-    """
-    Read the json file describing the mask classes usage in the CARS API
-    and return it as a dictionary.
-
-    :param mask_classes_path: path to the json file
-    :return: dictionary of the mask classes to use in CARS
-    """
-    classes_usage_dict = {}
-
-    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
-        classes_usage_dict = json.load(mask_classes_file)
 
     # check that required values are not protected for CARS internal usage
     used_values = []
-    for key in classes_usage_dict.keys():
-        used_values.extend(classes_usage_dict[key])
+    for key in mask_classes_dict.keys():
+        if mask_classes_dict[key] is not None:
+            used_values.extend(mask_classes_dict[key])
 
     for i in PROTECTED_VALUES:
         if i in used_values:
@@ -104,8 +67,6 @@ def read_mask_classes(mask_classes_path: str) -> Dict[str, List[int]]:
                 "{} value cannot be used as a mask class, "
                 "it is reserved for CARS internal use".format(i)
             )
-
-    return classes_usage_dict
 
 
 def is_multiclasses_mask(msk: np.ndarray) -> bool:
@@ -132,7 +93,13 @@ def is_multiclasses_mask(msk: np.ndarray) -> bool:
     msk_only_classes[msk_classes] = np.nan
 
     # check if mask has several classes
-    return bool(np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes))
+    with warnings.catch_warnings():
+        warnings.filterwarnings(
+            action="ignore", message="All-NaN slice encountered"
+        )
+        res = bool(np.nanmin(msk_only_classes) != np.nanmax(msk_only_classes))
+
+    return res
 
 
 def create_msk_from_classes(
@@ -140,18 +107,22 @@ def create_msk_from_classes(
     classes_to_use: List[int],
     out_msk_pix_value: int = 255,
     out_msk_dtype: np.dtype = np.uint16,
+    mask_intern_no_data_val: bool = False,
 ) -> np.ndarray:
     """
     Create a mask of type out_msk_dtype set to the out_msk_pix_value for pixels
     belonging to the required classes (defined by the classes_to_use parameter)
     in the multi-classes mask in input.
 
+    The NO_DATA_IN_EPIPOLAR_RECTIFICATION value is added to the classes to mask
+    if the add_intern_no_data_val parameter is set to True.
+
     :param mc_msk: multi-classes mask
     :param classes_to_use: List of values to use to create the output mask
     :param out_msk_pix_value: pixel value to assign to the output mask
-        in the locations of the required classes'
-    pixels. If the out_msk_dtype parameter is set to bool,
-        this parameter will be automatically set to True.
+           in the locations of the required classes'
+           pixels. If the out_msk_dtype parameter is set to bool,
+           this parameter will be automatically set to True.
     :param out_msk_dtype: numpy dtype of the output mask
     :return: the output mask
     """
@@ -172,68 +143,13 @@ def create_msk_from_classes(
             msk_with_selected_classes, np.where(mc_msk == i, True, False)
         )
 
-    out_msk[msk_with_selected_classes] = out_msk_pix_value
-
-    return out_msk
-
-
-def create_msk_from_tag(
-    mc_msk: np.ndarray,
-    msk_classes_path: str,
-    classes_to_use_tag: str,
-    out_msk_pix_value: int = 255,
-    out_msk_dtype: np.dtype = np.uint16,
-    mask_intern_no_data_val: bool = False,
-) -> np.ndarray:
-    """
-    Create a mask of type out_msk_dtype set to the out_msk_pix_value for pixels
-    belonging to the required classes  in the multi-classes mask in input.
-
-    The classes are defined by the classes_to_use_tag field
-    in the msk_classes_path json.
-
-    The NO_DATA_IN_EPIPOLAR_RECTIFICATION value is added to the classes to mask
-    if the add_intern_no_data_val parameter is set to True.
-
-    If the classes_to_use_tag is not set in the input json,
-    no class will be mask except if the add_intern_no_data_val is set to True.
-
-    :param mc_msk: multi-classes mask
-    :param msk_classes_path: mask classes json path
-    :param classes_to_use_tag: tag of the field to use
-        in the msk_classes_path json
-    :param out_msk_pix_value: pixel value to assign
-        to the output mask in the locations of the required classes' pixels.
-        If the out_msk_dtype parameter is set to bool,
-        this parameter will be automatically set to True.
-    :param out_msk_dtype: numpy dtype of the output mask
-    :param mask_intern_no_data_val: boolean activating the masking of all values
-        equal to the NO_DATA_IN_EPIPOLAR_RECTIFICATION variable
-        in the output mask
-    :return: the output mask
-    """
-    classes_dict = read_mask_classes(msk_classes_path)
-    classes_to_mask = []
-
-    # retrieve the required classes to use
-    if classes_to_use_tag in classes_dict.keys():
-        classes_to_mask.extend(classes_dict[classes_to_use_tag])
-    else:
-        logging.warning(
-            "No class specified by the {} tag in {}."
-            "No class will be used to mask the image data in "
-            "the corresponding step in cars".format(
-                classes_to_use_tag, msk_classes_path
-            )
+    # if intern nodata must be masked
+    if mask_intern_no_data_val:
+        msk_with_selected_classes = np.logical_or(
+            msk_with_selected_classes,
+            np.where(mc_msk == NO_DATA_IN_EPIPOLAR_RECTIFICATION, True, False),
         )
 
-    # add specific values
-    if mask_intern_no_data_val:
-        classes_to_mask.append(NO_DATA_IN_EPIPOLAR_RECTIFICATION)
-
-    # create final mask
-    out_msk = create_msk_from_classes(
-        mc_msk, classes_to_mask, out_msk_pix_value, out_msk_dtype
-    )
+    out_msk[msk_with_selected_classes] = out_msk_pix_value
 
     return out_msk

@@ -23,7 +23,7 @@ Quick Start
 
     $ ./quick_start.sh
 
-Go to the ``data_samples/outcompute/`` output directory to get a :term:`DSM` and color image associated.
+Go to the ``data_samples/outresults/`` output directory to get a :term:`DSM` and color image associated.
 
 Open the ``dsm.tif`` DSM and ``clr.tif`` color image in `QGIS`_ software.
 
@@ -64,23 +64,11 @@ Steps by steps
     $ md5sum --status -c data_samples.tar.bz2.md5sum
     $ tar xvfj data_samples.tar.bz2
 
-* Run CARS :ref:`prepare_pipeline` for first pair (img1 and img2)
+* Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:
 
 .. code-block:: console
 
-    $ docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input12.json -o /data/outprepare12
-
-* Run CARS :ref:`prepare_pipeline` pipeline for second pair (img1 and img3)
-
-.. code-block:: console
-
-    $ docker run -v "$(pwd)"/data_samples:/data cnes/cars prepare -i /data/input13.json -o /data/outprepare13
-
-* Run CARS :ref:`compute_dsm_pipeline`
-
-.. code-block:: console
-
-    $ docker run -v "$(pwd)"/data_samples:/data cnes/cars compute_dsm -i /data/outprepare12/content.json /data/outprepare13/content.json  -o /data/outcompute/
+    $ docker run -v "$(pwd)"/data_samples:/data cnes/cars /data/configfile.json
 
 * Clean Unix rights on Docker generated data.
 
@@ -92,12 +80,11 @@ Steps by steps
 
 .. code-block:: console
 
-    $ ls -l data_samples/outcompute/
-
+    $ ls -l data_samples/results/
 
 .. warning::
 
-	This first tutorial uses Docker to avoid CARS installation. To go further, follow :ref:`install` and :ref:`user_manual`.
+	This first tutorial uses Docker to avoid CARS installation. To go further, follow :ref:`install` and :ref:`userguide`.
 
 
 Advanced Quick Start
@@ -106,12 +93,6 @@ Advanced Quick Start
 1. :ref:`install` CARS on your system.
 
 2. Follow now `CARS Advanced Quick Start script  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start_advanced.sh>`_ with the same steps than previous quick start.
-
-You need to get these command line options files to run the script:
-
-- `CARS prepare img1-img2 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare12.txt>`_
-- `CARS prepare img1-img3 configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_prepare13.txt>`_
-- `CARS compute_dsm configuration file  <https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/args_compute.txt>`_
 
 
 .. _`QGIS`: https://www.qgis.org/

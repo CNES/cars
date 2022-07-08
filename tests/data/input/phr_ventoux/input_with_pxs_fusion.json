@@ -1,0 +1,22 @@
+{
+    "inputs": { 
+        "sensors" : {
+            "left": {
+                "image": "left_image.tif",
+                "color" : "lowres_color_image.tif",
+                "geomodel": "left_image.geom",
+                "no_data": 0
+                
+                
+            },
+            "right": {
+                "image": "right_image.tif",
+                "geomodel": "right_image.geom",
+                "no_data": 0
+
+            }   
+        },
+        "pairing": [["left", "right"]],
+        "initial_elevation": "srtm"
+    }
+}

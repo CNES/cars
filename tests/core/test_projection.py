@@ -36,11 +36,18 @@ from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 # CARS imports
-from cars.conf import input_parameters, static_conf
+from cars.conf import input_parameters
 from cars.core import inputs, projection
 
 # CARS Tests imports
-from ..helpers import absolute_data_path, temporary_dir
+from ..helpers import (
+    absolute_data_path,
+    get_geoid_path,
+    get_geometry_loader,
+    temporary_dir,
+)
+
+# Register otbgeometry to be able to use it
 
 
 @pytest.mark.unit_tests
@@ -206,7 +213,12 @@ def test_ground_intersection_envelopes():
         out_intersect = os.path.join(tmp_dir, "envelopes_intersection.gpkg")
 
         _, intersect_xymin_xymax = projection.ground_intersection_envelopes(
-            conf, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+            conf,
+            get_geometry_loader(),
+            out_shp1,
+            out_shp2,
+            out_intersect,
+            dem_dir=srtm_dir,
         )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -236,7 +248,12 @@ def test_ground_intersection_envelopes():
                 _,
                 intersect_xymin_xymax,
             ) = projection.ground_intersection_envelopes(
-                conf, out_shp1, out_shp2, out_intersect, dem_dir=srtm_dir
+                conf,
+                get_geometry_loader(),
+                out_shp1,
+                out_shp2,
+                out_intersect,
+                dem_dir=srtm_dir,
             )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -266,16 +283,20 @@ def test_get_time_ground_direction():
     }
 
     vec = projection.get_time_ground_direction(
-        conf, input_parameters.PRODUCT1_KEY, geoid=static_conf.get_geoid_path()
+        conf,
+        get_geometry_loader(),
+        input_parameters.PRODUCT1_KEY,
+        geoid=get_geoid_path(),
     )
     assert vec[0] == -0.02356248001209794
     assert vec[1] == 0.999722366227584
 
     vec = projection.get_time_ground_direction(
         conf,
+        get_geometry_loader(),
         input_parameters.PRODUCT1_KEY,
         dem=dem,
-        geoid=static_conf.get_geoid_path(),
+        geoid=get_geoid_path(),
     )
     assert vec[0] == -0.03760314420222626
     assert vec[1] == 0.9992927516729553
@@ -298,7 +319,7 @@ def test_get_ground_angles():
             input_parameters.PRODUCT2_KEY
         ): right_img,
     }
-    angles = projection.get_ground_angles(conf)
+    angles = projection.get_ground_angles(conf, get_geometry_loader())
     angles = np.asarray(angles)  # transform tuple to array
 
     np.testing.assert_allclose(

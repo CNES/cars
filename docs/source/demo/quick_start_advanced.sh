@@ -35,21 +35,12 @@ echo " "
 
 # CARS Docker Run
 
-echo "- Launch CARS PREPARE step for img1 and img2 pair:"
-echo "  # cars @args_prepare12.txt"
-cars @args_prepare12.txt
+echo "- Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:"
+echo "  # cars configfile.json"
+cars data_samples/configfile.json
 echo " "
 
-echo "- Launch CARS PREPARE step for img1 and img3 pair:"
-echo "  # cars @args_prepare13.txt"
-cars @args_prepare13.txt
-echo " "
-
-echo "- Launch CARS COMPUTE DSM step:"
-echo "  # cars @args_compute.txt"
-cars @args_compute.txt
-echo " "
 
 echo "- Show resulting DSM:"
-echo "  # ls -al data_samples/outcompute/"
-ls -l data_samples/outcompute/
+echo "  # ls -al data_samples/outresults/"
+ls -l data_samples/outresults/

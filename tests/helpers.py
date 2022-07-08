@@ -26,6 +26,9 @@ organized functionnally.
 TODO: add conftest.py general tests conf with tests refactor.
 """
 
+import json
+import logging
+
 # Standard imports
 import os
 
@@ -33,6 +36,7 @@ import os
 import numpy as np
 import pandora
 import rasterio as rio
+import xarray as xr
 from pandora.check_json import (
     check_pipeline_section,
     concat_conf,
@@ -40,11 +44,19 @@ from pandora.check_json import (
 )
 from pandora.state_machine import PandoraMachine
 
-# CARS imports
-from cars.externals.matching.correlator_configuration.corr_conf import (
+from cars.applications.dense_matching.loaders.pandora_loader import (
     check_input_section_custom_cars,
     get_config_input_custom_cars,
 )
+
+# CARS imports
+from cars.core import constants as cst
+from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
+
+# Specific values
+# 0 = valid pixels
+# 255 = value used as no data during the resampling in the epipolar geometry
+PROTECTED_VALUES = [255]
 
 
 def cars_path():
@@ -53,6 +65,65 @@ def cars_path():
     One level down from tests
     """
     return os.path.abspath(os.path.join(os.path.dirname(__file__), os.pardir))
+
+
+def generate_input_json(
+    input_json,
+    out_dir,
+    pipeline,
+    orchestrator_mode,
+    orchestrator_parameters=None,
+):
+    """
+    Load a partially filled input.json, fill it with out_dir
+    and orchestrator mode, and transform relative path to
+     absolute paths. Generates a new json dumped in out_dir
+
+    :param input_json: input json
+    :type input_json: str
+    :param out_dir: absolute path out directory
+    :type out_dir: str
+    :param pipeline: pipeline to run
+    :type pipeline: str
+    :param orchestrator_mode: orchestrator mode
+    :type orchestrator_mode: str
+    :param orchestrator_parameters: advanced orchestrator params
+    :type orchestrator_parameters: dict
+
+    :return: path of generated json, dict input config
+    :rtype: str, dict
+    """
+    # Load dict
+    json_dir_path = os.path.dirname(input_json)
+    with open(input_json, "r", encoding="utf8") as fstream:
+        config = json.load(fstream)
+
+    # Overload orchestrator
+    config["orchestrator"] = {"mode": orchestrator_mode}
+    if orchestrator_parameters is not None:
+        config["orchestrator"].update(orchestrator_parameters)
+    # Overload out_dir
+    config["output"] = {"out_dir": os.path.join(out_dir, "output")}
+
+    # overload pipeline
+    config["pipeline"] = pipeline
+
+    # Create keys
+    if "applications" not in config:
+        config["applications"] = {}
+
+    # transform pathes
+    new_config = config.copy()
+    new_config["inputs"] = sensors_inputs.sensors_check_inputs(
+        new_config["inputs"], config_json_dir=json_dir_path
+    )
+
+    # dump json
+    new_json_path = os.path.join(out_dir, "new_input.json")
+    with open(new_json_path, "w", encoding="utf8") as fstream:
+        json.dump(new_config, fstream, indent=2)
+
+    return new_json_path, new_config
 
 
 def absolute_data_path(data_path):
@@ -66,6 +137,10 @@ def absolute_data_path(data_path):
 
 def get_geoid_path():
     return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
+
+
+def get_geometry_loader():
+    return "OTBGeometry"
 
 
 def temporary_dir():
@@ -128,6 +203,94 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
         )
 
 
+def assert_same_dataframes(actual, expected, rtol=0, atol=0):
+    """
+    Compare two dataframes:
+    """
+    assert (
+        list(actual.attrs.keys()).sort() == list(expected.attrs.keys()).sort()
+    )
+    for key in expected.attrs.keys():
+        if isinstance(expected.attrs[key], np.ndarray):
+            np.testing.assert_allclose(actual.attrs[key], expected.attrs[key])
+        else:
+            assert actual.attrs[key] == expected.attrs[key]
+    assert list(actual.keys()).sort() == list(expected.keys()).sort()
+    np.testing.assert_allclose(
+        actual.to_numpy(), expected.to_numpy(), rtol=rtol, atol=atol
+    )
+
+
+def add_color(dataset, color_array, color_mask=None, margin=None):
+    """ " Add color array to xarray dataset"""
+
+    new_dataset = dataset.copy(deep=True)
+
+    if margin is None:
+        margin = [0, 0, 0, 0]
+
+    if cst.EPI_IMAGE in dataset:
+        nb_row = dataset[cst.EPI_IMAGE].values.shape[0]
+        nb_col = dataset[cst.EPI_IMAGE].values.shape[1]
+    elif cst.DISP_MAP in dataset:
+        nb_row = dataset[cst.DISP_MAP].values.shape[0]
+        nb_col = dataset[cst.DISP_MAP].values.shape[1]
+    elif cst.X in dataset:
+        nb_row = dataset[cst.X].values.shape[0]
+        nb_col = dataset[cst.X].values.shape[1]
+    else:
+        logging.error("nb_row and nb_col not set")
+        nb_row = color_array.shape[-2] + margin[1] + margin[3]
+        nb_col = color_array.shape[-1] + margin[0] + margin[2]
+
+    # add color
+    if len(color_array.shape) > 2:
+        nb_band = color_array.shape[0]
+        if margin is None:
+            new_color_array = color_array
+        else:
+            new_color_array = np.zeros([nb_band, nb_row, nb_col])
+            new_color_array[
+                :,
+                margin[1] : nb_row - margin[3],
+                margin[0] : nb_col - margin[2],
+            ] = color_array
+        # multiple bands
+        if cst.BAND not in new_dataset.dims:
+            nb_bands = color_array.shape[0]
+            new_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
+
+        new_dataset[cst.EPI_COLOR] = xr.DataArray(
+            new_color_array,
+            dims=[cst.BAND, cst.ROW, cst.COL],
+        )
+    else:
+        if margin is None:
+            new_color_array = color_array
+        else:
+            new_color_array = np.zeros([nb_row, nb_col])
+            new_color_array[
+                margin[1] : nb_row - margin[3], margin[0] : nb_col - margin[2]
+            ] = color_array
+        new_dataset[cst.EPI_COLOR] = xr.DataArray(
+            new_color_array,
+            dims=[cst.ROW, cst.COL],
+        )
+
+    if color_mask is not None:
+        new_color_mask = np.zeros([nb_row, nb_col])
+        new_color_mask[
+            margin[1] : nb_row - margin[3], margin[0] : nb_col - margin[2]
+        ] = color_mask
+
+        new_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
+            new_color_mask,
+            dims=[cst.ROW, cst.COL],
+        )
+
+    return new_dataset
+
+
 def create_corr_conf():
     """
     Create correlator configuration for stereo testing
@@ -175,3 +338,32 @@ def create_corr_conf():
     # concatenate updated config
     cfg = concat_conf([cfg_input, cfg_pipeline])
     return cfg
+
+
+def read_mask_classes(mask_classes_path):
+    """
+    Read the json file describing the mask classes usage in the CARS API
+    and return it as a dictionary.
+
+    :param mask_classes_path: path to the json file
+    :return: dictionary of the mask classes to use in CARS
+    """
+
+    classes_usage_dict = {}
+
+    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
+        classes_usage_dict = json.load(mask_classes_file)
+
+    # check that required values are not protected for CARS internal usage
+    used_values = []
+    for key in classes_usage_dict.keys():
+        used_values.extend(classes_usage_dict[key])
+
+    for i in PROTECTED_VALUES:
+        if i in used_values:
+            logging.warning(
+                "{} value cannot be used as a mask class, "
+                "it is reserved for CARS internal use".format(i)
+            )
+
+    return classes_usage_dict

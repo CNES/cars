@@ -57,8 +57,9 @@ def make_relative_path_absolute(path, directory):
     :type path: string
     :param directory: The directory path should be relative to
     :type directory: string
-    :returns: os.path.join(directory,path)
-        if path is a valid relative path form directory, else path
+
+    :return: os.path.join(directory,path)
+             if path is a valid relative path form directory, else path
     :rtype: string
     """
     out = path
@@ -83,7 +84,7 @@ def get_elevation_range_from_metadata(
     :param img: Path to the img for which the elevation range is required
     :param default_min: Default minimum value to return if everything else fails
     :param default_max: Default minimum value to return if everything else fails
-    :returns: (elev_min, elev_max) float tuple
+    :return: (elev_min, elev_max) float tuple
     """
     # First, try to get range from gdal metadata
     with rio.open(img) as descriptor:
@@ -130,8 +131,8 @@ def angle_vectors(vector_1: np.ndarray, vector_2: np.ndarray) -> float:
     """
     Compute the smallest angle in radians between two angle_vectors
     Use arctan2 more precise than arcos2
-    Tan θ = |(axb)|/ (a.b)
-    (same: Cos θ = (a.b)/(|a||b|))
+    Tan θ = abs(axb)/ (a.b)
+    (same: Cos θ = (a.b)/(abs(a)abs(b)))
 
     :param vector_1: Numpy first vector
     :param vector_2: Numpy second vector

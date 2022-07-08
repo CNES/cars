@@ -10,6 +10,8 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Changed
 
+- Refactoring of all Cars code by implementing new concepts as application, CarsDataset, orchestrator, pipeline and configuration. See documentation for more details. 
+
 ### Fixed
 
 

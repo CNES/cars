@@ -36,11 +36,14 @@ import pytest
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 
+from cars.applications.grid_generation import grids
+
 # CARS imports
 from cars.core import tiling
+from cars.data_structures import cars_dataset, format_transformation
 
 # CARS Tests import
-from ..helpers import temporary_dir
+from ..helpers import get_geometry_loader, temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -112,34 +115,43 @@ def test_list_tiles():
     largest_region = [0, 0, 100, 100]
     tile_size = 10
 
+    def remove_tile(tiles):
+        """
+        Remove tile key in dict
+        """
+        for tile in tiles:
+            del tile["tile"]
+
     tiles = tiling.list_tiles(region, largest_region, tile_size, margin=0)
+    remove_tile(tiles)
 
     assert tiles == [
-        [40, 60, 50, 70],
-        [40, 70, 50, 80],
-        [50, 60, 60, 70],
-        [50, 70, 60, 80],
+        {"idx": 4, "idy": 6},
+        {"idx": 4, "idy": 7},
+        {"idx": 5, "idy": 6},
+        {"idx": 5, "idy": 7},
     ]
 
     tiles = tiling.list_tiles(region, largest_region, tile_size, margin=1)
+    remove_tile(tiles)
 
     assert tiles == [
-        [30, 50, 40, 60],
-        [30, 60, 40, 70],
-        [30, 70, 40, 80],
-        [30, 80, 40, 90],
-        [40, 50, 50, 60],
-        [40, 60, 50, 70],
-        [40, 70, 50, 80],
-        [40, 80, 50, 90],
-        [50, 50, 60, 60],
-        [50, 60, 60, 70],
-        [50, 70, 60, 80],
-        [50, 80, 60, 90],
-        [60, 50, 70, 60],
-        [60, 60, 70, 70],
-        [60, 70, 70, 80],
-        [60, 80, 70, 90],
+        {"idx": 3, "idy": 5},
+        {"idx": 3, "idy": 6},
+        {"idx": 3, "idy": 7},
+        {"idx": 3, "idy": 8},
+        {"idx": 4, "idy": 5},
+        {"idx": 4, "idy": 6},
+        {"idx": 4, "idy": 7},
+        {"idx": 4, "idy": 8},
+        {"idx": 5, "idy": 5},
+        {"idx": 5, "idy": 6},
+        {"idx": 5, "idy": 7},
+        {"idx": 5, "idy": 8},
+        {"idx": 6, "idy": 5},
+        {"idx": 6, "idy": 6},
+        {"idx": 6, "idy": 7},
+        {"idx": 6, "idy": 8},
     ]
 
 
@@ -180,7 +192,9 @@ def test_terrain_region_to_epipolar(
     )
 
     region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = tiling.terrain_region_to_epipolar(region, configuration)
+    out_region = tiling.terrain_region_to_epipolar(
+        get_geometry_loader(), region, configuration
+    )
     assert out_region == [0.0, 0.0, 612.0, 400.0]
 
 
@@ -222,39 +236,83 @@ def test_tiles_pairing(
         epipolar_tile_size,
         epipolar_tile_size,
     ]
-    epipolar_regions = tiling.split(*epipolar_regions_params)
     epipolar_regions_grid = tiling.grid(*epipolar_regions_params)
-    epipolar_regions_hash = [
-        tiling.region_hash_string(k) for k in epipolar_regions
-    ]
+
+    # compute epipolar grid min max
+    epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
+        get_geometry_loader(),
+        epipolar_regions_grid,
+        epsg,
+        configuration,
+        disp_min,
+        disp_max,
+    )
 
     # compute points min/max epipolar corresponding to terrain grid
     points_min, points_max = tiling.terrain_grid_to_epipolar(
         terrain_grid,
         epipolar_regions_grid,
-        configuration,
-        disp_min,
-        disp_max,
+        epipolar_grid_min,
+        epipolar_grid_max,
         epsg,
     )
 
-    # Fill needed confdata with epipolar image information
-    confdata = {}
-    confdata["c1"] = {}
-    confdata["c1"]["epipolar_points_min"] = points_min
-    confdata["c1"]["epipolar_points_max"] = points_max
-    confdata["c1"]["largest_epipolar_region"] = largest_epipolar_region
-    confdata["c1"]["opt_epipolar_tile_size"] = epipolar_tile_size
-    confdata["c1"]["epipolar_regions_hash"] = epipolar_regions_hash
-    confdata["c1"]["delayed_point_clouds"] = epipolar_regions
+    # Create empty manager with needed epipolar image information
+    pc_left = cars_dataset.CarsDataset("arrays")
+    pc_right = cars_dataset.CarsDataset("arrays")
+    pc_left.tiling_grid = (
+        format_transformation.tilling_grid_2_cars_dataset_grid(
+            epipolar_regions_grid
+        )
+    )
+    pc_left.generate_none_tiles()
+    pc_right.tiling_grid = (
+        format_transformation.tilling_grid_2_cars_dataset_grid(
+            epipolar_regions_grid
+        )
+    )
+    pc_right.generate_none_tiles()
+    pc_left.attributes["largest_epipolar_region"] = largest_epipolar_region
+    pc_left.attributes["opt_epipolar_tile_size"] = epipolar_tile_size
 
-    # get epipolar tiles corresponding to the terrain grid
-    terrain_regions, corresp_tiles, __ = tiling.get_corresponding_tiles(
-        terrain_grid, confdata
+    list_points_clouds_left = [pc_left]
+    list_points_clouds_right = [pc_right]
+    list_epipolar_points_min = [points_min]
+    list_epipolar_points_max = [points_max]
+
+    # get epipolar tiles corresponding to the terrain grid for tile [0,0]
+    (
+        terrain_region,
+        corresp_tiles_left,
+        __,
+        __,
+        list_indexes,
+    ) = tiling.get_corresponding_tiles_row_col(
+        terrain_grid,
+        0,
+        0,
+        list_points_clouds_left,
+        list_points_clouds_right,
+        list_epipolar_points_min,
+        list_epipolar_points_max,
     )
 
+    def create_region_from_grid(id_x, id_y, epi_grid):
+        "create region"
+        pos_1 = epi_grid[id_x, id_y]
+        pos_2 = epi_grid[id_x + 1, id_y + 1]
+        return [pos_1[0], pos_1[1], pos_2[0], pos_2[1]]
+
+    epi_tiles = [
+        create_region_from_grid(id_x, id_y, epipolar_regions_grid)
+        for id_x, id_y in list_indexes
+    ]
+
     # count the number of epipolar tiles for the first terrain tile
-    assert len(corresp_tiles[0]) == nb_corresp_tiles
+    assert len(corresp_tiles_left) == nb_corresp_tiles
+
+    terrain_regions = [terrain_region]
+    corresp_tiles = [epi_tiles]
 
     ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
         terrain_regions, corresp_tiles

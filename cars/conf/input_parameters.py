@@ -31,7 +31,6 @@ from typing import Dict, Union
 from json_checker import And, OptionalKey
 
 # CARS imports
-from cars.conf import mask_classes
 from cars.core.inputs import rasterio_can_open
 from cars.core.utils import make_relative_path_absolute
 
@@ -47,7 +46,7 @@ def read_input_parameters(filename):
     :param filename: Path to json file
     :type filename: str
 
-    :returns: The dictionary read from file
+    :return: The dictionary read from file
     :rtype: dict
     """
     config = {}
@@ -131,12 +130,8 @@ INPUT_CONFIGURATION_SCHEMA = {
     OptionalKey(COLOR1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK2_TAG): And(str, rasterio_can_open),
-    OptionalKey(MASK1_CLASSES_TAG): And(
-        str, mask_classes.mask_classes_can_open
-    ),
-    OptionalKey(MASK2_CLASSES_TAG): And(
-        str, mask_classes.mask_classes_can_open
-    ),
+    OptionalKey(MASK1_CLASSES_TAG): str,
+    OptionalKey(MASK2_CLASSES_TAG): str,
     OptionalKey(DEFAULT_ALT_TAG): float,
     NODATA1_TAG: int,
     NODATA2_TAG: int,

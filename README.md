@@ -1,7 +1,7 @@
 <div align="center">
   <a href="https://github.com/CNES/cars"><img src="docs/source/images/picto_transparent.png" alt="CARS" title="CARS"  width="20%"></a>
 
-<h4>CARS, a satellite multi view stereo pipeline </h4>
+<h4>CARS, a satellite multi view stereo framework </h4>
 
 [![Python](https://img.shields.io/badge/python-v3.6+-blue.svg)](https://www.python.org/downloads/release/python-360/)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](CONTRIBUTING.md)
@@ -25,7 +25,7 @@ From stereo images  |  CARS produces a Digital Surface Model (DSM)
 
 
 **CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
-This Multiview Stereo Pipeline is intended for massive DSM production with a robust and performant design.
+This Multiview Stereo framework is intended for massive DSM production with a robust, performant and modular design.
 
 Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
 - <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="docs/source/images/logo_co3D_cnes.jpg" width="20" height="20"/></a>
@@ -42,27 +42,47 @@ CARS is available on Docker Hub and can be downloaded by:
 docker pull cnes/cars
 ```
 
-### Two steps, one DSM
+### One main pipeline to generate DSM
 
-You only need to launch two commands:
+You only need to launch one command:
+
 ```
-# prepare step
-docker run -v "$(pwd)"/data:/data cnes/cars prepare -i /data/input.json -o /data/prepare_outdir
+docker run -v "$(pwd)"/data_samples:/data cnes/cars /data/configfile.json
 ```
-```
-# compute_dsm step
-docker run -v "$(pwd)"/data:/data cnes/cars compute_dsm -i /data/prepare_outdir/content.json -o /data/compute_dsm_outdir
-```
-with one configuration input file ("input.json") located in a "data" folder to be consistent with the previous command lines:
+
+with one configuration input file ("configfile.json") located in a "data" folder to be consistent with the previous command lines:
 ```
 {
-    "img1" : "img1.tif",
-    "color1" : "color1.tif",
-    "img2" : "img2.tif",
-    "srtm_dir" : "srtm_dir",
-    "nodata1": 0,
-    "nodata2": 0
+
+        "inputs": {
+            "sensors" : {
+                "one": {
+                    "image": "img1.tif",
+                    "geomodel": "img1.geom",
+                    "no_data": 0
+                },
+                "two": {
+                    "image": "img2.tif",
+                    "geomodel": "img2.geom",
+                    "no_data": 0
+
+                },
+                "three": {
+                    "image": "img3.tif",
+                    "geomodel": "img3.geom",
+                    "no_data": 0
+                }
+            },
+            "pairing": [["one", "two"],["one", "three"]],
+            "initial_elevation": "srtm_dir"
+        },
+
+        "output": {
+              "out_dir": "data_samples/outresults"
+        }
+
 }
+
 ```
 
 ### On the way to the Pyramids...

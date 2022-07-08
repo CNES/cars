@@ -42,6 +42,8 @@ STEREO_SEC = "sec"
 # epipolar image dataset
 EPI_IMAGE = "im"  # has to be synchronized with the PANDORA input format
 EPI_MSK = "msk"  # has to be synchronized with the PANDORA input format
+EPI_COLOR = "color"
+EPI_COLOR_MSK = "color_msk"
 EPI_MARGINS = "margins"
 EPI_DISP_MIN = "disp_min"
 EPI_DISP_MAX = "disp_max"
