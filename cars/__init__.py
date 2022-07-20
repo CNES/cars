@@ -31,5 +31,5 @@ try:
 except Exception:  # pylint: disable=broad-except
     __version__ = "unknown"
 
-__author__ = "{{ cookiecutter.author.replace('\"', '\\\"') }}"
-__email__ = "{{ cookiecutter.email }}"
+__author__ = "CNES"
+__email__ = "cars@cnes.fr"
