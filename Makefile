@@ -87,6 +87,7 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@chmod +x ${CARS_VENV}/bin/register-python-argcomplete
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
@@ -211,7 +212,7 @@ docker: ## Build docker image (and check Dockerfile)
 	## Clean section
 
 .PHONY: clean
-clean: clean-venv clean-build clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
+clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-venv
 clean-venv:
@@ -226,6 +227,11 @@ clean-build:
 	@rm -fr .eggs/
 	@find . -name '*.egg-info' -exec rm -fr {} +
 	@find . -name '*.egg' -exec rm -f {} +
+
+.PHONY: clean-precommit
+clean-precommit:
+	@rm -f .git/hooks/pre-commit
+	@rm -f .git/hooks/pre-push
 
 .PHONY: clean-pyc
 clean-pyc:
