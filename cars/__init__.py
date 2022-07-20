@@ -23,22 +23,13 @@ Cars module init file
 """
 
 # Standard imports
-import sys
+from importlib.metadata import version
 
-# ** VERSION **
-# pylint: disable=import-error,no-name-in-module
-# Depending on python version get importlib standard lib or backported package
-if sys.version_info[:2] >= (3, 8):
-    # when python3 > 3.8
-    from importlib.metadata import PackageNotFoundError  # pragma: no cover
-    from importlib.metadata import version
-else:
-    from importlib_metadata import PackageNotFoundError  # pragma: no cover
-    from importlib_metadata import version
-# Get cars package version (installed from setuptools_scm)
+# VERSION through setuptools_scm when python3 > 3.8
 try:
     __version__ = version("cars")
-except PackageNotFoundError:
-    __version__ = "unknown"  # pragma: no cover
-finally:
-    del version, PackageNotFoundError
+except Exception:  # pylint: disable=broad-except
+    __version__ = "unknown"
+
+__author__ = "{{ cookiecutter.author.replace('\"', '\\\"') }}"
+__email__ = "{{ cookiecutter.email }}"
