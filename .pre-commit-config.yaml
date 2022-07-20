@@ -32,7 +32,7 @@ repos:
   - id: sphinx-build
     name: Build Sphinx Doc
     stages: [push]
-    entry: make doc
+    entry: make docs
     language: system
     files: ^(docs/.*|cars/.*)$
     pass_filenames: False
