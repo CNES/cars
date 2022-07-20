@@ -8,9 +8,11 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Added
 
+- Add documentation generation pre-commit when git push [#406]
+
 ### Changed
 
-- Refactoring of all Cars code by implementing new concepts as application, CarsDataset, orchestrator, pipeline and configuration. See documentation for more details. 
+- Refactoring of all CARS code by implementing new concepts as application, CarsDataset, orchestrator, pipeline and configuration. See documentation for more details. [#332]
 
 ### Fixed
 
