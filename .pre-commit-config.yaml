@@ -28,3 +28,12 @@ repos:
     language: system
     entry: pylint --rcfile=.pylintrc
     files: \.py$
+
+  - id: sphinx-build
+    name: Build Sphinx Doc
+    stages: [push]
+    entry: make doc
+    language: system
+    files: ^(docs/.*|cars/.*)$
+    pass_filenames: False
+
