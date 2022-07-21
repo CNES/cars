@@ -106,6 +106,5 @@ class CustomInstallCommand(install):
 
 # Setup with setup.cfg config
 setup(
-    use_scm_version=True,
     cmdclass={"install": CustomInstallCommand, "develop": CustomDevelopCommand},
 )
