@@ -49,9 +49,9 @@ INPUT_NODATA = "no_data"
 INPUT_COLOR = "color"
 
 # mask_classes constants
-IGNORED_BY_DENSE_MATCHING = "ignored_by_dense_mathing"
+IGNORED_BY_DENSE_MATCHING = "ignored_by_dense_matching"
 SET_TO_REF_ALT = "set_to_ref_alt"
-IGNORED_BY_SPARSE_MATCHING = "ignored_by_sparse_mathing"
+IGNORED_BY_SPARSE_MATCHING = "ignored_by_sparse_matching"
 
 # Pipeline output
 OUT_DIR = "out_dir"

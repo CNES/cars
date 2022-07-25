@@ -7,9 +7,9 @@
                 "no_data": 0,
                 "mask": "left_multiclass_msk.tif",
                 "mask_classes": {
-                    "ignored_by_dense_mathing": [1],
+                    "ignored_by_dense_matching": [1],
                     "set_to_ref_alt": [150],
-                    "ignored_by_sparse_mathing": [1]
+                    "ignored_by_sparse_matching": [1]
                 }
                 
                 
@@ -20,9 +20,9 @@
                 "no_data": 0,
                 "mask": "right_multiclass_msk.tif",
                 "mask_classes": {
-                    "ignored_by_dense_mathing": [1],
+                    "ignored_by_dense_matching": [1],
                     "set_to_ref_alt": [1, 150],
-                    "ignored_by_sparse_mathing": [1]
+                    "ignored_by_sparse_matching": [1]
                 }
 
             }   

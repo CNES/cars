@@ -101,24 +101,24 @@ def test_create_none():
 
 
 @pytest.mark.unit_tests
-def test_overlap_aray_to_dict():
+def test_overlap_array_to_dict():
     """
-    Test overlap_aray_to_dict
+    Test overlap_array_to_dict
     """
 
     overlap = [1, 2, 3, 4]
 
     dict_overlap = {"up": 1, "down": 2, "left": 3, "right": 4}
 
-    out_dict_overlap = cars_dataset.overlap_aray_to_dict(overlap)
+    out_dict_overlap = cars_dataset.overlap_array_to_dict(overlap)
 
     assert dict_overlap == out_dict_overlap
 
 
 @pytest.mark.unit_tests
-def test_window_aray_to_dict():
+def test_window_array_to_dict():
     """
-    Test window_aray_to_dict
+    Test window_array_to_dict
     """
 
     window = [0, 100, 3, 56]
@@ -131,7 +131,7 @@ def test_window_aray_to_dict():
         "col_max": 56,
     }
 
-    out_dict_window = cars_dataset.window_aray_to_dict(window)
+    out_dict_window = cars_dataset.window_array_to_dict(window)
 
     assert dict_window == out_dict_window
 
@@ -145,7 +145,7 @@ def test_window_aray_to_dict():
         "col_max": 60,
     }
 
-    out_dict_window = cars_dataset.window_aray_to_dict(window, overlap=overlap)
+    out_dict_window = cars_dataset.window_array_to_dict(window, overlap=overlap)
 
     assert dict_window == out_dict_window
 

@@ -278,7 +278,7 @@ class MappingToTerrainTiles(
 
             # Compute tiling grid
             merged_point_cloud.tiling_grid = (
-                format_transformation.tilling_grid_2_cars_dataset_grid(
+                format_transformation.tiling_grid_2_cars_dataset_grid(
                     terrain_grid, resolution=self.resolution, from_terrain=True
                 )
             )

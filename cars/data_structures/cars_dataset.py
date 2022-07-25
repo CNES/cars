@@ -920,7 +920,7 @@ def create_none(nb_row: int, nb_col: int):
     return grid
 
 
-def overlap_aray_to_dict(overlap):
+def overlap_array_to_dict(overlap):
     """
     Convert matrix of overlaps, to dict format used in CarsDatasets.
     Input is : [o_up, o_down, o_left, o_right].
@@ -942,7 +942,7 @@ def overlap_aray_to_dict(overlap):
     return new_overlap
 
 
-def window_aray_to_dict(window, overlap=None):
+def window_array_to_dict(window, overlap=None):
     """
     Convert matrix of windows, to dict format used in CarsDatasets.
     Use overlaps if you want to get window with overlaps

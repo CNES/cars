@@ -108,12 +108,12 @@ def create_cars_dataset_from_path(
         for j in range(array_cars_ds.tiling_grid.shape[1]):
 
             # Create window
-            dto_window = cars_dataset.window_aray_to_dict(
+            dto_window = cars_dataset.window_array_to_dict(
                 array_cars_ds.tiling_grid[i, j, :],
                 overlap=array_cars_ds.overlaps[i, j, :],
             )
 
-            array_overlap = cars_dataset.overlap_aray_to_dict(
+            array_overlap = cars_dataset.overlap_array_to_dict(
                 array_cars_ds.overlaps[i, j, :]
             )
 
