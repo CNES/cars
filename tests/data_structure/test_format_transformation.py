@@ -55,7 +55,7 @@ def test_tilling_grid_2_manager_grid():
 
     regions_grid = np.stack([regions_grid_x, region_grid_y], axis=2)
 
-    out_tiling_grid = format_transformation.tilling_grid_2_cars_dataset_grid(
+    out_tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
         regions_grid
     )
 
@@ -101,7 +101,7 @@ def test_tilling_grid_2_manager_grid():
 
     regions_grid = np.stack([regions_grid_x, region_grid_y], axis=2)
 
-    out_tiling_grid = format_transformation.tilling_grid_2_cars_dataset_grid(
+    out_tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
         regions_grid, resolution=resolution
     )
 

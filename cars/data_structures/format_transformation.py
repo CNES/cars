@@ -33,7 +33,7 @@ import numpy as np
 # CARS imports
 
 
-def tilling_grid_2_cars_dataset_grid(
+def tiling_grid_2_cars_dataset_grid(
     regions_grid, resolution=1, from_terrain=False
 ):
     """

@@ -63,7 +63,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         Init function of BicubicResampling
 
         :param conf: configuration for resampling
-        :return: a application_to_use object
+        :return: an application_to_use object
         """
         # Check conf
         checked_conf = self.check_conf(conf)
@@ -134,7 +134,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         optimum_tile_size,
     ):
         """
-        Pre run some computations : tilling grid
+        Pre run some computations : tiling grid
 
         :param grid_left: left grid
         :type grid_left: CarsDataset
@@ -255,7 +255,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: directory to save files to
-        :param pair_key: pair  id
+        :param pair_key: pair id
         :type pair_key: str
         :param margins: margins to use
         :type margins: xr.Dataset
@@ -284,7 +284,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Default orchestrator
         if orchestrator is None:
             # Create defaut sequential orchestrator for current application
-            # be awere, no out_json will be shared between orchestrators
+            # be aware, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
                 orchestrator_conf={"mode": "sequential"}
@@ -346,14 +346,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # Compute tiling grid
         epipolar_images_left.tiling_grid = (
-            format_transformation.tilling_grid_2_cars_dataset_grid(
+            format_transformation.tiling_grid_2_cars_dataset_grid(
                 epipolar_regions_grid
             )
         )
 
         # Generate tiling grid
         epipolar_images_right.tiling_grid = (
-            format_transformation.tilling_grid_2_cars_dataset_grid(
+            format_transformation.tiling_grid_2_cars_dataset_grid(
                 epipolar_regions_grid
             )
         )
@@ -486,14 +486,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
                 # get overlaps
-                left_overlap = cars_dataset.overlap_aray_to_dict(
+                left_overlap = cars_dataset.overlap_array_to_dict(
                     epipolar_images_left.overlaps[row, col]
                 )
-                right_overlap = cars_dataset.overlap_aray_to_dict(
+                right_overlap = cars_dataset.overlap_array_to_dict(
                     epipolar_images_right.overlaps[row, col]
                 )
                 # get window
-                left_window = cars_dataset.window_aray_to_dict(
+                left_window = cars_dataset.window_array_to_dict(
                     epipolar_images_left.tiling_grid[row, col]
                 )
 

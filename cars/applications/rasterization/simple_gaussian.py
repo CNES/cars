@@ -416,7 +416,7 @@ class SimpleGaussian(
 
                     if merged_points_cloud.tiles[row][col] is not None:
                         # Get window
-                        window = cars_dataset.window_aray_to_dict(
+                        window = cars_dataset.window_array_to_dict(
                             terrain_raster.tiling_grid[row, col]
                         )
 

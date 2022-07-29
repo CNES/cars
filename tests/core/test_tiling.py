@@ -260,14 +260,12 @@ def test_tiles_pairing(
     # Create empty manager with needed epipolar image information
     pc_left = cars_dataset.CarsDataset("arrays")
     pc_right = cars_dataset.CarsDataset("arrays")
-    pc_left.tiling_grid = (
-        format_transformation.tilling_grid_2_cars_dataset_grid(
-            epipolar_regions_grid
-        )
+    pc_left.tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
+        epipolar_regions_grid
     )
     pc_left.generate_none_tiles()
     pc_right.tiling_grid = (
-        format_transformation.tilling_grid_2_cars_dataset_grid(
+        format_transformation.tiling_grid_2_cars_dataset_grid(
             epipolar_regions_grid
         )
     )
