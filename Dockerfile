@@ -14,16 +14,16 @@ RUN apt-get update \
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     cmake-curses-gui=3.16.3-1ubuntu1 \
-    git=1:2.25.1-1ubuntu3.4 \
+    git=1:2.25.1-1ubuntu3.5 \
     wget=1.20.3-1ubuntu1 \
     file=1:5.38-4 \
     gcc=4:9.3.0-1ubuntu2 \
     g++=4:9.3.0-1ubuntu2 \
     make=4.2.1-1.2 \
-    libpython3.8=3.8.10-0ubuntu1~20.04.4 \
-    python3.8-dev=3.8.10-0ubuntu1~20.04.4 \
-    python3.8-venv=3.8.10-0ubuntu1~20.04.4 \
-    python3.8=3.8.10-0ubuntu1~20.04.4 \
+    libpython3.8=3.8.10-0ubuntu1~20.04.5 \
+    python3.8-dev=3.8.10-0ubuntu1~20.04.5 \
+    python3.8-venv=3.8.10-0ubuntu1~20.04.5 \
+    python3.8=3.8.10-0ubuntu1~20.04.5 \
     python3-pip=20.0.2-5ubuntu1.6 \
     python3-numpy=1:1.17.4-5ubuntu3 \
     python3-virtualenv=20.0.17-1ubuntu0.4 \

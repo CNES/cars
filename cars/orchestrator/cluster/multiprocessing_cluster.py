@@ -351,7 +351,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         return object_future
 
     @staticmethod  # noqa: C901
-    def refresh_task_cache(pool, task_cache, in_queue, per_job_timeout):
+    def refresh_task_cache(  # noqa: C901
+        pool, task_cache, in_queue, per_job_timeout
+    ):
         """
         Refresh task cache
 
