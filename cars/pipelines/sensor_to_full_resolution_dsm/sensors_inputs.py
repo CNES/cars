@@ -271,7 +271,7 @@ def check_roi(roi):
             raise Exception("Roid bounding box does't have the right format")
         if roi_epsg is not None:
             try:
-                _ = fiona.from_epsg(4326)
+                _ = fiona.crs.from_epsg(4326)
             except AttributeError as error:
                 logging.error("ROI EPSG code {} not readable".format(error))
 
