@@ -75,7 +75,7 @@ class Orchestrator:
         # overload orchestrator_conf
         if orchestrator_conf is None:
             orchestrator_conf = {"mode": "local_dask"}
-            logging.warning(
+            logging.info(
                 "No orchestrator configuration given: "
                 "local_dask mode is used"
             )
