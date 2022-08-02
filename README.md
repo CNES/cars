@@ -47,7 +47,7 @@ docker pull cnes/cars
 You only need to launch one command:
 
 ```
-docker run -v "$(pwd)"/data_samples:/data cnes/cars /data/configfile.json
+docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.json
 ```
 
 with one configuration input file ("configfile.json") located in a "data" folder to be consistent with the previous command lines:
@@ -78,7 +78,7 @@ with one configuration input file ("configfile.json") located in a "data" folder
         },
 
         "output": {
-              "out_dir": "data_samples/outresults"
+              "out_dir": "outresults"
         }
 
 }
@@ -87,8 +87,8 @@ with one configuration input file ("configfile.json") located in a "data" folder
 
 ### On the way to the Pyramids...
 
-You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/data_samples.tar.bz2) to give CARS a try!
-You're at a dead end? This [quick start script](https://raw.githubusercontent.com/CNES/cars/master/docs/source/demo/quick_start.sh) sets you back on the right path.
+You want to build the pyramids by yourself? Download our [open licence](https://www.etalab.gouv.fr/licence-ouverte-open-licence) Pleiades [data sample](https://raw.githubusercontent.com/CNES/cars/master/tutorials/data_gizeh.tar.bz2) to give CARS a try!
+You're at a dead end? This [quick start script](https://raw.githubusercontent.com/CNES/cars/master/tutorials/quick_start.sh) sets you back on the right path.
 
 ## Documentation
 

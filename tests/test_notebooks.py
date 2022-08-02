@@ -32,224 +32,97 @@ import tempfile
 import pytest
 
 # CARS Tests imports
-from .helpers import absolute_data_path, cars_path, temporary_dir
+from .helpers import cars_path, temporary_dir
 
 
 @pytest.mark.notebook_tests
-def test_step_by_step_compute_dsm():
+def test_sensor_to_full_resolution_dsm_step_by_step():
     """
-    Step by step compute dsm notebook test:
+    Sensor to full resolution dsm step by step notebook test:
     notebook conversion (.ipynb->.py), replace default TODO values,
     run the notebook with ipython and check return code
     """
 
-    # uncomment the following lines to regenerate the input files
-    # input_json = read_input_parameters(
-    #     absolute_data_path("input/phr_ventoux/preproc_input.json"))
-    # prepare.run(
-    #     input_json,
-    #     absolute_data_path("input/notebooks_input/content_dir/"),
-    #     epi_step=30,
-    #     region_size=250,
-    #     disparity_margin=0.25,
-    #     epipolar_error_upper_bound=43.,
-    #     elevation_delta_lower_bound=-20.,
-    #     elevation_delta_upper_bound=20.,
-    #     mode="local",  # Run on a local cluster
-    #     nb_workers=4,
-    #     walltime="00:10:00",
-    #     check_inputs=True)
-
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # Convert Jupyter notebook to script
         subprocess.run(
             [
                 "jupyter nbconvert "
                 "--to script "
-                "{}/notebooks/step_by_step_compute_dsm.ipynb "
+                "{}/tutorials/sensor_to_full_resolution_dsm_step_by_step.ipynb "
                 "--output-dir {}".format(cars_path(), directory)
             ],
             shell=True,
             check=True,
         )
-
-        for line in fileinput.input(
-            "{}/step_by_step_compute_dsm.py".format(directory), inplace=True
-        ):
-            if 'cars_home = "TODO"' in line:
-                line = line.replace("TODO", cars_path())
-            elif 'content_dir = "TODO"' in line:
-                line = line.replace(
-                    "TODO",
-                    absolute_data_path("input/notebooks_input/content_dir/"),
-                )
-            elif 'roi_file = "TODO"' in line:
-                line = line.replace(
-                    "TODO",
-                    absolute_data_path(
-                        "input/notebooks_input/content_dir/"
-                        "envelopes_intersection.gpkg"
-                    ),
-                )
-            elif 'output_dir = "TODO"' in line:
-                line = line.replace("TODO", directory)
-            print(line)  # keep this print
-
-        out = subprocess.run(
-            ["ipython {}/step_by_step_compute_dsm.py".format(directory)],
-            shell=True,
-            check=True,
-        )
-
-        out.check_returncode()
-
-
-@pytest.mark.notebook_tests
-def test_epipolar_distributions():
-    """
-    Epipolar distributions notebook test:
-    notebook conversion (.ipynb->.py), replace default TODO values,
-    run the notebook with ipython and check return code
-    """
-
-    # uncomment the following lines to regenerate the input files
-    # input_json = read_input_parameters(
-    #     absolute_data_path("input/phr_ventoux/preproc_input.json"))
-    # prepare.run(
-    #     input_json,
-    #     absolute_data_path("input/notebooks_input/content_dir/"),
-    #     epi_step=30,
-    #     region_size=250,
-    #     disparity_margin=0.25,
-    #     epipolar_error_upper_bound=43.,
-    #     elevation_delta_lower_bound=-20.,
-    #     elevation_delta_upper_bound=20.,
-    #     mode="local",  # Run on a local cluster
-    #     nb_workers=4,
-    #     walltime="00:10:00",
-    #     check_inputs=True)
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # copy notebook helpers
         subprocess.run(
             [
-                "jupyter nbconvert "
-                "--to script {}/notebooks/epipolar_distributions.ipynb "
-                "--output-dir {}".format(cars_path(), directory)
+                "cp "
+                "{}/tutorials/notebook_helpers.py "
+                "{}".format(cars_path(), directory)
             ],
             shell=True,
             check=True,
         )
-
-        for line in fileinput.input(
-            "{}/epipolar_distributions.py".format(directory), inplace=True
-        ):
-            if 'cars_home = "TODO"' in line:
-                line = line.replace("TODO", cars_path())
-            elif 'content_dir = "TODO"' in line:
-                line = line.replace(
-                    "TODO",
-                    absolute_data_path("input/notebooks_input/content_dir/"),
-                )
-            print(line)  # keep this print
-
-        out = subprocess.run(
-            ["ipython {}/epipolar_distributions.py".format(directory)],
-            shell=True,
-            check=True,
-        )
-
-        out.check_returncode()
-
-
-@pytest.mark.notebook_tests
-def test_lowres_dem_fit():
-    """
-    Low resolution notebook test:
-    notebook conversion (.ipynb->.py), replace default TODO values,
-    run the notebook with ipython and check return code
-    """
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # copy data samples gizeh
         subprocess.run(
             [
-                "jupyter nbconvert "
-                "--to script {}/notebooks/lowres_dem_fit.ipynb "
-                "--output-dir {}".format(cars_path(), directory)
+                "cp "
+                "{}/tutorials/data_gizeh_small.tar.bz2 "
+                "{}".format(cars_path(), directory)
             ],
             shell=True,
             check=True,
         )
-
+        # Desactivate matplotlib show data
         for line in fileinput.input(
-            "{}/lowres_dem_fit.py".format(directory), inplace=True
-        ):
-            if 'cars_home = "TODO"' in line:
-                line = line.replace("TODO", cars_path())
-            elif 'content_dir = "TODO"' in line:
-                line = line.replace(
-                    "TODO",
-                    absolute_data_path("input/notebooks_input/lowres_dem/"),
-                )
-            print(line)  # keep this print
-
-        out = subprocess.run(
-            ["ipython {}/lowres_dem_fit.py".format(directory)],
-            shell=True,
-            check=True,
-        )
-
-        out.check_returncode()
-
-
-@pytest.mark.notebook_tests
-def test_compute_dsm_memory_monitoring():
-    """
-    Compute DSM memory monitoring notebook test:
-    notebook conversion (.ipynb->.py), replace default TODO values,
-    run the notebook with ipython and check return code
-    """
-
-    # uncomment the following lines to regenerate the input files
-    # input_json = read_input_parameters(
-    #     absolute_data_path("input/phr_ventoux/preproc_input.json"))
-    # prepare.run(
-    #     input_json,
-    #     absolute_data_path("input/notebooks_input/content_dir/"),
-    #     epi_step=30,
-    #     region_size=250,
-    #     disparity_margin=0.25,
-    #     epipolar_error_upper_bound=43.,
-    #     elevation_delta_lower_bound=-20.,
-    #     elevation_delta_upper_bound=20.,
-    #     mode="local",  # Run on a local cluster
-    #     nb_workers=4,
-    #     walltime="00:10:00",
-    #     check_inputs=True)
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        subprocess.run(
-            [
-                "jupyter nbconvert "
-                "--to script "
-                "{}/notebooks/compute_dsm_memory_monitoring.ipynb "
-                "--output-dir {}".format(cars_path(), directory)
-            ],
-            shell=True,
-            check=True,
-        )
-
-        for line in fileinput.input(
-            "{}/compute_dsm_memory_monitoring.py".format(directory),
+            "{}/sensor_to_full_resolution_dsm_step_by_step.py".format(
+                directory
+            ),
             inplace=True,
         ):
-            if 'compute_dsm_output_dir = "TODO"' in line:
-                line = line.replace(
-                    "TODO",
-                    absolute_data_path("input/notebooks_input/content_dir/"),
-                )
+            if "show_data(" in line:
+                line = line.replace("show_data(", "#show_data(")
             print(line)  # keep this print
 
+        # Run notebook converted script
         out = subprocess.run(
-            ["ipython {}/compute_dsm_memory_monitoring.py".format(directory)],
+            [
+                "ipython "
+                "{}/sensor_to_full_resolution_dsm_step_by_step.py".format(
+                    directory
+                )
+            ],
+            shell=True,
+            check=True,
+        )
+
+        out.check_returncode()
+
+
+@pytest.mark.notebook_tests
+def test_main_tutorial():
+    """
+    Main tutorial test:
+    notebook conversion (.ipynb->.py), replace default TODO values,
+    run the notebook with ipython and check return code
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        subprocess.run(
+            [
+                "jupyter nbconvert "
+                "--to script "
+                "{}/tutorials/main_tutorial.ipynb "
+                "--output-dir {}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+
+        out = subprocess.run(
+            ["ipython {}/main_tutorial.py".format(directory)],
             shell=True,
             check=True,
         )
