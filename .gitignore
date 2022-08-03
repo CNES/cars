@@ -93,3 +93,7 @@ instance/
 
 # Swap file
 *.swp
+
+# tutorial data files 
+/tutorials/data_gizeh/
+/tutorials/data_gizeh_small/

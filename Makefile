@@ -132,7 +132,7 @@ test-pbs-cluster: install ## run pbs cluster tests only
 .PHONY: test-notebook
 test-notebook: install ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
-	# @${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
+	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 ## Code quality, linting section
 
@@ -188,7 +188,7 @@ docs: install ## build sphinx documentation
 .PHONY: notebook
 notebook: install ## install Jupyter notebook kernel with venv and cars install
 	@echo "Install Jupyter Kernel in virtualenv dir"
-	@${CARS_VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-$(CARS_VENV) --display-name=cars-$(CARS_VERSION)
+	@${CARS_VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-${CARS_VERSION_MIN} --display-name=cars-${CARS_VERSION_MIN}
 	@echo "Use jupyter kernelspec list to know where is the kernel"
 	@echo " --> After CARS virtualenv activation, please use following command to launch local jupyter notebook to open CARS Notebooks:"
 	@echo "jupyter notebook"

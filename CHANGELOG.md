@@ -14,6 +14,7 @@ A new section Unreleased is opened then for next dev phase.
 
 - Refactoring of all CARS code by implementing new concepts as application, CarsDataset, orchestrator, pipeline and configuration. See documentation for more details. [#332]
 - upgrade support to python 3.8 only [#372]
+- change quick_start and notebooks to tutorials structure [#419]
 
 ### Fixed
 
