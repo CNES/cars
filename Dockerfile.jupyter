@@ -1,0 +1,16 @@
+FROM cnes/cars:0.4.3
+LABEL maintainer="CNES"
+
+
+# # source venv/bin/activate in docker mode
+#ENV VIRTUAL_ENV='/cars/venv'
+#ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+# Jupyter kernel cars creation
+RUN python -m ipykernel install --sys-prefix --name=cars --display-name=cars
+
+
+# Jupyter notebook start
+ENTRYPOINT ["jupyter"]
+# Default options
+CMD ["notebook", "--ip", "0.0.0.0", "--port", "8888", "--no-browser", "--allow-root"]
