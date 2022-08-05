@@ -94,5 +94,10 @@ Advanced Quick Start
 
 2. Follow now `CARS Advanced Quick Start script  <https://raw.githubusercontent.com/CNES/cars/master/tutorials/quick_start_advanced.sh>`_ with the same steps than previous quick start.
 
+Docker Jupyter
+==============
+
+For more docker usage with jupyter, go to :ref:`dockerguide`.
+
 
 .. _`QGIS`: https://www.qgis.org/
