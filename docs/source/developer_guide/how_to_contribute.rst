@@ -93,7 +93,7 @@ It is possible to test pre-commit before commiting:
 Documentation
 =============
 
-CARS contains its Sphinx Documentation in the code.
+CARS contains its Sphinx Documentation in the code in docs directory.
 
 To generate documentation, use:
 
@@ -102,6 +102,54 @@ To generate documentation, use:
   $ make docs
   
 The documentation is then build in docs/build directory and can be consulted with a web browser.
+
+Documentation can be edited in docs/source/ RST files.
+
+Jupyter notebooks tutorials
+============================
+
+CARS contains tutorials and quick start scripts in tutorials directory.
+
+To generate a Jupyter kernel with CARS installation, use:
+
+.. code-block:: console
+
+  $ make notebook
+  
+Follow indications to run a jupyter notebook.
+
+Kernel is created with following command (with cars-version updated):
+
+.. code-block:: console
+
+  $ python -m ipykernel install --sys-prefix --name=cars-version --display-name=cars-version
+
+To run the jupyter notebook, use:
+
+.. code-block:: console
+
+  $ jupyter notebook
+
+To generate slides of CARS main tutorial jupyter notebook :
+
+.. code-block:: console
+
+  $ cd tutorials
+  $ jupyter nbconvert main_tutorial.ipynb --to slides --post serve # for remote reveal.js lib
+  
+or
+
+.. code-block:: console
+
+  $ cd tutorials
+  $ git clone https://github.com/hakimel/reveal.js.git
+  $ jupyter nbconvert main_tutorial.ipynb --to slides --reveal-prefix reveal.js --config
+  $ jupyter nbconvert main_tutorial.ipynb --to html --template reveal --reveal-prefix reveal.js # Same
+  $ python -m server.http 8000
+
+Slides can be then seen following http://localhost:8000/ URL.
+  
+Go to `Jupyter Nbconvert <https://nbconvert.readthedocs.io/en/latest/usage.html#reveal-js-html-slideshow>`_ documentation for details.
 
 
 Code quality
