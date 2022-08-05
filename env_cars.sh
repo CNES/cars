@@ -55,9 +55,3 @@ export CARS_NB_WORKERS_PER_PBS_JOB=2
 command_exists() {
   command -v "$1" >/dev/null 2>&1
 }
-
-if command_exists register-python-argcomplete ; then
-  eval "$(register-python-argcomplete cars)"
-else
-  echo "Autocompletion deactivated: argcomplete has to be installed"
-fi

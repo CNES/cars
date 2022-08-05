@@ -33,9 +33,6 @@ import os
 import re
 import sys
 
-# Third party imports
-import argcomplete
-
 # CARS imports
 from cars import __version__
 
@@ -122,9 +119,6 @@ def cars_parser() -> CarsArgumentParser:
         action="version",
         version="%(prog)s {version}".format(version=__version__),
     )
-
-    # autocomplete
-    argcomplete.autocomplete(parser)
 
     return parser
 
