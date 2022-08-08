@@ -482,7 +482,7 @@ def compute_epsg(
     return epsg
 
 
-def compoute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
+def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     """
     Compute Terrain bounds of merged pairs
 

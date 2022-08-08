@@ -429,7 +429,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             (
                 terrain_bounds,
                 optimal_terrain_tile_width,
-            ) = preprocessing.compoute_terrain_bounds(
+            ) = preprocessing.compute_terrain_bounds(
                 list_terrain_roi,
                 roi_poly=roi_poly,
                 resolution=self.rasterization_application.get_resolution(),
