@@ -10,6 +10,7 @@ A new section Unreleased is opened then for next dev phase.
 
 - Add documentation generation pre-commit when git push [#406]
 - Add docker images files for jupyter and cars tutorial [#418]
+- Add cars tutorial main_tutorial as notebook slides [#421]
 
 ### Changed
 

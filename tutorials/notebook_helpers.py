@@ -39,19 +39,22 @@ def get_dir_path():
     return os.path.dirname(__file__)
 
 
-def set_up_demo_inputs():
+def set_up_demo_inputs(demo_data_name="data_gizeh_small"):
     """
     Set up demo input, return path
 
+    :param demo_data_name: use demo data name for .tar.bz2 and path to return
+    :return: full absolute path of demo data
     """
+
     inputs_dir = os.path.dirname(__file__)
-    inputs_tar = os.path.join(inputs_dir, "data_gizeh_small.tar.bz2")
+    inputs_tar = os.path.join(inputs_dir, "{}.tar.bz2".format(demo_data_name))
 
     # decompact samples demo data
     cmd = "tar xfj {} -C {}".format(inputs_tar, inputs_dir)
     os.system(cmd)
 
-    return os.path.join(inputs_dir, "data_gizeh_small")
+    return os.path.join(inputs_dir, demo_data_name)
 
 
 def mkdir(root_dir, name_dir):
