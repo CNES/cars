@@ -143,11 +143,6 @@ Copyright (c) 2008, 2009 Michael Trier and contributors.
 Website: https://github.com/gitpython-developers/GitPython
 License: BSD 3 Clause.
 
-argcomplete: Python and tab completion, better together
-Copyright (c) 2012-2019, Andrey Kislyuk and argcomplete contributors.
-Website: https://github.com/kislyuk/argcomplete
-License: Apache v2.0.
-
 psutil: Cross-platform lib for process and system monitoring in Python
 Copyright (c) 2009, Jay Loden, Dave Daeschler, Giampaolo Rodola
 Website: https://github.com/giampaolo/psutil

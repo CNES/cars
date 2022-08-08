@@ -36,5 +36,6 @@ and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
    userguide
    developer_guide
    api_reference/index.rst
+   dockerguide
    faq
    glossary

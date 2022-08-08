@@ -88,7 +88,6 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@chmod +x ${CARS_VENV}/bin/register-python-argcomplete
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
@@ -98,7 +97,6 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@chmod +x ${CARS_VENV}/bin/register-python-argcomplete
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
@@ -202,14 +200,20 @@ dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebo
 ## Docker section
 
 .PHONY: docker
-docker: ## Build docker image (and check Dockerfile)
+docker: ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Check Dockerfile with hadolint"
+	@echo "Check Dockerfiles with hadolint"
 	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
-	@echo "Build Docker image CARS ${CARS_VERSION_MIN}"
-	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest .
-
+	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
+	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
+	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
+	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
+	@echo "Build Docker jupyter notebook image from CARS"
+	@docker build -t cnes/cars-jupyter:${CARS_VERSION_MIN} -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
+	@echo "Build Docker jupyter tutorial notebook image from CARS"
+	@docker build -t cnes/cars-tutorial:${CARS_VERSION_MIN} -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
+	
 	## Clean section
 
 .PHONY: clean
