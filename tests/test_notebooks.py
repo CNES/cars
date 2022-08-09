@@ -39,7 +39,8 @@ from .helpers import cars_path, temporary_dir
 def test_sensor_to_full_resolution_dsm_step_by_step():
     """
     Sensor to full resolution dsm step by step notebook test:
-    notebook conversion (.ipynb->.py), replace default TODO values,
+    notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
+    modify show_data matplotlib to be executable by ipython without pause,
     run the notebook with ipython and check return code
     """
 
@@ -105,7 +106,8 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
 def test_main_tutorial():
     """
     Main tutorial test:
-    notebook conversion (.ipynb->.py), replace default TODO values,
+    notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
+    modify show_data matplotlib to be executable by ipython without pause,
     run the notebook with ipython and check return code
     """
 
@@ -120,6 +122,34 @@ def test_main_tutorial():
             shell=True,
             check=True,
         )
+        # copy notebook helpers
+        subprocess.run(
+            [
+                "cp "
+                "{}/tutorials/notebook_helpers.py "
+                "{}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+        # copy data samples gizeh
+        subprocess.run(
+            [
+                "cp "
+                "{}/tutorials/data_gizeh_small.tar.bz2 "
+                "{}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+        # Desactivate matplotlib show data
+        for line in fileinput.input(
+            "{}/main_tutorial.py".format(directory),
+            inplace=True,
+        ):
+            if "show_data(" in line:
+                line = line.replace("show_data(", "#show_data(")
+            print(line)  # keep this print
 
         out = subprocess.run(
             ["ipython {}/main_tutorial.py".format(directory)],

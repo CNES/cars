@@ -10,7 +10,7 @@ echo " "
 
 echo "- Get CARS dockerfile image:"
 echo "  # docker pull cnes/cars"
-#docker pull cnes/cars
+docker pull cnes/cars
 echo " "
 
 echo "- Get and extract data samples from CARS repository:"
