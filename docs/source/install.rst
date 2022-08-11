@@ -83,7 +83,7 @@ Here are the correspondent commands to install these prior dependencies:
     $ python3 -m pip install --no-binary rasterio rasterio
     $ python3 -m pip install pygdal=="$(gdal-config --version).*"
 
-To manually install CARS core correlator, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
+To manually install CARS core dense matching correlator, see the `Pandora documentation <https://github.com/CNES/Pandora>`_.
 
 Environment variables
 ---------------------
@@ -102,7 +102,9 @@ Then, to install CARS:
     $ cd project_root
     $ pip install .
 
-Follow :ref:`userguide` to run and configure CARS.
+You can use [docs][dev] extra_require pip install targets for more dependencies.
+
+Follow :ref:`user_guide` to run and configure CARS.
 
 CARS OTB Application Compilation
 --------------------------------

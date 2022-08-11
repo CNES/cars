@@ -70,7 +70,7 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The SparseMatching {} application will be used".format(
+            "The SparseMatching {} application will be used".format(
                 matching_method
             )
         )

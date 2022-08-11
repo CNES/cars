@@ -63,7 +63,7 @@ Here are some rules to apply when developing a new functionality:
 * **Factorization**: Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the cars python modules.
 * **Be careful with user interface upgrade:** If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
 * **Logging and no print**: The usage of the `print()` function is forbidden: use the `logging` python standard module instead.
-* **Limit classes**: If possible, limit the use of classes as much as possible and opt for a functional approach. The classes are reserved for data modelling if it is impossible to do so using `xarray` and for the good level of modularity.
+* **Limit classes**: If possible, limit the use of classes at one or 2 levels and opt for a functional approach when possible. The classes are reserved for data modelling if it is impossible to do so using `xarray` and for the good level of modularity.
 * **Limit new dependencies**: Do not add new dependencies unless it is absolutely necessary, and only if it has a **permissive license**.
 
 Pre-commit validation
@@ -206,7 +206,7 @@ Flake8
 ------
 `Flake8`_ is a command-line utility for enforcing style consistency across Python projects. By default it includes lint checks provided by the PyFlakes project, PEP-0008 inspired style checks provided by the PyCodeStyle project, and McCabe complexity checking provided by the McCabe project. It will also run third-party extensions if they are found and installed.
 
-CARS ``flake8`` configuration is done in `setup.cfg <http://https://raw.githubusercontent.com/CNES/cars/master/setup.cfg>`_
+CARS ``flake8`` configuration is done in `setup.cfg <https://raw.githubusercontent.com/CNES/cars/master/setup.cfg>`_
 
 `Flake8`_ messages can be avoided (in particular cases !) adding "# noqa" in the file or line for all messages.
 It is better to choose filter message with "# noqa: E731" (with E371 example being the error number).
@@ -224,7 +224,7 @@ Pylint
 ------
 `Pylint`_ is a global linting tool which helps to have many information on source code.
 
-CARS ``pylint`` configuration is done in dedicated `.pylintrc <http://https://raw.githubusercontent.com/CNES/cars/master/.pylintrc>`_ file.
+CARS ``pylint`` configuration is done in dedicated `.pylintrc <//https://raw.githubusercontent.com/CNES/cars/master/.pylintrc>`_ file.
 
 `Pylint`_ messages can be avoided (in particular cases !) adding "# pylint: disable=error-message-name" in the file or line.
 Look at examples in source code.

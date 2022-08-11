@@ -4,8 +4,28 @@
 Applications for each 3D steps
 ==============================
 
+This section describes all possible configuration of CARS applications.
+
+CARS applications are defined and called by their name in applications configuration section:
+
+.. sourcecode:: text
+
+  "applications":{
+      "application_name": {
+          "method": "application_dependent",
+          "parameter1": 3,
+          "parameter2": 0.3
+      }
+  },
+
+Be careful with these parameters: no mechanism ensures consistency between applications for now.
+And some parameters can degrade performance and DSM quality heavily.
+The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
+
 Grid generation
 ***************
+
+**Name**: "grid_generation"
 
 Description
 ^^^^^^^^^^^
@@ -22,13 +42,24 @@ Configuration
 +-----------------+-----------------------------------------------+---------+---------------+----------+
 | epi_step        | Step of the deformation grid in nb. of pixels | int     | 30            | No       |
 +-----------------+-----------------------------------------------+---------+---------------+----------+
-| save_grids      | Save the generated grids in output folder     | boolean | False         | No       |
+| save_grids      | Save the generated grids (not available yet)  | boolean | false         | No       |
 +-----------------+-----------------------------------------------+---------+---------------+----------+
 | geometry_loader | Geometry external library                     | string  | "otb"         | No       |
 +-----------------+-----------------------------------------------+---------+---------------+----------+
 
+.. sourcecode:: text
+
+    "applications": {
+        "grid_generation": {
+            "method": "epipolar",
+            "epi_step": 35
+        }
+    },
+
 Resampling
 **********
+
+**Name**: "resampling"
 
 Description
 ^^^^^^^^^^^
@@ -46,13 +77,25 @@ Configuration
 +---------------------+--------------------------------------------------------+---------+---------------+----------+
 | epi_tile_size       | size in pixels of tile                                 | int     | 500           | No       |
 +---------------------+--------------------------------------------------------+---------+---------------+----------+
-| save_epipolar_image | Save the generated images in output folder             | boolean | False         | No       |
+| save_epipolar_image | Save the generated images in output folder             | boolean | false         | No       |
 +---------------------+--------------------------------------------------------+---------+---------------+----------+
-| save_epipolar_color | Save the generated images (only if color is avalaible) | boolean | False         | No       |
+| save_epipolar_color | Save the generated images (only if color is available) | boolean | false         | No       |
 +---------------------+--------------------------------------------------------+---------+---------------+----------+
+
+.. sourcecode:: text
+
+    "applications": {
+        "resampling": {
+            "method": "bicubic",
+            "epi_tile_size": 600
+        }
+    },
+
 
 Sparse matching
 ***************
+
+**Name**: "sparse_matching"
 
 Description
 ^^^^^^^^^^^
@@ -63,7 +106,7 @@ Configuration
 ^^^^^^^^^^^^^
 
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-| Name                                 | Description                                                                                 | Type       | avalaible value | Default value | Required |
+| Name                                 | Description                                                                                 | Type       | available value | Default value | Required |
 +======================================+=============================================================================================+============+=================+===============+==========+
 | method                               | Method for sparse matching                                                                  | string     | "sift"          | "sift"        | Yes      |
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -91,13 +134,27 @@ Configuration
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
 | sift_magnification                   |                                                                                             | float      |                 | 2.0           | No       |
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-| sift_back_matching                   |                                                                                             | Boolean    |                 | True          | No       |
+| sift_back_matching                   |                                                                                             | Boolean    |                 | true          | No       |
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-| save_matches                         | Save matches                                                                                | Boolean    |                 | False         | No       |
+| save_matches                         | Save matches                                                                                | Boolean    |                 | false         | No       |
 +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
+
+A lot of information about parameters can be found on `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
+
+.. sourcecode:: text
+
+    "applications": {
+        "sparse_matching": {
+            "method": "sift",
+            "disparity_margin": 0.01
+        }
+    },
+
 
 Dense matching
 **************
+
+**Name**: "dense_matching"
 
 Description
 ^^^^^^^^^^^
@@ -108,9 +165,9 @@ Configuration
 ^^^^^^^^^^^^^
 
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-| Name                            | Description                                                             | Type    | avalaible value                 | Default value | Required |
+| Name                            | Description                                                             | Type    | available value                 | Default value | Required |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-| method                          | Method for dense matching                                               | string  | all method avalaible on Pandora | "census_sgm"  | Yes      |
+| method                          | Method for dense matching                                               | string  | "census_sgm" or "mccnn_sgm"     | "census_sgm"  | Yes      |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 | loader                          | external library use to compute dense matching                          | string  | "pandora"                       | "pandora"     | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -120,7 +177,7 @@ Configuration
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 | max_elevation_offset            | Override maximum disparity from prepare step with this offset in meters | int     |                                 | None          | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-| use_sec_disp                    | Compute secondary disparity map                                         | boolean |                                 | False         | No       |
+| use_sec_disp                    | Compute secondary disparity map                                         | boolean |                                 | false         | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 | min_epi_tile_size               |                                                                         | int     |                                 | 300           | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -128,49 +185,76 @@ Configuration
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-| save_disparity_map              | Save disparity map                                                      | boolean |                                 | False         | No       |
+| save_disparity_map              | Save disparity map                                                      | boolean |                                 | false         | No       |
 +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+
+See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
+
+.. sourcecode:: text
+
+    "applications": {
+        "dense_matching": {
+            "method": "census_sgm",
+            "loader": "pandora",
+            "loader_conf": "path_to_user_pandora_configuration"
+        }
+    },
+
 
 Triangulation
 *************
 
+**Name**: "triangulation"
+
 Description
 ^^^^^^^^^^^
 
-Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude poin
+Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude point
 
 Configuration
 ^^^^^^^^^^^^^
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| Name              | Description                                                                                                                                                               | Type    | avalaible value              | Default value                | Required |
-+===================+===========================================================================================================================================================================+=========+==============================+==============================+==========+
-| method            | Method for triangulation                                                                                                                                                  | string  | "line_of_sight_intersection" | "line_of_sight_intersection" | Yes      |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| geometry_loader   | Geometry external library                                                                                                                                                 | string  | "otb"                        | "otb"                        | No       |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| use_geoid_alt     | Use geoid grid as altimetric reference.                                                                                                                                   | boolean |                              | False                        | No       |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| snap_to_img1      | This mode can be used if all pairs share the same left image. It will then modify lines of sights of secondary images so that they all cross those of the reference image | boolean |                              | False                        | No       |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| add_msk_info      |                                                                                                                                                                           | boolean |                              | True                         | No       |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-| save_points_cloud | save points_cloud                                                                                                                                                         | boolean |                              | False                        | No       |
-+-------------------+---------------------------------------------------------------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| Name              | Description                                                                                                        | Type    | available value              | Default value                | Required |
++===================+====================================================================================================================+=========+==============================+==============================+==========+
+| method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection" | "line_of_sight_intersection" | Yes      |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| geometry_loader   | Geometry external library                                                                                          | string  | "otb"                        | "otb"                        | No       |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| use_geoid_alt     | Use geoid grid as altimetric reference.                                                                            | boolean |                              | false                        | No       |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| snap_to_img1      | if all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                              | false                        | No       |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| add_msk_info      |                                                                                                                    | boolean |                              | true                         | No       |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
+| save_points_cloud | save points_cloud                                                                                                  | boolean |                              | false                        | No       |
++-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
 
+.. sourcecode:: text
+
+    "applications": {
+        "triangulation": {
+            "method": "line_of_sight_intersection",
+            "use_geoid_alt": true
+        }
+    },
 
 Point Cloud fusion
 ******************
+
+**Name**: "point_cloud_fusion"
 
 Description
 ^^^^^^^^^^^
 
 Merge points clouds coming from each pair
 
+Only one method is available for now: "mapping_to_terrain_tiles"
+
 Configuration
 ^^^^^^^^^^^^^
 
 +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-| Name              | Description           | Type    | avalaible value            | Default value              | Required |
+| Name              | Description           | Type    | available value            | Default value              | Required |
 +===================+=======================+=========+============================+============================+==========+
 | method            | Method for fusion     | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
 +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
@@ -178,12 +262,31 @@ Configuration
 +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
 | terrain_tile_size |                       | int     |                            | None                       | No       |
 +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-| save_points_cloud | Save points clouds    | boolean |                            | False                      | No       |
+| save_points_cloud | Save points clouds    | boolean |                            | false                      | No       |
 +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
 
+Example
+^^^^^^^
+
+.. sourcecode:: text
+
+        "applications": {
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "resolution": 0.5,
+                "save_points_cloud": true
+            }
+        },
+
+.. warning::
+  
+  Be careful with resolution to be consistent with resolution in rasterization.
+  No mechanism ensures consistency between applications for now.
 
 Point Cloud outliers removing
 *****************************
+
+**Name**: "point_cloud_outliers_removing"
 
 Description
 ^^^^^^^^^^^
@@ -195,19 +298,19 @@ Configuration
 ^^^^^^^^^^^^^
 
 +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-| Name              | Description                              | Type    | avalaible value                   | Default value | Required |
+| Name              | Description                              | Type    | available value                   | Default value | Required |
 +===================+==========================================+=========+===================================+===============+==========+
 | method            | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | Yes      |
 +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-| save_points_cloud | Save points clouds                       | boolean |                                   | False         | No       |
+| save_points_cloud | Save points clouds                       | boolean |                                   | false         | No       |
 +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
 If method is *statistical*:
 
 +----------------+-------------+---------+-----------------+---------------+----------+
-| Name           | Description | Type    | avalaible value | Default value | Required |
+| Name           | Description | Type    | available value | Default value | Required |
 +================+=============+=========+=================+===============+==========+
-| activated      |             | boolean |                 | True          | No       |
+| activated      |             | boolean |                 | true          | No       |
 +----------------+-------------+---------+-----------------+---------------+----------+
 | k              |             | int     | should be > 0   | 50            | No       |
 +----------------+-------------+---------+-----------------+---------------+----------+
@@ -217,9 +320,9 @@ If method is *statistical*:
 If method is *small_components*
 
 +-----------------------------+-------------+---------+-----------------+---------------+----------+
-| Name                        | Description | Type    | avalaible value | Default value | Required |
+| Name                        | Description | Type    | available value | Default value | Required |
 +=============================+=============+=========+=================+===============+==========+
-| activated                   |             | boolean |                 | True          | No       |
+| activated                   |             | boolean |                 | true          | No       |
 +-----------------------------+-------------+---------+-----------------+---------------+----------+
 | on_ground_margin            |             | int     |                 | 10            | No       |
 +-----------------------------+-------------+---------+-----------------+---------------+----------+
@@ -230,19 +333,35 @@ If method is *small_components*
 | clusters_distance_threshold |             | float   |                 | None          | No       |
 +-----------------------------+-------------+---------+-----------------+---------------+----------+
 
+Example
+^^^^^^^
 
-Rasterization
-*************
+.. sourcecode:: text
+
+        "applications": {
+            "point_cloud_outliers_removing": {
+                "method": "small_components",
+                "on_ground_margin": 10,
+                "save_points_cloud": true
+            }
+        },
+
+Point Cloud Rasterization
+*************************
+
+**Name**: "point_cloud_rasterization"
 
 Description
 ^^^^^^^^^^^
 
-Project altitudes on regular grid
+Project altitudes on regular grid.
+
+Only one simple gaussian method is available for now.
 
 Configuration
 ^^^^^^^^^^^^^
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| Name                        | Description            | Type       | avalaible value | Default value   | Required |
+| Name                        | Description            | Type       | available value | Default value   | Required |
 +=============================+========================+============+=================+=================+==========+
 | method                      |                        | string     | simple_gaussian | simple_gaussian | Yes      |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
@@ -252,9 +371,9 @@ Configuration
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
 | grid_points_division_factor |                        | int        |                 | None            | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| resolution                  |                        | float      |                 | 0.5             | No       |
+| resolution                  |altitude grid step (dsm)| float      |                 | 0.5             | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| dsm_no_data                 |                        | int        |                 | - 32768         |          |
+| dsm_no_data                 |                        | int        |                 | -32768          |          |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
 | color_no_data               |                        | int        |                 | 0               |          |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
@@ -262,13 +381,28 @@ Configuration
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
 | msk_no_data                 |                        | int        |                 | 65535           |          |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| write_color                 | Save color ortho-image | boolean    |                 | False           | No       |
+| write_color                 | Save color ortho-image | boolean    |                 | false           | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| write_stats                 |                        | boolean    |                 | False           | No       |
+| write_stats                 |                        | boolean    |                 | false           | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| write_msk                   |                        | boolean    |                 | False           | No       |
+| write_msk                   |                        | boolean    |                 | false           | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
-| write_dsm                   | Save dsm               | boolean    |                 | True            | No       |
+| write_dsm                   | Save dsm               | boolean    |                 | true            | No       |
 +-----------------------------+------------------------+------------+-----------------+-----------------+----------+
 
+Example
+^^^^^^^
 
+.. sourcecode:: text
+
+        "applications": {
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 1.5
+            }
+        },
+
+.. warning::
+  
+    Be careful with resolution to be consistent with resolution in rasterization.
+    No mechanism ensures consistency between applications for now.

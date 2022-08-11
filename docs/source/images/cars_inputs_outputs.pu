@@ -1,0 +1,24 @@
+@startuml 
+
+rectangle "Input Data" {
+(Stereo Images) as img
+(Geometric Models) as geom
+(Masks) as masks
+(Input DEM) as dem
+}
+(CARS pipeline) as cars #red
+rectangle "Output Data" {
+(dsm.tif) as dsm
+(color.tif) as color
+(Output stats) as output_stats
+}
+
+img --> cars
+geom --> cars
+masks ..> cars
+dem ..> cars
+cars --> dsm
+cars --> color
+cars --> output_stats
+
+@enduml

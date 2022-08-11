@@ -70,7 +70,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The PointCloudRasterization {} application will be used".format(
+            "The PointCloudRasterization {} application will be used".format(
                 rasterization_method
             )
         )

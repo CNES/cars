@@ -72,7 +72,7 @@ def compute_terrain_bbox(  # noqa: 751
     check_inputs=False,
 ):
     """
-    Compute terrain bounding box of cunrrent pair
+    Compute terrain bounding box of current pair
 
 
     :param srtm_dir: srtm directory

@@ -90,7 +90,7 @@ class Pipeline:
         return pipeline
 
     @classmethod
-    def print_avalaible_pipelines(cls):
+    def print_available_pipelines(cls):
         """
         Print all registered pipelines
         """

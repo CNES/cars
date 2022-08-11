@@ -135,14 +135,13 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         # Check if all specified applications are used
         needed_applications = [
             "grid_generation",
-            "sparse_matching",
             "resampling",
+            "sparse_matching",
             "dense_matching",
             "triangulation",
             "point_cloud_fusion",
             "point_cloud_rasterization",
-            "point_cloud_outliers_removing_statistical",
-            "point_cloud_outliers_removing_small_components",
+            "point_cloud_outliers_removing",
         ]
 
         for app_key in conf.keys():
@@ -159,14 +158,14 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             "grid_generation", cfg=conf.get("grid_generation", {})
         )
 
-        # Sparse Matching
-        self.sparse_matching_app = Application(
-            "sparse_matching", cfg=conf.get("sparse_matching", {})
-        )
-
         # image resampling
         self.resampling_application = Application(
             "resampling", cfg=conf.get("resampling", {})
+        )
+
+        # Sparse Matching
+        self.sparse_matching_app = Application(
+            "sparse_matching", cfg=conf.get("sparse_matching", {})
         )
 
         # Matching
@@ -188,7 +187,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.outlier_removing_small_comp_app = Application(
             "point_cloud_outliers_removing",
             cfg=conf.get(
-                "point_cloud_outliers_removing_small_components",
+                "point_cloud_outliers_removing:",
                 {"method": "small_components"},
             ),
         )
@@ -197,7 +196,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.pc_outlier_removing_stats_application = Application(
             "point_cloud_outliers_removing",
             cfg=conf.get(
-                "point_cloud_outliers_removing_statistical",
+                "point_cloud_outliers_removing",
                 {"method": "statistical"},
             ),
         )

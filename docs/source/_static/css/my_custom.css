@@ -4,3 +4,6 @@
 .wy-side-nav-search>div.version{
   color: #123D62;
 }
+.wy-nav-content {
+    max-width: 80% !important;
+}

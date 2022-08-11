@@ -70,9 +70,7 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The GridGeneration {} application will be used".format(
-                grid_method
-            )
+            "The GridGeneration {} application will be used".format(grid_method)
         )
 
         return super(GridGeneration, cls).__new__(

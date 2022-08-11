@@ -70,7 +70,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The PointCloudOutliersRemoving {} application"
+            "The PointCloudOutliersRemoving {} application"
             " will be used".format(points_removing_method)
         )
 

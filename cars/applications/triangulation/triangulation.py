@@ -70,7 +70,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The Triangulation {} application will be used".format(
+            "The Triangulation {} application will be used".format(
                 triangulation_method
             )
         )
