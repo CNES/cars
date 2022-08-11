@@ -98,6 +98,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.INPUT_COLOR: str,
         sens_cst.INPUT_NODATA: int,
         sens_cst.INPUT_GEO_MODEL: str,
+        sens_cst.INPUT_MODEL_FILTER: Or([str], None),
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_MSK_CLASSES: dict,
     }
@@ -119,6 +120,13 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_COLOR
         ] = color
+
+        geomodel_filters = conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_MODEL_FILTER, None
+        )
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            sens_cst.INPUT_MODEL_FILTER
+        ] = geomodel_filters
 
         no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_NODATA, -9999
