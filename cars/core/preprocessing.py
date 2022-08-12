@@ -72,7 +72,7 @@ def compute_terrain_bbox(  # noqa: 751
     check_inputs=False,
 ):
     """
-    Compute terrain bounding box of cunrrent pair
+    Compute terrain bounding box of current pair
 
 
     :param srtm_dir: srtm directory
@@ -707,7 +707,6 @@ def create_former_cars_conf(
     """
 
     # TODO remove this function, update geometry loader
-
     conf = {
         "img1": sensor_image_left[sens_cst.INPUT_IMG],
         "img2": sensor_image_right[sens_cst.INPUT_IMG],
@@ -720,6 +719,14 @@ def create_former_cars_conf(
     if "geomodel" in sensor_image_right:
         if sensor_image_right["geomodel"] is not None:
             conf["model2"] = sensor_image_right["geomodel"]
+
+    if "geomodel_filters" in sensor_image_left:
+        if sensor_image_left["geomodel_filters"] is not None:
+            conf["model1_filters"] = sensor_image_left["geomodel_filters"]
+
+    if "geomodel_filters" in sensor_image_right:
+        if sensor_image_right["geomodel_filters"] is not None:
+            conf["model2_filters"] = sensor_image_right["geomodel_filters"]
 
     if "mask" in sensor_image_left:
         if sensor_image_left["mask"] is not None:

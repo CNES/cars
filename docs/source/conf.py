@@ -21,7 +21,7 @@ sys.setrecursionlimit(1500)
 # -- Project information -----------------------------------------------------
 
 project = "CARS"
-copyright = "2021, CNES"
+copyright = "2022, CNES"
 author = "CARS Team"
 
 # The full version, including alpha/beta/rc tags
@@ -55,6 +55,8 @@ extensions = [
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
 ]
 
+# Autoapi apidoc configuration
+autoapi_generate_api_docs = True
 autoapi_dirs = ["../../cars"]
 autoapi_root = "api_reference"
 autoapi_keep_files = True

@@ -14,12 +14,12 @@ The data used within CARS imposes some restrictions that the structure must mana
 * can be used for parallel/distributed computation, i.e tiled data.
 * can contained overlaps between tiled data;
 
-*CarsDataset* aims at defining a data structure that takes into account this constraints.
+*CarsDataset* aims at defining a generic data structure that takes into account this constraints.
 
 Details
 -------
 
-.. figure:: ../../../images/Carsdataset.png
+.. figure:: ../../images/Carsdataset.png
     :align: center
     :alt: CarsDataset concept
 

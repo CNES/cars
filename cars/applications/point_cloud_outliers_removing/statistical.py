@@ -137,6 +137,17 @@ class Statistical(
 
         return overloaded_conf
 
+    def get_method(self):
+        """
+        Get margins to use during point clouds fusion
+
+        :return: algorithm method
+        :rtype: string
+
+        """
+
+        return self.used_method
+
     def run(
         self,
         merged_points_cloud,

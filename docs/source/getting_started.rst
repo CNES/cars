@@ -70,6 +70,41 @@ Steps by steps
 
     $ docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.json
 
+* Configuration example for quick_start data_gizeh:
+
+.. sourcecode:: text
+
+    {
+            "inputs": {
+                "sensors" : {
+                    "one": {
+                        "image": "img1.tif",
+                        "geomodel": "img1.geom",
+    		    "color": "color1.tif",
+                        "no_data": 0
+                    },
+                    "two": {
+                        "image": "img2.tif",
+                        "geomodel": "img2.geom",
+                        "no_data": 0
+
+                    },
+                    "three": {
+                        "image": "img3.tif",
+                        "geomodel": "img3.geom",
+                        "no_data": 0
+                    }
+                },
+                "pairing": [["one", "two"],["one", "three"]],
+                 "initial_elevation": "srtm_dir"
+            },
+
+            "output": {
+                  "out_dir": "outresults"
+            }
+    }
+
+
 * Clean Unix rights on Docker generated data.
 
 .. code-block:: console
@@ -84,7 +119,7 @@ Steps by steps
 
 .. warning::
 
-	This first tutorial uses Docker to avoid CARS installation. To go further, follow :ref:`install` and :ref:`userguide`.
+	This first tutorial uses Docker to avoid CARS installation. To go further, follow :ref:`install` and :ref:`user_guide`.
 
 
 Advanced Quick Start
@@ -97,7 +132,7 @@ Advanced Quick Start
 Docker Jupyter
 ==============
 
-For more docker usage with jupyter, go to :ref:`dockerguide`.
+For more docker usage with jupyter, go to :ref:`docker_guide`.
 
 
 .. _`QGIS`: https://www.qgis.org/

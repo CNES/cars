@@ -79,7 +79,7 @@ class Application:
         return app
 
     @classmethod
-    def print_avalaible_app(cls):
+    def print_available_app(cls):
         """
         Print all registered applications
         """
