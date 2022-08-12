@@ -161,6 +161,17 @@ class SmallComponents(
 
         return overloaded_conf
 
+    def get_method(self):
+        """
+        Get margins to use during point clouds fusion
+
+        :return: algorithm method
+        :rtype: string
+
+        """
+
+        return self.used_method
+
     def get_on_ground_margin(self):
         """
         Get margins to use during point clouds fusion

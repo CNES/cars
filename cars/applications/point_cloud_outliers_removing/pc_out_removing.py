@@ -97,6 +97,16 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         return on_ground_margin
 
     @abstractmethod
+    def get_method(self):
+        """
+        Get margins to use during point clouds fusion
+
+        :return: algorithm method
+        :rtype: string
+
+        """
+
+    @abstractmethod
     def run(
         self,
         merged_points_cloud,
