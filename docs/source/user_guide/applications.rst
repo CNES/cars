@@ -22,6 +22,7 @@ Be careful with these parameters: no mechanism ensures consistency between appli
 And some parameters can degrade performance and DSM quality heavily.
 The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
 
+
 Grid generation
 ***************
 
@@ -282,6 +283,8 @@ Example
   
   Be careful with resolution to be consistent with resolution in rasterization.
   No mechanism ensures consistency between applications for now.
+
+.. _point_cloud_outliers_removing:
 
 Point Cloud outliers removing
 *****************************

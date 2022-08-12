@@ -131,6 +131,43 @@ This dict indicate the masks's classes usage and is structured as follows :
 * The classes listed in *ignored_by_correlation* will be masked at the correlation step.
 * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
+.. _full_dsm_pipeline_applications:
+
+Applications
+^^^^^^^^^^^^
+
+There is a particular case with the *Point Cloud outliers removing* application on this pipeline because it is called twice.
+As described before, the ninth step consists of Filter the 3D points cloud via two consecutive filters.
+So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
+Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+those two applications with :
+
+ * *point_cloud_outliers_removing.1*
+ * *point_cloud_outliers_removing.2*
+
+Each one is associated to a particular *point_cloud_outliers_removing* method, let's refer to :ref:`point_cloud_outliers_removing`
+
+
+
+
+Example
+*******
+
+.. sourcecode:: text
+
+        "applications": {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "on_ground_margin": 10,
+                "save_points_cloud": true
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "k": 10
+            }
+        },
+
+
 
 Output
 ^^^^^^

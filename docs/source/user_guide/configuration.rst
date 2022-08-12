@@ -55,6 +55,7 @@ Inputs
 
 Values associated to this key are defined by pipeline so let's refer to :ref:`sensor_to_full_resolution_dsm_pipeline` for details.
 
+.. _configuration_applications:
 
 Applications
 ============
@@ -62,6 +63,10 @@ Applications
 This key is optional and allows to redefine parameters for each application defined in each "application_name" section used by pipeline.
 
 See :ref:`applications` for details.
+
+.. note::
+   For the particular case of the application *Point Cloud outliers removing* in the :ref:`sensor_to_full_resolution_dsm_pipeline`,
+   please refer not only in :ref:`applications` but also on :ref:`full_dsm_pipeline_applications`
 
 .. _orchestrator_config:
 
