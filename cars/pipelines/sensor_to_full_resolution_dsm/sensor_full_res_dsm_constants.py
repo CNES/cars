@@ -45,6 +45,7 @@ INPUT_IMG = "image"
 INPUT_MSK = "mask"
 INPUT_MSK_CLASSES = "mask_classes"
 INPUT_GEO_MODEL = "geomodel"
+INPUT_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"
 INPUT_COLOR = "color"
 
