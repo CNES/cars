@@ -135,14 +135,14 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         # Check if all specified applications are used
         needed_applications = [
             "grid_generation",
-            "sparse_matching",
             "resampling",
+            "sparse_matching",
             "dense_matching",
             "triangulation",
             "point_cloud_fusion",
             "point_cloud_rasterization",
-            "point_cloud_outliers_removing_statistical",
-            "point_cloud_outliers_removing_small_components",
+            "point_cloud_outliers_removing.1",
+            "point_cloud_outliers_removing.2",
         ]
 
         for app_key in conf.keys():
@@ -159,14 +159,14 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             "grid_generation", cfg=conf.get("grid_generation", {})
         )
 
-        # Sparse Matching
-        self.sparse_matching_app = Application(
-            "sparse_matching", cfg=conf.get("sparse_matching", {})
-        )
-
         # image resampling
         self.resampling_application = Application(
             "resampling", cfg=conf.get("resampling", {})
+        )
+
+        # Sparse Matching
+        self.sparse_matching_app = Application(
+            "sparse_matching", cfg=conf.get("sparse_matching", {})
         )
 
         # Matching
@@ -185,19 +185,19 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         )
 
         # Points cloud outlier removing small components
-        self.outlier_removing_small_comp_app = Application(
+        self.pc_outliers_removing_1_app = Application(
             "point_cloud_outliers_removing",
             cfg=conf.get(
-                "point_cloud_outliers_removing_small_components",
+                "point_cloud_outliers_removing.1:",
                 {"method": "small_components"},
             ),
         )
 
         # Points cloud outlier removing statistical
-        self.pc_outlier_removing_stats_application = Application(
+        self.pc_outliers_removing_2_app = Application(
             "point_cloud_outliers_removing",
             cfg=conf.get(
-                "point_cloud_outliers_removing_statistical",
+                "point_cloud_outliers_removing.2",
                 {"method": "statistical"},
             ),
         )
@@ -509,6 +509,23 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 resolution=self.rasterization_application.get_resolution(),
             )
 
+            # Get on_ground_margin, before point clouds merging,
+            # from app using small_components method.
+            # We don't now wich pc_outlier_removing_x_app
+            # refers to small_components so let's check.
+
+            if (
+                self.pc_outliers_removing_1_app.get_method()
+                == "small_components"
+            ):
+                on_ground_margin = (
+                    self.pc_outliers_removing_1_app.get_on_ground_margin()
+                )
+            else:
+                on_ground_margin = (
+                    self.pc_outliers_removing_2_app.get_on_ground_margin()
+                )
+
             # Merge point clouds
             merged_points_clouds = self.pc_fusion_application.run(
                 list_epipolar_points_cloud_left,
@@ -517,31 +534,29 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 epsg,
                 orchestrator=cars_orchestrator,
                 margins=self.rasterization_application.get_margins(),
-                on_ground_margin=(
-                    self.outlier_removing_small_comp_app.get_on_ground_margin()
-                ),
+                on_ground_margin=on_ground_margin,
                 optimal_terrain_tile_width=optimal_terrain_tile_width,
             )
 
             # Remove outliers with small components method
-            filtered_sc_merged_points_clouds = (
-                self.outlier_removing_small_comp_app.run(
+            filtered_1_merged_points_clouds = (
+                self.pc_outliers_removing_1_app.run(
                     merged_points_clouds,
                     orchestrator=cars_orchestrator,
                 )
             )
 
             # Remove outliers with statistical components method
-            filtered_stats_merged_points_clouds = (
-                self.pc_outlier_removing_stats_application.run(
-                    filtered_sc_merged_points_clouds,
+            filtered_2_merged_points_clouds = (
+                self.pc_outliers_removing_2_app.run(
+                    filtered_1_merged_points_clouds,
                     orchestrator=cars_orchestrator,
                 )
             )
 
             # rasterize point cloud
             _ = self.rasterization_application.run(
-                filtered_stats_merged_points_clouds,
+                filtered_2_merged_points_clouds,
                 epsg,
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(

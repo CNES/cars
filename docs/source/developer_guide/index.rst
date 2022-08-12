@@ -6,6 +6,6 @@ Developer guide
 .. toctree::
    :maxdepth: 2
 
-   developer_guide/how_to_contribute.rst
-   developer_guide/design.rst
+   how_to_contribute.rst
+   design/index.rst
 

@@ -300,9 +300,9 @@ class OTBGeometry(AbstractGeometry):
             stereo_app.SetParameterFloat("epi.elevation.default", default_alt)
         if geoid is not None:
             stereo_app.SetParameterString("epi.elevation.geoid", geoid)
-
         stereo_app.Execute()
-
+        # OTB doesn't do a new line, force it for next logging seen by user
+        print("\n")
         # Export grids to numpy
         left_grid_as_array = np.copy(
             stereo_app.GetVectorImageAsNumpyArray("io.outleft")

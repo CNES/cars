@@ -6,18 +6,18 @@ Application
 Overview
 --------
 
-An *application* is a main step of the 3d reconstruction framework
+An *application* is a main step of CARS 3D reconstruction framework.
 It contains algorithm methods.
 It takes *CarsDatasets* and configuration parameters as input and returns *CarsDatasets*.
 
 
 It is composed of:
-* an application factory concept that register all 3d step application
+* an application factory concept that register all 3D step application
 * an application template
 * Some abstract applications (each one defined a main 3d step)
 * Some subclass associated to each abstract application, containing specific algorithm
 
-.. figure:: ../../../images/application_concept.png
+.. figure:: ../../images/application_concept.png
     :align: center
     :alt: Applications
 

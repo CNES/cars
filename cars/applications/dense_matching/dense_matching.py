@@ -70,7 +70,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The AbstractDenseMatching {} application will be used".format(
+            "The AbstractDenseMatching {} application will be used".format(
                 matching_method
             )
         )

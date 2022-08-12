@@ -70,7 +70,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The PointCloudFusion {} application will be used".format(
+            "The PointCloudFusion {} application will be used".format(
                 fusion_method
             )
         )

@@ -1,4 +1,4 @@
-.. _dockerguide:
+.. _docker_guide:
 
 ============
 Docker guide

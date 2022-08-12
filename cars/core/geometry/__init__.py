@@ -64,7 +64,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             )
 
         logging.info(
-            "[The AbstractGeometry {} loader will be used".format(loader_to_use)
+            "The AbstractGeometry {} loader will be used".format(loader_to_use)
         )
 
         return super(AbstractGeometry, cls).__new__(
