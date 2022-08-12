@@ -91,12 +91,12 @@ RUN rm -rf vlfeat
 ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
-# copy and install cars
+# copy and install cars with mccnn plugin capabilities installed (but not configured by default)
 WORKDIR /cars
 COPY . /cars/
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal
-RUN make clean && make install
+RUN make clean && make install-pandora-mccnn
 
 # source venv/bin/activate in docker mode
 ENV VIRTUAL_ENV='/cars/venv'

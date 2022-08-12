@@ -8,9 +8,20 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Added
 
+### Changed
+
+### Fixed
+
+## 0.5.0 Refacto CARS (August 2022)
+
+Be careful, this version changes API and configuration ! See new documentation.
+
+### Added
+
 - Add documentation generation pre-commit when git push [#406]
 - Add docker images files for jupyter and cars tutorial [#418]
 - Add cars tutorial main_tutorial as notebook slides [#421]
+- Add pandora mccn simplified installation process [#426]
 
 ### Changed
 
@@ -19,6 +30,10 @@ A new section Unreleased is opened then for next dev phase.
 - change quick_start and notebooks to tutorials structure [#419]
 
 ### Fixed
+
+- remove setuptools pre installation [#341]
+- remove click 8.0.4 dependency [#341]
+
 
 
 ## 0.4.2 OTB/GDAL upgrade (July 2022)

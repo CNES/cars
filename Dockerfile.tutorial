@@ -1,4 +1,4 @@
-FROM cnes/cars-jupyter:0.4.3
+FROM cnes/cars-jupyter:0.5.0
 LABEL maintainer="CNES"
 
 WORKDIR /cars/tutorials/
