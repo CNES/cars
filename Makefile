@@ -91,6 +91,15 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
+install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
+	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+
+
 .PHONY: install-dev
 install-dev: install-deps ## install cars in dev editable mode (pip install -e .)
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
