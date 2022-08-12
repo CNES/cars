@@ -34,7 +34,6 @@ GDAL_VERSION = $(shell gdal-config --version)
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
-CHECK_SETUPTOOLS_SCM = $(shell ${CARS_VENV}/bin/python -m pip list|grep setuptools-scm)
 CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
@@ -74,10 +73,9 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 .PHONY: install-deps
 install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
-	${CARS_VENV}/bin/python -m pip install click==8.0.4 # temporary fix: force click version to avoid dask.distributed pbs cluster trouble , see issue #383
+	@${CARS_VENV}/bin/python -m pip install click==8.0.4 # temporary fix: force click version to avoid dask.distributed pbs cluster trouble , see issue #383
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_SETUPTOOLS_SCM}" ] ||${CARS_VENV}/bin/python -m pip install setuptools-scm
 	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba

@@ -11,6 +11,7 @@ A new section Unreleased is opened then for next dev phase.
 - Add documentation generation pre-commit when git push [#406]
 - Add docker images files for jupyter and cars tutorial [#418]
 - Add cars tutorial main_tutorial as notebook slides [#421]
+- Add pandora mccn simplified installation process [#426]
 
 ### Changed
 
@@ -19,6 +20,8 @@ A new section Unreleased is opened then for next dev phase.
 - change quick_start and notebooks to tutorials structure [#419]
 
 ### Fixed
+
+- remove setuptools pre installation [#341]
 
 
 ## 0.4.2 OTB/GDAL upgrade (July 2022)
