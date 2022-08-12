@@ -33,7 +33,7 @@ Be careful, this version changes API and configuration ! See new documentation.
 
 - remove setuptools pre installation [#341]
 - remove click 8.0.4 dependency [#341]
-
+- add automatic use of setup.cfg docs extra_require for readthedocs conf [#367]
 
 
 ## 0.4.2 OTB/GDAL upgrade (July 2022)
