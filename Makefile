@@ -73,7 +73,6 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 .PHONY: install-deps
 install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
-	@${CARS_VENV}/bin/python -m pip install click==8.0.4 # temporary fix: force click version to avoid dask.distributed pbs cluster trouble , see issue #383
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install pygdal==$(GDAL_VERSION).*

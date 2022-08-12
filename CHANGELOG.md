@@ -22,6 +22,8 @@ A new section Unreleased is opened then for next dev phase.
 ### Fixed
 
 - remove setuptools pre installation [#341]
+- remove click 8.0.4 dependency [#341]
+
 
 
 ## 0.4.2 OTB/GDAL upgrade (July 2022)
