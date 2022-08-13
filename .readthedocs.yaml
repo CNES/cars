@@ -13,6 +13,7 @@ build:
   - libgdal-dev
   - python3.8-dev
   - build-essential
+  - cmake
   jobs:
     pre_build:
       - pip install pygdal==`gdal-config --version`.*
