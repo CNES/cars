@@ -134,7 +134,7 @@ test-pbs-cluster: install ## run pbs cluster tests only
 	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-notebook
-test-notebook: install ## run notebook tests only
+test-notebook: install-pandora-mccnn ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
