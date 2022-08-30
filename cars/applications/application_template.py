@@ -32,7 +32,9 @@ from abc import ABCMeta
 # Disable pylint error: too few public method
 
 
-class ApplicationTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
+class ApplicationTemplate(  # noqa: B024
+    metaclass=ABCMeta
+):  # pylint: disable=R0903
     """
     Class for general specification of an application
     Empty for the moment because there is no any common method or function

@@ -12,6 +12,8 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
+- Fix dask upgrade bug [#436]
+
 ## 0.5.0 Refacto CARS (August 2022)
 
 Be careful, this version changes API and configuration ! See new documentation.
