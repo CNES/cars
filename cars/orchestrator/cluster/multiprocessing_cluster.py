@@ -25,11 +25,9 @@ Contains abstract function for multiprocessing Cluster
 import itertools
 
 # Standard imports
-import logging
 import multiprocessing as mp
 import os
 import shutil
-import subprocess
 import threading
 import time
 from multiprocessing import Queue, freeze_support
@@ -74,15 +72,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.dump_to_disk = checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = checked_conf_cluster["per_job_timeout"]
 
-        # Find mp mode
-        mp_mode = "fork"
-        if not check_tbb_installed():
-            mp_mode = "forkserver"
-            logging.warning(
-                "Numba does not find TBB : "
-                "Multiprocessing forced to forkserver mode. "
-                "User might not get logs from workers."
-            )
+        # Set multiprocessing mode
+        # forkserver is used, to allow OMP to be used in numba
+        mp_mode = "forkserver"
 
         self.launch_worker = launch_worker
 
@@ -697,21 +689,3 @@ class MpFutureIterator:
 
         self.future_list.remove(res)
         return self.cluster.wrapper.get_obj(res.get())
-
-
-def check_tbb_installed() -> bool:
-    """
-    Check if numba finds tbb correctly installed
-    :return: tbb found
-    """
-
-    tbb_installed = False
-    # Get output of 'numba -s'
-    numba_output = (
-        subprocess.check_output(["numba", "-s"]).decode("utf8").strip()
-    )
-    for item in numba_output.split("\n"):
-        if "TBB Threading Layer Available" in item and "True" in item:
-            tbb_installed = True
-            return tbb_installed
-    return tbb_installed

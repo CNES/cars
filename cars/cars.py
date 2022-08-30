@@ -145,26 +145,17 @@ def main_cli(args, dry_run=False):  # noqa: C901
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
 
-    # import tbb test and force numba library tbb | omp
-    from cars.orchestrator.cluster.multiprocessing_cluster import (
-        check_tbb_installed,
-    )
-
-    numba_threading_layer = "omp"
-    if not dry_run:
-        if (
-            check_tbb_installed()
-            and getattr(args, "mode", "local_dask") == "mp"
-        ):
-            numba_threading_layer = "tbb"
-    os.environ["NUMBA_THREADING_LAYER"] = numba_threading_layer
+    # Force the use of OpenMP in numba
+    os.environ["NUMBA_THREADING_LAYER"] = "omp"
 
     # Main try/except to catch all program exceptions
     from cars.pipelines.pipeline import Pipeline
 
     try:
+
         # main(s) for each command
         if args.conf is not None:
+
             # Tranform conf file to dict
             with open(args.conf, "r", encoding="utf8") as fstream:
                 config = json.load(fstream)
