@@ -1,6 +1,6 @@
 # pyproject.toml
 [build-system]
-requires = ["setuptools>= 45", "wheel", "setuptools_scm[toml]>=6.2"]
+requires = ["setuptools>=52", "wheel", "setuptools_scm[toml]>=6.2"]
 build-backend = "setuptools.build_meta"
 
 # enable setuptools_scm version
