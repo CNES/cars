@@ -13,7 +13,7 @@ A new section Unreleased is opened then for next dev phase.
 ### Fixed
 
 - Fix dask upgrade bug [#436]
-- Fix temporarely local path to CARS OTB installed apps [#434]
+- Fix temporarily local path to CARS OTB installed apps [#434]
 
 ## 0.5.0 Refacto CARS (August 2022)
 
