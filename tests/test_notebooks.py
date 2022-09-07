@@ -50,8 +50,8 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
             [
                 "jupyter nbconvert "
                 "--to script "
-                "{}/tutorials/sensor_to_full_resolution_dsm_step_by_step.ipynb "
-                "--output-dir {}".format(cars_path(), directory)
+                "{}/tutorials/sensor_to_full_resolution_dsm_step_by_step.ipynb"
+                " --output-dir {}".format(cars_path(), directory)
             ],
             shell=True,
             check=True,
@@ -103,6 +103,72 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
 
 
 @pytest.mark.notebook_tests
+def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
+    """
+    sensor_to_full_resolution_dsm_matching_methods_comparison notebook test:
+    notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
+    modify show_data matplotlib to be executable by ipython without pause,
+    run the notebook with ipython and check return code
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # Convert Jupyter notebook to script
+        subprocess.run(
+            [
+                "jupyter nbconvert "
+                "--to script "
+                "{}/tutorials/sensor_to_full_resolution"
+                "_dsm_matching_methods_comparison.ipynb"
+                " --output-dir {}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+        # copy notebook helpers
+        subprocess.run(
+            [
+                "cp "
+                "{}/tutorials/notebook_helpers.py "
+                "{}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+        # copy data samples gizeh
+        subprocess.run(
+            [
+                "cp "
+                "{}/tutorials/data_gizeh_small.tar.bz2 "
+                "{}".format(cars_path(), directory)
+            ],
+            shell=True,
+            check=True,
+        )
+        # Desactivate matplotlib show data
+        for line in fileinput.input(
+            "{}/sensor_to_full_resolution"
+            "_dsm_matching_methods_comparison.py".format(directory),
+            inplace=True,
+        ):
+            if "show_data(" in line:
+                line = line.replace("show_data(", "#show_data(")
+            print(line)  # keep this print
+
+        # Run notebook converted script
+        out = subprocess.run(
+            [
+                "ipython "
+                "{}/sensor_to_full_resolution_dsm"
+                "_matching_methods_comparison.py".format(directory)
+            ],
+            shell=True,
+            check=True,
+        )
+
+        out.check_returncode()
+
+
+@pytest.mark.notebook_tests
 def test_main_tutorial():
     """
     Main tutorial test:
@@ -116,8 +182,8 @@ def test_main_tutorial():
             [
                 "jupyter nbconvert "
                 "--to script "
-                "{}/tutorials/main_tutorial.ipynb "
-                "--output-dir {}".format(cars_path(), directory)
+                "{}/tutorials/main_tutorial.ipynb"
+                " --output-dir {}".format(cars_path(), directory)
             ],
             shell=True,
             check=True,

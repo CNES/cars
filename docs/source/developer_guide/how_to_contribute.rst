@@ -143,7 +143,7 @@ or
 
   $ cd tutorials
   $ git clone https://github.com/hakimel/reveal.js.git
-  $ jupyter nbconvert main_tutorial.ipynb --to slides --reveal-prefix reveal.js --config
+  $ jupyter nbconvert main_tutorial.ipynb --to slides --reveal-prefix reveal.js
   $ jupyter nbconvert main_tutorial.ipynb --to html --template reveal --reveal-prefix reveal.js # Same
   $ python -m server.http 8000
 
