@@ -22,6 +22,9 @@
 export ROOT_PATH="$(dirname $( cd "$(dirname "${BASH_SOURCE[0]}")"; pwd -P ))"
 
 # CARS OTB applications PATH
+# Because link to installed libs doesn't always work with setuptools, link to build directory
+export OTB_APPLICATION_PATH=$OTB_APPLICATION_PATH:$ROOT_PATH/../build/lib/otb/applications/
+# Complement with link to installed libs path (in sys.prefix of venv or main standard root)
 export OTB_APPLICATION_PATH=$OTB_APPLICATION_PATH:$ROOT_PATH/lib/
 
 # add PATH and LD_LIBRARY_PATH for CARS OTB added apps to work in shell

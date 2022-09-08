@@ -21,8 +21,8 @@
 """
 CARS setup.py
 Most of the configuration is in setup.cfg except :
-  - Surcharging subcommand install and develop with cars OTB build
-  - Enabling setuptools_scm
+  - Surcharging subcommand build_py with cars OTB build
+  TODO: add OTB build to wheel
 """
 import os
 import sys
@@ -31,8 +31,7 @@ from shutil import which
 from subprocess import run
 
 from setuptools import setup
-from setuptools.command.develop import develop
-from setuptools.command.install import install
+from setuptools.command.build_py import build_py
 
 
 def cars_otb_build(command_subclass):
@@ -77,6 +76,7 @@ def cars_otb_build(command_subclass):
         run(cmd, check=True)
         # Install OTB applications in sys.prefix/lib (path in env_cars.sh)
         run(["make", "install"], check=True)
+        # Check installation in sys.prefix/lib !
         os.chdir(current_dir)
 
     def modified_run(self):
@@ -92,19 +92,16 @@ def cars_otb_build(command_subclass):
 
 
 # Apply same cars specific setup decorator to custom setup commands:
-#   develop : pip install -e .
-#   install : pip install .
-@cars_otb_build
-class CustomDevelopCommand(develop):
-    pass
-
+#   build_py used in pip editable install -e . and pip standard install .
 
 @cars_otb_build
-class CustomInstallCommand(install):
-    pass
+class CustomBuildPyCommand(build_py):
+     pass
 
 
 # Setup with setup.cfg config
 setup(
-    cmdclass={"install": CustomInstallCommand, "develop": CustomDevelopCommand},
+    cmdclass={
+        "build_py": CustomBuildPyCommand
+    }
 )
