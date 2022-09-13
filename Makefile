@@ -205,11 +205,19 @@ dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebo
 
 ## Docker section
 
+.PHONY: docker-deps
+docker-deps:
+	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
+	@echo "Check Dockerfile.deps with hadolint"
+	@docker pull hadolint/hadolint
+	@docker run --rm -i hadolint/hadolint < Dockerfile.deps
+	@echo "Build Docker deps image CARS ${CARS_VERSION_MIN}"
+	@docker build -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
+
 .PHONY: docker
-docker: ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
+docker: docker-deps ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Check Dockerfiles with hadolint"
-	@docker pull hadolint/hadolint
 	@docker run --rm -i hadolint/hadolint < Dockerfile
 	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
 	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
@@ -219,8 +227,8 @@ docker: ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
 	@docker build -t cnes/cars-jupyter:${CARS_VERSION_MIN} -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
 	@echo "Build Docker jupyter tutorial notebook image from CARS"
 	@docker build -t cnes/cars-tutorial:${CARS_VERSION_MIN} -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
-	
-	## Clean section
+
+## Clean section
 
 .PHONY: clean
 clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts

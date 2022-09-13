@@ -1,4 +1,4 @@
-FROM cnes/cars:0.5.0
+FROM cnes/cars:latest
 LABEL maintainer="CNES"
 
 WORKDIR /cars/tutorials/
