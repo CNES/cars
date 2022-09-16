@@ -31,7 +31,7 @@ This Multiview stereo pipeline is intended for massive :term:`DSM` production wi
 **Contact:** cars AT cnes.fr
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 3
 
    getting_started
    install

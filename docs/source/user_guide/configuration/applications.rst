@@ -1,8 +1,10 @@
-.. _applications:
+.. _configuration_applications:
 
-==============================
-Applications for each 3D steps
-==============================
+============
+Applications
+============
+
+This key is optional and allows to redefine parameters for each application used in pipeline as described in :ref:`overview`
 
 This section describes all possible configuration of CARS applications.
 
@@ -336,18 +338,37 @@ If method is *small_components*
 | clusters_distance_threshold |             | float   |                 | None          | No       |
 +-----------------------------+-------------+---------+-----------------+---------------+----------+
 
+.. warning::
+
+    There is a particular case with the *Point Cloud outliers removing* application because it is called twice.
+    As described on :ref:`overview`, the ninth step consists of Filter the 3D points cloud via two consecutive filters.
+    So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
+    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+    those two applications with :
+
+     * *point_cloud_outliers_removing.1*
+     * *point_cloud_outliers_removing.2*
+
+    Each one is associated to a particular *point_cloud_outliers_removing* method*
+
+
 Example
 ^^^^^^^
 
 .. sourcecode:: text
 
         "applications": {
-            "point_cloud_outliers_removing": {
+            "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "on_ground_margin": 10,
                 "save_points_cloud": true
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "k": 10
             }
         },
+
 
 Point Cloud Rasterization
 *************************

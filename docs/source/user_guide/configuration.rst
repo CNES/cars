@@ -12,84 +12,24 @@ The structure follows this organisation:
 .. sourcecode:: text
 
     {
-        "pipeline": "sensor_to_full_resolution_dsm",
-        "inputs": {
-            ...
-        },
-
-        "applications": {
-            "name_application_used_in_pipeline": {
-                "parameter": value_parameter
-            }
-        }
-
-        "orchestrator": {
-            "mode": "local_dask"
-        },
-
-        "output": {
-              "out_dir"="output_directory_path"
-        }
+        "inputs": ... ,
+        "orchestrator": ... ,
+        "applications": ... ,
+        "output": ...
     }
         
 .. warning::
 
     Be careful with commas to separate each section. None needed for the last json element.
 
+.. toctree::
+   :maxdepth: 2
 
-To have a full configuration, use :ref:`sensor_to_full_resolution_dsm_pipeline` section for main pipeline configuration examples.
-
-Pipeline
-========
-
-This key is optional and defined the choice of CARS pipeline. At the moment, there are two of them:
-
-* *sensor_to_full_resolution_dsm* as default, see :ref:`sensor_to_full_resolution_dsm_pipeline` for :ref:`sensor_to_full_resolution_dsm_pipeline_full_example`.
-* *sensor_to_low_resolution_dsm*, for more advanced usage, a subpart of main pipeline to generate a low resolution DSM with sparse matches only.
+   configuration/inputs.rst
+   configuration/orchestrator.rst
+   configuration/applications.rst
+   configuration/outputs.rst
+   configuration/full_example.rst
 
 
-.. _configuration_inputs:
-
-Inputs
-======
-
-Values associated to this key are defined by pipeline so let's refer to :ref:`sensor_to_full_resolution_dsm_pipeline` for details.
-
-.. _configuration_applications:
-
-Applications
-============
-
-This key is optional and allows to redefine parameters for each application defined in each "application_name" section used by pipeline.
-
-See :ref:`applications` for details.
-
-.. note::
-   For the particular case of the application *Point Cloud outliers removing* in the :ref:`sensor_to_full_resolution_dsm_pipeline`,
-   please refer not only in :ref:`applications` but also on :ref:`full_dsm_pipeline_applications`
-
-.. _orchestrator_config:
-
-Orchestrator
-============
-
-This key is optional and allows to define orchestrator configuration that controls the distributed computations:
-
-+------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-| Name             | Description                                               | Type                                    | Default value | Required |
-+==================+===========================================================+=========================================+===============+==========+
-| *mode*           | Parallelization mode "local_dask", "pbs_dask" or "mp"     | string                                  |local_dask     | No       |
-+------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-| *nb_workers*     | Number of workers                                         | int, should be > 0                      | 2             | No       |
-+------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-| *walltime*       | Walltime for one worker                                   | string, Should be formatted as HH:MM:SS | 00:59:00      | No       |
-+------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-
-
-.. _configuration_outputs:
-
-Outputs
-^^^^^^^
-
-Values associated to this key are defined by pipeline so let's refer to :ref:`sensor_to_full_resolution_dsm_pipeline`.
 

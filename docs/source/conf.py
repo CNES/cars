@@ -100,7 +100,7 @@ html_favicon = "images/favicon_noname.ico"
 # Theme options
 html_theme_options = {
     "logo_only": True,
-    "navigation_depth": 3,
+    "navigation_depth": 4,
 }
 
 # These paths are either relative to html_static_path

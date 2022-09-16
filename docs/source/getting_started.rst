@@ -64,7 +64,7 @@ Steps by steps
     $ md5sum --status -c data_gizeh.tar.bz2.md5sum
     $ tar xvfj data_gizeh.tar.bz2
 
-* Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:
+* Launch CARS for img1+img2 and img1+img3 pairs:
 
 .. code-block:: console
 
@@ -80,7 +80,7 @@ Steps by steps
                     "one": {
                         "image": "img1.tif",
                         "geomodel": "img1.geom",
-    		    "color": "color1.tif",
+    		            "color": "color1.tif",
                         "no_data": 0
                     },
                     "two": {
@@ -129,10 +129,34 @@ Advanced Quick Start
 
 2. Follow now `CARS Advanced Quick Start script  <https://raw.githubusercontent.com/CNES/cars/master/tutorials/quick_start_advanced.sh>`_ with the same steps than previous quick start.
 
-Docker Jupyter
-==============
+The main steps are:
 
-For more docker usage with jupyter, go to :ref:`docker_guide`.
+* Download inputs and extract them
+
+.. code-block:: console
+
+    $ wget https://raw.githubusercontent.com/CNES/cars/master/tutorials/data_gizeh.tar.bz2
+    $ wget https://raw.githubusercontent.com/CNES/cars/master/tutorials/data_gizeh.tar.bz2.md5sum
+    $ md5sum --status -c data_gizeh.tar.bz2.md5sum
+    $ tar xvfj data_gizeh.tar.bz2
+
+* Launch CARS
+
+.. code-block:: console
+
+    $ cars data_gizeh/configfile.json
+
+Tutorials and notebooks
+=======================
+
+CARS provides a full python API which can be used to compute :term:`DSM` step by step and gives access to intermediate data.
+
+If you want to learn how to use it, go to the available `notebooks tutorials <https://github.com/CNES/cars/tree/master/tutorials>`_
+
+To ease the use, follow :ref:`docker_guide` guide to be able to get the tutorials easily.
 
 
 .. _`QGIS`: https://www.qgis.org/
+
+
+
