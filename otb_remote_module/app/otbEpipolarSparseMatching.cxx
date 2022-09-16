@@ -44,7 +44,7 @@ class EpipolarSparseMatching : public otb::Wrapper::Application
 {
 public:
   typedef EpipolarSparseMatching Self;
-  typedef itk::SmartPointer<Self> Pointer; 
+  typedef itk::SmartPointer<Self> Pointer;
 
   itkNewMacro(Self);
   itkTypeMacro(EpipolarSparseMatching, otb::Wrapper::Application);
@@ -213,7 +213,7 @@ private:
     return keptPoints;
   }
 
-  bool IsNotMasked(Int16ImageType::Pointer mask, Int16ImageType::ValueType maskValue) 
+  bool IsNotMasked(Int16ImageType::Pointer mask, Int16ImageType::ValueType maskValue)
   {
     Int16ImageType::ValueType maskvalue = GetParameterInt("maskvalue");
     ConstIteratorType it(mask, mask->GetLargestPossibleRegion());
@@ -225,7 +225,7 @@ private:
   }
 
   void DoExecute()
-  {  
+  {
     #pragma omp
     auto threshold = GetParameterFloat("matching");
     auto algorithm = GetParameterString("algorithm");
@@ -233,7 +233,7 @@ private:
     Int16ImageType::ValueType maskValue = GetParameterInt("maskvalue");
     auto nb_matches = 0UL;
 
-      
+
     // Update left image and mask and discard left image if fully masked
     FloatImageType::Pointer leftImage = GetParameterFloatImage("in1");
     leftImage->Update();
@@ -261,9 +261,9 @@ private:
         {
         // No valid data in mask, so skip image
         rightImage = nullptr;
-        } 
+        }
       }
-   
+
       // If both images are valid
       if (leftImage && rightImage)
         {
@@ -278,17 +278,18 @@ private:
         otbAppLogINFO(<<"Points detection: "<<clock.GetElapsedMilliseconds()<<" ms, "<<leftPoints->GetNumberOfPoints()<<" x "<<rightPoints->GetNumberOfPoints()<<" points");
 
         // If there are points to match
+	// need minimum two right points to find the second nearest neighbor
         if(leftPoints->GetNumberOfPoints() > 0
-           && rightPoints->GetNumberOfPoints() > 0)
+           && rightPoints->GetNumberOfPoints() > 1)
           {
           // Compute matching
           auto matchingFilter = MatchingFilterType::New();
           matchingFilter->SetDistanceThreshold(threshold);
           matchingFilter->SetUseBackMatching(backmatching);
-          
+
           matchingFilter->SetInput1(leftPoints);
           matchingFilter->SetInput2(rightPoints);
-          
+
           try
             {
             clock.Reset();
@@ -299,19 +300,19 @@ private:
             nb_matches = matchingFilter->GetOutput()->Size();
             otbAppLogINFO(<<"Points matching: "<<clock.GetElapsedMilliseconds()<<" ms, "<<nb_matches<<" matches");
 
-            
+
             if(nb_matches > 0)
               {
               auto outputArray = FloatImageType::New();
               FloatImageType::RegionType outputArrayRegion;
               FloatImageType::SizeType outputArraySize = {{4,nb_matches}};
               outputArrayRegion.SetSize(outputArraySize);
-              
+
               outputArray->SetRegions(outputArrayRegion);
               outputArray->Allocate();
 
               itk::ImageRegionIterator<FloatImageType> it(outputArray,outputArrayRegion);
-              
+
               for(auto mIt = matchingFilter->GetOutput()->Begin(); mIt != matchingFilter->GetOutput()->End(); ++mIt)
                   {
                   it.Set(mIt.Get()->GetPoint1()[0]);
@@ -343,7 +344,7 @@ private:
         outputArrayRegion.SetSize(outputArraySize);
         outputArray->SetRegions(outputArrayRegion);
         outputArray->Allocate();
-        outputArray->FillBuffer(0);     
+        outputArray->FillBuffer(0);
         SetParameterOutputImage("out",outputArray.GetPointer());
         }
 
