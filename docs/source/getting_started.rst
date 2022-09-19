@@ -80,7 +80,7 @@ Steps by steps
                     "one": {
                         "image": "img1.tif",
                         "geomodel": "img1.geom",
-    		            "color": "color1.tif",
+                        "color": "color1.tif",
                         "no_data": 0
                     },
                     "two": {
