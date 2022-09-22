@@ -26,7 +26,7 @@ The structure follows this organisation:
 
    .. tab:: Inputs
 
-    +-------------------------------------------------------------------------------------------+-----------------------+----------------------+----------+
+    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
     | Name                | Description                                                         | Type                  | Default value        | Required |
     +=====================+=====================================================================+=======================+======================+==========+
     | *sensor*            | Stereo sensor images                                                | See next section      | No                   | Yes      |
@@ -278,6 +278,8 @@ The structure follows this organisation:
 
         .. tab:: Dense matching
 
+            **Name**: "dense_matching"
+
             **Description**
 
             Compute disparity map from stereo-rectified pair images
@@ -324,6 +326,8 @@ The structure follows this organisation:
 
         .. tab:: Triangulation
 
+            **Name**: "triangulation"
+
             **Description**
 
             Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude point
@@ -358,6 +362,8 @@ The structure follows this organisation:
                 },
 
         .. tab:: Point Cloud fusion
+
+            **Name**: "point_cloud_fusion"
 
             **Description**
 

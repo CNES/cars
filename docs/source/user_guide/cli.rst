@@ -4,11 +4,6 @@
 Command line
 ============
 
-.. figure:: ../images/diagram_cars_overview.png
-    :width: 700px
-    :align: center
-    :alt: CARS CLI organization
-
 ``cars`` command line is the entry point for CARS to run 3D pipelines.
 
 It enables to run pipelines through :ref:`configuration`

@@ -11,7 +11,7 @@ This framework is intended for massive :term:`DSM` production with a robust, per
 
 
 .. figure:: ../images/overview_cars_userguide.png
-    :width: 1000px
+    :width: 2000px
     :align: center
 
 As shown in the figure above, the workflow is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
