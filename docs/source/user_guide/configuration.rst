@@ -115,20 +115,44 @@ The structure follows this organisation:
 
    .. tab:: Orchestrator
 
-    The chain have computing distribution capabilities and can use dask (local or distributed cluster) or multiprocessing libraries to distribute the computations.
-    The distributed cluster require centralized files storage and uses PBS scheduler only for now.
+        CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
+        The distributed cluster require centralized files storage and uses PBS scheduler.
 
-    This key is optional and allows to define orchestrator configuration that controls the distributed computations:
+        The ``orchestrator`` key is optional and allows to define orchestrator configuration that controls the distribution:
 
-    +------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-    | Name             | Description                                               | Type                                    | Default value | Required |
-    +==================+===========================================================+=========================================+===============+==========+
-    | *mode*           | Parallelization mode "local_dask", "pbs_dask" or "mp"     | string                                  |local_dask     | No       |
-    +------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-    | *nb_workers*     | Number of workers                                         | int, should be > 0                      | 2             | No       |
-    +------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-    | *walltime*       | Walltime for one worker                                   | string, Should be formatted as HH:MM:SS | 00:59:00      | No       |
-    +------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        +------------------+---------------------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | Name             | Description                                                         | Type                                    | Default value | Required |
+        +==================+=====================================================================+=========================================+===============+==========+
+        | *mode*           | Parallelization mode "local_dask", "pbs_dask", "mp" or "sequential" | string                                  |local_dask     | Yes      |
+        +------------------+---------------------------------------------------------------------+-----------------------------------------+---------------+----------+
+
+
+        Depending on the used orchestrator mode, the following parameters can be added in the configuration:
+
+        **Mode local_dask and pbs_dask:**
+
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | Name                | Description                                               | Type                                    | Default value | Required |
+        +=====================+===========================================================+=========================================+===============+==========+
+        | *nb_workers*        | Number of workers                                         | int, should be > 0                      | 2             | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | *walltime*          | Walltime for one worker                                   | string, Should be formatted as HH:MM:SS | 00:59:00      | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | *use_memory_logger* | Usage of dask memory logger                               | bool, True if use memory logger         | True          | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+
+        **Mode multiprocessing:**
+
+        +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+        | Name                | Description                                               | Type                                     | Default value | Required |
+        +=====================+===========================================================+==========================================+===============+==========+
+        | *nb_workers*        | Number of workers                                         | int, should be > 0                       | 2             | No       |
+        +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *dump_to_disk*      | Dump temporary files to disk                              | bool, True if objects are dumped on disk | True          | No       |
+        +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *per_job_timeout*   | Timeout used for a job                                    | float, int                               | 600           | No       |
+        +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+
 
    .. tab:: Applications
 
