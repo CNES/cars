@@ -14,6 +14,7 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
+- Fix dimension bug during point cloud fusion [#482]
 
 ## 0.5.1 Minor fixes post refactoring (September 2022)
 
