@@ -40,8 +40,8 @@ Open the ``dsm.tif`` DSM and ``clr.tif`` color image in `QGIS`_ software.
 | |dsm|        | |clr|       |  |dsmclr|   |
 +--------------+-------------+-------------+
 
-Steps by steps
-==============
+Step by step
+============
 
 * Check Docker install
 
@@ -153,7 +153,7 @@ CARS provides a full python API which can be used to compute :term:`DSM` step by
 
 If you want to learn how to use it, go to the available `notebooks tutorials <https://github.com/CNES/cars/tree/master/tutorials>`_
 
-To ease the use, follow :ref:`docker_guide` guide to be able to get the tutorials easily.
+Tutorials can be found within the :ref:`docker_guide`.
 
 
 .. _`QGIS`: https://www.qgis.org/

@@ -9,13 +9,13 @@ This section describes main CARS configuration structure through a `json <http:/
 
 The structure follows this organisation:
 
-.. sourcecode:: text
+.. code-block:: json
 
     {
-        "inputs": ... ,
-        "orchestrator": ... ,
-        "applications": ... ,
-        "output": ...
+        "inputs": {},
+        "orchestrator": {},
+        "applications": {},
+        "output": {}
     }
         
 .. warning::
@@ -52,15 +52,15 @@ The structure follows this organisation:
 
     For each sensor images, give a particular name (what you want):
 
-    .. sourcecode:: text
+    .. code-block:: json
 
         {
-          "my_name_for_this_image":
+            "my_name_for_this_image": 
             {
                 "image" : "path_to_image.tif",
                 "color" : "path_to_color.tif",
                 "mask" : "path_to_mask.tif",
-                "mask_classes" : {...}
+                "mask_classes" : {},
                 "nodata": 0
             }
         }
@@ -84,12 +84,13 @@ The structure follows this organisation:
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
     .. note::
+
         - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
         - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as unvalid data.
         - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
 
 
-    *CARS mask multi-classes structure*
+    **CARS mask multi-classes structure**
 
 
     Multi-classes masks have a unified CARS format enabling the use of several mask information into the API.
@@ -98,7 +99,7 @@ The structure follows this organisation:
     Dict is given in the *mask_classes* fields of sensor (see previous section).
     This dict indicate the masks's classes usage and is structured as follows :
 
-    .. sourcecode:: text
+    .. code-block:: json
 
         {
             "ignored_by_correlation": [1, 2],
@@ -137,7 +138,7 @@ The structure follows this organisation:
 
     CARS applications are defined and called by their name in applications configuration section:
 
-    .. sourcecode:: text
+    .. code-block:: json
 
       "applications":{
           "application_name": {
@@ -177,7 +178,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                 "applications": {
                     "grid_generation": {
@@ -210,7 +211,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                 "applications": {
                     "resampling": {
@@ -267,7 +268,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                 "applications": {
                     "sparse_matching": {
@@ -314,7 +315,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                 "applications": {
                     "dense_matching": {
@@ -352,7 +353,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                 "applications": {
                     "triangulation": {
@@ -388,7 +389,7 @@ The structure follows this organisation:
             **Example**
 
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                     "applications": {
                         "point_cloud_fusion": {
@@ -464,7 +465,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                     "applications": {
                         "point_cloud_outliers_removing.1": {
@@ -522,7 +523,7 @@ The structure follows this organisation:
 
             **Example**
 
-            .. sourcecode:: text
+            .. code-block:: json
 
                     "applications": {
                         "point_cloud_rasterization": {
@@ -566,7 +567,7 @@ Full example
 
 Here is a full detailed example with **orchestrator** and **applications** capabilities. See correspondent sections for details.
 
-.. sourcecode:: text
+.. code-block:: json
 
     {
       "inputs": {
