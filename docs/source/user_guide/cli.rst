@@ -1,3 +1,5 @@
+.. include:: ../common.rst
+
 .. _cli:
 
 ============
@@ -50,18 +52,24 @@ Inputs
 Images and Geometric models
 ---------------------------
 
-CARS supports the following official sensors raster products:
+Images and associated geometric models are read by the |otb|. Meaning:
 
-* Pléiades (PHR)
-* Spot 6/7
-* DigitalGlobe
+  - every raster `GDAL`_ knows how to read can be given as CARS input
+  - geommetric models can either be part of the raster image (embedded RPC) or defined within a separate file (e.g. XML DIMAP). 
 
-In fact, all rasters images for which `GDAL`_ can interpret the image geometric model through RPC coefficients may work.
-For now, however, CARS has been mainly tested on these products.
+.. note::
 
-Considering the raster images with a Dimap format (Pléiades, Spot 6/7), it is possible to directly use the XML DIMAP files. This enables to avoid a potential sub-grid division of the products, or an impeding geo-referencing of the image files (usually done for the official products), which would degrade the restitution.
+  As far as the CNES is directly concerned, CARS has mainly be tested on the following official sensors' products. Feel free to try different products and let us know of potential errors.
 
-Optionally, one can provide CARS a additional raster that shall be projected onto the final DSM grid. This can be useful to create an ortho-image.
+    - Pléiades (PHR)
+    - Sport 6/7
+    - WorldView 2/3
+
+.. note::
+
+  Whenever possible we strongly recommand the use of separate files to reference the geommetric models. Indeed, using embedded RPC will soon be obsolete.   
+
+Optionally, one can provide CARS an additional raster that shall be projected onto the final DSM grid. This can be useful to create an ortho-image.
 
 CARS also supports products Region Of Interest (ROI) created with `otbcli_ExtractROI <https://www.orfeo-toolbox.org/CookBook/Applications/app_ExtractROI.html>`_ OTB application.
 See :ref:`faq` for details.
@@ -79,7 +87,7 @@ For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to
 The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 
 Masks
-------
+-----
 
 CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
 
