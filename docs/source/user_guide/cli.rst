@@ -55,7 +55,7 @@ Images and Geometric models
 Images and associated geometric models are read by the |otb|. Meaning:
 
   - every raster `GDAL`_ knows how to read can be given as CARS input
-  - geommetric models can either be part of the raster image (embedded RPC) or defined within a separate file (e.g. XML DIMAP). 
+  - geometric models can either be part of the raster image (embedded RPC) or defined within a separate file (e.g. XML DIMAP). 
 
 .. note::
 
@@ -67,7 +67,7 @@ Images and associated geometric models are read by the |otb|. Meaning:
 
 .. note::
 
-  Whenever possible we strongly recommand the use of separate files to reference the geommetric models. Indeed, using embedded RPC will soon be obsolete.   
+  Whenever possible we strongly recommend the use of separate files to reference the geometric models. Indeed, using embedded RPC will soon be obsolete.   
 
 Optionally, one can provide CARS an additional raster that shall be projected onto the final DSM grid. This can be useful to create an ortho-image.
 

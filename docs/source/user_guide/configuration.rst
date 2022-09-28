@@ -41,7 +41,7 @@ The structure follows this organisation:
     | *default_alt*       | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
     |                     | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
     +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *roi*               | DSM roi file or bouding box                                         | string, list or tuple | None                 | No       |
+    | *roi*               | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
     +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
     | *check_inputs*      | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
     +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -86,7 +86,7 @@ The structure follows this organisation:
     .. note::
 
         - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
-        - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as unvalid data.
+        - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as invalid data.
         - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
 
 
