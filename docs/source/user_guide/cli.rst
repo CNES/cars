@@ -42,7 +42,7 @@ The ``loglevel`` option allows to parameter the loglevel. By default, the WARNIN
 
 .. note::
 
-  Use ``cars configfile.json --loglevel INFO`` to get detailed information about each CARS steps.
+  Use ``cars configfile.json --loglevel INFO`` to get detailed information about each CARS step.
 
 .. _inputs:
 
