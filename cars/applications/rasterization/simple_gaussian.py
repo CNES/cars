@@ -490,7 +490,7 @@ def rasterization_wrapper(
     :type profile: dict
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
-     :param sigma: sigma for gaussian interpolation.
+    :param sigma: sigma for gaussian interpolation.
         (If None, set to resolution)
     :param radius: Radius for hole filling.
     :param dsm_no_data: no data value to use in the final raster

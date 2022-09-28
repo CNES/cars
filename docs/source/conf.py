@@ -53,6 +53,7 @@ extensions = [
     "sphinx.ext.mathjax",  # Add rst math capabilities with :math:
     "autoapi.extension",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
+    'sphinx_tabs.tabs'
 ]
 
 # Autoapi apidoc configuration
@@ -100,7 +101,7 @@ html_favicon = "images/favicon_noname.ico"
 # Theme options
 html_theme_options = {
     "logo_only": True,
-    "navigation_depth": 3,
+    "navigation_depth": 4,
 }
 
 # These paths are either relative to html_static_path

@@ -1,17 +1,12 @@
+.. include:: ../common.rst
+
 .. _cli:
 
 ============
 Command line
 ============
 
-.. figure:: ../images/diagram_cars_overview.png
-    :width: 700px
-    :align: center
-    :alt: CARS CLI organization
-
 ``cars`` command line is the entry point for CARS to run 3D pipelines.
-
-It enables to run pipelines through :ref:`configuration`
 
 .. code-block:: console
 
@@ -30,15 +25,15 @@ It enables to run pipelines through :ref:`configuration`
                             Logger level (default: WARNING. Should be one of (DEBUG, INFO, WARNING, ERROR, CRITICAL)
       --version, -v         show program's version number and exit
 
-Mainly, CARS cli takes only one json file as command line argument:
+CARS cli takes only one ``.json`` file as command line argument:
 
 .. code-block:: console
 
     cars configfile.json
     
-See :ref:`configuration` for global configuration, :ref:`sensor_to_full_resolution_dsm_pipeline` for main pipeline configuration and :ref:`applications` sections for dedicated configuration.
+See :ref:`configuration` to learn how to write configuration file.
 
-.. _inputs:
+
 
 Loglevel parameter
 ==================
@@ -47,8 +42,9 @@ The ``loglevel`` option allows to parameter the loglevel. By default, the WARNIN
 
 .. note::
 
-	Use ``cars configfile.json --loglevel INFO`` to get many detailed information about each CARS steps.
+  Use ``cars configfile.json --loglevel INFO`` to get detailed information about each CARS step.
 
+.. _inputs:
 
 Inputs
 ======
@@ -56,47 +52,52 @@ Inputs
 Images and Geometric models
 ---------------------------
 
-CARS supports the following official sensors raster products:
+Images and associated geometric models are read by the |otb|. Meaning:
 
-* Pléiades (PHR)
-* Spot 6/7
-* DigitalGlobe
+  - every raster `GDAL`_ knows how to read can be given as CARS input
+  - geometric models can either be part of the raster image (embedded RPC) or defined within a separate file (e.g. XML DIMAP). 
 
-More generally, all rasters for which `GDAL`_ can interpret the image geometric model through RPC coefficients may work.
-For now, however, CARS has been mainly tested on Pléiades products.
+.. note::
 
-.. warning::
-  Please check input rasters and associated **geometric model** are well read with  `OTB ReadImageInfo application <https://www.orfeo-toolbox.org/CookBook/Applications/app_ReadImageInfo.html>`_
+  As far as the CNES is directly concerned, CARS has mainly be tested on the following official sensors' products. Feel free to try different products and let us know of potential errors.
 
-Considering the raster images with a Dimap format (Pléiades, Spot 6/7), it is possible to directly use the XML DIMAP files. This enables to avoid a potential sub-grid division of the products, or an impeding geo-referencing of the image files (usually done for the official products), which would degrade the restitution.
+    - Pléiades (PHR)
+    - Sport 6/7
+    - WorldView 2/3
 
-An additional image can be provided to be projected on the same grid as the one of the final DSM (ortho-image) for radiometric superposition with the :term:`DSM`.
+.. note::
 
-CARS also supports the products' extracts done with the `otbcli_ExtractROI <https://www.orfeo-toolbox.org/CookBook/Applications/app_ExtractROI.html>`_ OTB application.
+  Whenever possible we strongly recommend the use of separate files to reference the geometric models. Indeed, using embedded RPC will soon be obsolete.   
+
+Optionally, one can provide CARS an additional raster that shall be projected onto the final DSM grid. This can be useful to create an ortho-image.
+
+CARS also supports products Region Of Interest (ROI) created with `otbcli_ExtractROI <https://www.orfeo-toolbox.org/CookBook/Applications/app_ExtractROI.html>`_ OTB application.
 See :ref:`faq` for details.
 
-See :ref:`configuration_inputs`.
+For more information, see :ref:`configuration`.
 
 Initial Input Digital Elevation Model
 -------------------------------------
 
-For now, CARS uses an initial input Digital Elevation Model which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
+For now, CARS uses an initial input Digital Elevation Model (:term:`DEM`) which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
 Any geotiff file can be used.
 
-For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to the zone to process can be used through the `otbcli_DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook-7.4/Applications/app_DownloadSRTMTiles.html>`_ OTB command.
+For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to the processed zone can be used through the `otbcli_DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook-7.4/Applications/app_DownloadSRTMTiles.html>`_ OTB command.
 
-The parameter is ``initial_elevation`` as seen in :ref:`sensor_to_full_resolution_dsm_pipeline`
+The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 
 Masks
-------
+-----
 
 CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
 
-The masks can be "two-states" ones: 0 values will be considered as valid data, while any other value will be considered as unvalid data and thus will be masked during the 3D restitution process.
+The masks can be "two-states" ones: 0 values will be considered as valid data, while any other value will be considered as invalid data and thus will be masked during the 3D restitution process.
 
-The masks can also be multi-classes ones: they contain several values, one for each class (forest, water, cloud...). To use a multi-classes mask, a json file has to be indicated by the user in the configuration file. See the :ref:`sensor_to_full_resolution_dsm_pipeline` for more details.
+The masks can also be multi-classes ones: they contain several values, one for each class (forest, water, cloud...). To use a multi-classes mask, a json file has to be indicated by the user in the configuration file. See the :ref:`configuration` for more details.
 
-**Warning** : The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
+.. warning::
+
+  The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
 
 
 .. _output_data:
@@ -104,11 +105,11 @@ The masks can also be multi-classes ones: they contain several values, one for e
 Outputs
 =======
 
-In fine, CARS produces a geotiff file ``dsm.tif`` which contains the Digital Surface Model in the required cartographic projection and at the resolution defined by the user.
+CARS produces a geotiff file named ``dsm.tif`` that contains the Digital Surface Model in the required cartographic projection and the ground sampling distance defined by the user.
 
 If the user provides an additional input image, an ortho-image ``clr.tif`` is also produced. The latter is stackable to the DSM (See :ref:`getting_started`).
 
-Those two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
+These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`_ for example.
 
 .. |dsm| image:: ../images/dsm.png
   :width: 100%
@@ -123,8 +124,39 @@ Those two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
 | |dsm|        | |clr|       |  |dsmclr|   |
 +--------------+-------------+-------------+
 
-CARS generates also a lot of stats described in :ref:`sensor_to_full_resolution_dsm_pipeline`.
-
 
 .. _`GDAL`: https://gdal.org/
 
+
+Simple example
+==============
+
+A simple json file with only required configuration:
+
+.. code-block:: json
+
+    {
+      "inputs": {
+          "sensors" : {
+              "one": {
+                  "image": "img1.tif",
+                  "geomodel": "img1.geom"
+              },
+              "two": {
+                  "image": "img2.tif",
+                  "geomodel": "img2.geom"
+
+              }
+          },
+          "pairing": [["one", "two"]]
+      },
+      "output": {
+          "out_dir": "outresults"
+        }
+    }
+
+Launch CARS with configuration file
+
+.. code-block:: console
+
+   cars configfile.json

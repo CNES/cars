@@ -8,7 +8,7 @@ Install
 Dependencies
 =============
 
-CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
+Besides thirparties python packages, CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
 
 * Check OTB install:
 
@@ -28,12 +28,12 @@ See `CARS Dockerfile <https://raw.githubusercontent.com/CNES/cars/master/Dockerf
 Quick install
 =============
 
-* Clone CARS Source code (choose version)
+* Clone CARS source code (choose version)
 
 .. code-block:: console
 
     $ git clone --depth 1 https://github.com/CNES/cars.git # For latest version
-    $ git clone --depth 1 --branch LAST_TAG https://github.com/CNES/cars.git # For last stable version
+    $ git clone --depth 1 --branch LAST_TAG https://github.com/CNES/cars.git # For latest stable version
 
 * Install CARS
 
@@ -52,7 +52,7 @@ Quick install
 
 Advanced Install
 ================
-The following steps are defined in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_  ``install`` command.
+This chapter further explains the content and behavior of ``make install`` (see the `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_).
 
 Virtualenv
 ----------
@@ -67,12 +67,12 @@ First create a virtualenv and upgrade main pip packages.
 Required python packages
 ------------------------
 
-CARS python package requires some python packages to be installed before:
+CARS python package requires some python packages:
 
-* **numpy**, **cython**: They have to be installed separately otherwise some dependencies won't be correctly installed.
-* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from source to fit local GDAL version.
+* **numpy**, **cython**: They have to be installed at first, otherwise some dependencies won't be correctly installed.
+* **fiona**, **rasterio**, **pygdal**: On some systems, they have to be installed from sources to match local GDAL version.
 
-Here are the correspondent commands to install these prior dependencies:
+Here are the corresponding commands to install these requirements:
 
 .. code-block:: console
 
@@ -102,7 +102,7 @@ Then, to install CARS:
     $ cd project_root
     $ pip install .
 
-You can use [docs][dev] extra_require pip install targets for more dependencies.
+You can use ``pip install .[docs]`` and/or ``pip install .[dev]`` to install specific dependencies that are not required to run CARS.
 
 Follow :ref:`user_guide` to run and configure CARS.
 

@@ -42,6 +42,9 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
       Stereo matching or disparity estimation is the process of finding the pixels
       in the multiscopic views that correspond to the same 3D point in the scene.
 
+    OTB
+      `Orfeo Toolbox <https://www.orfeo-toolbox.org/>`_ is an open-source project for state-of-the-art remote sensing applications.
+
     pipeline
       In computing, a pipeline, also known as a data pipeline is a set of data
       processing elements connected in series, where the output of one element
@@ -55,6 +58,7 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
     ROI
       `Region of Interest`_ means a subpart of the `DSM` raster in CARS.
       It can be defined by a file or a bounding box.
+
 
 
 .. _`Digital Elevation Model`: https://en.wikipedia.org/wiki/Digital_elevation_model

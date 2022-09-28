@@ -3,12 +3,15 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
+.. include:: common.rst
+
 :Version: |version|
 
 CARS, a satellite multi view stereo pipeline
 ============================================
 
-:term:`CARS` is a dedicated and open source 3D tool to produce **Digital Surface Models** from satellite imaging by photogrammetry.
+:term:`CARS` is a dedicated and open source 3D software. It creates **Digital Surface Models** (:term:`DSM`) from pairs of satellite images using MultiView Stereo methods.
+CARS is designed for massive production and scalability |cars_isprs|. It aims to be effectively used on HPC cluster as well as personal computers and is the core of the 3D image processing chain of the CO3D |co3d| satellite mission.
 
 .. |img1| image:: images/animation_sat.gif
    :width: 100%
@@ -21,16 +24,15 @@ CARS, a satellite multi view stereo pipeline
 | |img1|             | |img2|                                      |
 +--------------------+---------------------------------------------+
 
-This Multiview stereo pipeline is intended for massive :term:`DSM` production with a robust and performant design.
-
 .. warning::
   
-    Be aware that CARS is new and evolving to maturity with CNES roadmaps and `CO3D <https://co3d.cnes.fr/en/co3d-0>`_
-    and `AI4GEO <https://www.ai4geo.eu/>`_ projects.
-
+   CARS maturity is tightly linked to CO3D image processing chain development. 
+   As so, version ``1.0.0`` of CARS would be the last upgraded version of CARS for CO3D and every version released before that shall be considered experimental.
+   
 **Contact:** cars AT cnes.fr
 
 .. toctree::
+   :caption: Content
    :maxdepth: 2
 
    getting_started
@@ -40,4 +42,12 @@ This Multiview stereo pipeline is intended for massive :term:`DSM` production wi
    docker_guide
    api_reference/index.rst
    faq
+
+
+
+.. toctree::
+   :caption: References
+   :maxdepth: 2
+
    glossary
+   references
