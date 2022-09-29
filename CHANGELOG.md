@@ -12,9 +12,18 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
+## 0.5.1 Minor fixes post refactoring (September 2022)
+
+### Changed
+
+- New User Guide version [#448]
+
+### Fixed
+
 - Fix dask upgrade bug [#436]
 - Fix temporarily local path to CARS OTB installed apps [#434]
 - Fix multiprocessing bug [#446]
+- Fix (remove) warning: tile ignored [#455]
 
 ## 0.5.0 Refacto CARS (August 2022)
 
