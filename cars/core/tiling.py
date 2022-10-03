@@ -239,7 +239,7 @@ def list_tiles(region, largest_region, tile_size, margin=1):
             # Crop to largest region
             tile = crop(tile, largest_region)
 
-            # Check if tile is emtpy
+            # Check if tile is empty
             if not empty(tile):
                 out.append({"idx": tile_idx_x, "idy": tile_idx_y, "tile": tile})
 
@@ -398,7 +398,7 @@ def terrain_region_to_epipolar(
     points_min = np.min(points_list, axis=0)
     points_max = np.max(points_list, axis=0)
 
-    # Bouding region of corresponding cell
+    # Bounding region of corresponding cell
     epipolar_region_minx = points_min[0]
     epipolar_region_miny = points_min[1]
     epipolar_region_maxx = points_max[0]
@@ -547,7 +547,7 @@ def terrain_grid_to_epipolar(
 def region_hash_string(region: Tuple):
     """
     This lambda will allow to derive a key
-    to index region in the previous dictionnary
+    to index region in the previous dictionary
 
     :param region: region to hash
     """
@@ -652,7 +652,7 @@ def get_corresponding_tiles_row_col(
             ),
         )
 
-        # Bouding region of corresponding cell
+        # Bounding region of corresponding cell
         epipolar_region_minx = tile_min[0]
         epipolar_region_miny = tile_min[1]
         epipolar_region_maxx = tile_max[0]
@@ -716,13 +716,13 @@ def get_paired_regions_as_geodict(
     terrain_regions: List, epipolar_regions: List
 ) -> Tuple[Dict, Dict]:
     """
-    Get paired regions (terrain/epipolar) as "geodictionnaries": theses
+    Get paired regions (terrain/epipolar) as "geodictionnaries": these
     objects can be dumped into geojson files to be visualized.
 
     :param terrain_regions: terrain region respecting cars tiling
     :param epipolar_regions: corresponding epipolar regions
 
-    :return: Terrain dictionnary and Epipolar dictionnary containing
+    :return: Terrain dictionary and Epipolar dictionary containing
              respectively Terrain tiles in terrain projection and Epipolar tiles
              in epipolar projection
     """

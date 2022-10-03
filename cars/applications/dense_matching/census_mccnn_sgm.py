@@ -167,7 +167,7 @@ class CensusMccnnSgm(
 
     def get_margins(self, grid_left, disp_min=None, disp_max=None):
         """
-        Get Margins needeed by matching method, to use during resampling
+        Get Margins needed by matching method, to use during resampling
 
         :param grid_left: left epipolar grid
         :param disp_min: minimum disparity
@@ -185,7 +185,7 @@ class CensusMccnnSgm(
             if user_disp_min > disp_min:
                 logging.warning(
                     (
-                        "Overriden disparity minimum "
+                        "Overridden disparity minimum "
                         "= {:.3f} pix. (= {:.3f} m.) "
                         "is greater than disparity minimum estimated "
                         "in prepare step = {:.3f} pix. (or {:.3f} m.) "
@@ -205,7 +205,7 @@ class CensusMccnnSgm(
             if user_disp_max < disp_max:
                 logging.warning(
                     (
-                        "Overriden disparity maximum "
+                        "Overridden disparity maximum "
                         "= {:.3f} pix. (or {:.3f} m.) "
                         "is lower than disparity maximum estimated "
                         "in prepare step = {:.3f} pix. (or {:.3f} m.) "
@@ -345,12 +345,12 @@ class CensusMccnnSgm(
                 "largest_epipolar_region","opt_epipolar_tile_size",
                     "epipolar_regions_grid"
 
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
@@ -554,7 +554,7 @@ def compute_disparity(
                 "Left mask seems to have several classes but no "
                 "classes usage json file has been indicated in the "
                 "configuration file. All classes will be "
-                "considered as unvalid data."
+                "considered as invalid data."
             )
 
     # Check masks' classes consistency
@@ -566,7 +566,7 @@ def compute_disparity(
                 "Right mask seems to have several classes but no "
                 "classes usage json file has been indicated in the "
                 "configuration file. All classes will be "
-                "considered as unvalid data."
+                "considered as invalid data."
             )
 
     # Compute disparity

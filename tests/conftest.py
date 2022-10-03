@@ -33,7 +33,7 @@ import pytest
 from .helpers import absolute_data_path
 
 # Local testing function pytest fixtures (mainly stereo)
-# Ease following stereo tests readibility
+# Ease following stereo tests readability
 
 
 @pytest.fixture(scope="module")

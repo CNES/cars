@@ -123,7 +123,7 @@ def get_masks_from_pandora(
     #  * Bit 8: Pixel located in an occlusion region
     #  * Bit 9: Fake match
     validity_mask_cropped = disp["validity_mask"].values
-    # Mask intialization to false (all is invalid)
+    # Mask initialization to false (all is invalid)
     msk = np.full(validity_mask_cropped.shape, False)
     # Identify valid points
     msk[
@@ -494,7 +494,7 @@ def compute_mask_to_use_in_pandora(
 
     info_dtype = np.iinfo(out_msk_dtype)
 
-    # find a value to use for unvalid pixels
+    # find a value to use for invalid pixels
     unvalid_pixels = None
     for i in range(info_dtype.max):
         if i not in (valid_pixels, nodata_pixels):
@@ -508,7 +508,7 @@ def compute_mask_to_use_in_pandora(
         fill_value=valid_pixels,
     )
 
-    # retrieve the unvalid and nodata pixels locations
+    # retrieve the invalid and nodata pixels locations
     unvalid_pixels_mask = mask_classes.create_msk_from_classes(
         dataset[msk_key].values, classes_to_ignore, out_msk_dtype=bool
     )
@@ -516,7 +516,7 @@ def compute_mask_to_use_in_pandora(
         dataset[msk_key].values, [nodata_pixels], out_msk_dtype=bool
     )
 
-    # update the mask to use in pandora with the unvalid and
+    # update the mask to use in pandora with the invalid and
     # nodata pixels values
     final_msk = np.where(unvalid_pixels_mask, unvalid_pixels, final_msk)
     final_msk = np.where(nodata_pixels_mask, nodata_pixels, final_msk)

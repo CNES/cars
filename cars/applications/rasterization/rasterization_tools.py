@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-This module is reponsible for the rasterization step:
+This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
@@ -122,10 +122,10 @@ def simple_rasterization_dataset_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
-    :param grid_points_division_factor: number of blocs to use to divide
+    :param grid_points_division_factor: number of blocks to use to divide
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set to construct
-        700000 points blocs.
+        700000 points blocks.
     :return: Rasterized cloud
     """
 
@@ -291,7 +291,7 @@ def get_flatten_neighbors(
     """
     Get the grid point neighbors of the cloud as flatten array.
 
-    This is done by slicing the grid points by blocs in
+    This is done by slicing the grid points by blocks in
     order to reduce the memory peak induced by the list
     of neighbors retrieve from the kdTree query done in the
     search_neighbors function.
@@ -303,10 +303,10 @@ def get_flatten_neighbors(
     :param resolution: Resolution of rasterized cells,
         expressed in cloud CRS units or None.
     :param worker_logger: logger
-    :param grid_points_division_factor: number of blocs to use to divide
+    :param grid_points_division_factor: number of blocks to use to divide
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set,
-        the factor is automatically set to construct 700000 points blocs.
+        the factor is automatically set to construct 700000 points blocks.
     :return: the flattened neighbors ids list, the list start index for each
         grid point and the list of neighbors count for each grid point.
     """
@@ -320,7 +320,7 @@ def get_flatten_neighbors(
         )
     )
 
-    # compute blocs indexes (memory optimization)
+    # compute blocks indexes (memory optimization)
     nb_grid_points = grid_points.shape[0]
 
     if grid_points_division_factor is None:
@@ -329,7 +329,7 @@ def get_flatten_neighbors(
             nb_grid_points / default_bloc_size
         )
         worker_logger.debug(
-            "The grid points will be divided in {} blocs".format(
+            "The grid points will be divided in {} blocks".format(
                 grid_points_division_factor
             )
         )
@@ -340,7 +340,7 @@ def get_flatten_neighbors(
         0, nb_grid_points, grid_points_division_factor + 1
     )
 
-    # compute neighbors per blocs
+    # compute neighbors per blocks
     neighbors_id = None
     n_count = None
     for i in range(grid_points_division_factor):
@@ -414,10 +414,10 @@ def compute_vector_raster_and_stats(
     :param radius: Radius for hole filling.
     :param msk_no_data: No data value to use for the rasterized mask
     :param worker_logger: Logger
-    :param grid_points_division_factor: Number of blocs to use to divide
+    :param grid_points_division_factor: Number of blocks to use to divide
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set
-        to construct 700000 points blocs.
+        to construct 700000 points blocks.
     :return: a tuple with rasterization results and statistics.
     """
     # Build a grid of cell centers coordinates
@@ -805,7 +805,7 @@ def create_raster_dataset(
     raster_out.attrs[cst.EPSG] = epsg
     raster_out.attrs[cst.RESOLUTION] = resolution
 
-    # statics layer for height output
+    # statistics layer for height output
     raster_out[cst.RASTER_HGT_MEAN] = xr.DataArray(
         mean[..., 0], coords=raster_coords, dims=raster_dims
     )
@@ -868,10 +868,10 @@ def rasterize(
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
     :param msk_no_data: no data value to use in the final mask image
-    :param grid_points_division_factor: number of blocs to use to divide
+    :param grid_points_division_factor: number of blocks to use to divide
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set to
-        construct 700000 points blocs.
+        construct 700000 points blocks.
     :return: Rasterized cloud color and statistics.
     """
     worker_logger = logging.getLogger("distributed.worker")

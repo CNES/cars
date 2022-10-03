@@ -390,7 +390,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             for job_id, _ in done_list.items():
                 del in_progress_list[job_id]
 
-            # check wait_list for dependant tasks
+            # check wait_list for dependent tasks
 
             ready_list = []
             for job_id, wait_job_id in wait_list.items():
@@ -458,7 +458,7 @@ def check_job_done(done_list, obj, current_can_run):
         if obj.task_id in done_list:
             if not done_list[obj.task_id][0]:
                 # Task ended with an error but we need the result
-                # for a dependant task
+                # for a dependent task
                 raise done_list[obj.task_id][1]
 
             if isinstance(done_list[obj.task_id][1], tuple):
@@ -563,16 +563,16 @@ class MpFuture:
             raise ValueError("mp_future not ready!")
         return self._success
 
-    def set(self, sucess, obj):
+    def set(self, success, obj):
         """
         Set results to future
 
-        :param sucess: sucess of future
-        :type sucess: bool
+        :param success: success of future
+        :type success: bool
         :param obj: result
 
         """
-        self._success = sucess
+        self._success = success
         if self._success:
             if not isinstance(obj, tuple):
                 if self.return_index > 0:

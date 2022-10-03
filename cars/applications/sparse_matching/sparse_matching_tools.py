@@ -166,12 +166,12 @@ def derive_disparity_range_from_matches(
     """
     Compute disp min and disp max from matches
 
-    :param cars_orchestrator: orchestrator : used for info writting
+    :param cars_orchestrator: orchestrator : used for info writing
     :param corrected_matches: matches
     :type corrected_matches: np.ndarray
     :param disparity_margin: disparity margin
     :type disparity_margin: float
-    :param pair_key: id of pair : only used for info writting
+    :param pair_key: id of pair : only used for info writing
     :type pair_key: int
     :param disp_to_alt_ratio: used for logging info
     :type disp_to_alt_ratio: float
@@ -188,7 +188,7 @@ def derive_disparity_range_from_matches(
 
     # Default orchestrator
     if orchestrator is None:
-        # Create defaut sequential orchestrator for current application
+        # Create default sequential orchestrator for current application
         # be awere, no out_json will be shared between orchestrators
         # No files saved
         cars_orchestrator = ocht.Orchestrator(

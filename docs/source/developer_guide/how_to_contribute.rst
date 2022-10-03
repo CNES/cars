@@ -81,7 +81,7 @@ Here is the way to install it manually:
 
 This installs the pre-commit hook in `.git/hooks/pre-commit` and `.git/hooks/pre-push`  from `.pre-commit-config.yaml <https://raw.githubusercontent.com/CNES/cars/master/.pre-commit-config.yaml>`_ file configuration.
 
-It is possible to test pre-commit before commiting:
+It is possible to test pre-commit before committing:
 
 .. code-block:: console
 
@@ -235,7 +235,7 @@ Pylint manual usage examples:
 
   $ cd CARS_HOME
   $ pylint tests cars       # Run all pylint tests
-  $ pylint --list-msgs          # Get pylint detailed errors informations
+  $ pylint --list-msgs          # Get pylint detailed errors information
 
 
 Tests

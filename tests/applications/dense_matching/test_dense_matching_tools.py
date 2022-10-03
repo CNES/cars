@@ -503,7 +503,7 @@ def test_compute_mask_to_use_in_pandora():
 @pytest.mark.unit_tests
 def test_create_inside_sec_roi_mask():
     """
-    Test create_inside_sec_roi_mask fonction
+    Test create_inside_sec_roi_mask function
     """
     # create fake dataset with margins values and image dimension
     dataset_left_margin = 1

@@ -167,7 +167,7 @@ class Statistical(
                     optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
                      "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys: "epsg"
-            - attributes contraining "bounds", "ysize", "xsize", "epsg"
+            - attributes containing "bounds", "ysize", "xsize", "epsg"
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
@@ -181,14 +181,14 @@ class Statistical(
                     optional: "clr", "msk", "data_valid", "coord_epi_geom_i",\
                      "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys: "epsg"
-            - attributes contraining "bounds", "ysize", "xsize", "epsg"
+            - attributes containing "bounds", "ysize", "xsize", "epsg"
 
         :rtype : CarsDataset filled with xr.Dataset
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(

@@ -144,5 +144,5 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_max: int
 
         :return left points cloud, right points cloud
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

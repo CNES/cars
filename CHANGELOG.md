@@ -151,7 +151,7 @@ Be careful, this version changes API and configuration ! See new documentation.
 
 ## 0.2.0 First Open Source Official Release (July 2020)
 
-- 3D functionnal pipeline : Python3 and C++ OTB modules
+- 3D functional pipeline : Python3 and C++ OTB modules
 - Python API
 - CLI command
 - Documentation basics

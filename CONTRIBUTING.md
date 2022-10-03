@@ -31,7 +31,7 @@ The Merge Request shall have a short description of the proposed changes. If it 
 Likewise, if you work on a branch (which is recommended), prefix the branch's name by `xx-` in order to link it to the xx issue.
 
 CARS Classical workflow is :
-* Check Licence and sign [Contributor Licence Agrement](#contribution-license-agreement) (Individual or Corporate)
+* Check Licence and sign [Contributor Licence Agreement](#contribution-license-agreement) (Individual or Corporate)
 * Create an issue (or begin from an existing one)
 * Create a Merge Request from the issue: a MR is created accordingly with "WIP:", "Closes xx" and associated "xx-name-issue" branch
 * CARS hacking code from a local working directory or from the forge (less possibilities) following [Developer manual](./docs/source/developer.rst)

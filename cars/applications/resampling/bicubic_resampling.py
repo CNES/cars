@@ -278,12 +278,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 "largest_epipolar_region","opt_epipolar_tile_size",\
                 "epipolar_regions_grid" \
 
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be aware, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(

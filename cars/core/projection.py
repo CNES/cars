@@ -275,7 +275,7 @@ def enu_to_aer(
     :param x_east: ENU East coordinate (meters)
     :param y_north: ENU North coordinate (meters)
     :param z_up: ENU Up coordinate (meters)
-    :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
+    :return: Azimuth, Elevation Angle, Slant Range (degrees, degrees, meters)
     """
 
     xy_range = np.hypot(x_east, y_north)  # Distance of e, n vector
@@ -308,7 +308,7 @@ def geo_to_aer(
     :param lat0: Reference geodetic latitude
     :param lon0: Reference geodetic longitude
     :param alt0: Reference altitude above geodetic ellipsoid (meters)
-    :return: Azimuth, Elevation Angle, Slant Range (degrees, degres, meters)
+    :return: Azimuth, Elevation Angle, Slant Range (degrees, degrees, meters)
     """
     x_east, y_north, z_up = geo_to_enu(lat, lon, alt, lat0, lon0, alt0)
     return enu_to_aer(x_east, y_north, z_up)
@@ -322,7 +322,7 @@ def points_cloud_conversion(
 
     :param cloud_in: cloud to project
     :param epsg_in: EPSG code of the input SRS
-    :param epsg_out: EPSG code of the ouptut SRS
+    :param epsg_out: EPSG code of the output SRS
     :return: Projected point cloud
     """
     srs_in = osr.SpatialReference()
@@ -421,7 +421,7 @@ def points_cloud_conversion_dataframe(
 
     :param cloud: cloud to project
     :param epsg_in: EPSG code of the input SRS
-    :param epsg_out: EPSG code of the ouptut SRS
+    :param epsg_out: EPSG code of the output SRS
     """
     xyz_in = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
 

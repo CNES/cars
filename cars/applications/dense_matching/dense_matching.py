@@ -100,7 +100,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def get_margins(self, grid_left, disp_min=None, disp_max=None):
         """
-        Get Margins needeed by matching method, to use during resampling
+        Get Margins needed by matching method, to use during resampling
 
         :param grid_left: left epipolar grid
         :param disp_min: minimum disparity
@@ -159,5 +159,5 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_max: int
 
         :return: left disparity map, right disparity map
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

@@ -608,7 +608,7 @@ def save_single_tile_array(dataset: xr.Dataset, tile_path_name: str):
         attributes[PROFILE] = rio_profile_to_dict_profile(attributes[PROFILE])
 
     # dump
-    # separate attibutes
+    # separate attributes
     dataset.attrs, custom_attributes = separate_dicts(
         attributes, [PROFILE, WINDOW, OVERLAPS, SAVING_INFO, ATTRIBUTES]
     )
@@ -646,7 +646,7 @@ def save_single_tile_points(dataframe, tile_path_name: str):
     # Format transformation
 
     # dump
-    # separate attibutes
+    # separate attributes
     dataframe.attrs, custom_attributes = separate_dicts(
         attributes, [SAVING_INFO, ATTRIBUTES]
     )
@@ -670,7 +670,7 @@ def fill_dataset(
 ):
     """
     From a full xarray dataset, fill info properly.
-    User can fill with saving informations (containing CarsDataset id),
+    User can fill with saving information (containing CarsDataset id),
     window of current tile and its overlaps,
     rasterio profile of full data, and attributes associated to data
 
@@ -706,7 +706,7 @@ def fill_dataset(
 def fill_dataframe(dataframe, saving_info=None, attributes=None):
     """
     From a full pandas dataframe, fill info properly.
-    User can fill with saving informations (containing CarsDataset id),
+    User can fill with saving information (containing CarsDataset id),
     and attributes associated to data
 
 
@@ -949,7 +949,7 @@ def window_array_to_dict(window, overlap=None):
     inputs are :
 
       - window : [row_min, row_max, col_min, col_max], with pixel format
-      - overlap (optionnal): [o_row_min, o_row_max, o_col_min, o_col_max]
+      - overlap (optional): [o_row_min, o_row_max, o_col_min, o_col_max]
 
     outputs are :
       {
@@ -1061,12 +1061,12 @@ def rio_profile_to_dict_profile(in_profile: Dict) -> Dict:
     return profile
 
 
-def save_dict(dictionnary, file_path: str, safe_save=False):
+def save_dict(dictionary, file_path: str, safe_save=False):
     """
     Save dict to json file
 
-    :param dictionnary: dictionnary to save
-    :type dictionnary: Dict
+    :param dictionary: dictionary to save
+    :type dictionary: Dict
     :param file_path: file path to use
     :type file_path: str
     :param safe_save: if True, be robust to types
@@ -1094,10 +1094,10 @@ def save_dict(dictionnary, file_path: str, safe_save=False):
 
     if safe_save:
         with open(file_path, "w", encoding="utf8") as fstream:
-            json.dump(dictionnary, fstream, indent=2, cls=CustomEncoder)
+            json.dump(dictionary, fstream, indent=2, cls=CustomEncoder)
     else:
         with open(file_path, "w", encoding="utf8") as fstream:
-            json.dump(dictionnary, fstream, indent=2)
+            json.dump(dictionary, fstream, indent=2)
 
 
 def load_dict(file_path: str) -> Dict:
@@ -1110,12 +1110,12 @@ def load_dict(file_path: str) -> Dict:
     """
 
     with open(file_path, "r", encoding="utf8") as fstream:
-        dictionnary = json.load(fstream)
+        dictionary = json.load(fstream)
 
-    return dictionnary
+    return dictionary
 
 
-def separate_dicts(dictionnary, list_tags):
+def separate_dicts(dictionary, list_tags):
     """
     Separate a dict into two, the second one containing the given tags.
 
@@ -1128,11 +1128,11 @@ def separate_dicts(dictionnary, list_tags):
     dict1 = {}
     dict2 = {}
 
-    for key in dictionnary:
+    for key in dictionary:
         if key in list_tags:
-            dict2[key] = dictionnary[key]
+            dict2[key] = dictionary[key]
         else:
-            dict1[key] = dictionnary[key]
+            dict1[key] = dictionary[key]
 
     return dict1, dict2
 

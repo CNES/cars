@@ -160,5 +160,5 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type mask2_ignored_by_sift: list
 
         :return left matches, right matches
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

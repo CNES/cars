@@ -129,10 +129,10 @@ def test_tasks_pipeline(conf):
         )
 
         # Create tasks
-        datas = ["bon", "jour"]
+        data = ["bon", "jour"]
 
         final_delayed = []
-        for dat in datas:
+        for dat in data:
             delayed_1a, delayed_1b = cluster.create_task(step1, nout=2)(dat)
             delayed_2 = cluster.create_task(step2, nout=1)(
                 delayed_1a, delayed_1b
@@ -150,7 +150,7 @@ def test_tasks_pipeline(conf):
         # Test
 
         expected_res = [
-            data + "_step1a_" + data + "_step1b" + "_step3" for data in datas
+            data + "_step1a_" + data + "_step1b" + "_step3" for data in data
         ]
 
         for expected in expected_res:
@@ -229,10 +229,10 @@ def test_tasks_pipeline_dump_xarray(conf):
         )
 
         # Create tasks
-        datas = [101]
+        data = [101]
 
         final_delayed = []
-        for dat in datas:
+        for dat in data:
             delayed_1a, delayed_1b = cluster.create_task(step1_array, nout=2)(
                 dat
             )
@@ -250,7 +250,7 @@ def test_tasks_pipeline_dump_xarray(conf):
 
         # Test
         expected = xr.Dataset(
-            data_vars={"im": (("row", "col"), datas[0] * np.ones((3, 4)))},
+            data_vars={"im": (("row", "col"), data[0] * np.ones((3, 4)))},
             coords={
                 "row": [0, 1, 2],
                 "col": [0, 1, 2, 3],

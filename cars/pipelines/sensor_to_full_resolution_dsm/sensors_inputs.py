@@ -276,7 +276,7 @@ def check_roi(roi):
 
         # TODO check roi, and if epsg is valid
         if len(roi_bbox) != 4:
-            raise Exception("Roid bounding box does't have the right format")
+            raise Exception("Roid bounding box doesn't have the right format")
         if roi_epsg is not None:
             try:
                 _ = fiona.crs.from_epsg(4326)

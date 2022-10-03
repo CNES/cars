@@ -126,5 +126,5 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         :type add_color: bool
 
         :return: left epipolar image, right epipolar image
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

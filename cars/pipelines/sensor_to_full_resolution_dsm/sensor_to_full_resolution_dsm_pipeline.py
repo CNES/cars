@@ -511,7 +511,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
 
             # Get on_ground_margin, before point clouds merging,
             # from app using small_components method.
-            # We don't now wich pc_outlier_removing_x_app
+            # We don't now which pc_outlier_removing_x_app
             # refers to small_components so let's check.
 
             if (
