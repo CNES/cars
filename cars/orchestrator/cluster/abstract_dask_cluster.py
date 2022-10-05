@@ -328,7 +328,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         total_rasters_in_memory = 0
         total_rasters_nbytes = 0
 
-        # Measure ellapsed time for the state change
+        # Measure elapsed time for the state change
         elapsed_time = time.time() - self.start_time
 
         # Walk the worker known memory

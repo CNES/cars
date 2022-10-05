@@ -161,7 +161,7 @@ def test_save_tif_and_constructor():
     Tests Arrays init from tif, and save functions
     """
 
-    # read imput
+    # read input
     in_file = absolute_data_path("../data/input/phr_paca/left_image.tif")
 
     # create object
@@ -185,7 +185,7 @@ def test_save_to_disk_and_load():
     Test save_to_disk and load from path functions.
     """
 
-    # read imput
+    # read input
     in_file = absolute_data_path("../data/input/phr_paca/left_image.tif")
 
     # create object

@@ -126,7 +126,7 @@ def ref_disp(ref_row, ref_col):  # pylint: disable=redefined-outer-name
     np_ref_disp_msk = np.full(
         (ref_row, ref_col), fill_value=255, dtype=np.uint16
     )
-    np_ref_disp_msk[2, :] = 0  # last column set to unvalid data
+    np_ref_disp_msk[2, :] = 0  # last column set to invalid data
 
     disp_ds = xr.Dataset(
         {
@@ -151,7 +151,7 @@ def sec_disp(sec_row, sec_col):  # pylint: disable=redefined-outer-name
     np_sec_disp_msk = np.full(
         (sec_row, sec_col), fill_value=255, dtype=np.uint16
     )
-    np_sec_disp_msk[3, :] = 0  # last line set to unvalid data
+    np_sec_disp_msk[3, :] = 0  # last line set to invalid data
 
     disp_ds = xr.Dataset(
         {

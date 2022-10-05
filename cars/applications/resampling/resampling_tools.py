@@ -192,7 +192,7 @@ def resample_image(
     :type grid: string
     :param largest_size: Size of full output image
     :type largest_size: list of two int
-    :param region: A subset of the ouptut image to produce
+    :param region: A subset of the output image to produce
     :type region: None (full output is produced) or array of four floats
                   [xmin,ymin,xmax,ymax]
     :param nodata: Nodata value to use (both for input and output)

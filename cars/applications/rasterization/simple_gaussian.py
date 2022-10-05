@@ -192,7 +192,7 @@ class SimpleGaussian(
                      "coord_epi_geom_j","idx_im_epi"
                 - attrs with keys "epsg", "ysize", "xsize", "xstart", "ystart"
 
-             - attributes contraining "bounds", "ysize", "xsize", "epsg"
+             - attributes containing "bounds", "ysize", "xsize", "epsg"
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
@@ -211,14 +211,14 @@ class SimpleGaussian(
                 - data : with keys : "hgt", "img", "raster_msk",optional : \
                   "n_pts", "pts_in_cell", "hgt_mean", "hgt_stdev"
                 - attrs with keys: "epsg"
-            - attributes contraining: None
+            - attributes containing: None
 
         :rtype : CarsDataset filled with xr.Dataset
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
@@ -488,7 +488,7 @@ def rasterization_wrapper(
     :type window: int
     :param  profile: rasterio profile
     :type profile: dict
-    :param saving_info: informations about CarsDataset ID.
+    :param saving_info: information about CarsDataset ID.
     :type saving_info: dict
     :param sigma: sigma for gaussian interpolation.
         (If None, set to resolution)
@@ -496,10 +496,10 @@ def rasterization_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
-    :param grid_points_division_factor: number of blocs to use to divide
+    :param grid_points_division_factor: number of blocks to use to divide
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set to construct
-        700000 points blocs.
+        700000 points blocks.
 
     :return: digital surface model + projected colors
     :rtype: xr.Dataset

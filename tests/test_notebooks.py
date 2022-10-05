@@ -76,7 +76,7 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
             shell=True,
             check=True,
         )
-        # Desactivate matplotlib show data
+        # Deactivate matplotlib show data
         for line in fileinput.input(
             "{}/sensor_to_full_resolution_dsm_step_by_step.py".format(
                 directory
@@ -144,7 +144,7 @@ def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
             shell=True,
             check=True,
         )
-        # Desactivate matplotlib show data
+        # Deactivate matplotlib show data
         for line in fileinput.input(
             "{}/sensor_to_full_resolution"
             "_dsm_matching_methods_comparison.py".format(directory),
@@ -208,7 +208,7 @@ def test_main_tutorial():
             shell=True,
             check=True,
         )
-        # Desactivate matplotlib show data
+        # Deactivate matplotlib show data
         for line in fileinput.input(
             "{}/main_tutorial.py".format(directory),
             inplace=True,

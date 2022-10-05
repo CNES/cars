@@ -112,7 +112,7 @@ def generate_input_json(
     if "applications" not in config:
         config["applications"] = {}
 
-    # transform pathes
+    # transform paths
     new_config = config.copy()
     new_config["inputs"] = sensors_inputs.sensors_check_inputs(
         new_config["inputs"], config_json_dir=json_dir_path

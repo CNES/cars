@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Contains function for format transformation between region ans windows:
+Contains function for format transformation between region and windows:
 """
 
 # Third party imports
@@ -160,7 +160,7 @@ def region_margins_from_window(
 
 
     :return: Region, Margin
-    :rtype: Tupple(List, List)
+    :rtype: Tuple(List, List)
 
     """
 

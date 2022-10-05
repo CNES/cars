@@ -131,7 +131,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             :type mask2_set_to_ref_alt: list
 
             :return left disparity map, right disparity map
-            :rtype: Tupple(CarsDataset, CarsDataset)
+            :rtype: Tuple(CarsDataset, CarsDataset)
             """
 
 

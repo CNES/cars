@@ -22,7 +22,7 @@
 """
 This module contains class application template for
 templating the application concept. Useless for the moment
-but will be usefull for shared functions in all applications
+but will be useful for shared functions in all applications
 """
 
 import logging

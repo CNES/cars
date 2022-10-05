@@ -219,7 +219,7 @@ def disk_wrapper_fun(*argv, **kwargs):
     :return: path to results
     """
 
-    # Get function to wrapp and id_list
+    # Get function to wrap and id_list
     id_list = kwargs["id_list"]
     func = kwargs["fun"]
     tmp_dir = kwargs["tmp_dir"]

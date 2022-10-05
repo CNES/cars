@@ -43,7 +43,7 @@
         
         % 1. Compute stereo-rectification grids for the input pair
         \node [block, fill=blue!50!white] (grid) {Compute epipolar grids};
-        \node [data, above of=grid] (inpu) {Input pair + parameters};
+        \node [data, above of=grid] (input) {Input pair + parameters};
         
         \node [below of=grid] (vir0){}; % virtual node for grid output
         \node [data, left of=vir0] (left) {Left \\ epipolar grid};
@@ -56,21 +56,21 @@
         \node [block, below of=sift, fill=blue!50!white] (corr) {Correct right epipolar grid from SIFT};
         
         \node [below of=left] (vir1){}; % virtual node for sift output
-        \node [data, below of=vir1] (righ) {Corrected right epipolar grid};
+        \node [data, below of=vir1] (right) {Corrected right epipolar grid};
 
         % 5. Derive disp range from sift
         \node [block, below of=corr, fill=blue!50!white] (rang) {Derive disp range from SIFT};
         \node [data, below of=rang] (disp) {Disparity range};
         
         % Draw edges
-        \path [line] (inpu) -- (grid);
+        \path [line] (input) -- (grid);
         \path [line] (grid) -| (left);
         \path [line] (grid) -| (sift);
         \path [line] (sift) -- (corr);
-        \path [line] (corr) -| (righ);
+        \path [line] (corr) -| (right);
         \path [line] (corr) -- (rang);
         \path [line] (rang) -- (disp);
-        \background{left}{inpu}{disp}{disp}{Pair Preparation Part}[]
+        \background{left}{input}{disp}{disp}{Pair Preparation Part}[]
         
       \end{tikzpicture}
     }
@@ -86,7 +86,7 @@
         \node [block, fill=green!50!white] (resa) {Resample images \\(including masks)};
         
         \node [above of=resa] (vir0) {}; % virtual node for input
-        \node [data, left of=vir0] (inpu) {Input pairs + parameters};
+        \node [data, left of=vir0] (input) {Input pairs + parameters};
         \node [data, right of=vir0] (prep) {Epipolar grids + disp range};
         
         % 2. Disparity map estimation using Pandora (SGM)
@@ -100,14 +100,14 @@
         \node [data, below of=rast] (dsmo) {Digital Surface Model as a raster};
     
         % Draw edges
-        \path [line] (inpu) |- (resa);
+        \path [line] (input) |- (resa);
         \path [line] (prep) |- (resa);
         \path [line] (resa) -- (disp);
         \path [line] (disp) -- (tria);
         \path [line] (tria) -- (rast);
         \path [line] (rast) -- (dsmo);
         
-        \background{inpu}{inpu}{prep}{dsmo}{DSM Computation Part}[]
+        \background{input}{input}{prep}{dsmo}{DSM Computation Part}[]
         
       \end{tikzpicture}
     }

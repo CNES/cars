@@ -137,7 +137,7 @@ def compute_terrain_bbox(  # noqa: 751
 
     # Default orchestrator
     if orchestrator is None:
-        # Create defaut sequential orchestrator for current application
+        # Create default sequential orchestrator for current application
         # be awere, no out_json will be shared between orchestrators
         # No files saved
         orchestrator = ocht.Orchestrator(
@@ -325,7 +325,7 @@ def compute_roi_poly(input_roi, epsg):
     :type epsg: str
 
     :return: polygon of roi with right epsg
-    :rtype: Polgon
+    :rtype: Polygon
 
     """
 
@@ -419,7 +419,7 @@ def compute_epsg(
     if pair_folder is None:
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             orchestrator = ocht.Orchestrator(

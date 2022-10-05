@@ -125,7 +125,7 @@ class PandoraLoader:
 
         """
 
-        # Import plugins before checking confifuration
+        # Import plugins before checking configuration
         pandora.import_plugin()
         # Check configuration and update the configuration with default values
         # Instantiate pandora state machine

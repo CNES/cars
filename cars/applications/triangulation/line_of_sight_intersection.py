@@ -88,9 +88,9 @@ class LineOfSightIntersection(
             self.geometry_loader
         )
 
-        #  global value fo left image to check if snap_to_img1 can
-        # be applied
-        # Need than same application object is runed for all pairs
+        # global value for left image to check if snap_to_img1 can
+        # be applied : Need than same application object is run
+        # for all pairs
         self.ref_left_img = None
 
         # Init orchestrator
@@ -224,7 +224,7 @@ class LineOfSightIntersection(
                     Each tile will be a future pandas DataFrame containing:
 
                     - data : (L, 4) shape matches
-                - attributes contraining:"disp_lower_bound","disp_upper_bound",\
+                - attributes containing:"disp_lower_bound","disp_upper_bound",\
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
         :type epipolar_disparity_map_left: CarsDataset
@@ -255,15 +255,15 @@ class LineOfSightIntersection(
                 - data : with keys : "x", "y", "z", "corr_msk"\
                     optional: "color", "msk",
                 - attrs with keys: "margins", "epi_full_size", "epsg"
-            - attributes contraining: "disp_lower_bound",  "disp_upper_bound", \
+            - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
@@ -288,7 +288,7 @@ class LineOfSightIntersection(
                     "snap_to_left_image mode is used but inputs "
                     " have different images as their "
                     "left image in pair. This may result in "
-                    "increasing registration discrepencies between pairs"
+                    "increasing registration discrepancies between pairs"
                 )
 
         # Add log about geoid

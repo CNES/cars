@@ -53,7 +53,7 @@ class StreamCapture:
         self.triggered = False
 
     def __getattr__(self, attr_name):
-        """Redefine assignement"""
+        """Redefine assignment"""
         return getattr(self.stream, attr_name)
 
     def write(self, data):
@@ -156,7 +156,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # main(s) for each command
         if args.conf is not None:
 
-            # Tranform conf file to dict
+            # Transform conf file to dict
             with open(args.conf, "r", encoding="utf8") as fstream:
                 config = json.load(fstream)
 

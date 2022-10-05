@@ -377,7 +377,7 @@ def test_simple_rasterization_multiple_datasets():
 @pytest.fixture(scope="module")
 def mask_interp_inputs():  # pylint: disable=redefined-outer-name
     """
-    pytest fixture local function to ease rasterization tests readibility:
+    pytest fixture local function to ease rasterization tests readability:
     Returns a mask interpolated cloud.
     """
     row = 4

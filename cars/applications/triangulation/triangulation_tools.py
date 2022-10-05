@@ -67,7 +67,7 @@ def triangulate(
     :returns: point_cloud as a dictionary of dataset containing:
 
         - Array with shape (roi_size_x,roi_size_y,3), with last dimension \
-          corresponding to longitude, lattitude and elevation
+          corresponding to longitude, latitude and elevation
         - Array with shape (roi_size_x,roi_size_y) with output mask
         - Array for color (optional): only if color1 is not None
 
@@ -163,7 +163,7 @@ def triangulate_matches(
     :returns: point_cloud as a dataset containing:
 
         - Array with shape (nb_matches,1,3), with last dimension \
-        corresponding to longitude, lattitude and elevation
+        corresponding to longitude, latitude and elevation
         - Array with shape (nb_matches,1) with output mask
 
     :rtype: xarray.Dataset

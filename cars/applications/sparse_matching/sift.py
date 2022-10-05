@@ -340,15 +340,15 @@ class Sift(SparseMatching, short_name="sift"):
             - N x M Delayed tiles \
                 Each tile will be a future pandas DataFrame containing:
                 - data : (L, 4) shape matches
-            - attributes contraining "disp_lower_bound",  "disp_upper_bound",\
+            - attributes containing "disp_lower_bound",  "disp_upper_bound",\
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(
@@ -538,7 +538,7 @@ class Sift(SparseMatching, short_name="sift"):
                 Each tile will be a future pandas DataFrame containing:
 
                 - data : (L, 4) shape matches
-            - attributes contraining "disp_lower_bound",  "disp_upper_bound", \
+            - attributes containing "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type epipolar_matches_left: CarsDataset
         :param save_matches: true is matches needs to be saved
@@ -551,7 +551,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             cars_orchestrator = ocht.Orchestrator(

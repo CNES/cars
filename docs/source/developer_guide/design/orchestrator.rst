@@ -24,7 +24,7 @@ It is mainly composed of:
 
 * a *cluster*
 * a *CarsDatasetRegistry*
-* dictionnary for output json file containing information given by applications
+* dictionary for output json file containing information given by applications
 
 .. _cluster:
 
@@ -95,7 +95,7 @@ It is mainly composed of:
 
 There is some functions that allows to:
 
-* Add new *CarsDataset* to registery
+* Add new *CarsDataset* to registry
 * Obtain an ID for a CarsDataset
 * Find a *CarsDataset* from an ID
 * Manage saving tile by tile (i.e future by future, related to `dask` terms), by using the `SingleCarsDatasetSaver` that wraps `CarsDataset` save functions.

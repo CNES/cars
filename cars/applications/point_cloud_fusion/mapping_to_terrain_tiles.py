@@ -198,7 +198,7 @@ class MappingToTerrainTiles(
                 - data : with keys : "x", "y", "z", "corr_msk" \
                     optional: "color", "msk",
                 - attrs with keys: "margins", "epi_full_size", "epsg"
-            - attributes contraining: "disp_lower_bound",  "disp_upper_bound" \
+            - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type list_epipolar_points_cloud_left: list(CarsDataset) filled with
           xr.Dataset
@@ -211,7 +211,7 @@ class MappingToTerrainTiles(
                 - data : with keys : "x", "y", "z", "corr_msk" \
                     optional: "color", "msk",
                 - attrs with keys: "margins", "epi_full_size", "epsg"
-            - attributes contraining: "disp_lower_bound",  "disp_upper_bound",\
+            - attributes containing: "disp_lower_bound",  "disp_upper_bound",\
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type list_epipolar_points_cloud_right: list(CarsDataset) filled with
           xr.Dataset
@@ -240,7 +240,7 @@ class MappingToTerrainTiles(
                     optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
                      "coord_epi_geom_j","idx_im_epi"
                 - attrs with keys: "epsg"
-            - attributes contraining: "bounds", "ysize", "xsize", "epsg"
+            - attributes containing: "bounds", "ysize", "xsize", "epsg"
 
         :rtype: CarsDataset filled with pandas.DataFrame
 
@@ -248,7 +248,7 @@ class MappingToTerrainTiles(
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(

@@ -5,7 +5,7 @@ Copyright (c) 2022 Centre National d'Etudes Spatiales (CNES).
 CARS is licensed under permissive Apache 2 license (See LICENSE file).
 The copyright is kept CNES only for long term maintenance ease.
 
-See CONTRIBUTING.md for more details on Contributor License Agrement.
+See CONTRIBUTING.md for more details on Contributor License Agreement.
 
 This file keeps track of authors contributions.
 

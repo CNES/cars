@@ -117,5 +117,5 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         :type pair_key: str
 
         :return: left grid, right grid
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

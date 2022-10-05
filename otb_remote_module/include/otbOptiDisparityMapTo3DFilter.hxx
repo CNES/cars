@@ -330,7 +330,7 @@ DisparityMapTo3DFilter<TDisparityImage,TOutputImage,TEpipolarGridImage,TMaskImag
 
     // compute right los
 
-    // Apply dispartiy to index, and optionnaly vertical shift
+    // Apply disparity to index, and optionally vertical shift
     itk::ContinuousIndex<double,2> rightIndexEstimate;
     rightIndexEstimate[0] = static_cast<double>((horizIt.GetIndex())[0]) + static_cast<double>(horizIt.Get());
     

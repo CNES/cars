@@ -162,12 +162,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 "epipolar_origin_y","epipolar_spacing_x", \
                 "epipolar_spacing", "disp_to_alt_ratio",
 
-        :rtype: Tupple(CarsDataset, CarsDataset)
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """
 
         # Default orchestrator
         if orchestrator is None:
-            # Create defaut sequential orchestrator for current application
+            # Create default sequential orchestrator for current application
             # be awere, no out_json will be shared between orchestrators
             # No files saved
             self.orchestrator = ocht.Orchestrator(

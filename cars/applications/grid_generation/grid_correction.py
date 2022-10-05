@@ -299,7 +299,7 @@ def estimate_right_grid_correction(matches, grid_right, initial_cars_ds=None):
         sensor_matches_perfect_y - sensor_matches_corrected_y
     )
 
-    # Ouptut corrected epipolar error stats for monitoring
+    # Output corrected epipolar error stats for monitoring
     mean_corrected_epipolar_error = [
         np.mean(corrected_epipolar_error_x),
         np.mean(corrected_epipolar_error_y),

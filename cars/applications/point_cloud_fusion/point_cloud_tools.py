@@ -167,7 +167,7 @@ def create_combined_cloud(  # noqa: C901
             ]
         )
 
-    # iterate trough input clouds
+    # iterate through input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
     nb_points = 0
     for cloud_list_idx, cloud_list_item in enumerate(cloud_list):
