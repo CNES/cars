@@ -37,17 +37,19 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
     SequentialCluster
     """
 
-    def __init__(  # pylint: disable=W0613
-        self, conf_cluster, out_dir, launch_worker=True
-    ):
+    def __init__(self, conf_cluster, out_dir, launch_worker=True):
         """
         Init function of SequentialCluster
 
         :param conf_cluster: configuration for cluster
 
         """
-
-        self.check_conf(conf_cluster)
+        checked_conf_cluster = self.check_conf(conf_cluster)
+        # retrieve parameters
+        self.profiling = checked_conf_cluster["profiling"]
+        self.loop_testing = checked_conf_cluster["loop_testing"]
+        self.out_dir = out_dir
+        self.launch_worker = launch_worker
 
     def check_conf(self, conf):
         """
@@ -70,8 +72,9 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "sequential")
-
-        cluster_schema = {"mode": str}
+        overloaded_conf["profiling"] = conf.get("profiling", "disable")
+        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
+        cluster_schema = {"mode": str, "profiling": str, "loop_testing": bool}
 
         # Check conf
         checker = Checker(cluster_schema)
@@ -85,7 +88,7 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         """
 
-    def create_task(self, func, nout=1):
+    def create_task_wrapped(self, func, nout=2):
         """
         Create task
 

@@ -370,6 +370,11 @@ class MappingToTerrainTiles(
             orchestrator.update_out_info(updating_dict)
 
             # Generate merged point clouds
+            logging.info(
+                "Point clouds: Merged points number: {}".format(
+                    merged_point_cloud.shape[1] * merged_point_cloud.shape[0]
+                )
+            )
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):

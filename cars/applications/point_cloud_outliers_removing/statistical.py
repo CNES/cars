@@ -243,6 +243,12 @@ class Statistical(
                 }
             }
             orchestrator.update_out_info(updating_dict)
+            logging.info(
+                "Cloud filtering: Filtered points number: {}".format(
+                    filtered_point_cloud.shape[1]
+                    * filtered_point_cloud.shape[0]
+                )
+            )
 
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):

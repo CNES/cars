@@ -23,8 +23,14 @@ Contains abstract function for Abstract Cluster
 """
 
 import logging
+import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
+
+from cars.core.utils import safe_makedirs
+
+# CARS imports
+from cars.orchestrator.cluster import log_wrapper
 
 
 class AbstractCluster(metaclass=ABCMeta):
@@ -43,6 +49,8 @@ class AbstractCluster(metaclass=ABCMeta):
          - KeyError when the required cluster is not registered
 
         :param conf_cluster: configuration for cluster
+        :param out_dir: output directory for results
+        :param launch_worker: launcher of the new worker
         :return: a cltser object
         """
 
@@ -59,6 +67,18 @@ class AbstractCluster(metaclass=ABCMeta):
         logging.info(
             "The AbstractCluster {}  will be used".format(cluster_mode)
         )
+        if (
+            "profiling" in conf_cluster
+            and conf_cluster["profiling"] == "memray"
+        ):
+            profiling_memory_dir = os.path.join(out_dir, "profiling", "memray")
+            if os.path.exists(profiling_memory_dir):
+                files = os.listdir(profiling_memory_dir)
+                for file in files:
+                    filename = os.path.join(profiling_memory_dir, file)
+                    if os.path.exists(filename):
+                        os.remove(filename)
+            safe_makedirs(profiling_memory_dir)
 
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]
@@ -89,8 +109,48 @@ class AbstractCluster(metaclass=ABCMeta):
         Cleanup cluster
         """
 
-    @abstractmethod
     def create_task(self, func, nout=1):
+        """
+        Create task
+
+        :param func: function
+        :param nout: number of outputs
+        """
+
+        def create_task_builder(*argv, **kwargs):
+            """
+            Create task builder to select the type of log
+            according to the configured profiling mode
+
+            :param argv: list of input arguments
+            :param kwargs: list of named input arguments
+            """
+            if self.profiling == "time":
+                (wrapper_func, additionnal_kwargs) = log_wrapper.LogWrapper(
+                    func, self.loop_testing
+                ).func_args_plus()
+            elif self.profiling == "cprofile":
+                (
+                    wrapper_func,
+                    additionnal_kwargs,
+                ) = log_wrapper.CProfileWrapper(func).func_args_plus()
+            elif self.profiling == "memray":
+                (wrapper_func, additionnal_kwargs) = log_wrapper.MemrayWrapper(
+                    func, self.loop_testing, self.out_dir
+                ).func_args_plus()
+            else:
+                return self.create_task_wrapped(func, nout=nout)(
+                    *argv, **kwargs
+                )
+
+            return self.create_task_wrapped(wrapper_func, nout=nout)(
+                *argv, **kwargs, **additionnal_kwargs
+            )
+
+        return create_task_builder
+
+    @abstractmethod
+    def create_task_wrapped(self, func, nout=1):
         """
         Create task
 
