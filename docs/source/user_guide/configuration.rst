@@ -125,6 +125,8 @@ The structure follows this organisation:
         +==================+=====================================================================+=========================================+===============+==========+
         | *mode*           | Parallelization mode "local_dask", "pbs_dask", "mp" or "sequential" | string                                  |local_dask     | Yes      |
         +------------------+---------------------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | *profiling*      | Configuration for CARS profiling mode                               | dict                                    |               | No       |
+        +------------------+---------------------------------------------------------------------+-----------------------------------------+---------------+----------+
 
 
         Depending on the used orchestrator mode, the following parameters can be added in the configuration:
@@ -154,6 +156,32 @@ The structure follows this organisation:
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
         | *factorize_delayed* | Factorize delayed tasks                                   | bool                                     | True          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+
+        **Profiling configuration:**
+
+        The profiling mode is used to analyze time or memory of the executed CARS function. By default, the profiling mode is disable.
+        It could be configured for the different orchestrator modes and for different purposes (time, elapsed time, memory allocation, loop testing).
+
+        .. code-block:: json
+
+            {
+                "orchestrator": 
+                {
+                    "mode" : "sequential",
+                    "profiling" : {},
+                }
+            }
+
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | Name                | Description                                               | Type                                    | Default value | Required |
+        +=====================+===========================================================+=========================================+===============+==========+
+        | *activated*         | activation of the profiling mode (disable by default)     | bool                                    | False         | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | *mode*              | type of profiling mode "time, cprofile, memray"           | bool                                    | False         | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        | *loop_testing*      | enable loop mode to execute each step multiple times      | bool                                    | False         | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+
 
 
    .. tab:: Applications
