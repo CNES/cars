@@ -72,7 +72,10 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         # Get root package directory
         package_path = os.path.dirname(__file__)
         json_file = os.path.join(
-            package_path, "sensor_to_full_resolution_dsm.json"
+            package_path,
+            "..",
+            "conf_pipeline",
+            "sensor_to_full_resolution_dsm.json",
         )
         with open(json_file, "r", encoding="utf8") as fstream:
             pipeline_config = json.load(fstream)
