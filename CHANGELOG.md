@@ -11,6 +11,7 @@ A new section Unreleased is opened then for next dev phase.
 ### Changed
 
 - Clean setup.cfg with optionnal package data [#467]
+- New Orchestrator Profiling Mode [#473]
 
 ### Fixed
 
