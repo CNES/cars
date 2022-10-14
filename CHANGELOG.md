@@ -10,7 +10,10 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Changed
 
+- Clean setup.cfg with optionnal package data [#467]
+
 ### Fixed
+
 
 ## 0.5.1 Minor fixes post refactoring (September 2022)
 
