@@ -159,7 +159,7 @@ The structure follows this organisation:
 
         **Profiling configuration:**
 
-        The profiling mode is used to analyze time or memory of the executed CARS function. By default, the profiling mode is disable.
+        The profiling mode is used to analyze time or memory of the executed CARS functions at worker level. By default, the profiling mode is disabled.
         It could be configured for the different orchestrator modes and for different purposes (time, elapsed time, memory allocation, loop testing).
 
         .. code-block:: json
@@ -175,14 +175,15 @@ The structure follows this organisation:
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
         | Name                | Description                                               | Type                                    | Default value | Required |
         +=====================+===========================================================+=========================================+===============+==========+
-        | *activated*         | activation of the profiling mode (disable by default)     | bool                                    | False         | No       |
+        | *activated*         | activation of the profiling mode (disabled by default)    | bool                                    | False         | No       |
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *mode*              | type of profiling mode "time, cprofile, memray"           | bool                                    | False         | No       |
+        | *mode*              | type of profiling mode "time, cprofile, memray"           | string                                  | time          | No       |
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
         | *loop_testing*      | enable loop mode to execute each step multiple times      | bool                                    | False         | No       |
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
 
-
+        - Please use make command 'profile-memory-report' to generate a memory profiling report from the memray outputs files (after the memray profiling execution).
+        - Please disabled profiling to eval memory profiling at master orchestrator level and execute make command instead: 'profile-memory-all'.
 
    .. tab:: Applications
 

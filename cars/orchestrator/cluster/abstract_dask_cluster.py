@@ -69,7 +69,6 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         self.use_memory_logger = checked_conf_cluster["use_memory_logger"]
         self.config_name = checked_conf_cluster["config_name"]
         self.profiling = checked_conf_cluster["profiling"]
-        self.loop_testing = checked_conf_cluster["loop_testing"]
         self.launch_worker = launch_worker
 
         if self.launch_worker:
@@ -115,16 +114,17 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
         overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
         overloaded_conf["config_name"] = conf.get("config_name", "unknown")
-        overloaded_conf["profiling"] = conf.get("profiling", "disable")
-        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
             "nb_workers": int,
             "walltime": str,
             "config_name": str,
-            "profiling": str,
-            "loop_testing": bool,
+            "profiling": {
+                "activated": bool,
+                "mode": str,
+                "loop_testing": bool,
+            },
         }
 
         # Check conf

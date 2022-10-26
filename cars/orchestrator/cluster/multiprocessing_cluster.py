@@ -79,8 +79,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.per_job_timeout = checked_conf_cluster["per_job_timeout"]
         self.factorize_delayed = checked_conf_cluster["factorize_delayed"]
         self.profiling = checked_conf_cluster["profiling"]
-        self.loop_testing = checked_conf_cluster["loop_testing"]
-
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
         mp_mode = "forkserver"
@@ -170,16 +168,17 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "factorize_delayed", True
         )
 
-        overloaded_conf["profiling"] = conf.get("profiling", "disable")
-        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
         cluster_schema = {
             "mode": str,
             "dump_to_disk": bool,
             "nb_workers": int,
             "per_job_timeout": Or(float, int),
             "factorize_delayed": bool,
-            "profiling": str,
-            "loop_testing": bool,
+            "profiling": {
+                "activated": bool,
+                "mode": str,
+                "loop_testing": bool,
+            },
         }
 
         # Check conf

@@ -64,21 +64,25 @@ class AbstractCluster(metaclass=ABCMeta):
             logging.error("No mode named {} registered".format(cluster_mode))
             raise KeyError("No mode named {} registered".format(cluster_mode))
 
+        profiling = {"activated": False, "mode": "time", "loop_testing": False}
+        if "profiling" in conf_cluster:
+            conf_profiling = conf_cluster["profiling"]
+            if "activated" in conf_profiling:
+                profiling["activated"] = conf_profiling["activated"]
+            if profiling["activated"]:
+                if "mode" in conf_profiling:
+                    profiling["mode"] = conf_profiling["mode"]
+                if "loop_testing" in conf_profiling:
+                    profiling["loop_testing"] = conf_profiling["loop_testing"]
+                if "memray" in profiling["mode"]:
+                    profiling_memory_dir = os.path.join(
+                        out_dir, "profiling", "memray"
+                    )
+                    safe_makedirs(profiling_memory_dir, cleanup=True)
+        conf_cluster["profiling"] = profiling
         logging.info(
             "The AbstractCluster {}  will be used".format(cluster_mode)
         )
-        if (
-            "profiling" in conf_cluster
-            and conf_cluster["profiling"] == "memray"
-        ):
-            profiling_memory_dir = os.path.join(out_dir, "profiling", "memray")
-            if os.path.exists(profiling_memory_dir):
-                files = os.listdir(profiling_memory_dir)
-                for file in files:
-                    filename = os.path.join(profiling_memory_dir, file)
-                    if os.path.exists(filename):
-                        os.remove(filename)
-            safe_makedirs(profiling_memory_dir)
 
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]
@@ -125,24 +129,24 @@ class AbstractCluster(metaclass=ABCMeta):
             :param argv: list of input arguments
             :param kwargs: list of named input arguments
             """
-            if self.profiling == "time":
-                (wrapper_func, additionnal_kwargs) = log_wrapper.LogWrapper(
-                    func, self.loop_testing
-                ).func_args_plus()
-            elif self.profiling == "cprofile":
-                (
-                    wrapper_func,
-                    additionnal_kwargs,
-                ) = log_wrapper.CProfileWrapper(func).func_args_plus()
-            elif self.profiling == "memray":
-                (wrapper_func, additionnal_kwargs) = log_wrapper.MemrayWrapper(
-                    func, self.loop_testing, self.out_dir
-                ).func_args_plus()
-            else:
+            if not self.profiling["activated"]:
                 return self.create_task_wrapped(func, nout=nout)(
                     *argv, **kwargs
                 )
 
+            if self.profiling["mode"] == "time":
+                (wrapper_func, additionnal_kwargs) = log_wrapper.LogWrapper(
+                    func, self.profiling["loop_testing"]
+                ).func_args_plus()
+            elif self.profiling["mode"] == "cprofile":
+                (
+                    wrapper_func,
+                    additionnal_kwargs,
+                ) = log_wrapper.CProfileWrapper(func).func_args_plus()
+            elif self.profiling["mode"] == "memray":
+                (wrapper_func, additionnal_kwargs,) = log_wrapper.MemrayWrapper(
+                    func, self.profiling["loop_testing"], self.out_dir
+                ).func_args_plus()
             return self.create_task_wrapped(wrapper_func, nout=nout)(
                 *argv, **kwargs, **additionnal_kwargs
             )

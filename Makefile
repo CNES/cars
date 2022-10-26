@@ -290,9 +290,9 @@ clean-docker: ## clean docker image
 
 .PHONY: profile-memory-report
 profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
-	@for file in $(wildcard ./$(filter-out $@,$(MAKECMDGOALS))/profiling/memray/*.bin); do echo $$file && memray tree -b 10 $$file; done;
+	@for file in $(wildcard ./$(filter-out $@,$(MAKECMDGOALS))/profiling/memray/*.bin); do echo $$file && ${CARS_VENV}/bin/memray tree -b 10 $$file; done;
 
 .PHONY: profile-memory-all
-profile-memory-all: ## memray profiling on one complete job with cars CLI command (detect the biggest memory occupation), uses config.json as input
-	@${CARS_VENV}/bin/memray run -o memray.result.bin ${CARS_VENV}/bin/cars $(wildcard ./$(filter-out $@,$(MAKECMDGOALS))
+profile-memory-all: ## memory profiling at master orchestrator level (not only at worker level) with cars CLI command, uses config.json as input (please use sequential orchestrator mode and desactive profiling)
+	@${CARS_VENV}/bin/memray run -o memray.result.bin ${CARS_VENV}/bin/cars $(wildcard ./$(filter-out $@,$(MAKECMDGOALS)))
 	@${CARS_VENV}/bin/memray tree -b 50 memray.result.bin

@@ -47,7 +47,6 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         checked_conf_cluster = self.check_conf(conf_cluster)
         # retrieve parameters
         self.profiling = checked_conf_cluster["profiling"]
-        self.loop_testing = checked_conf_cluster["loop_testing"]
         self.out_dir = out_dir
         self.launch_worker = launch_worker
 
@@ -72,9 +71,14 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "sequential")
-        overloaded_conf["profiling"] = conf.get("profiling", "disable")
-        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
-        cluster_schema = {"mode": str, "profiling": str, "loop_testing": bool}
+        cluster_schema = {
+            "mode": str,
+            "profiling": {
+                "activated": bool,
+                "mode": str,
+                "loop_testing": bool,
+            },
+        }
 
         # Check conf
         checker = Checker(cluster_schema)

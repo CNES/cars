@@ -141,48 +141,11 @@ def log_function(*argv, **kwargs):
     start_time = time.time()
 
     if loop_testing:
-        logging.info(
-            "{} {}".format(func.__module__, func.__name__.capitalize())
-        )
-        argv_temp = copy.deepcopy(argv)
-        kwargs_temp = copy.deepcopy(kwargs)
-        # execute sevral time the function to observe possible leaks
-        for k in range(1, 5):
-            logging.info("loop ieration {}".format(k))
-            res = func(*argv, **kwargs)
-            del argv
-            del kwargs
-            gc.collect()
-            argv = copy.deepcopy(argv_temp)
-            kwargs = copy.deepcopy(kwargs_temp)
-
+        res = loop_function(argv, kwargs, func)
     else:
         res = func(*argv, **kwargs)
     total_time = time.time() - start_time
-    if total_time >= 1:
-        logging.info(
-            "# {} {} : {:.3f} s LONG".format(
-                func.__module__, func.__name__.capitalize(), total_time
-            )
-        )
-    elif 1 > total_time >= 0.001:
-        logging.info(
-            "# {} {} : {:.4f} s FAST".format(
-                func.__module__, func.__name__.capitalize(), total_time
-            )
-        )
-    elif 0.001 > total_time >= 0.000001:
-        logging.info(
-            "# {} {} : {:.4f} ms VERY FAST".format(
-                func.__module__, func.__name__.capitalize(), total_time * 1000.0
-            )
-        )
-    else:
-        logging.info(
-            "# {} {} : TOO FAST".format(
-                func.__module__, func.__name__.capitalize()
-            )
-        )
+    switch_messages(func, total_time)
     return res
 
 
@@ -206,35 +169,13 @@ def time_profiling_function(*argv, **kwargs):
     profiler.disable()
     total_time = time.time() - start_time
 
-    if total_time >= 1:
-        message = "# {} : {:.3f} s LONG".format(
-            func.__name__.capitalize(), total_time
-        )
-        logging.info(message)
-        logging.info(func.__module__)
-        print(message)
-    elif 1 > total_time >= 0.001:
-        message = "# {} : {:.4f} s FAST".format(
-            func.__name__.capitalize(), total_time
-        )
-        logging.info(message)
-        print(message)
-    elif 0.001 > total_time >= 0.000001:
-        message = "# {} : {:.4f} ms VERY FAST".format(
-            func.__name__.capitalize(), total_time * 1000.0
-        )
-        logging.info(message)
-        print(message)
-    else:
-        message = "# {} : TOO FAST".format(func.__name__.capitalize())
-        logging.info(message)
-        print(message)
+    switch_messages(func, total_time)
     print("## PROF STATs")
 
     stream_cumtime = io.StringIO()
     stream_calls = io.StringIO()
     pstats.Stats(profiler, stream=stream_cumtime).sort_stats(
-        "cumtime"
+        "tottime"
     ).print_stats(5)
     pstats.Stats(profiler, stream=stream_calls).sort_stats("calls").print_stats(
         5
@@ -264,9 +205,6 @@ def memory_profiling_function(*argv, **kwargs):
     kwargs.pop("fun_log_wrapper")
     kwargs.pop("loop_testing")
     kwargs.pop("out_dir")
-    if loop_testing:
-        argv_temp = copy.copy(argv)
-        kwargs_temp = copy.deepcopy(kwargs)
 
     # Monitor time
     memray = import_module("memray")
@@ -282,47 +220,81 @@ def memory_profiling_function(*argv, **kwargs):
         )
     ):
         if loop_testing:
-            logging.info(
-                "{} {}".format(func.__module__, func.__name__.capitalize())
-            )
-            # execute sevral time the function to observe possible leaks
-            for k in range(1, 5):
-                logging.info("loop ieration {}".format(k))
-                res = func(*argv, **kwargs)
-                del argv
-                del kwargs
-                gc.collect()
-                argv = copy.deepcopy(argv_temp)
-                kwargs = copy.deepcopy(kwargs_temp)
+            res = loop_function(argv, kwargs, func)
         else:
             res = func(*argv, **kwargs)
     total_time = time.time() - start_time
 
+    switch_messages(func, total_time)
+    print("----------")
+    return res
+
+
+def switch_messages(func, total_time):
+    """
+    create profile message with specific message
+    depends on elapsed time (LONG, FAST...).
+
+
+    :param func : profiled function
+    :param total_time : elapsed time of the function
+    """
     if total_time >= 1:
         message = "# {} : {:.3f} s LONG".format(
             func.__name__.capitalize(), total_time
         )
-        logging.info(message)
-        print(message)
-        print(func.__module__)
+        log_message(func, message)
     elif 1 > total_time >= 0.001:
         message = "# {} : {:.4f} s FAST".format(
             func.__name__.capitalize(), total_time
         )
-        logging.info(message)
-        print(message)
-        print(func.__module__)
+        log_message(func, message)
     elif 0.001 > total_time >= 0.000001:
         message = "# {} : {:.4f} ms VERY FAST".format(
             func.__name__.capitalize(), total_time * 1000.0
         )
-        logging.info(message)
-        print(message)
-        print(func.__module__)
+        log_message(func, message)
     else:
         message = "# {} : TOO FAST".format(func.__name__.capitalize())
-        logging.info(message)
-        print(message)
-        print(func.__module__)
-    print("----------")
-    return res
+        log_message(func, message)
+
+
+def log_message(func, message):
+    """
+    log profiling message
+
+    :param func : logged function
+    :param message : log message
+    """
+    logging.info(message)
+    logging.info(func.__module__)
+    print(message)
+    print(func.__module__)
+
+
+def loop_function(argv, kwargs, func, nb_iteration=5):
+    """
+    generate a loop on each cluster function to eval possible leak
+
+    :param argv : input argv
+    :param kwargs : input kwargs
+    :param func : function to evaluation
+    :param nb_iteration (int, optional): number of the iteration loop.
+    :param Defaults to 5.
+
+    Returns:
+        _type_: result of the function
+    """
+    logging.info("{} {}".format(func.__module__, func.__name__.capitalize()))
+    argv_temp = copy.copy(argv)
+    kwargs_temp = copy.deepcopy(kwargs)
+    # execute sevral time the function to observe possible leaks
+    for k in range(1, nb_iteration):
+        logging.info("loop iteration {}".format(k))
+        func(*argv, **kwargs)
+        del argv
+        del kwargs
+        gc.collect()
+        argv = copy.deepcopy(argv_temp)
+        kwargs = copy.deepcopy(kwargs_temp)
+    return func(*argv, **kwargs)
