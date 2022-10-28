@@ -19,30 +19,26 @@
 # limitations under the License.
 #
 """
-file contains all the constants used in rasterization module
+CARS Disparity Constants module
 """
 
+# disparity map
+MAP = "disp"
 
-RASTERIZATION_PARAMS_TAG = "rasterization_params"
-RASTERIZATION_RUN_TAG = "rasterization_run"
+# confidence measure
+AMBIGUITY_CONFIDENCE = "ambiguity_confidence"
 
-# Params
-METHOD = "method"
-DSM_RADIUS = "dsm_radius"
-SIGMA = "sigma"
-GRID_POINTS_DIVISION_FACTOR = "grid_points_division_factor"
-RESOLUTION = "resolution"
-
-
-# Run infos
-EPSG_TAG = "epsg"
-DSM_TAG = "dsm"
-COLOR_TAG = "color"
-MSK_TAG = "msk"
-AMBIGUITY_TAG = "ambiguity"
-DSM_MEAN_TAG = "dsm_mean"
-DSM_STD_TAG = "dsm_std"
-DSM_N_PTS_TAG = "dsm_n_pts"
-DSM_POINTS_IN_CELL_TAG = "dsm_points_in_cell"
-DSM_NO_DATA_TAG = "dsm_no_data"
-COLOR_NO_DATA_TAG = "color_no_data"
+# disparity mask
+VALID = "disp_msk"
+INVALID_REF = "msk_invalid_ref"
+INVALID_SEC = "msk_invalid_sec"
+MASKED_REF = "msk_masked_ref"
+MASKED_SEC = "msk_masked_sec"
+OCCLUSION = "msk_occlusion"
+FALSE_MATCH = "msk_false_match"
+INCOMPLETE_DISP = "msk_incomplete_disp"
+STOPPED_INTERP = "msk_stopped_interp"
+FILLED_OCCLUSION = "msk_filled_occlusion"
+FILLED_FALSE_MATCH = "msk_filled_false_match"
+INSIDE_SEC_ROI = "msk_inside_sec_roi"
+DISP_TO_0 = "msk_disp_to_0"

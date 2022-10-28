@@ -165,7 +165,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             if self.save_disparity_map:
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_left.tif"),
-                    cst.DISP_MAP,
+                    cst_disp.MAP,
                     epipolar_disparity_map_left,
                 )
 
@@ -277,8 +277,8 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 
         Returned objects are composed of :
             * dataset (None for right object if use_sec_disp not activated) with :
-                - cst.DISP_MAP
-                - cst.DISP_MSK
+                - cst_disp.MAP
+                - cst_disp.VALID
                 - cst.EPI_COLOR
         """
 

@@ -243,23 +243,31 @@ class SingleCarsDatasetSaver:
                 if not self.already_seen:
                     # generate descriptors
                     for count, file_name in enumerate(self.file_names):
-                        desc = self.cars_ds.generate_descriptor(
-                            future_result,
-                            file_name,
-                            tag=self.tags[count],
-                            dtype=self.dtypes[count],
-                            nodata=self.nodatas[count],
-                        )
-                        self.descriptors.append(desc)
+                        if self.tags[count] in future_result.keys():
+                            desc = self.cars_ds.generate_descriptor(
+                                future_result,
+                                file_name,
+                                tag=self.tags[count],
+                                dtype=self.dtypes[count],
+                                nodata=self.nodatas[count],
+                            )
+                            self.descriptors.append(desc)
                     self.already_seen = True
 
                 for count, file_name in enumerate(self.file_names):
-                    self.cars_ds.run_save(
-                        future_result,
-                        file_name,
-                        tag=self.tags[count],
-                        descriptor=self.descriptors[count],
-                    )
+                    if self.tags[count] in future_result.keys():
+                        self.cars_ds.run_save(
+                            future_result,
+                            file_name,
+                            tag=self.tags[count],
+                            descriptor=self.descriptors[count],
+                        )
+                    else:
+                        logging.warning(
+                            "{} is not consistent.".format(
+                                self.tags[count].capitalize()
+                            )
+                        )
             else:
                 # type points
                 if not self.already_seen:

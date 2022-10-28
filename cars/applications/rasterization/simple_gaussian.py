@@ -28,6 +28,7 @@ import collections
 # Standard imports
 import logging
 import os
+from typing import List
 
 # Third party imports
 import numpy as np
@@ -38,7 +39,9 @@ from json_checker import Checker, Or
 import cars.applications.rasterization.rasterization_tools as rasterization_step
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.rasterization import rasterization_constants
+from cars.applications.rasterization import (
+    rasterization_constants as raster_cst,
+)
 from cars.applications.rasterization.point_cloud_rasterization import (
     PointCloudRasterization,
 )
@@ -92,6 +95,7 @@ class SimpleGaussian(
         self.write_stats = checked_conf["write_stats"]
         self.write_mask = checked_conf["write_msk"]
         self.write_dsm = checked_conf["write_dsm"]
+        self.write_ambiguity = checked_conf["write_ambiguity"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -137,6 +141,17 @@ class SimpleGaussian(
         overloaded_conf["write_stats"] = conf.get("write_stats", False)
         overloaded_conf["write_msk"] = conf.get("write_msk", False)
         overloaded_conf["write_dsm"] = conf.get("write_dsm", True)
+        overloaded_conf["write_ambiguity"] = conf.get("write_ambiguity", True)
+        overloaded_conf["compute_all"] = conf.get("compute_all", False)
+        list_computed_layers = []
+        if overloaded_conf["compute_all"]:
+            for key in overloaded_conf.keys():
+                if "write_" in key:
+                    list_computed_layers.append(key.split("_")[1])
+        else:
+            for key, activated in overloaded_conf.items():
+                if "write_" in key and activated:
+                    list_computed_layers.append(key.split("_")[1])
 
         rasterization_schema = {
             "method": str,
@@ -152,6 +167,8 @@ class SimpleGaussian(
             "write_msk": bool,
             "write_stats": bool,
             "write_dsm": bool,
+            "write_ambiguity": bool,
+            "compute_all": bool,
         }
 
         # Check conf
@@ -246,6 +263,7 @@ class SimpleGaussian(
             out_dsm_file_name = None
             out_clr_file_name = None
             out_msk_file_name = None
+            out_ambiguity_file_name = None
             out_dsm_mean_file_name = None
             out_dsm_std_file_name = None
             out_dsm_n_pts_file_name = None
@@ -339,6 +357,19 @@ class SimpleGaussian(
                     cars_ds_name="dsm_mask",
                 )
 
+            if self.write_ambiguity:
+                out_ambiguity_file_name = os.path.join(
+                    self.orchestrator.out_dir, "ambiguity.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_ambiguity_file_name,
+                    cst.RASTER_AMBIGUITY_CONFIDENCE,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.msk_no_data,
+                    cars_ds_name="ambiguity",
+                )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos([terrain_raster])
 
@@ -377,36 +408,27 @@ class SimpleGaussian(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    rasterization_constants.RASTERIZATION_PARAMS_TAG: {
-                        rasterization_constants.METHOD: self.used_method,
-                        rasterization_constants.DSM_RADIUS: self.dsm_radius,
-                        rasterization_constants.SIGMA: self.sigma,
-                        rasterization_constants.GRID_POINTS_DIVISION_FACTOR: (
+                    raster_cst.RASTERIZATION_PARAMS_TAG: {
+                        raster_cst.METHOD: self.used_method,
+                        raster_cst.DSM_RADIUS: self.dsm_radius,
+                        raster_cst.SIGMA: self.sigma,
+                        raster_cst.GRID_POINTS_DIVISION_FACTOR: (
                             self.grid_points_division_factor
                         ),
-                        rasterization_constants.RESOLUTION: self.resolution,
+                        raster_cst.RESOLUTION: self.resolution,
                     },
-                    rasterization_constants.RASTERIZATION_RUN_TAG: {
-                        rasterization_constants.EPSG_TAG: epsg,
-                        rasterization_constants.DSM_TAG: out_dsm_file_name,
-                        rasterization_constants.DSM_NO_DATA_TAG: float(
-                            self.dsm_no_data
-                        ),
-                        rasterization_constants.COLOR_NO_DATA_TAG: float(
-                            self.color_no_data
-                        ),
-                        rasterization_constants.COLOR_TAG: out_clr_file_name,
-                        rasterization_constants.MSK_TAG: out_msk_file_name,
-                        rasterization_constants.DSM_MEAN_TAG: (
-                            out_dsm_mean_file_name
-                        ),
-                        rasterization_constants.DSM_STD_TAG: (
-                            out_dsm_std_file_name
-                        ),
-                        rasterization_constants.DSM_N_PTS_TAG: (
-                            out_dsm_n_pts_file_name
-                        ),
-                        rasterization_constants.DSM_POINTS_IN_CELL_TAG: (
+                    raster_cst.RASTERIZATION_RUN_TAG: {
+                        raster_cst.EPSG_TAG: epsg,
+                        raster_cst.DSM_TAG: out_dsm_file_name,
+                        raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
+                        raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
+                        raster_cst.COLOR_TAG: out_clr_file_name,
+                        raster_cst.MSK_TAG: out_msk_file_name,
+                        raster_cst.AMBIGUITY_TAG: out_ambiguity_file_name,
+                        raster_cst.DSM_MEAN_TAG: (out_dsm_mean_file_name),
+                        raster_cst.DSM_STD_TAG: (out_dsm_std_file_name),
+                        raster_cst.DSM_N_PTS_TAG: (out_dsm_n_pts_file_name),
+                        raster_cst.DSM_POINTS_IN_CELL_TAG: (
                             out_dsm_points_in_cell_file_name
                         ),
                     },
@@ -465,6 +487,7 @@ def rasterization_wrapper(
     epsg,
     window,
     profile,
+    list_computed_layers: List[str] = None,
     saving_info=None,
     sigma: float = None,
     radius: int = 1,
@@ -487,6 +510,7 @@ def rasterization_wrapper(
     :param  window: Window considered
     :type window: int
     :param  profile: rasterio profile
+    :param list_computed_layers: list of computed output data
     :type profile: dict
     :param saving_info: information about CarsDataset ID.
     :type saving_info: dict
@@ -528,6 +552,7 @@ def rasterization_wrapper(
         color_no_data=color_no_data,
         msk_no_data=msk_no_data,
         grid_points_division_factor=grid_points_division_factor,
+        list_computed_layers=list_computed_layers,
     )
 
     # Fill raster

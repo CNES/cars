@@ -174,12 +174,21 @@ def test_end2end_ventoux_unique():
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
         #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
-
+        # copy2(
+        #     os.path.join(out_dir, "ambiguity.tif"),
+        #     absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
             atol=0.0001,
             rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "ambiguity.tif"),
+            absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+            atol=1.0e-7,
+            rtol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),

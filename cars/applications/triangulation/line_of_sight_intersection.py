@@ -525,15 +525,15 @@ def compute_points_cloud(
     :type right_image_object: xr.Dataset
     :param left_disparity_object: Left disparity map dataset with :
 
-            - cst.DISP_MAP
-            - cst.DISP_MSK
+            - cst_disp.MAP
+            - cst_disp.VALID
             - cst.EPI_COLOR
     :type left_disparity_object: xr.Dataset
     :param right_disparity_object: Right disparity map dataset \
            (None if use_sec_disp not activated) with :
 
-            - cst.DISP_MAP
-            - cst.DISP_MSK
+            - cst_disp.MAP
+            - cst_disp.VALID
             - cst.EPI_COLOR
     :type right_disparity_object: xr.Dataset
     :param input_stereo_cfg: Configuration for stereo processing

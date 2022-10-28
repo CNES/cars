@@ -53,18 +53,6 @@ EPI_NO_DATA_IMG = "no_data_img"
 EPI_TRANSFORM = "transform"
 EPI_CRS = "crs"
 
-# disparity dataset
-DISP_MAP = "disp"
-DISP_MSK = "disp_msk"
-DISP_MSK_INVALID_REF = "msk_invalid_ref"
-DISP_MSK_INVALID_SEC = "msk_invalid_sec"
-DISP_MSK_MASKED_REF = "msk_masked_ref"
-DISP_MSK_MASKED_SEC = "msk_masked_sec"
-DISP_MSK_OCCLUSION = "msk_occlusion"
-DISP_MSK_FALSE_MATCH = "msk_false_match"
-DISP_MSK_INSIDE_SEC_ROI = "msk_inside_sec_roi"
-DISP_MSK_DISP_TO_0 = "msk_disp_to_0"
-
 # points cloud fields (xarray Dataset and pandas Dataframe)
 POINTS_CLOUD_CORR_MSK = "corr_msk"
 POINTS_CLOUD_MSK = "msk"
@@ -73,6 +61,7 @@ POINTS_CLOUD_CLR_KEY_ROOT = "clr"
 POINTS_CLOUD_COORD_EPI_GEOM_I = "coord_epi_geom_i"
 POINTS_CLOUD_COORD_EPI_GEOM_J = "coord_epi_geom_j"
 POINTS_CLOUD_IDX_IM_EPI = "idx_im_epi"
+POINTS_CLOUD_AMBIGUITY = "ambiguity_confidence"
 
 # raster fields (xarray Dataset)
 RASTER_HGT = "hgt"
@@ -84,7 +73,7 @@ RASTER_HGT_MEAN = "hgt_mean"
 RASTER_HGT_STD_DEV = "hgt_stdev"
 RASTER_BAND_MEAN = "band_mean"
 RASTER_BAND_STD_DEV = "band_stdev"
-
+RASTER_AMBIGUITY_CONFIDENCE = "ambiguity_confidence"
 # Geometry constants
 DISP_MODE = "disp"
 MATCHES_MODE = "matches"

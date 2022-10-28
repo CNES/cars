@@ -27,7 +27,6 @@ TODO: refactor in several files and remove too-many-lines
 # Standard imports
 import logging
 import math
-import time
 import warnings
 from typing import List, Tuple, Union
 
@@ -95,6 +94,7 @@ def simple_rasterization_dataset_wrapper(
     color_no_data: int = np.nan,
     msk_no_data: int = 65535,
     grid_points_division_factor: int = None,
+    list_computed_layers: List[str] = None,
 ) -> xr.Dataset:
     """
     Wrapper of simple_rasterization
@@ -126,6 +126,7 @@ def simple_rasterization_dataset_wrapper(
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set to construct
         700000 points blocks.
+    :param list_computed_layers: list of computed output data
     :return: Rasterized cloud
     """
 
@@ -162,6 +163,7 @@ def simple_rasterization_dataset_wrapper(
         color_no_data=color_no_data,
         msk_no_data=msk_no_data,
         grid_points_division_factor=grid_points_division_factor,
+        list_computed_layers=list_computed_layers,
     )
 
     return raster
@@ -243,7 +245,6 @@ def search_neighbors(
     cloud_tree: cKDTree,
     radius: int,
     resolution: float,
-    worker_logger: logging.Logger,
 ) -> List[List[int]]:
     """
     Search for neighbors of the grid points in the cloud kdTree
@@ -253,28 +254,14 @@ def search_neighbors(
     :param radius: Radius for hole filling.
     :param resolution: Resolution of rasterized cells,
         expressed in cloud CRS units or None.
-    :param worker_logger: logger
     :return: The list of neighbors
     """
     # build a kD-tree with rasterization grid cells center coordinates
-    tic = time.process_time()
     grid_tree = cKDTree(grid_points)
-    toc = time.process_time()
-    worker_logger.debug(
-        "Neighbors search: "
-        "Grid point kD-tree built in {} seconds".format(toc - tic)
-    )
 
     # perform neighborhood query for all grid points
-    tic = time.process_time()
     neighbors_list = grid_tree.query_ball_tree(
         cloud_tree, (radius + 0.5) * resolution
-    )
-    toc = time.process_time()
-    worker_logger.debug(
-        "Neighbors search: Neighborhood query done in {} seconds".format(
-            toc - tic
-        )
     )
 
     return neighbors_list
@@ -311,14 +298,7 @@ def get_flatten_neighbors(
         grid point and the list of neighbors count for each grid point.
     """
     # Build a KDTree for with cloud points coordinates.
-    tic = time.process_time()
     cloud_tree = cKDTree(cloud.loc[:, [cst.X, cst.Y]].values)
-    toc = time.process_time()
-    worker_logger.debug(
-        "Neighbors search: Point cloud kD-tree built in {} seconds".format(
-            toc - tic
-        )
-    )
 
     # compute blocks indexes (memory optimization)
     nb_grid_points = grid_points.shape[0]
@@ -348,7 +328,7 @@ def get_flatten_neighbors(
             int(index_division[i]) : int(index_division[i + 1]), :
         ]
         neighbors_list = search_neighbors(
-            sub_grid, cloud_tree, radius, resolution, worker_logger
+            sub_grid, cloud_tree, radius, resolution
         )
 
         # reorganize neighborhood query results with one as 1d arrays to be
@@ -386,7 +366,9 @@ def compute_vector_raster_and_stats(
     msk_no_data: int,
     worker_logger: logging.Logger,
     grid_points_division_factor: int,
+    list_computed_layers: List[str] = None,
 ) -> Tuple[
+    np.ndarray,
     np.ndarray,
     np.ndarray,
     np.ndarray,
@@ -418,20 +400,24 @@ def compute_vector_raster_and_stats(
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set
         to construct 700000 points blocks.
+    :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
+    out, mean, stdev, n_pts, n_in_cell, msk, ambiguity = (
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+        None,
+    )
     # Build a grid of cell centers coordinates
-    tic = time.process_time()
     grid_points = compute_grid_points(
         x_start, y_start, x_size, y_size, resolution
     )
-    toc = time.process_time()
-    worker_logger.debug(
-        "Cell centers array built in {} seconds".format(toc - tic)
-    )
 
     # Search for neighbors
-    tic = time.process_time()
     neighbors_id, start_ids, n_count = get_flatten_neighbors(
         grid_points,
         cloud,
@@ -440,13 +426,8 @@ def compute_vector_raster_and_stats(
         worker_logger,
         grid_points_division_factor,
     )
-    toc = time.process_time()
-    worker_logger.debug(
-        "Total neighbors search done in {} seconds".format(toc - tic)
-    )
 
     # perform rasterization with gaussian interpolation
-    tic = time.process_time()
     clr_bands = [
         band
         for band in cloud
@@ -454,23 +435,21 @@ def compute_vector_raster_and_stats(
     ]
     cloud_band = [cst.X, cst.Y, cst.Z]
     cloud_band.extend(clr_bands)
+    if (list_computed_layers is None) or list_computed_layers["stats"]:
+        out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
+            cloud.loc[:, cloud_band].values,
+            data_valid.astype(bool),
+            neighbors_id,
+            start_ids,
+            n_count,
+            grid_points,
+            resolution,
+            sigma,
+        )
 
-    out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
-        cloud.loc[:, cloud_band].values,
-        data_valid.astype(bool),
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
-        resolution,
-        sigma,
-    )
-    toc = time.process_time()
-    worker_logger.debug(
-        "Vectorized rasterization done in {} seconds".format(toc - tic)
-    )
-
-    if cst.POINTS_CLOUD_MSK in cloud.columns:
+    if cst.POINTS_CLOUD_MSK in cloud.columns and (
+        (list_computed_layers is None) or list_computed_layers["msk"]
+    ):
         msk = mask_interp(
             cloud.loc[:, [cst.X, cst.Y, cst.POINTS_CLOUD_MSK]].values,
             data_valid.astype(np.bool),
@@ -482,10 +461,22 @@ def compute_vector_raster_and_stats(
             no_data_val=msk_no_data,
             undefined_val=msk_no_data,
         )
-    else:
-        msk = None
 
-    return out, mean, stdev, n_pts, n_in_cell, msk
+    if cst.POINTS_CLOUD_AMBIGUITY in cloud.columns and (
+        (list_computed_layers is None) or list_computed_layers["amb"]
+    ):
+        ambiguity, _, _, _, _ = gaussian_interp(
+            cloud.loc[:, [cst.X, cst.Y, cst.POINTS_CLOUD_AMBIGUITY]].values,
+            data_valid.astype(bool),
+            neighbors_id,
+            start_ids,
+            n_count,
+            grid_points,
+            resolution,
+            sigma,
+        )
+
+    return out, mean, stdev, n_pts, n_in_cell, msk, ambiguity
 
 
 @njit(
@@ -759,6 +750,7 @@ def create_raster_dataset(
     n_pts: np.ndarray,
     n_in_cell: np.ndarray,
     msk: np.ndarray = None,
+    ambiguity: np.ndarray = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -831,7 +823,10 @@ def create_raster_dataset(
 
     if msk is not None:
         raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
-
+    if ambiguity is not None:
+        raster_out[cst.RASTER_AMBIGUITY_CONFIDENCE] = xr.DataArray(
+            ambiguity, dims=raster_dims
+        )
     return raster_out
 
 
@@ -849,6 +844,7 @@ def rasterize(
     color_no_data: int = 0,
     msk_no_data: int = 65535,
     grid_points_division_factor: int = None,
+    list_computed_layers: List[str] = None,
 ) -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset
@@ -872,6 +868,7 @@ def rasterize(
         the grid points (memory optimization, reduce the highest memory peak).
         If it is not set, the factor is automatically set to
         construct 700000 points blocks.
+    :param list_computed_layers: list of computed output data
     :return: Rasterized cloud color and statistics.
     """
     worker_logger = logging.getLogger("distributed.worker")
@@ -893,7 +890,15 @@ def rasterize(
         )
     )
 
-    out, mean, stdev, n_pts, n_in_cell, msk = compute_vector_raster_and_stats(
+    (
+        out,
+        mean,
+        stdev,
+        n_pts,
+        n_in_cell,
+        msk,
+        ambiguity,
+    ) = compute_vector_raster_and_stats(
         cloud,
         data_valid,
         x_start,
@@ -906,10 +911,10 @@ def rasterize(
         msk_no_data,
         worker_logger,
         grid_points_division_factor,
+        list_computed_layers,
     )
 
     # reshape data as a 2d grid.
-    tic = time.process_time()
     shape_out = (y_size, x_size)
     out = out.reshape(shape_out + (-1,))
     mean = mean.reshape(shape_out + (-1,))
@@ -919,12 +924,10 @@ def rasterize(
 
     if msk is not None:
         msk = msk.reshape(shape_out)
-
-    toc = time.process_time()
-    worker_logger.debug("Output reshaping done in {} seconds".format(toc - tic))
+    if ambiguity is not None:
+        ambiguity = ambiguity.reshape(shape_out)
 
     # build output dataset
-    tic = time.process_time()
     raster_out = create_raster_dataset(
         out,
         x_start,
@@ -940,12 +943,7 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
-    )
-
-    toc = time.process_time()
-    worker_logger.debug(
-        "Final raster formatting into a xarray.Dataset "
-        "done in {} seconds".format(toc - tic)
+        ambiguity,
     )
 
     return raster_out

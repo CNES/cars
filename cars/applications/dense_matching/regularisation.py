@@ -32,6 +32,7 @@ import xarray as xr
 # CARS imports
 from cars.conf import mask_classes
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 
 
 def update_disp_to_0(
@@ -103,13 +104,13 @@ def update_disp_ds_from_msk(disp, mask):
     Update a disparity dataset to set the indicated pixels to the mask to 0.
     The corresponding pixels are passed to valid ones in the disparity mask.
 
-    A cst.DISP_MSK_SET_TO_INPUT_DEM mask is also added
+    A cst_disp.SET_TO_INPUT_DEM mask is also added
     to the dataset with the mask used here.
 
     :param disp: disparity dataset to update
     :param mask: mask identifying the pixels
         for which the disparity has to be set to 0
     """
-    disp[cst.DISP_MAP].values[mask] = 0
-    disp[cst.DISP_MSK].values[mask] = 255
-    disp[cst.DISP_MSK_DISP_TO_0] = xr.DataArray(mask, dims=[cst.ROW, cst.COL])
+    disp[cst_disp.MAP].values[mask] = 0
+    disp[cst_disp.VALID].values[mask] = 255
+    disp[cst_disp.DISP_TO_0] = xr.DataArray(mask, dims=[cst.ROW, cst.COL])

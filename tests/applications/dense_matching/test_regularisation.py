@@ -38,6 +38,7 @@ from cars.conf import mask_classes
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 
 # CARS Tests imports
 from tests.helpers import (
@@ -130,8 +131,8 @@ def ref_disp(ref_row, ref_col):  # pylint: disable=redefined-outer-name
 
     disp_ds = xr.Dataset(
         {
-            cst.DISP_MAP: ([cst.ROW, cst.COL], np_ref_disp),
-            cst.DISP_MSK: ([cst.ROW, cst.COL], np_ref_disp_msk),
+            cst_disp.MAP: ([cst.ROW, cst.COL], np_ref_disp),
+            cst_disp.VALID: ([cst.ROW, cst.COL], np_ref_disp_msk),
         },
         coords={
             cst.ROW: np.array(range(ref_row)),
@@ -155,8 +156,8 @@ def sec_disp(sec_row, sec_col):  # pylint: disable=redefined-outer-name
 
     disp_ds = xr.Dataset(
         {
-            cst.DISP_MAP: ([cst.ROW, cst.COL], np_sec_disp),
-            cst.DISP_MSK: ([cst.ROW, cst.COL], np_sec_disp_msk),
+            cst_disp.MAP: ([cst.ROW, cst.COL], np_sec_disp),
+            cst_disp.VALID: ([cst.ROW, cst.COL], np_sec_disp_msk),
         },
         coords={
             cst.ROW: np.array(range(sec_row)),
@@ -257,8 +258,8 @@ def test_update_disp_0(
     ]
 
     # create ref
-    up_ref_disp = deepcopy(ref_disp[cst.DISP_MAP].values)
-    up_ref_disp_msk = deepcopy(ref_disp[cst.DISP_MSK].values)
+    up_ref_disp = deepcopy(ref_disp[cst_disp.MAP].values)
+    up_ref_disp_msk = deepcopy(ref_disp[cst_disp.VALID].values)
 
     ref_msk_set_to_ref_alt = np.logical_or(
         np.where(c_ref_msk == 1, True, False),
@@ -267,17 +268,17 @@ def test_update_disp_0(
     up_ref_disp[ref_msk_set_to_ref_alt] = 0
     up_ref_disp_msk[np.where(c_ref_msk == 3, True, False)] = 255
 
-    assert np.allclose(disp[cst.STEREO_REF][cst.DISP_MAP].values, up_ref_disp)
+    assert np.allclose(disp[cst.STEREO_REF][cst_disp.MAP].values, up_ref_disp)
     assert np.allclose(
-        disp[cst.STEREO_REF][cst.DISP_MSK].values, up_ref_disp_msk
+        disp[cst.STEREO_REF][cst_disp.VALID].values, up_ref_disp_msk
     )
     assert np.allclose(
-        disp[cst.STEREO_REF][cst.DISP_MSK_DISP_TO_0].values,
+        disp[cst.STEREO_REF][cst_disp.DISP_TO_0].values,
         ref_msk_set_to_ref_alt,
     )
 
-    up_sec_disp = deepcopy(sec_disp[cst.DISP_MAP].values)
-    up_sec_disp_msk = deepcopy(sec_disp[cst.DISP_MSK].values)
+    up_sec_disp = deepcopy(sec_disp[cst_disp.MAP].values)
+    up_sec_disp_msk = deepcopy(sec_disp[cst_disp.VALID].values)
 
     sec_msk_set_to_ref_alt = np.logical_or(
         np.where(sec_ds[cst.EPI_MSK].values == 4, True, False),
@@ -288,11 +289,11 @@ def test_update_disp_0(
         np.where(sec_ds[cst.EPI_MSK].values == 5, True, False)
     ] = 255
 
-    assert np.allclose(disp[cst.STEREO_SEC][cst.DISP_MAP].values, up_sec_disp)
+    assert np.allclose(disp[cst.STEREO_SEC][cst_disp.MAP].values, up_sec_disp)
     assert np.allclose(
-        disp[cst.STEREO_SEC][cst.DISP_MSK].values, up_sec_disp_msk
+        disp[cst.STEREO_SEC][cst_disp.VALID].values, up_sec_disp_msk
     )
     assert np.allclose(
-        disp[cst.STEREO_SEC][cst.DISP_MSK_DISP_TO_0].values,
+        disp[cst.STEREO_SEC][cst_disp.DISP_TO_0].values,
         sec_msk_set_to_ref_alt,
     )

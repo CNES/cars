@@ -48,13 +48,14 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.conf import mask_classes
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
 class CensusMccnnSgm(
     DenseMatching, short_name=["census_sgm", "mccnn_sgm"]
-):  # pylint: disable=R0903
+):  # pylint: disable=R0903,disable=R0902
     """
     Census SGM & MCCNN SGM matching class
     """
@@ -88,7 +89,6 @@ class CensusMccnnSgm(
         # Get params from loader
         self.loader = checked_conf["loader"]
         self.corr_config = checked_conf["loader_conf"]
-
         # init orchestrator
         self.orchestrator = None
 
@@ -384,14 +384,14 @@ class CensusMccnnSgm(
             if self.save_disparity_map:
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_left.tif"),
-                    cst.DISP_MAP,
+                    cst_disp.MAP,
                     epipolar_disparity_map_left,
                     cars_ds_name="epi_disp_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_right.tif"),
-                    cst.DISP_MAP,
+                    cst_disp.MAP,
                     epipolar_disparity_map_right,
                     cars_ds_name="epi_disp_right",
                 )
@@ -412,16 +412,30 @@ class CensusMccnnSgm(
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_mask_left.tif"),
-                    cst.DISP_MSK,
+                    cst_disp.VALID,
                     epipolar_disparity_map_left,
                     cars_ds_name="epi_disp_mask_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp_mask_right.tif"),
-                    cst.DISP_MSK,
+                    cst_disp.VALID,
                     epipolar_disparity_map_right,
                     cars_ds_name="epi_disp_mask_right",
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "epi_ambiguity_left.tif"),
+                    cst_disp.AMBIGUITY_CONFIDENCE,
+                    epipolar_disparity_map_left,
+                    cars_ds_name="epi_ambiguity_left",
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "epi_ambiguity_right.tif"),
+                    cst_disp.AMBIGUITY_CONFIDENCE,
+                    epipolar_disparity_map_right,
+                    cars_ds_name="epi_ambiguity_right",
                 )
 
             # Get saving infos in order to save tiles when they are computed
@@ -485,6 +499,7 @@ class CensusMccnnSgm(
                         use_sec_disp=self.use_sec_disp,
                         saving_info_left=saving_info_left,
                         saving_info_right=saving_info_right,
+                        compute_disparity_masks=False,
                     )
         else:
             logging.error(
@@ -508,6 +523,7 @@ def compute_disparity(
     use_sec_disp=False,
     saving_info_left=None,
     saving_info_right=None,
+    compute_disparity_masks=False,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -538,15 +554,16 @@ def compute_disparity(
     :param use_sec_disp: Boolean activating the use of the secondary \
                          disparity map
     :type use_sec_disp: bool
-
-
+    :param compute_disparity_masks: Compute all the disparity \
+                        pandora masks(disable by default)
+    :type compute_disparity_masks: bool
     :return: Left disparity object, Right disparity object (if exists)
 
     Returned objects are composed of :
         - dataset (None for right object if use_sec_disp not activated) with :
 
-            - cst.DISP_MAP
-            - cst.DISP_MSK
+            - cst_disp.MAP
+            - cst_disp.VALID
             - cst.EPI_COLOR
     """
 
@@ -585,6 +602,7 @@ def compute_disparity(
         mask1_ignored_by_corr=mask1_ignored_by_corr,
         mask2_ignored_by_corr=mask2_ignored_by_corr,
         use_sec_disp=use_sec_disp,
+        compute_disparity_masks=compute_disparity_masks,
     )
 
     # If necessary, set disparity to 0 for classes to be set to input dem
