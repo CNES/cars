@@ -32,18 +32,24 @@ import threading
 import time
 from multiprocessing import Queue, freeze_support
 
+# Third party imports
 from json_checker import Checker, Or
 
 # CARS imports
-from cars.orchestrator.cluster import abstract_cluster, wrapper
-
-# Third party imports
-
+from cars.orchestrator.cluster import abstract_cluster, mp_wrapper
+from cars.orchestrator.cluster.mp_factorizer import factorize_delayed
+from cars.orchestrator.cluster.mp_objects import (
+    MpDelayed,
+    MpDelayedTask,
+    MpFuture,
+    MpFutureIterator,
+    MpJob,
+)
 
 RUN = 0
 TERMINATE = 1
 
-REFRESH_TIME = 1
+REFRESH_TIME = 2
 
 job_counter = itertools.count()
 
@@ -53,6 +59,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
     """
     MultiprocessingCluster
     """
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf_cluster, out_dir, launch_worker=True):
         """
@@ -71,6 +79,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.nb_workers = checked_conf_cluster["nb_workers"]
         self.dump_to_disk = checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = checked_conf_cluster["per_job_timeout"]
+        self.factorize_delayed = checked_conf_cluster["factorize_delayed"]
 
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
@@ -90,9 +99,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 self.tmp_dir = os.path.join(self.out_dir, "tmp_save_disk")
                 if not os.path.exists(self.tmp_dir):
                     os.makedirs(self.tmp_dir)
-                self.wrapper = wrapper.WrapperDisk(self.tmp_dir)
+                self.wrapper = mp_wrapper.WrapperDisk(self.tmp_dir)
             else:
-                self.wrapper = wrapper.WrapperNone(None)
+                self.wrapper = mp_wrapper.WrapperNone(None)
 
             # Create pool
             self.pool = mp.get_context(mp_mode).Pool(
@@ -103,6 +112,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.queue = Queue()
             self.task_cache = {}
 
+            # Variable used for cleaning
+            # Clone of iterator future list
+            self.cl_future_list = []
+
             # Refresh worker
             self.refresh_worker = threading.Thread(
                 target=MultiprocessingCluster.refresh_task_cache,
@@ -111,6 +124,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     self.task_cache,
                     self.queue,
                     self.per_job_timeout,
+                    self.cl_future_list,
+                    self.wrapper,
                 ),
             )
             self.refresh_worker.daemon = True
@@ -151,12 +166,16 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
+        overloaded_conf["factorize_delayed"] = conf.get(
+            "factorize_delayed", True
+        )
 
         cluster_schema = {
             "mode": str,
             "dump_to_disk": bool,
             "nb_workers": int,
             "per_job_timeout": Or(float, int),
+            "factorize_delayed": bool,
         }
 
         # Check conf
@@ -210,12 +229,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             :param kwargs: kwargs of func
             """
 
-            used_func, used_kwargs = self.wrapper.get_function_and_kwargs(
-                func, kwargs, nout=nout
-            )
-
             # create delayed_task
-            delayed_task = MpDelayedTask(used_func, list(argv), used_kwargs)
+            delayed_task = MpDelayedTask(func, list(argv), kwargs)
 
             delayed_object_list = []
             for idx in range(nout):
@@ -240,6 +255,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param task_list: task list
         """
 
+        # factorize task
+        if self.factorize_delayed:
+            factorize_delayed(task_list)
+
         memorize = {}
         future_list = [self.rec_start(task, memorize) for task in task_list]
         # signal that we reached the end of this batch
@@ -263,62 +282,78 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         current_delayed_task = delayed_object.delayed_task
 
-        def check_arg(obj, current_can_run):
+        # Modify delayed with wrapper here
+        delayed_object.delayed_task.modify_delayed_task(self.wrapper)
+
+        def transform_delayed_to_mp_job(args_or_kawargs):
             """
-            Check if arg is a delayed.
-            If obj is a delayed and job is done, replace it by MpJob
-            And add it to arguments list
+            Replace MpDalayed in list or dict by a MpJob
 
-            :param obj: object to process
-            :param current_can_run : copy of global canRun
+            :param args_or_kawargs: list or dict of data
             """
-            new_can_run = current_can_run
-            if isinstance(obj, MpDelayed):
-                rec_future = self.rec_start(obj, memorize)
-                new_obj = MpJob(
-                    rec_future.mp_future_task.job_id, rec_future.return_index
-                )
-                new_can_run = False
-            else:
-                new_obj = obj
-            return new_obj, new_can_run
 
-        # inspect args recursively
-        filt_args = []
-        for idx, _ in enumerate(current_delayed_task.args):
-            if isinstance(current_delayed_task.args[idx], list):
-                current_idx_args_list = []
-                for idx2 in range(len(current_delayed_task.args[idx])):
-                    new_obj, can_run = check_arg(
-                        current_delayed_task.args[idx][idx2], can_run
-                    )
-                    current_idx_args_list.append(new_obj)
-                filt_args.append(current_idx_args_list)
-            else:
-                new_obj, can_run = check_arg(
-                    current_delayed_task.args[idx], can_run
-                )
-                filt_args.append(new_obj)
+            def transform_data(obj):
+                """
+                Replace MpDelayed by MpJob
 
-        # inspect kwargs recursively
-        filt_kw = {}
-        for key in current_delayed_task.kw_args.keys():
-            if isinstance(current_delayed_task.kw_args[key], list):
-                current_idx_args_list = []
-                for idx2 in range(len(current_delayed_task.kw_args[key])):
-                    new_obj, can_run = check_arg(
-                        current_delayed_task.kw_args[key][idx2], can_run
+                :param data: data to replace if necessary
+                """
+
+                new_data = obj
+                if isinstance(obj, MpDelayed):
+                    rec_future = self.rec_start(obj, memorize)
+                    new_data = MpJob(
+                        rec_future.mp_future_task.job_id,
+                        rec_future.return_index,
                     )
-                    current_idx_args_list.append(new_obj)
-                filt_kw[key] = current_idx_args_list
-            else:
-                new_obj, can_run = check_arg(
-                    current_delayed_task.kw_args[key], can_run
-                )
-                filt_kw[key] = new_obj
+                return new_data
+
+            def replace_data_rec(list_or_dict):
+                """
+                Replace MpJob in list or dict by their real data recursively,
+                creating a new list or dict
+
+                :param list_or_dict: list or dict of data
+                """
+
+                if isinstance(list_or_dict, list):
+                    res = []
+                    for arg in list_or_dict:
+                        if isinstance(arg, (list, dict)):
+                            res.append(replace_data_rec(arg))
+                        else:
+                            res.append(transform_data(arg))
+
+                elif isinstance(list_or_dict, dict):
+                    res = {}
+                    for key, value in list_or_dict.items():
+                        if isinstance(value, (list, dict)):
+                            res[key] = replace_data_rec(value)
+                        else:
+                            res[key] = transform_data(value)
+                else:
+                    raise Exception("Function only support list or dict")
+
+                return res
+
+            # replace data
+            return replace_data_rec(args_or_kawargs)
+
+        # Transform MpDelayed to MpJob
+
+        filt_args = transform_delayed_to_mp_job(current_delayed_task.args)
+
+        filt_kw = transform_delayed_to_mp_job(current_delayed_task.kw_args)
+
+        # Check if can be run
+        dependances = compute_dependances(filt_args, filt_kw)
+        can_run = True
+        if len(dependances) > 0:
+            can_run = False
 
         # start current task
         task_future = MpFutureTask(self)
+
         self.queue.put(
             (
                 task_future.job_id,
@@ -344,19 +379,26 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
     @staticmethod  # noqa: C901
     def refresh_task_cache(  # noqa: C901
-        pool, task_cache, in_queue, per_job_timeout
+        pool, task_cache, in_queue, per_job_timeout, cl_future_list, wrapper_obj
     ):
         """
         Refresh task cache
 
         :param task_cache: task cache list
         :param in_queue: queue
+        :param per_job_timeout: per job timeout
+        :param cl_future_list: current future list used in iterator
+        :param wrapper_obj: wrapper (disk or None)
+        :type wrapper_obj: AbstractWrapper
 
         """
         thread = threading.current_thread()
 
+        # initialize lists
         wait_list = {}
         in_progress_list = {}
+        dependances_list = {}
+        done_task_results = {}
 
         while thread._state == RUN:  # pylint: disable=W0212
             # wait before next iteration
@@ -371,11 +413,18 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                         in_progress_list[job_id] = pool.apply_async(
                             func, args=args, kwds=kw_args
                         )
+                        # add to dependances
+                        dependances_list[job_id] = []
                     else:
+                        # add to wait list
                         wait_list[job_id] = [func, args, kw_args]
+                        # get dependances
+                        dependances_list[job_id] = compute_dependances(
+                            args, kw_args
+                        )
 
             # check for ready results
-            done_list = {}
+            done_list = []
             for job_id, job_id_progress in in_progress_list.items():
                 if job_id_progress.ready():
                     try:
@@ -384,54 +433,68 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     except Exception as exception:
                         res = exception
                         success = False
-                    done_list[job_id] = [success, res]
+                    done_list.append(job_id)
+                    done_task_results[job_id] = [success, res]
+                    # remove from dependance list
+                    dependances_list.pop(job_id)
 
             # clean done jobs
-            for job_id, _ in done_list.items():
+            for job_id in done_list:
+                # delete
                 del in_progress_list[job_id]
+                # copy results to futures
+                # (they remove themselves from task_cache
+                task_cache[job_id].set(done_task_results[job_id])
 
             # check wait_list for dependent tasks
 
             ready_list = []
-            for job_id, wait_job_id in wait_list.items():
-                func, args, kw_args = wait_job_id
+            done_task_result_keys = done_task_results.keys()
+            for job_id in wait_list.keys():  # pylint: disable=C0201
+                depending_tasks = dependances_list[job_id]
+                # check if all tasks are finished
                 can_run = True
-                for idx, _ in enumerate(args):
-                    args[idx], can_run = check_job_done(
-                        done_list, args[idx], can_run
-                    )
-                    if isinstance(args[idx], list):
-                        for idx2 in range(len(args[idx])):
-                            args[idx][idx2], can_run = check_job_done(
-                                done_list, args[idx][idx2], can_run
-                            )
-
-                # inspect kwargs recursively
-                for key in kw_args:
-                    kw_args[key], can_run = check_job_done(
-                        done_list, kw_args[key], can_run
-                    )
-                    if isinstance(kw_args[key], list):
-                        for idx2 in range(len(kw_args[key])):
-                            kw_args[key][idx2], can_run = check_job_done(
-                                done_list, kw_args[key][idx2], can_run
-                            )
-
-                # mask as ready to run
+                for depend in depending_tasks:
+                    if depend not in done_task_result_keys:
+                        can_run = False
                 if can_run:
                     ready_list.append(job_id)
-
-            # copy results to futures (they remove themselves from task_cache
-            for job_id, done_job_id in done_list.items():
-                task_cache[job_id].set(done_job_id)
-
             # launch tasks ready to run
             for job_id in ready_list:
                 func, args, kw_args = wait_list[job_id]
+                # replace jobs by real data
+                replace_job_by_data(args, done_task_results)
+                replace_job_by_data(kw_args, done_task_results)
+                # launch task
                 in_progress_list[job_id] = pool.apply_async(
                     func, args=args, kwds=kw_args
                 )
                 del wait_list[job_id]
+
+            # find done jobs that can be cleaned
+            cleanable_jobid = []
+
+            for job_id in done_task_results.keys():  # pylint: disable=C0201
+                # check if needed
+                still_need = False
+                for dependance_task_list in dependances_list.values():
+                    if job_id in dependance_task_list:
+                        still_need = True
+                if not still_need:
+                    cleanable_jobid.append(job_id)
+
+            # clean unused in the future jobs through wrapper
+            for job_id_to_clean in cleanable_jobid:
+                if job_id_to_clean not in get_job_ids_from_futures(
+                    cl_future_list
+                ):
+                    # not needed by iterator -> can be cleaned
+                    # Cleanup with wrapper
+                    wrapper_obj.cleanup_future_res(
+                        done_task_results[job_id_to_clean][1]
+                    )
+                    # cleanup list
+                    done_task_results.pop(job_id_to_clean)
 
     def future_iterator(self, future_list):
         """
@@ -443,169 +506,147 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         return MpFutureIterator(future_list, self)
 
 
-def check_job_done(done_list, obj, current_can_run):
+def get_job_ids_from_futures(future_list):
     """
-    Check if obj is a delayed.
-    If obj is a delayed and job is done, replace it
+    Get list of jobs ids in future list
 
-    :param done_list: list of done tasks
-    :param obj: object to process
-    :param current_can_run: current global can_run
+    :param future_list: list of futures
+    :type future_list: MpFuture
+
+    :return: list of job id
+    :rtype: list(int)
     """
-    new_can_run = current_can_run
-    new_obj = obj
-    if isinstance(obj, MpJob):
-        if obj.task_id in done_list:
-            if not done_list[obj.task_id][0]:
-                # Task ended with an error but we need the result
-                # for a dependent task
-                raise done_list[obj.task_id][1]
 
-            if isinstance(done_list[obj.task_id][1], tuple):
-                new_obj = done_list[obj.task_id][1][obj.r_idx]
+    list_ids = []
+
+    for future in future_list:
+        list_ids.append(future.mp_future_task.job_id)
+
+    return list_ids
+
+
+def replace_job_by_data(args_or_kawargs, done_task_results):
+    """
+    Replace MpJob in list or dict by their real data
+
+    :param args_or_kawargs: list or dict of data
+    :param done_task_results: dict of done tasks
+    """
+
+    def get_data(data, done_task_results):
+        """
+        Replace MpJob in list or dict by their real data
+
+        :param data: data to replace if necessary
+        :param done_task_results: dict of done tasks
+        """
+
+        new_data = data
+        if isinstance(data, MpJob):
+            task_id = data.task_id
+            idx = data.r_idx
+
+            full_res = done_task_results[task_id][1]
+            if not done_task_results[task_id][0]:
+                raise Exception("Current task failed")
+
+            if isinstance(full_res, tuple):
+                new_data = full_res[idx]
             else:
-                if obj.r_idx > 0:
+                if idx > 0:
                     raise ValueError("Asked for index > 0 in a singleton")
-                new_obj = done_list[obj.task_id][1]
+                new_data = full_res
+
+        return new_data
+
+    def replace_data_rec(list_or_dict, done_task_results):
+        """
+        Replace MpJob in list or dict by their real data recursively
+
+        :param list_or_dict: list or dict of data
+        :param done_task_results: dict of done tasks
+        """
+        if isinstance(list_or_dict, list):
+            for index_arg, arg in enumerate(list_or_dict):
+                if isinstance(arg, (list, dict)):
+                    replace_data_rec(arg, done_task_results)
+                else:
+                    list_or_dict[index_arg] = get_data(arg, done_task_results)
+
+        elif isinstance(list_or_dict, dict):
+            for key, value in list_or_dict.items():
+                if isinstance(value, (list, dict)):
+                    replace_data_rec(value, done_task_results)
+                else:
+                    list_or_dict[key] = get_data(value, done_task_results)
+        else:
+            raise Exception("Function only support list or dict")
+
+    # replace data
+    replace_data_rec(args_or_kawargs, done_task_results)
+
+
+def compute_dependances(args, kw_args):
+    """
+    Compute dependances from args and kw_args
+
+    :param args: arguments
+    :type args: list
+    :param kw_args: key arguments
+    :type kw_args: dict
+
+    :return: dependances
+    :rtype: list
+    """
+
+    def get_job_id(data):
+        """
+        Get job id from data if is MpJob
+
+        :param data
+
+        :return job id if exists, None if doesnt exist
+        :rtype: int
+        """
+        job_id = None
+
+        if isinstance(data, MpJob):
+            job_id = data.task_id
+
+        return job_id
+
+    def get_ids_rec(list_or_dict):
+        """
+        Compute dependances from list or dict or simple data
+
+        :param list_or_dict: arguments
+        :type list_or_dict: list or dict
+
+        :return: dependances
+        :rtype: list
+        """
+
+        list_ids = []
+
+        if isinstance(list_or_dict, list):
+            for arg in list_or_dict:
+                list_ids += get_ids_rec(arg)
+
+        elif isinstance(list_or_dict, dict):
+            for key in list_or_dict:
+                list_ids += get_ids_rec(list_or_dict[key])
 
         else:
-            new_can_run = False
-    return new_obj, new_can_run
+            current_id = get_job_id(list_or_dict)
+            if current_id is not None:
+                list_ids.append(current_id)
 
+        return list_ids
 
-class MpJob:  # pylint: disable=R0903
-    """
-    Encapsulation of multiprocessing job Id (internal use for mp_local_cluster)
-    """
+    # compute dependances
+    dependances = get_ids_rec(args) + get_ids_rec(kw_args)
 
-    __slots__ = ["task_id", "r_idx"]
-
-    def __init__(self, idx, return_index):
-        self.task_id = idx
-        self.r_idx = return_index
-
-
-class MpDelayedTask:  # pylint: disable=R0903
-    """
-    Delayed task
-    """
-
-    def __init__(self, func, args, kw_args):
-        """
-        Init function of MpDelayedTask
-
-        :param func: function to run
-        :param args: args of function
-        :param kw_args: kwargs of function
-
-        """
-        self.func = func
-        self.args = args
-        self.kw_args = kw_args
-        self.associated_objects = []
-
-
-class MpDelayed:  # pylint: disable=R0903
-    """
-    multiprocessing version of dask.delayed
-    """
-
-    def __init__(self, delayed_task, return_index=0):
-        self.delayed_task = delayed_task
-        self.return_index = return_index
-
-        # register to delayed_task
-        self.delayed_task.associated_objects.append(self)
-
-
-class MpFuture:
-    """
-    Multiprocessing version of distributed.future
-    """
-
-    def __init__(self, mp_future_task, return_index):
-        """
-        Init function of SequentialCluster
-
-        :param mp_future_task: Future task
-        :param return_index: index of return object
-
-        """
-
-        self.mp_future_task = mp_future_task
-        # register itself to future_task
-        self.mp_future_task.associated_futures.append(self)
-
-        self.result = None
-        self._success = None
-        self.return_index = return_index
-        self.event = threading.Event()
-
-    def cleanup(self):
-        """
-        Cleanup future
-        """
-        self.event.clear()
-
-    def ready(self):
-        """
-        Check if future is ready
-
-        """
-        return self.event.is_set()
-
-    def successful(self):
-        """
-        Check if future is successful
-
-        """
-        if not self.ready():
-            raise ValueError("mp_future not ready!")
-        return self._success
-
-    def set(self, success, obj):
-        """
-        Set results to future
-
-        :param success: success of future
-        :type success: bool
-        :param obj: result
-
-        """
-        self._success = success
-        if self._success:
-            if not isinstance(obj, tuple):
-                if self.return_index > 0:
-                    raise ValueError("Asked for index > 0 in a singleton")
-                self.result = obj
-            else:
-                self.result = obj[self.return_index]
-        else:
-            self.result = obj
-        self.event.set()
-
-    def wait(self, timeout=None):
-        """
-        Wait
-
-        :param timeout: timeout to apply
-
-        """
-        self.event.wait(timeout)
-
-    def get(self, timeout=None):
-        """
-        Get result
-
-        :param timeout: timeout to apply
-
-        """
-        self.wait(timeout)
-        if not self.ready():
-            raise TimeoutError
-        if not self._success:
-            raise self.result
-        return self.result
+    return dependances
 
 
 class MpFutureTask:  # pylint: disable=R0903
@@ -648,44 +689,3 @@ class MpFutureTask:  # pylint: disable=R0903
         del self.task_cache[self.job_id]
         self._cluster = None
         self.event.clear()
-
-
-class MpFutureIterator:
-    """
-    iterator on multiprocessing.pool.AsyncResult, similar to as_completed
-    Only returns the actual results, delete the future after usage
-    """
-
-    def __init__(self, future_list, cluster):
-        """
-        Init function of MpFutureIterator
-
-        :param future_list: list of futures
-
-        """
-        self.future_list = future_list
-        self.cluster = cluster
-
-    def __iter__(self):
-        """
-        Iterate
-
-        """
-        return self
-
-    def __next__(self):
-        """
-        Next
-
-        """
-        if not self.future_list:
-            raise StopIteration
-        res = None
-        while res is None:
-            for item in self.future_list:
-                if item.ready():
-                    res = item
-                    break
-
-        self.future_list.remove(res)
-        return self.cluster.wrapper.get_obj(res.get())
