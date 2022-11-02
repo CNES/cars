@@ -26,8 +26,11 @@ templating the pipeline concept.
 
 from abc import ABCMeta, abstractmethod
 
+from json_checker import Checker, OptionalKey
+
 # CARS imports
 from cars.orchestrator import orchestrator
+from cars.pipelines import pipeline_constants
 
 # Disable pylint error: too few public method
 
@@ -49,6 +52,26 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             orchestrator_conf=conf, out_dir=None, launch_worker=False
         ):
             pass
+
+    def check_global_schema(self, conf):
+        """
+        Check the given gloabal configuration
+
+        :param conf: configuration
+        :type conf: dict
+        """
+
+        # Validate inputs
+        global_schema = {
+            pipeline_constants.INPUTS: dict,
+            pipeline_constants.OUTPUT: dict,
+            OptionalKey(pipeline_constants.APPLICATIONS): dict,
+            OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
+            OptionalKey(pipeline_constants.PIPELINE): str,
+        }
+
+        checker_inputs = Checker(global_schema)
+        checker_inputs.validate(conf)
 
     @abstractmethod
     def check_inputs(self, conf, config_json_dir=None):
