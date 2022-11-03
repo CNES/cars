@@ -102,14 +102,14 @@ The structure follows this organisation:
     .. code-block:: json
 
         {
-            "ignored_by_correlation": [1, 2],
+            "ignored_by_dense_matching": [1, 2],
             "set_to_ref_alt": [1, 3, 4],
-            "ignored_by_sift_matching": [2]
+            "ignored_by_sparse_matching": [2]
         }
 
 
-    * The classes listed in *ignored_by_sift_matching* will be masked at the sparse matching step.
-    * The classes listed in *ignored_by_correlation* will be masked at the correlation step.
+    * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
+    * The classes listed in *ignored_by_dense_matching* will be masked at the correlation step.
     * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
 
