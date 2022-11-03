@@ -374,6 +374,22 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                         self.inputs[sens_cst.ROI], epsg
                     )
 
+                # Run epipolar resampling
+                (
+                    new_epipolar_image_left,
+                    new_epipolar_image_right,
+                ) = self.resampling_application.run(
+                    sensor_image_left,
+                    sensor_image_right,
+                    grid_left,
+                    corrected_grid_right,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=pair_folder,
+                    pair_key=pair_key,
+                    margins=self.sparse_matching_app.get_margins(),
+                    add_color=False,
+                )
+
                 # Run epipolar triangulation application
                 (
                     epipolar_points_cloud_left,
@@ -381,10 +397,10 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                 ) = self.triangulation_application.run(
                     sensor_image_left,
                     sensor_image_right,
-                    epipolar_image_left,
-                    epipolar_image_right,
+                    new_epipolar_image_left,
+                    new_epipolar_image_right,
                     grid_left,
-                    grid_right,
+                    corrected_grid_right,
                     corrected_matches_cars_ds_left,
                     corrected_matches_cars_ds_right,
                     epsg,

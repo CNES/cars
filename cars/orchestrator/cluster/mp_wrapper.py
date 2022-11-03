@@ -27,6 +27,7 @@ import logging
 import os
 import shutil
 from abc import ABCMeta, abstractmethod
+from multiprocessing.pool import ThreadPool
 
 import pandas
 
@@ -74,6 +75,14 @@ class AbstractWrapper(metaclass=ABCMeta):
     def cleanup(self):
         """
         Cleanup tmp_dir
+        """
+
+    @abstractmethod
+    def cleanup_future_res(self, future_res):
+        """
+        Cleanup future result
+
+        :param future_res: future result to clean
         """
 
 
@@ -125,6 +134,14 @@ class WrapperNone(AbstractWrapper):
         Cleanup tmp_dir
         """
 
+    def cleanup_future_res(self, future_res):
+        """
+        Cleanup future result
+
+        :param future_res: future result to clean
+        """
+        del future_res
+
 
 class WrapperDisk(AbstractWrapper):
 
@@ -145,13 +162,40 @@ class WrapperDisk(AbstractWrapper):
 
         self.current_object_id = 0
 
+        # Create a thead pool for removing data
+        self.removing_pool = ThreadPool(1)
+
     def cleanup(self):
         """
         Cleanup tmp_dir
         """
 
+        logging.info("Clean removing thread pool ...")
+        self.removing_pool.close()
+        self.removing_pool.join()
+
         logging.info("Clean tmp directory ...")
-        shutil.rmtree(self.tmp_dir)
+        removing_disk_data(self.tmp_dir)
+
+    def cleanup_future_res(self, future_res):
+        """
+        Cleanup future result
+
+        :param future_res: future result to clean
+        """
+
+        if isinstance(future_res, tuple):
+            for future_res_i in future_res:
+                if is_dumped_object(future_res_i):
+                    self.removing_pool.apply_async(
+                        removing_disk_data, args=[future_res_i]
+                    )
+
+        else:
+            if is_dumped_object(future_res):
+                self.removing_pool.apply_async(
+                    removing_disk_data, args=[future_res]
+                )
 
     def get_function_and_kwargs(self, func, kwargs, nout=1):
         """
@@ -191,6 +235,15 @@ class WrapperDisk(AbstractWrapper):
         """
         res = load(obj)
         return res
+
+
+def removing_disk_data(path):
+    """
+    Remove directory from disk
+
+    :param path: path to delete
+    """
+    shutil.rmtree(path)
 
 
 def none_wrapper_fun(*argv, **kwargs):
