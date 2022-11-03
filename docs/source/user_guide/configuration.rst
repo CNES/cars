@@ -109,7 +109,7 @@ The structure follows this organisation:
 
 
     * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
-    * The classes listed in *ignored_by_dense_matching* will be masked at the correlation step.
+    * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
     * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
 
