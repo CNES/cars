@@ -457,6 +457,12 @@ class Sift(SparseMatching, short_name="sift"):
                 }
             }
             orchestrator.update_out_info(updating_infos)
+            logging.info(
+                "Generate disparity: Number tiles: {}".format(
+                    epipolar_disparity_map_left.shape[1]
+                    * epipolar_disparity_map_left.shape[0]
+                )
+            )
 
             # Generate disparity maps
             for col in range(epipolar_disparity_map_left.shape[1]):

@@ -42,7 +42,6 @@ def full_res_dsm_check_output(conf):
     :type conf: dict
     """
     overloaded_conf = conf.copy()
-
     out_dir = conf[sensors_cst.OUT_DIR]
     out_dir = os.path.abspath(out_dir)
     # Ensure that outdir exists

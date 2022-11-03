@@ -23,8 +23,14 @@ Contains abstract function for Abstract Cluster
 """
 
 import logging
+import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
+
+from cars.core.utils import safe_makedirs
+
+# CARS imports
+from cars.orchestrator.cluster import log_wrapper
 
 
 class AbstractCluster(metaclass=ABCMeta):
@@ -43,6 +49,8 @@ class AbstractCluster(metaclass=ABCMeta):
          - KeyError when the required cluster is not registered
 
         :param conf_cluster: configuration for cluster
+        :param out_dir: output directory for results
+        :param launch_worker: launcher of the new worker
         :return: a cltser object
         """
 
@@ -56,6 +64,22 @@ class AbstractCluster(metaclass=ABCMeta):
             logging.error("No mode named {} registered".format(cluster_mode))
             raise KeyError("No mode named {} registered".format(cluster_mode))
 
+        profiling = {"activated": False, "mode": "time", "loop_testing": False}
+        if "profiling" in conf_cluster:
+            conf_profiling = conf_cluster["profiling"]
+            if "activated" in conf_profiling:
+                profiling["activated"] = conf_profiling["activated"]
+            if profiling["activated"]:
+                if "mode" in conf_profiling:
+                    profiling["mode"] = conf_profiling["mode"]
+                if "loop_testing" in conf_profiling:
+                    profiling["loop_testing"] = conf_profiling["loop_testing"]
+                if "memray" in profiling["mode"]:
+                    profiling_memory_dir = os.path.join(
+                        out_dir, "profiling", "memray"
+                    )
+                    safe_makedirs(profiling_memory_dir, cleanup=True)
+        conf_cluster["profiling"] = profiling
         logging.info(
             "The AbstractCluster {}  will be used".format(cluster_mode)
         )
@@ -89,8 +113,48 @@ class AbstractCluster(metaclass=ABCMeta):
         Cleanup cluster
         """
 
-    @abstractmethod
     def create_task(self, func, nout=1):
+        """
+        Create task
+
+        :param func: function
+        :param nout: number of outputs
+        """
+
+        def create_task_builder(*argv, **kwargs):
+            """
+            Create task builder to select the type of log
+            according to the configured profiling mode
+
+            :param argv: list of input arguments
+            :param kwargs: list of named input arguments
+            """
+            if not self.profiling["activated"]:
+                return self.create_task_wrapped(func, nout=nout)(
+                    *argv, **kwargs
+                )
+
+            if self.profiling["mode"] == "time":
+                (wrapper_func, additionnal_kwargs) = log_wrapper.LogWrapper(
+                    func, self.profiling["loop_testing"]
+                ).func_args_plus()
+            elif self.profiling["mode"] == "cprofile":
+                (
+                    wrapper_func,
+                    additionnal_kwargs,
+                ) = log_wrapper.CProfileWrapper(func).func_args_plus()
+            elif self.profiling["mode"] == "memray":
+                (wrapper_func, additionnal_kwargs,) = log_wrapper.MemrayWrapper(
+                    func, self.profiling["loop_testing"], self.out_dir
+                ).func_args_plus()
+            return self.create_task_wrapped(wrapper_func, nout=nout)(
+                *argv, **kwargs, **additionnal_kwargs
+            )
+
+        return create_task_builder
+
+    @abstractmethod
+    def create_task_wrapped(self, func, nout=1):
         """
         Create task
 

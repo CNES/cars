@@ -280,9 +280,19 @@ clean-dask:
 	@echo "+ $@"
 	@find . -type d -name "dask-worker-space" -exec rm -fr {} +
 
+
 .PHONY: clean-docker
 clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@echo "Clean Docker image cnes/cars ${CARS_VERSION_MIN}"
 	@docker image rm cnes/cars:${CARS_VERSION_MIN}
 	@docker image rm cnes/cars:latest
+
+.PHONY: profile-memory-report
+profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
+	@for file in $(wildcard ./$(filter-out $@,$(MAKECMDGOALS))/profiling/memray/*.bin); do echo $$file && ${CARS_VENV}/bin/memray tree -b 10 $$file; done;
+
+.PHONY: profile-memory-all
+profile-memory-all: ## memory profiling at master orchestrator level (not only at worker level) with cars CLI command, uses config.json as input (please use sequential orchestrator mode and desactive profiling)
+	@${CARS_VENV}/bin/memray run -o memray.result.bin ${CARS_VENV}/bin/cars $(wildcard ./$(filter-out $@,$(MAKECMDGOALS)))
+	@${CARS_VENV}/bin/memray tree -b 50 memray.result.bin

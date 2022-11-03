@@ -25,6 +25,7 @@ contains some cars global shared general purpose functions
 # Standard imports
 import errno
 import os
+import shutil
 from typing import Tuple
 
 # Third party imports
@@ -33,7 +34,7 @@ import numpy.linalg as la
 import rasterio as rio
 
 
-def safe_makedirs(directory):
+def safe_makedirs(directory, cleanup=False):
     """
     Create directories even if they already exist (mkdir -p)
 
@@ -43,7 +44,8 @@ def safe_makedirs(directory):
         os.makedirs(directory)
     except OSError as exc:
         if exc.errno == errno.EEXIST and os.path.isdir(directory):
-            pass
+            if cleanup:
+                shutil.rmtree(directory)
         else:
             raise
 

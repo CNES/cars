@@ -456,7 +456,12 @@ class CensusMccnnSgm(
                 }
             }
             self.orchestrator.update_out_info(updating_dict)
-
+            logging.info(
+                "Compute disparity: number tiles: {}".format(
+                    epipolar_disparity_map_right.shape[1]
+                    * epipolar_disparity_map_right.shape[0]
+                )
+            )
             # Generate disparity maps
             for col in range(epipolar_disparity_map_right.shape[1]):
                 for row in range(epipolar_disparity_map_right.shape[0]):

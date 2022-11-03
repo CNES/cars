@@ -58,7 +58,6 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         :param conf_cluster: configuration for cluster
 
         """
-
         self.out_dir = out_dir
 
         # Check conf
@@ -69,7 +68,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         self.walltime = checked_conf_cluster["walltime"]
         self.use_memory_logger = checked_conf_cluster["use_memory_logger"]
         self.config_name = checked_conf_cluster["config_name"]
-
+        self.profiling = checked_conf_cluster["profiling"]
         self.launch_worker = launch_worker
 
         if self.launch_worker:
@@ -109,23 +108,28 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "unknowed_dask")
-        overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
-        overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
         overloaded_conf["use_memory_logger"] = conf.get(
             "use_memory_logger", True
         )
+        overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
+        overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
         overloaded_conf["config_name"] = conf.get("config_name", "unknown")
-
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
             "nb_workers": int,
             "walltime": str,
             "config_name": str,
+            "profiling": {
+                "activated": bool,
+                "mode": str,
+                "loop_testing": bool,
+            },
         }
 
         # Check conf
         checker = Checker(cluster_schema)
+
         checker.validate(overloaded_conf)
 
         return overloaded_conf
@@ -136,7 +140,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         Start dask cluster
         """
 
-    def create_task(self, func, nout=1):
+    def create_task_wrapped(self, func, nout=1):
         """
         Create task
 
