@@ -51,6 +51,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 
 # Specific values
@@ -232,9 +233,9 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
     if cst.EPI_IMAGE in dataset:
         nb_row = dataset[cst.EPI_IMAGE].values.shape[0]
         nb_col = dataset[cst.EPI_IMAGE].values.shape[1]
-    elif cst.DISP_MAP in dataset:
-        nb_row = dataset[cst.DISP_MAP].values.shape[0]
-        nb_col = dataset[cst.DISP_MAP].values.shape[1]
+    elif cst_disp.MAP in dataset:
+        nb_row = dataset[cst_disp.MAP].values.shape[0]
+        nb_col = dataset[cst_disp.MAP].values.shape[1]
     elif cst.X in dataset:
         nb_row = dataset[cst.X].values.shape[0]
         nb_col = dataset[cst.X].values.shape[1]

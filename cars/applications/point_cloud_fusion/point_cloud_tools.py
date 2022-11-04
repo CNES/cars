@@ -166,6 +166,8 @@ def create_combined_cloud(  # noqa: C901
                 cst.POINTS_CLOUD_IDX_IM_EPI,
             ]
         )
+    if cst.POINTS_CLOUD_AMBIGUITY in cloud_list_item.keys():
+        nb_data.append(cst.POINTS_CLOUD_AMBIGUITY)
 
     # iterate through input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
@@ -233,7 +235,13 @@ def create_combined_cloud(  # noqa: C901
         c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
 
         ds_values_list = [key for key, _ in cloud_list_item.items()]
-
+        if cst.POINTS_CLOUD_AMBIGUITY in ds_values_list:
+            c_ambiguity = cloud_list_item[cst.POINTS_CLOUD_AMBIGUITY].values[
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
+            c_cloud[nb_data.index(cst.POINTS_CLOUD_AMBIGUITY), :] = np.ravel(
+                c_ambiguity
+            )
         if cst.POINTS_CLOUD_MSK in ds_values_list:
             c_msk = cloud_list_item[cst.POINTS_CLOUD_MSK].values[
                 bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
@@ -272,46 +280,15 @@ def create_combined_cloud(  # noqa: C901
 
         # add the color information to the current cloud
         if cst.EPI_COLOR in cloud_list[cloud_list_idx]:
-            if nb_band_clr == 1:
-                if (
-                    len(cloud_list[cloud_list_idx][cst.EPI_COLOR].values.shape)
-                    == 3
-                ):
-                    c_color = np.squeeze(
-                        cloud_list[cloud_list_idx][cst.EPI_COLOR].values, axis=0
-                    )
-                else:
-                    c_color = cloud_list[cloud_list_idx][cst.EPI_COLOR].values
-                c_color = c_color[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-                c_cloud[
-                    nb_data.index(
-                        "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, 0)
-                    ),
-                    :,
-                ] = np.ravel(c_color[:, :])
-            else:
-                color_array = cloud_list[cloud_list_idx][cst.EPI_COLOR].values
-                if len(color_array.shape) == 2:
-                    # point cloud created with pancro, needs to duplicate
-                    worker_logger.debug(
-                        "Not the same number of color bands"
-                        " for all point clouds"
-                    )
-                    color_array = np.stack(
-                        [color_array for _ in range(nb_band_clr)], axis=0
-                    )
-
-                c_color = color_array[
-                    :, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-                ]
-
-                for band in range(nb_band_clr):
-                    c_cloud[
-                        nb_data.index(
-                            "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
-                        ),
-                        :,
-                    ] = np.ravel(c_color[band, :, :])
+            add_color_information(
+                cloud_list,
+                worker_logger,
+                nb_data,
+                nb_band_clr,
+                cloud_list_idx,
+                bbox,
+                c_cloud,
+            )
 
         # add the original image coordinates information to the current cloud
         if with_coords:
@@ -367,6 +344,63 @@ def create_combined_cloud(  # noqa: C901
     pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
 
     return pd_cloud, epsg
+
+
+def add_color_information(
+    cloud_list,
+    worker_logger,
+    nb_data,
+    nb_band_clr,
+    cloud_list_idx,
+    bbox,
+    c_cloud,
+):
+    """
+    Add color information for a current cloud_list item
+
+    :param cloud_list: point cloud dataset
+    :type cloud_list: List(Dataset)
+    :param worker_logger: logger
+    :type worker_logger: Logger
+    :param nb_data: list of band data
+    :type nb_data: list[str]
+    :param nb_band_clr: number of color band
+    :type nb_band_clr: int
+    :param cloud_list_idx: index of the current point cloud
+    :type cloud_list_idx: int
+    :param bbox : bbox of interest
+    :type bbox: list[int]
+    :param c_cloud : arranged point cloud
+    :type c_cloud: NDArray[float64]
+    """
+    if nb_band_clr == 1:
+        c_color = np.squeeze(cloud_list[cloud_list_idx][cst.EPI_COLOR].values)[
+            bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+        ]
+        c_cloud[
+            nb_data.index("{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, 0)),
+            :,
+        ] = np.ravel(c_color[:, :])
+    else:
+        color_array = cloud_list[cloud_list_idx][cst.EPI_COLOR].values
+        if len(color_array.shape) == 2:
+            # point cloud created with pancro, needs to duplicate
+            worker_logger.debug(
+                "Not the same number of color bands for all point clouds"
+            )
+            color_array = np.stack(
+                [color_array for _ in range(nb_band_clr)], axis=0
+            )
+
+        c_color = color_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+
+        for band in range(nb_band_clr):
+            c_cloud[
+                nb_data.index(
+                    "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
+                ),
+                :,
+            ] = np.ravel(c_color[band, :, :])
 
 
 def get_number_bands(cloud_list):

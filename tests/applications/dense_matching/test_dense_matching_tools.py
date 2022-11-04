@@ -38,6 +38,7 @@ from cars.applications.dense_matching import dense_matching_tools
 from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 
 # CARS Tests imports
 from tests.helpers import (
@@ -141,10 +142,10 @@ def test_compute_disparity_1(
         mask2_ignored_by_corr=mask2_ignored_by_corr,
     )
 
-    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
-    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
-    assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (160, 177)
-    assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (160, 177)
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
@@ -222,10 +223,10 @@ def test_compute_disparity_3(
         mask2_ignored_by_corr=mask2_ignored_by_corr,
     )
 
-    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (90, 90)
-    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (90, 90)
-    assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (170, 254)
-    assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (170, 254)
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (90, 90)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (90, 90)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (170, 254)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (170, 254)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI],
@@ -305,11 +306,11 @@ def test_compute_disparity_1_msk_ref(
         disp_max,
         mask1_ignored_by_corr=mask1_ignored_by_corr,
         mask2_ignored_by_corr=mask2_ignored_by_corr,
-        verbose=True,
+        compute_disparity_masks=True,
     )
 
-    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
-    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
@@ -370,11 +371,11 @@ def test_compute_disparity_1_msk_ref(
         disp_max,
         mask1_ignored_by_corr=mask1_ignored_by_corr,
         mask2_ignored_by_corr=mask2_ignored_by_corr,
-        verbose=True,
+        compute_disparity_masks=True,
     )
 
-    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
-    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
@@ -441,13 +442,13 @@ def test_compute_disparity_1_msk_sec(
         disp_max,
         mask1_ignored_by_corr=mask1_ignored_by_corr,
         mask2_ignored_by_corr=mask2_ignored_by_corr,
-        verbose=True,
+        compute_disparity_masks=True,
     )
 
-    assert output[cst.STEREO_REF][cst.DISP_MAP].shape == (120, 110)
-    assert output[cst.STEREO_REF][cst.DISP_MSK].shape == (120, 110)
-    assert output[cst.STEREO_SEC][cst.DISP_MAP].shape == (160, 177)
-    assert output[cst.STEREO_SEC][cst.DISP_MSK].shape == (160, 177)
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
@@ -577,8 +578,8 @@ def test_estimate_color_from_disparity():
 
     disp_dataset = xr.Dataset(
         {
-            cst.DISP_MAP: ([cst.ROW, cst.COL], np.copy(disp)),
-            cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(mask)),
+            cst_disp.MAP: ([cst.ROW, cst.COL], np.copy(disp)),
+            cst_disp.VALID: ([cst.ROW, cst.COL], np.copy(mask)),
         },
         coords={cst.ROW: disp_row, cst.COL: disp_col},
     )

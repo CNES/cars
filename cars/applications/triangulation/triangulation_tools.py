@@ -33,6 +33,7 @@ import xarray as xr
 
 from cars.conf import input_parameters
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core import former_confs_utils
 
 # CARS imports
@@ -257,14 +258,13 @@ def compute_points_cloud(
 
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
-
     values = {
         cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
         cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),  # latitudes
         cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
         cst.POINTS_CLOUD_CORR_MSK: (
             [cst.ROW, cst.COL],
-            data[cst.DISP_MSK].values,
+            data[cst_disp.VALID].values,
         ),
     }
 
@@ -292,16 +292,25 @@ def compute_points_cloud(
                         - dataset_msk.attrs[cst.EPI_MARGINS][3]
                     ),
                 ]
-            im_msk = dataset_msk[cst.EPI_MSK].values[
-                ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-            ]
-            values[cst.POINTS_CLOUD_MSK] = ([cst.ROW, cst.COL], im_msk)
+            # propagate all the data in the point cloud (except color)
+            for key, val in dataset_msk.items():
+                if len(val.values.shape) == 2:
+                    values[key] = (
+                        [cst.ROW, cst.COL],
+                        val.values[
+                            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+                        ],
+                    )
+            for key, val in data.items():
+                if len(val.values.shape) == 2:
+                    if "msk_" not in key and "color" not in key:
+                        values[key] = ([cst.ROW, cst.COL], val.values)
+
         else:
             worker_logger = logging.getLogger("distributed.worker")
             worker_logger.warning("No mask is present in the image dataset")
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
-
     # add color
     nb_bands = 1
     if cst.EPI_COLOR in data:

@@ -33,18 +33,19 @@ import numpy as np
 import pandora
 import pandora.marge
 import xarray as xr
-from pandora import constants as pcst
-from pandora.constants import (
-    PANDORA_MSK_PIXEL_RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING as P_MSK_PR_N_D,
-)
+from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
 from pkg_resources import iter_entry_points
 from scipy import interpolate
 
 # CARS imports
+from cars.applications.dense_matching import (
+    dense_matching_constants as dense_match_cst,
+)
 from cars.conf import mask_classes
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core import datasets
 
 
@@ -101,13 +102,13 @@ def get_margins(disp_min, disp_max, corr_cfg):
 
 
 def get_masks_from_pandora(
-    disp: xr.Dataset, verbose: bool
+    disp: xr.Dataset, compute_disparity_masks: bool
 ) -> Dict[str, np.ndarray]:
     """
     Get masks dictionary from the disparity map in output of pandora.
 
     :param disp: disparity map (pandora output)
-    :param verbose: verbose activation status
+    :param compute_disparity_masks: compute_disparity_masks activation status
     :return: masks dictionary
     """
     masks = {}
@@ -122,133 +123,20 @@ def get_masks_from_pandora(
     #           image
     #  * Bit 8: Pixel located in an occlusion region
     #  * Bit 9: Fake match
-    validity_mask_cropped = disp["validity_mask"].values
+    validity_mask_cropped = disp.validity_mask.values
     # Mask initialization to false (all is invalid)
-    msk = np.full(validity_mask_cropped.shape, False)
+    masks[cst_disp.VALID] = np.full(validity_mask_cropped.shape, False)
     # Identify valid points
-    msk[
-        np.where((validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_INVALID) == 0)
+    masks[cst_disp.VALID][
+        np.where((validity_mask_cropped & p_cst.PANDORA_MSK_PIXEL_INVALID) == 0)
     ] = True
 
-    masks["mask"] = msk
-
-    # With verbose, produce one mask for each invalid flag in
-    # TODO: refactor in function (many duplicated code)
-    if verbose:
-        # Bit 9: False match bit 9
-        msk_false_match = np.full(validity_mask_cropped.shape, False)
-        msk_false_match[
-            np.where(
-                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_MISMATCH) == 0
-            )
-        ] = True
-        # Bit 8: Occlusion
-        msk_occlusion = np.full(validity_mask_cropped.shape, False)
-        msk_occlusion[
-            np.where(
-                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_OCCLUSION) == 0
-            )
-        ] = True
-        # Bit 7: Masked in secondary image
-        msk_masked_sec = np.full(validity_mask_cropped.shape, False)
-        msk_masked_sec[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_RIGHT
-                )
-                == 0
-            )
-        ] = True
-        # Bit 6: Masked in reference image
-        msk_masked_ref = np.full(validity_mask_cropped.shape, False)
-        msk_masked_ref[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_IN_VALIDITY_MASK_LEFT
-                )
-                == 0
-            )
-        ] = True
-        # Bit 5: Filled false match
-        msk_filled_false_match = np.full(validity_mask_cropped.shape, False)
-        msk_filled_false_match[
-            np.where(
-                (validity_mask_cropped & pcst.PANDORA_MSK_PIXEL_FILLED_MISMATCH)
-                == 0
-            )
-        ] = True
-        # Bit 4: Filled occlusion
-        msk_filled_occlusion = np.full(validity_mask_cropped.shape, False)
-        msk_filled_occlusion[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_FILLED_OCCLUSION
-                )
-                == 0
-            )
-        ] = True
-        # Bit 3: Computation stopped during pixelic step, under pixelic
-        # interpolation never ended
-        msk_stopped_interp = np.full(validity_mask_cropped.shape, False)
-        msk_stopped_interp[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_STOPPED_INTERPOLATION
-                )
-                == 0
-            )
-        ] = True
-        # Bit 2: Disparity range to explore is incomplete (borders reached in
-        # secondary image)
-        msk_incomplete_disp = np.full(validity_mask_cropped.shape, False)
-        msk_incomplete_disp[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_RIGHT_INCOMPLETE_DISPARITY_RANGE
-                )
-                == 0
-            )
-        ] = True
-        # Bit 1: Invalid in secondary image
-        # fmt: off
-        msk_invalid_sec = np.full(validity_mask_cropped.shape, False)
-        msk_invalid_sec[
-            np.where(
-                (
-    validity_mask_cropped  # noqa: E122
-    & P_MSK_PR_N_D  # noqa: E122
-                )
-                == 0
-            )
-        ] = True
-        # fmt: on
-        # Bit 0: Invalid in reference image
-        msk_invalid_ref = np.full(validity_mask_cropped.shape, False)
-        msk_invalid_ref[
-            np.where(
-                (
-                    validity_mask_cropped
-                    & pcst.PANDORA_MSK_PIXEL_LEFT_NODATA_OR_BORDER
-                )
-                == 0
-            )
-        ] = True
-
-        masks["masked_ref"] = msk_masked_ref
-        masks["masked_sec"] = msk_masked_sec
-        masks["incomplete_disp"] = msk_incomplete_disp
-        masks["stopped_interp"] = msk_stopped_interp
-        masks["filled_occlusion"] = msk_filled_occlusion
-        masks["filled_false_match"] = msk_filled_false_match
-        masks["invalid_ref"] = msk_invalid_ref
-        masks["invalid_sec"] = msk_invalid_sec
-        masks["occlusion"] = msk_occlusion
-        masks["false_match"] = msk_false_match
+    # With compute_disparity_masks, produce one mask for each invalid flag in
+    if compute_disparity_masks:
+        msk_table = dense_match_cst.MASK_HASH_TABLE
+        for key, val in msk_table.items():
+            masks[key] = np.full(validity_mask_cropped.shape, False)
+            masks[key][np.where((validity_mask_cropped & val) == 0)] = True
 
     # Build final mask with 255 for valid points and 0 for invalid points
     # The mask is used by rasterize method (non zero are valid points)
@@ -262,14 +150,14 @@ def get_masks_from_pandora(
 
 
 def add_color(
-    input_dataset: xr.Dataset,
+    output_dataset: xr.Dataset,
     color: np.ndarray = None,
     color_mask: np.ndarray = None,
 ):
     """ "
     Add color and color mask to dataset
 
-    :param input_dataset: input dataset
+    :param output_dataset: output dataset
     :param color: color array
     :param color_mask: color mask array
 
@@ -280,21 +168,21 @@ def add_color(
         if len(color.shape) > 2:
             nb_bands = color.shape[0]
 
-        if nb_bands > 1 and cst.BAND not in input_dataset.dims:
-            input_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
-            input_dataset[cst.EPI_COLOR] = xr.DataArray(
+        if nb_bands > 1 and cst.BAND not in output_dataset.dims:
+            output_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
+            output_dataset[cst.EPI_COLOR] = xr.DataArray(
                 color,
                 dims=[cst.BAND, cst.ROW, cst.COL],
             )
         else:
-            input_dataset[cst.EPI_COLOR] = xr.DataArray(
+            output_dataset[cst.EPI_COLOR] = xr.DataArray(
                 color,
                 dims=[cst.ROW, cst.COL],
             )
 
     # Add color mask
     if color_mask is not None:
-        input_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
+        output_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
             color_mask,
             dims=[cst.ROW, cst.COL],
         )
@@ -305,7 +193,7 @@ def create_disp_dataset(
     ref_dataset: xr.Dataset,
     sec_dataset: xr.Dataset = None,
     check_roi_in_sec: bool = False,
-    verbose: bool = False,
+    compute_disparity_masks: bool = False,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -316,19 +204,19 @@ def create_disp_dataset(
                         (needed only if the check_roi_in_sec is set to True)
     :param check_roi_in_sec: option to invalid the values of the disparity
                              which end up outside the secondary image roi
-    :param verbose: verbose activation status
+    :param compute_disparity_masks: compute_disparity_masks activation status
     :return: disparity dataset as used in cars
     """
     # Retrieve disparity values
-    disp_map = disp["disparity_map"].values
+    disp_map = disp.disparity_map.values
 
     # retrieve masks
-    masks = get_masks_from_pandora(disp, verbose)
+    masks = get_masks_from_pandora(disp, compute_disparity_masks)
     if check_roi_in_sec:
-        masks["inside_sec_roi"] = create_inside_sec_roi_mask(
-            disp_map, masks["mask"], sec_dataset
+        masks[cst_disp.INSIDE_SEC_ROI] = create_inside_sec_roi_mask(
+            disp_map, masks[cst_disp.VALID], sec_dataset
         )
-        masks["mask"][masks["inside_sec_roi"] == 0] = 0
+        masks[cst_disp.VALID][masks[cst_disp.INSIDE_SEC_ROI] == 0] = 0
 
     # retrieve colors
     color = None
@@ -345,6 +233,7 @@ def create_disp_dataset(
         color_mask = ref_dataset[cst.EPI_COLOR_MSK].values
 
     # Crop disparity to ROI
+    ref_roi = []
     if not check_roi_in_sec:
         ref_roi = [
             int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
@@ -380,9 +269,10 @@ def create_disp_dataset(
             masks[key] = masks[key][
                 ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
             ]
-
+    else:
+        ref_roi = [0, 0, disp_map.shape[1], disp_map.shape[0]]
     # Fill disparity array with 0 value for invalid points
-    disp_map[masks["mask"] == 0] = 0
+    disp_map[masks[cst_disp.VALID] == 0] = 0
 
     # Build output dataset
     if not check_roi_in_sec:
@@ -408,8 +298,11 @@ def create_disp_dataset(
 
     disp_ds = xr.Dataset(
         {
-            cst.DISP_MAP: ([cst.ROW, cst.COL], np.copy(disp_map)),
-            cst.DISP_MSK: ([cst.ROW, cst.COL], np.copy(masks["mask"])),
+            cst_disp.MAP: ([cst.ROW, cst.COL], np.copy(disp_map)),
+            cst_disp.VALID: (
+                [cst.ROW, cst.COL],
+                np.copy(masks[cst_disp.VALID]),
+            ),
         },
         coords={cst.ROW: row, cst.COL: col},
     )
@@ -417,29 +310,12 @@ def create_disp_dataset(
     # add color
     add_color(disp_ds, color=color, color_mask=color_mask)
 
-    if verbose:
-        disp_ds[cst.DISP_MSK_INVALID_REF] = xr.DataArray(
-            np.copy(masks["invalid_ref"]), dims=[cst.ROW, cst.COL]
-        )
-        disp_ds[cst.DISP_MSK_INVALID_SEC] = xr.DataArray(
-            np.copy(masks["invalid_sec"]), dims=[cst.ROW, cst.COL]
-        )
-        disp_ds[cst.DISP_MSK_MASKED_REF] = xr.DataArray(
-            np.copy(masks["masked_ref"]), dims=[cst.ROW, cst.COL]
-        )
-        disp_ds[cst.DISP_MSK_MASKED_SEC] = xr.DataArray(
-            np.copy(masks["masked_sec"]), dims=[cst.ROW, cst.COL]
-        )
-        disp_ds[cst.DISP_MSK_OCCLUSION] = xr.DataArray(
-            np.copy(masks["occlusion"]), dims=[cst.ROW, cst.COL]
-        )
-        disp_ds[cst.DISP_MSK_FALSE_MATCH] = xr.DataArray(
-            np.copy(masks["false_match"]), dims=[cst.ROW, cst.COL]
-        )
-        if check_roi_in_sec:
-            disp_ds[cst.DISP_MSK_INSIDE_SEC_ROI] = xr.DataArray(
-                np.copy(masks["inside_sec_roi"]), dims=[cst.ROW, cst.COL]
-            )
+    # add ambiguity_confidence
+    add_ambiguity(disp_ds, disp, ref_roi)
+
+    if compute_disparity_masks:
+        for key, val in masks.items():
+            disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
 
     disp_ds.attrs = disp.attrs.copy()
     disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
@@ -450,6 +326,35 @@ def create_disp_dataset(
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
     return disp_ds
+
+
+def add_ambiguity(
+    output_dataset: xr.Dataset,
+    disp: xr.Dataset,
+    ref_roi: List[int],
+):
+    """ "
+    Add ambiguity to dataset
+
+    :param output_dataset: output dataset
+    :param disp: disp xarray
+
+    """
+    confidence_measure_indicator_index = list(disp.confidence_measure.indicator)
+    if "ambiguity_confidence" in confidence_measure_indicator_index:
+        ambiguity_idx = list(disp.confidence_measure.indicator).index(
+            "ambiguity_confidence"
+        )
+        output_dataset[cst_disp.AMBIGUITY_CONFIDENCE] = xr.DataArray(
+            np.copy(
+                disp.confidence_measure.data[
+                    ref_roi[1] : ref_roi[3],
+                    ref_roi[0] : ref_roi[2],
+                    ambiguity_idx,
+                ]
+            ),
+            dims=[cst.ROW, cst.COL],
+        )
 
 
 def compute_mask_to_use_in_pandora(
@@ -533,7 +438,7 @@ def compute_disparity(
     mask1_ignored_by_corr=None,
     mask2_ignored_by_corr=None,
     use_sec_disp=True,
-    verbose=False,
+    compute_disparity_masks=False,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -557,8 +462,8 @@ def compute_disparity(
     :param use_sec_disp: Boolean activating the use of the secondary
                          disparity map
     :type use_sec_disp: bool
-    :param verbose: Activation of verbose mode
-    :type verbose: Boolean
+    :param compute_disparity_masks: Activation of compute_disparity_masks mode
+    :type compute_disparity_masks: Boolean
     :return: Dictionary of disparity dataset. Keys are \
              (if it is computed by Pandora):
 
@@ -569,6 +474,7 @@ def compute_disparity(
 
     # Check disp min and max bounds with respect to margin used for
     # rectification
+
     if disp_min is None:
         disp_min = left_dataset.attrs[cst.EPI_DISP_MIN]
     else:
@@ -646,7 +552,7 @@ def compute_disparity(
 
     disp = {}
     disp[cst.STEREO_REF] = create_disp_dataset(
-        ref, left_dataset, verbose=verbose
+        ref, left_dataset, compute_disparity_masks=compute_disparity_masks
     )
 
     if bool(sec.dims) and use_sec_disp:
@@ -661,7 +567,7 @@ def compute_disparity(
             right_dataset,
             sec_dataset=left_dataset,
             check_roi_in_sec=True,
-            verbose=verbose,
+            compute_disparity_masks=compute_disparity_masks,
         )
 
     return disp
@@ -757,7 +663,7 @@ def estimate_color_from_disparity(
     """
     # retrieve numpy arrays from input datasets
 
-    disp_msk = disp_ref_to_sec[cst.DISP_MSK].values
+    disp_msk = disp_ref_to_sec[cst_disp.VALID].values
     im_color = disp_sec_to_ref_with_color[cst.EPI_COLOR].values
     if cst.EPI_COLOR_MSK in disp_sec_to_ref_with_color.variables.keys():
         im_msk = disp_sec_to_ref_with_color[cst.EPI_COLOR_MSK].values
@@ -766,7 +672,7 @@ def estimate_color_from_disparity(
     if len(im_color.shape) == 2:
         im_color = np.expand_dims(im_color, axis=0)
     nb_bands, nb_row, nb_col = im_color.shape
-    nb_disp_row, nb_disp_col = disp_ref_to_sec[cst.DISP_MAP].values.shape
+    nb_disp_row, nb_disp_col = disp_ref_to_sec[cst_disp.MAP].values.shape
 
     sec_up_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][1])
     sec_left_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][0])
@@ -792,14 +698,14 @@ def estimate_color_from_disparity(
     interpolated_points = np.zeros(
         (nb_disp_row * nb_disp_col, 2), dtype=np.float64
     )
-    for i in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[0]):
-        for j in range(0, disp_ref_to_sec[cst.DISP_MAP].values.shape[1]):
+    for i in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[0]):
+        for j in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[1]):
 
             # if the pixel is valid,
             # else the position is left to (0,0)
             # and the final image pixel value will be set to np.nan
             if disp_msk[i, j] == 255:
-                idx = j + disp_ref_to_sec[cst.DISP_MAP].values[i, j]
+                idx = j + disp_ref_to_sec[cst_disp.MAP].values[i, j]
                 interpolated_points[i * nb_disp_col + j, 0] = (
                     idx - sec_left_margin
                 )

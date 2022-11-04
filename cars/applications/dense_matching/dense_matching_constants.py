@@ -21,7 +21,9 @@
 """
 this module contains the constants of dense_matching.
 """
+from pandora import constants as pandora_cst
 
+from cars.core import constants_disparity as disp_cst
 
 # USED VARIABLES
 
@@ -39,4 +41,43 @@ USE_SEC_DISP = "use_sec_disp"
 MIN_ELEVATION_OFFSET = "min_elevation_offset"
 MAX_ELEVATION_OFFSET = "max_elevation_offset"
 
-# INFOS
+# ABRIDGED PANDORA CONSTANTS
+IN_VALIDITY_MASK_LEFT = "IN_VALIDITY_MASK_LEFT"
+IN_VALIDITY_MASK_RIGHT = "IN_VALIDITY_MASK_RIGHT"
+RIGHT_INCOMPLETE_DISPARITY_RANGE = "RIGHT_INCOMPLETE_DISPARITY_RANGE"
+STOPPED_INTERPOLATION = "STOPPED_INTERPOLATION"
+FILLED_OCCLUSION = "FILLED_OCCLUSION"
+FILLED_MISMATCH = "FILLED_MISMATCH"
+LEFT_NODATA_OR_BORDER = "LEFT_NODATA_OR_BORDER"
+RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING = (
+    "RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING"
+)
+OCCLUSION = "OCCLUSION"
+MISMATCH = "MISMATCH"
+
+
+def get_cst(key):
+    """
+    get pandora constant from abridged key
+
+    :param key: abridged key of pandora mask
+
+    Returns:
+        _type_: pandora mask constant
+    """
+    return pandora_cst.__dict__.get("PANDORA_MSK_PIXEL_" + key)
+
+
+# CORRESPONDING MSK TABLE PANDORA CARS
+MASK_HASH_TABLE = {
+    disp_cst.MASKED_REF: get_cst(IN_VALIDITY_MASK_LEFT),
+    disp_cst.MASKED_SEC: get_cst(IN_VALIDITY_MASK_RIGHT),
+    disp_cst.INCOMPLETE_DISP: get_cst(RIGHT_INCOMPLETE_DISPARITY_RANGE),
+    disp_cst.STOPPED_INTERP: get_cst(STOPPED_INTERPOLATION),
+    disp_cst.FILLED_OCCLUSION: get_cst(FILLED_OCCLUSION),
+    disp_cst.FILLED_FALSE_MATCH: get_cst(FILLED_MISMATCH),
+    disp_cst.INVALID_REF: get_cst(LEFT_NODATA_OR_BORDER),
+    disp_cst.INVALID_SEC: get_cst(RIGHT_NODATA_OR_DISPARITY_RANGE_MISSING),
+    disp_cst.OCCLUSION: get_cst(OCCLUSION),
+    disp_cst.FALSE_MATCH: get_cst(MISMATCH),
+}

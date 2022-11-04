@@ -33,6 +33,7 @@ from json_checker import And
 
 from cars.conf import input_parameters
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core import inputs
 from cars.core.geometry import AbstractGeometry
 from cars.core.otb_adapters import encode_to_otb
@@ -205,7 +206,7 @@ class OTBGeometry(AbstractGeometry):
 
             # encode disparity for otb
             disp = encode_to_otb(
-                matches[cst.DISP_MAP].values,
+                matches[cst_disp.MAP].values,
                 matches.attrs[cst.EPI_FULL_SIZE],
                 matches.attrs[roi_key],
             )
