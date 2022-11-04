@@ -12,7 +12,7 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
-## 0.5.2
+## 0.5.2 Profiling and dense matching confidence information (November 2022)
 
 ### Added
 
