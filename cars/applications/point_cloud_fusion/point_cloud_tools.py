@@ -368,9 +368,9 @@ def add_color_information(
     :type nb_band_clr: int
     :param cloud_list_idx: index of the current point cloud
     :type cloud_list_idx: int
-    :param bbox : bbox of interest
+    :param bbox: bbox of interest
     :type bbox: list[int]
-    :param c_cloud : arranged point cloud
+    :param c_cloud: arranged point cloud
     :type c_cloud: NDArray[float64]
     """
     if nb_band_clr == 1:

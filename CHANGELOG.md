@@ -10,8 +10,20 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Changed
 
+### Fixed
+
+## 0.5.2 Profiling and dense matching confidence information (November 2022)
+
+### Added
+
+- Add ambiguity transmission through pipeline [#478]
+- Add memory/cpu profiling mode [#473]
+- Clean notebooks outputs [#497]
+
+### Changed
+
 - Clean setup.cfg with optionnal package data [#467]
-- New Orchestrator Profiling Mode [#473]
+- Clean disk data in Multiprocessing mode [#454]
 
 ### Fixed
 
