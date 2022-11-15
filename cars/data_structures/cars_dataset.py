@@ -51,6 +51,7 @@ from cars.data_structures import dataframe_converter
 # cars dataset dtype
 CARS_DS_TYPE_ARRAY = "arrays"
 CARS_DS_TYPE_POINTS = "points"
+CARS_DS_TYPE_DICT = "dict"
 
 # cars_dataset names
 TILES_INFO_FILE = "tiles_info.json"
@@ -91,7 +92,11 @@ class CarsDataset:
         """
 
         self.dataset_type = dataset_type
-        if dataset_type not in [CARS_DS_TYPE_ARRAY, CARS_DS_TYPE_POINTS]:
+        if dataset_type not in [
+            CARS_DS_TYPE_ARRAY,
+            CARS_DS_TYPE_POINTS,
+            CARS_DS_TYPE_DICT,
+        ]:
             raise ValueError("wrong dataset type")
 
         self.tiles = None
@@ -723,6 +728,29 @@ def fill_dataframe(dataframe, saving_info=None, attributes=None):
 
     if saving_info is not None:
         dataframe.attrs[SAVING_INFO] = saving_info
+
+
+def fill_dict(data_dict, saving_info=None, attributes=None):
+    """
+    From a fulldict, fill info properly.
+    User can fill with saving information (containing CarsDataset id),
+    and attributes associated to data
+
+
+    :param data_dict: dictionnary to fill
+    :type data_dict: Dict
+    :param saving_info: created by Orchestrator.get_saving_infos
+    :type saving_info: dict
+    :param attributes:
+    :type attributes: dict
+
+    """
+
+    if attributes is not None:
+        data_dict[ATTRIBUTES] = attributes
+
+    if saving_info is not None:
+        data_dict[SAVING_INFO] = saving_info
 
 
 def save_dataframe(dataframe, file_name, overwrite=True):

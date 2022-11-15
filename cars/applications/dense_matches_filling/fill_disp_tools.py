@@ -24,11 +24,14 @@ This module is responsible for the filling disparity algorithms:
 """
 # pylint: disable=too-many-lines
 
-# Third party imports
+
+import copy
+
 # Standard imports
 import logging
 import math
 
+# Third party imports
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
@@ -44,6 +47,7 @@ from scipy.ndimage import (
     median_filter,
 )
 from scipy.spatial.distance import cdist
+from shapely import affinity
 from skimage.segmentation import find_boundaries
 
 
@@ -82,97 +86,115 @@ def fill_central_area_using_plane(
     :rtype: 2D np.array (row, col)
     """
 
-    disp_mask = np.copy(disp_map["disp_msk"].values)
-    disp_values = np.copy(disp_map["disp"].values)
-
-    # Find invalid region of interest in disp data from polygon info
-    disp_inv_mask = np.copy(disp_map["msk_invalid_sec"].values)
-    roi_msk = np.zeros(disp_mask.shape)
-    roi_msk = np.logical_and(disp_inv_mask == 0, disp_mask == 0)
-
     # Generate a structuring element that will consider features
     # connected even if they touch diagonally
     struct = generate_binary_structure(2, 2)
 
-    # Option 'ignore_nodata' adds invalid values of disp mask at roi_msk
-    # invalid region borders
-    if ignore_nodata:
-        add_surrounding_nodata_to_roi(roi_msk, disp_values, disp_mask)
+    disp_mask = np.copy(disp_map["disp_msk"].values)
+    disp_values = np.copy(disp_map["disp"].values)
 
-    # Selected invalid region dilation
-    dilatation = binary_dilation(roi_msk, structure=struct, iterations=nb_pix)
-    # dilated mask - initial mask = band of 'nb_pix' pix around roi
-    roi_msk_tmp = np.logical_xor(dilatation, roi_msk)
+    # Find invalid region of interest in disp data from polygon info
+    disp_inv_mask_mask = np.copy(disp_map["msk_invalid_sec"].values)
 
-    # Band disp values retrieval
-    # Optional filter processing n°1 : ignore invalid values in band
-    if ignore_zero_fill:
-        initial_len = np.sum(roi_msk_tmp)
-        roi_msk_tmp = np.logical_and(
-            roi_msk_tmp,
-            disp_map["disp_msk"].values.astype(bool),
+    labeled_disp_inv_msk_array, num_features = label(
+        (disp_inv_mask_mask == 0).astype(int), structure=struct
+    )
+
+    list_roi_msk = []
+
+    for segm in range(1, num_features + 1):
+
+        roi_msk = np.logical_and(
+            labeled_disp_inv_msk_array == segm, disp_mask == 0
         )
-        logging.info(
-            "Zero_fill_disp_mask - Filtering {} \
-            disparity values, equivalent to {}% of data".format(
-                initial_len - np.sum(roi_msk_tmp),
-                100 - (100 * np.sum(roi_msk_tmp)) / initial_len,
+
+        # Option 'ignore_nodata' adds invalid values of disp mask at roi_msk
+        # invalid region borders
+        if ignore_nodata:
+            add_surrounding_nodata_to_roi(roi_msk, disp_values, disp_mask)
+
+        # Selected invalid region dilation
+        dilatation = binary_dilation(
+            roi_msk, structure=struct, iterations=nb_pix
+        )
+        # dilated mask - initial mask = band of 'nb_pix' pix around roi
+        roi_msk_tmp = np.logical_xor(dilatation, roi_msk)
+
+        # Band disp values retrieval
+        # Optional filter processing n°1 : ignore invalid values in band
+        if ignore_zero_fill:
+            initial_len = np.sum(roi_msk_tmp)
+            roi_msk_tmp = np.logical_and(
+                roi_msk_tmp,
+                disp_map["disp_msk"].values.astype(bool),
             )
-        )
-    band_disp_values = disp_values[roi_msk_tmp]
-
-    # Optional filter processing n°2 : remove extreme values (10%)
-    if ignore_extrema and len(band_disp_values) != 0:
-        initial_len = len(band_disp_values)
-        msk_extrema = np.copy(roi_msk_tmp)
-        msk_extrema[:] = 0
-        msk_extrema[
-            np.where(
-                abs(disp_values - np.mean(band_disp_values))
-                < 1.65 * np.std(band_disp_values)
+            logging.info(
+                "Zero_fill_disp_mask - Filtering {} \
+                disparity values, equivalent to {}% of data".format(
+                    initial_len - np.sum(roi_msk_tmp),
+                    100 - (100 * np.sum(roi_msk_tmp)) / initial_len,
+                )
             )
-        ] = 1
-        roi_msk_tmp = np.logical_and(
-            roi_msk_tmp,
-            msk_extrema,
-        )
-
         band_disp_values = disp_values[roi_msk_tmp]
-        logging.info(
-            "Extrema values - Filtering {} disparity values,\
-            equivalent to {}% of data".format(
-                initial_len - len(band_disp_values),
-                100 - (100 * len(band_disp_values)) / initial_len,
+
+        # Optional filter processing n°2 : remove extreme values (10%)
+        if ignore_extrema and len(band_disp_values) != 0:
+            initial_len = len(band_disp_values)
+            msk_extrema = np.copy(roi_msk_tmp)
+            msk_extrema[:] = 0
+            msk_extrema[
+                np.where(
+                    abs(disp_values - np.mean(band_disp_values))
+                    < 1.65 * np.std(band_disp_values)
+                )
+            ] = 1
+            roi_msk_tmp = np.logical_and(
+                roi_msk_tmp,
+                msk_extrema,
             )
+
+            band_disp_values = disp_values[roi_msk_tmp]
+            logging.info(
+                "Extrema values - Filtering {} disparity values,\
+                equivalent to {}% of data".format(
+                    initial_len - len(band_disp_values),
+                    100 - (100 * len(band_disp_values)) / initial_len,
+                )
+            )
+
+        if len(band_disp_values) != 0:
+            disp_moy = np.mean(band_disp_values)
+            logging.info(
+                "Valeur disparité moyenne calculée : {}".format(disp_moy)
+            )
+        # Definition of central area to fill using plane model
+        erosion_value = define_interpolation_band_width(
+            roi_msk, percent_to_erode
+        )
+        central_area = binary_erosion(
+            roi_msk, structure=struct, iterations=erosion_value
         )
 
-    if len(band_disp_values) != 0:
-        disp_moy = np.mean(band_disp_values)
-        logging.info("Valeur disparité moyenne calculée : {}".format(disp_moy))
-    # Definition of central area to fill using plane model
-    erosion_value = define_interpolation_band_width(roi_msk, percent_to_erode)
-    central_area = binary_erosion(
-        roi_msk, structure=struct, iterations=erosion_value
-    )
+        variable_disp = calculate_disp_plane(
+            band_disp_values,
+            roi_msk_tmp,
+            central_area,
+        )
 
-    variable_disp = calculate_disp_plane(
-        band_disp_values,
-        roi_msk_tmp,
-        central_area,
-    )
+        disp_map["disp"].values[central_area] = variable_disp
+        disp_map["disp_msk"].values[central_area] = 255
 
-    disp_map["disp"].values[central_area] = variable_disp
-    disp_map["disp_msk"].values[central_area] = 255
+        # Retrieve borders that weren't filled yet
+        roi_msk[central_area] = 0
 
-    # Retrieve borders that weren't filled yet
-    roi_msk[central_area] = 0
-    return roi_msk
+        list_roi_msk.append(roi_msk)
+    return list_roi_msk
 
 
 def add_surrounding_nodata_to_roi(
-    roi_mask: xr.Dataset,
-    disp: xr.Dataset,
-    disp_mask: xr.Dataset,
+    roi_mask,
+    disp,
+    disp_mask,
 ):
     """
     Add surounding nodata to invalidity region
@@ -185,7 +207,10 @@ def add_surrounding_nodata_to_roi(
     """
 
     struct = generate_binary_structure(2, 2)
-    all_mask = np.logical_or(roi_mask.astype(bool), ~disp_mask.astype(bool))
+    modified_nan_disp_mask = np.nan_to_num(disp_mask, nan=0, posinf=0)
+    all_mask = np.logical_or(
+        roi_mask.astype(bool), ~modified_nan_disp_mask.astype(bool)
+    )
 
     # Added because zero values not included in disp_mask are present
     all_mask = np.logical_or(all_mask, disp == 0)
@@ -298,23 +323,26 @@ def calculate_disp_plane(
     return val
 
 
-def fill_area_borders_using_interpolation(disp_map, mask_to_fill, options):
+def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
     """
     Raster interpolation command
     :param disp_map: disparity values
     :type disp_map: 2D np.array (row, col)
-    :param mask_to_fill: mask to locate disp values to fill
-    :type mask_to_fill: 2D np.array (row, col)
+    :param masks_to_fill: masks to locate disp values to fill
+    :type masks_to_fill: list(2D np.array (row, col))
     :param options: parameters for interpolation methods
     :type options: dict
     """
     # Copy input data - disparity values + mask with values to fill
     raster = np.copy(disp_map["disp"].values)
     # Interpolation step
-    interpol_raster = make_raster_interpolation(raster, mask_to_fill, options)
-    # Insertion of interpolated data into disparity map
-    disp_map["disp"].values[mask_to_fill] = interpol_raster[mask_to_fill]
-    disp_map["disp_msk"].values[mask_to_fill] = 255
+    for mask_to_fill in masks_to_fill:
+        interpol_raster = make_raster_interpolation(
+            raster, mask_to_fill, options
+        )
+        # Insertion of interpolated data into disparity map
+        disp_map["disp"].values[mask_to_fill] = interpol_raster[mask_to_fill]
+        disp_map["disp_msk"].values[mask_to_fill] = 255
 
 
 # --------------------------------------------------------------------
@@ -485,3 +513,157 @@ def find_valid_neighbors(
                 valid_neighbors[direction] = disp[tmp_col, tmp_row]
                 break
     return valid_neighbors
+
+
+def estimate_poly_with_disp(poly, dmin=0, dmax=0):
+    """
+    Estimate new polygone using disparity range
+
+    :param poly: polygone to estimate
+    :type poly: Polygon
+    :param dmin: minimum disparity
+    :type dmin: int
+    :param dmax: maximum disparity
+    :type dmax: int
+
+    :return: polygon in disparity range
+    :rtype: Polygon
+
+    """
+
+    # TODO modify convention
+    # current convention in polygon is (col, row)
+
+    new_poly = copy.copy(poly)
+    for disp in range(dmin, dmax + 1):
+        translated_poly = affinity.translate(poly, xoff=0.0, yoff=disp)
+        new_poly = new_poly.union(translated_poly)
+
+    return poly
+
+
+def get_corresponding_holes(tile_poly, holes_poly_list):
+    """
+    Get list of holes situated in tile
+
+    :param tile_poly: envelop of tile
+    :type tile_poly: Polygon
+    :param holes_poly_list: envelop of holes
+    :type holes_poly_list: list(Polygon)
+
+
+    :return: list of holes envelops
+    :rtype: list(Polygon)
+
+    """
+
+    corresponding_holes = []
+    for poly in holes_poly_list:
+        if tile_poly.intersects(poly):
+            corresponding_holes.append(poly)
+
+    return corresponding_holes
+
+
+def get_corresponding_tiles(tiles_polygones, corresponding_holes, epi_disp_map):
+    """
+    Get list of tiles intersecting with holes
+
+    :param tiles_polygones: envelop of tiles
+    :type tiles_polygones: list(Polygon)
+    :param corresponding_holes: envelop of holes
+    :type corresponding_holes: list(Polygon)
+    :param epi_disp_map: disparity map cars dataset
+    :type epi_disp_map: CarsDataset
+
+
+    :return: list of tiles to use (window, overlap, xr.Dataset)
+    :rtype: list(tuple)
+
+    """
+    corresponding_tiles_row_col = []
+    corresponding_tiles = []
+
+    for key_tile, poly_tile in tiles_polygones.items():
+
+        for poly_hole in corresponding_holes:
+            if poly_tile.intersects(poly_hole):
+                if key_tile not in corresponding_tiles_row_col:
+                    corresponding_tiles_row_col.append(key_tile)
+
+    for (row, col) in corresponding_tiles_row_col:
+        corresponding_tiles.append(
+            (
+                epi_disp_map.tiling_grid[row, col],
+                epi_disp_map.overlaps[row, col],
+                epi_disp_map[row, col],
+            )
+        )
+
+    return corresponding_tiles
+
+
+def get_polygons_from_cars_ds(cars_ds):
+    """
+    Get the holes envelops computed in holes detection application
+    cars_ds must contain dicts, and not delayed.
+    This function must be called after an orchestrator.breakpoint()
+
+    :param cars_ds: holes cars dataset
+    :type cars_ds: CarsDataset
+
+
+    :return: list of holes
+    :rtype: list(Polygon)
+    """
+
+    list_poly = []
+
+    if cars_ds is not None:
+        for row in range(cars_ds.shape[0]):
+            for col in range(cars_ds.shape[1]):
+                if cars_ds[row, col] is not None:
+                    list_poly += cars_ds[row, col]["list_bbox"]
+
+    return list_poly
+
+
+def merge_intersecting_polygones(list_poly):
+    """
+    Merge polygons that intersects each other
+
+    :param list_poly: list of holes
+    :type list_poly: list(Polygon)
+
+
+    :return: list of holes
+    :rtype: list(Polygon)
+    """
+
+    new_list_poly = list_poly
+
+    merged_list = []
+
+    while len(new_list_poly) > 0:
+        current_poly = new_list_poly[0]
+
+        new_poly = current_poly
+        to_delete = [0]
+
+        for element_id in range(1, len(new_list_poly)):
+            if new_poly.intersects(new_list_poly[element_id]):
+                # Delete from list
+                to_delete.append(element_id)
+                # Merge with current
+                new_poly = new_poly.union(new_list_poly[element_id])
+
+        # Add new poly to merged list
+        merged_list.append(new_poly)
+
+        # Delete element
+        for _ in range(len(to_delete)):
+            # Start with last ones
+            pos = to_delete.pop()
+            new_list_poly.pop(pos)
+
+    return merged_list

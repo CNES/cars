@@ -275,6 +275,7 @@ class CensusMccnnSgm(
         mask2_set_to_ref_alt: List[int] = None,
         disp_min=None,
         disp_max=None,
+        compute_disparity_masks=False,
     ):
         """
         Run Matching application.
@@ -481,7 +482,7 @@ class CensusMccnnSgm(
                         use_sec_disp=self.use_sec_disp,
                         saving_info_left=saving_info_left,
                         saving_info_right=saving_info_right,
-                        compute_disparity_masks=False,
+                        compute_disparity_masks=compute_disparity_masks,
                     )
         else:
             logging.error(

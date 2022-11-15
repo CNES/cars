@@ -26,6 +26,7 @@ This module contains the saver registry class
 # Standard imports
 import logging
 import os
+import traceback
 
 # CARS imports
 from cars.orchestrator.registry.abstract_registry import (
@@ -267,7 +268,7 @@ class SingleCarsDatasetSaver:
                                 self.tags[count].capitalize()
                             )
                         )
-            else:
+            elif self.cars_ds.dataset_type == "points":
                 # type points
                 if not self.already_seen:
                     # create tmp_folder
@@ -282,8 +283,15 @@ class SingleCarsDatasetSaver:
                 )
                 self.count += 1
 
-        except Exception as err:  # pylint: disable=W0702 # noqa: B001, E722
-            logging.error(err)
+            else:
+                logging.error(
+                    "Saving {} CarsDataset not implemeted".format(
+                        self.cars_ds.dataset_type
+                    )
+                )
+
+        except:  # pylint: disable=W0702 # noqa: B001, E722
+            logging.error(traceback.format_exc())
             logging.error("Tile not saved")
 
     def cleanup(self):

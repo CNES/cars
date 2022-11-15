@@ -382,6 +382,88 @@ The structure follows this organisation:
                     }
                 },
 
+        .. tab:: HolesDetection
+
+            **Name**: "holes_detection"
+
+            **Description**
+
+            Detection of holes from input maskes.
+
+            **Configuration**
+
+            +-------------------+-------------------------------+---------+------------------------------+------------------------------+----------+
+            | Name              | Description                   | Type    | available value              | Default value                | Required |
+            +===================+===============================+=========+==============================+==============================+==========+
+            | method            | Method for holes detection    | string  | "cloud_to_bbox"              | "cloud_to_bbox"              | Yes      |
+            +-------------------+-------------------------------+---------+------------------------------+------------------------------+----------+
+
+            **Example**
+
+            .. code-block:: json
+
+                "applications": {
+                    "holes_detection": {
+                        "method": "cloud_to_bbox"
+                    }
+                },
+
+            .. warning::
+
+              This application will not be used if DenseMatchingFiling activated parameter is false
+
+        .. tab:: DenseMatchingFiling
+
+            **Name**: "dense_matches_filling"
+
+            **Description**
+
+            Fill holes in dense matches map. This uses the holes detected with the HolesDetection application.
+
+            **Configuration**
+
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | Name                                | Description                     | Type    | available value     | Default value      | Required |
+            +=====================================+=================================+=========+=====================+====================+==========+
+            | method                              | Method for holes detection      | string  | "plane"             | "plane"            | Yes      |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | save_disparity_map                  | Save disparity map              | boolean |                     |False               | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | activated                           | Activate application            | boolean |                     | false              | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | interpolation_type                  | Interpolation type              | string  | "pandora"           | "pandora"          | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | interpolation_method                | Method for holes interpolation  | string  | "mc_cnn"            | "mc_cnn"           | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | max_search_distance                 | Maximum search distance         | int     |                     | 100                | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | smoothing_iterations                | Number of smoothing iterations  | int     |                     | 1                  | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean |                     | true               | No      |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean |                     | true               | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | ignore_extrema_disp_values          | Ignore extrema values           | boolean |                     | true               | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | nb_pix                              | Margin used for mask            | int     |                     | 20                 | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            | percent_to_erode                    | Percentage to erode             | float   |                     | 0.2                | No       |
+            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+
+            **Example**
+
+            .. code-block:: json
+
+                "applications": {
+                    "dense_matches_filling": {
+                        "method": "plane",
+                        "activated": true,
+                        "save_disparity_map": true
+                    }
+                },
+            
+            
+
         .. tab:: Triangulation
 
             **Name**: "triangulation"
