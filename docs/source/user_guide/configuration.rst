@@ -439,7 +439,7 @@ The structure follows this organisation:
             +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
             | smoothing_iterations                | Number of smoothing iterations  | int     |                     | 1                  | No       |
             +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean |                     | true               | No      |
+            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean |                     | true               | No       |
             +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
             | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean |                     | true               | No       |
             +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+

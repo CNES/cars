@@ -19,8 +19,8 @@
 # limitations under the License.
 """
 This module is responsible for the filling disparity algorithms:
-- thus it fills the disparity map with values estimated according to
-  their neighbourhood.
+thus it fills the disparity map with values estimated according to
+their neighbourhood.
 """
 # pylint: disable=too-many-lines
 
@@ -64,25 +64,27 @@ def fill_central_area_using_plane(
     in this area according to a plan model estimation. The estimation
     of this model is done using disparity values at invalid region
     borders.
+
     :param disp_map: disparity map with several layers ('disp',
-    'disp_msk', 'msk_invalid_sec')
+        'disp_msk', 'msk_invalid_sec')
     :type disp_map: 2D np.array (row, col)
     :param ignore_nodata: option to activate to
-    ignore nodata values at disp mask borders
+        ignore nodata values at disp mask borders
     :type ignore_nodata: bool
     :param ignore_zero_fill: option to activate to
-    ignore zero values at disp mask borders
+        ignore zero values at disp mask borders
     :type ignore_zero_fill: bool
     :param ignore_extrema: option to activate to ignore
-    extrema values at disp mask borders
+        extrema values at disp mask borders
     :type ignore_extrema: bool
     :param nb_pix: pixel number used to define disparity values band
-    at invalid region borders that will be considered for disp estimation
+        at invalid region borders that will be considered for disp estimation
     :type nb_pix: int
     :param percent_to_erode: percentage to define size of central area
     :type percent_to_erode: float
+
     :return: mask of invalid region that hasn't be filled yet (original
-    invalid region - central area)
+        invalid region - central area)
     :rtype: 2D np.array (row, col)
     """
 
@@ -198,6 +200,7 @@ def add_surrounding_nodata_to_roi(
 ):
     """
     Add surounding nodata to invalidity region
+
     :param roi_mask: invalidity mask (values to fill)
     :type roi_mask: 2D np.array (row, col)
     :param disp: disparity values
@@ -230,10 +233,12 @@ def add_surrounding_nodata_to_roi(
 def define_interpolation_band_width(binary_image, percentage):
     """
     Define number of pixel for later erosion operation
+
     :param binary_image: invalidity mask (values to fill)
     :type binary_image: 2D np.array (row, col)
     :param percentage: percentage of border compared to center region
     :type percentage: dict
+
     :return: pixel number to erode
     :rtype: int
     """
@@ -258,10 +263,12 @@ def plot_function(
 ):
     """
     Displays shape of plane/quadratic function used in region to fill.
+
     :param data: coords and value of valid disparity values
     :type data: 3D np.array (row, col)
     :param fit: Least-squares solution.
     :type fit: ndarray
+
     :return: plot of function used in region to fill
     :rtype: matplotlib plot
     """
@@ -291,6 +298,7 @@ def calculate_disp_plane(
     """
     Estimates disparity values in disparity map which contains invalid
     area using valid data and a plane model.
+
     :param values: valid disparity values
     :type values: 3D np.array (row, col)
     :param mask: validity mask
@@ -299,8 +307,9 @@ def calculate_disp_plane(
     :type central_area: 3D np.array (row, col)
     :param display: plot interpolation fct in region to fill
     :type display: boolean
-    :return: val
-    :rtype: central interpolated disparity values
+
+    :return: central interpolated disparity values
+    :rtype: list
     """
     data_to_fill = np.where(central_area)
     data = np.vstack([np.where(mask), values]).T
@@ -381,7 +390,7 @@ def make_raster_interpolation(
     return interpol_raster
 
 
-# Copied/adapted fct from pandora/validation/interpolated_disparity.py @njit()
+@njit()
 def fill_disp_pandora(
     disp: np.ndarray, msk_fill_disp: np.ndarray, nb_directions: int
 ):
@@ -396,14 +405,18 @@ def fill_disp_pandora(
     and mutual information.
     IEEE Transactions on pattern analysis and machine intelligence,
     2007, vol. 30, no 2, p. 328-341.
+
+    Copied/adapted fct from pandora/validation/interpolated_disparity.py
+
     :param disp: disparity map
     :type disp: 2D np.array (row, col)
     :param msk_fill_disp: validity mask
     :type msk_fill_disp: 2D np.array (row, col)
     :param nb_directions: nb directions to explore
     :type nb_directions: integer
+
     :return: the interpolate left disparity map,
-    with the validity mask update :
+        with the validity mask update :
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
     # Output disparity map and validity mask
@@ -460,7 +473,6 @@ def fill_disp_pandora(
 
 
 @njit()
-# Copied/adapted fct from pandora/validation/interpolated_disparity.py
 def find_valid_neighbors(
     dirs: np.ndarray,
     disp: np.ndarray,
@@ -471,6 +483,9 @@ def find_valid_neighbors(
 ):
     """
     Find valid neighbors along directions
+
+    Copied/adapted fct from pandora/validation/interpolated_disparity.py
+
     :param dirs: directions
     :type dirs: 2D np.array (row, col)
     :param disp: disparity map
@@ -483,6 +498,7 @@ def find_valid_neighbors(
     :type col: int
     :param nb_directions: nb directions to explore
     :type nb_directions: int
+
     :return: valid neighbors
     :rtype: 2D np.array
     """
