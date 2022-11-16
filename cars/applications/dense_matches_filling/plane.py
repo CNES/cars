@@ -115,7 +115,7 @@ class PlaneFill(
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "plane")
 
-        overloaded_conf["activated"] = conf.get("activated", True)
+        overloaded_conf["activated"] = conf.get("activated", False)
 
         overloaded_conf[fd_cst.INTERP_TYPE] = conf.get(
             fd_cst.INTERP_TYPE, "pandora"
@@ -625,7 +625,7 @@ def wrapper_fill_disparity(
         )
 
         fill_disp_using_plane(
-            combined_dataset_left,
+            combined_dataset_right,
             ignore_nodata_at_disp_mask_borders,
             ignore_zero_fill_disp_mask_values,
             ignore_extrema_disp_values,
@@ -643,8 +643,6 @@ def wrapper_fill_disparity(
             row_min_right,
             col_min_right,
         )
-
-        # TODO : compute new color
 
     # Fill with attributes
     cars_dataset.fill_dataset(

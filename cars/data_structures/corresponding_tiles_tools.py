@@ -95,43 +95,43 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
             data_shape = (nb_bands, nb_rows, nb_cols)
         data = np.nan * np.zeros(data_shape)
 
-        for tile_window, _, tile_ds in tiles:
+        for tile_window, tile_overlap, tile_ds in tiles:
             # only use overlaps when on the border of full image
             # row min
             if row_min == tile_window[0]:
                 # is on border -> use overlap
-                real_row_min = int(tile_window[0] - ol_row_min)
+                real_row_min = int(tile_window[0])
                 getter_offset_row_min = int(0)
             else:
-                real_row_min = tile_window[0]
-                getter_offset_row_min = int(ol_row_min)
+                real_row_min = int(tile_window[0] + ol_row_min)
+                getter_offset_row_min = int(tile_overlap[0])
 
             # row max
             if row_max == tile_window[1]:
                 # is on border -> use overlap
-                real_row_max = int(tile_window[1] - ol_row_max)
+                real_row_max = int(tile_window[1] + ol_row_max + ol_row_min)
                 getter_offset_row_max = int(0)
             else:
-                real_row_max = int(tile_window[1])
-                getter_offset_row_max = int(ol_row_max)
+                real_row_max = int(tile_window[1] + ol_row_min)
+                getter_offset_row_max = int(tile_overlap[1])
 
             # col min
             if col_min == tile_window[2]:
                 # is on border -> use overlap
-                real_col_min = int(tile_window[2] - ol_col_min)
+                real_col_min = int(tile_window[2])
                 getter_offset_col_min = int(0)
             else:
-                real_col_min = int(tile_window[2])
-                getter_offset_col_min = int(ol_col_min)
+                real_col_min = int(tile_window[2] + ol_col_min)
+                getter_offset_col_min = int(tile_overlap[2])
 
             # col max
             if col_max == tile_window[3]:
                 # is on border -> use overlap
-                real_col_max = int(tile_window[3] - ol_col_max)
+                real_col_max = int(tile_window[3] + ol_col_max + ol_col_min)
                 getter_offset_col_max = int(0)
             else:
-                real_col_max = int(tile_window[3])
-                getter_offset_col_max = int(ol_col_max)
+                real_col_max = int(tile_window[3] + ol_col_min)
+                getter_offset_col_max = int(tile_overlap[3])
 
             real_row_min = int(real_row_min - row_min)
             real_row_max = int(real_row_max - row_min)
@@ -166,7 +166,7 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
             data,
             dims=dims,
         )
-    return new_dataset, row_min, col_min
+    return new_dataset, row_min - ol_row_min, col_min - ol_col_min
 
 
 def find_tile_dataset(corresponding_tiles, window):
