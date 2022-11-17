@@ -419,6 +419,7 @@ The structure follows this organisation:
             **Description**
 
             Fill holes in dense matches map. This uses the holes detected with the HolesDetection application.
+            The holes correspond to the area masked for dense matching.
 
             **Configuration**
 

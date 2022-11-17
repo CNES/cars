@@ -82,10 +82,12 @@ def get_roi_coverage_as_poly_with_margins(
     :return: list of polygon
 
     """
+
     bbox = []
     coord_shapes = []
     # Check if at least one masked area in roi
     if np.sum(msk_values) != 0:
+        msk_values_dil = msk_values
         if margin != 0:
             # Dilates areas in mask according to parameter 'margin' in order
             # to get enough disparity values if region is near a tile border
@@ -96,7 +98,6 @@ def get_roi_coverage_as_poly_with_margins(
             msk_values_dil = binary_dilation(
                 msk_values, structure=struct, iterations=margin
             )
-        # TODO: create function to avoid code duplication
         labeled_array, __ = label(np.array(msk_values_dil).astype("int"))
         shapes = rasterio.features.shapes(
             labeled_array,
@@ -107,7 +108,7 @@ def get_roi_coverage_as_poly_with_margins(
                 # Get polygon coordinates of labelled region
                 coords = geometry["coordinates"][0]
                 coords = [
-                    (c[0] + row_offset, c[1] + col_offset) for c in coords
+                    (c[1] + row_offset, c[0] + col_offset) for c in coords
                 ]
                 coord_shapes.append(coords)
         bbox.extend([Polygon(c) for c in coord_shapes])
@@ -141,7 +142,6 @@ def localize_masked_areas(
     :return: bounding box of masked area(s)
 
     """
-
     # binarize msk layer of epipolar image dataset
     # 0: 'valid' data, 1: masked data according to key_id
     msk_values = get_msk_roi_to_fill(dataset["msk"].values, key_id)
@@ -150,98 +150,3 @@ def localize_masked_areas(
         msk_values, row_offset=row_offset, col_offset=col_offset, margin=margin
     )
     return bbox
-
-
-def find_tiles_including_mask_roi(
-    dataset_left: xr.Dataset, dataset_right: xr.Dataset
-) -> dict:
-    """
-    Retrieves all previously calculated bbox in left and right tiles
-    and calculates their intersection to identify each masked region
-    and its tile coverage.
-
-    :param dataset_left: left epipolar image dataset
-    :type dataset_left: CarsDataset
-    :param dataset_right: right epipolar image dataset
-    :type dataset_right: CarsDataset
-
-    :return: dict containing masked area id and its tile coverage
-
-    """
-
-    # Storage of tile definition and their Polygon shape for later
-    # intersection test.
-    # Retrieve all bbox of masked areas previously calculated in
-    # fill_disp_tools.find_bbox_for_masked_areas()
-    tiles = []
-    poly_tiles = []
-    msk_areas = []
-    shape = dataset_left.tiling_grid.shape
-    if len(shape) == 3:
-        tiles = dataset_left.tiling_grid.reshape(shape[0] * shape[1], shape[2])
-    else:
-        tiles = dataset_left.tiling_grid
-    poly_tiles = []
-    for tile in tiles:
-        poly_tiles.append(
-            Polygon(
-                [
-                    [tile[2], tile[0]],
-                    [tile[3], tile[0]],
-                    [tile[3], tile[1]],
-                    [tile[2], tile[1]],
-                    [tile[2], tile[0]],
-                ]
-            )
-        )
-    # retrieve msk_bbox
-    for x_val in range(dataset_left.shape[0]):
-        for y_val in range(dataset_left.shape[1]):
-            poly_right = dataset_right[x_val, y_val].attrs["msk_bbox"]
-            if poly_right is not None:
-                msk_areas.extend(poly_right)
-            poly_left = dataset_left[x_val, y_val].attrs["msk_bbox"]
-            if poly_left is not None:
-                msk_areas.extend(poly_left)
-
-    # Calculate intersection of left_msk_areas VS right_msk_areas and
-    # msk_areas VS tile definitions
-    mapping_poly = {}
-    ind = 0
-    if len(msk_areas) == 0:
-        mapping_poly = None
-    else:
-        while len(msk_areas) != 0:
-            find_intersections = [
-                msk_areas[0].intersects(m) for m in msk_areas[1:]
-            ]
-            intersect_id = np.where(find_intersections)[0] + 1
-            msk_of_interest = msk_areas[0]
-            # Create union between areas that intersect
-            # Remove area in list of masked areas and intersection id
-            # in intersect_id
-            while len(intersect_id) != 0:
-                msk_of_interest = msk_of_interest.union(
-                    msk_areas[intersect_id[-1]]
-                )
-                msk_areas.pop(intersect_id[-1])
-                intersect_id = intersect_id[:-1]
-            # Finds tiles that intersects with this region and stores
-            # their region definition
-            find_tiles_intersect = [
-                msk_of_interest.intersects(t) for t in poly_tiles
-            ]
-            # print(f'find_tiles_intersect : {find_tiles_intersect}')
-            linked_tiles = np.array(
-                [tiles[el] for el in np.where(find_tiles_intersect)[0]]
-            )
-            # print(f'linked_tiles : {linked_tiles}')
-            # Store linked masked area and associated tiles in dict
-            mapping_poly[str(ind)] = {
-                "msk_roi": [msk_of_interest],
-                "associated_tiles": linked_tiles,
-            }
-            msk_areas.pop(0)
-            ind = ind + 1
-
-    return mapping_poly

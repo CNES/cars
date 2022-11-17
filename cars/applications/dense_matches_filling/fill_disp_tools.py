@@ -30,6 +30,7 @@ import copy
 # Standard imports
 import logging
 import math
+from typing import Dict, Tuple
 
 # Third party imports
 import matplotlib.pyplot as plt
@@ -50,9 +51,15 @@ from scipy.spatial.distance import cdist
 from shapely import affinity
 from skimage.segmentation import find_boundaries
 
+# Cars import
+from cars.applications.holes_detection import holes_detection_tools
+
 
 def fill_central_area_using_plane(
     disp_map: xr.Dataset,
+    corresponding_poly,
+    row_min,
+    col_min,
     ignore_nodata: bool,
     ignore_zero_fill: bool,
     ignore_extrema: bool,
@@ -68,6 +75,12 @@ def fill_central_area_using_plane(
     :param disp_map: disparity map with several layers ('disp',
         'disp_msk', 'msk_invalid_sec')
     :type disp_map: 2D np.array (row, col)
+    :param corresponding_poly: list of holes polygons
+    :type corresponding_poly: list(Polygon)
+    :param row_min: row offset of combined tile
+    :type row_min: int
+    :param col_min: col offset of combined tile
+    :type col_min: int
     :param ignore_nodata: option to activate to
         ignore nodata values at disp mask borders
     :type ignore_nodata: bool
@@ -110,86 +123,103 @@ def fill_central_area_using_plane(
             labeled_disp_inv_msk_array == segm, disp_mask == 0
         )
 
-        # Option 'ignore_nodata' adds invalid values of disp mask at roi_msk
-        # invalid region borders
-        if ignore_nodata:
-            add_surrounding_nodata_to_roi(roi_msk, disp_values, disp_mask)
-
-        # Selected invalid region dilation
-        dilatation = binary_dilation(
-            roi_msk, structure=struct, iterations=nb_pix
+        # Create Polygon of current mask
+        mask_polys = (
+            holes_detection_tools.get_roi_coverage_as_poly_with_margins(
+                roi_msk, row_offset=row_min, col_offset=col_min, margin=0
+            )
         )
-        # dilated mask - initial mask = band of 'nb_pix' pix around roi
-        roi_msk_tmp = np.logical_xor(dilatation, roi_msk)
+        if len(mask_polys) != 1:
+            raise Exception("Not single polygon for current mask")
 
-        # Band disp values retrieval
-        # Optional filter processing n°1 : ignore invalid values in band
-        if ignore_zero_fill:
-            initial_len = np.sum(roi_msk_tmp)
-            roi_msk_tmp = np.logical_and(
-                roi_msk_tmp,
-                disp_map["disp_msk"].values.astype(bool),
+        intersect_holes = False
+        for hole_poly in corresponding_poly:
+            if hole_poly.intersects(mask_polys[0]):
+                intersect_holes = True
+
+        if intersect_holes:
+            # is a hole to fill, not nodata in the border
+
+            # Option 'ignore_nodata' adds invalid values of disp mask at roi_msk
+            # invalid region borders
+            if ignore_nodata:
+                add_surrounding_nodata_to_roi(roi_msk, disp_values, disp_mask)
+
+            # Selected invalid region dilation
+            dilatation = binary_dilation(
+                roi_msk, structure=struct, iterations=nb_pix
             )
-            logging.info(
-                "Zero_fill_disp_mask - Filtering {} \
-                disparity values, equivalent to {}% of data".format(
-                    initial_len - np.sum(roi_msk_tmp),
-                    100 - (100 * np.sum(roi_msk_tmp)) / initial_len,
+            # dilated mask - initial mask = band of 'nb_pix' pix around roi
+            roi_msk_tmp = np.logical_xor(dilatation, roi_msk)
+
+            # Band disp values retrieval
+            # Optional filter processing n°1 : ignore invalid values in band
+            if ignore_zero_fill:
+                initial_len = np.sum(roi_msk_tmp)
+                roi_msk_tmp = np.logical_and(
+                    roi_msk_tmp,
+                    disp_map["disp_msk"].values.astype(bool),
                 )
-            )
-        band_disp_values = disp_values[roi_msk_tmp]
-
-        # Optional filter processing n°2 : remove extreme values (10%)
-        if ignore_extrema and len(band_disp_values) != 0:
-            initial_len = len(band_disp_values)
-            msk_extrema = np.copy(roi_msk_tmp)
-            msk_extrema[:] = 0
-            msk_extrema[
-                np.where(
-                    abs(disp_values - np.mean(band_disp_values))
-                    < 1.65 * np.std(band_disp_values)
+                logging.info(
+                    "Zero_fill_disp_mask - Filtering {} \
+                    disparity values, equivalent to {}% of data".format(
+                        initial_len - np.sum(roi_msk_tmp),
+                        100 - (100 * np.sum(roi_msk_tmp)) / initial_len,
+                    )
                 )
-            ] = 1
-            roi_msk_tmp = np.logical_and(
-                roi_msk_tmp,
-                msk_extrema,
-            )
-
             band_disp_values = disp_values[roi_msk_tmp]
-            logging.info(
-                "Extrema values - Filtering {} disparity values,\
-                equivalent to {}% of data".format(
-                    initial_len - len(band_disp_values),
-                    100 - (100 * len(band_disp_values)) / initial_len,
+
+            # Optional filter processing n°2 : remove extreme values (10%)
+            if ignore_extrema and len(band_disp_values) != 0:
+                initial_len = len(band_disp_values)
+                msk_extrema = np.copy(roi_msk_tmp)
+                msk_extrema[:] = 0
+                msk_extrema[
+                    np.where(
+                        abs(disp_values - np.mean(band_disp_values))
+                        < 1.65 * np.std(band_disp_values)
+                    )
+                ] = 1
+                roi_msk_tmp = np.logical_and(
+                    roi_msk_tmp,
+                    msk_extrema,
                 )
+
+                band_disp_values = disp_values[roi_msk_tmp]
+                logging.info(
+                    "Extrema values - Filtering {} disparity values,\
+                    equivalent to {}% of data".format(
+                        initial_len - len(band_disp_values),
+                        100 - (100 * len(band_disp_values)) / initial_len,
+                    )
+                )
+
+            if len(band_disp_values) != 0:
+                disp_moy = np.mean(band_disp_values)
+                logging.info(
+                    "Valeur disparité moyenne calculée : {}".format(disp_moy)
+                )
+            # Definition of central area to fill using plane model
+            erosion_value = define_interpolation_band_width(
+                roi_msk, percent_to_erode
+            )
+            central_area = binary_erosion(
+                roi_msk, structure=struct, iterations=erosion_value
             )
 
-        if len(band_disp_values) != 0:
-            disp_moy = np.mean(band_disp_values)
-            logging.info(
-                "Valeur disparité moyenne calculée : {}".format(disp_moy)
+            variable_disp = calculate_disp_plane(
+                band_disp_values,
+                roi_msk_tmp,
+                central_area,
             )
-        # Definition of central area to fill using plane model
-        erosion_value = define_interpolation_band_width(
-            roi_msk, percent_to_erode
-        )
-        central_area = binary_erosion(
-            roi_msk, structure=struct, iterations=erosion_value
-        )
 
-        variable_disp = calculate_disp_plane(
-            band_disp_values,
-            roi_msk_tmp,
-            central_area,
-        )
+            disp_map["disp"].values[central_area] = variable_disp
+            disp_map["disp_msk"].values[central_area] = 255
 
-        disp_map["disp"].values[central_area] = variable_disp
-        disp_map["disp_msk"].values[central_area] = 255
+            # Retrieve borders that weren't filled yet
+            roi_msk[central_area] = 0
 
-        # Retrieve borders that weren't filled yet
-        roi_msk[central_area] = 0
-
-        list_roi_msk.append(roi_msk)
+            list_roi_msk.append(roi_msk)
     return list_roi_msk
 
 
@@ -547,9 +577,6 @@ def estimate_poly_with_disp(poly, dmin=0, dmax=0):
 
     """
 
-    # TODO modify convention
-    # current convention in polygon is (col, row)
-
     new_poly = copy.copy(poly)
     for disp in range(dmin, dmax + 1):
         translated_poly = affinity.translate(poly, xoff=0.0, yoff=disp)
@@ -683,3 +710,62 @@ def merge_intersecting_polygones(list_poly):
             new_list_poly.pop(pos)
 
     return merged_list
+
+
+def fill_disp_using_plane(
+    disp_map: xr.Dataset,
+    corresponding_poly,
+    row_min,
+    col_min,
+    ignore_nodata: bool,
+    ignore_zero_fill: bool,
+    ignore_extrema: bool,
+    nb_pix: int,
+    percent_to_erode: float,
+    interp_options: dict,
+) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+    """
+    Fill disparity map holes
+
+    :param disp_map: disparity map
+    :type disp_map: xr.Dataset
+    :param corresponding_poly: list of holes polygons
+    :type corresponding_poly: list(Polygon)
+    :param row_min: row offset of combined tile
+    :type row_min: int
+    :param col_min: col offset of combined tile
+    :type col_min: int
+    :param ignore_nodata: ingore nodata
+    :type ignore_nodata: bool
+    :param ignore_zero_fill: ingnore zero fill
+    :type ignore_zero_fill: bool
+    :param ignore_extrema: ignore extrema
+    :type ignore_extrema: bool
+    :param nb_pix: margin to use
+    :type nb_pix: int
+    :param percent_to_erode: percent to erode
+    :type percent_to_erode: float
+    :param interp_options: interp_options
+    :type interp_options: dict
+
+    :return: overloaded configuration
+    :rtype: dict
+
+    """
+    border_region = fill_central_area_using_plane(
+        disp_map,
+        corresponding_poly,
+        row_min,
+        col_min,
+        ignore_nodata,
+        ignore_zero_fill,
+        ignore_extrema,
+        nb_pix,
+        percent_to_erode,
+    )
+
+    fill_area_borders_using_interpolation(
+        disp_map,
+        border_region,
+        interp_options,
+    )

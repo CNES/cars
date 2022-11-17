@@ -107,6 +107,7 @@ class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
         self,
         epipolar_disparity_map_left,
         epipolar_disparity_map_right,
+        epipolar_images_left,
         holes_bbox_left,
         holes_bbox_right,
         disp_min=0,
@@ -122,6 +123,19 @@ class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
         :type epipolar_disparity_map_left: CarsDataset
         :param epipolar_disparity_map_right:  right disparity
         :type epipolar_disparity_map_right: CarsDataset
+        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
+
+                - N x M Delayed tiles. \
+                    Each tile will be a future xarray Dataset containing:
+
+                    - data with keys : "im", "msk", "color"
+                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
+                        "transform", "crs", "valid_pixels", "no_data_mask",\
+                        "no_data_img"
+                - attributes containing:
+                    "largest_epipolar_region","opt_epipolar_tile_size",
+                    "epipolar_regions_grid"
+        :type epipolar_images_left: CarsDataset
         :param holes_bbox_left:  left holes
         :type holes_bbox_left: CarsDataset
         :param holes_bbox_right:  right holes
@@ -148,6 +162,5 @@ class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
                     "epipolar_regions_grid"
 
         :rtype: Tuple(CarsDataset, CarsDataset)
-
 
         """

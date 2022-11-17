@@ -23,15 +23,13 @@ this module contains the fill_disp application class.
 """
 
 
+# Standard imports
 import copy
 import logging
-
-# Standard imports
 import os
-from typing import Dict, Tuple
 
 # Third party imports
-import xarray as xr
+import numpy as np
 from json_checker import Checker, Or
 from shapely.geometry import Polygon
 
@@ -44,6 +42,7 @@ from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFiling,
 )
+from cars.applications.dense_matching import dense_matching_tools
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
@@ -185,6 +184,7 @@ class PlaneFill(
         self,
         epipolar_disparity_map_left,
         epipolar_disparity_map_right,
+        epipolar_images_left,
         holes_bbox_left,
         holes_bbox_right,
         disp_min=0,
@@ -200,6 +200,19 @@ class PlaneFill(
         :type epipolar_disparity_map_left: CarsDataset
         :param epipolar_disparity_map_right:  right disparity
         :type epipolar_disparity_map_right: CarsDataset
+        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
+
+                - N x M Delayed tiles. \
+                    Each tile will be a future xarray Dataset containing:
+
+                    - data with keys : "im", "msk", "color"
+                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
+                        "transform", "crs", "valid_pixels", "no_data_mask",\
+                        "no_data_img"
+                - attributes containing:
+                    "largest_epipolar_region","opt_epipolar_tile_size",
+                    "epipolar_regions_grid"
+        :type epipolar_images_left: CarsDataset
         :param holes_bbox_left:  left holes
         :type holes_bbox_left: CarsDataset
         :param holes_bbox_right:  right holes
@@ -226,7 +239,6 @@ class PlaneFill(
                     "epipolar_regions_grid"
 
         :rtype: Tuple(CarsDataset, CarsDataset)
-
 
         """
 
@@ -406,11 +418,11 @@ class PlaneFill(
                         ]
                         tiles_polygones[(row, col)] = Polygon(
                             [
-                                [tile[2], tile[0]],
-                                [tile[3], tile[0]],
-                                [tile[3], tile[1]],
-                                [tile[2], tile[1]],
-                                [tile[2], tile[0]],
+                                [tile[0], tile[2]],
+                                [tile[0], tile[3]],
+                                [tile[1], tile[3]],
+                                [tile[1], tile[2]],
+                                [tile[0], tile[2]],
                             ]
                         )
 
@@ -481,8 +493,6 @@ class PlaneFill(
 
                         else:
                             # Fill holes
-
-                            # TODO : update color image with new disp
                             (
                                 new_epipolar_disparity_map_left[row, col],
                                 new_epipolar_disparity_map_right[row, col],
@@ -491,9 +501,12 @@ class PlaneFill(
                             )(
                                 corresponding_tiles_left,
                                 corresponding_tiles_right,
+                                corresponding_holes_left,
+                                corresponding_holes_right,
                                 window,
                                 overlap_left,
                                 overlap_right,
+                                epipolar_images_left[row, col],
                                 ignore_nodata_at_disp_mask_borders=(
                                     self.ignore_nodata_at_disp_mask_borders
                                 ),
@@ -525,9 +538,12 @@ class PlaneFill(
 def wrapper_fill_disparity(
     corresponding_tiles_left,
     corresponding_tiles_right,
+    corresponding_poly_left,
+    corresponding_poly_right,
     window,
     overlap_left,
     overlap_right,
+    left_epi_image,
     ignore_nodata_at_disp_mask_borders=True,
     ignore_zero_fill_disp_mask_values=True,
     ignore_extrema_disp_values=True,
@@ -544,12 +560,18 @@ def wrapper_fill_disparity(
     :type corresponding_tiles_left: list(tuple(list, list, xr.Dataset))
     :param corresponding_tiles_right: right disparity map tiles
     :type corresponding_tiles_right: list(tuple(list, list, xr.Dataset))
+    :param corresponding_poly_left: left holes polygons
+    :type corresponding_poly_left: list(Polygon)
+    :param corresponding_poly_right: right holes polygons
+    :type corresponding_poly_right: list(Polygon)
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
     :param overlap_left: left overlap [row min, row max, col min col max]
     :type overlap_left: list
     :param overlap_right: left overlap  [row min, row max, col min col max]
     :type overlap_right: list
+    :param left_epi_image: left epipolar image
+    :type left_epi_image:  xr.Dataset
     :param ignore_nodata_at_disp_mask_borders: ingore nodata
     :type ignore_nodata_at_disp_mask_borders: bool
     :param ignore_zero_fill_disp_mask_values: ingnore zero fill
@@ -588,8 +610,11 @@ def wrapper_fill_disparity(
 
     # Fill disparity
 
-    fill_disp_using_plane(
+    fd_tools.fill_disp_using_plane(
         combined_dataset_left,
+        corresponding_poly_left,
+        row_min_left,
+        col_min_left,
         ignore_nodata_at_disp_mask_borders,
         ignore_zero_fill_disp_mask_values,
         ignore_extrema_disp_values,
@@ -624,8 +649,11 @@ def wrapper_fill_disparity(
             corresponding_tiles_right, window, overlap_right
         )
 
-        fill_disp_using_plane(
+        fd_tools.fill_disp_using_plane(
             combined_dataset_right,
+            corresponding_poly_right,
+            row_min_right,
+            col_min_right,
             ignore_nodata_at_disp_mask_borders,
             ignore_zero_fill_disp_mask_values,
             ignore_extrema_disp_values,
@@ -643,6 +671,22 @@ def wrapper_fill_disparity(
             row_min_right,
             col_min_right,
         )
+
+        # compute right color image from right-left disparity map
+        color_sec = dense_matching_tools.estimate_color_from_disparity(
+            croped_disp_right,
+            left_epi_image,
+            croped_disp_left,
+        )
+
+        # check bands
+        if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
+            nb_bands = left_epi_image[cst.EPI_COLOR].values.shape[0]
+            if cst.BAND not in croped_disp_right.dims:
+                croped_disp_right.assign_coords({cst.BAND: np.arange(nb_bands)})
+
+        # merge colors
+        croped_disp_right[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
 
     # Fill with attributes
     cars_dataset.fill_dataset(
@@ -721,50 +765,3 @@ def wrapper_copy_disparity(
         )
 
     return res
-
-
-def fill_disp_using_plane(
-    disp_map: xr.Dataset,
-    ignore_nodata: bool,
-    ignore_zero_fill: bool,
-    ignore_extrema: bool,
-    nb_pix: int,
-    percent_to_erode: float,
-    interp_options: dict,
-) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
-    """
-    Fill disparity map holes
-
-    :param disp_map: disparity map
-    :type disp_map: xr.Dataset
-    :param ignore_nodata: ingore nodata
-    :type ignore_nodata: bool
-    :param ignore_zero_fill: ingnore zero fill
-    :type ignore_zero_fill: bool
-    :param ignore_extrema: ignore extrema
-    :type ignore_extrema: bool
-    :param nb_pix: margin to use
-    :type nb_pix: int
-    :param percent_to_erode: percent to erode
-    :type percent_to_erode: float
-    :param interp_options: interp_options
-    :type interp_options: dict
-
-    :return: overloaded configuration
-    :rtype: dict
-
-    """
-    border_region = fd_tools.fill_central_area_using_plane(
-        disp_map,
-        ignore_nodata,
-        ignore_zero_fill,
-        ignore_extrema,
-        nb_pix,
-        percent_to_erode,
-    )
-
-    fd_tools.fill_area_borders_using_interpolation(
-        disp_map,
-        border_region,
-        interp_options,
-    )

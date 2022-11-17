@@ -383,8 +383,12 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     epipolar_image_right,
                     is_activated=self.dense_matches_filling.get_is_activated(),
                     margin=self.dense_matches_filling.get_poly_margin(),
-                    mask_holes_to_fill_left=[1],
-                    mask_holes_to_fill_right=[1],
+                    mask_holes_to_fill_left=sensor_image_left[
+                        sens_cst.INPUT_MSK_CLASSES
+                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
+                    mask_holes_to_fill_right=sensor_image_right[
+                        sens_cst.INPUT_MSK_CLASSES
+                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -523,6 +527,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 ) = self.dense_matches_filling.run(
                     epipolar_disparity_map_left,
                     epipolar_disparity_map_right,
+                    new_epipolar_image_left,
                     holes_bbox_left,
                     holes_bbox_right,
                     disp_min=disp_min,
