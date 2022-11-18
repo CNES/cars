@@ -612,8 +612,17 @@ def compute_points_cloud(
         for key, point in points.items():
             points[key] = triangulation_tools.geoid_offset(point, geoid_data)
 
+    # propagate the color type
+    color_type = None
+    if cst.EPI_COLOR in left_image_object.data_vars.keys():
+        color_type = left_image_object[cst.EPI_COLOR].attrs["color_type"]
+    else:
+        color_type = left_image_object[cst.EPI_IMAGE].attrs["color_type"]
+
     # Fill datasets
     left_pc_dataset = points[cst.STEREO_REF]
+    if color_type:
+        left_pc_dataset.attrs["color_type"] = color_type
     cars_dataset.fill_dataset(
         left_pc_dataset,
         saving_info=saving_info_left,

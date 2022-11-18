@@ -23,6 +23,8 @@ this module contains the statistical points removing application class.
 """
 
 
+import copy
+
 # Standard imports
 import logging
 import os
@@ -80,8 +82,11 @@ class Statistical(
         # check loader
 
         # Saving files
-        self.save_points_cloud = self.used_config.get(
-            "save_points_cloud", False
+        self.save_points_cloud_as_laz = self.used_config.get(
+            "save_points_cloud_as_laz", False
+        )
+        self.save_points_cloud_as_csv = self.used_config.get(
+            "save_points_cloud_as_csv", False
         )
 
         # Init orchestrator
@@ -108,8 +113,11 @@ class Statistical(
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "statistical")
-        overloaded_conf["save_points_cloud"] = conf.get(
-            "save_points_cloud", False
+        overloaded_conf["save_points_cloud_as_laz"] = conf.get(
+            "save_points_cloud_as_laz", False
+        )
+        overloaded_conf["save_points_cloud_as_csv"] = conf.get(
+            "save_points_cloud_as_csv", False
         )
 
         # statistical outlier filtering
@@ -124,7 +132,8 @@ class Statistical(
 
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud": bool,
+            "save_points_cloud_as_laz": bool,
+            "save_points_cloud_as_csv": bool,
             "activated": bool,
             "k": int,
             "std_dev_factor": float,
@@ -204,18 +213,17 @@ class Statistical(
             # Get tiling grid
             filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
             filtered_point_cloud.generate_none_tiles()
-
             filtered_point_cloud.attributes = (
                 merged_points_cloud.attributes.copy()
             )
 
             # Save objects
-            if self.save_points_cloud:
+            if self.save_points_cloud_as_laz or self.save_points_cloud_as_csv:
                 # Points cloud file name
                 # TODO in input conf file
                 pc_file_name = os.path.join(
                     self.orchestrator.out_dir,
-                    "points_cloud_post_statistical_removing.csv",
+                    "points_cloud_post_statistical_removing",
                 )
                 self.orchestrator.add_to_save_lists(
                     pc_file_name,
@@ -259,6 +267,8 @@ class Statistical(
                             self.activated,
                             self.k,
                             self.std_dev_factor,
+                            self.save_points_cloud_as_laz,
+                            self.save_points_cloud_as_csv,
                             saving_info=saving_info,
                         )
 
@@ -273,7 +283,13 @@ class Statistical(
 
 
 def statistical_removing_wrapper(
-    cloud, activated, statistical_k, std_dev_factor, saving_info=None
+    cloud,
+    activated,
+    statistical_k,
+    std_dev_factor,
+    save_points_cloud_as_laz,
+    save_points_cloud_as_csv,
+    saving_info=None,
 ):
     """
     Statistical outlier removing
@@ -286,6 +302,10 @@ def statistical_removing_wrapper(
     :type statistical_k: float
     :param std_dev_factor: std factor
     :type std_dev_factor: float
+    :param save_points_cloud_as_laz: activation of point cloud saving to laz
+    :type save_points_cloud_as_laz: bool
+    :param save_points_cloud_as_csv: activation of point cloud saving to csv
+    :type save_points_cloud_as_csv: bool
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -296,7 +316,13 @@ def statistical_removing_wrapper(
 
     # Copy input cloud
     new_cloud = cloud.copy()
-    new_cloud.attrs = cloud.attrs.copy()
+    new_cloud.attrs = copy.deepcopy(cloud.attrs)
+    new_cloud.attrs["attributes"][
+        "save_points_cloud_as_laz"
+    ] = save_points_cloud_as_laz
+    new_cloud.attrs["attributes"][
+        "save_points_cloud_as_csv"
+    ] = save_points_cloud_as_csv
 
     if activated:
         worker_logger = logging.getLogger("distributed.worker")
@@ -333,8 +359,13 @@ def statistical_removing_wrapper(
             "Statistical cloud filtering done in {} seconds".format(toc - tic)
         )
 
+    # Conversion to UTM
+    projection.points_cloud_conversion_dataframe(
+        new_cloud, cloud_epsg, current_epsg
+    )
     # Update attributes
     cloud_attributes["epsg"] = current_epsg
+
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )

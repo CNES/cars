@@ -46,6 +46,7 @@ from cars.core import outputs
 
 # CARS imports
 from cars.core.utils import safe_makedirs
+from cars.data_structures import dataframe_converter
 
 # cars dataset dtype
 CARS_DS_TYPE_ARRAY = "arrays"
@@ -516,7 +517,6 @@ def run_save_points(future_result, file_name, overwrite=False):
         # remove pickle file if already exists
         if os.path.exists(file_name):
             os.remove(file_name)
-
     # Save
     save_dataframe(future_result, file_name, overwrite=False)
 
@@ -736,29 +736,54 @@ def save_dataframe(dataframe, file_name, overwrite=True):
     :type overwrite: bool
 
     """
-    # Save attributes
-    file_name_no_ext, _ = os.path.splitext(file_name)
-    attributes_file_name = file_name_no_ext + "_attrs.json"
+    # generate filename if attributes have xstart and ystart settings
+    if (
+        "attributes" in dataframe.attrs
+        and "xstart" in dataframe.attrs["attributes"]
+    ):
+        file_name = os.path.dirname(file_name)
+        file_name = os.path.join(
+            file_name,
+            (
+                str(dataframe.attrs["attributes"]["xstart"])
+                + "_"
+                + str(dataframe.attrs["attributes"]["ystart"])
+            ),
+        )
+
+    attributes_file_name = file_name + "_attrs.json"
     save_dict(dataframe.attrs, attributes_file_name)
 
+    # Save point cloud to laz format
+    if (
+        "attributes" in dataframe.attrs
+        and pc_attributes["save_points_cloud_as_laz"]
+    ):
+        las_file_name = file_name + ".laz"
+        dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
+
     # Save panda dataframe to csv
-
-    if overwrite and os.path.exists(file_name):
-        dataframe.to_csv(file_name, index=False)
-
-    else:
-        if os.path.exists(file_name):
-            # merge files
-            existing_dataframe = pandas.read_csv(file_name)
-            merged_dataframe = pandas.concat(
-                [existing_dataframe, dataframe],
-                ignore_index=True,
-                sort=False,
-            )
-            merged_dataframe.to_csv(file_name, index=False)
+    if (
+        "attributes" in dataframe.attrs
+        and pc_attributes["save_points_cloud_as_csv"]
+    ) or "attributes" not in dataframe.attrs:
+        file_name = file_name + ".csv"
+        if overwrite and os.path.exists(file_name):
+            dataframe.to_csv(file_name, index=False)
 
         else:
-            dataframe.to_csv(file_name, index=False)
+            if os.path.exists(file_name):
+                # merge files
+                existing_dataframe = pandas.read_csv(file_name)
+                merged_dataframe = pandas.concat(
+                    [existing_dataframe, dataframe],
+                    ignore_index=True,
+                    sort=False,
+                )
+                merged_dataframe.to_csv(file_name, index=False)
+
+            else:
+                dataframe.to_csv(file_name, index=False)
 
 
 def save_dataset(

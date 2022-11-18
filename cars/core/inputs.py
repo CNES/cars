@@ -87,6 +87,17 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
+def rasterio_get_color_type(raster_file: str) -> list:
+    """
+    Get the color image type
+
+    :param raster_file: Image file
+    :return: The number of bands
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.dtypes
+
+
 def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     """
     Get the size of an image (file)
@@ -96,6 +107,23 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     """
     with rio.open(raster_file, "r") as descriptor:
         return (descriptor.width, descriptor.height)
+
+
+def rasterio_get_list_min_max(raster_file: str) -> Tuple[int, int]:
+    """
+    Get the stats of an image (file)
+
+    :param raster_file: Image file
+    :return: The list min max
+    """
+    min_list = []
+    max_list = []
+    with rio.open(raster_file, "r") as descriptor:
+        for k in range(1, descriptor.count + 1):
+            stat = descriptor.statistics(k)
+            min_list.append(stat.min)
+            max_list.append(stat.max)
+    return min_list, max_list
 
 
 def rasterio_read_as_array(

@@ -234,7 +234,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.pc_outliers_removing_1_app = Application(
             "point_cloud_outliers_removing",
             cfg=conf.get(
-                "point_cloud_outliers_removing.1:",
+                "point_cloud_outliers_removing.1",
                 {"method": "small_components"},
             ),
         )

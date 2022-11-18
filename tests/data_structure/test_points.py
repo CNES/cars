@@ -109,7 +109,9 @@ def test_save_pandas_and_constructor():
             for j in range(manager.tiling_grid.shape[1]):
                 overwrite = bool(i + j == 0)
                 cars_dataset.CarsDataset("points").run_save(
-                    manager.tiles[i][j], save_file, overwrite=overwrite
+                    manager.tiles[i][j],
+                    save_file,
+                    overwrite=overwrite,
                 )
 
     # create object

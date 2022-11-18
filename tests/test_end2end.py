@@ -511,7 +511,12 @@ def test_end2end_ventoux_with_color():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {
+                "method": "bicubic",
+                "epi_tile_size": 250,
+                "save_epipolar_image": True,
+                "save_epipolar_color": False,
+            },
             "sparse_matching": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
@@ -519,6 +524,15 @@ def test_end2end_ventoux_with_color():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_points_cloud": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
             },
         }
 
@@ -551,6 +565,30 @@ def test_end2end_ventoux_with_color():
             assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(out_disp_compute["matches"])
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "0_675248.0_4897173.0.laz"
+                    )
+                )
+                or os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "0_675370.5_4897173.0.laz"
+                    )
+                )
+            ) is True
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "0_675248.0_4897173.0.csv"
+                    )
+                )
+                or os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "0_675370.5_4897173.0.csv"
+                    )
+                )
+            ) is True
 
         # Run full res dsm pipeline
         # clean outdir
@@ -568,7 +606,27 @@ def test_end2end_ventoux_with_color():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
             },
-            "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
+            "dense_matching": {
+                "method": "census_sgm",
+                "loader": "pandora",
+                "save_disparity_map": True,
+                "use_sec_disp": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
         }
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
@@ -580,6 +638,64 @@ def test_end2end_ventoux_with_color():
         full_res_pipeline.run()
 
         out_dir = input_config_low_res["output"]["out_dir"]
+
+        assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "points_cloud", "0_675431.5_4897173.0.laz"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "points_cloud", "0_675431.5_4897173.0.csv"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_small_components_removing",
+                    "0_675431.5_4897173.0.laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_small_components_removing",
+                    "0_675431.5_4897173.0.csv",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_statistical_removing",
+                    "0_675431.5_4897173.0.laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_statistical_removing",
+                    "0_675431.5_4897173.0.csv",
+                )
+            )
+            is True
+        )
 
         # Uncomment the following instruction to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -599,7 +715,6 @@ def test_end2end_ventoux_with_color():
             rtol=1.0e-7,
             atol=1.0e-7,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
 
 
 @pytest.mark.end2end_tests

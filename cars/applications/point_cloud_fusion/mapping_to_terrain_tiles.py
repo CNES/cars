@@ -36,7 +36,6 @@ import pandas
 import xarray as xr
 from json_checker import Checker, Or
 
-# CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.point_cloud_fusion import (
@@ -46,7 +45,9 @@ from cars.applications.point_cloud_fusion import (
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,
 )
-from cars.core import tiling
+
+# CARS imports
+from cars.core import projection, tiling
 from cars.data_structures import cars_dataset, format_transformation
 
 
@@ -75,8 +76,11 @@ class MappingToTerrainTiles(
         # check loader
 
         # Saving files
-        self.save_points_cloud = self.used_config.get(
-            "save_points_cloud", False
+        self.save_points_cloud_as_laz = self.used_config.get(
+            "save_points_cloud_as_laz", False
+        )
+        self.save_points_cloud_as_csv = self.used_config.get(
+            "save_points_cloud_as_csv", False
         )
 
         # Init orchestrator
@@ -109,15 +113,19 @@ class MappingToTerrainTiles(
             "terrain_tile_size", None
         )
         overloaded_conf["resolution"] = conf.get("resolution", 0.5)
-        overloaded_conf["save_points_cloud"] = conf.get(
-            "save_points_cloud", False
+        overloaded_conf["save_points_cloud_as_laz"] = conf.get(
+            "save_points_cloud_as_laz", False
+        )
+        overloaded_conf["save_points_cloud_as_csv"] = conf.get(
+            "save_points_cloud_as_csv", False
         )
 
         points_cloud_fusion_schema = {
             "method": str,
             "terrain_tile_size": Or(int, None),
             "resolution": float,
-            "save_points_cloud": bool,
+            "save_points_cloud_as_laz": bool,
+            "save_points_cloud_as_csv": bool,
         }
 
         # Check conf
@@ -290,11 +298,11 @@ class MappingToTerrainTiles(
 
             # Save objects
 
-            if self.save_points_cloud:
+            if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
                 # Points cloud file name
                 # TODO in input conf file
                 pc_file_name = os.path.join(
-                    self.orchestrator.out_dir, "points_cloud.csv"
+                    self.orchestrator.out_dir, "points_cloud"
                 )
                 self.orchestrator.add_to_save_lists(
                     pc_file_name,
@@ -425,6 +433,8 @@ class MappingToTerrainTiles(
                             ysize=ysize,
                             radius=margins["radius"],
                             on_ground_margin=on_ground_margin,
+                            save_pc_as_laz=self.save_points_cloud_as_laz,
+                            save_pc_as_csv=self.save_points_cloud_as_csv,
                             saving_info=saving_info,
                         )
 
@@ -532,6 +542,11 @@ def compute_point_cloud_wrapper(
         on_ground_margin=kwargs["on_ground_margin"],
     )
 
+    # Conversion to UTM
+    projection.points_cloud_conversion_dataframe(pc_pandas, cloud_epsg, epsg)
+    cloud_epsg = epsg
+    # get color type list
+    color_type = point_cloud_tools.get_color_type(clouds)
     # Fill attributes for rasterization
     attributes = {
         "xstart": kwargs["xstart"],
@@ -539,6 +554,9 @@ def compute_point_cloud_wrapper(
         "xsize": kwargs["xsize"],
         "ysize": kwargs["ysize"],
         "epsg": cloud_epsg,
+        "color_type": color_type,
+        "save_points_cloud_as_laz": kwargs["save_pc_as_laz"],
+        "save_points_cloud_as_csv": kwargs["save_pc_as_csv"],
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=kwargs["saving_info"], attributes=attributes
