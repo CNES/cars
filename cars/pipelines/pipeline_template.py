@@ -55,7 +55,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
 
     def check_global_schema(self, conf):
         """
-        Check the given gloabal configuration
+        Check the given global configuration
 
         :param conf: configuration
         :type conf: dict
