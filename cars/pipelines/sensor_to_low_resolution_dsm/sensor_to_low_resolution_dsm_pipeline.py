@@ -38,6 +38,7 @@ from cars.conf import log_conf
 from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
 from cars.orchestrator import orchestrator
+from cars.pipelines import pipeline_constants as pipeline_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
@@ -86,20 +87,23 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         self.conf = pipeline_config.copy()
         self.conf.update(conf)
 
+        # check global conf
+        self.check_global_schema(self.conf)
+
         # Check conf orchestrator
-        self.orchestrator_conf = self.conf.get(sens_cst.ORCHESTRATOR, None)
+        self.orchestrator_conf = self.conf.get(pipeline_cst.ORCHESTRATOR, None)
         self.check_orchestrator(self.orchestrator_conf)
 
         # Check conf inputs
         self.inputs = self.check_inputs(
-            self.conf[sens_cst.INPUTS], config_json_dir=config_json_dir
+            self.conf[pipeline_cst.INPUTS], config_json_dir=config_json_dir
         )
 
         # Check conf output
-        self.output = self.check_output(self.conf[sens_cst.OUTPUT])
+        self.output = self.check_output(self.conf[pipeline_cst.OUTPUT])
 
         # Check conf application
-        self.check_applications(self.conf.get(sens_cst.APPLICATIONS, {}))
+        self.check_applications(self.conf.get(pipeline_cst.APPLICATIONS, {}))
 
     def check_inputs(self, conf, config_json_dir=None):
         """

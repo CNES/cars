@@ -25,11 +25,6 @@ this module contains the constants used in sensor_to_full_resolution
 
 # Sensor input
 
-INPUTS = "inputs"
-OUTPUT = "output"
-APPLICATIONS = "applications"
-ORCHESTRATOR = "orchestrator"
-
 SENSORS = "sensors"
 PAIRING = "pairing"
 
