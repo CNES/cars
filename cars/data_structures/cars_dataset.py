@@ -383,7 +383,6 @@ class CarsDataset:
                 "CarsDataset doesn't have a profile, default is given"
             )
             new_profile = DefaultGTiffProfile(count=new_profile["count"])
-
             new_profile["height"] = self.tiling_grid[-1, 0, 1]
             new_profile["width"] = self.tiling_grid[0, -1, 3]
 
@@ -392,7 +391,7 @@ class CarsDataset:
         if nodata is not None:
             new_profile["nodata"] = nodata
 
-        descriptor = rio.open(file_name, "w", **new_profile)
+        descriptor = rio.open(file_name, "w", **new_profile, BIGTIFF="IF_SAFER")
 
         return descriptor
 
