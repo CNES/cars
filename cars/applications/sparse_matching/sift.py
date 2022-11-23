@@ -90,6 +90,9 @@ class Sift(SparseMatching, short_name="sift"):
             "disparity_outliers_rejection_percent"
         ]
 
+        # minimum number of matches to continue with
+        self.minimum_nb_matches = checked_conf["minimum_nb_matches"]
+
         # sifts
         self.sift_matching_threshold = checked_conf["sift_matching_threshold"]
         self.sift_n_octave = checked_conf["sift_n_octave"]
@@ -146,6 +149,11 @@ class Sift(SparseMatching, short_name="sift"):
             "disparity_outliers_rejection_percent", 0.1
         )
 
+        # minimum number of matches to continue with
+        overloaded_conf["minimum_nb_matches"] = conf.get(
+            "minimum_nb_matches", 100
+        )
+
         # sifts params
         overloaded_conf["sift_matching_threshold"] = conf.get(
             "sift_matching_threshold", 0.6
@@ -175,6 +183,7 @@ class Sift(SparseMatching, short_name="sift"):
             "method": str,
             "disparity_margin": float,
             "disparity_outliers_rejection_percent": float,
+            "minimum_nb_matches": int,
             "elevation_delta_lower_bound": Or(int, float),
             "elevation_delta_upper_bound": Or(int, float),
             "epipolar_error_upper_bound": float,
@@ -646,15 +655,19 @@ class Sift(SparseMatching, short_name="sift"):
         # TODO: we could also make it a warning and continue
         # with uncorrected grid
         # and default disparity range
-        if nb_matches < 100:
+        if nb_matches < self.minimum_nb_matches:
             logging.error(
-                "Insufficient amount of matches found (< 100), can not safely "
-                "estimate epipolar error correction and disparity range"
+                "Insufficient amount of matches found (< {}), can not safely "
+                "estimate epipolar error correction and disparity range".format(
+                    self.minimum_nb_matches
+                )
             )
 
             raise ValueError(
-                "Insufficient amount of matches found (< 100), can not safely "
-                "estimate epipolar error correction and disparity range"
+                "Insufficient amount of matches found (< {}), can not safely "
+                "estimate epipolar error correction and disparity range".format(
+                    self.minimum_nb_matches
+                )
             )
 
         logging.info(
