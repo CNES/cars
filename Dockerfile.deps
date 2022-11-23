@@ -13,8 +13,8 @@ RUN apt-get update \
 
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
-    cmake-curses-gui=3.16.3-1ubuntu1 \
-    git=1:2.25.1-1ubuntu3.5 \
+    cmake-curses-gui=3.16.3-1ubuntu1.20.04.1 \
+    git=1:2.25.1-1ubuntu3.6 \
     wget=1.20.3-1ubuntu1 \
     file=1:5.38-4 \
     gcc=4:9.3.0-1ubuntu2 \
@@ -46,7 +46,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     swig=4.0.1-5build1 \
     libfftw3-dev=3.3.8-2ubuntu1 \
     openssh-client=1:8.2p1-4ubuntu0.5 \
-    curl=7.68.0-1ubuntu2.13 \
+    curl=7.68.0-1ubuntu2.14 \
     vim=2:8.1.2269-1ubuntu5.9 \
     nano=4.8-1ubuntu1 \
     && rm -rf /var/lib/apt/lists/*
@@ -97,4 +97,3 @@ ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
 
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal
-

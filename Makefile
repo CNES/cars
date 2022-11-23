@@ -45,6 +45,7 @@ CHECK_DOCKER = $(shell docker -v)
 # CARS version from setup.py
 CARS_VERSION = $(shell python3 setup.py --version)
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
+CARS_VERSION_TUTO=0.5.0
 
 ################ MAKE targets by sections ######################
 
@@ -208,25 +209,32 @@ dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebo
 .PHONY: docker-deps
 docker-deps:
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Check Dockerfile.deps with hadolint"
 	@docker pull hadolint/hadolint
+	@echo "Check Dockerfile.deps with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile.deps
 	@echo "Build Docker deps image CARS ${CARS_VERSION_MIN}"
 	@docker build -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
 
 .PHONY: docker
 docker: docker-deps ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
-	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Check Dockerfiles with hadolint"
-	@docker run --rm -i hadolint/hadolint < Dockerfile
-	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
-	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
+	@echo "Check Dockerfile with hadolint"
+	@cat Dockerfile | sed s/cars-deps:latest/cars-deps:$(CARS_VERSION_MIN)/g | docker run --rm -i hadolint/hadolint # avoid implicit tag warning
 	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
 	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
+
+.PHONY: docker-tuto
+docker-tuto:
+	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
+	@docker pull hadolint/hadolint
+	@echo "Check Dockerfile.jupyter with hadolint"
+	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
+	@echo "Check Dockerfile.tutorial with hadolint"
+	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
 	@echo "Build Docker jupyter notebook image from CARS"
-	@docker build -t cnes/cars-jupyter:${CARS_VERSION_MIN} -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
+	@docker build -t cnes/cars-jupyter:$(CARS_VERSION_TUTO) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
 	@echo "Build Docker jupyter tutorial notebook image from CARS"
-	@docker build -t cnes/cars-tutorial:${CARS_VERSION_MIN} -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
+	@docker build -t cnes/cars-tutorial:$(CARS_VERSION_TUTO) -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
+
 
 ## Clean section
 
@@ -292,9 +300,15 @@ clean-dask:
 .PHONY: clean-docker
 clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Clean Docker image cnes/cars ${CARS_VERSION_MIN}"
-	@docker image rm cnes/cars:${CARS_VERSION_MIN}
-	@docker image rm cnes/cars:latest
+	@echo "Clean Docker images cars-deps, cars ${CARS_VERSION_MIN} + cars-jupyter, cars-tutorial $(CARS_VERSION_TUTO)"
+	@docker image rm -f cnes/cars-deps:${CARS_VERSION_MIN}
+	@docker image rm -f cnes/cars-deps:latest
+	@docker image rm -f cnes/cars:${CARS_VERSION_MIN}
+	@docker image rm -f cnes/cars:latest
+	@docker image rm -f cnes/cars-jupyter:${CARS_VERSION_TUTO}
+	@docker image rm -f cnes/cars-jupyter:latest
+	@docker image rm -f cnes/cars-tutorial:${CARS_VERSION_TUTO}
+	@docker image rm -f cnes/cars-tutorial:latest
 
 .PHONY: profile-memory-report
 profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file

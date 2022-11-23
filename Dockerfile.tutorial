@@ -1,4 +1,4 @@
-FROM cnes/cars-jupyter:latest
+FROM cnes/cars-jupyter:0.5.0
 LABEL maintainer="CNES"
 
 WORKDIR /cars/tutorials/
@@ -7,5 +7,5 @@ WORKDIR /cars/tutorials/
 RUN git clone https://github.com/hakimel/reveal.js.git \
   && jupyter nbconvert main_tutorial.ipynb --to slides --reveal-prefix reveal.js \
   && cp main_tutorial.slides.html index.html
-  
+
 ENTRYPOINT ["python", "-m", "http.server", "8000"]

@@ -1,4 +1,4 @@
-FROM cnes/cars:latest
+FROM cnes/cars:0.5.0
 LABEL maintainer="CNES"
 
 WORKDIR /cars/tutorials/
@@ -13,4 +13,3 @@ RUN jupyter-nbextension install rise --py --sys-prefix \
 ENTRYPOINT ["jupyter"]
 # Default options for jupyter
 CMD ["notebook", "--ip", "0.0.0.0", "--port", "8888", "--no-browser", "--allow-root"]
-
