@@ -24,6 +24,10 @@ endif
 ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
+# Set docker options like --build-arg
+ifndef DOCKER_OPTIONS
+	DOCKER_OPTIONS = ""
+endif
 
 # Check CMAKE, OTB, GDAL variables before venv creation
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
@@ -213,14 +217,14 @@ docker-deps: ## Check and build docker image cnes/cars-deps
 	@echo "Check Dockerfile.deps with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile.deps
 	@echo "Build Docker deps image CARS ${CARS_VERSION_MIN}"
-	@docker build -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
 
 .PHONY: docker
 docker: docker-deps ## Check and build docker image cnes/cars (depending on cnes/cars-deps)
 	@echo "Check Dockerfile with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile
 	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
-	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
 
 .PHONY: docker-tuto
 docker-tuto: ## Check and build docker image cnes/cars-jupyter and cnes/tutorials
@@ -231,9 +235,9 @@ docker-tuto: ## Check and build docker image cnes/cars-jupyter and cnes/tutorial
 	@echo "Check Dockerfile.tutorial with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
 	@echo "Build Docker jupyter notebook image from CARS"
-	@docker build -t cnes/cars-jupyter:$(CARS_VERSION_TUTO) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars-jupyter:$(CARS_VERSION_TUTO) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
 	@echo "Build Docker jupyter tutorial notebook image from CARS"
-	@docker build -t cnes/cars-tutorial:$(CARS_VERSION_TUTO) -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars-tutorial:$(CARS_VERSION_TUTO) -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
 
 
 ## Clean section
