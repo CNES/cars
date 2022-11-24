@@ -13,4 +13,3 @@ RUN jupyter-nbextension install rise --py --sys-prefix \
 ENTRYPOINT ["jupyter"]
 # Default options for jupyter
 CMD ["notebook", "--ip", "0.0.0.0", "--port", "8888", "--no-browser", "--allow-root"]
-
