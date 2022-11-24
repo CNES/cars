@@ -23,8 +23,11 @@
 This module contains class application factory.
 """
 
+# Standard imports
 import logging
-from typing import Dict, Union
+
+# CARS imports
+from cars.conf.input_parameters import ConfigType
 
 
 class Application:
@@ -42,7 +45,7 @@ class Application:
     def __new__(
         cls,
         app_name: str,
-        cfg: Dict[str, Union[str, int]] = None,
+        cfg: ConfigType = None,
     ):
         """
         Return the instance of application associated with the application
@@ -57,7 +60,7 @@ class Application:
         return cls.create_app(app_name, cfg)
 
     @classmethod
-    def create_app(cls, name: str, cfg: Dict[str, Union[str, int]]):
+    def create_app(cls, name: str, cfg: ConfigType):
         """Factory command to create the application
         Return the instance of application associated with the application
         name given as parameter
@@ -79,7 +82,7 @@ class Application:
         return app
 
     @classmethod
-    def print_available_app(cls):
+    def print_applications(cls):
         """
         Print all registered applications
         """

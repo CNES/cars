@@ -98,7 +98,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         margins=None,
         optimum_tile_size=None,
         add_color=True,
-    ):  # noqa: C901
+    ):
         """
         Run resampling application.
 
