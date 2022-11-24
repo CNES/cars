@@ -218,7 +218,7 @@ docker-deps: ## Check and build docker image cnes/cars-deps
 .PHONY: docker
 docker: docker-deps ## Check and build docker image cnes/cars (depending on cnes/cars-deps)
 	@echo "Check Dockerfile with hadolint"
-	@cat Dockerfile | sed s/cars-deps:latest/cars-deps:$(CARS_VERSION_MIN)/g | docker run --rm -i hadolint/hadolint # avoid implicit tag warning
+	@docker run --rm -i hadolint/hadolint < Dockerfile
 	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
 	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
 
