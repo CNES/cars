@@ -207,7 +207,7 @@ dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebo
 ## Docker section
 
 .PHONY: docker-deps
-docker-deps:
+docker-deps: ## Check and build docker image cnes/cars-deps
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@docker pull hadolint/hadolint
 	@echo "Check Dockerfile.deps with hadolint"
@@ -216,14 +216,14 @@ docker-deps:
 	@docker build -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
 
 .PHONY: docker
-docker: docker-deps ## Check and build docker images (cnes/cars and cnes/cars-jupyter)
+docker: docker-deps ## Check and build docker image cnes/cars (depending on cnes/cars-deps)
 	@echo "Check Dockerfile with hadolint"
 	@cat Dockerfile | sed s/cars-deps:latest/cars-deps:$(CARS_VERSION_MIN)/g | docker run --rm -i hadolint/hadolint # avoid implicit tag warning
 	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
 	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
 
 .PHONY: docker-tuto
-docker-tuto:
+docker-tuto: ## Check and build docker image cnes/cars-jupyter and cnes/tutorials
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@docker pull hadolint/hadolint
 	@echo "Check Dockerfile.jupyter with hadolint"
