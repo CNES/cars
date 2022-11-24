@@ -12,6 +12,8 @@ A new section Unreleased is opened then for next dev phase.
 
 ### Fixed
 
+- fix pylint errors (no-member) in application template [#437]
+
 ## 0.5.2 Profiling and dense matching confidence information (November 2022)
 
 ### Added

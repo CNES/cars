@@ -21,24 +21,35 @@
 
 """
 This module contains class application template for
-templating the application concept. Useless for the moment
-but will be useful for shared functions in all applications
+templating the application concept.
+Useful for shared parameters and functions in all applications
+Beware: argument-differ is activated in pylintrc for run parameters different
+in sub application classes
 """
 
+# Standard imports
 import logging
 import pprint
-from abc import ABCMeta
+from abc import ABCMeta, abstractmethod
 
-# Disable pylint error: too few public method
+# CARS imports
+from cars.conf.input_parameters import ConfigType
 
 
-class ApplicationTemplate(  # noqa: B024
-    metaclass=ABCMeta
-):  # pylint: disable=R0903
+class ApplicationTemplate(metaclass=ABCMeta):
     """
     Class for general specification of an application
     Empty for the moment because there is no any common method or function
     """
+
+    # Define abstract attributes
+    used_config: ConfigType
+
+    @abstractmethod
+    def run(self, *args, **kwargs):
+        """
+        Generic run() function to be defined in subclasses
+        """
 
     def print_config(self):
         """

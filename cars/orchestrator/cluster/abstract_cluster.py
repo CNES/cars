@@ -22,14 +22,15 @@
 Contains abstract function for Abstract Cluster
 """
 
+# Standard imports
 import logging
 import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-from cars.core.utils import safe_makedirs
-
 # CARS imports
+from cars.conf.input_parameters import ConfigType
+from cars.core.utils import safe_makedirs
 from cars.orchestrator.cluster import log_wrapper
 
 
@@ -38,7 +39,15 @@ class AbstractCluster(metaclass=ABCMeta):
     AbstractCluster
     """
 
+    # Available cluster modes to instanciate AbstractCluster subclasses.
     available_modes: Dict = {}
+
+    # Define abstract attributes
+
+    # profiling config parameter: activated, mode, loop_testing, memray
+    profiling: ConfigType
+    # cluster mode output directory
+    out_dir: str
 
     def __new__(  # pylint: disable=W0613
         cls, conf_cluster, out_dir, launch_worker=True
@@ -80,9 +89,7 @@ class AbstractCluster(metaclass=ABCMeta):
                     )
                     safe_makedirs(profiling_memory_dir, cleanup=True)
         conf_cluster["profiling"] = profiling
-        logging.info(
-            "The AbstractCluster {}  will be used".format(cluster_mode)
-        )
+        logging.info("The AbstractCluster {} will be used".format(cluster_mode))
 
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]

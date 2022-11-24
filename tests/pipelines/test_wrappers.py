@@ -41,7 +41,12 @@ from cars.conf import input_parameters as in_params
 from cars.conf import mask_classes
 
 # CARS Tests imports
-from ..helpers import absolute_data_path, assert_same_datasets, create_corr_conf
+from ..helpers import (
+    absolute_data_path,
+    assert_same_datasets,
+    create_corr_conf,
+    read_mask_classes,
+)
 
 
 @pytest.mark.unit_tests
@@ -86,7 +91,7 @@ def test_epipolar_pipeline(
     mask2_set_to_ref_alt = None
 
     if mask1_classes is not None:
-        mask1_classes_dict = mask_classes.read_mask_classes(mask1_classes)
+        mask1_classes_dict = read_mask_classes(mask1_classes)
         mask1_ignored_by_corr = mask1_classes_dict.get(
             mask_classes.ignored_by_corr_tag, None
         )
@@ -95,7 +100,7 @@ def test_epipolar_pipeline(
         )
 
     if mask2_classes is not None:
-        mask2_classes_dict = mask_classes.read_mask_classes(mask2_classes)
+        mask2_classes_dict = read_mask_classes(mask2_classes)
         mask2_ignored_by_corr = mask2_classes_dict.get(
             mask_classes.ignored_by_corr_tag, None
         )

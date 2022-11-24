@@ -25,7 +25,7 @@ This input module refers to parameters and configuration inputs
 import json
 import logging
 import os
-from typing import Dict, Union
+from typing import Any, Dict
 
 # Third party imports
 from json_checker import And, OptionalKey
@@ -37,17 +37,20 @@ from cars.core.utils import make_relative_path_absolute
 # tag for static conf file
 STATIC_PARAMS_TAG = "static_parameters"
 
+# Type for input configuration json
+ConfigType = Dict[str, Any]
 
-def read_input_parameters(filename):
+
+def read_input_parameters(filename: ConfigType) -> ConfigType:
     """
     Read an input parameters json file.
     Relative paths will be made absolute.
 
     :param filename: Path to json file
-    :type filename: str
+    :type filename: ConfigType
 
     :return: The dictionary read from file
-    :rtype: dict
+    :rtype: ConfigType
     """
     config = {}
     with open(filename, "r", encoding="utf-8") as fstream:
@@ -136,6 +139,3 @@ INPUT_CONFIGURATION_SCHEMA = {
     NODATA1_TAG: int,
     NODATA2_TAG: int,
 }
-
-# Type for input configuration json
-InputConfigurationType = Dict[str, Union[int, str]]
