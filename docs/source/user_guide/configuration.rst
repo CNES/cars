@@ -462,6 +462,10 @@ The structure follows this organisation:
                         "save_disparity_map": true
                     }
                 },
+
+            .. warning::
+
+                DenseMatchingFiling does not support currently multiprocessing cluster.
             
             
 

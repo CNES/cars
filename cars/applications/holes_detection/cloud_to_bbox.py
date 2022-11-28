@@ -185,6 +185,20 @@ class CloudToBbox(
 
             if is_activated:
 
+                # Current application is not available in MP mode
+                if (
+                    self.orchestrator.cluster.checked_conf_cluster["mode"]
+                    == "mp"
+                ):
+                    logging.error(
+                        "DenseMatchingFiling and multiprocessing cluster "
+                        "is currently not supported"
+                    )
+                    raise Exception(
+                        "DenseMatchingFiling and multiprocessing cluster "
+                        "is currently not supported"
+                    )
+
                 # Get saving infos in order to save tiles when they are computed
                 [
                     saving_info_left,
