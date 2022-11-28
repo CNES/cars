@@ -1,3 +1,4 @@
+# hadolint ignore=DL3007
 FROM cnes/cars-deps:latest
 LABEL maintainer="CNES"
 

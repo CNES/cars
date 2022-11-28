@@ -81,9 +81,10 @@ ENV OTB_APPLICATION_PATH=/usr/local/otb/lib/otb/applications \
 
 # install vlfeat
 WORKDIR /opt
-RUN git clone https://github.com/vlfeat/vlfeat.git vlfeat
+RUN wget -q https://github.com/vlfeat/vlfeat/archive/refs/heads/master.zip \
+    && unzip master.zip && rm master.zip
 
-WORKDIR /opt/vlfeat
+WORKDIR /opt/vlfeat-master
 # https://github.com/vlfeat/vlfeat/issues/214
 RUN sed -i 's/default(none)//g' vl/kmeans.c \
     && make \
@@ -91,7 +92,7 @@ RUN sed -i 's/default(none)//g' vl/kmeans.c \
     && mkdir -p /usr/local/include/vl \
     && cp -r vl/*.h /usr/local/include/vl
 WORKDIR /opt
-RUN rm -rf vlfeat
+RUN rm -rf vlfeat-master
 ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
