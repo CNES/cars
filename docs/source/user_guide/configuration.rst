@@ -431,17 +431,19 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-            | Name              | Description           | Type    | available value            | Default value              | Required |
-            +===================+=======================+=========+============================+============================+==========+
-            | method            | Method for fusion     | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
-            +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-            | resolution        | Resolution of the dsm | float   | should be > 0              | 0.5                        | No       |
-            +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-            | terrain_tile_size |                       | int     |                            | None                       | No       |
-            +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud | Save points clouds    | boolean |                            | false                      | No       |
-            +-------------------+-----------------------+---------+----------------------------+----------------------------+----------+
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            | Name                     | Description                      | Type    | available value            | Default value              | Required |
+            +==========================+==================================+=========+============================+============================+==========+
+            | method                   | Method for fusion                | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            | resolution               | Resolution of the dsm            | float   | should be > 0              | 0.5                        | No       |
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            | terrain_tile_size        |                                  | int     |                            | None                       | No       |
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_points_cloud_as_laz | Save points clouds as laz format | boolean |                            | false                      | No       |
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_points_cloud_as_csv | Save points clouds as csv format | boolean |                            | false                      | No       |
+            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
 
             **Example**
 
@@ -452,7 +454,8 @@ The structure follows this organisation:
                         "point_cloud_fusion": {
                             "method": "mapping_to_terrain_tiles",
                             "resolution": 0.5,
-                            "save_points_cloud": true
+                            "save_points_cloud_as_laz": true,
+                            "save_points_cloud_as_csv": true,
                         }
                     },
 
@@ -460,6 +463,7 @@ The structure follows this organisation:
 
               Be careful with resolution to be consistent with resolution in rasterization.
               No mechanism ensures consistency between applications for now.
+
 
         .. tab:: Point Cloud outliers removing
 
@@ -471,13 +475,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name              | Description                              | Type    | available value                   | Default value | Required |
-            +===================+==========================================+=========+===================================+===============+==========+
-            | method            | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | Yes      |
-            +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud | Save points clouds                       | boolean |                                   | false         | No       |
-            +-------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | Name                     | Description                              | Type    | available value                   | Default value | Required |
+            +==========================+==========================================+=========+===================================+===============+==========+
+            | method                   | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | Yes      |
+            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_points_cloud_as_laz | Save points clouds as laz format         | boolean |                                   | false         | No       |
+            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_points_cloud_as_csv | Save points clouds as csv format         | boolean |                                   | false         | No       |
+            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             If method is *statistical*:
 
@@ -528,11 +534,13 @@ The structure follows this organisation:
                         "point_cloud_outliers_removing.1": {
                             "method": "small_components",
                             "on_ground_margin": 10,
-                            "save_points_cloud": true
+                            "save_points_cloud_as_laz": true,
+                            "save_points_cloud_as_csv": false
                         },
                         "point_cloud_outliers_removing.2": {
                             "method": "statistical",
-                            "k": 10
+                            "k": 10,
+                            "save_points_cloud_as_laz": true,
                         }
                     },
 
