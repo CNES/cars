@@ -28,7 +28,6 @@ from cars.core import constants_disparity as disp_cst
 # USED VARIABLES
 
 
-DENSE_MATCHING_PARAMS_TAG = "dense_matching_params"
 DENSE_MATCHING_RUN_TAG = "dense_matching_run"
 
 

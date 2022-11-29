@@ -37,6 +37,7 @@ from cars.applications.sparse_matching import sparse_matching_tools
 from cars.conf import log_conf
 from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
+from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -44,6 +45,7 @@ from cars.pipelines.pipeline_constants import (
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
+    PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
@@ -92,20 +94,41 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         # check global conf
         self.check_global_schema(self.conf)
 
+        # Used conf
+        self.used_conf = {}
+
+        # Pipeline
+        self.used_conf[PIPELINE] = "sensor_to_full_resolution_dsm"
+
         # Check conf orchestrator
-        self.orchestrator_conf = self.conf.get(ORCHESTRATOR, None)
-        self.check_orchestrator(self.orchestrator_conf)
+        self.orchestrator_conf = self.check_orchestrator(
+            self.conf.get(ORCHESTRATOR, None)
+        )
+        self.used_conf[ORCHESTRATOR] = self.orchestrator_conf
 
         # Check conf inputs
         self.inputs = self.check_inputs(
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
+        self.used_conf[INPUTS] = self.inputs
 
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
+        self.used_conf[OUTPUT] = self.output
 
         # Check conf application
-        self.check_applications(self.conf.get(APPLICATIONS, {}))
+        application_conf = self.check_applications(
+            self.conf.get(APPLICATIONS, {})
+        )
+        self.used_conf[APPLICATIONS] = application_conf
+
+        # Save used conf
+        out_dir = self.output["out_dir"]
+        cars_dataset.save_dict(
+            self.used_conf,
+            os.path.join(out_dir, "used_conf.json"),
+            safe_save=True,
+        )
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -157,6 +180,9 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             "point_cloud_outliers_removing.2",
         ]
 
+        # Initialize used config
+        used_conf = {}
+
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -170,31 +196,39 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.epipolar_grid_generation_application = Application(
             "grid_generation", cfg=conf.get("grid_generation", {})
         )
+        used_conf[
+            "grid_generation"
+        ] = self.epipolar_grid_generation_application.get_conf()
 
         # image resampling
         self.resampling_application = Application(
             "resampling", cfg=conf.get("resampling", {})
         )
+        used_conf["resampling"] = self.resampling_application.get_conf()
 
         # Sparse Matching
         self.sparse_matching_app = Application(
             "sparse_matching", cfg=conf.get("sparse_matching", {})
         )
+        used_conf["sparse_matching"] = self.sparse_matching_app.get_conf()
 
         # Matching
         self.dense_matching_application = Application(
             "dense_matching", cfg=conf.get("dense_matching", {})
         )
+        used_conf["dense_matching"] = self.dense_matching_application.get_conf()
 
         # Triangulation
         self.triangulation_application = Application(
             "triangulation", cfg=conf.get("triangulation", {})
         )
+        used_conf["triangulation"] = self.triangulation_application.get_conf()
 
         # Points cloud fusion
         self.pc_fusion_application = Application(
             "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
         )
+        used_conf["point_cloud_fusion"] = self.pc_fusion_application.get_conf()
 
         # Points cloud outlier removing small components
         self.pc_outliers_removing_1_app = Application(
@@ -204,6 +238,9 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 {"method": "small_components"},
             ),
         )
+        used_conf[
+            "point_cloud_outliers_removing.1"
+        ] = self.pc_outliers_removing_1_app.get_conf()
 
         # Points cloud outlier removing statistical
         self.pc_outliers_removing_2_app = Application(
@@ -213,12 +250,20 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 {"method": "statistical"},
             ),
         )
+        used_conf[
+            "point_cloud_outliers_removing.2"
+        ] = self.pc_outliers_removing_2_app.get_conf()
 
         # Rasterization
         self.rasterization_application = Application(
             "point_cloud_rasterization",
             cfg=conf.get("point_cloud_rasterization", {}),
         )
+        used_conf[
+            "point_cloud_rasterization"
+        ] = self.rasterization_application.get_conf()
+
+        return used_conf
 
     def run(self):
         """

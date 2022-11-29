@@ -68,22 +68,21 @@ class Statistical(
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
-        self.used_method = checked_conf["method"]
+        self.used_method = self.used_config["method"]
 
         # statistical outliers
-        self.activated = checked_conf["activated"]
-        self.k = checked_conf["k"]
-        self.std_dev_factor = checked_conf["std_dev_factor"]
+        self.activated = self.used_config["activated"]
+        self.k = self.used_config["k"]
+        self.std_dev_factor = self.used_config["std_dev_factor"]
 
         # check loader
 
         # Saving files
-        self.save_points_cloud = checked_conf.get("save_points_cloud", False)
+        self.save_points_cloud = self.used_config.get(
+            "save_points_cloud", False
+        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -233,12 +232,6 @@ class Statistical(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_PARAMS_TAG: {
-                        pr_cst.METHOD: self.used_method,
-                        pr_cst.STATISTICAL_OUTLIER: (self.activated),
-                        pr_cst.SO_K: self.k,
-                        pr_cst.SO_STD_DEV_FACTOR: (self.std_dev_factor),
-                    },
                     pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
                 }
             }

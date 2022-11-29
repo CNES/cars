@@ -70,15 +70,15 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         """
         self.out_dir = out_dir
 
-        # Check conf
-        checked_conf_cluster = self.check_conf(conf_cluster)
+        # call parent init
+        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
 
         # retrieve parameters
-        self.nb_workers = checked_conf_cluster["nb_workers"]
-        self.dump_to_disk = checked_conf_cluster["dump_to_disk"]
-        self.per_job_timeout = checked_conf_cluster["per_job_timeout"]
-        self.factorize_delayed = checked_conf_cluster["factorize_delayed"]
-        self.profiling = checked_conf_cluster["profiling"]
+        self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.dump_to_disk = self.checked_conf_cluster["dump_to_disk"]
+        self.per_job_timeout = self.checked_conf_cluster["per_job_timeout"]
+        self.factorize_delayed = self.checked_conf_cluster["factorize_delayed"]
+        self.profiling = self.checked_conf_cluster["profiling"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
         mp_mode = "forkserver"

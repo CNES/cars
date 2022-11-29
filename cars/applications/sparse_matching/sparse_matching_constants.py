@@ -26,7 +26,6 @@ this module contains the constants of sparse matching.
 # USED VARIABLES
 
 
-SPARSE_MATCHING_PARAMS_TAG = "sparse_matching_params"
 SPARSE_MATCHING_RUN_TAG = "sparse_matching_run"
 
 

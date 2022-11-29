@@ -141,6 +141,47 @@ def test_end2end_ventoux_unique():
                 ]["matches"]
             )
 
+        # Check used_conf for low res
+
+        gt_used_conf_orchestrator = {
+            "orchestrator": {
+                "mode": "local_dask",
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "profiling": {
+                    "activated": False,
+                    "mode": "time",
+                    "loop_testing": False,
+                },
+                "use_memory_logger": True,
+                "config_name": "unknown",
+            }
+        }
+
+        used_conf_path = os.path.join(out_dir, "used_conf.json")
+
+        # check used_conf file exists
+        assert os.path.isfile(used_conf_path)
+
+        with open(used_conf_path, "r", encoding="utf-8") as json_file:
+            used_conf = json.load(json_file)
+            # check used_conf inputs conf exists
+            assert "inputs" in used_conf
+            assert "sensors" in used_conf["inputs"]
+            # check used_conf pipeline
+            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            # check used_conf sparse_matching configuration
+            assert (
+                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                == 0.25
+            )
+            # check used_conf orchestrator conf is the same as gt
+            assert (
+                used_conf["orchestrator"]
+                == gt_used_conf_orchestrator["orchestrator"]
+            )
+            # check used_conf reentry
+            _ = pipeline_low_res.SensorToLowResolutionDsmPipeline(used_conf)
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
@@ -169,6 +210,31 @@ def test_end2end_ventoux_unique():
 
         out_dir = input_config_low_res["output"]["out_dir"]
 
+        # Check used_conf for full res
+        used_conf_path = os.path.join(out_dir, "used_conf.json")
+
+        # check used_conf file exists
+        assert os.path.isfile(used_conf_path)
+
+        with open(used_conf_path, "r", encoding="utf-8") as json_file:
+            used_conf = json.load(json_file)
+            # check used_conf inputs conf exists
+            assert "inputs" in used_conf
+            assert "sensors" in used_conf["inputs"]
+            # check used_conf pipeline
+            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            # check used_conf sparse_matching configuration
+            assert (
+                used_conf["applications"]["point_cloud_rasterization"]["sigma"]
+                == 0.3
+            )
+            # check used_conf orchestrator conf is the same as gt
+            assert (
+                used_conf["orchestrator"]
+                == gt_used_conf_orchestrator["orchestrator"]
+            )
+            # check used_conf reentry
+            _ = pipeline_full_res.SensorToFullResolutionDsmPipeline(used_conf)
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))

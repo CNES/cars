@@ -114,11 +114,47 @@ class AbstractCluster(metaclass=ABCMeta):
 
         return decorator
 
+    def __init__(
+        self, conf_cluster, out_dir, launch_worker=True
+    ):  # pylint: disable=W0613
+        """
+        Init function of AbstractCluster
+
+        :param conf_cluster: configuration for cluster
+
+        """
+        self.out_dir = out_dir
+        # Check conf
+        self.checked_conf_cluster = self.check_conf(conf_cluster)
+
     @abstractmethod
     def cleanup(self):
         """
         Cleanup cluster
         """
+
+    @abstractmethod
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+    def get_conf(self):
+        """
+        Get overriden configuration
+
+
+        :return: overriden configuration
+        """
+
+        return self.checked_conf_cluster
 
     def create_task(self, func, nout=1):
         """

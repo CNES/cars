@@ -33,7 +33,8 @@ CARS cli takes only one ``.json`` file as command line argument:
     
 See :ref:`configuration` to learn how to write configuration file.
 
-
+An output ``used_conf.json`` file will be created on the output directory. This file contains all the execution used
+parameters and can be used as an input configuration file to re-run cars.
 
 Loglevel parameter
 ==================

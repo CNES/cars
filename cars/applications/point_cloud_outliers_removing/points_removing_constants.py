@@ -23,7 +23,6 @@ file contains all the constants used in cloud fusion module
 """
 
 
-CLOUD_OUTLIER_REMOVING_PARAMS_TAG = "cloud_outlier_removing_params"
 CLOUD_OUTLIER_REMOVING_RUN_TAG = "points_removing_constants_run"
 
 # Params

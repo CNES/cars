@@ -22,8 +22,6 @@
 file contains all the constants used in rasterization module
 """
 
-
-RASTERIZATION_PARAMS_TAG = "rasterization_params"
 RASTERIZATION_RUN_TAG = "rasterization_run"
 
 # Params

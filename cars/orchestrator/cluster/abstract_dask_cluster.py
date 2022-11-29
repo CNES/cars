@@ -60,15 +60,15 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         """
         self.out_dir = out_dir
 
-        # Check conf
-        checked_conf_cluster = self.check_conf(conf_cluster)
+        # call parent init
+        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
 
         # retrieve parameters
-        self.nb_workers = checked_conf_cluster["nb_workers"]
-        self.walltime = checked_conf_cluster["walltime"]
-        self.use_memory_logger = checked_conf_cluster["use_memory_logger"]
-        self.config_name = checked_conf_cluster["config_name"]
-        self.profiling = checked_conf_cluster["profiling"]
+        self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.walltime = self.checked_conf_cluster["walltime"]
+        self.use_memory_logger = self.checked_conf_cluster["use_memory_logger"]
+        self.config_name = self.checked_conf_cluster["config_name"]
+        self.profiling = self.checked_conf_cluster["profiling"]
         self.launch_worker = launch_worker
 
         if self.launch_worker:

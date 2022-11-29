@@ -64,48 +64,49 @@ class Sift(SparseMatching, short_name="sift"):
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
-        self.used_method = checked_conf["method"]
-        self.disparity_margin = checked_conf["disparity_margin"]
-        self.elevation_delta_lower_bound = checked_conf[
+        self.used_method = self.used_config["method"]
+        self.disparity_margin = self.used_config["disparity_margin"]
+        self.elevation_delta_lower_bound = self.used_config[
             "elevation_delta_lower_bound"
         ]
-        self.elevation_delta_upper_bound = checked_conf[
+        self.elevation_delta_upper_bound = self.used_config[
             "elevation_delta_upper_bound"
         ]
-        self.epipolar_error_upper_bound = checked_conf[
+        self.epipolar_error_upper_bound = self.used_config[
             "epipolar_error_upper_bound"
         ]
-        self.epipolar_error_maximum_bias = checked_conf[
+        self.epipolar_error_maximum_bias = self.used_config[
             "epipolar_error_maximum_bias"
         ]
 
         # outlier filtering (used after application run, to filter matches)
-        self.disparity_outliers_rejection_percent = checked_conf[
+        self.disparity_outliers_rejection_percent = self.used_config[
             "disparity_outliers_rejection_percent"
         ]
 
         # minimum number of matches to continue with
-        self.minimum_nb_matches = checked_conf["minimum_nb_matches"]
+        self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
 
         # sifts
-        self.sift_matching_threshold = checked_conf["sift_matching_threshold"]
-        self.sift_n_octave = checked_conf["sift_n_octave"]
-        self.sift_n_scale_per_octave = checked_conf["sift_n_scale_per_octave"]
-        self.sift_dog_threshold = checked_conf["sift_dog_threshold"]
-        self.sift_edge_threshold = checked_conf["sift_edge_threshold"]
-        self.sift_magnification = checked_conf["sift_magnification"]
-        self.sift_back_matching = checked_conf["sift_back_matching"]
+        self.sift_matching_threshold = self.used_config[
+            "sift_matching_threshold"
+        ]
+        self.sift_n_octave = self.used_config["sift_n_octave"]
+        self.sift_n_scale_per_octave = self.used_config[
+            "sift_n_scale_per_octave"
+        ]
+        self.sift_dog_threshold = self.used_config["sift_dog_threshold"]
+        self.sift_edge_threshold = self.used_config["sift_edge_threshold"]
+        self.sift_magnification = self.used_config["sift_magnification"]
+        self.sift_back_matching = self.used_config["sift_back_matching"]
 
         # check loader
 
         # Saving files
-        self.save_matches = checked_conf["save_matches"]
+        self.save_matches = self.used_config["save_matches"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -427,37 +428,6 @@ class Sift(SparseMatching, short_name="sift"):
             updating_infos = {
                 application_constants.APPLICATION_TAG: {
                     pair_key: {
-                        sm_cst.SPARSE_MATCHING_PARAMS_TAG: {
-                            sm_cst.METHOD: self.used_method,
-                            sm_cst.DISPARITY_MARGIN_TAG: (
-                                self.disparity_margin
-                            ),
-                            sm_cst.ELEVATION_DELTA_LOWER_BOUND: (
-                                self.elevation_delta_lower_bound
-                            ),
-                            sm_cst.ELEVATION_DELTA_UPPER_BOUND: (
-                                self.elevation_delta_upper_bound
-                            ),
-                            sm_cst.EPIPOLAR_ERROR_UPPER_BOUND: (
-                                self.epipolar_error_upper_bound
-                            ),
-                            sm_cst.EPIPOLAR_ERROR_MAXIMUM_BIAS: (
-                                self.epipolar_error_maximum_bias
-                            ),
-                            sm_cst.SIFT_THRESH_HOLD: (
-                                self.sift_matching_threshold
-                            ),
-                            sm_cst.SIFT_N_OCTAVE: self.sift_n_octave,
-                            sm_cst.SIFT_N_SCALE_PER_OCTAVE: (
-                                self.sift_n_scale_per_octave
-                            ),
-                            sm_cst.SIFT_DOG_THESHOLD: (self.sift_dog_threshold),
-                            sm_cst.SIFT_EDGE_THRESHOLD: (
-                                self.sift_edge_threshold
-                            ),
-                            sm_cst.SIFT_MAGNIFICATION: self.sift_magnification,
-                            sm_cst.SIFT_BACK_MATCHING: self.sift_back_matching,
-                        },
                         sm_cst.SPARSE_MATCHING_RUN_TAG: {
                             sm_cst.DISP_LOWER_BOUND: disp_lower_bound,
                             sm_cst.DISP_UPPER_BOUND: disp_upper_bound,

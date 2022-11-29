@@ -65,17 +65,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :param conf: configuration for resampling
         :return: an application_to_use object
         """
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
-        self.used_method = checked_conf["method"]
-        self.epi_tile_size = checked_conf["epi_tile_size"]
+        self.used_method = self.used_config["method"]
+        self.epi_tile_size = self.used_config["epi_tile_size"]
         # Saving bools
-        self.save_epipolar_image = checked_conf["save_epipolar_image"]
-        self.save_epipolar_color = checked_conf["save_epipolar_color"]
+        self.save_epipolar_image = self.used_config["save_epipolar_image"]
+        self.save_epipolar_color = self.used_config["save_epipolar_color"]
 
         # check loader
         # TODO use loaders
@@ -439,9 +436,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             application_constants.APPLICATION_TAG: {
                 pair_key: {
                     resampling_constants.METHOD: self.used_method,
-                    resampling_constants.RESAMPLING_PARAMS_TAG: {
-                        resampling_constants.EPI_TILE_SIZE: self.epi_tile_size
-                    },
                     resampling_constants.RESAMPLING_RUN_TAG: {},
                 }
             }

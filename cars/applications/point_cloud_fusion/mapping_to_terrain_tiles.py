@@ -62,23 +62,22 @@ class MappingToTerrainTiles(
         Init function of EpipolarCloudFusion
 
         :param conf: configuration for fusion
-        :return: a application_to_use object
+        :return: an application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # Cloud fusion
-        self.used_method = checked_conf["method"]
-        self.terrain_tile_size = checked_conf["terrain_tile_size"]
-        self.resolution = checked_conf["resolution"]
+        self.used_method = self.used_config["method"]
+        self.terrain_tile_size = self.used_config["terrain_tile_size"]
+        self.resolution = self.used_config["resolution"]
 
         # check loader
 
         # Saving files
-        self.save_points_cloud = checked_conf.get("save_points_cloud", False)
+        self.save_points_cloud = self.used_config.get(
+            "save_points_cloud", False
+        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -345,13 +344,6 @@ class MappingToTerrainTiles(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    cloud_fusion_constants.CLOUD_FUSION_PARAMS_TAG: {
-                        cloud_fusion_constants.METHOD: (self.used_method),
-                        cloud_fusion_constants.TERRAIN_TILE_SIZE: (
-                            self.terrain_tile_size
-                        ),
-                        cloud_fusion_constants.RESOLUTION: self.resolution,
-                    },
                     cloud_fusion_constants.CLOUD_FUSION_RUN_TAG: {
                         cloud_fusion_constants.EPSG_TAG: epsg,
                         cloud_fusion_constants.MARGINS_TAG: margins,
