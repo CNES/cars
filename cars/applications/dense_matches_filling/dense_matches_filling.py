@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the abstract matching application class.
+this module contains the abstract dense matches filling application class.
 """
 import logging
 from abc import ABCMeta, abstractmethod
@@ -30,9 +30,9 @@ from cars.applications.application_template import ApplicationTemplate
 
 
 @Application.register("dense_matches_filling")
-class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
+class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
     """
-    AbstractDenseMatchingFiling
+    DenseMatchingFilling
     """
 
     available_applications: Dict = {}
@@ -51,7 +51,7 @@ class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
         fill_method = cls.default_application
         if bool(conf) is False:
             logging.info(
-                "DenseMatchingFiling method not specified, "
+                "DenseMatchingFilling method not specified, "
                 "default {} is used".format(fill_method)
             )
         else:
@@ -59,22 +59,20 @@ class DenseMatchingFiling(ApplicationTemplate, metaclass=ABCMeta):
 
         if fill_method not in cls.available_applications:
             logging.error(
-                "No DenseMatchingFiling application named {} registered".format(
-                    fill_method
-                )
+                "No DenseMatchingFilling application "
+                "named {} registered".format(fill_method)
             )
             raise KeyError(
-                "No DenseMatchingFiling application named {} registered".format(
-                    fill_method
-                )
+                "No DenseMatchingFilling application"
+                " named {} registered".format(fill_method)
             )
 
         logging.info(
-            "[The AbstractDenseMatchingFiling {} application "
+            "[The DenseMatchingFilling {} application "
             "will be used".format(fill_method)
         )
 
-        return super(DenseMatchingFiling, cls).__new__(
+        return super(DenseMatchingFilling, cls).__new__(
             cls.available_applications[fill_method]
         )
 

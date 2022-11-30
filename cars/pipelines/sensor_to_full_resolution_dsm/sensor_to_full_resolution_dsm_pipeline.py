@@ -212,11 +212,15 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.holes_detection_app = Application(
             "holes_detection", cfg=conf.get("holes_detection", {})
         )
+        used_conf["holes_detection"] = self.holes_detection_app.get_conf()
 
         # disparity filling
         self.dense_matches_filling = Application(
             "dense_matches_filling", cfg=conf.get("dense_matches_filling", {})
         )
+        used_conf[
+            "dense_matches_filling"
+        ] = self.dense_matches_filling.get_conf()
 
         # Sparse Matching
         self.sparse_matching_app = Application(

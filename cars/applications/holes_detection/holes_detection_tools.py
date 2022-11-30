@@ -18,8 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 """
-This module is responsible for the dense matching algorithms:
-- thus it creates a disparity map from a pair of images
+This module contains function for holes detection.
 """
 # pylint: disable=too-many-lines
 
@@ -72,10 +71,12 @@ def get_roi_coverage_as_poly_with_margins(
     Finds all roi existing in binary msk and stores their coverage as
     list of Polygon
 
-    :param roi: ['roi'] attribute of epipolar image dataset
-    :type roi: List[int]
     :param msk_values: msk layer of left/right epipolar image dataset
     :type msk_values: np.ndarray
+    :param row_offset: offset on row to apply
+    :type row_offset: int
+    :param col_offset: offset on col to apply
+    :type col_offset: int
     :param margin: margin added to bbox in case masked region is
         localized at tile border (to ensure later disparity values
         at mask border extraction)
@@ -129,13 +130,15 @@ def localize_masked_areas(
     input image file (see configuration "mask" and "mask_classes"
     in input .json configuration file)
 
-    :param dataset_left: left epipolar image dataset
-    :type dataset_left: CarsDataset
-    :param dataset_right: right epipolar image dataset
-    :type dataset_right: CarsDataset
+    :param dataset: epipolar image dataset
+    :type dataset: CarsDataset
     :param key_id: label used in mask and specified in
      "mask_classes" of input .json configuration file
     :type key_id: List of int
+    :param row_offset: offset on row to apply
+    :type row_offset: int
+    :param col_offset: offset on col to apply
+    :type col_offset: int
     :param margin: margin added to bbox in case masked region is
         localized at tile border (to ensure later disparity values
         at mask border extraction)
@@ -150,8 +153,8 @@ def localize_masked_areas(
         logging.error("No mask provided")
         raise Exception("No mask provided")
     if not isinstance(key_id, list):
-        logging.error("no mask classes provided for DisparityFiling")
-        raise Exception("no mask classes provided for DisparityFiling")
+        logging.error("no mask classes provided for DisparityFilling")
+        raise Exception("no mask classes provided for DisparityFilling")
     msk_values = get_msk_roi_to_fill(dataset["msk"].values, key_id)
     # Finds roi in msk and stores its localization as polygon list
     bbox = get_roi_coverage_as_poly_with_margins(

@@ -117,6 +117,7 @@ class HolesDetection(ApplicationTemplate, metaclass=ABCMeta):
         :param mask_holes_to_fill_right: mask classes to use
         :type mask_holes_to_fill_right: list(int)
         :param orchestrator: orchestrator used
+        :type orchestrator: Orchestrator
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id

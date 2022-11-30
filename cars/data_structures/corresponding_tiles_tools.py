@@ -173,8 +173,8 @@ def find_tile_dataset(corresponding_tiles, window):
     """
     Find the dataset corresponding to window, in the list of tiles.
 
-    :param tiles: list of tiles
-    :type tiles: list(tuple)
+    :param corresponding_tiles: list of tiles
+    :type corresponding_tiles: list(tuple)
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
 

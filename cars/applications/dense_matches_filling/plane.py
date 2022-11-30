@@ -40,7 +40,7 @@ from cars.applications.dense_matches_filling import (
 )
 from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchingFiling,
+    DenseMatchingFilling,
 )
 from cars.applications.dense_matching import dense_matching_tools
 from cars.core import constants as cst
@@ -49,7 +49,7 @@ from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
 class PlaneFill(
-    DenseMatchingFiling, short_name=["plane"]
+    DenseMatchingFilling, short_name=["plane"]
 ):  # pylint: disable=R0903
     """
     Fill invalid area in disparity map using plane method
@@ -65,30 +65,29 @@ class PlaneFill(
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
-        # check conf
-        self.activated = checked_conf["activated"]
-        self.used_method = checked_conf["method"]
-        self.interpolation_type = checked_conf[fd_cst.INTERP_TYPE]
-        self.interpolation_method = checked_conf[fd_cst.INTERP_METHOD]
-        self.max_search_distance = checked_conf[fd_cst.MAX_DIST]
-        self.smoothing_iterations = checked_conf[fd_cst.SMOOTH_IT]
-        self.ignore_nodata_at_disp_mask_borders = checked_conf[
+        # get conf
+        self.activated = self.used_config["activated"]
+        self.used_method = self.used_config["method"]
+        self.interpolation_type = self.used_config[fd_cst.INTERP_TYPE]
+        self.interpolation_method = self.used_config[fd_cst.INTERP_METHOD]
+        self.max_search_distance = self.used_config[fd_cst.MAX_DIST]
+        self.smoothing_iterations = self.used_config[fd_cst.SMOOTH_IT]
+        self.ignore_nodata_at_disp_mask_borders = self.used_config[
             fd_cst.IGNORE_NODATA
         ]
-        self.ignore_zero_fill_disp_mask_values = checked_conf[
+        self.ignore_zero_fill_disp_mask_values = self.used_config[
             fd_cst.IGNORE_ZERO
         ]
-        self.ignore_extrema_disp_values = checked_conf[fd_cst.IGNORE_EXTREMA]
-        self.nb_pix = checked_conf["nb_pix"]
-        self.percent_to_erode = checked_conf["percent_to_erode"]
+        self.ignore_extrema_disp_values = self.used_config[
+            fd_cst.IGNORE_EXTREMA
+        ]
+        self.nb_pix = self.used_config["nb_pix"]
+        self.percent_to_erode = self.used_config["percent_to_erode"]
 
         # Saving files
-        self.save_disparity_map = checked_conf["save_disparity_map"]
+        self.save_disparity_map = self.used_config["save_disparity_map"]
 
         # init orchestrator
         self.orchestrator = None
@@ -245,7 +244,7 @@ class PlaneFill(
         res = None, None
 
         if not self.activated:
-            logging.info("Disparity hiles filing was not activated")
+            logging.info("Disparity hiles filling was not activated")
             res = epipolar_disparity_map_left, epipolar_disparity_map_right
 
         else:
@@ -264,11 +263,11 @@ class PlaneFill(
             # Current application is not available in MP mode
             if self.orchestrator.cluster.checked_conf_cluster["mode"] == "mp":
                 logging.error(
-                    "DenseMatchingFiling and multiprocessing cluster "
+                    "DenseMatchingFilling and multiprocessing cluster "
                     "is currently not supported"
                 )
                 raise Exception(
-                    "DenseMatchingFiling and multiprocessing cluster "
+                    "DenseMatchingFilling and multiprocessing cluster "
                     "is currently not supported"
                 )
 
@@ -414,7 +413,7 @@ class PlaneFill(
                 )
 
                 logging.info(
-                    "Disparity filing: {} holes on"
+                    "Disparity filling: {} holes on"
                     " left to fill, {} on right".format(
                         len(merged_poly_list_left), len(merged_poly_list_right)
                     )

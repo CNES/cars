@@ -96,7 +96,7 @@ def fill_central_area_using_plane(
     :param percent_to_erode: percentage to define size of central area
     :type percent_to_erode: float
 
-    :return: mask of invalid region that hasn't be filled yet (original
+    :return: mask of invalid region that hasn't been filled yet (original
         invalid region - central area)
     :rtype: 2D np.array (row, col)
     """

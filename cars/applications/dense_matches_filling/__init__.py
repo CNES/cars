@@ -26,7 +26,7 @@ CARS core fill disparity map module init file
 """
 
 from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchingFiling,
+    DenseMatchingFilling,
 )
 
 from . import plane

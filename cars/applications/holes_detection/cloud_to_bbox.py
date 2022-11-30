@@ -60,15 +60,12 @@ class CloudToBbox(
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
 
         # get rasterization parameter
-        self.used_method = checked_conf["method"]
+        self.used_method = self.used_config["method"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -135,6 +132,7 @@ class CloudToBbox(
         :param mask_holes_to_fill_right: mask classes to use
         :type mask_holes_to_fill_right: list(int)
         :param orchestrator: orchestrator used
+        :type orchestrator: Orchestrator
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id
@@ -191,11 +189,11 @@ class CloudToBbox(
                     == "mp"
                 ):
                     logging.error(
-                        "DenseMatchingFiling and multiprocessing cluster "
+                        "DenseMatchingFilling and multiprocessing cluster "
                         "is currently not supported"
                     )
                     raise Exception(
-                        "DenseMatchingFiling and multiprocessing cluster "
+                        "DenseMatchingFilling and multiprocessing cluster "
                         "is currently not supported"
                     )
 
@@ -303,10 +301,10 @@ def compute_mask_bboxes(
     :type window_left: dict
     :param window_right: right window
     :type window_right: dict
-    :param left_overlaps: left  overlpas
-    :type left_overlaps: dict
-    :param right_overlaps: right overlaps
-    :type right_overlaps: dict
+    :param overlap_left: left  overlpas
+    :type overlap_left: dict
+    :param overlap_right: right overlaps
+    :type overlap_right: dict
     :param mask_holes_to_fill_left: mask classes to use
     :type mask_holes_to_fill_left: list(int)
     :param mask_holes_to_fill_right: mask classes to use
