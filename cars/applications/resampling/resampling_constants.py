@@ -26,7 +26,6 @@ this module contains the constants of resampling.
 # USED VARIABLES
 
 
-RESAMPLING_PARAMS_TAG = "resampling_params"
 RESAMPLING_RUN_TAG = "resampling_run"
 
 

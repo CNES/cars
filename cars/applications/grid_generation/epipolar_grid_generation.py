@@ -55,21 +55,18 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
-        self.used_method = checked_conf["method"]
-        self.epi_step = checked_conf["epi_step"]
+        self.used_method = self.used_config["method"]
+        self.epi_step = self.used_config["epi_step"]
         # Saving files
         # TODO not implemented, future work
-        self.save_grids = checked_conf["save_grids"]
+        self.save_grids = self.used_config["save_grids"]
 
         # check loader
         # TODO
-        self.geometry_loader = checked_conf["geometry_loader"]
+        self.geometry_loader = self.used_config["geometry_loader"]
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             self.geometry_loader
         )
@@ -266,13 +263,6 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         updating_dict = {
             application_constants.APPLICATION_TAG: {
                 pair_key: {
-                    grid_constants.GRID_GENERATION_PARAMS_TAG: {
-                        grid_constants.EPI_STEP_TAG: self.epi_step,
-                        grid_constants.METHOD: self.used_method,
-                        grid_constants.GEOMETRY_LOADER_TAG: (
-                            self.geometry_loader
-                        ),
-                    },
                     grid_constants.GRID_GENERATION_RUN_TAG: {
                         grid_constants.EPIPOLAR_SIZE_X_TAG: (epipolar_size[0]),
                         grid_constants.EPIPOLAR_SIZE_Y_TAG: (epipolar_size[1]),

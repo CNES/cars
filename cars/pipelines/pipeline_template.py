@@ -46,12 +46,15 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
 
         :param conf: configuration of orchestrator
         :type conf: dict
+        return: overloaded orchestrator conf
+        :rtype: dict
         """
 
         with orchestrator.Orchestrator(
             orchestrator_conf=conf, out_dir=None, launch_worker=False
-        ):
-            pass
+        ) as orchestrator_obj:
+            conf = orchestrator_obj.get_conf()
+        return conf
 
     def check_global_schema(self, conf):
         """

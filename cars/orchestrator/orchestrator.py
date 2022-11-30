@@ -84,6 +84,7 @@ class Orchestrator:
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             orchestrator_conf, self.out_dir, launch_worker=self.launch_worker
         )
+        self.conf = self.cluster.get_conf()
 
         # Init IdGenerator
         self.id_generator = id_gen.IdGenerator()
@@ -111,6 +112,15 @@ class Orchestrator:
     def add_to_clean(self, tmp_dir):
 
         self.tmp_dir_list.append(tmp_dir)
+
+    def get_conf(self):
+        """
+        Get orchestrator conf
+
+        :return: orchestrator conf
+        """
+
+        return self.conf
 
     def add_to_save_lists(
         self,

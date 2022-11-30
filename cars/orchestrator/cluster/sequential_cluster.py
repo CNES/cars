@@ -44,9 +44,11 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         :param conf_cluster: configuration for cluster
 
         """
-        checked_conf_cluster = self.check_conf(conf_cluster)
+        # call parent init
+        super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
+
         # retrieve parameters
-        self.profiling = checked_conf_cluster["profiling"]
+        self.profiling = self.checked_conf_cluster["profiling"]
         self.out_dir = out_dir
         self.launch_worker = launch_worker
 

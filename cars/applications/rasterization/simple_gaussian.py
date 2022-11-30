@@ -70,32 +70,29 @@ class SimpleGaussian(
         :return: a application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
 
         # get rasterization parameter
-        self.used_method = checked_conf["method"]
-        self.dsm_radius = checked_conf["dsm_radius"]
-        self.sigma = checked_conf["sigma"]
-        self.grid_points_division_factor = checked_conf[
+        self.used_method = self.used_config["method"]
+        self.dsm_radius = self.used_config["dsm_radius"]
+        self.sigma = self.used_config["sigma"]
+        self.grid_points_division_factor = self.used_config[
             "grid_points_division_factor"
         ]
-        self.resolution = checked_conf["resolution"]
+        self.resolution = self.used_config["resolution"]
         # get nodata values
-        self.dsm_no_data = checked_conf["dsm_no_data"]
-        self.color_no_data = checked_conf["color_no_data"]
-        self.color_dtype = checked_conf["color_dtype"]
-        self.msk_no_data = checked_conf["msk_no_data"]
+        self.dsm_no_data = self.used_config["dsm_no_data"]
+        self.color_no_data = self.used_config["color_no_data"]
+        self.color_dtype = self.used_config["color_dtype"]
+        self.msk_no_data = self.used_config["msk_no_data"]
         # Get if color, mask and stats are saved
-        self.write_color = checked_conf["write_color"]
-        self.write_stats = checked_conf["write_stats"]
-        self.write_mask = checked_conf["write_msk"]
-        self.write_dsm = checked_conf["write_dsm"]
-        self.write_ambiguity = checked_conf["write_ambiguity"]
+        self.write_color = self.used_config["write_color"]
+        self.write_stats = self.used_config["write_stats"]
+        self.write_mask = self.used_config["write_msk"]
+        self.write_dsm = self.used_config["write_dsm"]
+        self.write_ambiguity = self.used_config["write_ambiguity"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -408,15 +405,6 @@ class SimpleGaussian(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    raster_cst.RASTERIZATION_PARAMS_TAG: {
-                        raster_cst.METHOD: self.used_method,
-                        raster_cst.DSM_RADIUS: self.dsm_radius,
-                        raster_cst.SIGMA: self.sigma,
-                        raster_cst.GRID_POINTS_DIVISION_FACTOR: (
-                            self.grid_points_division_factor
-                        ),
-                        raster_cst.RESOLUTION: self.resolution,
-                    },
                     raster_cst.RASTERIZATION_RUN_TAG: {
                         raster_cst.EPSG_TAG: epsg,
                         raster_cst.DSM_TAG: out_dsm_file_name,

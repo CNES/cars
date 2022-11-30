@@ -65,30 +65,27 @@ class CensusMccnnSgm(
         Init function of DenseMatching
 
         :param conf: configuration for matching
-        :return: a application_to_use object
+        :return: an application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
         # check conf
-        self.used_method = checked_conf["method"]
-        self.min_epi_tile_size = checked_conf["min_epi_tile_size"]
-        self.max_epi_tile_size = checked_conf["max_epi_tile_size"]
-        self.epipolar_tile_margin_in_percent = checked_conf[
+        self.used_method = self.used_config["method"]
+        self.min_epi_tile_size = self.used_config["min_epi_tile_size"]
+        self.max_epi_tile_size = self.used_config["max_epi_tile_size"]
+        self.epipolar_tile_margin_in_percent = self.used_config[
             "epipolar_tile_margin_in_percent"
         ]
-        self.use_sec_disp = checked_conf["use_sec_disp"]
-        self.min_elevation_offset = checked_conf["min_elevation_offset"]
-        self.max_elevation_offset = checked_conf["max_elevation_offset"]
+        self.use_sec_disp = self.used_config["use_sec_disp"]
+        self.min_elevation_offset = self.used_config["min_elevation_offset"]
+        self.max_elevation_offset = self.used_config["max_elevation_offset"]
         # Saving files
-        self.save_disparity_map = checked_conf["save_disparity_map"]
+        self.save_disparity_map = self.used_config["save_disparity_map"]
 
         # Get params from loader
-        self.loader = checked_conf["loader"]
-        self.corr_config = checked_conf["loader_conf"]
+        self.loader = self.used_config["loader"]
+        self.corr_config = self.used_config["loader_conf"]
         # init orchestrator
         self.orchestrator = None
 
@@ -450,21 +447,6 @@ class CensusMccnnSgm(
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
                     pair_key: {
-                        dm_cst.DENSE_MATCHING_PARAMS_TAG: {
-                            dm_cst.METHOD: self.used_method,
-                            dm_cst.MIN_EPI_TILE_SIZE: self.min_epi_tile_size,
-                            dm_cst.MAX_EPI_TILE_SIZE: self.max_epi_tile_size,
-                            dm_cst.EPI_TILE_MARGIN_IN_PERCENT: (
-                                self.epipolar_tile_margin_in_percent
-                            ),
-                            dm_cst.USE_SEC_DISP: self.use_sec_disp,
-                            dm_cst.MIN_ELEVATION_OFFSET: (
-                                self.min_elevation_offset
-                            ),
-                            dm_cst.MAX_ELEVATION_OFFSET: (
-                                self.max_elevation_offset
-                            ),
-                        },
                         dm_cst.DENSE_MATCHING_RUN_TAG: {},
                     }
                 }

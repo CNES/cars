@@ -62,29 +62,28 @@ class SmallComponents(
         Init function of PointCloudOutliersRemoving
 
         :param conf: configuration for points outliers removing
-        :return: a application_to_use object
+        :return: an application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
+        super().__init__(conf=conf)
 
-        self.used_method = checked_conf["method"]
+        self.used_method = self.used_config["method"]
 
         # small components
-        self.activated = checked_conf["activated"]
-        self.on_ground_margin = checked_conf["on_ground_margin"]
-        self.connection_distance = checked_conf["connection_distance"]
-        self.nb_points_threshold = checked_conf["nb_points_threshold"]
-        self.clusters_distance_threshold = checked_conf[
+        self.activated = self.used_config["activated"]
+        self.on_ground_margin = self.used_config["on_ground_margin"]
+        self.connection_distance = self.used_config["connection_distance"]
+        self.nb_points_threshold = self.used_config["nb_points_threshold"]
+        self.clusters_distance_threshold = self.used_config[
             "clusters_distance_threshold"
         ]
 
         # check loader
 
         # Saving files
-        self.save_points_cloud = checked_conf.get("save_points_cloud", False)
+        self.save_points_cloud = self.used_config.get(
+            "save_points_cloud", False
+        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -273,20 +272,6 @@ class SmallComponents(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_PARAMS_TAG: {
-                        pr_cst.METHOD: self.used_method,
-                        pr_cst.SMALL_COMPONENTS_FILTER: (self.activated),
-                        pr_cst.SC_ON_GROUND_MARGIN: (self.on_ground_margin),
-                        pr_cst.SC_CONNECTION_DISTANCE: (
-                            self.connection_distance
-                        ),
-                        pr_cst.SC_NB_POINTS_THRESHOLD: (
-                            self.nb_points_threshold
-                        ),
-                        pr_cst.SC_CLUSTERS_DISTANCES_THRESHOLD: (
-                            self.clusters_distance_threshold
-                        ),
-                    },
                     pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
                 }
             }

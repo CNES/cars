@@ -82,6 +82,16 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         super().__init_subclass__(**kwargs)
         cls.available_applications[short_name] = cls
 
+    def __init__(self, conf=None):
+        """
+        Init function of GridGeneration
+
+        :param conf: configuration
+        :return: an application_to_use object
+        """
+
+        super().__init__(conf=conf)
+
     @abstractmethod
     def run(
         self,

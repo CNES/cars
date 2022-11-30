@@ -85,6 +85,16 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         for name in short_name:
             cls.available_applications[name] = cls
 
+    def __init__(self, conf=None):
+        """
+        Init function of DenseMatching
+
+        :param conf: configuration
+        :return: an application_to_use object
+        """
+
+        super().__init__(conf=conf)
+
     @abstractmethod
     def get_optimal_tile_size(self, disp_min, disp_max):
         """

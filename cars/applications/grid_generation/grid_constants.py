@@ -23,13 +23,7 @@ grid_constants contains all the constants used in grid_generation module
 """
 
 
-GRID_GENERATION_PARAMS_TAG = "grid_generation_params"
 GRID_GENERATION_RUN_TAG = "grid_generation_run"
-
-# Params
-EPI_STEP_TAG = "epi_step"
-METHOD = "method"
-GEOMETRY_LOADER_TAG = "geometry_loader"
 
 # Run infos
 

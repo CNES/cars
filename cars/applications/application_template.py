@@ -51,6 +51,29 @@ class ApplicationTemplate(metaclass=ABCMeta):
         Generic run() function to be defined in subclasses
         """
 
+    def __init__(self, conf=None):  # pylint: disable=W0613
+        """
+        Init function of ApplicationTemplate
+
+        :param conf: configuration for application
+
+        """
+        # Check conf
+        self.used_config = self.check_conf(conf)
+
+    @abstractmethod
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
     def print_config(self):
         """
         Print used application configuration
@@ -62,3 +85,12 @@ class ApplicationTemplate(metaclass=ABCMeta):
             pretty_printer.pprint(self.used_config)
         except Exception:
             logging.error("self.used_config not filled by application")
+
+    def get_conf(self):
+        """
+        Get used conf
+
+        :return: used conf
+        """
+
+        return self.used_config

@@ -65,25 +65,21 @@ class LineOfSightIntersection(
         Init function of Triangulation
 
         :param conf: configuration for triangulation
-        :return: a application_to_use object
+        :return: an application_to_use object
         """
 
-        # Check conf
-        checked_conf = self.check_conf(conf)
-        # used_config used for printing config
-        self.used_config = checked_conf
-
+        super().__init__(conf=conf)
         # check conf
-        self.used_method = checked_conf["method"]
-        self.use_geoid_alt = checked_conf["use_geoid_alt"]
-        self.snap_to_img1 = checked_conf["snap_to_img1"]
-        self.add_msk_info = checked_conf["add_msk_info"]
+        self.used_method = self.used_config["method"]
+        self.use_geoid_alt = self.used_config["use_geoid_alt"]
+        self.snap_to_img1 = self.used_config["snap_to_img1"]
+        self.add_msk_info = self.used_config["add_msk_info"]
         # Saving files
-        self.save_points_cloud = checked_conf["save_points_cloud"]
+        self.save_points_cloud = self.used_config["save_points_cloud"]
 
         # check loader
         # TODO
-        self.geometry_loader = checked_conf["geometry_loader"]
+        self.geometry_loader = self.used_config["geometry_loader"]
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             self.geometry_loader
         )
@@ -303,21 +299,6 @@ class LineOfSightIntersection(
         updating_dict = {
             application_constants.APPLICATION_TAG: {
                 pair_key: {
-                    triangulation_constants.TRIANGULATION_PARAMS_TAG: {
-                        triangulation_constants.METHOD: self.used_method,
-                        triangulation_constants.USE_GEOID_ALT: (
-                            self.use_geoid_alt
-                        ),
-                        triangulation_constants.SNAP_TO_IMG1: (
-                            self.snap_to_img1
-                        ),
-                        triangulation_constants.ADD_MSK_INFO: (
-                            self.add_msk_info
-                        ),
-                        triangulation_constants.GEOMETRY_LOADER: (
-                            self.geometry_loader
-                        ),
-                    },
                     triangulation_constants.TRIANGULATION_RUN_TAG: {
                         triangulation_constants.ALT_REFERENCE_TAG: (
                             alt_reference
