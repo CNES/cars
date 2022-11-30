@@ -26,7 +26,6 @@ This module contains the saver registry class
 # Standard imports
 import logging
 import os
-import traceback
 
 # CARS imports
 from cars.orchestrator.registry.abstract_registry import (
@@ -284,7 +283,7 @@ class SingleCarsDatasetSaver:
                 self.count += 1
 
         except Exception as err:  # pylint: disable=W0702 # noqa: B001, E722
-            logging.error(traceback.format_exc())
+            logging.error(err)
             logging.error("Tile not saved")
 
     def cleanup(self):

@@ -751,26 +751,34 @@ def save_dataframe(dataframe, file_name, overwrite=True):
             ),
         )
 
+    # Save attributes
     attributes_file_name = file_name + "_attrs.json"
     save_dict(dataframe.attrs, attributes_file_name)
 
     # Save point cloud to laz format
     if (
         "attributes" in dataframe.attrs
-        and pc_attributes["save_points_cloud_as_laz"]
+        and "save_points_cloud_as_laz" in dataframe.attrs["attributes"]
     ):
-        las_file_name = file_name + ".laz"
-        dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
+        if dataframe.attrs["attributes"]["save_points_cloud_as_laz"]:
+            las_file_name = file_name + ".laz"
+            dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
 
     # Save panda dataframe to csv
     if (
-        "attributes" in dataframe.attrs
-        and pc_attributes["save_points_cloud_as_csv"]
-    ) or "attributes" not in dataframe.attrs:
-        file_name = file_name + ".csv"
+        (
+            "attributes" in dataframe.attrs
+            and "save_points_cloud_as_csv" in dataframe.attrs["attributes"]
+            and dataframe.attrs["attributes"]["save_points_cloud_as_csv"]
+        )
+        or "attributes" not in dataframe.attrs
+        or "save_points_cloud_as_csv" not in dataframe.attrs["attributes"]
+    ):
+        _, extension = os.path.splitext(file_name)
+        if "csv" not in extension:
+            file_name = file_name + ".csv"
         if overwrite and os.path.exists(file_name):
             dataframe.to_csv(file_name, index=False)
-
         else:
             if os.path.exists(file_name):
                 # merge files

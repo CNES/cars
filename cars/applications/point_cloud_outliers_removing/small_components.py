@@ -356,12 +356,6 @@ def small_components_removing_wrapper(
     # Copy input cloud
     new_cloud = cloud.copy()
     new_cloud.attrs = copy.deepcopy(cloud.attrs)
-    new_cloud.attrs["attributes"][
-        "save_points_cloud_as_laz"
-    ] = save_points_cloud_as_laz
-    new_cloud.attrs["attributes"][
-        "save_points_cloud_as_csv"
-    ] = save_points_cloud_as_csv
 
     if activated:
         worker_logger = logging.getLogger("distributed.worker")
@@ -410,7 +404,8 @@ def small_components_removing_wrapper(
     )
     # Update attributes
     cloud_attributes["epsg"] = current_epsg
-
+    cloud_attributes["save_points_cloud_as_laz"] = save_points_cloud_as_laz
+    cloud_attributes["save_points_cloud_as_csv"] = save_points_cloud_as_csv
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )

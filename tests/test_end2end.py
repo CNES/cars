@@ -568,24 +568,24 @@ def test_end2end_ventoux_with_color():
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "0_675248.0_4897173.0.laz"
+                        out_dir, "points_cloud", "675248.0_4897173.0.laz"
                     )
                 )
-                or os.path.exists(
+                and os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "0_675370.5_4897173.0.laz"
+                        out_dir, "points_cloud", "675370.5_4897173.0.laz"
                     )
                 )
             ) is True
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "0_675248.0_4897173.0.csv"
+                        out_dir, "points_cloud", "675248.0_4897173.0.csv"
                     )
                 )
-                or os.path.exists(
+                and os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "0_675370.5_4897173.0.csv"
+                        out_dir, "points_cloud", "675370.5_4897173.0.csv"
                     )
                 )
             ) is True
@@ -642,16 +642,22 @@ def test_end2end_ventoux_with_color():
         assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
         assert (
             os.path.exists(
-                os.path.join(
-                    out_dir, "points_cloud", "0_675431.5_4897173.0.laz"
-                )
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.csv")
             )
             is True
         )
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "points_cloud", "0_675431.5_4897173.0.csv"
+                    out_dir,
+                    "points_cloud_post_small_components_removing",
+                    "675431.5_4897173.0.laz",
                 )
             )
             is True
@@ -661,17 +667,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "0_675431.5_4897173.0.laz",
-                )
-            )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "points_cloud_post_small_components_removing",
-                    "0_675431.5_4897173.0.csv",
+                    "675431.5_4897173.0.csv",
                 )
             )
             is True
@@ -681,7 +677,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "0_675431.5_4897173.0.laz",
+                    "675431.5_4897173.0.laz",
                 )
             )
             is True
@@ -691,7 +687,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "0_675431.5_4897173.0.csv",
+                    "675431.5_4897173.0.csv",
                 )
             )
             is True

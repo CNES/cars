@@ -104,7 +104,6 @@ def test_save_pandas_and_constructor():
         """
         Save all tiles to manager
         """
-
         for i in range(manager.tiling_grid.shape[0]):
             for j in range(manager.tiling_grid.shape[1]):
                 overwrite = bool(i + j == 0)
