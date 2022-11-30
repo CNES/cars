@@ -368,11 +368,10 @@ def small_components_removing_wrapper(
         spatial_ref = osr.SpatialReference()
         spatial_ref.ImportFromEPSG(cloud_epsg)
         if spatial_ref.IsGeographic():
-
             worker_logger.debug(
                 "The points cloud to filter is not in a cartographic system. "
                 "The filter's default parameters might not be adapted "
-                "to this referential. Convert the points "
+                "to this referential. Please, convert the points "
                 "cloud to ECEF to ensure a proper points_cloud."
             )
             # Convert to epsg = 4978
