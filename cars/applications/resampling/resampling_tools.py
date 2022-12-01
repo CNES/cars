@@ -166,7 +166,6 @@ def epipolar_rectify_images(
                 band_coords=True,
                 lowres_color=color1,
             )
-
         # Remove region key as it duplicates coordinates span
         left_color_dataset.attrs.pop("region", None)
 

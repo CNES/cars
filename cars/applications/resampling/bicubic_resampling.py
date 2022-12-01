@@ -517,7 +517,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     saving_info_left=saving_info_left,
                     saving_info_right=saving_info_right,
                 )
-
         return epipolar_images_left, epipolar_images_right
 
 
@@ -567,7 +566,6 @@ def generate_epipolar_images_wrapper(
             - cst.EPI_MSK (if given)
             - cst.EPI_COLOR (for left, if given)
     """
-
     region, margins = format_transformation.region_margins_from_window(
         initial_margins, window, left_overlaps, right_overlaps
     )
@@ -621,6 +619,16 @@ def generate_epipolar_images_wrapper(
                 left_color_dataset[cst.EPI_MSK].values, dims=[cst.ROW, cst.COL]
             )
 
+        # Add input color type
+        color_types = inputs.rasterio_get_color_type(color1)
+        # Check if each color bands have the same type
+        color_type_set = set(color_types)
+        if len(color_type_set) > 1:
+            logging.warning("The colors bands haven't the same types.")
+        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_types[0]
+    else:
+        color_types = inputs.rasterio_get_color_type(img1)
+        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types[0]
     # Add attributes info
     attributes = {}
 

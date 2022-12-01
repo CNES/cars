@@ -216,8 +216,8 @@ def build_image_resampling_pipeline(
     resampling_app.SetParameterString("grid.type", "def")
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
-    resampling_app.Execute()
 
+    resampling_app.Execute()
     extract_app = build_extract_roi_application(
         resampling_app.GetParameterOutputImage("io.out"), roi
     )

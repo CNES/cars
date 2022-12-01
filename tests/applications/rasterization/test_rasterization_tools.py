@@ -206,6 +206,8 @@ def test_simple_rasterization_dataset_1():
         ysize=ysize,
         radius=radius,
         on_ground_margin=0,
+        save_pc_as_laz=False,
+        save_pc_as_csv=False,
         saving_info=None,
     )
 
@@ -272,6 +274,8 @@ def test_simple_rasterization_dataset_2():
         ysize=ysize,
         radius=radius,
         on_ground_margin=0,
+        save_pc_as_laz=False,
+        save_pc_as_csv=False,
         saving_info=None,
     )
 
@@ -344,6 +348,8 @@ def test_simple_rasterization_multiple_datasets():
         ysize=ysize,
         radius=radius,
         on_ground_margin=0,
+        save_pc_as_laz=False,
+        save_pc_as_csv=False,
         saving_info=None,
     )
 

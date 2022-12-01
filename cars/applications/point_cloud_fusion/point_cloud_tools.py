@@ -403,6 +403,31 @@ def add_color_information(
             ] = np.ravel(c_color[band, :, :])
 
 
+def get_color_type(clouds):
+    """
+    Get color type of the tiles and if the same type.
+
+    :param cloud_list: list of clouds
+    :type cloud_list: xarray Dataset
+
+    :return: color type of the tiles list
+    :rtype: str
+
+    """
+    color_types = []
+    for cloud_idx, cloud_item in enumerate(clouds):
+        if cst.EPI_COLOR in clouds[cloud_idx]:
+            if "color_type" in cloud_item.attrs:
+                color_types.append(cloud_item.attrs["color_type"])
+    if color_types:
+        color_type_set = set(color_types)
+        if len(color_type_set) > 1:
+            logging.warning("The tiles colors haven't the same types.")
+        return color_types[0]
+
+    return None
+
+
 def get_number_bands(cloud_list):
     """
     Get max number of bands of clouds

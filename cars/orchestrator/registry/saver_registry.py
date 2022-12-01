@@ -209,7 +209,6 @@ class SingleCarsDatasetSaver:
         self.already_seen = False
         self.count = 0
         self.folder_name = None
-        self.extension = None
 
     def add_file(self, file_name, tag=None, dtype=None, nodata=None):
         """
@@ -272,23 +271,19 @@ class SingleCarsDatasetSaver:
                 # type points
                 if not self.already_seen:
                     # create tmp_folder
-                    self.folder_name, self.extension = os.path.splitext(
-                        self.file_names[0]
-                    )
+                    self.folder_name = self.file_names[0]
                     if not os.path.exists(self.folder_name):
                         os.makedirs(self.folder_name)
                     self.already_seen = True
-
                 self.cars_ds.run_save(
                     future_result,
-                    os.path.join(
-                        self.folder_name, repr(self.count) + self.extension
-                    ),
+                    os.path.join(self.folder_name, repr(self.count)),
                     overwrite=not self.already_seen,
                 )
                 self.count += 1
 
-        except:  # pylint: disable=W0702 # noqa: B001, E722
+        except Exception as err:  # pylint: disable=W0702 # noqa: B001, E722
+            logging.error(err)
             logging.error("Tile not saved")
 
     def cleanup(self):
