@@ -1,6 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
-#
 # !/usr/bin/env python
 # coding: utf8
 #
@@ -24,6 +21,7 @@
 """
 CARS core dense matching module init file
 """
+# flake8: noqa: F401
 
 from cars.applications.dense_matching.dense_matching import DenseMatching
 

@@ -1,4 +1,4 @@
-#!/usr/bin/env python # pylint: disable=too-many-lines
+#!/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -23,6 +23,7 @@ This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 import logging

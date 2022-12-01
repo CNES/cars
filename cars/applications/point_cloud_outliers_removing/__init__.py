@@ -1,6 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
-#
 # !/usr/bin/env python
 # coding: utf8
 #
@@ -24,7 +21,7 @@
 """
 CARS core cloud outlier removing module init file
 """
-
+# flake8: noqa: F401
 
 from cars.applications.point_cloud_outliers_removing.pc_out_removing import (
     PointCloudOutliersRemoving,
