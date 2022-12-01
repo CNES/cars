@@ -22,6 +22,7 @@
 Tiling module:
 contains functions related to regions and tiles management
 """
+# pylint: disable=too-many-lines
 
 import logging
 
@@ -37,11 +38,6 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 from shapely.geometry import box, mapping
 from shapely.geometry.multipolygon import MultiPolygon
-
-from cars.applications.grid_generation import grids
-
-# CARS imports
-from cars.core import former_confs_utils
 
 
 def grid(
@@ -73,6 +69,89 @@ def grid(
         for j in range(0, nb_ysplits + 1):
             out_grid[j, i, 0] = min(xmax, xmin + i * xsplit)
             out_grid[j, i, 1] = min(ymax, ymin + j * ysplit)
+
+    return out_grid
+
+
+def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
+    """
+    Transform a 4 layer grid: (N, M, 4) containing [xmin, xmax, ymin, ymax]
+    into a 2 layer grid: (N+1, M+1, 2) containing x and y
+    defined like : grid[j, i, 0] = min(xmax, xmin + i * xsplit)
+        and grid[j, i, 1] = min(ymax, ymin + j * ysplit)
+
+    :param tiling_grid: tiling grid
+    :type tiling_grid: np.ndarray
+
+    :return 2D grid
+    :rtype: np.ndarray
+    """
+
+    if terrain is False:
+        tiling_grid_ = tiling_grid.copy()
+        tiling_grid_[:, :, [0, 1, 2, 3]] = tiling_grid_[:, :, [2, 3, 0, 1]]
+    else:
+        tiling_grid_ = tiling_grid.transpose(1, 0, 2).copy()
+
+    arr = np.ndarray(
+        shape=(tiling_grid_.shape[0] + 1, tiling_grid_.shape[1] + 1, 2),
+        dtype=float,
+    )
+
+    # Fill x
+    arr[0:-1, 0:-1, 0] = tiling_grid_[:, :, 0]
+    arr[0:-1, -1, 0] = tiling_grid_[:, -1, 1]
+    arr[-1, :, 0] = arr[0, :, 0]
+
+    # Fill y
+    arr[0:-1, 0:-1, 1] = tiling_grid_[:, :, 2]
+    arr[-1, 0:-1, 1] = tiling_grid_[-1, :, 3]
+    arr[:, -1, 1] = arr[:, 0, 1]
+
+    return arr
+
+
+def generate_tiling_grid(
+    row_min: float,
+    col_min: float,
+    row_max: float,
+    col_max: float,
+    row_split: int,
+    col_split: int,
+) -> np.ndarray:
+    """
+    Generate grid of positions by splitting [row_min, row_max] x
+     [col_min, col_max]
+     in splits of row_split x col_split size
+
+    :param row_min : row_min of the bounding box of the region to split
+    :param col_min : col_min of the bounding box of the region to split
+    :param row_max : row_max of the bounding box of the region to split
+    :param col_max : col_max of the bounding box of the region to split
+    :param row_split: height of splits
+    :param col_split: width of splits
+
+    :return: The output ndarray grid with nb_row_split splits in first direction
+             and nb_col_split in second direction for 2 dimensions 0:y, 1:x
+             [row, col, :] containing [row_min, row_max, col_min, col_max]
+    :rtype: numpy array
+    """
+
+    nb_col_split = math.ceil((col_max - col_min) / col_split)
+    nb_row_split = math.ceil((row_max - row_min) / row_split)
+
+    out_grid = np.ndarray(shape=(nb_row_split, nb_col_split, 4), dtype=float)
+
+    for row in range(0, nb_row_split):
+        for col in range(0, nb_col_split):
+            out_grid[row, col, 0] = min(row_max, row_min + row * row_split)
+            out_grid[row, col, 1] = min(
+                row_max, row_min + (row + 1) * row_split
+            )
+            out_grid[row, col, 2] = min(col_max, col_min + col * col_split)
+            out_grid[row, col, 3] = min(
+                col_max, col_min + (col + 1) * col_split
+            )
 
     return out_grid
 
@@ -295,126 +374,6 @@ def snap_to_grid(xmin, ymin, xmax, ymax, resolution):
     return xmin, ymin, xmax, ymax
 
 
-def terrain_region_to_epipolar(
-    geometry_loader,
-    region,
-    conf,
-    epsg=4326,
-    disp_min=None,
-    disp_max=None,
-    step=100,
-):
-    """
-    Transform terrain region to epipolar region
-    """
-    # UNUSED TODO remove ?
-
-    # Retrieve disp min and disp max if needed
-    (
-        minimum_disparity,
-        maximum_disparity,
-    ) = former_confs_utils.get_disp_min_max(conf)
-    # retrieve epipolar sizes from conf
-    (
-        epi_size_x,
-        epi_size_y,
-    ) = former_confs_utils.get_epi_sizes_from_cars_post_prepare_configuration(
-        conf
-    )
-
-    if disp_min is None:
-        disp_min = int(math.floor(minimum_disparity))
-    else:
-        disp_min = int(math.floor(disp_min))
-
-    if disp_max is None:
-        disp_max = int(math.ceil(maximum_disparity))
-    else:
-        disp_max = int(math.ceil(disp_max))
-
-    region_grid = np.array(
-        [
-            [region[0], region[1]],
-            [region[2], region[1]],
-            [region[2], region[3]],
-            [region[0], region[3]],
-        ]
-    )
-
-    epipolar_grid = grid(
-        0,
-        0,
-        epi_size_x,
-        epi_size_y,
-        step,
-        step,
-    )
-
-    epi_grid_flat = epipolar_grid.reshape(-1, epipolar_grid.shape[-1])
-
-    epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
-        geometry_loader,
-        epipolar_grid,
-        epsg,
-        conf,
-        disp_min=disp_min,
-        disp_max=disp_max,
-    )
-
-    # Build Delaunay triangulations
-    tri_min = Delaunay(epipolar_grid_min)
-    tri_max = Delaunay(epipolar_grid_max)
-
-    # Build kdtrees
-    tree_min = cKDTree(epipolar_grid_min)
-    tree_max = cKDTree(epipolar_grid_max)
-
-    # Look-up terrain grid with Delaunay
-    s_min = tsearch(tri_min, region_grid)
-    s_max = tsearch(tri_max, region_grid)
-
-    points_list = []
-    # For each corner
-    for i in range(0, 4):
-        # If we are inside triangulation of s_min
-        if s_min[i] != -1:
-            # Add points from surrounding triangle
-            for point in epi_grid_flat[tri_min.simplices[s_min[i]]]:
-                points_list.append(point)
-        else:
-            # else add nearest neighbor
-            __, point_idx = tree_min.query(region_grid[i, :])
-            points_list.append(epi_grid_flat[point_idx])
-            # If we are inside triangulation of s_min
-            if s_max[i] != -1:
-                # Add points from surrounding triangle
-                for point in epi_grid_flat[tri_max.simplices[s_max[i]]]:
-                    points_list.append(point)
-            else:
-                # else add nearest neighbor
-                __, point_nn_idx = tree_max.query(region_grid[i, :])
-                points_list.append(epi_grid_flat[point_nn_idx])
-
-    points_min = np.min(points_list, axis=0)
-    points_max = np.max(points_list, axis=0)
-
-    # Bounding region of corresponding cell
-    epipolar_region_minx = points_min[0]
-    epipolar_region_miny = points_min[1]
-    epipolar_region_maxx = points_max[0]
-    epipolar_region_maxy = points_max[1]
-
-    # This mimics the previous code that was using
-    # terrain_region_to_epipolar
-    epipolar_region = [
-        epipolar_region_minx,
-        epipolar_region_miny,
-        epipolar_region_maxx,
-        epipolar_region_maxy,
-    ]
-    return epipolar_region
-
-
 def filter_simplices_on_the_edges(
     original_grid_shape: Tuple, tri: Delaunay, simplices: np.ndarray
 ):
@@ -446,8 +405,8 @@ def filter_simplices_on_the_edges(
 
 
 def terrain_grid_to_epipolar(
-    terrain_grid,
-    epipolar_regions_grid,
+    terrain_tiling_grid,
+    epipolar_tiling_grid,
     epipolar_grid_min,
     epipolar_grid_max,
     epsg,
@@ -455,6 +414,13 @@ def terrain_grid_to_epipolar(
     """
     Transform terrain grid to epipolar region
     """
+
+    terrain_regions_grid = transform_four_layers_to_two_layers_grid(
+        terrain_tiling_grid, terrain=True
+    )
+    epipolar_regions_grid = transform_four_layers_to_two_layers_grid(
+        epipolar_tiling_grid
+    )
 
     epipolar_regions_grid_shape = np.shape(epipolar_regions_grid)[:2]
     epipolar_regions_grid_flat = epipolar_regions_grid.reshape(
@@ -477,9 +443,9 @@ def terrain_grid_to_epipolar(
     tree_min = cKDTree(epipolar_grid_min * precision_factor)
     tree_max = cKDTree(epipolar_grid_max * precision_factor)
 
-    # Look-up terrain_grid with Delaunay
-    s_min = tsearch(tri_min, terrain_grid * precision_factor)
-    s_max = tsearch(tri_max, terrain_grid * precision_factor)
+    # Look-up terrain_regions_grid with Delaunay
+    s_min = tsearch(tri_min, terrain_regions_grid * precision_factor)
+    s_max = tsearch(tri_max, terrain_regions_grid * precision_factor)
 
     # Filter simplices on the edges
     filter_simplices_on_the_edges(epipolar_regions_grid_shape, tri_min, s_min)
@@ -490,11 +456,11 @@ def terrain_grid_to_epipolar(
     points_disp_max = epipolar_regions_grid_flat[tri_max.simplices[s_max]]
 
     nn_disp_min = epipolar_regions_grid_flat[
-        tree_min.query(terrain_grid * precision_factor)[1]
+        tree_min.query(terrain_regions_grid * precision_factor)[1]
     ]
 
     nn_disp_max = epipolar_regions_grid_flat[
-        tree_max.query(terrain_grid * precision_factor)[1]
+        tree_max.query(terrain_regions_grid * precision_factor)[1]
     ]
 
     points_disp_min_min = np.min(points_disp_min, axis=2)
@@ -555,7 +521,7 @@ def region_hash_string(region: Tuple):
 
 
 def get_corresponding_tiles_row_col(
-    terrain_grid: np.ndarray,
+    terrain_tiling_grid: np.ndarray,
     row: int,
     col: int,
     list_points_clouds_left: list,
@@ -567,7 +533,7 @@ def get_corresponding_tiles_row_col(
     This function allows to get required points cloud for each
     terrain region.
 
-    :param terrain_grid: terrain grid positions
+    :param terrain_tiling_grid: terrain grid positions
     :param row: row
     :param col: column
            epipolar input tiles where keys are image pairs index and values are
@@ -579,17 +545,22 @@ def get_corresponding_tiles_row_col(
              sorting tiles for dask processing
     """
 
-    j = row
-    i = col
+    logging.debug(
+        "Processing tile located at {},{} in tile grid".format(row, col)
+    )
 
-    logging.debug("Processing tile located at {},{} in tile grid".format(i, j))
-
+    # Terrain grid [row, j, :] = [xmin, xmax, ymin, ymax]
+    # terrain region = [xmin, ymin, xmax, ymax]
     terrain_region = [
-        terrain_grid[j, i, 0],
-        terrain_grid[j, i, 1],
-        terrain_grid[j + 1, i + 1, 0],
-        terrain_grid[j + 1, i + 1, 1],
+        terrain_tiling_grid[row, col, 0],
+        terrain_tiling_grid[row, col, 2],
+        terrain_tiling_grid[row, col, 1],
+        terrain_tiling_grid[row, col, 3],
     ]
+
+    # reverse convention as row and col correspond to new format
+    # Former format is transposed
+    row, col = col, row
 
     logging.debug("Corresponding terrain region: {}".format(terrain_region))
 
@@ -613,20 +584,22 @@ def get_corresponding_tiles_row_col(
         tile_min = np.minimum(
             np.minimum(
                 np.minimum(
-                    epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
+                    epipolar_points_min[row, col],
+                    epipolar_points_min[row + 1, col],
                 ),
                 np.minimum(
-                    epipolar_points_min[j + 1, i + 1],
-                    epipolar_points_min[j, i + 1],
+                    epipolar_points_min[row + 1, col + 1],
+                    epipolar_points_min[row, col + 1],
                 ),
             ),
             np.minimum(
                 np.minimum(
-                    epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
+                    epipolar_points_max[row, col],
+                    epipolar_points_max[row + 1, col],
                 ),
                 np.minimum(
-                    epipolar_points_max[j + 1, i + 1],
-                    epipolar_points_max[j, i + 1],
+                    epipolar_points_max[row + 1, col + 1],
+                    epipolar_points_max[row, col + 1],
                 ),
             ),
         )
@@ -634,20 +607,22 @@ def get_corresponding_tiles_row_col(
         tile_max = np.maximum(
             np.maximum(
                 np.maximum(
-                    epipolar_points_min[j, i], epipolar_points_min[j + 1, i]
+                    epipolar_points_min[row, col],
+                    epipolar_points_min[row + 1, col],
                 ),
                 np.maximum(
-                    epipolar_points_min[j + 1, i + 1],
-                    epipolar_points_min[j, i + 1],
+                    epipolar_points_min[row + 1, col + 1],
+                    epipolar_points_min[row, col + 1],
                 ),
             ),
             np.maximum(
                 np.maximum(
-                    epipolar_points_max[j, i], epipolar_points_max[j + 1, i]
+                    epipolar_points_max[row, col],
+                    epipolar_points_max[row + 1, col],
                 ),
                 np.maximum(
-                    epipolar_points_max[j + 1, i + 1],
-                    epipolar_points_max[j, i + 1],
+                    epipolar_points_max[row + 1, col + 1],
+                    epipolar_points_max[row, col + 1],
                 ),
             ),
         )
@@ -658,8 +633,6 @@ def get_corresponding_tiles_row_col(
         epipolar_region_maxx = tile_max[0]
         epipolar_region_maxy = tile_max[1]
 
-        # This mimics the previous code that was using
-        # terrain_region_to_epipolar
         epipolar_region = [
             epipolar_region_minx,
             epipolar_region_miny,
@@ -701,7 +674,7 @@ def get_corresponding_tiles_row_col(
                     required_point_clouds_right.append(pc_right[id_y, id_x])
                     list_indexes.append([id_y, id_x])
 
-    rank = i * i + j * j
+    rank = col * col + row * row
 
     return (
         terrain_region,

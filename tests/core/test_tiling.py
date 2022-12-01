@@ -40,7 +40,7 @@ from cars.applications.grid_generation import grids
 
 # CARS imports
 from cars.core import tiling
-from cars.data_structures import cars_dataset, format_transformation
+from cars.data_structures import cars_dataset
 
 # CARS Tests import
 from ..helpers import get_geometry_loader, temporary_dir
@@ -175,34 +175,24 @@ def test_snap_to_grid():
 
 # function parameters are fixtures set in conftest.py
 @pytest.mark.unit_tests
-def test_terrain_region_to_epipolar(
-    images_and_grids_conf,  # pylint: disable=redefined-outer-name
-    disparities_conf,  # pylint: disable=redefined-outer-name
-    epipolar_sizes_conf,
-):  # pylint: disable=redefined-outer-name
-    """
-    Test transform to epipolar method
-    """
-    configuration = images_and_grids_conf
-    configuration["preprocessing"]["output"].update(
-        disparities_conf["preprocessing"]["output"]
-    )
-    configuration["preprocessing"]["output"].update(
-        epipolar_sizes_conf["preprocessing"]["output"]
-    )
-
-    region = [5.1952, 44.205, 5.2, 44.208]
-    out_region = tiling.terrain_region_to_epipolar(
-        get_geometry_loader(), region, configuration
-    )
-    assert out_region == [0.0, 0.0, 612.0, 400.0]
-
-
-# function parameters are fixtures set in conftest.py
-@pytest.mark.unit_tests
 @pytest.mark.parametrize(
     ",".join(["terrain_tile_size", "epipolar_tile_size", "nb_corresp_tiles"]),
-    [[500, 612, 1], [45, 70, 15]],
+    [
+        [500, 612, np.array([[1]])],
+        [
+            45,
+            70,
+            np.array(
+                [
+                    [15, 20, 16],
+                    [20, 25, 16],
+                    [16, 25, 15],
+                    [16, 16, 16],
+                    [16, 20, 16],
+                ]
+            ),
+        ],
+    ],
 )
 def test_tiles_pairing(
     terrain_tile_size,
@@ -228,20 +218,26 @@ def test_tiles_pairing(
     largest_epipolar_region = [0, 0, 612, 612]
     disp_min, disp_max = -20, 15
     epsg = 32631
-    terrain_grid = tiling.grid(
-        *terrain_region, terrain_tile_size, terrain_tile_size
+    terrain_tiling_grid = tiling.generate_tiling_grid(
+        terrain_region[0],
+        terrain_region[1],
+        terrain_region[2],
+        terrain_region[3],
+        terrain_tile_size,
+        terrain_tile_size,
     )
+
     epipolar_regions_params = [
         *largest_epipolar_region,
         epipolar_tile_size,
         epipolar_tile_size,
     ]
-    epipolar_regions_grid = tiling.grid(*epipolar_regions_params)
+    epipolar_tiling_grid = tiling.generate_tiling_grid(*epipolar_regions_params)
 
     # compute epipolar grid min max
     epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
         get_geometry_loader(),
-        epipolar_regions_grid,
+        tiling.transform_four_layers_to_two_layers_grid(epipolar_tiling_grid),
         epsg,
         configuration,
         disp_min,
@@ -250,8 +246,8 @@ def test_tiles_pairing(
 
     # compute points min/max epipolar corresponding to terrain grid
     points_min, points_max = tiling.terrain_grid_to_epipolar(
-        terrain_grid,
-        epipolar_regions_grid,
+        terrain_tiling_grid,
+        epipolar_tiling_grid,
         epipolar_grid_min,
         epipolar_grid_max,
         epsg,
@@ -260,15 +256,9 @@ def test_tiles_pairing(
     # Create empty manager with needed epipolar image information
     pc_left = cars_dataset.CarsDataset("arrays")
     pc_right = cars_dataset.CarsDataset("arrays")
-    pc_left.tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
-        epipolar_regions_grid
-    )
+    pc_left.tiling_grid = epipolar_tiling_grid
     pc_left.generate_none_tiles()
-    pc_right.tiling_grid = (
-        format_transformation.tiling_grid_2_cars_dataset_grid(
-            epipolar_regions_grid
-        )
-    )
+    pc_right.tiling_grid = epipolar_tiling_grid
     pc_right.generate_none_tiles()
     pc_left.attributes["largest_epipolar_region"] = largest_epipolar_region
     pc_left.attributes["opt_epipolar_tile_size"] = epipolar_tile_size
@@ -278,62 +268,71 @@ def test_tiles_pairing(
     list_epipolar_points_min = [points_min]
     list_epipolar_points_max = [points_max]
 
-    # get epipolar tiles corresponding to the terrain grid for tile [0,0]
-    (
-        terrain_region,
-        corresp_tiles_left,
-        __,
-        __,
-        list_indexes,
-    ) = tiling.get_corresponding_tiles_row_col(
-        terrain_grid,
-        0,
-        0,
-        list_points_clouds_left,
-        list_points_clouds_right,
-        list_epipolar_points_min,
-        list_epipolar_points_max,
-    )
-
     def create_region_from_grid(id_x, id_y, epi_grid):
         "create region"
         pos_1 = epi_grid[id_x, id_y]
         pos_2 = epi_grid[id_x + 1, id_y + 1]
         return [pos_1[0], pos_1[1], pos_2[0], pos_2[1]]
 
-    epi_tiles = [
-        create_region_from_grid(id_x, id_y, epipolar_regions_grid)
-        for id_x, id_y in list_indexes
-    ]
+    for row in range(terrain_tiling_grid.shape[0]):
+        for col in range(terrain_tiling_grid.shape[1]):
+            # get epipolar tiles corresponding to the terrain grid for tile
+            # [row, col]
+            (
+                terrain_region,
+                corresp_tiles_left,
+                __,
+                __,
+                list_indexes,
+            ) = tiling.get_corresponding_tiles_row_col(
+                terrain_tiling_grid,
+                row,
+                col,
+                list_points_clouds_left,
+                list_points_clouds_right,
+                list_epipolar_points_min,
+                list_epipolar_points_max,
+            )
 
-    # count the number of epipolar tiles for the first terrain tile
-    assert len(corresp_tiles_left) == nb_corresp_tiles
+            epi_tiles = [
+                create_region_from_grid(
+                    id_x,
+                    id_y,
+                    tiling.transform_four_layers_to_two_layers_grid(
+                        epipolar_tiling_grid
+                    ),
+                )
+                for id_x, id_y in list_indexes
+            ]
 
-    terrain_regions = [terrain_region]
-    corresp_tiles = [epi_tiles]
+            # count the number of epipolar tiles for the first terrain tile
+            assert len(corresp_tiles_left) == nb_corresp_tiles[row, col]
 
-    ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
-        terrain_regions, corresp_tiles
-    )
+            terrain_regions = [terrain_region]
+            corresp_tiles = [epi_tiles]
 
-    # check geodict writing
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
-        ter_filename = f"terrain_tiles_{nb_corresp_tiles}.geojson"
-        epi_filename = f"epipolar_tiles_{nb_corresp_tiles}.geojson"
-        # CRS for all GeoJSON is epsg:4326: to convert for QGIS:
-        # > ogr2ogr -f "GeoJSON" out.geojson in.geojson \
-        # > -s_srs EPSG:32631 -t_srs EPSG:4326
-        with open(
-            os.path.join(tmp_dir, ter_filename), "w", encoding="utf-8"
-        ) as writer:
-            writer.write(json.dumps(ter_geodict))
-        with open(
-            os.path.join(tmp_dir, epi_filename), "w", encoding="utf-8"
-        ) as writer:
-            writer.write(json.dumps(epi_geodict))
-        for tmp_filename in [ter_filename, epi_filename]:
-            with fiona.open(os.path.join(tmp_dir, tmp_filename)):
-                pass
+            ter_geodict, epi_geodict = tiling.get_paired_regions_as_geodict(
+                terrain_regions, corresp_tiles
+            )
+
+            # check geodict writing
+            with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
+                ter_filename = f"terrain_tiles_{nb_corresp_tiles}.geojson"
+                epi_filename = f"epipolar_tiles_{nb_corresp_tiles}.geojson"
+                # CRS for all GeoJSON is epsg:4326: to convert for QGIS:
+                # > ogr2ogr -f "GeoJSON" out.geojson in.geojson \
+                # > -s_srs EPSG:32631 -t_srs EPSG:4326
+                with open(
+                    os.path.join(tmp_dir, ter_filename), "w", encoding="utf-8"
+                ) as writer:
+                    writer.write(json.dumps(ter_geodict))
+                with open(
+                    os.path.join(tmp_dir, epi_filename), "w", encoding="utf-8"
+                ) as writer:
+                    writer.write(json.dumps(epi_geodict))
+                for tmp_filename in [ter_filename, epi_filename]:
+                    with fiona.open(os.path.join(tmp_dir, tmp_filename)):
+                        pass
 
 
 @pytest.mark.unit_tests

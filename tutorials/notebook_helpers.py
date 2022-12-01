@@ -70,12 +70,14 @@ def mkdir(root_dir, name_dir):
     return full_path_name_dir
 
 
-def get_full_data(cars_ds, tag):
+def get_full_data(cars_ds, tag, from_terrain=False, resolution=1):
     """
     Get combined data of CarsDataset
 
     :param cars_ds: cars dataset to use
-    :parap tag: key to get from xr.Datasets
+    :param tag: key to get from xr.Datasets
+    :param from_terrain: true if in tiling grid in terrain coordinate
+    :param resolution: resolution, used if from_terrain is true
 
     :return: array of full data
 
@@ -99,34 +101,50 @@ def get_full_data(cars_ds, tag):
 
                 break
 
-    # Create array
-    nb_rows = int(np.max(cars_ds.tiling_grid[:, :, 1]))
-    nb_cols = int(np.max(cars_ds.tiling_grid[:, :, 3]))
+    # get nb row and nb col
+    nb_rows = 0
+    for row in range(cars_ds.shape[0]):
+        if nb_bands == 1:
+            nb_rows += cars_ds[row, 0][tag].shape[0]
+        else:
+            nb_rows += cars_ds[row, 0][tag].shape[1]
 
+    nb_cols = 0
+    for col in range(cars_ds.shape[1]):
+        if nb_bands == 1:
+            nb_cols += cars_ds[0, col][tag].shape[1]
+        else:
+            nb_cols += cars_ds[0, col][tag].shape[2]
+
+    # Create array
     if nb_bands == 1:
         array = np.empty((nb_rows, nb_cols))
     else:
         array = np.empty((nb_rows, nb_cols, nb_bands))
 
     # fill array
-    windows = cars_ds.tiling_grid.astype(int)
     overlaps = cars_ds.overlaps.astype(int)
     for row in range(cars_ds.shape[0]):
         for col in range(cars_ds.shape[1]):
-            row_start = windows[row, col, 0]
-            row_end = windows[row, col, 1]
-            col_start = windows[row, col, 2]
-            col_end = windows[row, col, 3]
+
+            window = cars_ds.get_window_as_dict(
+                row, col, from_terrain=from_terrain, resolution=resolution
+            )
+            row_start = window["row_min"]
+            row_end = window["row_max"]
+            col_start = window["col_min"]
+            col_end = window["col_max"]
 
             data_with_overlaps = cars_ds[row, col][tag].values
             data_with_overlaps = np.squeeze(data_with_overlaps)
+
             if len(data_with_overlaps.shape) == 2:
                 nb_rows, nb_cols = (
                     data_with_overlaps.shape[0],
                     data_with_overlaps.shape[1],
                 )
                 current_data = data_with_overlaps[
-                    overlaps[row, col, 0] : nb_rows - overlaps[row, col, 1],
+                    overlaps[row, col, 0] : nb_rows + 1 - overlaps[row, col, 1],
                     overlaps[row, col, 2] : nb_cols - overlaps[row, col, 3],
                 ]
                 array[row_start:row_end, col_start:col_end] = current_data

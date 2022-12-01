@@ -267,6 +267,69 @@ class CarsDataset:
 
         return functions[self.dataset_type](future_result, file_name, **kwargs)
 
+    def get_window_as_dict(self, row, col, from_terrain=False, resolution=1):
+        """
+        Get window in pixels for rasterio. Set from_terrain if tiling grid
+        was defined in geographic coordinates.
+
+        :param row: row
+        :type row: int
+        :param col: col
+        :type col: int
+        :param from_terrain: true if in terrain coordinates
+        :type from_terrain: bool
+        :param resolution: resolution
+        :type resolution: float
+
+        :return: New window :  {
+            "row_min" : row_min ,
+            "row_max" : row_max
+            "col_min" : col_min
+            "col_max" : col_max
+            }
+        :rtype: Dict
+
+        """
+
+        row_min = np.min(self.tiling_grid[:, :, 0])
+        col_min = np.min(self.tiling_grid[:, :, 2])
+        col_max = np.max(self.tiling_grid[:, :, 3])
+
+        window_arr = np.copy(self.tiling_grid[row, col, :])
+
+        if from_terrain:
+            #  row -> y axis : reversed by convention
+            window = np.array(
+                [
+                    col_max - window_arr[3],
+                    col_max - window_arr[2],
+                    window_arr[0] - row_min,
+                    window_arr[1] - row_min,
+                ]
+            )
+
+        else:
+            window = np.array(
+                [
+                    window_arr[0] - row_min,
+                    window_arr[1] - row_min,
+                    window_arr[2] - col_min,
+                    window_arr[3] - col_min,
+                ]
+            )
+
+        # normalize with resolution
+        window = np.round(window / resolution)
+
+        new_window = {
+            "row_min": int(window[0]),
+            "row_max": int(window[1]),
+            "col_min": int(window[2]),
+            "col_max": int(window[3]),
+        }
+
+        return new_window
+
     def create_grid(
         self,
         nb_col: int,
@@ -369,6 +432,8 @@ class CarsDataset:
         """
         Generate de rasterio descriptor for the given future result
 
+        Only works with pixelic tiling grid
+
         :param future_result: Future result
         :type future_result: xr.Dataset
         :param file_name: file name to save futures to
@@ -389,8 +454,9 @@ class CarsDataset:
                 "CarsDataset doesn't have a profile, default is given"
             )
             new_profile = DefaultGTiffProfile(count=new_profile["count"])
-            new_profile["height"] = self.tiling_grid[-1, 0, 1]
-            new_profile["width"] = self.tiling_grid[0, -1, 3]
+
+            new_profile["height"] = np.max(self.tiling_grid[:, :, 1])
+            new_profile["width"] = np.max(self.tiling_grid[:, :, 3])
 
         # Change dtype
         new_profile["dtype"] = dtype

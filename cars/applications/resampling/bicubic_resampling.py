@@ -171,34 +171,23 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "{size}x{size} pixels".format(size=opt_epipolar_tile_size)
         )
 
-        # Split epipolar image in pieces
-        epipolar_regions = tiling.split(
+        epipolar_regions_grid = tiling.generate_tiling_grid(
             0,
             0,
-            grid_left.attributes["epipolar_size_x"],
             grid_left.attributes["epipolar_size_y"],
-            opt_epipolar_tile_size,
-            opt_epipolar_tile_size,
-        )
-
-        epipolar_regions_grid = tiling.grid(
-            0,
-            0,
             grid_left.attributes["epipolar_size_x"],
-            grid_left.attributes["epipolar_size_y"],
             opt_epipolar_tile_size,
             opt_epipolar_tile_size,
         )
 
         logging.info(
             "Epipolar image will be processed in {} splits".format(
-                len(epipolar_regions)
+                epipolar_regions_grid.shape[0] * epipolar_regions_grid.shape[1]
             )
         )
 
         return (
             epipolar_regions_grid,
-            epipolar_regions,
             opt_epipolar_tile_size,
             largest_epipolar_region,
         )
@@ -272,8 +261,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"
             - attributes containing: \
-                "largest_epipolar_region","opt_epipolar_tile_size",\
-                "epipolar_regions_grid" \
+                "largest_epipolar_region","opt_epipolar_tile_size"
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """
@@ -306,7 +294,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Get grids and regions for current pair
         (
             epipolar_regions_grid,
-            _,
             opt_epipolar_tile_size,
             largest_epipolar_region,
         ) = self.pre_run(
@@ -342,18 +329,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_right = cars_dataset.CarsDataset("arrays")
 
         # Compute tiling grid
-        epipolar_images_left.tiling_grid = (
-            format_transformation.tiling_grid_2_cars_dataset_grid(
-                epipolar_regions_grid
-            )
-        )
+        epipolar_images_left.tiling_grid = epipolar_regions_grid
 
         # Generate tiling grid
-        epipolar_images_right.tiling_grid = (
-            format_transformation.tiling_grid_2_cars_dataset_grid(
-                epipolar_regions_grid
-            )
-        )
+        epipolar_images_right.tiling_grid = epipolar_regions_grid
 
         # Compute overlaps
         epipolar_images_left.overlaps = (
@@ -371,7 +350,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_attributes = {
             "largest_epipolar_region": largest_epipolar_region,
             "opt_epipolar_tile_size": opt_epipolar_tile_size,
-            "epipolar_regions_grid": epipolar_regions_grid,
         }
 
         epipolar_images_left.attributes.update(epipolar_images_attributes)
@@ -487,9 +465,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     epipolar_images_right.overlaps[row, col]
                 )
                 # get window
-                left_window = cars_dataset.window_array_to_dict(
-                    epipolar_images_left.tiling_grid[row, col]
-                )
+                left_window = epipolar_images_left.get_window_as_dict(row, col)
 
                 # Compute images
                 (

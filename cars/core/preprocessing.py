@@ -541,7 +541,19 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     # Compute optimal terrain tile width
     optimal_terrain_tile_width_average = np.mean(list_terrain_epi_tile_width)
 
-    return bounds, optimal_terrain_tile_width_average
+    optimal_terrain_tile_width = (
+        int(math.ceil(optimal_terrain_tile_width_average / resolution))
+        * resolution
+    )
+
+    logging.info(
+        "Optimal terrain tile size: {}x{} pixels".format(
+            int(optimal_terrain_tile_width / resolution),
+            int(optimal_terrain_tile_width / resolution),
+        )
+    )
+
+    return bounds, optimal_terrain_tile_width
 
 
 def create_former_cars_post_prepare_configuration(

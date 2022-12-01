@@ -188,9 +188,20 @@ def test_simple_rasterization_dataset_1():
     ysize = 112
     resolution = 0.5
 
+    # equals to :
+    xmin = xstart
+    xmax = xstart + (xsize + 1) * resolution
+    ymin = ystart - (ysize + 1) * resolution
+    ymax = ystart
+
     epsg = 32630
     sigma = 0.3
     radius = 3
+
+    # Compute margin
+    on_ground_margin = 0
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
@@ -198,14 +209,12 @@ def test_simple_rasterization_dataset_1():
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [cloud],
         [None],
-        resolution,
         epsg,
-        xstart=xstart,
-        ystart=ystart,
-        xsize=xsize,
-        ysize=ysize,
-        radius=radius,
-        on_ground_margin=0,
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        margins=used_margin,
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
@@ -256,6 +265,12 @@ def test_simple_rasterization_dataset_2():
     ysize = None
     resolution = 0.5
 
+    # equals to :
+    xmin = None
+    xmax = None
+    ymin = None
+    ymax = None
+
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
 
@@ -263,17 +278,20 @@ def test_simple_rasterization_dataset_2():
     sigma = 0.3
     radius = 3
 
+    # Compute margin
+    on_ground_margin = 0
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [cloud],
         [None],
-        resolution,
         epsg,
-        xstart=xstart,
-        ystart=ystart,
-        xsize=xsize,
-        ysize=ysize,
-        radius=radius,
-        on_ground_margin=0,
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        margins=used_margin,
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
@@ -327,27 +345,36 @@ def test_simple_rasterization_multiple_datasets():
     utm1 = add_color(utm1, color1[cst.EPI_IMAGE].values)
     utm2 = add_color(utm2, color2[cst.EPI_IMAGE].values)
 
+    resolution = 0.5
+
     xstart = 1154790
     ystart = 4927552
     xsize = 114
     ysize = 112
-    resolution = 0.5
+    # equals to :
+    xmin = xstart
+    xmax = xstart + (xsize + 1) * resolution
+    ymin = ystart - (ysize + 1) * resolution
+    ymax = ystart
 
     epsg = 32630
     sigma = 0.3
     radius = 3
 
+    # Compute margin
+    on_ground_margin = 0
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [utm1, utm2],
         [None, None],
-        resolution,
         epsg,
-        xstart=xstart,
-        ystart=ystart,
-        xsize=xsize,
-        ysize=ysize,
-        radius=radius,
-        on_ground_margin=0,
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        margins=used_margin,
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,

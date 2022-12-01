@@ -93,7 +93,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
         super().__init__(conf=conf)
 
-    def get_on_ground_margin(self):
+    @abstractmethod
+    def get_on_ground_margin(self, resolution=0.5):
         """
         Get margins to use during point clouds fusion
 
@@ -101,10 +102,6 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :rtype: float
 
         """
-
-        on_ground_margin = 0
-
-        return on_ground_margin
 
     @abstractmethod
     def get_method(self):
