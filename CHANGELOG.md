@@ -1,18 +1,24 @@
 # Changelog
 
-Only the first "Unreleased" section of this file corresponding of next release can be updated along the development of each new, changed and fixed features.
-When publication of a new release, the section "Unreleased" is set to the next chosen version, the name of the milestone and the date (month year).
-A new section Unreleased is opened then for next dev phase.
-
-## Unreleased
+## 0.5.3 Points clouds as LAZ files (December 2022)
 
 ### Added
 
+- Dump point clouds as LAS [#438]
+- Refactoring of tiling grids and margins [#451]
+- Generate a runnable full configuration file [#422]
+- Add hole filling application for disparity maps [#275]
+
 ### Changed
+
+- Add minimum number of sift matches in configuration [#514]
 
 ### Fixed
 
-- fix pylint errors (no-member) in application template [#437]
+- Fix pylint errors (no-member) in application template [#437]
+- Fix bug PBS Dask [#515]
+- Fix wrong images saved in notebooks
+- Fix bug in disparity map saving [#484]
 
 ## 0.5.2 Profiling and dense matching confidence information (November 2022)
 
@@ -31,6 +37,7 @@ A new section Unreleased is opened then for next dev phase.
 
 - Fix dimension bug during point cloud fusion [#482]
 
+
 ## 0.5.1 Minor fixes post refactoring (September 2022)
 
 ### Changed
@@ -43,6 +50,7 @@ A new section Unreleased is opened then for next dev phase.
 - Fix temporarily local path to CARS OTB installed apps [#434]
 - Fix multiprocessing bug [#446]
 - Fix (remove) warning: tile ignored [#455]
+
 
 ## 0.5.0 Refacto CARS (August 2022)
 
@@ -63,9 +71,9 @@ Be careful, this version changes API and configuration ! See new documentation.
 
 ### Fixed
 
-- remove setuptools pre installation [#341]
-- remove click 8.0.4 dependency [#341]
-- add automatic use of setup.cfg docs extra_require for readthedocs conf [#367]
+- Remove setuptools pre installation [#341]
+- Remove click 8.0.4 dependency [#341]
+- Add automatic use of setup.cfg docs extra_require for readthedocs conf [#367]
 
 
 ## 0.4.2 OTB/GDAL upgrade (July 2022)
