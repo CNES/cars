@@ -41,7 +41,7 @@ from cars.applications.point_cloud_fusion import (
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,
 )
-from cars.core import tiling
+from cars.core import projection, tiling
 from cars.data_structures import cars_dataset
 
 
@@ -405,6 +405,8 @@ def compute_point_cloud_wrapper(
     xmax: float = None,
     ymax: float = None,
     margins: float = 0,
+    save_pc_as_laz: bool = False,
+    save_pc_as_csv: bool = False,
     saving_info=None,
 ):
     """
@@ -440,6 +442,10 @@ def compute_point_cloud_wrapper(
         (if None, will be estimated by the function)
     :param margins: margins needed for tiles, meter or degree
     :type margins: float
+    :param save_pc_as_laz: save point cloud as laz
+    :type save_pc_as_laz: bool
+    :param save_pc_as_csv: save point cloud as csv
+    :type save_pc_as_csv: bool
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
 
@@ -487,8 +493,8 @@ def compute_point_cloud_wrapper(
         "ymin": ymin,
         "ymax": ymax,
         "color_type": color_type,
-        "save_points_cloud_as_laz": kwargs["save_pc_as_laz"],
-        "save_points_cloud_as_csv": kwargs["save_pc_as_csv"],
+        "save_points_cloud_as_laz": save_pc_as_laz,
+        "save_points_cloud_as_csv": save_pc_as_csv,
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes

@@ -456,7 +456,7 @@ class SimpleGaussian(
                         pc_row,
                         pc_col,
                     ) = format_transformation.get_corresponding_indexes(
-                        row, col, terrain_raster.tiling_grid.shape
+                        row, col
                     )
 
                     if merged_points_cloud.tiles[pc_row][pc_col] is not None:

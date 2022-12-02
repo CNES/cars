@@ -833,15 +833,15 @@ def save_dataframe(dataframe, file_name, overwrite=True):
     # generate filename if attributes have xstart and ystart settings
     if (
         "attributes" in dataframe.attrs
-        and "xstart" in dataframe.attrs["attributes"]
+        and "xmin" in dataframe.attrs["attributes"]
     ):
         file_name = os.path.dirname(file_name)
         file_name = os.path.join(
             file_name,
             (
-                str(dataframe.attrs["attributes"]["xstart"])
+                str(dataframe.attrs["attributes"]["xmin"])
                 + "_"
-                + str(dataframe.attrs["attributes"]["ystart"])
+                + str(dataframe.attrs["attributes"]["ymax"])
             ),
         )
 

@@ -86,7 +86,7 @@ def grid_margins_2_overlaps(grid, margins):
     return cars_ds_overlaps
 
 
-def get_corresponding_indexes(row, col, tiling_shape):
+def get_corresponding_indexes(row, col):
     """
     Get point cloud tiling grid indexes, corresponding to
     given raster indexes.
@@ -96,8 +96,6 @@ def get_corresponding_indexes(row, col, tiling_shape):
     :type row: int
     :param col: col
     :type col: int
-    :param tiling_shape: tiling grid shape
-    :type tiling_shape: tuple
 
     :return: corresponding indexes (row, col)
     :rtype: tuple(int, int)
@@ -105,7 +103,7 @@ def get_corresponding_indexes(row, col, tiling_shape):
     """
 
     pc_row = col
-    pc_col = tiling_shape[1] - row - 1
+    pc_col = row
 
     return pc_row, pc_col
 
@@ -132,9 +130,7 @@ def terrain_coords_to_pix(point_cloud_cars_ds, resolution):
     for row in range(raster_tiling_grid.shape[0]):
         for col in range(raster_tiling_grid.shape[1]):
             # get corresponding tile in point cloud
-            pc_row, pc_col = get_corresponding_indexes(
-                row, col, point_cloud_cars_ds.tiling_grid.shape
-            )
+            pc_row, pc_col = get_corresponding_indexes(row, col)
 
             # Get window
             window_dict = point_cloud_cars_ds.get_window_as_dict(

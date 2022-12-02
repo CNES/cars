@@ -127,3 +127,17 @@ def test_region_margins_from_window():
     np.testing.assert_allclose(
         out_margin["right_margin"].data, expected_right_margin
     )
+
+
+@pytest.mark.unit_tests
+def test_get_corresponding_indexes():
+    """
+    Test get_corresponding_indexes
+    """
+
+    row, col = 0, 1
+
+    pc_row, pc_col = format_transformation.get_corresponding_indexes(row, col)
+
+    assert pc_row == 1
+    assert pc_col == 0
