@@ -87,9 +87,15 @@ class AbstractCarsDatasetRegistry:
         """
 
         cars_ds_id = None
-        if SAVING_INFO in future_result.attrs:
-            if CARS_DATASET_KEY in future_result.attrs[SAVING_INFO]:
-                cars_ds_id = future_result.attrs[SAVING_INFO][CARS_DATASET_KEY]
+
+        if isinstance(future_result, dict):
+            attributes_info_dict = future_result
+        else:
+            attributes_info_dict = future_result.attrs
+
+        if SAVING_INFO in attributes_info_dict:
+            if CARS_DATASET_KEY in attributes_info_dict[SAVING_INFO]:
+                cars_ds_id = attributes_info_dict[SAVING_INFO][CARS_DATASET_KEY]
 
         return cars_ds_id
 
@@ -107,13 +113,19 @@ class AbstractCarsDatasetRegistry:
 
         cars_ds_row = None
         cars_ds_col = None
-        if SAVING_INFO in future_result.attrs:
-            if CARS_DS_ROW in future_result.attrs[SAVING_INFO]:
-                cars_ds_row = future_result.attrs[SAVING_INFO][CARS_DS_ROW]
+
+        if isinstance(future_result, dict):
+            attributes_info_dict = future_result
+        else:
+            attributes_info_dict = future_result.attrs
+
+        if SAVING_INFO in attributes_info_dict:
+            if CARS_DS_ROW in attributes_info_dict[SAVING_INFO]:
+                cars_ds_row = attributes_info_dict[SAVING_INFO][CARS_DS_ROW]
             else:
                 logging.warning("No row given in object")
-            if CARS_DS_COL in future_result.attrs[SAVING_INFO]:
-                cars_ds_col = future_result.attrs[SAVING_INFO][CARS_DS_COL]
+            if CARS_DS_COL in attributes_info_dict[SAVING_INFO]:
+                cars_ds_col = attributes_info_dict[SAVING_INFO][CARS_DS_COL]
             else:
                 logging.warning("No col given in object")
 

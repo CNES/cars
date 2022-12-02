@@ -1,6 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
-#
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -24,6 +21,7 @@
 """
 CARS cluster module init file
 """
+# flake8: noqa: F401
 
 # CARS imports
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster

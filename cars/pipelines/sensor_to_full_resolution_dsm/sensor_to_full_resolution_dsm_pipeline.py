@@ -171,6 +171,8 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         needed_applications = [
             "grid_generation",
             "resampling",
+            "holes_detection",
+            "dense_matches_filling",
             "sparse_matching",
             "dense_matching",
             "triangulation",
@@ -205,6 +207,20 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             "resampling", cfg=conf.get("resampling", {})
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
+
+        # holes detection
+        self.holes_detection_app = Application(
+            "holes_detection", cfg=conf.get("holes_detection", {})
+        )
+        used_conf["holes_detection"] = self.holes_detection_app.get_conf()
+
+        # disparity filling
+        self.dense_matches_filling = Application(
+            "dense_matches_filling", cfg=conf.get("dense_matches_filling", {})
+        )
+        used_conf[
+            "dense_matches_filling"
+        ] = self.dense_matches_filling.get_conf()
 
         # Sparse Matching
         self.sparse_matching_app = Application(
@@ -362,6 +378,26 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     add_color=False,
                 )
 
+                # Run holes detection
+                (
+                    holes_bbox_left,
+                    holes_bbox_right,
+                ) = self.holes_detection_app.run(
+                    epipolar_image_left,
+                    epipolar_image_right,
+                    is_activated=self.dense_matches_filling.get_is_activated(),
+                    margin=self.dense_matches_filling.get_poly_margin(),
+                    mask_holes_to_fill_left=sensor_image_left[
+                        sens_cst.INPUT_MSK_CLASSES
+                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
+                    mask_holes_to_fill_right=sensor_image_right[
+                        sens_cst.INPUT_MSK_CLASSES
+                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
+                    orchestrator=cars_orchestrator,
+                    pair_folder=pair_folder,
+                    pair_key=pair_key,
+                )
+
                 # Run epipolar sparse_matching application
                 (epipolar_matches_left, _,) = self.sparse_matching_app.run(
                     epipolar_image_left,
@@ -377,6 +413,9 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                         sens_cst.INPUT_MSK_CLASSES
                     ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
                 )
+
+                # Run cluster breakpoint to compute sifts: force computation
+                cars_orchestrator.breakpoint()
 
                 # Run grid correction application
 
@@ -480,6 +519,26 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     ][sens_cst.SET_TO_REF_ALT],
                     disp_min=disp_min,
                     disp_max=disp_max,
+                    compute_disparity_masks=(
+                        self.dense_matches_filling.get_is_activated()
+                    ),
+                )
+
+                # Fill holes in disparity map
+                (
+                    filled_epipolar_disparity_map_left,
+                    filled_epipolar_disparity_map_right,
+                ) = self.dense_matches_filling.run(
+                    epipolar_disparity_map_left,
+                    epipolar_disparity_map_right,
+                    new_epipolar_image_left,
+                    holes_bbox_left,
+                    holes_bbox_right,
+                    disp_min=disp_min,
+                    disp_max=disp_max,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=pair_folder,
+                    pair_key=pair_key,
                 )
 
                 if epsg is None:
@@ -513,8 +572,8 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     new_epipolar_image_right,
                     grid_left,
                     corrected_grid_right,
-                    epipolar_disparity_map_left,
-                    epipolar_disparity_map_right,
+                    filled_epipolar_disparity_map_left,
+                    filled_epipolar_disparity_map_right,
                     epsg,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,

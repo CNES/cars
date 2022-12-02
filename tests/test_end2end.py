@@ -1374,3 +1374,88 @@ def test_end2end_paca_with_mask():
             rtol=1.0e-7,
             atol=1.0e-7,
         )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_disparity_filing():
+    """
+    End to end processing, test with mask and fill holes
+    """
+    # Force max RAM to 1000 to get stable tiling in tests
+    os.environ["OTB_MAX_RAM_HINT"] = "200"
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+
+        # Run full resolution pipeline
+        _, input_config_full_res = generate_input_json(
+            input_json,
+            directory,
+            "sensor_to_full_resolution_dsm",
+            "local_dask",
+            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+        )
+        resolution = 0.5
+        full_res_applications = {
+            "dense_matching": {
+                "method": "census_sgm",
+                "save_disparity_map": True,
+                "use_sec_disp": True,
+            },
+            "dense_matches_filling": {
+                "method": "plane",
+                "save_disparity_map": True,
+                "activated": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": resolution,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+                "msk_no_data": 65534,
+                "write_msk": True,
+            },
+        }
+        input_config_full_res["applications"].update(full_res_applications)
+
+        # update epsg
+        final_epsg = 32631
+        input_config_full_res["inputs"]["epsg"] = final_epsg
+
+        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
+            input_config_full_res
+        )
+        full_res_pipeline.run()
+
+        out_dir = input_config_full_res["output"]["out_dir"]
+
+        # Uncomment the 2 following instructions to update reference data
+        # copy2(os.path.join(out_dir, 'dsm.tif'),
+        #      absolute_data_path("ref_output/dsm_end2end_gizeh_fill.tif"))
+        # copy2(os.path.join(out_dir, 'clr.tif'),
+        #       absolute_data_path("ref_output/clr_end2end_gizeh_fill.tif"))
+        # copy2(os.path.join(out_dir, 'msk.tif'),
+        #      absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"))
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path("ref_output/dsm_end2end_gizeh_fill.tif"),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path("ref_output/clr_end2end_gizeh_fill.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "msk.tif"),
+            absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+
+        # TODO test with mp mode

@@ -443,6 +443,11 @@ class Sift(SparseMatching, short_name="sift"):
                 )
             )
 
+            # Add to replace list so tiles will be readble at the same time
+            self.orchestrator.add_to_replace_lists(
+                epipolar_disparity_map_left, cars_ds_name="epi_matches_left"
+            )
+
             # Generate disparity maps
             for col in range(epipolar_disparity_map_left.shape[1]):
                 for row in range(epipolar_disparity_map_left.shape[0]):
@@ -553,14 +558,6 @@ class Sift(SparseMatching, short_name="sift"):
         epipolar_error_maximum_bias = self.epipolar_error_maximum_bias
 
         # Compute grid correction
-        # TODO to remove
-        cars_orchestrator.add_to_replace_lists(
-            epipolar_matches_left, cars_ds_name="epi_matches_left"
-        )
-        # Run cluster breakpoint
-        cars_orchestrator.breakpoint()
-
-        # epipolar_matches_left is now filled with readable data
 
         # Concatenated matches
         list_matches = []

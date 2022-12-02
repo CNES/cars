@@ -123,7 +123,7 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
         """
         Replace future result
 
-        :param future_result: xr.Dataset or pandas.DataFrame
+        :param future_result: xr.Dataset or pandas.DataFrame or Dict
 
         """
 

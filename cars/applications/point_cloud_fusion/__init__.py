@@ -1,6 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
-#
 # !/usr/bin/env python
 # coding: utf8
 #
@@ -24,6 +21,7 @@
 """
 CARS core cloud fusion module init file
 """
+# flake8: noqa: F401
 
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,

@@ -58,7 +58,6 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         :param conf_cluster: configuration for cluster
 
         """
-        self.out_dir = out_dir
 
         # call parent init
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)

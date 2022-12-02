@@ -352,6 +352,9 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
                 )
 
+                # Run cluster breakpoint to compute sifts
+                cars_orchestrator.breakpoint()
+
                 # Run grid correction application
 
                 # Filter matches
