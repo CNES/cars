@@ -130,17 +130,23 @@ def test_create_combined_cloud():
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
 
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
         epsg,
-        resolution=0.5,
-        xstart=40.0,
-        ystart=50.0,
-        xsize=20,
-        ysize=25,
-        on_ground_margin=1,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
         epipolar_border_margin=1,
-        radius=1,
         with_coords=False,
     )
 
@@ -176,17 +182,23 @@ def test_create_combined_cloud():
     # test with mask
     cloud_list = [get_cloud0_ds(with_msk=True), cloud2]
 
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
         epsg,
-        resolution=0.5,
-        xstart=40.0,
-        ystart=50.0,
-        xsize=20,
-        ysize=25,
-        on_ground_margin=1,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
         epipolar_border_margin=1,
-        radius=1,
         with_coords=False,
     )
 
@@ -241,17 +253,23 @@ def test_create_combined_cloud():
         cloud_with_color2,
     ]
 
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list_with_color,
         epsg,
-        resolution=0.5,
-        xstart=40.0,
-        ystart=50.0,
-        xsize=20,
-        ysize=25,
-        on_ground_margin=1,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
         epipolar_border_margin=1,
-        radius=1,
         with_coords=False,
     )
 
@@ -272,18 +290,24 @@ def test_create_combined_cloud():
 
     assert np.allclose(cloud.values, ref_cloud_clr)
 
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
     # test with coords and colors
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list_with_color,
         epsg,
-        resolution=0.5,
-        xstart=40.0,
-        ystart=50.0,
-        xsize=20,
-        ysize=25,
-        on_ground_margin=1,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
         epipolar_border_margin=1,
-        radius=1,
         with_coords=True,
     )
 
@@ -326,17 +350,23 @@ def test_create_combined_cloud():
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
 
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
         epsg,
-        resolution=0.5,
-        xstart=40.0,
-        ystart=50.0,
-        xsize=20,
-        ysize=25,
-        on_ground_margin=1,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
         epipolar_border_margin=1,
-        radius=1,
         with_coords=True,
     )
 

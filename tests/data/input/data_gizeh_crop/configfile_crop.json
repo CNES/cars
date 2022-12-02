@@ -1,0 +1,20 @@
+{
+
+        "inputs": {
+            "sensors" : {
+                "one": {
+                    "image": "img1_crop.tif",
+                    "geomodel": "img1_crop.geom",
+                    "no_data": 0
+                },
+                "two": {
+                    "image": "img2_crop.tif",
+                    "geomodel": "img2_crop.geom",
+                    "no_data": 0
+
+                }
+            },
+            "pairing": [["one", "two"]],
+             "initial_elevation": "srtm_dir"
+        }
+}

@@ -625,23 +625,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 resolution=self.rasterization_application.get_resolution(),
             )
 
-            # Get on_ground_margin, before point clouds merging,
-            # from app using small_components method.
-            # We don't now which pc_outlier_removing_x_app
-            # refers to small_components so let's check.
-
-            if (
-                self.pc_outliers_removing_1_app.get_method()
-                == "small_components"
-            ):
-                on_ground_margin = (
-                    self.pc_outliers_removing_1_app.get_on_ground_margin()
-                )
-            else:
-                on_ground_margin = (
-                    self.pc_outliers_removing_2_app.get_on_ground_margin()
-                )
-
             # Merge point clouds
             merged_points_clouds = self.pc_fusion_application.run(
                 list_epipolar_points_cloud_left,
@@ -649,8 +632,13 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 terrain_bounds,
                 epsg,
                 orchestrator=cars_orchestrator,
-                margins=self.rasterization_application.get_margins(),
-                on_ground_margin=on_ground_margin,
+                margins=self.pc_outliers_removing_1_app.get_on_ground_margin(
+                    resolution=(self.rasterization_application.get_resolution())
+                )
+                + self.pc_outliers_removing_2_app.get_on_ground_margin(
+                    resolution=(self.rasterization_application.get_resolution())
+                )
+                + self.rasterization_application.get_margins(),
                 optimal_terrain_tile_width=optimal_terrain_tile_width,
             )
 

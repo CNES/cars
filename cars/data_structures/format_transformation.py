@@ -33,63 +33,6 @@ import numpy as np
 # CARS imports
 
 
-def tiling_grid_2_cars_dataset_grid(
-    regions_grid, resolution=1, from_terrain=False
-):
-    """
-    Convert Region grid to Grid format used in CarsDatasets, in pixels
-
-    :param regions_grid: region grid
-    :type regions_grid: np.ndarray
-    :param resolution: resolution of image
-    :type resolution: float
-    :param from_terrain: is a terrain raster
-    :type from_terrain: bool
-
-    :return: Grid with CarsDataset format
-    :rtype: np.ndarray
-
-    """
-
-    nb_rows, nb_cols = regions_grid.shape[0] - 1, regions_grid.shape[1] - 1
-
-    cars_ds_grid = np.zeros((nb_rows, nb_cols, 4))
-    # rows min : ymin
-    cars_ds_grid[:, :, 0] = np.squeeze(regions_grid[:-1, :-1, 1])
-
-    # rows max : ymax
-    cars_ds_grid[:, :, 1] = np.squeeze(regions_grid[1:, :-1, 1])
-
-    # cols min : xmin
-    cars_ds_grid[:, :, 2] = np.squeeze(regions_grid[:-1, :-1, 0])
-
-    # cols max : xmax
-    cars_ds_grid[:, :, 3] = np.squeeze(regions_grid[:-1, 1:, 0])
-
-    # convert position to pixels
-
-    x_min = np.min(regions_grid[:, :, 0])
-    y_min = np.min(regions_grid[:, :, 1])
-    y_max = np.max(regions_grid[:, :, 1])
-
-    if from_terrain:
-        arr0 = np.copy(cars_ds_grid[:, :, 0])
-        arr1 = np.copy(cars_ds_grid[:, :, 1])
-
-        cars_ds_grid[:, :, 0] = y_max - arr1
-        cars_ds_grid[:, :, 1] = y_max - arr0
-    else:
-        cars_ds_grid[:, :, 0] -= y_min
-        cars_ds_grid[:, :, 1] -= y_min
-
-    cars_ds_grid[:, :, 2] -= x_min
-    cars_ds_grid[:, :, 3] -= x_min
-
-    cars_ds_grid = np.round(cars_ds_grid / resolution)
-
-    return cars_ds_grid
-
-
 def grid_margins_2_overlaps(grid, margins):
     """
     Convert margins to overlap grid format used in CarsDatasets
@@ -107,7 +50,7 @@ def grid_margins_2_overlaps(grid, margins):
 
     nb_rows, nb_cols = grid.shape[0], grid.shape[1]
 
-    cars_ds_overlaps = np.zeros((nb_rows, nb_cols, 4))
+    cars_ds_overlaps = np.ndarray(shape=(nb_rows, nb_cols, 4), dtype=float)
 
     # margins : pandora convention : ['left','up', 'right', 'down']
     overlap_row_up = abs(math.floor(margins[1]))
@@ -115,8 +58,8 @@ def grid_margins_2_overlaps(grid, margins):
     overlap_col_left = abs(math.floor(margins[0]))
     overlap_col_right = abs(math.ceil(margins[2]))
 
-    row_max = grid[-1, 0, 1]
-    col_max = grid[0, -1, 3]
+    row_max = np.max(grid[:, :, 1])
+    col_max = np.max(grid[:, :, 3])
 
     for j in range(0, nb_cols):
         for i in range(0, nb_rows):
@@ -141,6 +84,71 @@ def grid_margins_2_overlaps(grid, margins):
             )
 
     return cars_ds_overlaps
+
+
+def get_corresponding_indexes(row, col):
+    """
+    Get point cloud tiling grid indexes, corresponding to
+    given raster indexes.
+    In rasterio convention.
+
+    :param row: row
+    :type row: int
+    :param col: col
+    :type col: int
+
+    :return: corresponding indexes (row, col)
+    :rtype: tuple(int, int)
+
+    """
+
+    pc_row = col
+    pc_col = row
+
+    return pc_row, pc_col
+
+
+def terrain_coords_to_pix(point_cloud_cars_ds, resolution):
+    """
+    Compute the tiling grid in pixels, from a tiling grid in
+    geocoordinates
+
+    :param point_cloud_cars_ds: point clouds
+    :type point_cloud_cars_ds: CarsDataset
+    :param resolution: resolution
+    :type resolution: float
+
+    :return: new tiling grid
+    :rtype: np.ndarray
+
+    """
+
+    raster_tiling_grid = np.empty(
+        point_cloud_cars_ds.tiling_grid.shape
+    ).transpose(1, 0, 2)
+
+    for row in range(raster_tiling_grid.shape[0]):
+        for col in range(raster_tiling_grid.shape[1]):
+            # get corresponding tile in point cloud
+            pc_row, pc_col = get_corresponding_indexes(row, col)
+
+            # Get window
+            window_dict = point_cloud_cars_ds.get_window_as_dict(
+                pc_row,
+                pc_col,
+                from_terrain=True,
+                resolution=resolution,
+            )
+
+            # apply window
+            raster_tiling_grid[row, col, :] = [
+                window_dict["row_min"],
+                window_dict["row_max"],
+                window_dict["col_min"],
+                window_dict["col_max"],
+            ]
+
+    return raster_tiling_grid
 
 
 def region_margins_from_window(

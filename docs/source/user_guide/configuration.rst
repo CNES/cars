@@ -523,10 +523,6 @@ The structure follows this organisation:
             +==========================+==================================+=========+============================+============================+==========+
             | method                   | Method for fusion                | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | resolution               | Resolution of the dsm            | float   | should be > 0              | 0.5                        | No       |
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | terrain_tile_size        |                                  | int     |                            | None                       | No       |
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
             | save_points_cloud_as_laz | Save points clouds as laz format | boolean |                            | false                      | No       |
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
             | save_points_cloud_as_csv | Save points clouds as csv format | boolean |                            | false                      | No       |
@@ -540,17 +536,10 @@ The structure follows this organisation:
                     "applications": {
                         "point_cloud_fusion": {
                             "method": "mapping_to_terrain_tiles",
-                            "resolution": 0.5,
                             "save_points_cloud_as_laz": true,
                             "save_points_cloud_as_csv": true,
                         }
                     },
-
-            .. warning::
-
-              Be careful with resolution to be consistent with resolution in rasterization.
-              No mechanism ensures consistency between applications for now.
-
 
         .. tab:: Point Cloud outliers removing
 
@@ -690,11 +679,6 @@ The structure follows this organisation:
                             "dsm_radius": 1.5
                         }
                     },
-
-            .. warning::
-
-                Be careful with resolution to be consistent with resolution in rasterization.
-                No mechanism ensures consistency between applications for now.
 
    .. tab:: Outputs
 

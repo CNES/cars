@@ -130,7 +130,7 @@ class SmallComponents(
         #           margin added to the on ground region to not filter
         #           points clusters
         #           that were incomplete because they were on the edges
-        overloaded_conf["on_ground_margin"] = conf.get("on_ground_margin", 10)
+        overloaded_conf["on_ground_margin"] = conf.get("on_ground_margin", 11)
         # pts_connection_dist:
         #           distance to use to consider that two points are connected
         overloaded_conf["connection_distance"] = conf.get(
@@ -180,7 +180,7 @@ class SmallComponents(
 
         return self.used_method
 
-    def get_on_ground_margin(self):
+    def get_on_ground_margin(self, resolution=0.5):
         """
         Get margins to use during point clouds fusion
 
@@ -192,7 +192,7 @@ class SmallComponents(
         on_ground_margin = 0
 
         if self.activated:
-            on_ground_margin = self.on_ground_margin
+            on_ground_margin = self.on_ground_margin * resolution
 
         return on_ground_margin
 

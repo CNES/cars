@@ -40,14 +40,12 @@ from cars.core import projection
 def create_combined_cloud(  # noqa: C901
     cloud_list: List[xr.Dataset],
     dsm_epsg: int,
-    resolution: float = None,
-    xstart: float = None,
-    ystart: float = None,
-    xsize: int = None,
-    ysize: int = None,
-    on_ground_margin: int = 0,
+    xmin: float = None,
+    xmax: float = None,
+    ymin: int = None,
+    ymax: int = None,
     epipolar_border_margin: int = 0,
-    radius: float = 1,
+    margin: float = 0,
     with_coords: bool = False,
 ) -> Tuple[pandas.DataFrame, int]:
     """
@@ -92,22 +90,18 @@ def create_combined_cloud(  # noqa: C901
 
 
     :param dsm_epsg: epsg code for the CRS of the final output raster
-    :param resolution: Resolution of rasterized cells, in cloud CRS units
+    :param xmin: xmin of the rasterization grid
         (if None, the whole clouds are combined)
-    :param xstart: xstart of the rasterization grid
+    :param xmax: xmax of the rasterization grid
         (if None, the whole clouds are combined)
-    :param ystart: ystart of the rasterization grid
+    :param ymin: ymin of the rasterization grid
         (if None, the whole clouds are combined)
-    :param xsize: xsize of the rasterization grid
+    :param ymax: ymax of the rasterization grid
         (if None, the whole clouds are combined)
-    :param ysize: ysize of the rasterization grid
-        (if None, the whole clouds are combined)
-    :param on_ground_margin: Margin added to the rasterization grid
+    :param margin: Margin added for each tile, in meter or degree.
         (default value: 0)
     :param epipolar_border_margin: Margin used
         to invalidate cells too close to epipolar border. (default value: 0)
-    :param radius: Radius for hole filling
-        (if None, the whole clouds are combined).
     :param with_coords: Option enabling the adding to the combined cloud
         of information of each point to retrieve their positions
         in the original epipolar images
@@ -127,16 +121,11 @@ def create_combined_cloud(  # noqa: C901
 
     # compute margin/roi and final number of data to add to the combined cloud
     roi = (
-        resolution is not None
-        and xstart is not None
-        and ystart is not None
-        and xsize is not None
-        and ysize is not None
+        xmin is not None
+        and xmax is not None
+        and ymin is not None
+        and ymax is not None
     )
-    if roi:
-        total_margin = (on_ground_margin + radius + 1) * resolution
-        xend = xstart + (xsize + 1) * resolution
-        yend = ystart - (ysize + 1) * resolution
 
     nb_data = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
 
@@ -190,13 +179,13 @@ def create_combined_cloud(  # noqa: C901
                     cloud_list_item, dsm_epsg
                 )
 
-            msk_xstart = np.where(full_x > xstart - total_margin, True, False)
-            msk_xend = np.where(full_x < xend + total_margin, True, False)
-            msk_yend = np.where(full_y > yend - total_margin, True, False)
-            msk_ystart = np.where(full_y < ystart + total_margin, True, False)
+            msk_xmin = np.where(full_x > xmin - margin, True, False)
+            msk_xmax = np.where(full_x < xmax + margin, True, False)
+            msk_ymin = np.where(full_y > ymin - margin, True, False)
+            msk_ymax = np.where(full_y < ymax + margin, True, False)
             terrain_tile_data_msk = np.logical_and(
-                msk_xstart,
-                np.logical_and(msk_xend, np.logical_and(msk_ystart, msk_yend)),
+                msk_xmin,
+                np.logical_and(msk_xmax, np.logical_and(msk_ymin, msk_ymax)),
             )
             terrain_tile_data_msk_pos = terrain_tile_data_msk.astype(
                 np.int8

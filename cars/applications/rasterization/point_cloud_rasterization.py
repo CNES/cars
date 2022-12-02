@@ -95,6 +95,23 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
+    def get_resolution(self):
+        """
+        Get the resolution used by rasterization application
+
+        :return: resolution in meters or degrees
+
+        """
+
+    @abstractmethod
+    def get_margins(self):
+        """
+        Get the margin to use for terrain tiles
+
+        :return: margin in meters or degrees
+        """
+
+    @abstractmethod
     def run(
         self,
         merged_points_cloud,

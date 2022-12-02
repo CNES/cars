@@ -102,8 +102,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         bounds,
         epsg,
         orchestrator=None,
-        margins=None,
-        on_ground_margin=0,
+        margins=0,
         optimal_terrain_tile_width=500,
     ):
         """
@@ -125,10 +124,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         :param margins: margins to add to tiles
-        :type margins: dict
-            ex: {"radius": 1, "resolution": 0.5}
-        :param on_ground_margin: margins needed for future filtering
-        :type on_ground_margin: float
+        :type margins: float
         :param optimal_terrain_tile_width: optimal terrain tile width
         :type optimal_terrain_tile_width: int
 

@@ -156,6 +156,17 @@ class Statistical(
 
         return self.used_method
 
+    def get_on_ground_margin(self, resolution=0.5):
+        """
+        Get margins to use during point clouds fusion
+
+        :return: margin
+        :rtype: float
+
+        """
+
+        return 0
+
     def run(
         self,
         merged_points_cloud,

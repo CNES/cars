@@ -33,7 +33,6 @@ RESOLUTION = "resolution"
 # Run infos
 EPSG_TAG = "epsg"
 MARGINS_TAG = "margins"
-ON_GROUND_MARGINS_TAG = "on_ground_margins"
 NUMBER_TERRAIN_TILES = "number_terrain_tiles"
 XSIZE = "x_size"
 YSIZE = "y_size"

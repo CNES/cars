@@ -31,6 +31,10 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
+from cars.data_structures import (  # pylint: disable=E0401
+    corresponding_tiles_tools,
+)
+
 
 def get_dir_path():
     """
@@ -75,7 +79,7 @@ def get_full_data(cars_ds, tag):
     Get combined data of CarsDataset
 
     :param cars_ds: cars dataset to use
-    :parap tag: key to get from xr.Datasets
+    :param tag: key to get from xr.Datasets
 
     :return: array of full data
 
@@ -85,65 +89,28 @@ def get_full_data(cars_ds, tag):
         logging.error("Not an arrays CarsDataset")
         raise Exception("Not an arrays CarsDataset")
 
-    # Get number of bands
-    nb_bands = 0
+    list_tiles = []
+    window = cars_ds.tiling_grid[0, 0, :]
+    overlap = cars_ds.overlaps[0, 0, :]
+
     for row in range(cars_ds.shape[0]):
         for col in range(cars_ds.shape[1]):
-            if cars_ds[row, col] is not None:
-                if tag not in cars_ds[row, col]:
-                    raise Exception("tag not in dataset")
-                if len(cars_ds[row, col][tag].values.shape) == 2:
-                    nb_bands = 1
-                else:
-                    nb_bands = cars_ds[row, col][tag].values.shape[0]
-
-                break
-
-    # Create array
-    nb_rows = int(np.max(cars_ds.tiling_grid[:, :, 1]))
-    nb_cols = int(np.max(cars_ds.tiling_grid[:, :, 3]))
-
-    if nb_bands == 1:
-        array = np.empty((nb_rows, nb_cols))
-    else:
-        array = np.empty((nb_rows, nb_cols, nb_bands))
-
-    # fill array
-    windows = cars_ds.tiling_grid.astype(int)
-    overlaps = cars_ds.overlaps.astype(int)
-    for row in range(cars_ds.shape[0]):
-        for col in range(cars_ds.shape[1]):
-            row_start = windows[row, col, 0]
-            row_end = windows[row, col, 1]
-            col_start = windows[row, col, 2]
-            col_end = windows[row, col, 3]
-
-            data_with_overlaps = cars_ds[row, col][tag].values
-            data_with_overlaps = np.squeeze(data_with_overlaps)
-            if len(data_with_overlaps.shape) == 2:
-                nb_rows, nb_cols = (
-                    data_with_overlaps.shape[0],
-                    data_with_overlaps.shape[1],
+            list_tiles.append(
+                (
+                    cars_ds.tiling_grid[row, col, :],
+                    cars_ds.overlaps[row, col, :],
+                    cars_ds[row, col],
                 )
-                current_data = data_with_overlaps[
-                    overlaps[row, col, 0] : nb_rows - overlaps[row, col, 1],
-                    overlaps[row, col, 2] : nb_cols - overlaps[row, col, 3],
-                ]
-                array[row_start:row_end, col_start:col_end] = current_data
-            else:
-                nb_rows, nb_cols = (
-                    data_with_overlaps.shape[1],
-                    data_with_overlaps.shape[2],
-                )
-                current_data = data_with_overlaps[
-                    :,
-                    overlaps[row, col, 0] : nb_rows - overlaps[row, col, 1],
-                    overlaps[row, col, 2] : nb_cols - overlaps[row, col, 3],
-                ]
+            )
 
-                array[row_start:row_end, col_start:col_end, :] = np.rollaxis(
-                    current_data, 0, 3
-                )
+    merged_dataset = corresponding_tiles_tools.reconstruct_data(
+        list_tiles, window, overlap
+    )
+
+    array = merged_dataset[0][tag].values
+
+    if len(array.shape) == 3:
+        array = np.rollaxis(array, 0, 3)
 
     return array
 

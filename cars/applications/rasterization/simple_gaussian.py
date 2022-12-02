@@ -46,8 +46,8 @@ from cars.applications.rasterization.point_cloud_rasterization import (
     PointCloudRasterization,
 )
 from cars.core import constants as cst
-from cars.core import projection
-from cars.data_structures import cars_dataset
+from cars.core import projection, tiling
+from cars.data_structures import cars_dataset, format_transformation
 
 # R0903  temporary disabled for error "Too few public methods"
 # œgoing to be corrected by adding new methods as check_conf
@@ -175,12 +175,23 @@ class SimpleGaussian(
         return overloaded_conf
 
     def get_resolution(self):
+        """
+        Get the resolution used by rasterization application
+
+        :return: resolution in meters or degrees
+
+        """
 
         return self.resolution
 
     def get_margins(self):
+        """
+        Get the margin to use for terrain tiles
 
-        margins = {"radius": self.dsm_radius, "resolution": self.resolution}
+        :return: margin in meters or degrees
+        """
+
+        margins = self.dsm_radius * self.resolution
         return margins
 
     def run(
@@ -247,12 +258,21 @@ class SimpleGaussian(
             terrain_raster = cars_dataset.CarsDataset("arrays")
 
             # Get tiling grid
-            terrain_raster.tiling_grid = merged_points_cloud.tiling_grid
+            terrain_raster.tiling_grid = (
+                format_transformation.terrain_coords_to_pix(
+                    merged_points_cloud, self.resolution
+                )
+            )
             terrain_raster.generate_none_tiles()
 
             bounds = merged_points_cloud.attributes["bounds"]
-            ysize = merged_points_cloud.attributes["ysize"]
-            xsize = merged_points_cloud.attributes["xsize"]
+            # Derive output image files parameters to pass to rasterio
+            xsize, ysize = tiling.roi_to_start_and_size(
+                bounds, self.resolution
+            )[2:]
+            logging.info(
+                "DSM output image size: {}x{} pixels".format(xsize, ysize)
+            )
 
             # Save objects
             # Initialize files names
@@ -379,6 +399,7 @@ class SimpleGaussian(
                 0.0,
                 -self.resolution,
             )
+
             transform = Affine.from_gdal(*geotransform)
             raster_profile = collections.OrderedDict(
                 {
@@ -427,12 +448,31 @@ class SimpleGaussian(
             # Generate rasters
             for col in range(terrain_raster.shape[1]):
                 for row in range(terrain_raster.shape[0]):
+                    # get corresponding point cloud
+                    # one tile in point cloud correspond
+                    # to one tile in raster
+                    # uses rasterio conventions
+                    (
+                        pc_row,
+                        pc_col,
+                    ) = format_transformation.get_corresponding_indexes(
+                        row, col
+                    )
 
-                    if merged_points_cloud.tiles[row][col] is not None:
+                    if merged_points_cloud.tiles[pc_row][pc_col] is not None:
                         # Get window
                         window = cars_dataset.window_array_to_dict(
                             terrain_raster.tiling_grid[row, col]
                         )
+
+                        # Get terrain region
+                        # corresponding to point cloud tile
+                        terrain_region = [
+                            merged_points_cloud.tiling_grid[pc_row, pc_col, 0],
+                            merged_points_cloud.tiling_grid[pc_row, pc_col, 2],
+                            merged_points_cloud.tiling_grid[pc_row, pc_col, 1],
+                            merged_points_cloud.tiling_grid[pc_row, pc_col, 3],
+                        ]
 
                         # Delayed call to rasterization operations using all
                         #  required point clouds
@@ -441,7 +481,8 @@ class SimpleGaussian(
                         ] = self.orchestrator.cluster.create_task(
                             rasterization_wrapper
                         )(
-                            merged_points_cloud[row, col],
+                            merged_points_cloud[pc_row, pc_col],
+                            terrain_region,
                             self.resolution,
                             epsg,
                             window,
@@ -471,6 +512,7 @@ class SimpleGaussian(
 
 def rasterization_wrapper(
     cloud,
+    terrain_region,
     resolution,
     epsg,
     window,
@@ -491,6 +533,7 @@ def rasterization_wrapper(
 
     :param cloud: combined cloud
     :type cloud: pandas.DataFrame
+    :param terrain_region: terrain bounds
     :param resolution: Produced DSM resolution (meter, degree [EPSG dependent])
     :type resolution: float
     :param  epsg_code: epsg code for the CRS of the output DSM
@@ -525,15 +568,20 @@ def rasterization_wrapper(
     if epsg != cloud_epsg:
         projection.points_cloud_conversion_dataframe(cloud, cloud_epsg, epsg)
 
+    # Compute start and size
+    xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
+        terrain_region, resolution
+    )
+
     # Call simple_rasterization
     raster = rasterization_step.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,
         epsg,
-        xstart=cloud_attributes["xstart"],
-        ystart=cloud_attributes["ystart"],
-        xsize=cloud_attributes["xsize"],
-        ysize=cloud_attributes["ysize"],
+        xstart=xstart,
+        ystart=ystart,
+        xsize=xsize,
+        ysize=ysize,
         sigma=sigma,
         radius=radius,
         dsm_no_data=dsm_no_data,

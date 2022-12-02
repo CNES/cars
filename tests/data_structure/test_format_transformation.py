@@ -38,105 +38,6 @@ from cars.data_structures import format_transformation
 
 
 @pytest.mark.unit_tests
-def test_tilling_grid_2_manager_grid():
-    """
-    Test tilling_grid_2_manager_grid
-    """
-
-    # Create a 2x2 grid with resolution 1 and no offset
-
-    regions_grid_x = np.expand_dims(
-        np.array([[0, 100, 150], [0, 100, 150], [0, 100, 150]]), axis=2
-    )
-
-    region_grid_y = np.expand_dims(
-        np.array([[0, 0, 0], [110, 110, 110], [170, 170, 170]]), axis=2
-    )
-
-    regions_grid = np.stack([regions_grid_x, region_grid_y], axis=2)
-
-    out_tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
-        regions_grid
-    )
-
-    expected_grid_col_min = np.expand_dims(
-        np.array([[0, 100], [0, 100]]), axis=2
-    )
-    expected_grid_col_max = np.expand_dims(
-        np.array([[100, 150], [100, 150]]), axis=2
-    )
-    expected_grid_row_min = np.expand_dims(
-        np.array([[0, 0], [110, 110]]), axis=2
-    )
-    expected_grid_row_max = np.expand_dims(
-        np.array([[110, 110], [170, 170]]), axis=2
-    )
-
-    expected_grid = np.squeeze(
-        np.stack(
-            [
-                expected_grid_row_min,
-                expected_grid_row_max,
-                expected_grid_col_min,
-                expected_grid_col_max,
-            ],
-            axis=2,
-        )
-    )
-
-    np.testing.assert_allclose(out_tiling_grid, expected_grid)
-
-    # Create a 2x2 grid with resolution 0.5 and offset
-    offset_x = 4
-    offset_y = 3
-    resolution = 0.5
-
-    regions_grid_x = offset_x + np.expand_dims(
-        np.array([[0, 100, 150], [0, 100, 150], [0, 100, 150]]), axis=2
-    )
-
-    region_grid_y = offset_y + np.expand_dims(
-        np.array([[0, 0, 0], [110, 110, 110], [170, 170, 170]]), axis=2
-    )
-
-    regions_grid = np.stack([regions_grid_x, region_grid_y], axis=2)
-
-    out_tiling_grid = format_transformation.tiling_grid_2_cars_dataset_grid(
-        regions_grid, resolution=resolution
-    )
-
-    expected_grid_col_min = np.expand_dims(
-        np.array([[0, 100], [0, 100]]), axis=2
-    )
-    expected_grid_col_max = np.expand_dims(
-        np.array([[100, 150], [100, 150]]), axis=2
-    )
-    expected_grid_row_min = np.expand_dims(
-        np.array([[0, 0], [110, 110]]), axis=2
-    )
-    expected_grid_row_max = np.expand_dims(
-        np.array([[110, 110], [170, 170]]), axis=2
-    )
-
-    expected_grid = (
-        np.squeeze(
-            np.stack(
-                [
-                    expected_grid_row_min,
-                    expected_grid_row_max,
-                    expected_grid_col_min,
-                    expected_grid_col_max,
-                ],
-                axis=2,
-            )
-        )
-        / resolution
-    )
-
-    np.testing.assert_allclose(out_tiling_grid, expected_grid)
-
-
-@pytest.mark.unit_tests
 def test_grid_margins_2_overlaps():
     """
     Test grid_margins_2_overlaps
@@ -226,3 +127,17 @@ def test_region_margins_from_window():
     np.testing.assert_allclose(
         out_margin["right_margin"].data, expected_right_margin
     )
+
+
+@pytest.mark.unit_tests
+def test_get_corresponding_indexes():
+    """
+    Test get_corresponding_indexes
+    """
+
+    row, col = 0, 1
+
+    pc_row, pc_col = format_transformation.get_corresponding_indexes(row, col)
+
+    assert pc_row == 1
+    assert pc_col == 0

@@ -294,8 +294,7 @@ class CensusMccnnSgm(
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
                 - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
+                    "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_left: CarsDataset
         :param epipolar_images_right: tiled right epipolar CarsDataset contains:
 
@@ -307,8 +306,7 @@ class CensusMccnnSgm(
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
                 - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
+                    "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
@@ -340,8 +338,7 @@ class CensusMccnnSgm(
                 - data with keys : "disp", "disp_msk"
                 - attrs with keys: profile, window, overlaps
             - attributes containing:
-                "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
+                "largest_epipolar_region","opt_epipolar_tile_size"
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """

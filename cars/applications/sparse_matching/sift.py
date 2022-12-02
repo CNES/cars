@@ -316,8 +316,7 @@ class Sift(SparseMatching, short_name="sift"):
                         "transform", "crs", "valid_pixels", "no_data_mask",
                         "no_data_img"
                 - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
+                    "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_left: CarsDataset
         :param epipolar_images_right: tiled right epipolar.CarsDataset contains:
 
@@ -329,7 +328,7 @@ class Sift(SparseMatching, short_name="sift"):
                         "transform", "crs", "valid_pixels", "no_data_mask",\
                         "no_data_img"
                 - attributes containing:"largest_epipolar_region", \
-                  "opt_epipolar_tile_size", "epipolar_regions_grid"
+                  "opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio
         :type disp_to_alt_ratio: float

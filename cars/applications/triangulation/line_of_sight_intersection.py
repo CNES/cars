@@ -42,7 +42,7 @@ from cars.applications.triangulation import (
 )
 from cars.applications.triangulation.triangulation import Triangulation
 from cars.core import constants as cst
-from cars.core import preprocessing
+from cars.core import preprocessing, tiling
 
 # CARS imports
 from cars.core.geometry import AbstractGeometry, read_geoid_file
@@ -212,7 +212,7 @@ class LineOfSightIntersection(
                     - data with keys : "disp", "disp_msk"
                     - attrs with keys: profile, window, overlaps
                 - attributes containing:"largest_epipolar_region"\
-                  "opt_epipolar_tile_size","epipolar_regions_grid"
+                  "opt_epipolar_tile_size"
 
             - if CarsDataset is instance of "points", CarsDataset contains:
 
@@ -332,7 +332,9 @@ class LineOfSightIntersection(
             epipolar_grid_max,
         ) = grids.compute_epipolar_grid_min_max(
             self.geometry_loader,
-            epipolar_images_left.attributes["epipolar_regions_grid"],
+            tiling.transform_four_layers_to_two_layers_grid(
+                epipolar_images_left.tiling_grid
+            ),
             epsg,
             configuration,
             disp_min,
@@ -342,9 +344,6 @@ class LineOfSightIntersection(
         # TODO remove with refactoring
         pc_attributes = {
             "used_epsg_for_terrain_grid": epsg,
-            "epipolar_regions_grid": epipolar_images_left.attributes[
-                "epipolar_regions_grid"
-            ],
             "epipolar_grid_min": epipolar_grid_min,
             "epipolar_grid_max": epipolar_grid_max,
             "largest_epipolar_region": epipolar_images_left.attributes[
