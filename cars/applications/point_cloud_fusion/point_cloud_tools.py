@@ -363,9 +363,15 @@ def add_color_information(
     :type c_cloud: NDArray[float64]
     """
     if nb_band_clr == 1:
-        c_color = np.squeeze(cloud_list[cloud_list_idx][cst.EPI_COLOR].values)[
-            bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-        ]
+        if len(cloud_list[cloud_list_idx][cst.EPI_COLOR].values.shape) == 3:
+            c_color = np.squeeze(
+                cloud_list[cloud_list_idx][cst.EPI_COLOR].values
+            )[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        else:
+            c_color = cloud_list[cloud_list_idx][cst.EPI_COLOR].values[
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
+
         c_cloud[
             nb_data.index("{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, 0)),
             :,
