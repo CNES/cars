@@ -166,7 +166,6 @@ def start_cluster(
         "NUMBA_NUM_THREADS",
         "OPJ_NUM_THREADS",
         "GDAL_NUM_THREADS",
-        "OTB_MAX_RAM_HINT",
         "VIRTUAL_ENV",
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS",
         "GDAL_CACHEMAX",

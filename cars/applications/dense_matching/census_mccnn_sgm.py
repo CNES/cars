@@ -241,12 +241,13 @@ class CensusMccnnSgm(
 
         return margins, disp_min, disp_max
 
-    def get_optimal_tile_size(self, disp_min, disp_max):
+    def get_optimal_tile_size(self, disp_min, disp_max, max_ram_per_worker):
         """
         Get the optimal tile size to use during dense matching.
 
         :param disp_min: minimum disparity
         :param disp_max: maximum disparity
+        :param max_ram_per_worker: maximum ram per worker
         :return: optimal tile size
 
         """
@@ -259,6 +260,7 @@ class CensusMccnnSgm(
                 disp_max,
                 self.min_epi_tile_size,
                 self.max_epi_tile_size,
+                max_ram_per_worker,
                 margin=self.epipolar_tile_margin_in_percent,
             )
         )

@@ -40,7 +40,7 @@ from dask.config import set as dask_config_set
 from dask.distributed import as_completed
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
-from json_checker import Checker
+from json_checker import Checker, Or
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -115,6 +115,9 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             "use_memory_logger", False
         )
         overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
+        overloaded_conf["max_ram_per_worker"] = conf.get(
+            "max_ram_per_worker", 2000
+        )
         overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
         overloaded_conf["config_name"] = conf.get("config_name", "unknown")
         overloaded_conf["activate_dashboard"] = conf.get(
@@ -124,6 +127,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             "mode": str,
             "use_memory_logger": bool,
             "nb_workers": int,
+            "max_ram_per_worker": Or(float, int),
             "walltime": str,
             "config_name": str,
             "activate_dashboard": bool,

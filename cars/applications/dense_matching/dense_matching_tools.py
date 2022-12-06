@@ -25,7 +25,6 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
-import os
 from typing import Dict, List
 
 # Third party imports
@@ -577,7 +576,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     disp_max: int,
     min_tile_size: int,
     max_tile_size: int,
-    otb_max_ram_hint: int = None,
+    max_ram_per_worker: int,
     tile_size_rounding: int = 50,
     margin: int = 0,
 ) -> int:
@@ -590,8 +589,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     :param disp_max: Maximum disparity to explore
     :param min_tile_size: Minimal tile size
     :param max_tile_size: Maximal tile size
-    :param otb_max_ram_hint: amount of RAM allocated to OTB (if None, will try\
-                             to read it from environment variable)
+    :param max_ram_per_worker: amount of RAM allocated per worker
     :param tile_size_rounding: Optimal tile size will be aligned to multiples\
                                of tile_size_rounding
     :param margin: margin to remove to the computed tile size
@@ -599,16 +597,7 @@ def optimal_tile_size_pandora_plugin_libsgm(
     :returns: Optimal tile size according to benchmarked memory usage
     """
 
-    if otb_max_ram_hint is None:
-        if "OTB_MAX_RAM_HINT" in os.environ:
-            otb_max_ram_hint = int(os.environ["OTB_MAX_RAM_HINT"])
-        else:
-            raise ValueError(
-                "otb_max_ram_hint is None and OTB_MAX_RAM_HINT "
-                "envvar is not set"
-            )
-
-    memory = otb_max_ram_hint
+    memory = max_ram_per_worker
     disp = disp_max - disp_min
 
     image = 32 * 2

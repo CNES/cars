@@ -67,8 +67,6 @@ def test_end2end_gizeh_rectangle_epi_image():
 
     Test pipeline with a non square epipolar image
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "300"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
@@ -81,7 +79,11 @@ def test_end2end_gizeh_rectangle_epi_image():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 300,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -144,8 +146,6 @@ def test_end2end_ventoux_unique():
     """
     End to end processing
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
@@ -155,7 +155,11 @@ def test_end2end_ventoux_unique():
             directory,
             "sensor_to_low_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -226,6 +230,7 @@ def test_end2end_ventoux_unique():
                 "mode": "local_dask",
                 "walltime": "00:10:00",
                 "nb_workers": 4,
+                "max_ram_per_worker": 1000,
                 "activate_dashboard": False,
                 "profiling": {
                     "activated": False,
@@ -355,7 +360,11 @@ def test_end2end_ventoux_unique():
             directory,
             "sensor_to_low_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 300,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -430,7 +439,10 @@ def test_end2end_ventoux_unique():
             directory,
             "sensor_to_low_resolution_dsm",
             "mp",
-            orchestrator_parameters={"nb_workers": 4},
+            orchestrator_parameters={
+                "nb_workers": 4,
+                "max_ram_per_worker": 300,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -511,7 +523,11 @@ def test_prepare_ventoux_bias():
             directory,
             "sensor_to_low_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 2000,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -564,8 +580,6 @@ def test_end2end_ventoux_with_color():
     """
     End to end processing with p+xs fusion
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     input_json = read_input_parameters(
         absolute_data_path(
@@ -583,7 +597,11 @@ def test_end2end_ventoux_with_color():
             directory,
             "sensor_to_low_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -794,8 +812,6 @@ def test_compute_dsm_with_roi_ventoux():
     """
     Dask compute dsm processing with input roi (cars_stereo)
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
@@ -807,7 +823,11 @@ def test_compute_dsm_with_roi_ventoux():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -910,8 +930,6 @@ def test_compute_dsm_with_snap_to_img1():
     """
     Dask compute dsm processing with input roi (cars_stereo)
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
@@ -922,7 +940,11 @@ def test_compute_dsm_with_snap_to_img1():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -995,8 +1017,6 @@ def test_end2end_quality_stats():
     """
     End to end processing
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
@@ -1007,7 +1027,11 @@ def test_end2end_quality_stats():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -1128,8 +1152,6 @@ def test_end2end_ventoux_egm96_geoid():
     """
     End to end processing
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
@@ -1140,7 +1162,11 @@ def test_end2end_ventoux_egm96_geoid():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -1234,7 +1260,11 @@ def test_end2end_ventoux_egm96_geoid():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -1296,8 +1326,6 @@ def test_end2end_paca_with_mask():
     """
     End to end processing
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_paca/input.json")
@@ -1308,7 +1336,11 @@ def test_end2end_paca_with_mask():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -1384,7 +1416,10 @@ def test_end2end_paca_with_mask():
             directory,
             "sensor_to_full_resolution_dsm",
             "mp",
-            orchestrator_parameters={"nb_workers": 4},
+            orchestrator_parameters={
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         resolution = 0.5
         full_res_applications = {
@@ -1456,8 +1491,6 @@ def test_end2end_disparity_filing():
     """
     End to end processing, test with mask and fill holes
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "200"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
@@ -1468,7 +1501,11 @@ def test_end2end_disparity_filing():
             directory,
             "sensor_to_full_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 200,
+            },
         )
         resolution = 0.5
         full_res_applications = {

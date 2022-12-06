@@ -58,19 +58,19 @@ def test_optimal_tile_size():
     mem = 313
 
     res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
-        0, disp, min_tile_size=0, max_tile_size=1000, otb_max_ram_hint=mem
+        0, disp, min_tile_size=0, max_tile_size=1000, max_ram_per_worker=mem
     )
 
     assert res == 400
 
     res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
-        0, disp, min_tile_size=0, max_tile_size=300, otb_max_ram_hint=mem
+        0, disp, min_tile_size=0, max_tile_size=300, max_ram_per_worker=mem
     )
 
     assert res == 300
 
     res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
-        0, disp, min_tile_size=500, max_tile_size=1000, otb_max_ram_hint=mem
+        0, disp, min_tile_size=500, max_tile_size=1000, max_ram_per_worker=mem
     )
 
     assert res == 500
@@ -82,7 +82,7 @@ def test_optimal_tile_size():
             1000,
             min_tile_size=0,
             max_tile_size=1000,
-            otb_max_ram_hint=100,
+            max_ram_per_worker=100,
             tile_size_rounding=33,
         )
         == 33

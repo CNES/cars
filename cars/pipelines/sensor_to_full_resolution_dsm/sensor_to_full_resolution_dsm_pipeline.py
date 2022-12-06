@@ -490,7 +490,11 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     margins=dense_matching_margins,
                     optimum_tile_size=(
                         self.dense_matching_application.get_optimal_tile_size(
-                            disp_min, disp_max
+                            disp_min,
+                            disp_max,
+                            cars_orchestrator.cluster.checked_conf_cluster[
+                                "max_ram_per_worker"
+                            ],
                         )
                     ),
                     add_color=True,

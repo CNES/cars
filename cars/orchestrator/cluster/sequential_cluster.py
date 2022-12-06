@@ -25,7 +25,7 @@ Contains functions for sequential cluster
 # Standard imports
 
 # Third party imports
-from json_checker import Checker
+from json_checker import Checker, Or
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -73,8 +73,13 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "sequential")
+        overloaded_conf["max_ram_per_worker"] = conf.get(
+            "max_ram_per_worker", 2000
+        )
+
         cluster_schema = {
             "mode": str,
+            "max_ram_per_worker": Or(float, int),
             "profiling": {
                 "activated": bool,
                 "mode": str,
