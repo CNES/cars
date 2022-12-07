@@ -68,7 +68,7 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
         ply_file.write("end_header\n")
 
         if isinstance(cloud, xr.Dataset):
-            for x_item, y_item, z_item, mask_item in zip(
+            for x_item, y_item, z_item, mask_item in zip(  # noqa: B905
                 np.nditer(cloud[cst.X].values),
                 np.nditer(cloud[cst.Y].values),
                 np.nditer(cloud[cst.Z].values),

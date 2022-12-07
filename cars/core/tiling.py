@@ -572,7 +572,12 @@ def get_corresponding_tiles_row_col(
     list_indexes = []
 
     # For each stereo configuration
-    for (pc_left, pc_right, epipolar_points_min, epipolar_points_max) in zip(
+    for (
+        pc_left,
+        pc_right,
+        epipolar_points_min,
+        epipolar_points_max,
+    ) in zip(  # noqa: B905
         list_points_clouds_left,
         list_points_clouds_right,
         list_epipolar_points_min,
@@ -704,7 +709,7 @@ def get_paired_regions_as_geodict(
     epi_geodict = {"type": "FeatureCollection", "features": []}
 
     for idx, (ter, epi_list) in enumerate(
-        zip(terrain_regions, epipolar_regions)
+        zip(terrain_regions, epipolar_regions)  # noqa: B905
     ):
         feature = {}
         feature["type"] = "Feature"

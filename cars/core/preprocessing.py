@@ -499,7 +499,10 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     """
 
     # get lists
-    (list_terrain_bounding_box, list_terrain_epi_tile_width) = zip(
+    (
+        list_terrain_bounding_box,
+        list_terrain_epi_tile_width,
+    ) = zip(  # noqa: B905
         *list_of_terrain_roi
     )
     list_terrain_bounding_box = list(list_terrain_bounding_box)

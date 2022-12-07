@@ -52,7 +52,9 @@ def test_detect_small_components():
     cloud_arr = np.concatenate(
         [
             np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
-            for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+            for x_coord, y_coord, z_coord in zip(  # noqa: B905
+                x_coord, y_coord, z_coord
+            )
         ],
         axis=0,
     )
@@ -91,7 +93,9 @@ def test_detect_statistical_outliers():
     ref_cloud = np.concatenate(
         [
             np.stack((x_coord, y_coord, z_coord), axis=-1).reshape(-1, 3)
-            for x_coord, y_coord, z_coord in zip(x_coord, y_coord, z_coord)
+            for x_coord, y_coord, z_coord in zip(  # noqa: B905
+                x_coord, y_coord, z_coord
+            )
         ],
         axis=0,
     )
