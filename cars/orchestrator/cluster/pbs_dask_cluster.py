@@ -127,11 +127,24 @@ def start_cluster(
     # See https://jobqueue.dask.org/en/latest/advanced-tips-and-tricks.html
     hours, minutes, seconds = map(int, walltime.split(":"))
     lifetime = timedelta(seconds=3600 * hours + 60 * minutes + seconds)
-    # Use hardcoded stagger of 3 minutes.
+    # Use hardcoded stagger of 3 minutes. The actual lifetime will be selected
+    # uniformly at random between lifetime +/- stagger.
     stagger = timedelta(minutes=3)
     # Add some margin to not get killed by scheduler during worker shutdown.
     shutdown_margin = timedelta(minutes=2)
-    lifetime_with_margin = lifetime - stagger - shutdown_margin
+    min_walltime = stagger + shutdown_margin
+    lifetime_with_margin = lifetime - min_walltime
+    if lifetime_with_margin.total_seconds() < 0:
+        min_walltime_minutes = min_walltime.total_seconds() / 60
+        logging.warning(
+            "Could not add worker lifetime margin because specified walltime "
+            "is too short. Workers might get killed by PBS before they can "
+            "cleanly exit, which might break adaptative scaling. Please "
+            "specify a lifetime greater than {} minutes.".format(
+                min_walltime_minutes
+            )
+        )
+        lifetime_with_margin = lifetime
 
     logging.info(
         "Starting Dask PBS cluster with {} workers "
