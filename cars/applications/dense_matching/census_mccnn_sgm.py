@@ -21,6 +21,7 @@
 """
 this module contains the dense_matching application class.
 """
+import collections
 
 # Standard imports
 import logging
@@ -141,7 +142,9 @@ class CensusMccnnSgm(
             conf=loader_conf, method_name=overloaded_conf["method"]
         )
         overloaded_conf["loader"] = loader
-        overloaded_conf["loader_conf"] = pandora_loader.get_conf()
+        overloaded_conf["loader_conf"] = collections.OrderedDict(
+            pandora_loader.get_conf()
+        )
 
         application_schema = {
             "method": str,
