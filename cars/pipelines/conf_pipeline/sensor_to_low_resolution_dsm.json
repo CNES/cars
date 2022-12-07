@@ -1,19 +1,9 @@
 {
-
     "applications": {
-        "point_cloud_fusion": {
-            "method": "mapping_to_terrain_tiles",
-            "resolution": 15.0,
-            "terrain_tile_size": 2000
-
-        },
         "point_cloud_rasterization": {
             "method": "simple_gaussian",
             "resolution": 15.0,
             "write_color": false
-
         }
     }
-    
-    
 }
