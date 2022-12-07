@@ -279,7 +279,7 @@ def define_interpolation_band_width(binary_image, percentage):
     # TODO: cas d'une zone bien concave --> résultat ok?
     centroid = measurements.center_of_mass(binary_image)
     # Recherche de la dist moy entre contours et centre de la zone
-    coords_contours = list(zip(*np.where(contours)))
+    coords_contours = list(zip(*np.where(contours)))  # noqa: B905
     centroid_list = (centroid,) * len(coords_contours)
     all_dist = cdist(centroid_list, coords_contours, "euclidean")
     mean_dist = np.mean(all_dist)
