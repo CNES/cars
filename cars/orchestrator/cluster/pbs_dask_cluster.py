@@ -189,7 +189,7 @@ def start_cluster(
     cluster = PBSCluster(
         processes=nb_workers_per_job,
         cores=nb_workers_per_job,
-        memory="{}MB".format(memory),
+        memory="{}MiB".format(memory),
         local_directory=local_directory,
         account="dask-test",
         walltime=walltime,
