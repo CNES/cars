@@ -29,11 +29,15 @@ import json
 import logging
 import os
 
+import numpy as np
+
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.grid_generation import grid_correction
-from cars.applications.sparse_matching import sparse_matching_tools
+from cars.applications.sparse_matching import (
+    sparse_matching_tools as sparse_mtch_tools,
+)
 from cars.conf import log_conf
 from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
@@ -42,10 +46,12 @@ from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
+    EPIPOLAR_A_PRIORI,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
     PIPELINE,
+    USE_EPIPOLAR_A_PRIORI,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
@@ -121,7 +127,17 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             self.conf.get(APPLICATIONS, {})
         )
         self.used_conf[APPLICATIONS] = application_conf
-
+        # Check conf USE_EPIPOLAR_A_PRIORI
+        self.used_conf[USE_EPIPOLAR_A_PRIORI] = self.conf.get(
+            USE_EPIPOLAR_A_PRIORI, False
+        )
+        # Retrieve EPIPOLAR_A_PRIORI if it is provided
+        if EPIPOLAR_A_PRIORI in self.conf:
+            self.used_conf[EPIPOLAR_A_PRIORI] = self.conf.get(
+                EPIPOLAR_A_PRIORI, {}
+            )
+        else:
+            self.used_conf[EPIPOLAR_A_PRIORI] = {}
         # Save used conf
         out_dir = self.output["out_dir"]
         cars_dataset.save_dict(
@@ -223,10 +239,10 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         ] = self.dense_matches_filling.get_conf()
 
         # Sparse Matching
-        self.sparse_matching_app = Application(
+        self.sparse_mtch_app = Application(
             "sparse_matching", cfg=conf.get("sparse_matching", {})
         )
-        used_conf["sparse_matching"] = self.sparse_matching_app.get_conf()
+        used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # Matching
         self.dense_matching_application = Application(
@@ -372,7 +388,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    margins=self.sparse_matching_app.get_margins(),
+                    margins=self.sparse_mtch_app.get_margins(),
                     add_color=False,
                 )
 
@@ -421,48 +437,84 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 # Run grid correction application
 
                 # Filter matches
-                matches_array = self.sparse_matching_app.filter_matches(
+                matches_array = self.sparse_mtch_app.filter_matches(
                     epipolar_matches_left,
                     orchestrator=cars_orchestrator,
                     pair_key=pair_key,
                     pair_folder=pair_folder,
-                    save_matches=self.sparse_matching_app.get_save_matches(),
+                    save_matches=self.sparse_mtch_app.get_save_matches(),
                 )
-                # Estimate grid correction
-                (
-                    grid_correction_coef,
-                    corrected_matches_array,
-                    _,
-                    _,
-                    _,
-                    _,
-                ) = grid_correction.estimate_right_grid_correction(
-                    matches_array, grid_right
-                )
+                # Estimate grid correction if no epipolar a priori
+                if self.used_conf[USE_EPIPOLAR_A_PRIORI] is False:
+                    # Compute grid correction
+                    (
+                        grid_correction_coef,
+                        corrected_matches_array,
+                        _,
+                        _,
+                        _,
+                        _,
+                    ) = grid_correction.estimate_right_grid_correction(
+                        matches_array, grid_right
+                    )
+                    # Correct grid right
+                    corrected_grid_right = grid_correction.correct_grid(
+                        grid_right, grid_correction_coef
+                    )
 
-                # Correct grid right
-                corrected_grid_right = grid_correction.correct_grid(
-                    grid_right, grid_correction_coef
-                )
+                    # Compute disp_min and disp_max
+                    (
+                        dmin,
+                        dmax,
+                    ) = sparse_mtch_tools.derive_disparity_range_from_matches(
+                        corrected_matches_array,
+                        orchestrator=cars_orchestrator,
+                        disparity_margin=(
+                            self.sparse_mtch_app.get_disparity_margin()
+                        ),
+                        pair_key=pair_key,
+                        pair_folder=pair_folder,
+                        disp_to_alt_ratio=grid_left.attributes[
+                            "disp_to_alt_ratio"
+                        ],
+                        disparity_outliers_rejection_percent=(
+                            self.sparse_mtch_app.get_disp_out_reject_percent()
+                        ),
+                        save_matches=self.sparse_mtch_app.get_save_matches(),
+                    )
+                    self.update_conf(grid_correction_coef, dmin, dmax, pair_key)
+                    cars_dataset.save_dict(
+                        self.used_conf,
+                        os.path.join(out_dir, "used_conf.json"),
+                        safe_save=True,
+                    )
+                else:
+                    # load the disparity range
+                    [dmin, dmax] = self.used_conf[EPIPOLAR_A_PRIORI][pair_key][
+                        "disparity_range"
+                    ]
+                    # load the grid correction coefficient
+                    grid_correction_coef = self.used_conf[EPIPOLAR_A_PRIORI][
+                        pair_key
+                    ]["grid_correction"]
+                    # no correction if the grid correction coefs are None
+                    if grid_correction_coef is None:
+                        corrected_grid_right = grid_right
+                    else:
+                        # Retrieve grid correction coefficients
+                        coefs_x = grid_correction_coef[:3]
+                        coefs_x.append(0.0)
+                        coefs_y = grid_correction_coef[3:6]
+                        coefs_y.append(0.0)
+                        grid_correction_coef = (
+                            np.array(coefs_x).reshape((2, 2)),
+                            np.array(coefs_y).reshape((2, 2)),
+                        )
 
-                # Compute disp_min and disp_max
-                (
-                    dmin,
-                    dmax,
-                ) = sparse_matching_tools.derive_disparity_range_from_matches(
-                    corrected_matches_array,
-                    orchestrator=cars_orchestrator,
-                    disparity_margin=(
-                        self.sparse_matching_app.get_disparity_margin()
-                    ),
-                    pair_key=pair_key,
-                    pair_folder=pair_folder,
-                    disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
-                    disparity_outliers_rejection_percent=(
-                        self.sparse_matching_app.get_disp_out_reject_percent()
-                    ),
-                    save_matches=self.sparse_matching_app.get_save_matches(),
-                )
+                        # Correct grid right with provided epipolar a priori
+                        corrected_grid_right = grid_correction.correct_grid(
+                            grid_right, grid_correction_coef
+                        )
 
                 # Run epipolar resampling
 
@@ -675,3 +727,25 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     out_dir, self.output[sens_cst.CLR_BASENAME]
                 ),
             )
+
+    def update_conf(self, grid_correction_coef, dmin, dmax, pair_key):
+        """
+        Update the conf with grid correction and disparity range
+        :param grid_correction_coef: grid correction coefficient
+        :type grid_correction_coef: list
+        :param dmin: disparity range minimum
+        :type dmin: float
+        :param dmax: disparity range maximum
+        :type dmax: float
+        :param pair_key: name of the inputs key pair
+        :type pair_key: str
+        """
+        self.used_conf[EPIPOLAR_A_PRIORI][pair_key] = {}
+        self.used_conf[EPIPOLAR_A_PRIORI][pair_key]["grid_correction"] = (
+            np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
+            + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
+        )
+        self.used_conf[EPIPOLAR_A_PRIORI][pair_key]["disparity_range"] = [
+            dmin,
+            dmax,
+        ]

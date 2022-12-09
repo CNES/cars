@@ -71,6 +71,8 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             OptionalKey(pipeline_constants.APPLICATIONS): dict,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.PIPELINE): str,
+            OptionalKey(pipeline_constants.USE_EPIPOLAR_A_PRIORI): bool,
+            OptionalKey(pipeline_constants.EPIPOLAR_A_PRIORI): dict,
         }
 
         checker_inputs = Checker(global_schema)
