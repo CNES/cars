@@ -710,6 +710,41 @@ The structure follows this organisation:
         * information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
         * subfolder for each defined pair which can contains intermediate data
 
+   .. tab:: Pipelines
+
+        The pipeline is a preconfigured application chain. For now, there are two pipelines. The sensor_to_low_resolution_dsm pipeline can be used to prepare
+        a refined configuration for the full resolution pipeline to facilitate and accelerate the full resolution pipeline.
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
+        | Name                  | Description                                                 | Type   | Default value  | Required |
+        +=======================+=============================================================+========+================+==========+
+        | pipeline              | The type of pipeline ( sensor_to_full_resolution_dsm,       | string |                | No       |
+        |                       | sensor_to_low_resolution_dsm )                              |        |                |          |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
+        | use_epipolar_a_priori | base name for dsm                                           | bool   | False          | Yes      |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
+        | epipolar_a_priori     | base name for  ortho-image                                  | dict   |                | No       |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
+        
+        .. note::
+            - If use_epipolar_a_priori is activated, the epipolar_a_priori data dict should be provided.
+              The sensor_to_full_resolution_dsm pipeline can be produce a refined_conf_full_res.json in the outdir
+              that it contains the epipolar_a_priori information for each sensor image pairs.
+
+
+
+        For each sensor images, give a the according epipolar settings:
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | Name                  | Description                                                 | Type   | Default value  | Required                         |
+        +=======================+=============================================================+========+================+==================================+
+        | grid_correction       | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | disparity_range       | The disparity range disp_min and disp_max                   | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+        .. note::
+            - The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
 
 
 Full example

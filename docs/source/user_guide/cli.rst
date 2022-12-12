@@ -122,6 +122,7 @@ These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
   :width: 100%
 .. |pc| image:: ../images/pc.png
   :width: 100%
+
 +--------------+-------------+-------------+-------------------+
 |   dsm.tif    |   clr.tif   | `QGIS`_ Mix |    cloudcompare   |
 +--------------+-------------+-------------+-------------------+
