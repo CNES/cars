@@ -140,7 +140,7 @@ The structure follows this organisation:
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
         | *walltime*          | Walltime for one worker                                   | string, Should be formatted as HH:MM:SS | 00:59:00      | No       |
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *use_memory_logger* | Usage of dask memory logger                               | bool, True if use memory logger         | True          | No       |
+        | *use_memory_logger* | Usage of dask memory logger                               | bool, True if use memory logger         | False         | No       |
         +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
 
         **Mode multiprocessing:**
