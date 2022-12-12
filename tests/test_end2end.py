@@ -363,7 +363,7 @@ def test_end2end_ventoux_unique():
             orchestrator_parameters={
                 "walltime": "00:10:00",
                 "nb_workers": 4,
-                "max_ram_per_worker": 300,
+                "max_ram_per_worker": 1000,
             },
         )
         application_config = {
@@ -441,7 +441,7 @@ def test_end2end_ventoux_unique():
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
-                "max_ram_per_worker": 300,
+                "max_ram_per_worker": 1000,
             },
         )
         application_config = {
