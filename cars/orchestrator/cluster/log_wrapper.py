@@ -34,6 +34,8 @@ import uuid
 from abc import ABCMeta, abstractmethod
 from importlib import import_module
 
+import psutil
+
 
 # pylint: disable=too-few-public-methods
 class AbstractLogWrapper(metaclass=ABCMeta):
@@ -140,12 +142,18 @@ def log_function(*argv, **kwargs):
     kwargs.pop("loop_testing")
     start_time = time.time()
 
+    memory_start = get_current_memory()
+
     if loop_testing:
         res = loop_function(argv, kwargs, func)
     else:
         res = func(*argv, **kwargs)
     total_time = time.time() - start_time
     switch_messages(func, total_time)
+
+    memory_end = get_current_memory()
+    log_delta_memory(func, memory_start, memory_end)
+
     return res
 
 
@@ -270,6 +278,10 @@ def log_message(func, message):
     logging.info(func.__module__)
     print(message)
     print(func.__module__)
+    worker_logger = logging.getLogger("distributed.worker")
+    # dask logger
+    worker_logger.info(message)
+    worker_logger.info(func.__module__)
 
 
 def loop_function(argv, kwargs, func, nb_iteration=5):
@@ -298,3 +310,41 @@ def loop_function(argv, kwargs, func, nb_iteration=5):
         argv = copy.deepcopy(argv_temp)
         kwargs = copy.deepcopy(kwargs_temp)
     return func(*argv, **kwargs)
+
+
+def get_current_memory():
+    """
+    Get current memory of process
+
+    :return: memory
+    :rtype: float
+
+    """
+
+    # Use psutil to capture python process memory as well
+    process = psutil.Process(os.getpid())
+    process_memory = process.memory_info().rss
+
+    # Convert nbytes size for logging
+    process_memory = float(process_memory) / 1000000
+
+    return process_memory
+
+
+def log_delta_memory(func, memory_start, memory_end):
+    """
+    Log memory infos
+
+    :param func: profiled function
+    :param memory_start: memory before the run of function
+    :type memory_start: float
+    :param memory_end: memory after the run of function
+    :type memory_end: float
+
+    """
+
+    message = "Memory before run : {}Mb, Memory after run: {}Mb".format(
+        str(memory_start), str(memory_end)
+    )
+
+    log_message(func, message)
