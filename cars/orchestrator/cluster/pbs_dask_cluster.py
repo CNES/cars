@@ -162,6 +162,7 @@ def start_cluster(
         "CARS_STATIC_CONFIGURATION",
         "LD_LIBRARY_PATH",
         "OTB_APPLICATION_PATH",
+        "OTB_MAX_RAM_HINT",
         "OMP_NUM_THREADS",
         "NUMBA_NUM_THREADS",
         "OPJ_NUM_THREADS",

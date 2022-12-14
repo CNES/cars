@@ -80,6 +80,10 @@ class Orchestrator:
                 "local_dask mode is used"
             )
 
+        # set OTB_MAX_RAM_HINT
+        self.former_otb_max_ram = os.environ.get("OTB_MAX_RAM_HINT", "")
+        os.environ["OTB_MAX_RAM_HINT"] = "3000"  # 60% 5Gb
+
         # init cluster
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             orchestrator_conf, self.out_dir, launch_worker=self.launch_worker
@@ -336,6 +340,9 @@ class Orchestrator:
         for tmp_dir in self.tmp_dir_list:
             if tmp_dir is not None and os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
+
+        # reset OTB_MAX_RAM_HINT
+        os.environ["OTB_MAX_RAM_HINT"] = self.former_otb_max_ram
 
 
 def flatten_object(cars_ds_list):
