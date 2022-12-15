@@ -232,7 +232,7 @@ def test_end2end_ventoux_unique():
                     "mode": "time",
                     "loop_testing": False,
                 },
-                "use_memory_logger": True,
+                "use_memory_logger": False,
                 "config_name": "unknown",
             }
         }
