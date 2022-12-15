@@ -258,6 +258,13 @@ def compute_points_cloud(
 
     row = np.array(range(data.attrs[roi_key][1], data.attrs[roi_key][3]))
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
+
+    # apply no_data to X,Y and Z point cloud
+    index = np.where(data[cst_disp.VALID].values == 0)
+    llh[:, :, 0][index] = np.nan
+    llh[:, :, 1][index] = np.nan
+    llh[:, :, 2][index] = np.nan
+
     values = {
         cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
         cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),  # latitudes
@@ -267,7 +274,6 @@ def compute_points_cloud(
             data[cst_disp.VALID].values,
         ),
     }
-
     if dataset_msk is not None:
         ds_values_list = [key for key, _ in dataset_msk.items()]
 
@@ -292,6 +298,7 @@ def compute_points_cloud(
                         - dataset_msk.attrs[cst.EPI_MARGINS][3]
                     ),
                 ]
+
             # propagate all the data in the point cloud (except color)
             for key, val in dataset_msk.items():
                 if len(val.values.shape) == 2:
@@ -301,6 +308,7 @@ def compute_points_cloud(
                             ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
                         ],
                     )
+
             for key, val in data.items():
                 if len(val.values.shape) == 2:
                     if "msk_" not in key and "color" not in key:
