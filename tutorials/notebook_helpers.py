@@ -124,7 +124,7 @@ def cars_cmap():
     colors = ["navy", "lightsteelblue", "snow", "lightcoral", "red"]
     nodes = [0.0, 0.4, 0.45, 0.5, 1.0]
     cmap_shift = LinearSegmentedColormap.from_list(
-        "mycmap", list(zip(nodes, colors))
+        "mycmap", list(zip(nodes, colors))  # noqa: B905
     )
 
     return cmap_shift
@@ -139,7 +139,7 @@ def pandora_cmap():
     colors = ["crimson", "lightpink", "white", "yellowgreen"]
     nodes = [0.0, 0.4, 0.5, 1.0]
     cmap_shift = LinearSegmentedColormap.from_list(
-        "mycmap", list(zip(nodes, colors))
+        "mycmap", list(zip(nodes, colors))  # noqa: B905
     )
 
     return cmap_shift
