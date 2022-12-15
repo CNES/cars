@@ -81,7 +81,7 @@ class Orchestrator:
             )
 
         # set OTB_MAX_RAM_HINT
-        self.former_otb_max_ram = os.environ.get("OTB_MAX_RAM_HINT", "")
+        self.former_otb_max_ram = os.environ.get("OTB_MAX_RAM_HINT", None)
         os.environ["OTB_MAX_RAM_HINT"] = "3000"  # 60% 5Gb
 
         # init cluster
@@ -343,6 +343,8 @@ class Orchestrator:
 
         # reset OTB_MAX_RAM_HINT
         os.environ["OTB_MAX_RAM_HINT"] = self.former_otb_max_ram
+        if self.former_otb_max_ram is None:
+            del os.environ["OTB_MAX_RAM_HINT"]
 
 
 def flatten_object(cars_ds_list):
