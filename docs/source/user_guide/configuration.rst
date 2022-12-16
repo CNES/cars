@@ -26,28 +26,32 @@ The structure follows this organisation:
 
    .. tab:: Inputs
 
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | Name                | Description                                                         | Type                  | Default value        | Required |
-    +=====================+=====================================================================+=======================+======================+==========+
-    | *sensor*            | Stereo sensor images                                                | See next section      | No                   | Yes      |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *pairing*           | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *epsg*              | EPSG code                                                           | int, should be > 0    | None                 | No       |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *initial_elevation* | Field contains the path to the folder in which are located          | string                | None                 | No       |
-    |                     | the srtm tiles covering the production                              |                       |                      |          |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *default_alt*       | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
-    |                     | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *roi*               | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *check_inputs*      | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *geoid*             | geoid path                                                          | string                | Cars internal geoid  | No       |
-    +---------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | Name                    | Description                                                         | Type                  | Default value        | Required |
+    +=========================+=====================================================================+=======================+======================+==========+
+    | *sensor*                | Stereo sensor images                                                | See next section      | No                   | Yes      |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *pairing*               | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *initial_elevation*     | Field contains the path to the folder in which are located          | string                | None                 | No       |
+    |                         | the srtm tiles covering the production                              |                       |                      |          |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
+    |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *roi*                   | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *check_inputs*          | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *geoid*                 | Geoid path                                                          | string                | Cars internal geoid  | No       |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *use_epipolar_a_priori* | Active epipolar a priori                                            | bool                  | False                | Yes      |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    | *epipolar_a_priori*     | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
+    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+    
     **Sensor**
 
     For each sensor images, give a particular name (what you want):
@@ -111,6 +115,30 @@ The structure follows this organisation:
     * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
     * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
     * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
+
+    **Epipolar a priori**
+
+
+    The epipolar_a_priori data dict should be produced from low and full resolution dsm pipeline.
+    However, the using of the epipolar is usefull for the sensor_to_full_resolution_dsm.
+    It should be not activated for the sensor_to_low_resolution_dsm.
+    So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
+    that contains the epipolar_a_priori information for each sensor image pairs.
+
+    For each sensor images, the epipolar a priori are filled as following:
+
+    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+    | Name                  | Description                                                 | Type   | Default value  | Required                         |
+    +=======================+=============================================================+========+================+==================================+
+    | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+    | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
+    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+    .. note::
+
+        The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+        The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
 
 
    .. tab:: Orchestrator
@@ -715,36 +743,11 @@ The structure follows this organisation:
         The pipeline is a preconfigured application chain. For now, there are two pipelines. The sensor_to_low_resolution_dsm pipeline can be used to prepare
         a refined configuration for the full resolution pipeline to facilitate and accelerate the full resolution pipeline.
 
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
-        | Name                  | Description                                                 | Type   | Default value  | Required |
-        +=======================+=============================================================+========+================+==========+
-        | pipeline              | The type of pipeline ( sensor_to_full_resolution_dsm,       | string |                | No       |
-        |                       | sensor_to_low_resolution_dsm )                              |        |                |          |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
-        | use_epipolar_a_priori | base name for dsm                                           | bool   | False          | Yes      |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
-        | epipolar_a_priori     | base name for  ortho-image                                  | dict   |                | No       |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------+
-        
-        .. note::
-            - If use_epipolar_a_priori is activated, the epipolar_a_priori data dict should be provided.
-              The sensor_to_full_resolution_dsm pipeline can be produce a refined_conf_full_res.json in the outdir
-              that it contains the epipolar_a_priori information for each sensor image pairs.
-
-
-
-        For each sensor images, give a the according epipolar settings:
-
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-        | Name                  | Description                                                 | Type   | Default value  | Required                         |
-        +=======================+=============================================================+========+================+==================================+
-        | grid_correction       | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-        | disparity_range       | The disparity range disp_min and disp_max                   | list   |                | if use_epipolar_a_priori is True |
-        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-
-        .. note::
-            - The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+        +-----------------------+-------------------------------------------------------------------------------------------+--------+-------------------------------+----------+
+        | Name                  | Description                                                                               | Type   | Default value                 | Required |
+        +=======================+===========================================================================================+=======================+================+==========+
+        | pipeline              | The type of pipeline ( sensor_to_full_resolution_dsm, sensor_to_low_resolution_dsm )      | string | sensor_to_full_resolution_dsm | No       |
+        +-----------------------+-------------------------------------------------------------------------------------------+--------+-------------------------------+----------+
 
 
 Full example
