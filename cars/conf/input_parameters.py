@@ -124,6 +124,8 @@ MASK2_CLASSES_TAG = "mask2_classes"
 NODATA1_TAG = "nodata1"
 NODATA2_TAG = "nodata2"
 DEFAULT_ALT_TAG = "default_alt"
+USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
+EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 
 # Schema for input configuration json
 INPUT_CONFIGURATION_SCHEMA = {
@@ -136,6 +138,9 @@ INPUT_CONFIGURATION_SCHEMA = {
     OptionalKey(MASK1_CLASSES_TAG): str,
     OptionalKey(MASK2_CLASSES_TAG): str,
     OptionalKey(DEFAULT_ALT_TAG): float,
+    OptionalKey(DEFAULT_ALT_TAG): float,
     NODATA1_TAG: int,
     NODATA2_TAG: int,
+    OptionalKey(USE_EPIPOLAR_A_PRIORI): bool,
+    OptionalKey(EPIPOLAR_A_PRIORI): dict,
 }

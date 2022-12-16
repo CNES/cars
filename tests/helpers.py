@@ -98,7 +98,6 @@ def generate_input_json(
     json_dir_path = os.path.dirname(input_json)
     with open(input_json, "r", encoding="utf8") as fstream:
         config = json.load(fstream)
-
     # Overload orchestrator
     config["orchestrator"] = {"mode": orchestrator_mode}
     if orchestrator_parameters is not None:
@@ -115,8 +114,14 @@ def generate_input_json(
 
     # transform paths
     new_config = config.copy()
+    check_epipolar_a_priori = True
+
+    if pipeline == "sensor_to_low_resolution_dsm":
+        check_epipolar_a_priori = False
     new_config["inputs"] = sensors_inputs.sensors_check_inputs(
-        new_config["inputs"], config_json_dir=json_dir_path
+        new_config["inputs"],
+        config_json_dir=json_dir_path,
+        check_epipolar_a_priori=check_epipolar_a_priori,
     )
 
     # dump json

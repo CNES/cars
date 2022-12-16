@@ -44,12 +44,10 @@ from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
-    EPIPOLAR_A_PRIORI,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
     PIPELINE,
-    USE_EPIPOLAR_A_PRIORI,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
@@ -132,8 +130,6 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         )
         self.used_conf[APPLICATIONS] = application_conf
 
-        self.used_conf[USE_EPIPOLAR_A_PRIORI] = False
-
         # Save used conf
         out_dir = self.output["out_dir"]
         cars_dataset.save_dict(
@@ -144,7 +140,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         self.config_full_res = self.used_conf.copy()
         self.config_full_res[PIPELINE] = "sensor_to_full_resolution_dsm"
         self.config_full_res.__delitem__("applications")
-        self.config_full_res[EPIPOLAR_A_PRIORI] = {}
+        self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -160,7 +156,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
         return sensors_inputs.sensors_check_inputs(
-            conf, config_json_dir=config_json_dir
+            conf, config_json_dir=config_json_dir, check_epipolar_a_priori=False
         )
 
     def check_output(self, conf):
@@ -564,13 +560,17 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         :param pair_key: name of the inputs key pair
         :type pair_key: str
         """
-        self.config_full_res[EPIPOLAR_A_PRIORI][pair_key] = {}
-        self.config_full_res[EPIPOLAR_A_PRIORI][pair_key]["grid_correction"] = (
+        self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key] = {}
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
+            "grid_correction"
+        ] = (
             np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
             + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
         )
-        self.config_full_res[EPIPOLAR_A_PRIORI][pair_key]["disparity_range"] = [
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
+            "disparity_range"
+        ] = [
             dmin,
             dmax,
         ]
-        self.config_full_res[USE_EPIPOLAR_A_PRIORI] = True

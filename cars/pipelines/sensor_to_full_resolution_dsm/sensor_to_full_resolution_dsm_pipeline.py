@@ -46,12 +46,10 @@ from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
-    EPIPOLAR_A_PRIORI,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
     PIPELINE,
-    USE_EPIPOLAR_A_PRIORI,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
@@ -127,17 +125,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             self.conf.get(APPLICATIONS, {})
         )
         self.used_conf[APPLICATIONS] = application_conf
-        # Check conf USE_EPIPOLAR_A_PRIORI
-        self.used_conf[USE_EPIPOLAR_A_PRIORI] = self.conf.get(
-            USE_EPIPOLAR_A_PRIORI, False
-        )
-        # Retrieve EPIPOLAR_A_PRIORI if it is provided
-        if EPIPOLAR_A_PRIORI in self.conf:
-            self.used_conf[EPIPOLAR_A_PRIORI] = self.conf.get(
-                EPIPOLAR_A_PRIORI, {}
-            )
-        else:
-            self.used_conf[EPIPOLAR_A_PRIORI] = {}
+
         # Save used conf
         out_dir = self.output["out_dir"]
         cars_dataset.save_dict(
@@ -445,7 +433,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     save_matches=self.sparse_mtch_app.get_save_matches(),
                 )
                 # Estimate grid correction if no epipolar a priori
-                if self.used_conf[USE_EPIPOLAR_A_PRIORI] is False:
+                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
                     # Compute grid correction
                     (
                         grid_correction_coef,
@@ -461,7 +449,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     corrected_grid_right = grid_correction.correct_grid(
                         grid_right, grid_correction_coef
                     )
-
                     # Compute disp_min and disp_max
                     (
                         dmin,
@@ -482,21 +469,15 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                         ),
                         save_matches=self.sparse_mtch_app.get_save_matches(),
                     )
-                    self.update_conf(grid_correction_coef, dmin, dmax, pair_key)
-                    cars_dataset.save_dict(
-                        self.used_conf,
-                        os.path.join(out_dir, "used_conf.json"),
-                        safe_save=True,
-                    )
                 else:
                     # load the disparity range
-                    [dmin, dmax] = self.used_conf[EPIPOLAR_A_PRIORI][pair_key][
-                        "disparity_range"
-                    ]
-                    # load the grid correction coefficient
-                    grid_correction_coef = self.used_conf[EPIPOLAR_A_PRIORI][
+                    [dmin, dmax] = self.used_conf[INPUTS]["epipolar_a_priori"][
                         pair_key
-                    ]["grid_correction"]
+                    ]["disparity_range"]
+                    # load the grid correction coefficient
+                    grid_correction_coef = self.used_conf[INPUTS][
+                        "epipolar_a_priori"
+                    ][pair_key]["grid_correction"]
                     # no correction if the grid correction coefs are None
                     if grid_correction_coef is None:
                         corrected_grid_right = grid_right
@@ -516,6 +497,12 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                             grid_right, grid_correction_coef
                         )
 
+                self.update_conf(grid_correction_coef, dmin, dmax, pair_key)
+                cars_dataset.save_dict(
+                    self.used_conf,
+                    os.path.join(out_dir, "used_conf.json"),
+                    safe_save=True,
+                )
                 # Run epipolar resampling
 
                 # Get margins used in dense matching,
@@ -740,12 +727,21 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         :param pair_key: name of the inputs key pair
         :type pair_key: str
         """
-        self.used_conf[EPIPOLAR_A_PRIORI][pair_key] = {}
-        self.used_conf[EPIPOLAR_A_PRIORI][pair_key]["grid_correction"] = (
-            np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
-            + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
-        )
-        self.used_conf[EPIPOLAR_A_PRIORI][pair_key]["disparity_range"] = [
+        self.used_conf[INPUTS]["epipolar_a_priori"][pair_key] = {}
+        if grid_correction_coef:
+            self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
+                "grid_correction"
+            ] = (
+                np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
+                + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
+            )
+        else:
+            self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
+                "grid_correction"
+            ] = None
+        self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
+            "disparity_range"
+        ] = [
             dmin,
             dmax,
         ]

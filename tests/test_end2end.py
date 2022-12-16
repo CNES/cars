@@ -544,7 +544,6 @@ def test_end2end_use_epipolar_a_prior():
         }
 
         input_config_low_res["applications"].update(application_config)
-
         low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
             input_config_low_res
         )
@@ -651,12 +650,18 @@ def test_end2end_use_epipolar_a_prior():
                 == "sensor_to_full_resolution_dsm"
             )
             # check refined_config_full_res_json sparse_matching configuration
-            assert "use_epipolar_a_priori" in refined_config_full_res_json
-            assert refined_config_full_res_json["use_epipolar_a_priori"] is True
-            assert "epipolar_a_priori" in refined_config_full_res_json
+            assert (
+                "use_epipolar_a_priori"
+                in refined_config_full_res_json["inputs"]
+            )
+            assert (
+                refined_config_full_res_json["inputs"]["use_epipolar_a_priori"]
+                is True
+            )
+            assert "epipolar_a_priori" in refined_config_full_res_json["inputs"]
             assert (
                 "grid_correction"
-                in refined_config_full_res_json["epipolar_a_priori"][
+                in refined_config_full_res_json["inputs"]["epipolar_a_priori"][
                     "left_right"
                 ]
             )

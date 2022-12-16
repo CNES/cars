@@ -42,7 +42,9 @@ from cars.pipelines.sensor_to_full_resolution_dsm import (
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
 
-def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
+def sensors_check_inputs(  # noqa: C901
+    conf, config_json_dir=None, check_epipolar_a_priori=True
+):
     """
     Check the inputs given
 
@@ -64,6 +66,19 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     overloaded_conf[sens_cst.CHECK_INPUTS] = conf.get(
         sens_cst.CHECK_INPUTS, False
     )
+
+    if check_epipolar_a_priori:
+        # Check conf use_epipolar_a_priori
+        overloaded_conf["use_epipolar_a_priori"] = conf.get(
+            "use_epipolar_a_priori", False
+        )
+        # Retrieve epipolar_a_priori if it is provided
+        if "epipolar_a_priori" in conf:
+            overloaded_conf["epipolar_a_priori"] = conf.get(
+                "epipolar_a_priori", {}
+            )
+        else:
+            overloaded_conf["epipolar_a_priori"] = {}
 
     if "geoid" not in overloaded_conf:
         # use cars geoid
@@ -88,9 +103,20 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.CHECK_INPUTS: bool,
         sens_cst.GEOID: Or(None, str),
     }
+    if check_epipolar_a_priori:
+        inputs_schema[sens_cst.USE_EPIPOLAR_A_PRIORI] = bool
+        inputs_schema[sens_cst.EPIPOLAR_A_PRIORI] = dict
 
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
+
+    # Validate epipolar schema
+    epipolar_schema = {
+        sens_cst.GRID_CORRECTION: Or(list, None),
+        sens_cst.DISPARITY_RANGE: list,
+    }
+
+    checker_epipolar = Checker(epipolar_schema)
 
     # Validate each sensor image
     sensor_schema = {
@@ -188,6 +214,15 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
                 sens_cst.INPUT_MSK_CLASSES
             ]
         )
+    # check epipolar a priori for each image pair
+    if (
+        check_epipolar_a_priori
+        and overloaded_conf[sens_cst.USE_EPIPOLAR_A_PRIORI]
+    ):
+        for key_image_pair in conf[sens_cst.EPIPOLAR_A_PRIORI]:
+            checker_epipolar.validate(
+                overloaded_conf[sens_cst.EPIPOLAR_A_PRIORI][key_image_pair]
+            )
 
     # Validate pairs
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
