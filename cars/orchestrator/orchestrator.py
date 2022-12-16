@@ -342,9 +342,10 @@ class Orchestrator:
                 shutil.rmtree(tmp_dir)
 
         # reset OTB_MAX_RAM_HINT
-        os.environ["OTB_MAX_RAM_HINT"] = self.former_otb_max_ram
         if self.former_otb_max_ram is None:
             del os.environ["OTB_MAX_RAM_HINT"]
+        else:
+            os.environ["OTB_MAX_RAM_HINT"] = self.former_otb_max_ram
 
 
 def flatten_object(cars_ds_list):
