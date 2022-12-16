@@ -43,7 +43,9 @@ class LocalDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         Start dask cluster
         """
 
-        return start_local_cluster(self.nb_workers)
+        return start_local_cluster(
+            self.nb_workers, activate_dashboard=self.activate_dashboard
+        )
 
     def cleanup(self):
         """
@@ -54,7 +56,7 @@ class LocalDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         logging.info("Dask cluster closed")
 
 
-def start_local_cluster(nb_workers, timeout=600):
+def start_local_cluster(nb_workers, timeout=600, activate_dashboard=False):
     """
     Start a local cluster
 
@@ -66,7 +68,17 @@ def start_local_cluster(nb_workers, timeout=600):
     :rtype: (dask.distributed.LocalCluster, dask.distributed.Client) tuple
     """
     logging.info("Local cluster with {} workers started".format(nb_workers))
-    cluster = LocalCluster(n_workers=nb_workers, threads_per_worker=1)
+
+    if activate_dashboard:
+        dashboard_address = ":0"
+    else:
+        dashboard_address = None
+
+    cluster = LocalCluster(
+        n_workers=nb_workers,
+        threads_per_worker=1,
+        dashboard_address=dashboard_address,
+    )
 
     client = Client(cluster, timeout=timeout)
     return cluster, client

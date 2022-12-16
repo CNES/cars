@@ -65,7 +65,12 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         Start dask cluster
         """
 
-        return start_cluster(self.nb_workers, self.walltime, self.out_dir)
+        return start_cluster(
+            self.nb_workers,
+            self.walltime,
+            self.out_dir,
+            activate_dashboard=self.activate_dashboard,
+        )
 
     def cleanup(self):
         """
@@ -76,7 +81,9 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         logging.info("Dask cluster closed")
 
 
-def start_cluster(nb_workers, walltime, out_dir, timeout=600):
+def start_cluster(
+    nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
+):
     """
     This function create a dask cluster.
     Each worker has nb_cpus cpus.
@@ -144,6 +151,11 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
         )
     )
 
+    if activate_dashboard:
+        scheduler_options = None
+    else:
+        scheduler_options = {"dashboard": None, "dashboard_address": None}
+
     names = [
         "PATH",
         "PYTHONPATH",
@@ -177,6 +189,7 @@ def start_cluster(nb_workers, walltime, out_dir, timeout=600):
         queue=pbs_queue,
         env_extra=envs,
         log_directory=log_directory,
+        scheduler_options=scheduler_options,
     )
     logging.info("Dask cluster started")
     cluster.scale(nb_workers)

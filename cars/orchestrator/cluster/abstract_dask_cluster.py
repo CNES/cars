@@ -70,6 +70,10 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         self.profiling = self.checked_conf_cluster["profiling"]
         self.launch_worker = launch_worker
 
+        self.activate_dashboard = self.checked_conf_cluster[
+            "activate_dashboard"
+        ]
+
         if self.launch_worker:
             # Set DASK CARS specific config
             # TODO: update with adequate configuration through tests
@@ -108,17 +112,21 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "unknowed_dask")
         overloaded_conf["use_memory_logger"] = conf.get(
-            "use_memory_logger", True
+            "use_memory_logger", False
         )
         overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
         overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
         overloaded_conf["config_name"] = conf.get("config_name", "unknown")
+        overloaded_conf["activate_dashboard"] = conf.get(
+            "activate_dashboard", False
+        )
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
             "nb_workers": int,
             "walltime": str,
             "config_name": str,
+            "activate_dashboard": bool,
             "profiling": {
                 "activated": bool,
                 "mode": str,
