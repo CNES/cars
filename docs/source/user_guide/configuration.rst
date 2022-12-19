@@ -118,12 +118,13 @@ The structure follows this organisation:
 
     **Epipolar a priori**
 
-
-    The epipolar_a_priori data dict should be produced from low and full resolution dsm pipeline.
-    However, the using of the epipolar is usefull for the sensor_to_full_resolution_dsm.
-    It should be not activated for the sensor_to_low_resolution_dsm.
+    The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+    particularly for the sensor_to_full_resolution_dsm pipeline.
+    The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
+    However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
     So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
     that contains the epipolar_a_priori information for each sensor image pairs.
+    The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
 
     For each sensor images, the epipolar a priori are filled as following:
 
@@ -742,6 +743,7 @@ The structure follows this organisation:
 
         The pipeline is a preconfigured application chain. For now, there are two pipelines. The sensor_to_low_resolution_dsm pipeline can be used to prepare
         a refined configuration for the full resolution pipeline to facilitate and accelerate the full resolution pipeline.
+        See the configuration/inputs/epipolar_a_priori section for more details.
 
         +-----------------------+-------------------------------------------------------------------------------------------+--------+-------------------------------+----------+
         | Name                  | Description                                                                               | Type   | Default value                 | Required |
