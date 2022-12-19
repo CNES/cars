@@ -106,7 +106,7 @@ def get_roi_coverage_as_poly_with_margins(
             labeled_array,
             transform=Affine(1.0, 0.0, 0.0, 0.0, 1.0, 0.0),
         )
-        for (geometry, value) in shapes:
+        for geometry, value in shapes:
             if value != 0:
                 # Get polygon coordinates of labelled region
                 coords = geometry["coordinates"][0]

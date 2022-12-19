@@ -149,7 +149,6 @@ def test_save_to_disk_and_load():
 
     # reconstruct dataframe and save it
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # save tiled object
 
         left_pc_folder = os.path.join(directory, "left_pc_object")

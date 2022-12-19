@@ -118,7 +118,6 @@ def fill_central_area_using_plane(
     list_roi_msk = []
 
     for segm in range(1, num_features + 1):
-
         roi_msk = np.logical_and(
             labeled_disp_inv_msk_array == segm, disp_mask == 0
         )
@@ -628,13 +627,12 @@ def get_corresponding_tiles(tiles_polygones, corresponding_holes, epi_disp_map):
     corresponding_tiles = []
 
     for key_tile, poly_tile in tiles_polygones.items():
-
         for poly_hole in corresponding_holes:
             if poly_tile.intersects(poly_hole):
                 if key_tile not in corresponding_tiles_row_col:
                     corresponding_tiles_row_col.append(key_tile)
 
-    for (row, col) in corresponding_tiles_row_col:
+    for row, col in corresponding_tiles_row_col:
         corresponding_tiles.append(
             (
                 epi_disp_map.tiling_grid[row, col],

@@ -695,7 +695,6 @@ def gaussian_interp(
     n_pts_in_cell = np.zeros(neighbors_count.size, np.uint16)
 
     for i_grid in range(neighbors_count.size):
-
         p_sample = grid_points[i_grid]
 
         neighbors = get_neighbors_from_points_array(

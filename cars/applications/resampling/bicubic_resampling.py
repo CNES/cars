@@ -569,7 +569,6 @@ def generate_epipolar_images_wrapper(
     )
 
     if add_color:
-
         # merge color in left dataset
         if len(left_color_dataset[cst.EPI_IMAGE].values.shape) > 2:
             nb_bands = left_color_dataset[cst.EPI_IMAGE].values.shape[0]

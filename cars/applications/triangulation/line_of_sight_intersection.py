@@ -143,7 +143,6 @@ class LineOfSightIntersection(
         return overloaded_conf
 
     def get_geometry_loader(self):
-
         return self.geometry_loader
 
     def run(
@@ -451,7 +450,6 @@ class LineOfSightIntersection(
 
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
-
                 # Compute points
                 (
                     epipolar_points_cloud_left[row][col],

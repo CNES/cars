@@ -92,7 +92,6 @@ def test_low_res_dsm_args():
     Cars prepare arguments test with default and degraded cases
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # test default args
         args = argparse.Namespace()
         filled_absolute_path_input, _ = generate_input_json(
@@ -126,7 +125,6 @@ def test_full_res_dsm_args():
     Cars prepare arguments test with default and degraded cases
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # test default args
         args = argparse.Namespace()
         filled_absolute_path_input, _ = generate_input_json(

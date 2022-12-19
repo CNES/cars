@@ -141,7 +141,6 @@ def epipolar_rectify_images(
 
     left_color_dataset = None
     if add_color:
-
         # Build rectification pipeline for color image, and build datasets
         if color1 is None:
             color1 = img1

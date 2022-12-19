@@ -216,7 +216,6 @@ class MappingToTerrainTiles(
         )
 
         if list_epipolar_points_cloud_left[0].dataset_type == "arrays":
-
             # Create CarsDataset
             merged_point_cloud = cars_dataset.CarsDataset("points")
 
@@ -304,7 +303,6 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
-
                     # Get required point clouds
                     (
                         terrain_region,

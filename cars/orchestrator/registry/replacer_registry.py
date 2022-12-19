@@ -130,7 +130,6 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
         replacer = self.get_corresponding_replacer(future_result)
 
         if replacer is not None:
-
             if not replacer.as_been_seen:
                 # reset all tiles to None
                 for row in range(replacer.cars_ds.shape[0]):

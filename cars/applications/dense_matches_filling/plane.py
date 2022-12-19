@@ -248,7 +248,6 @@ class PlaneFill(
             res = epipolar_disparity_map_left, epipolar_disparity_map_right
 
         else:
-
             # Default orchestrator
             if orchestrator is None:
                 # Create defaut sequential orchestrator for current application
@@ -439,7 +438,6 @@ class PlaneFill(
                 # Generate disparity maps
                 for col in range(epipolar_disparity_map_right.shape[1]):
                     for row in range(epipolar_disparity_map_right.shape[0]):
-
                         tile_poly = tiles_polygones[(row, col)]
                         # Get intersecting holes poly
                         corresponding_holes_left = (
@@ -650,7 +648,6 @@ def wrapper_fill_disparity(
 
     croped_disp_right = None
     if input_disp_right is not None:
-
         (
             combined_dataset_right,
             row_min_right,

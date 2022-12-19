@@ -190,7 +190,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         )
 
     # Validate pairs
-    for (key1, key2) in overloaded_conf[sens_cst.PAIRING]:
+    for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         if key1 not in overloaded_conf[sens_cst.SENSORS]:
             logging.error("{} not in sensors images".format(key1))
             raise Exception("{} not in sensors images".format(key1))
@@ -250,7 +250,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
                 sensor_image[sens_cst.INPUT_COLOR],
             )
     else:
-
         logging.info(
             "The inputs consistency will not be checked. "
             "To enable the inputs checking, add check_inputs: True "
@@ -427,7 +426,7 @@ def generate_inputs(conf):
 
     # Generate list of pairs
     list_sensor_pairs = []
-    for (key1, key2) in pairs:
+    for key1, key2 in pairs:
         merged_key = key1 + "_" + key2
         sensor1 = conf[sens_cst.SENSORS][key1]
         sensor2 = conf[sens_cst.SENSORS][key2]

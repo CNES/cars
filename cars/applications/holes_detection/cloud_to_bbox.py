@@ -179,7 +179,6 @@ class CloudToBbox(
             )
 
             if is_activated:
-
                 # Current application is not available in MP mode
                 if (
                     self.orchestrator.cluster.checked_conf_cluster["mode"]
@@ -213,7 +212,6 @@ class CloudToBbox(
                 # Generate disparity maps
                 for col in range(epipolar_images_left.shape[1]):
                     for row in range(epipolar_images_left.shape[0]):
-
                         # update saving_info with row and col needed for
                         # replacement
                         full_saving_info_left = ocht.update_saving_infos(

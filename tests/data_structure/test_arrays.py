@@ -106,7 +106,6 @@ def create_cars_dataset_from_path(
     for i in range(array_cars_ds.tiling_grid.shape[0]):
         object_row = []
         for j in range(array_cars_ds.tiling_grid.shape[1]):
-
             # Create window
             dto_window = cars_dataset.window_array_to_dict(
                 array_cars_ds.tiling_grid[i, j, :],
@@ -194,7 +193,6 @@ def test_save_to_disk_and_load():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # save tiled object
 
         left_image_folder = os.path.join(directory, "left_image_object")

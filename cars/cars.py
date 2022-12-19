@@ -152,10 +152,8 @@ def main_cli(args, dry_run=False):  # noqa: C901
     from cars.pipelines.pipeline import Pipeline
 
     try:
-
         # main(s) for each command
         if args.conf is not None:
-
             # Transform conf file to dict
             with open(args.conf, "r", encoding="utf8") as fstream:
                 config = json.load(fstream)

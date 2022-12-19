@@ -450,7 +450,6 @@ class Sift(SparseMatching, short_name="sift"):
             # Generate disparity maps
             for col in range(epipolar_disparity_map_left.shape[1]):
                 for row in range(epipolar_disparity_map_left.shape[0]):
-
                     # initialize list of matches
                     delayed_matches_row_col = []
                     # iterate on offsets

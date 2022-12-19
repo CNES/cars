@@ -253,7 +253,6 @@ class SimpleGaussian(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-
             # Create CarsDataset
             terrain_raster = cars_dataset.CarsDataset("arrays")
 

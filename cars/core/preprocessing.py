@@ -469,7 +469,10 @@ def compute_epsg(
 
     # Compute epipolar image terrain position corners
     # for min and max disparity
-    (terrain_dispmin, _,) = grids.compute_epipolar_grid_min_max(
+    (
+        terrain_dispmin,
+        _,
+    ) = grids.compute_epipolar_grid_min_max(
         geometry_loader_to_use, corners, 4326, configuration, disp_min, disp_max
     )
 

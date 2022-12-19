@@ -168,7 +168,6 @@ def create_combined_cloud(  # noqa: C901
 
         # get mask of points inside the roi (plus margins)
         if roi:
-
             # if the points clouds are not in the same referential as the roi,
             # it is converted using the dsm_epsg
             if epsg != dsm_epsg:

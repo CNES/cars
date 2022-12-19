@@ -75,7 +75,6 @@ def factorize_delayed_rec(delayed, graph_usages, already_seen_delayed_tasks):
     current_task = delayed.delayed_task
 
     if current_task not in already_seen_delayed_tasks:
-
         if number_depending_task == 1 and max_nb_of_usages == 1:
             # We can factorize current delayed with next ones
 
@@ -274,7 +273,6 @@ def factorized_fun(*args, **kwargs):
         for iter_args in range(len(current_args)):  # pylint: disable=C0200
             if isinstance(current_args[iter_args], str):
                 if "POS_" in current_args[iter_args]:
-
                     pos = int(current_args[iter_args].split("_")[1])
 
                     if isinstance(res, tuple):
@@ -347,7 +345,6 @@ def generate_args_kwargs_factorize(fun1, args1, kwargs1, fun2, args2, kwargs2):
 
     # Check if one of the delayed is already factorized
     if factorized_fun not in (fun1, fun2):  # pylint: disable=W0143
-
         # Addon will only contain f1, the rest is in args and kwargs
         # for input transformation purposes
         new_args = args1

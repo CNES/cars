@@ -71,7 +71,6 @@ def create_inside_sec_roi_mask(
     in_sec_roi_msk = np.zeros(disp.shape, dtype=np.int16)
     for i in range(0, disp.shape[0]):
         for j in range(0, disp.shape[1]):
-
             # if the pixel is valid
             if disp_msk[i, j] == 255:
                 idx = float(j) + disp[i, j]
@@ -700,7 +699,6 @@ def estimate_color_from_disparity(
     )
     for i in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[0]):
         for j in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[1]):
-
             # if the pixel is valid,
             # else the position is left to (0,0)
             # and the final image pixel value will be set to np.nan

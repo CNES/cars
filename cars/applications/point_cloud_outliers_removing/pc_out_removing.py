@@ -79,7 +79,6 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
-
         super().__init_subclass__(**kwargs)
         cls.available_applications[short_name] = cls
 

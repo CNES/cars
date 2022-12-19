@@ -405,7 +405,6 @@ def create_matches_cars_ds(corrected_matches, initial_cars_ds):
 
     for row in range(new_matches_cars_ds_left.shape[0]):
         for col in range(new_matches_cars_ds_left.shape[1]):
-
             [
                 row_min,
                 row_max,

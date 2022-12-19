@@ -187,7 +187,10 @@ class AbstractCluster(metaclass=ABCMeta):
                     additionnal_kwargs,
                 ) = log_wrapper.CProfileWrapper(func).func_args_plus()
             elif self.profiling["mode"] == "memray":
-                (wrapper_func, additionnal_kwargs,) = log_wrapper.MemrayWrapper(
+                (
+                    wrapper_func,
+                    additionnal_kwargs,
+                ) = log_wrapper.MemrayWrapper(
                     func, self.profiling["loop_testing"], self.out_dir
                 ).func_args_plus()
             return self.create_task_wrapped(wrapper_func, nout=nout)(
