@@ -120,6 +120,15 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def get_disparity_margin(self):
+        """
+        Get disparity margin corresponding to sparse matches
+
+        :return: margin in percent
+
+        """
+
+    @abstractmethod
     def run(
         self,
         epipolar_images_left,

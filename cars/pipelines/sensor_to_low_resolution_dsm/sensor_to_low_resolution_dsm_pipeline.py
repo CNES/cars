@@ -394,32 +394,32 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                 )
 
                 # Compute disp_min and disp_max
-                (
-                    dmin,
-                    dmax,
-                ) = sparse_matching_tools.derive_disparity_range_from_matches(
-                    corrected_matches_array,
-                    orchestrator=cars_orchestrator,
-                    disparity_margin=(
-                        self.sparse_matching_app.get_disparity_margin()
-                    ),
-                    pair_key=pair_key,
-                    pair_folder=pair_folder,
-                    disp_to_alt_ratio=(
-                        grid_left.attributes["disp_to_alt_ratio"]
-                    ),
-                    disparity_outliers_rejection_percent=(
-                        self.sparse_matching_app.get_disp_out_reject_percent()
-                    ),
-                    save_matches=self.sparse_matching_app.get_save_matches(),
-                )
+                (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(
+                                        sensor_image_left,
+                                        sensor_image_right,
+                                        epipolar_image_left,
+                                        epipolar_image_right,
+                                        grid_left,
+                                        corrected_grid_right,
+                                        grid_right,
+                                        corrected_matches_array,
+                                        orchestrator=cars_orchestrator,
+                                        disparity_margin=(
+                                            self.sparse_matching_tools.get_disparity_margin()
+                                        ),
+                                        pair_key=pair_key,
+                                        disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
+                                        geometry_loader = self.triangulation_application.get_geometry_loader(),
+                                        pair_folder=pair_folder,
+                                        srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
+                                        default_alt=self.inputs[sens_cst.DEFAULT_ALT]
+                                        )
 
                 # Update full res pipeline configuration
                 # with grid correction and disparity range
                 self.update_full_res_conf(
                     grid_correction_coef, dmin, dmax, pair_key
                 )
-
                 if epsg is None:
                     # compute epsg
                     epsg = preprocessing.compute_epsg(

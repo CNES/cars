@@ -34,6 +34,7 @@ EPI_FULL_SIZE = "full_epipolar_size"
 ROI = "roi"
 ROI_WITH_MARGINS = "roi_with_margins"
 EPSG = "epsg"
+DISPARITY = "disparity"
 
 # stereo keys
 STEREO_REF = "ref"

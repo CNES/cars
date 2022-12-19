@@ -26,6 +26,7 @@ This module is responsible for the dense matching algorithms:
 # Standard imports
 import logging
 from typing import Dict, List
+import pandas 
 
 # Third party imports
 import numpy as np
@@ -42,11 +43,13 @@ from scipy import interpolate
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
 )
+from cars.applications import application_constants
+from cars.applications.triangulation import triangulation_tools
+from cars.applications.point_cloud_outliers_removing import outlier_removing_tools
 from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.core import datasets
-
+from cars.core import datasets, preprocessing, projection
 
 def get_margins(disp_min, disp_max, corr_cfg):
     """
@@ -660,3 +663,163 @@ def estimate_color_from_disparity(
     interp_clr_ds.attrs[cst.ROI] = disp_ref_to_sec.attrs[cst.ROI]
 
     return interp_clr_ds
+
+
+def compute_disp_min_disp_max(sensor_image_right,
+                    sensor_image_left,
+                    new_epipolar_image_left,
+                    new_epipolar_image_right,
+                    grid_left,
+                    corrected_grid_right,
+                    grid_right,
+                    matches,
+                    orchestrator,
+                    geometry_loader,
+                    pair_folder,
+                    srtm_dir,
+                    default_alt,                    
+                    disparity_margin=0.1,
+                    pair_key=None,
+                    disp_to_alt_ratio=None):
+    """
+    Compute disp min and disp max from triangulated and filtered matches
+
+    :param sensor_image_right:
+    :type sensor_image_right: CarsDataset
+    :param sensor_image_left:
+    :type sensor_image_left: CarsDataset
+    :param new_epipolar_image_left:
+    :type new_epipolar_image_left: CarsDataset
+    :param new_epipolar_image_right:
+    :type new_epipolar_image_right: CarsDataset
+    :param grid_left:
+    :type grid_left: CarsDataset
+    :param corrected_grid_right:
+    :type corrected_grid_right: CarsDataset
+    :param matches: matches
+    :type matches: np.ndarray
+    :param orchestrator: orchestrator : used for info writing
+    :type orchestrator: 
+    :param geometry_loader:
+    :type geometry_loader:
+    :param srtm_dir:
+    :type srtm_dir:
+    :param disparity_margin: disparity margin
+    :type disparity_margin: float
+    :param disp_to_alt_ratio: used for logging info
+    :type disp_to_alt_ratio: float
+
+
+    :return: disp min and disp max
+    :rtype: float, float
+    """
+    input_stereo_cfg = (
+            preprocessing.create_former_cars_post_prepare_configuration(
+                sensor_image_left,
+                sensor_image_right,
+                grid_left,
+                corrected_grid_right,
+                pair_folder,
+                uncorrected_grid_right=grid_right,
+                srtm_dir=srtm_dir,
+                default_alt=default_alt,
+                disp_min=None,
+                disp_max=None,
+            )
+        )
+
+    point_cloud = triangulation_tools.triangulate_matches(
+            geometry_loader, input_stereo_cfg, matches
+        )         
+
+    # compute epsg
+    epsg = preprocessing.compute_epsg(
+        sensor_image_left,
+        sensor_image_right,
+        grid_left,
+        corrected_grid_right,
+        geometry_loader,
+        orchestrator=orchestrator,
+        pair_folder=pair_folder,
+        srtm_dir=srtm_dir,
+        default_alt=default_alt,
+        disp_min=0,
+        disp_max=0,
+    )
+    # Project point cloud to UTM
+    projection.points_cloud_conversion_dataset(point_cloud, epsg)
+
+    # Convert point cloud to pandas format to allow statistical filtering
+    labels = [
+            cst.X,
+            cst.Y,
+            cst.Z,
+            cst.DISPARITY,
+            cst.POINTS_CLOUD_CORR_MSK
+        ]
+    cloud_array = []
+    cloud_array.append(point_cloud[cst.X].data)
+    cloud_array.append(point_cloud[cst.Y].data)
+    cloud_array.append(point_cloud[cst.Z].data)
+    cloud_array.append(point_cloud[cst.DISPARITY].data)
+    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].data)
+    pd_cloud = pandas.DataFrame(
+            np.transpose(np.array(cloud_array)[:,:,0]), columns=labels
+    )
+
+    # Statistical filtering
+    filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(pd_cloud, k = 25, 
+                                    std_factor = 3.0)
+
+    disparity = np.array(pd_cloud.iloc[:, 3])
+                          
+    logging.info(
+        "Non filt disp range : [{:.3f} pix., {:.3f} pix.]"
+        .format(np.min(disparity), np.max(disparity))
+    )
+    # Obtain dmin dmax
+    filt_disparity = np.array(filter_cloud.iloc[:, 3])
+    dmax = np.max(filt_disparity)
+    dmin = np.min(filt_disparity) 
+                          
+    logging.info(
+        "Filt disp range : [{:.3f} pix., {:.3f} pix.]"
+        .format(np.min(filt_disparity), np.max(filt_disparity))
+    )
+    margin = abs(dmax - dmin) * disparity_margin
+    dmin -= margin
+    dmax += margin
+    
+    logging.info(
+        "Disparity range with margin: [{:.3f} pix., {:.3f} pix.] "
+        "(margin = {:.3f} pix.)".format(dmin, dmax, margin)
+    )
+
+    if disp_to_alt_ratio is not None:
+        logging.info(
+            "Equivalent range in meters: [{:.3f} m, {:.3f} m] "
+            "(margin = {:.3f} m)".format(
+                dmin * disp_to_alt_ratio,
+                dmax * disp_to_alt_ratio,
+                margin * disp_to_alt_ratio,
+            )
+        )
+
+    # update orchestrator_out_json
+    updating_infos = {
+        application_constants.APPLICATION_TAG: {
+            pair_key: {
+                dense_match_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+                    dense_match_cst.DISPARITY_MARGIN_PARAM_TAG: disparity_margin,
+                    dense_match_cst.MINIMUM_DISPARITY_TAG: dmin,
+                    dense_match_cst.MAXIMUM_DISPARITY_TAG: dmax
+                }
+            }
+        }
+    }
+    orchestrator.update_out_info(updating_infos)
+
+    return dmin, dmax
+
+
+

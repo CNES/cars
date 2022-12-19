@@ -911,18 +911,27 @@ def test_end2end_ventoux_with_color():
             assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(out_disp_compute["matches"])
-
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
+                        out_dir, "points_cloud", "675248.0_4897173.0.laz"
+                    )
+                )
+                and os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675370.5_4897173.0.laz"
                     )
                 )
             ) is True
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.csv"
+                        out_dir, "points_cloud", "675248.0_4897173.0.csv"
+                    )
+                )
+                and os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675370.5_4897173.0.csv"
                     )
                 )
             ) is True
