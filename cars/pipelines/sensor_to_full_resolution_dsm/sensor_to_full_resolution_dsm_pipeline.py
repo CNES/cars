@@ -452,7 +452,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     )
 
                     # Compute disp_min and disp_max
-                    (dmin, dmax) = self.sparse_mtch_tools.compute_disp_min_disp_max(
+                    (dmin, dmax) = sparse_mtch_tools.compute_disp_min_disp_max(
                                             sensor_image_left,
                                             sensor_image_right,
                                             epipolar_image_left,
@@ -463,7 +463,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                                             corrected_matches_array,
                                             orchestrator=cars_orchestrator,
                                             disparity_margin=(
-                                                self.sparse_mtch_tools.get_disparity_margin()
+                                                self.sparse_mtch_app.get_disparity_margin()
                                             ),
                                             pair_key=pair_key,
                                             disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],

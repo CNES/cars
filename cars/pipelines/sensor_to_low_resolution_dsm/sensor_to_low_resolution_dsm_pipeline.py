@@ -37,6 +37,7 @@ from cars.applications.application import Application
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.conf import log_conf
+from cars.applications.dense_matching import dense_matching_tools
 from cars.core import preprocessing
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
