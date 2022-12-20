@@ -404,7 +404,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 (
                     epipolar_matches_left,
                     _,
-                ) = self.sparse_matching_app.run(
+                ) = self.sparse_mtch_app.run(
                     epipolar_image_left,
                     epipolar_image_right,
                     grid_left.attributes["disp_to_alt_ratio"],
