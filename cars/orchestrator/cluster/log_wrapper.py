@@ -66,7 +66,6 @@ class LogWrapper(AbstractLogWrapper):
     """
 
     def __init__(self, func, loop_testing):
-
         self.used_function = func
         self.loop_testing = loop_testing
 
@@ -89,7 +88,6 @@ class CProfileWrapper(AbstractLogWrapper):
     """
 
     def __init__(self, func):
-
         self.used_function = func
 
     def func_args_plus(self):
@@ -109,7 +107,6 @@ class MemrayWrapper(AbstractLogWrapper):
     """
 
     def __init__(self, func, loop_testing, out_dir):
-
         self.used_function = func
         self.loop_testing = loop_testing
         self.out_dir = out_dir
@@ -189,7 +186,6 @@ def time_profiling_function(*argv, **kwargs):
 
 
 def memory_profiling_function(*argv, **kwargs):
-
     """
     Create a wrapper to profile the function occupation memory
 

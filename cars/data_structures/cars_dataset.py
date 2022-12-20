@@ -501,7 +501,6 @@ class CarsDataset:
         # save each tile
         for col in range(nb_cols):
             for row in range(nb_rows):
-
                 # Get name
                 current_tile_path_name = create_tile_path(col, row, directory)
 
@@ -538,7 +537,6 @@ class CarsDataset:
         for row in range(nb_rows):
             tiles_row = []
             for col in range(nb_cols):
-
                 # Get name
                 current_tile_path_name = create_tile_path(col, row, directory)
 
@@ -932,7 +930,6 @@ def save_dataset(
                 ]
 
     if len(dataset[tag].values.shape) > 2:
-
         nb_rows, nb_cols = (
             dataset[tag].values.shape[1],
             dataset[tag].values.shape[2],

@@ -49,7 +49,6 @@ def test_save_load_numpy_array():
     array = np.ones((5, 5))
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         arr_path = os.path.join(directory, "array")
 
         # save numpy array
@@ -71,7 +70,6 @@ def test_save_load_dict():
     to_save_dict = {"A": "B", "C": 2}
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         dict_path = os.path.join(directory, "dict")
 
         # save numpy array

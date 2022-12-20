@@ -110,7 +110,6 @@ class Orchestrator:
         self.out_json = {}
 
     def add_to_clean(self, tmp_dir):
-
         self.tmp_dir_list.append(tmp_dir)
 
     def get_conf(self):

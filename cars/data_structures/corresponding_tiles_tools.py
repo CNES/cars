@@ -184,7 +184,7 @@ def find_tile_dataset(corresponding_tiles, window):
     """
 
     dataset = None
-    for (tile_window, _, tile_dataset) in corresponding_tiles:
+    for tile_window, _, tile_dataset in corresponding_tiles:
         if tuple(tile_window) == tuple(window):
             dataset = tile_dataset
 

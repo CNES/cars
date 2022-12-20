@@ -246,7 +246,6 @@ class SmallComponents(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-
             # Create CarsDataset
             filtered_point_cloud = cars_dataset.CarsDataset("points")
 
@@ -289,9 +288,7 @@ class SmallComponents(
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
                 for row in range(filtered_point_cloud.shape[0]):
-
                     if merged_points_cloud.tiles[row][col] is not None:
-
                         # Delayed call to cloud filtering
                         filtered_point_cloud[
                             row, col
@@ -384,7 +381,10 @@ def small_components_removing_wrapper(
 
         # Filter point cloud
         tic = time.process_time()
-        (new_cloud, _,) = outlier_removing_tools.small_components_filtering(
+        (
+            new_cloud,
+            _,
+        ) = outlier_removing_tools.small_components_filtering(
             new_cloud,
             connection_distance,
             nb_points_threshold,

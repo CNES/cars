@@ -306,7 +306,6 @@ def list_tiles(region, largest_region, tile_size, margin=1):
     # Loop on tile idx
     for tile_idx_x in range(min_tile_idx_x, max_tile_idx_x):
         for tile_idx_y in range(min_tile_idx_y, max_tile_idx_y):
-
             # Derive tile coordinates
             tile = [
                 tile_idx_x * tile_size,
@@ -665,7 +664,6 @@ def get_corresponding_tiles_row_col(
                 largest_epipolar_region,
                 opt_epipolar_tile_size,
             ):
-
                 id_x = epipolar_tile["idx"]
                 id_y = epipolar_tile["idy"]
 

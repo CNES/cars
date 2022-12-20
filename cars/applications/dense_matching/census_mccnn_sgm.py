@@ -462,7 +462,6 @@ class CensusMccnnSgm(
             # Generate disparity maps
             for col in range(epipolar_disparity_map_right.shape[1]):
                 for row in range(epipolar_disparity_map_right.shape[0]):
-
                     # Compute disparity
                     (
                         epipolar_disparity_map_left[row, col],

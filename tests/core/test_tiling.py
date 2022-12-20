@@ -48,7 +48,6 @@ from ..helpers import get_geometry_loader, temporary_dir
 
 @pytest.mark.unit_tests
 def test_grid():
-
     grid = tiling.grid(0, 0, 500, 400, 90, 90)
     assert grid.shape == (6, 7, 2)
 

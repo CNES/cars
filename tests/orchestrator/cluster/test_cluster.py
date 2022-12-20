@@ -122,7 +122,6 @@ def test_tasks_pipeline(conf):
     current_conf = conf
     # create temporary dir
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # Create cluster
         cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
             current_conf, directory
@@ -223,7 +222,6 @@ def test_tasks_pipeline_dump_xarray(conf):
     current_conf = conf
     # create temporary dir
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # Create cluster
         cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
             current_conf, directory

@@ -77,7 +77,6 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
-
         super().__init_subclass__(**kwargs)
         for name in short_name:
             cls.available_applications[name] = cls

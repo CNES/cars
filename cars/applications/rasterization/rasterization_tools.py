@@ -23,7 +23,7 @@ This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 # Standard imports
 import logging
@@ -695,7 +695,6 @@ def gaussian_interp(
     n_pts_in_cell = np.zeros(neighbors_count.size, np.uint16)
 
     for i_grid in range(neighbors_count.size):
-
         p_sample = grid_points[i_grid]
 
         neighbors = get_neighbors_from_points_array(

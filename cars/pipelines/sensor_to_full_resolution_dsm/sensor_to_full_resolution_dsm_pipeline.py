@@ -299,7 +299,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 out_dir, self.output[sens_cst.INFO_BASENAME]
             ),
         ) as cars_orchestrator:
-
             # initialize out_json
             cars_orchestrator.update_out_info(
                 {
@@ -337,7 +336,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 sensor_image_left,
                 sensor_image_right,
             ) in list_sensor_pairs:
-
                 # Create Pair folder
                 pair_folder = os.path.join(out_dir, pair_key)
                 safe_makedirs(pair_folder)
@@ -399,7 +397,10 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 )
 
                 # Run epipolar sparse_matching application
-                (epipolar_matches_left, _,) = self.sparse_matching_app.run(
+                (
+                    epipolar_matches_left,
+                    _,
+                ) = self.sparse_matching_app.run(
                     epipolar_image_left,
                     epipolar_image_right,
                     grid_left.attributes["disp_to_alt_ratio"],

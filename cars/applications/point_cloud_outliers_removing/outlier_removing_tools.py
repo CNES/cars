@@ -106,7 +106,6 @@ def detect_small_components(
     processed = [False] * len(cloud_xyz)
     connected_components = []
     for idx, xyz_point in enumerate(cloud_xyz):
-
         # if point has already been added to a cluster
         if processed[idx]:
             continue

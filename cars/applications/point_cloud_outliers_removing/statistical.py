@@ -217,7 +217,6 @@ class Statistical(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-
             # Create CarsDataset
             filtered_point_cloud = cars_dataset.CarsDataset("points")
 
@@ -265,9 +264,7 @@ class Statistical(
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
                 for row in range(filtered_point_cloud.shape[0]):
-
                     if merged_points_cloud.tiles[row][col] is not None:
-
                         # Delayed call to cloud filtering
                         filtered_point_cloud[
                             row, col
@@ -340,7 +337,6 @@ def statistical_removing_wrapper(
         spatial_ref = osr.SpatialReference()
         spatial_ref.ImportFromEPSG(cloud_epsg)
         if spatial_ref.IsGeographic():
-
             worker_logger.debug(
                 "The points cloud to filter is not in a cartographic system. "
                 "The filter's default parameters might not be adapted "

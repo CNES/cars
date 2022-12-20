@@ -63,7 +63,6 @@ def grid_margins_2_overlaps(grid, margins):
 
     for j in range(0, nb_cols):
         for i in range(0, nb_rows):
-
             row_up = grid[i, j, 0]
             row_down = grid[i, j, 1]
             col_left = grid[i, j, 2]

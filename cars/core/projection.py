@@ -77,7 +77,6 @@ def compute_dem_intersection_with_poly(
             if ext not in unsupported_formats:
                 if inputs.rasterio_can_open(os.path.join(srtm_dir, file)):
                     with rio.open(os.path.join(srtm_dir, file)) as data:
-
                         xmin = min(data.bounds.left, data.bounds.right)
                         ymin = min(data.bounds.bottom, data.bounds.top)
                         xmax = max(data.bounds.left, data.bounds.right)
@@ -398,7 +397,6 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     """
 
     if cloud.attrs[cst.EPSG] != epsg_out:
-
         xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud)
 
         xyz = points_cloud_conversion(xyz, int(cloud.attrs[cst.EPSG]), epsg_out)

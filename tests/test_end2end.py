@@ -148,7 +148,6 @@ def test_end2end_ventoux_unique():
     os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         input_json = absolute_data_path("input/phr_ventoux/input.json")
         # Run low resolution pipeline
         _, input_config_low_res = generate_input_json(
@@ -349,7 +348,6 @@ def test_end2end_ventoux_unique():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         # Run low resolution pipeline
         _, input_config_low_res = generate_input_json(
             input_json,
@@ -505,7 +503,6 @@ def test_prepare_ventoux_bias():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         input_json = absolute_data_path("input/phr_ventoux/input_bias.json")
         # Run low resolution pipeline
         _, input_config_low_res = generate_input_json(
@@ -576,7 +573,6 @@ def test_end2end_ventoux_with_color():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_pxs_fusion.json"
         )
@@ -801,7 +797,6 @@ def test_compute_dsm_with_roi_ventoux():
     os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_pxs_fusion.json"
         )
