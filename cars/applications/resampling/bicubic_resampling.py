@@ -41,7 +41,6 @@ from cars.applications import application_constants
 from cars.applications.grid_generation import grids
 from cars.applications.resampling import resampling_constants, resampling_tools
 from cars.applications.resampling.resampling import Resampling
-from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
@@ -304,8 +303,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_left, epipolar_images_right = None, None
 
         # Retrieve number of bands
-        # TODO remove it, unnecessary
-        if in_params.COLOR1_TAG in sensor_image_left:
+        if sens_cst.INPUT_COLOR in sensor_image_left:
             nb_bands = inputs.rasterio_get_nb_bands(
                 sensor_image_left[sens_cst.INPUT_COLOR]
             )
