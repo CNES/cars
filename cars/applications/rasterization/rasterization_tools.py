@@ -23,7 +23,7 @@ This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
-# pylint: disable=too-many-lines
+# pylint: disable=C0302
 
 # Standard imports
 import logging
