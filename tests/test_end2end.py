@@ -216,13 +216,6 @@ def test_end2end_ventoux_unique():
                 < 15
             )
 
-            # check matches file exists
-            assert os.path.isfile(
-                out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
-                ]["matches"]
-            )
-
         # Check used_conf for low res
 
         gt_used_conf_orchestrator = {
@@ -818,8 +811,8 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -86
-            assert out_disp_compute["minimum_disparity"] < -84
+            assert out_disp_compute["minimum_disparity"] > -84
+            assert out_disp_compute["minimum_disparity"] < -82
             assert out_disp_compute["maximum_disparity"] > -46
             assert out_disp_compute["maximum_disparity"] < -44
 
@@ -905,10 +898,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
-            assert out_disp_compute["maximum_disparity"] > 14
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["minimum_disparity"] > -21
+            assert out_disp_compute["minimum_disparity"] < -17
+            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] < 16
 
             assert os.path.isfile(out_disp_compute["matches"])
             assert (
@@ -1335,16 +1328,16 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
-            assert out_disp_compute["maximum_disparity"] > 14
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["minimum_disparity"] > -16
+            assert out_disp_compute["minimum_disparity"] < -13
+            assert out_disp_compute["maximum_disparity"] > 8
+            assert out_disp_compute["maximum_disparity"] < 11
 
             assert os.path.isfile(out_disp_compute["matches"])
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #      absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
         #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
         # copy2(os.path.join(out_dir, 'dsm_mean.tif'),
@@ -1474,10 +1467,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
-            assert out_disp_compute["maximum_disparity"] > 14
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["minimum_disparity"] > -16
+            assert out_disp_compute["minimum_disparity"] < -13
+            assert out_disp_compute["maximum_disparity"] > 8
+            assert out_disp_compute["maximum_disparity"] < 11
 
             assert os.path.isfile(out_disp_compute["matches"])
 
@@ -1485,7 +1478,7 @@ def test_end2end_ventoux_egm96_geoid():
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #      absolute_data_path("ref_output/dsm_end2end_ventoux_egm96.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),

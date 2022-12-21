@@ -771,21 +771,12 @@ def compute_disp_min_disp_max(sensor_image_right,
     filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(pd_cloud, k = 25, 
                                     std_factor = 3.0)
 
-    disparity = np.array(pd_cloud.iloc[:, 3])
-                          
-    logging.info(
-        "Non filt disp range : [{:.3f} pix., {:.3f} pix.]"
-        .format(np.min(disparity), np.max(disparity))
-    )
     # Obtain dmin dmax
     filt_disparity = np.array(filter_cloud.iloc[:, 3])
     dmax = np.max(filt_disparity)
     dmin = np.min(filt_disparity) 
                           
-    logging.info(
-        "Filt disp range : [{:.3f} pix., {:.3f} pix.]"
-        .format(np.min(filt_disparity), np.max(filt_disparity))
-    )
+  
     margin = abs(dmax - dmin) * disparity_margin
     dmin -= margin
     dmax += margin
