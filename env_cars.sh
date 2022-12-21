@@ -34,7 +34,6 @@ export LD_LIBRARY_PATH=$LD_LIBRARY_PATH:$ROOT_PATH/lib #
 ## Environment variables that affect Orfeo ToolBox and co external libs
 # OTB
 export OTB_LOGGER_LEVEL=WARNING # Set OTB log level to limit OTB verbosity
-export OTB_MAX_RAM_HINT=2000 # Set OTB RAM for CARS
 # OpenMP
 export OMP_NUM_THREADS=1 # Set OpenMP threads for CARS and DASK
 # OpenJpeg
@@ -51,9 +50,6 @@ export NUMBA_NUM_THREADS=$OMP_NUM_THREADS # Set Numba threads as OpenMP
 # CARS PBS DASK Number of workers per pbs job
 # TODO: evolution with cluster refactoring, remove env
 export CARS_NB_WORKERS_PER_PBS_JOB=2
-
-# Change CARS dask config
-export DASK_CONFIG=$ROOT_PATH/../dask
 
 ## CARS autocompletion
 
