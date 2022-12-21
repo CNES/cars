@@ -26,10 +26,10 @@ This module is responsible for the dense matching algorithms:
 # Standard imports
 import logging
 from typing import Dict, List
-import pandas 
 
 # Third party imports
 import numpy as np
+import pandas
 import pandora
 import pandora.marge
 import xarray as xr
@@ -39,13 +39,16 @@ from pandora.state_machine import PandoraMachine
 from pkg_resources import iter_entry_points
 from scipy import interpolate
 
+from cars.applications import application_constants
+
 # CARS imports
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
 )
-from cars.applications import application_constants
+from cars.applications.point_cloud_outliers_removing import (
+    outlier_removing_tools,
+)
 from cars.applications.triangulation import triangulation_tools
-from cars.applications.point_cloud_outliers_removing import outlier_removing_tools
 from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
@@ -665,47 +668,49 @@ def estimate_color_from_disparity(
     return interp_clr_ds
 
 
-def compute_disp_min_disp_max(sensor_image_right,
-                    sensor_image_left,
-                    new_epipolar_image_left,
-                    new_epipolar_image_right,
-                    grid_left,
-                    corrected_grid_right,
-                    grid_right,
-                    matches,
-                    orchestrator,
-                    geometry_loader,
-                    pair_folder,
-                    srtm_dir,
-                    default_alt,                    
-                    disparity_margin=0.1,
-                    pair_key=None,
-                    disp_to_alt_ratio=None):
+def compute_disp_min_disp_max(
+    sensor_image_right,
+    sensor_image_left,
+    grid_left,
+    corrected_grid_right,
+    grid_right,
+    matches,
+    orchestrator,
+    geometry_loader,
+    srtm_dir,
+    default_alt,
+    pair_folder="",
+    disp_margin=0.1,
+    pair_key=None,
+    disp_to_alt_ratio=None,
+):
     """
     Compute disp min and disp max from triangulated and filtered matches
 
-    :param sensor_image_right:
+    :param sensor_image_right: sensor image right
     :type sensor_image_right: CarsDataset
-    :param sensor_image_left:
+    :param sensor_image_left: sensor image left
     :type sensor_image_left: CarsDataset
-    :param new_epipolar_image_left:
-    :type new_epipolar_image_left: CarsDataset
-    :param new_epipolar_image_right:
-    :type new_epipolar_image_right: CarsDataset
-    :param grid_left:
-    :type grid_left: CarsDataset
-    :param corrected_grid_right:
+    :param grid_left: grid left
+    :type grid_left: CarsDataset CarsDataset
+    :param corrected_grid_right: corrected grid right
     :type corrected_grid_right: CarsDataset
+    :param grid_right: uncorrected grid right
+    :type grid_right: CarsDataset
     :param matches: matches
     :type matches: np.ndarray
-    :param orchestrator: orchestrator : used for info writing
-    :type orchestrator: 
-    :param geometry_loader:
-    :type geometry_loader:
-    :param srtm_dir:
-    :type srtm_dir:
-    :param disparity_margin: disparity margin
-    :type disparity_margin: float
+    :param orchestrator: orchestrator used
+    :type orchestrator: Orchestrator
+    :param geometry_loader: geometry loader to use
+    :type geometry_loader: str
+    :param srtm_dir: srtm directory
+    :type srtm_dir: str
+    :param default_alt: default altitude
+    :type default_alt: float
+    :param pair_folder: folder used for current pair
+    :type pair_folder: str
+    :param disp_margin: disparity margin
+    :type disp_margin: float
     :param disp_to_alt_ratio: used for logging info
     :type disp_to_alt_ratio: float
 
@@ -714,23 +719,21 @@ def compute_disp_min_disp_max(sensor_image_right,
     :rtype: float, float
     """
     input_stereo_cfg = (
-            preprocessing.create_former_cars_post_prepare_configuration(
-                sensor_image_left,
-                sensor_image_right,
-                grid_left,
-                corrected_grid_right,
-                pair_folder,
-                uncorrected_grid_right=grid_right,
-                srtm_dir=srtm_dir,
-                default_alt=default_alt,
-                disp_min=None,
-                disp_max=None,
-            )
+        preprocessing.create_former_cars_post_prepare_configuration(
+            sensor_image_left,
+            sensor_image_right,
+            grid_left,
+            corrected_grid_right,
+            pair_folder,
+            uncorrected_grid_right=grid_right,
+            srtm_dir=srtm_dir,
+            default_alt=default_alt,
         )
+    )
 
     point_cloud = triangulation_tools.triangulate_matches(
-            geometry_loader, input_stereo_cfg, matches
-        )         
+        geometry_loader, input_stereo_cfg, matches
+    )
 
     # compute epsg
     epsg = preprocessing.compute_epsg(
@@ -750,13 +753,7 @@ def compute_disp_min_disp_max(sensor_image_right,
     projection.points_cloud_conversion_dataset(point_cloud, epsg)
 
     # Convert point cloud to pandas format to allow statistical filtering
-    labels = [
-            cst.X,
-            cst.Y,
-            cst.Z,
-            cst.DISPARITY,
-            cst.POINTS_CLOUD_CORR_MSK
-        ]
+    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINTS_CLOUD_CORR_MSK]
     cloud_array = []
     cloud_array.append(point_cloud[cst.X].data)
     cloud_array.append(point_cloud[cst.Y].data)
@@ -764,23 +761,23 @@ def compute_disp_min_disp_max(sensor_image_right,
     cloud_array.append(point_cloud[cst.DISPARITY].data)
     cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].data)
     pd_cloud = pandas.DataFrame(
-            np.transpose(np.array(cloud_array)[:,:,0]), columns=labels
+        np.transpose(np.array(cloud_array)[:, :, 0]), columns=labels
     )
 
     # Statistical filtering
-    filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(pd_cloud, k = 25, 
-                                    std_factor = 3.0)
+    filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(
+        pd_cloud, k=25, std_factor=3.0
+    )
 
     # Obtain dmin dmax
     filt_disparity = np.array(filter_cloud.iloc[:, 3])
     dmax = np.max(filt_disparity)
-    dmin = np.min(filt_disparity) 
-                          
-  
-    margin = abs(dmax - dmin) * disparity_margin
+    dmin = np.min(filt_disparity)
+
+    margin = abs(dmax - dmin) * disp_margin
     dmin -= margin
     dmax += margin
-    
+
     logging.info(
         "Disparity range with margin: [{:.3f} pix., {:.3f} pix.] "
         "(margin = {:.3f} pix.)".format(dmin, dmax, margin)
@@ -801,9 +798,9 @@ def compute_disp_min_disp_max(sensor_image_right,
         application_constants.APPLICATION_TAG: {
             pair_key: {
                 dense_match_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
-                    dense_match_cst.DISPARITY_MARGIN_PARAM_TAG: disparity_margin,
+                    dense_match_cst.DISPARITY_MARGIN_PARAM_TAG: disp_margin,
                     dense_match_cst.MINIMUM_DISPARITY_TAG: dmin,
-                    dense_match_cst.MAXIMUM_DISPARITY_TAG: dmax
+                    dense_match_cst.MAXIMUM_DISPARITY_TAG: dmax,
                 }
             }
         }
@@ -811,6 +808,3 @@ def compute_disp_min_disp_max(sensor_image_right,
     orchestrator.update_out_info(updating_infos)
 
     return dmin, dmax
-
-
-

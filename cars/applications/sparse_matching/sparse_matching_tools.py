@@ -27,15 +27,9 @@ contains sift sparse matching method
 from __future__ import absolute_import
 
 import logging
-import os
 
 # Third party imports
 import numpy as np
-
-import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
-import cars.orchestrator.orchestrator as ocht
-from cars.applications import application_constants
-from cars.core.utils import safe_makedirs
 
 # CARS imports
 from cars.externals import otb_pipelines
@@ -151,5 +145,3 @@ def compute_disparity_range(matches, percent=0.1):
     maxdisp = np.percentile(disparity, 100 - percent)
 
     return mindisp, maxdisp
-
-

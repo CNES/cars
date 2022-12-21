@@ -212,7 +212,6 @@ class Sift(SparseMatching, short_name="sift"):
 
         return self.save_matches
 
-
     def get_disp_out_reject_percent(self):
         """
         Get disparity_outliers_rejection_percent

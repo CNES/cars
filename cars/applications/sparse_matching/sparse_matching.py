@@ -93,7 +93,6 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
 
         super().__init__(conf=conf)
 
-
     @abstractmethod
     def get_disp_out_reject_percent(self):
         """

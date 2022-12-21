@@ -270,7 +270,6 @@ class CensusMccnnSgm(
 
         return opt_epipolar_tile_size
 
-
     def get_disparity_margin(self):
         """
         Get disparity margin corresponding to sparse matches
@@ -279,7 +278,6 @@ class CensusMccnnSgm(
 
         """
         return self.disparity_margin
-
 
     def run(
         self,

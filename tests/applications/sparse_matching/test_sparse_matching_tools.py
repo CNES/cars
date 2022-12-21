@@ -124,23 +124,3 @@ def test_remove_epipolar_outliers():
 
     nb_filtered_points = matches.shape[0] - matches_filtered.shape[0]
     assert nb_filtered_points == 2
-
-
-@pytest.mark.unit_tests
-def test_compute_disparity_range():
-    """
-    Test compute disparity range function
-    """
-    matches_file = absolute_data_path(
-        "input/preprocessing_input/matches_reunion.npy"
-    )
-
-    matches = np.load(matches_file)
-
-    matches_filtered = sparse_matching_tools.remove_epipolar_outliers(matches)
-    dispmin, dispmax = sparse_matching_tools.compute_disparity_range(
-        matches_filtered
-    )
-
-    assert dispmin == -3.1239416122436525
-    assert dispmax == 3.820396270751972

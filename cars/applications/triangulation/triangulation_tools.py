@@ -217,7 +217,6 @@ def triangulate_matches(
     )
     point_cloud.attrs[cst.EPSG] = int(4326)
 
-
     return point_cloud
 
 
