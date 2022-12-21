@@ -1,0 +1,26 @@
+jobqueue:
+  pbs:
+    name: cars-dask-worker      # Name of dask worker (set to PBS JOB NAME)
+
+    # Dask worker options
+    cores: null                 # Total number of cores per job
+    memory: null                # Total amount of memory per job
+    processes: null             # Number of Python processes per job
+
+    interface: null             # Network interface to use like eth0 or ib0
+    death-timeout: 3000         # Number of seconds to wait if a worker can not find a scheduler
+    local-directory: null       # Location of fast local storage like /scratch or $TMPDIR
+    extra: []                   # Additional arguments to pass to `dask-worker`
+
+    # PBS resource manager options
+    shebang: "#!/usr/bin/env bash"  # Path to desired interpreter for your batch submission script.
+    queue: null                     # PBS queue by default. Take the one specified in PBSCluster() first
+    project: null                   # PBS project name in ACCOUNT information
+    walltime: '00:59:00'            # PBS walltime by default.
+    env-extra: []                   # PBS environnements to pass to workers
+    resource-spec: null             # Resource string for PBS cpu and memory by default
+    job-extra: []                   # ?
+    log-directory: null             # Log directory by default
+
+    # Scheduler options
+    scheduler-options: {}           # Used to pass additional arguments to Dask Scheduler.
