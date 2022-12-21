@@ -260,10 +260,10 @@ def compute_points_cloud(
     col = np.array(range(data.attrs[roi_key][0], data.attrs[roi_key][2]))
 
     # apply no_data to X,Y and Z point cloud
-    index = np.where(data[cst_disp.VALID].values == 0)
-    llh[:, :, 0][index] = np.nan
-    llh[:, :, 1][index] = np.nan
-    llh[:, :, 2][index] = np.nan
+    nodata_index = np.where(data[cst_disp.VALID].values == 0)
+    llh[:, :, 0][nodata_index] = np.nan
+    llh[:, :, 1][nodata_index] = np.nan
+    llh[:, :, 2][nodata_index] = np.nan
 
     values = {
         cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
@@ -319,28 +319,10 @@ def compute_points_cloud(
             worker_logger.warning("No mask is present in the image dataset")
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
+
     # add color
-    nb_bands = 1
     if cst.EPI_COLOR in data:
-        color = data[cst.EPI_COLOR].values
-        if len(color.shape) > 2:
-            nb_bands = color.shape[0]
-            if nb_bands == 1:
-                color = color[0, :, :]
-
-        if nb_bands > 1:
-            if cst.BAND not in point_cloud.dims:
-                point_cloud.assign_coords({cst.BAND: np.arange(nb_bands)})
-
-            point_cloud[cst.EPI_COLOR] = xr.DataArray(
-                color,
-                dims=[cst.BAND, cst.ROW, cst.COL],
-            )
-        else:
-            point_cloud[cst.EPI_COLOR] = xr.DataArray(
-                color,
-                dims=[cst.ROW, cst.COL],
-            )
+        add_color(data[cst.EPI_COLOR].values, nodata_index, point_cloud)
 
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     if roi_key == cst.ROI_WITH_MARGINS:
@@ -351,6 +333,39 @@ def compute_points_cloud(
     point_cloud.attrs[cst.EPSG] = int(4326)
 
     return point_cloud
+
+
+def add_color(color, nodata_index, point_cloud):
+    """
+    Add color point cloud to point cloud dataset
+
+    :param data: color point cloud
+    :param nodata_index: nodata index array
+    :param point_cloud: point cloud dataset
+    """
+    nb_bands = 1
+    if len(color.shape) > 2:
+        nb_bands = color.shape[0]
+        for k in range(nb_bands):
+            color[k, :, :][nodata_index] = np.nan
+        if nb_bands == 1:
+            color = color[0, :, :]
+    else:
+        color[:, :][nodata_index] = np.nan
+
+    if nb_bands > 1:
+        if cst.BAND not in point_cloud.dims:
+            point_cloud.assign_coords({cst.BAND: np.arange(nb_bands)})
+
+        point_cloud[cst.EPI_COLOR] = xr.DataArray(
+            color,
+            dims=[cst.BAND, cst.ROW, cst.COL],
+        )
+    else:
+        point_cloud[cst.EPI_COLOR] = xr.DataArray(
+            color,
+            dims=[cst.ROW, cst.COL],
+        )
 
 
 def geoid_offset(points, geoid):

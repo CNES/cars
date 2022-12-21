@@ -71,22 +71,17 @@ def convert_pcl_to_laz(point_clouds, output_filename: str):
             array = point_clouds[name].to_numpy()
             # first step : define np.ndarray to contains the arrays X,Y,Z
             if arrays_pcl is None:
-                valid = np.nonzero(array.reshape(-1).T)
-                arrays_pcl = np.ndarray(
-                    (3, array.reshape(-1).T[valid].shape[0])
-                )
+                arrays_pcl = np.ndarray((3, array.reshape(-1).T.shape[0]))
             # get only valid pixels
-            array = array.reshape(-1).T[valid]
+            array = array.reshape(-1).T
 
             # get layer into np.ndarray (laspy accept only XYZ in upper case)
             arrays_pcl[band_index[name.upper()]] = array
         elif name in ["clr0", "clr1", "clr2"]:
             array = point_clouds[name].to_numpy()
             if arrays_color is None:
-                arrays_color = np.ndarray(
-                    (3, array.reshape(-1).T[valid].shape[0])
-                )
-            array = array.reshape(-1).T[valid]
+                arrays_color = np.ndarray((3, array.reshape(-1).T.shape[0]))
+            array = array.reshape(-1).T
             maxi = 65535
             if color_type:
                 if np.issubdtype(np.dtype(color_type), np.integer):
