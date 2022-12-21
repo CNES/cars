@@ -145,5 +145,3 @@ def compute_disparity_range(matches, percent=0.1):
     maxdisp = np.percentile(disparity, 100 - percent)
 
     return mindisp, maxdisp
-
-

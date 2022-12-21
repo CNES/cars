@@ -46,9 +46,10 @@ from cars.applications import application_constants
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
 )
-from cars.applications import application_constants
+from cars.applications.point_cloud_outliers_removing import (
+    outlier_removing_tools,
+)
 from cars.applications.triangulation import triangulation_tools
-from cars.applications.point_cloud_outliers_removing import outlier_removing_tools
 from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
