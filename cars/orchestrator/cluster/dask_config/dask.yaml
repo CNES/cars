@@ -1,0 +1,20 @@
+temporary-directory: null  # Directory for local disk like /tmp, /scratch, or /local. null -> local dask-worker-space directory.
+
+dataframe:
+  shuffle-compression: null  # compression for on disk-shuffling. Partd supports ZLib, BZ2, SNAPPY, BLOSC
+
+array:
+  svg:
+    size: 120  # pixels for jupyter notebook array rendering
+  slicing:
+    split-large-chunks: null  # How to handle large output chunks in slicing. Warns by default.
+
+optimization:
+  fuse:  # Options for Dask's task fusion optimizations
+    active: true
+    ave-width: 1  # Upper limit for width, where width = num_nodes / height
+    max-width: null  # 1.5 + ave_width * log(ave_width + 1)
+    max-height: .inf # Fuse all possibilities
+    max-depth-new-edges: null  # ave_width * 1.5
+    subgraphs: null  # true for dask.dataframe, false for everything else.  Set to null to let the default optimizer of individual dask collections decide.
+    rename-keys: true # Set to true to rename the fused keys with `default_fused_keys_renamer`. Can be costly.
