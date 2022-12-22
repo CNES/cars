@@ -602,7 +602,9 @@ def test_end2end_use_epipolar_a_prior():
                     "mode": "time",
                     "loop_testing": False,
                 },
-                "use_memory_logger": True,
+                "use_memory_logger": False,
+                "activate_dashboard": False,
+                "max_ram_per_worker": 2000,
                 "config_name": "unknown",
             }
         }
