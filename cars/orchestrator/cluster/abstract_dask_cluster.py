@@ -321,7 +321,7 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         # Measure plugin registration time
         self.start_time = time.time()
         # Data will hold the memory traces as numpy array
-        self.data = [[0, 0, 0, 0, 0, 0]]
+        self.data = [[0, 0, 0, 0]]
 
     def transition(self, key, start, finish, **kwargs):
         """
@@ -334,10 +334,8 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         worker_logger = logging.getLogger("distributed.worker")
 
         # Define cumulants
-        total_point_clouds_in_memory = 0
-        total_point_clouds_nbytes = 0
-        total_rasters_in_memory = 0
-        total_rasters_nbytes = 0
+        total_in_memory = 0
+        total_nbytes = 0
 
         # Measure elapsed time for the state change
         elapsed_time = time.time() - self.start_time
@@ -346,13 +344,8 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         for task_key in self.worker.state.tasks.keys():
             task_size = self.worker.state.tasks[task_key].get_nbytes()
 
-            # Sort between point clouds and rasters
-            if task_key.startswith("images_pair_to_3d_points"):
-                total_point_clouds_nbytes += task_size
-                total_point_clouds_in_memory += 1
-            else:
-                total_rasters_nbytes += task_size
-                total_rasters_in_memory += 1
+            total_in_memory += task_size
+            total_nbytes += 1
 
         # Use psutil to capture python process memory as well
         process = psutil.Process(os.getpid())
@@ -366,10 +359,8 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
                     [
                         [
                             elapsed_time,
-                            total_point_clouds_in_memory,
-                            total_point_clouds_nbytes,
-                            total_rasters_in_memory,
-                            total_rasters_nbytes,
+                            total_in_memory,
+                            total_nbytes,
                             process_memory,
                         ]
                     ]
@@ -377,19 +368,15 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
             )
         )
         # Convert nbytes size for logging
-        total_point_clouds_nbytes = float(total_point_clouds_nbytes) / 1000000
-        total_rasters_nbytes = float(total_rasters_nbytes) / 1000000
+        total_nbytes = float(total_nbytes) / 1000000
         process_memory = float(process_memory) / 1000000
 
         # Log memory state
         worker_logger.info(
-            "Memory report: point clouds = {} ({} Mb), "
-            "rasters = {} ({} Mb), "
+            "Memory report: data created = {} ({} Mb), "
             "python process memory = {} Mb".format(
-                total_point_clouds_in_memory,
-                total_point_clouds_nbytes,
-                total_rasters_in_memory,
-                total_rasters_nbytes,
+                total_in_memory,
+                total_nbytes,
                 process_memory,
             )
         )
@@ -397,6 +384,6 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         # Save data records in npy file
         # TODO: Save only every x seconds ?
         file = os.path.join(
-            self.outdir, "dask_log", "memory_" + self.name + ".npy"
+            self.outdir, "dask_log", "memory_" + repr(self.name) + ".npy"
         )
         np.save(file, self.data)
