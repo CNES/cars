@@ -226,12 +226,13 @@ def test_end2end_ventoux_unique():
                 "mode": "local_dask",
                 "walltime": "00:10:00",
                 "nb_workers": 4,
+                "activate_dashboard": False,
                 "profiling": {
                     "activated": False,
                     "mode": "time",
                     "loop_testing": False,
                 },
-                "use_memory_logger": True,
+                "use_memory_logger": False,
                 "config_name": "unknown",
             }
         }
