@@ -83,7 +83,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
 
 def start_cluster(
-        nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
+    nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
 ):
     """Create a Dask cluster.
 
