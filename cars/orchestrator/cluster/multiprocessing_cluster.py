@@ -155,13 +155,16 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         # Modify some env variables for memory  usage
         # TODO
-        # set OTB_MAX_RAM_HINT = total_ram / nb_worker or 4000 by default
+        # set max_ram_per_worker = total_ram / nb_worker or 4000 by default
         # set ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS = 1
 
         # Overload conf
         overloaded_conf["mode"] = conf.get("mode", "mp")
         nb_workers = conf.get("nb_workers", 2)
         overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
+        overloaded_conf["max_ram_per_worker"] = conf.get(
+            "max_ram_per_worker", 2000
+        )
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
         overloaded_conf["factorize_delayed"] = conf.get(
@@ -172,6 +175,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "mode": str,
             "dump_to_disk": bool,
             "nb_workers": int,
+            "max_ram_per_worker": Or(float, int),
             "per_job_timeout": Or(float, int),
             "factorize_delayed": bool,
             "profiling": {
