@@ -27,6 +27,7 @@ import logging
 import math
 import os
 import warnings
+from datetime import timedelta
 
 # Third party imports
 from dask.distributed import Client
@@ -84,24 +85,14 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 def start_cluster(
     nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
 ):
-    """
-    This function create a dask cluster.
-    Each worker has nb_cpus cpus.
-    Only one python process is started on each worker.
+    """Create a Dask cluster.
 
-    Threads number:
-    start_cluster will use OMP_NUM_THREADS environment variable to determine
-    how many threads might be used by a worker when running C/C++ code.
-    (default to 1)
+    Each worker will be spawned in an independent job with a single CPU
+    allocated to it, and will use a single process. This is done to maximize
+    CPU utilization and minimize scheduling delay.
 
-    Workers number:
-    start_cluster will use CARS_NB_WORKERS_PER_PBS_JOB environment variable
-    to determine how many workers should be started by a single PBS job.
-    (default to 1)
-
-    Queue worker:
-    start_cluster will use CARS_PBS_QUEUE to determine
-    in which queue worker jobs should be posted.
+    The CARS_PBS_QUEUE environment variable, if defined, is used to specify the
+    queue in which worker jobs are scheduled.
 
     :param nb_workers: Number of dask workers
     :type nb_workers: int
@@ -112,35 +103,53 @@ def start_cluster(
     :return: Dask cluster and dask client
     :rtype: (dask_jobqueue.PBSCluster, dask.distributed.Client) tuple
     """
-    # Retrieve multi-threading factor for C/C++ code if available
-    omp_num_threads = 1
-    if os.environ.get("OMP_NUM_THREADS"):
-        omp_num_threads = int(os.environ["OMP_NUM_THREADS"])
-
-    # Retrieve number of workers per PBS job
-    nb_workers_per_job = 1
-    if os.environ.get("CARS_NB_WORKERS_PER_PBS_JOB"):
-        nb_workers_per_job = int(os.environ["CARS_NB_WORKERS_PER_PBS_JOB"])
-
     # Retrieve PBS queue
-    pbs_queue = None
-    if os.environ.get("CARS_PBS_QUEUE"):
-        pbs_queue = os.environ["CARS_PBS_QUEUE"]
+    pbs_queue = os.environ.get("CARS_PBS_QUEUE")
 
-    # Total number of cpus is multi-threading factor times size of batch
-    # (number of workers per PBS job)
-    nb_cpus = nb_workers_per_job * omp_num_threads
+    # Configure worker distribution.
+    # Workers are mostly running single-threaded, GIL-holding functions, so we
+    # dedicate a single thread for each worker to maximize CPU utilization.
+    nb_threads_per_worker = 1
+
+    # Network latency is not the bottleneck, so we dedicate a single worker for
+    # each job in order to minimize the requested resources, which reduces our
+    # scheduling delay.
+    nb_workers_per_job = 1
+
+    # Total number of CPUs is multi-threading factor times size of batch
+    # (number of workers per job)
+    nb_cpus = nb_threads_per_worker * nb_workers_per_job
+    nb_jobs = int(math.ceil(nb_workers / nb_workers_per_job))
     # Cluster nodes have 5GB per core
     memory = nb_cpus * 5000
-    # Resource string for PBS
-    resource = "select=1:ncpus={}:mem={}mb".format(nb_cpus, memory)
 
-    nb_jobs = int(math.ceil(nb_workers / nb_workers_per_job))
+    # Configure worker lifetime for adaptative scaling.
+    # See https://jobqueue.dask.org/en/latest/advanced-tips-and-tricks.html
+    hours, minutes, seconds = map(int, walltime.split(":"))
+    lifetime = timedelta(seconds=3600 * hours + 60 * minutes + seconds)
+    # Use hardcoded stagger of 3 minutes. The actual lifetime will be selected
+    # uniformly at random between lifetime +/- stagger.
+    stagger = timedelta(minutes=3)
+    # Add some margin to not get killed by scheduler during worker shutdown.
+    shutdown_margin = timedelta(minutes=2)
+    min_walltime = stagger + shutdown_margin
+    lifetime_with_margin = lifetime - min_walltime
+    if lifetime_with_margin.total_seconds() < 0:
+        min_walltime_minutes = min_walltime.total_seconds() / 60
+        logging.warning(
+            "Could not add worker lifetime margin because specified walltime "
+            "is too short. Workers might get killed by PBS before they can "
+            "cleanly exit, which might break adaptative scaling. Please "
+            "specify a lifetime greater than {} minutes.".format(
+                min_walltime_minutes
+            )
+        )
+        lifetime_with_margin = lifetime
 
     logging.info(
         "Starting Dask PBS cluster with {} workers "
-        "({} workers with {} cores each per PSB job)".format(
-            nb_workers, nb_workers_per_job, omp_num_threads
+        "({} workers with {} cores each per PBS job)".format(
+            nb_workers, nb_workers_per_job, nb_threads_per_worker
         )
     )
 
@@ -180,19 +189,24 @@ def start_cluster(
     cluster = PBSCluster(
         processes=nb_workers_per_job,
         cores=nb_workers_per_job,
-        resource_spec=resource,
-        memory="{}MB".format(memory),
+        memory="{}MiB".format(memory),
         local_directory=local_directory,
-        project="dask-test",
+        account="dask-test",
         walltime=walltime,
         interface="ib0",
         queue=pbs_queue,
-        env_extra=envs,
+        job_script_prologue=envs,
         log_directory=log_directory,
+        worker_extra_args=[
+            "--lifetime",
+            f"{int(lifetime_with_margin.total_seconds())}s",
+            "--lifetime-stagger",
+            f"{int(stagger.total_seconds())}s",
+        ],
         scheduler_options=scheduler_options,
     )
     logging.info("Dask cluster started")
-    cluster.scale(nb_workers)
+    cluster.adapt(minimum=nb_workers, maximum=nb_workers)
     client = Client(cluster, timeout=timeout)
     logging.info("Dashboard started at {}".format(get_dashboard_link(cluster)))
     return cluster, client
