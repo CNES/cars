@@ -26,7 +26,6 @@ This module is responsible for the dense matching algorithms:
 # Standard imports
 import logging
 from typing import Dict, List
-import pandas
 
 # Third party imports
 import numpy as np
