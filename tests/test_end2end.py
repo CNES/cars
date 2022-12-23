@@ -527,7 +527,11 @@ def test_end2end_use_epipolar_a_prior():
             directory,
             "sensor_to_low_resolution_dsm",
             "local_dask",
-            orchestrator_parameters={"walltime": "00:10:00", "nb_workers": 4},
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -604,7 +608,7 @@ def test_end2end_use_epipolar_a_prior():
                 },
                 "use_memory_logger": False,
                 "activate_dashboard": False,
-                "max_ram_per_worker": 2000,
+                "max_ram_per_worker": 1000,
                 "config_name": "unknown",
             }
         }
