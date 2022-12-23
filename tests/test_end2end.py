@@ -1336,54 +1336,68 @@ def test_end2end_quality_stats():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #       absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/
+        #       dsm_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      clr_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_mean.tif'),
-        #      absolute_data_path("ref_output/dsm_mean_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      dsm_mean_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_std.tif'),
-        #      absolute_data_path("ref_output/dsm_std_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      dsm_std_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_n_pts.tif'),
         #      absolute_data_path(
-        #      "ref_output/dsm_n_pts_end2end_ventoux.tif"))
+        #      "ref_output/dsm_n_pts_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_pts_in_cell.tif'),
         #      absolute_data_path(
-        #      "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"))
+        #      "ref_output/dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/clr_end2end_ventoux_quality_stats.tif"
+            ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_mean.tif"),
-            absolute_data_path("ref_output/dsm_mean_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_mean_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_std.tif"),
-            absolute_data_path("ref_output/dsm_std_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_std_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_n_pts.tif"),
-            absolute_data_path("ref_output/dsm_n_pts_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_n_pts_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_pts_in_cell.tif"),
             absolute_data_path(
-                "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"
+                "ref_output/dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -1466,10 +1480,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -16
-            assert out_disp_compute["minimum_disparity"] < -13
-            assert out_disp_compute["maximum_disparity"] > 8
-            assert out_disp_compute["maximum_disparity"] < 11
+            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["maximum_disparity"] > 14
+            assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(out_disp_compute["matches"])
 
@@ -1477,7 +1491,7 @@ def test_end2end_ventoux_egm96_geoid():
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #      absolute_data_path("ref_output/dsm_end2end_ventoux_egm96.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #       absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -1487,7 +1501,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -1558,7 +1572,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
