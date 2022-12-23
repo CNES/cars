@@ -71,8 +71,6 @@ def correct_grid(grid, grid_correction):
     # Compute corresponding point in sensor geometry (grid encodes (x_sensor -
     # x_epi,y_sensor - y__epi)
     source_points = right_grid
-    source_points[:, :, 0] += x_values_2d
-    source_points[:, :, 1] += y_values_2d
 
     # Interpolate the regression model at grid position
     correction_grid_x = np.polynomial.polynomial.polyval2d(
@@ -83,8 +81,8 @@ def correct_grid(grid, grid_correction):
     )
 
     # Compute corrected grid
-    corrected_grid_x = source_points[:, :, 0] - correction_grid_x - x_values_2d
-    corrected_grid_y = source_points[:, :, 1] - correction_grid_y - y_values_2d
+    corrected_grid_x = source_points[:, :, 0] - correction_grid_x
+    corrected_grid_y = source_points[:, :, 1] - correction_grid_y
     corrected_right_grid = np.stack(
         (corrected_grid_x, corrected_grid_y), axis=2
     )

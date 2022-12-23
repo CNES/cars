@@ -94,14 +94,11 @@ def cars_otb_build(command_subclass):
 # Apply same cars specific setup decorator to custom setup commands:
 #   build_py used in pip editable install -e . and pip standard install .
 
+
 @cars_otb_build
 class CustomBuildPyCommand(build_py):
-     pass
+    pass
 
 
 # Setup with setup.cfg config
-setup(
-    cmdclass={
-        "build_py": CustomBuildPyCommand
-    }
-)
+setup(cmdclass={"build_py": CustomBuildPyCommand})

@@ -29,6 +29,8 @@ import json
 import logging
 import os
 
+import numpy as np
+
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -100,6 +102,9 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         # Used conf
         self.used_conf = {}
 
+        # Prepared config full res
+        self.config_full_res = {}
+
         # Pipeline
         self.used_conf[PIPELINE] = "sensor_to_low_resolution_dsm"
 
@@ -132,6 +137,10 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             os.path.join(out_dir, "used_conf.json"),
             safe_save=True,
         )
+        self.config_full_res = self.used_conf.copy()
+        self.config_full_res[PIPELINE] = "sensor_to_full_resolution_dsm"
+        self.config_full_res.__delitem__("applications")
+        self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -147,7 +156,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
         return sensors_inputs.sensors_check_inputs(
-            conf, config_json_dir=config_json_dir
+            conf, config_json_dir=config_json_dir, check_epipolar_a_priori=False
         )
 
     def check_output(self, conf):
@@ -406,6 +415,12 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     save_matches=self.sparse_matching_app.get_save_matches(),
                 )
 
+                # Update full res pipeline configuration
+                # with grid correction and disparity range
+                self.update_full_res_conf(
+                    grid_correction_coef, dmin, dmax, pair_key
+                )
+
                 if epsg is None:
                     # compute epsg
                     epsg = preprocessing.compute_epsg(
@@ -495,7 +510,12 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                 list_epipolar_points_cloud_right.append(
                     epipolar_points_cloud_right
                 )
-
+            # Save the refined full res pipeline configuration
+            cars_dataset.save_dict(
+                self.config_full_res,
+                os.path.join(out_dir, "refined_config_full_res.json"),
+                safe_save=True,
+            )
             # compute terrain bounds
             (
                 terrain_bounds,
@@ -523,6 +543,34 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                 epsg,
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
-                    out_dir, self.output[sens_cst.DSM_BASENAME]
+                    self.used_conf[OUTPUT]["out_dir"],
+                    self.output[sens_cst.DSM_BASENAME],
                 ),
             )
+
+    def update_full_res_conf(self, grid_correction_coef, dmin, dmax, pair_key):
+        """
+        Update the ful res conf with grid correction and disparity range
+        :param grid_correction_coef: grid correction coefficient
+        :type grid_correction_coef: list
+        :param dmin: disparity range minimum
+        :type dmin: float
+        :param dmax: disparity range maximum
+        :type dmax: float
+        :param pair_key: name of the inputs key pair
+        :type pair_key: str
+        """
+        self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key] = {}
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
+            "grid_correction"
+        ] = (
+            np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
+            + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
+        )
+        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
+            "disparity_range"
+        ] = [
+            dmin,
+            dmax,
+        ]

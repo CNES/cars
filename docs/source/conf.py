@@ -55,7 +55,7 @@ extensions = [
     "sphinx.ext.mathjax",  # Add rst math capabilities with :math:
     "autoapi.extension",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
-    'sphinx_tabs.tabs'
+    "sphinx_tabs.tabs",
 ]
 
 # Autoapi apidoc configuration

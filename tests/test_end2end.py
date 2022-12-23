@@ -510,6 +510,258 @@ def test_end2end_ventoux_unique():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_use_epipolar_a_prior():
+    """
+    End to end processing low res pipeline
+    and use prepared refined full res conf
+    to compute the full res pipeline
+    """
+    # Force max RAM to 1000 to get stable tiling in tests
+    os.environ["OTB_MAX_RAM_HINT"] = "1000"
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        # Run low resolution pipeline
+        _, input_config_low_res = generate_input_json(
+            input_json,
+            directory,
+            "sensor_to_low_resolution_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": True,
+            },
+        }
+
+        input_config_low_res["applications"].update(application_config)
+        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
+            input_config_low_res
+        )
+        low_res_pipeline.run()
+
+        out_dir = input_config_low_res["output"]["out_dir"]
+
+        # Check preproc properties
+        out_json = os.path.join(out_dir, "content.json")
+        assert os.path.isfile(out_json)
+
+        with open(out_json, "r", encoding="utf-8") as json_file:
+            out_json = json.load(json_file)
+            assert (
+                out_json["applications"]["left_right"]["grid_generation_run"][
+                    "epipolar_size_x"
+                ]
+                == 612
+            )
+            assert (
+                out_json["applications"]["left_right"]["grid_generation_run"][
+                    "epipolar_size_y"
+                ]
+                == 612
+            )
+            assert (
+                -20
+                < out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["minimum_disparity"]
+                < -18
+            )
+            assert (
+                14
+                < out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["maximum_disparity"]
+                < 15
+            )
+
+            # check matches file exists
+            assert os.path.isfile(
+                out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["matches"]
+            )
+
+        # Check used_conf for low res
+
+        gt_used_conf_orchestrator = {
+            "orchestrator": {
+                "mode": "local_dask",
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "profiling": {
+                    "activated": False,
+                    "mode": "time",
+                    "loop_testing": False,
+                },
+                "use_memory_logger": False,
+                "activate_dashboard": False,
+                "max_ram_per_worker": 1000,
+                "config_name": "unknown",
+            }
+        }
+
+        used_conf_path = os.path.join(out_dir, "used_conf.json")
+
+        # check refined_config_full_res_json file exists
+        assert os.path.isfile(used_conf_path)
+
+        with open(used_conf_path, "r", encoding="utf-8") as json_file:
+            used_conf = json.load(json_file)
+            # check used_conf inputs conf exists
+            assert "inputs" in used_conf
+            assert "sensors" in used_conf["inputs"]
+            # check used_conf pipeline
+            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            # check used_conf sparse_matching configuration
+            assert (
+                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                == 0.25
+            )
+            # check used_conf orchestrator conf is the same as gt
+            assert (
+                used_conf["orchestrator"]
+                == gt_used_conf_orchestrator["orchestrator"]
+            )
+            # check used_conf reentry
+            _ = pipeline_low_res.SensorToLowResolutionDsmPipeline(used_conf)
+
+        refined_config_full_res_json = os.path.join(
+            out_dir, "refined_config_full_res.json"
+        )
+        assert os.path.isfile(refined_config_full_res_json)
+        with open(
+            refined_config_full_res_json, "r", encoding="utf-8"
+        ) as json_file:
+            refined_config_full_res_json = json.load(json_file)
+            # check refined_config_full_res_json inputs conf exists
+            assert "inputs" in refined_config_full_res_json
+            assert "sensors" in refined_config_full_res_json["inputs"]
+            # check refined_config_full_res_json pipeline
+            assert (
+                refined_config_full_res_json["pipeline"]
+                == "sensor_to_full_resolution_dsm"
+            )
+            # check refined_config_full_res_json sparse_matching configuration
+            assert (
+                "use_epipolar_a_priori"
+                in refined_config_full_res_json["inputs"]
+            )
+            assert (
+                refined_config_full_res_json["inputs"]["use_epipolar_a_priori"]
+                is True
+            )
+            assert "epipolar_a_priori" in refined_config_full_res_json["inputs"]
+            assert (
+                "grid_correction"
+                in refined_config_full_res_json["inputs"]["epipolar_a_priori"][
+                    "left_right"
+                ]
+            )
+            # check if orchestrator conf is the same as gt
+            assert (
+                refined_config_full_res_json["orchestrator"]
+                == gt_used_conf_orchestrator["orchestrator"]
+            )
+
+        # clean outdir
+        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
+
+        # full resolution pipeline
+        input_config_full_res = refined_config_full_res_json.copy()
+        # update applications
+        input_config_full_res["applications"] = input_config_low_res[
+            "applications"
+        ]
+        full_res_applications = {
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": 0.5,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+            },
+            "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
+        }
+        input_config_full_res["applications"].update(full_res_applications)
+        # update epsg
+        input_config_full_res["inputs"]["epsg"] = 32631
+        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
+            input_config_full_res
+        )
+        full_res_pipeline.run()
+
+        out_dir = input_config_low_res["output"]["out_dir"]
+
+        # Check used_conf for full res
+        used_conf_path = os.path.join(out_dir, "used_conf.json")
+
+        # check used_conf file exists
+        assert os.path.isfile(used_conf_path)
+
+        with open(used_conf_path, "r", encoding="utf-8") as json_file:
+            used_conf = json.load(json_file)
+            # check used_conf inputs conf exists
+            assert "inputs" in used_conf
+            assert "sensors" in used_conf["inputs"]
+            # check used_conf pipeline
+            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            # check used_conf sparse_matching configuration
+            assert (
+                used_conf["applications"]["point_cloud_rasterization"]["sigma"]
+                == 0.3
+            )
+            # check used_conf orchestrator conf is the same as gt
+            assert (
+                used_conf["orchestrator"]
+                == gt_used_conf_orchestrator["orchestrator"]
+            )
+            # check used_conf reentry
+            _ = pipeline_full_res.SensorToFullResolutionDsmPipeline(used_conf)
+        # Uncomment the 2 following instructions to update reference data
+        # copy2(os.path.join(out_dir, 'dsm.tif'),
+        #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        # copy2(os.path.join(out_dir, 'clr.tif'),
+        #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        # copy2(
+        #     os.path.join(out_dir, "ambiguity.tif"),
+        #     absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+        # )
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "ambiguity.tif"),
+            absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+
+
+@pytest.mark.end2end_tests
 def test_prepare_ventoux_bias():
     """
     Dask prepare with bias geoms

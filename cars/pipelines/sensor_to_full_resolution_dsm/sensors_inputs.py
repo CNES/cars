@@ -42,7 +42,9 @@ from cars.pipelines.sensor_to_full_resolution_dsm import (
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
 
-def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
+def sensors_check_inputs(  # noqa: C901
+    conf, config_json_dir=None, check_epipolar_a_priori=True
+):
     """
     Check the inputs given
 
@@ -64,6 +66,19 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     overloaded_conf[sens_cst.CHECK_INPUTS] = conf.get(
         sens_cst.CHECK_INPUTS, False
     )
+
+    if check_epipolar_a_priori:
+        # Check conf use_epipolar_a_priori
+        overloaded_conf["use_epipolar_a_priori"] = conf.get(
+            "use_epipolar_a_priori", False
+        )
+        # Retrieve epipolar_a_priori if it is provided
+        if "epipolar_a_priori" in conf:
+            overloaded_conf["epipolar_a_priori"] = conf.get(
+                "epipolar_a_priori", {}
+            )
+        else:
+            overloaded_conf["epipolar_a_priori"] = {}
 
     if "geoid" not in overloaded_conf:
         # use cars geoid
@@ -88,9 +103,20 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.CHECK_INPUTS: bool,
         sens_cst.GEOID: Or(None, str),
     }
+    if check_epipolar_a_priori:
+        inputs_schema[sens_cst.USE_EPIPOLAR_A_PRIORI] = bool
+        inputs_schema[sens_cst.EPIPOLAR_A_PRIORI] = dict
 
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
+
+    # Validate epipolar schema
+    epipolar_schema = {
+        sens_cst.GRID_CORRECTION: Or(list, None),
+        sens_cst.DISPARITY_RANGE: list,
+    }
+
+    checker_epipolar = Checker(epipolar_schema)
 
     # Validate each sensor image
     sensor_schema = {
@@ -188,6 +214,12 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
                 sens_cst.INPUT_MSK_CLASSES
             ]
         )
+    # check epipolar a priori for each image pair
+    if (
+        check_epipolar_a_priori
+        and overloaded_conf[sens_cst.USE_EPIPOLAR_A_PRIORI]
+    ):
+        validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar)
 
     # Validate pairs
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
@@ -200,25 +232,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
 
     # Modify to absolute path
     if config_json_dir is not None:
-        for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
-            sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
-            for tag in [
-                sens_cst.INPUT_IMG,
-                sens_cst.INPUT_MSK,
-                sens_cst.INPUT_GEO_MODEL,
-                sens_cst.INPUT_COLOR,
-            ]:
-                if sensor_image[tag] is not None:
-                    sensor_image[tag] = make_relative_path_absolute(
-                        sensor_image[tag], config_json_dir
-                    )
-
-        for tag in [sens_cst.INITIAL_ELEVATION, sens_cst.ROI, sens_cst.GEOID]:
-            if overloaded_conf[tag] is not None:
-                if isinstance(overloaded_conf[tag], str):
-                    overloaded_conf[tag] = make_relative_path_absolute(
-                        overloaded_conf[tag], config_json_dir
-                    )
+        modify_to_absolute_path(config_json_dir, overloaded_conf)
 
     else:
         logging.debug(
@@ -260,6 +274,54 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION])
 
     return overloaded_conf
+
+
+def modify_to_absolute_path(config_json_dir, overloaded_conf):
+    """
+    Modify input file path to absolute path
+
+    :param config_json_dir: directory of the json configuration
+    :type config_json_dir: str
+    :param overloaded_conf: overloaded configuration json
+    :dict overloaded_conf: dict
+    """
+    for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
+        sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
+        for tag in [
+            sens_cst.INPUT_IMG,
+            sens_cst.INPUT_MSK,
+            sens_cst.INPUT_GEO_MODEL,
+            sens_cst.INPUT_COLOR,
+        ]:
+            if sensor_image[tag] is not None:
+                sensor_image[tag] = make_relative_path_absolute(
+                    sensor_image[tag], config_json_dir
+                )
+
+    for tag in [sens_cst.INITIAL_ELEVATION, sens_cst.ROI, sens_cst.GEOID]:
+        if overloaded_conf[tag] is not None:
+            if isinstance(overloaded_conf[tag], str):
+                overloaded_conf[tag] = make_relative_path_absolute(
+                    overloaded_conf[tag], config_json_dir
+                )
+
+
+def validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar):
+    """
+    Validate inner epipolar configuration
+
+    :param conf : input configuration json
+    :type conf: dict
+    :param overloaded_conf : overloaded configuration json
+    :type overloaded_conf: dict
+    :param checker_epipolar : json checker
+    :type checker_epipolar: Checker
+    """
+
+    for key_image_pair in conf[sens_cst.EPIPOLAR_A_PRIORI]:
+        checker_epipolar.validate(
+            overloaded_conf[sens_cst.EPIPOLAR_A_PRIORI][key_image_pair]
+        )
 
 
 def check_roi(roi):
