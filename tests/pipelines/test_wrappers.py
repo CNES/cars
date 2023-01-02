@@ -24,9 +24,10 @@ Important : Uses conftest.py for shared pytest fixtures
 """
 
 
+import pickle
+
 # Third party imports
 import pytest
-import xarray as xr
 
 # CARS imports
 import cars.applications.dense_matching.dense_matching_tools as dense_match
@@ -186,11 +187,13 @@ def test_epipolar_pipeline(
         add_msk_info=True,
     )
 
-    # Uncomment to update baseline
-    # cloud[cst.STEREO_REF].to_netcdf(
-    # absolute_data_path("ref_output/cloud1_ref_pandora.nc"))
+    # Uncomment to update reference
+    # with open(absolute_data_path(
+    #                   "ref_output/cloud1_ref_pandora"),'wb') as left_pc_file:
+    #     pickle.dump(left_pc, left_pc_file)
 
-    ref = xr.open_dataset(
-        absolute_data_path("ref_output/cloud1_ref_pandora.nc")
-    )
-    assert_same_datasets(left_pc, ref, atol=1.0e-3)
+    with open(
+        absolute_data_path("ref_output/cloud1_ref_pandora"), "rb"
+    ) as left_pc_file:
+        ref_pc = pickle.load(left_pc_file)
+        assert_same_datasets(left_pc, ref_pc, atol=1.0e-3)

@@ -59,7 +59,7 @@ def test_triangulation_1(
     assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(
+    # point_cloud_dict[cst.STEREO_REF].to_netcdf(
     # absolute_data_path("ref_output/triangulation1_ref.nc"))
 
     ref = xr.open_dataset(
