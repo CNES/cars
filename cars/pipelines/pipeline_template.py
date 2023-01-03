@@ -76,6 +76,26 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         checker_inputs = Checker(global_schema)
         checker_inputs.validate(conf)
 
+    def merge_pipeline_conf(self, conf1, conf2):
+        """
+        Merge two pipeline dict
+
+        :param conf1: configuration
+        :type conf1: dict
+        :param conf2: configuration
+        :type conf2: dict
+
+        :return: merged conf
+        :rtype: dict
+
+        """
+
+        merged_dict = conf1.copy()
+
+        merge_pipeline_conf_rec(merged_dict, conf2)
+
+        return merged_dict
+
     @abstractmethod
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -117,3 +137,28 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
         Run pipeline
         """
+
+
+def merge_pipeline_conf_rec(conf1, conf2):
+    """
+    Merge two pipeline dict
+
+    :param conf1: configuration
+    :type conf1: dict
+    :param conf2: configuration
+    :type conf2: dict
+
+    :return: merged conf
+    :rtype: dict
+
+    """
+
+    for key in conf2.keys():
+        if key in conf1:
+            if isinstance(conf1[key], dict) and isinstance(conf2[key], dict):
+                merge_pipeline_conf_rec(conf1[key], conf2[key])
+            else:
+                conf1[key] = conf2[key]
+
+        else:
+            conf1[key] = conf2[key]
