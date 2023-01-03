@@ -179,6 +179,38 @@ def assert_same_images(actual, expected, rtol=0, atol=0):
             )
 
 
+def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
+    """
+    Compare two Carsdatasets:
+    """
+    assert (
+        list(actual.attributes.keys()).sort()
+        == list(expected.attributes.keys()).sort()
+    )
+    for key in expected.attributes.keys():
+        if isinstance(expected.attributes[key], np.ndarray):
+            np.testing.assert_allclose(
+                actual.attributes[key], expected.attributes[key]
+            )
+        else:
+            assert actual.attributes[key] == expected.attributes[key]
+
+    assert actual.shape == expected.shape
+    assert actual.tiling_grid.size == expected.tiling_grid.size
+    assert actual.overlaps.size == expected.overlaps.size
+    assert list(actual.tiling_grid).sort() == list(expected.tiling_grid).sort()
+    assert list(actual.overlaps).sort() == list(expected.overlaps).sort()
+    for idx, actual_tiles in enumerate(actual.tiles):
+        assert len(actual_tiles) == len(expected.tiles[idx])
+        for idx_tile, actual_tile in enumerate(actual_tiles):
+            np.testing.assert_allclose(
+                actual_tile,
+                expected.tiles[idx][idx_tile],
+                rtol,
+                atol,
+            )
+
+
 def assert_same_datasets(actual, expected, rtol=0, atol=0):
     """
     Compare two datasets:

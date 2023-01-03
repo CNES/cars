@@ -25,21 +25,37 @@ Test module for cars/steps/epi_rectif/test_grids.py
 # Standard imports
 from __future__ import absolute_import
 
+import os
+import pickle
+import tempfile
+
 # Third party imports
 import numpy as np
 import pytest
 import rasterio as rio
 import xarray as xr
 
+from cars import __version__
+from cars.applications.application import Application
 from cars.applications.grid_generation import grid_correction, grids
 from cars.applications.sparse_matching import sparse_matching_tools
 
 # CARS imports
 from cars.conf import input_parameters
 from cars.data_structures import cars_dataset
+from cars.orchestrator import orchestrator
+from cars.pipelines.sensor_to_full_resolution_dsm import (
+    sensor_full_res_dsm_constants as sens_cst,
+)
+from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 
 # CARS Tests imports
-from tests.helpers import absolute_data_path, get_geoid_path
+from tests.helpers import (
+    absolute_data_path,
+    assert_same_carsdatasets,
+    get_geoid_path,
+    temporary_dir,
+)
 
 
 @pytest.mark.unit_tests
@@ -253,3 +269,116 @@ def test_generate_epipolar_grids():
     )
     assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
     assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
+
+
+@pytest.mark.unit_tests
+def test_grid_generation():
+    """
+    Grid generation application test
+    """
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        conf = {}
+        conf["out_dir"] = directory
+        # Triangulation
+        epipolar_grid_generation_application = Application(
+            "grid_generation", cfg=conf.get("grid_generation", {})
+        )
+        orchestrator_conf = {"mode": "sequential", "max_ram_per_worker": 40}
+        orchestrator_conf["mode"] = "sequential"
+        input_conf = {
+            "sensors": {
+                "one": {
+                    "image": "img1.tif",
+                    "geomodel": "img1.geom",
+                    "no_data": 0,
+                },
+                "two": {
+                    "image": "img2.tif",
+                    "geomodel": "img2.geom",
+                    "no_data": 0,
+                },
+            },
+            "pairing": [["one", "two"]],
+            "initial_elevation": "srtm_dir",
+        }
+        inputs = sensors_inputs.sensors_check_inputs(
+            input_conf,
+            config_json_dir=absolute_data_path("input_test_application"),
+        )
+        with orchestrator.Orchestrator(
+            orchestrator_conf=orchestrator_conf
+        ) as cars_orchestrator:
+            # initialize out_json
+            cars_orchestrator.update_out_info({"version": __version__})
+            # load dictionary of cardatasets
+            with open(
+                absolute_data_path(
+                    os.path.join(
+                        "input", "test_application", "grid_generation_gizeh_ROI"
+                    )
+                ),
+                "rb",
+            ) as file:
+                # load pickle data
+                data = pickle.load(file)
+                # Run grid generation
+                (
+                    grid_left,
+                    grid_right,
+                ) = epipolar_grid_generation_application.run(
+                    data["sensor_image_left"],
+                    data["sensor_image_right"],
+                    orchestrator=cars_orchestrator,
+                    pair_folder=os.path.join(directory, "pair_0"),
+                    srtm_dir=inputs[sens_cst.INITIAL_ELEVATION],
+                    default_alt=inputs[sens_cst.DEFAULT_ALT],
+                    geoid_path=inputs[sens_cst.GEOID],
+                )
+                ref_data_path = absolute_data_path(
+                    os.path.join(
+                        "ref_output_application",
+                        "grid_generation",
+                        "grid_generation_gizeh_ROI_ref",
+                    )
+                )
+                # serialize reference data if needed
+                save_reference = True
+                if save_reference:
+                    serialize_ref_data(grid_left, grid_right, ref_data_path)
+                # load reference output data
+                with open(ref_data_path, "rb") as file:
+                    ref_data = pickle.load(file)
+                    assert_same_carsdatasets(
+                        grid_left,
+                        ref_data["grid_left"],
+                        atol=1.0e-5,
+                        rtol=1.0e-5,
+                    )
+                    assert_same_carsdatasets(
+                        grid_right,
+                        ref_data["grid_right"],
+                        atol=1.0e-5,
+                        rtol=1.0e-5,
+                    )
+
+
+def serialize_ref_data(grid_left, grid_right, ref_data_path):
+    """
+    Serialize reference data if needed with pickle
+    """
+    # cast C++ SwigObject to serializable(pickable) object
+    grid_left.attributes["grid_spacing"] = list(
+        grid_left.attributes["grid_spacing"]
+    )
+    grid_left.attributes["grid_origin"] = list(
+        grid_left.attributes["grid_origin"]
+    )
+    grid_right.attributes["grid_spacing"] = list(
+        grid_right.attributes["grid_spacing"]
+    )
+    grid_right.attributes["grid_origin"] = list(
+        grid_right.attributes["grid_origin"]
+    )
+    data_dict = {"grid_left": grid_left, "grid_right": grid_right}
+    with open(ref_data_path, "wb") as file:
+        pickle.dump(data_dict, file)
