@@ -19,8 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/pipelines/wrappers.py
-Important : Uses conftest.py for shared pytest fixtures
+Test module for cars/pipelines/pipeline_template
 """
 
 
