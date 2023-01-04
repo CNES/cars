@@ -279,6 +279,8 @@ def test_grid_generation():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {}
         conf["out_dir"] = directory
+        input_relative_path = os.path.join("input", "test_application")
+        input_path = absolute_data_path(input_relative_path)
         # Triangulation
         epipolar_grid_generation_application = Application(
             "grid_generation", cfg=conf.get("grid_generation", {})
@@ -303,7 +305,7 @@ def test_grid_generation():
         }
         inputs = sensors_inputs.sensors_check_inputs(
             input_conf,
-            config_json_dir=absolute_data_path("input_test_application"),
+            config_json_dir=input_path,
         )
         with orchestrator.Orchestrator(
             orchestrator_conf=orchestrator_conf
@@ -314,13 +316,14 @@ def test_grid_generation():
             with open(
                 absolute_data_path(
                     os.path.join(
-                        "input", "test_application", "grid_generation_gizeh_ROI"
+                        input_relative_path, "grid_generation_gizeh_ROI"
                     )
                 ),
                 "rb",
             ) as file:
                 # load pickle data
                 data = pickle.load(file)
+                adapt_path_for_test_dir(data, input_path, input_relative_path)
                 # Run grid generation
                 (
                     grid_left,
@@ -360,6 +363,18 @@ def test_grid_generation():
                         atol=1.0e-5,
                         rtol=1.0e-5,
                     )
+
+
+def adapt_path_for_test_dir(data, input_path, input_relative_path):
+    """
+    Adapt path of source for the test dir
+    """
+    for primary_key in data:
+        for key in data[primary_key]:
+            if isinstance(data[primary_key][key], str):
+                if input_relative_path in data[primary_key][key]:
+                    basename = os.path.basename(data[primary_key][key])
+                    data[primary_key][key] = os.path.join(input_path, basename)
 
 
 def serialize_ref_data(grid_left, grid_right, ref_data_path):
