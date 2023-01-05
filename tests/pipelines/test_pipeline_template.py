@@ -43,7 +43,9 @@ def test_merge_pipeline_conf():
 
     updated_conf = conf1.copy()
 
-    pipeline_temp.merge_pipeline_conf_rec(updated_conf, conf2)
+    pipeline_temp._merge_pipeline_conf_rec(  # pylint: disable=W0212
+        updated_conf, conf2
+    )
 
     vt_conf = {"a": "toto", "b": {"c": {"d": "titi"}, "e": "tota"}, "g": "tato"}
 
