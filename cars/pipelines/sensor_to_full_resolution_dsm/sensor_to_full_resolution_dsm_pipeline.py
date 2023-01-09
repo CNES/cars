@@ -92,8 +92,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         with open(json_file, "r", encoding="utf8") as fstream:
             pipeline_config = json.load(fstream)
 
-        self.conf = pipeline_config.copy()
-        self.conf.update(conf)
+        self.conf = self.merge_pipeline_conf(pipeline_config, conf)
 
         # check global conf
         self.check_global_schema(self.conf)
