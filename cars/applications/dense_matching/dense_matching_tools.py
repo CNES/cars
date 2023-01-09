@@ -48,42 +48,6 @@ from cars.core import constants_disparity as cst_disp
 from cars.core import datasets
 
 
-def create_inside_sec_roi_mask(
-    disp: np.ndarray, disp_msk: np.ndarray, sec_dataset: xr.Dataset
-) -> np.ndarray:
-    """
-    Create mask of disp values which are in the secondary image roi
-    (255 if in the roi, otherwise 0)
-
-    :param disp: disparity map
-    :param disp_msk: disparity map valid values mask
-    :param sec_dataset: secondary image dataset
-    :return: mask of valid pixels that are in the secondary image roi
-    """
-    # create mask of secondary image roi
-    sec_up_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][1])
-    sec_bottom_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][3])
-    sec_right_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][2])
-    sec_left_margin = abs(sec_dataset.attrs[cst.EPI_MARGINS][0])
-
-    # valid pixels that are inside the secondary image roi
-    in_sec_roi_msk = np.zeros(disp.shape, dtype=np.int16)
-    for i in range(0, disp.shape[0]):
-        for j in range(0, disp.shape[1]):
-            # if the pixel is valid
-            if disp_msk[i, j] == 255:
-                idx = float(j) + disp[i, j]
-
-                # if the pixel is in the roi in the secondary image
-                if (
-                    sec_left_margin <= idx < disp.shape[1] - sec_right_margin
-                    and sec_up_margin <= i < disp.shape[0] - sec_bottom_margin
-                ):
-                    in_sec_roi_msk[i, j] = 255
-
-    return in_sec_roi_msk
-
-
 def get_margins(disp_min, disp_max, corr_cfg):
     """
     Get margins for the dense matching steps
@@ -189,8 +153,6 @@ def add_color(
 def create_disp_dataset(
     disp: xr.Dataset,
     ref_dataset: xr.Dataset,
-    sec_dataset: xr.Dataset = None,
-    check_roi_in_sec: bool = False,
     compute_disparity_masks: bool = False,
 ) -> xr.Dataset:
     """
@@ -198,10 +160,6 @@ def create_disp_dataset(
 
     :param disp: disparity map (result of pandora)
     :param ref_dataset: reference dataset for the considered disparity map
-    :param sec_dataset: secondary dataset for the considered disparity map
-                        (needed only if the check_roi_in_sec is set to True)
-    :param check_roi_in_sec: option to invalid the values of the disparity
-                             which end up outside the secondary image roi
     :param compute_disparity_masks: compute_disparity_masks activation status
     :return: disparity dataset as used in cars
     """
@@ -210,11 +168,6 @@ def create_disp_dataset(
 
     # retrieve masks
     masks = get_masks_from_pandora(disp, compute_disparity_masks)
-    if check_roi_in_sec:
-        masks[cst_disp.INSIDE_SEC_ROI] = create_inside_sec_roi_mask(
-            disp_map, masks[cst_disp.VALID], sec_dataset
-        )
-        masks[cst_disp.VALID][masks[cst_disp.INSIDE_SEC_ROI] == 0] = 0
 
     # retrieve colors
     color = None
@@ -231,68 +184,43 @@ def create_disp_dataset(
         color_mask = ref_dataset[cst.EPI_COLOR_MSK].values
 
     # Crop disparity to ROI
-    ref_roi = []
-    if not check_roi_in_sec:
-        ref_roi = [
-            int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
-            int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
-            int(
-                ref_dataset.dims[cst.COL]
-                - ref_dataset.attrs[cst.EPI_MARGINS][2]
-            ),
-            int(
-                ref_dataset.dims[cst.ROW]
-                - ref_dataset.attrs[cst.EPI_MARGINS][3]
-            ),
+    ref_roi = [
+        int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
+        int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
+        int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
+        int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
+    ]
+    # Crop disparity map
+    disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+
+    # Crop color
+    if color is not None:
+        if nb_bands == 1:
+            color = color[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+        else:
+            color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+    # Crop color mask
+    if color_mask is not None:
+        color_mask = color_mask[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
         ]
-        # Crop disparity map
-        disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
-        # Crop color
-        if color is not None:
-            if nb_bands == 1:
-                color = color[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-            else:
-                color = color[
-                    :, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-                ]
-        # Crop color mask
-        if color_mask is not None:
-            color_mask = color_mask[
-                ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-            ]
+    # Crop masks
+    for key in masks.copy():
+        masks[key] = masks[key][
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
 
-        # Crop masks
-        for key in masks.copy():
-            masks[key] = masks[key][
-                ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-            ]
-    else:
-        ref_roi = [0, 0, disp_map.shape[1], disp_map.shape[0]]
     # Fill disparity array with 0 value for invalid points
     disp_map[masks[cst_disp.VALID] == 0] = 0
 
     # Build output dataset
-    if not check_roi_in_sec:
-        row = np.array(
-            range(ref_dataset.attrs[cst.ROI][1], ref_dataset.attrs[cst.ROI][3])
-        )
-        col = np.array(
-            range(ref_dataset.attrs[cst.ROI][0], ref_dataset.attrs[cst.ROI][2])
-        )
-    else:
-        row = np.array(
-            range(
-                ref_dataset.attrs[cst.ROI_WITH_MARGINS][1],
-                ref_dataset.attrs[cst.ROI_WITH_MARGINS][3],
-            )
-        )
-        col = np.array(
-            range(
-                ref_dataset.attrs[cst.ROI_WITH_MARGINS][0],
-                ref_dataset.attrs[cst.ROI_WITH_MARGINS][2],
-            )
-        )
+    row = np.array(
+        range(ref_dataset.attrs[cst.ROI][1], ref_dataset.attrs[cst.ROI][3])
+    )
+    col = np.array(
+        range(ref_dataset.attrs[cst.ROI][0], ref_dataset.attrs[cst.ROI][2])
+    )
 
     disp_ds = xr.Dataset(
         {
@@ -317,10 +245,7 @@ def create_disp_dataset(
 
     disp_ds.attrs = disp.attrs.copy()
     disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
-    if check_roi_in_sec:
-        disp_ds.attrs[cst.ROI_WITH_MARGINS] = ref_dataset.attrs[
-            cst.ROI_WITH_MARGINS
-        ]
+
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
     return disp_ds
@@ -563,8 +488,6 @@ def compute_disparity(
         disp[cst.STEREO_SEC] = create_disp_dataset(
             sec,
             right_dataset,
-            sec_dataset=left_dataset,
-            check_roi_in_sec=True,
             compute_disparity_masks=compute_disparity_masks,
         )
 
