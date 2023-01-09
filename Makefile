@@ -43,7 +43,7 @@ TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' '
 CHECK_DOCKER = $(shell docker -v)
 
 # CARS version from setup.py
-CARS_VERSION = $(shell python3 setup.py --version)
+CARS_VERSION = $(shell python3 -c 'from importlib.metadata import version; print(version("cars"))')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 CARS_VERSION_TUTO=0.5.0
 
