@@ -683,7 +683,6 @@ def wrapper_fill_disparity(
         color_sec = dense_matching_tools.estimate_color_from_disparity(
             croped_disp_right,
             left_epi_image,
-            croped_disp_left,
         )
 
         # check bands
