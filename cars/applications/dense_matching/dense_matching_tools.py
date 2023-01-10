@@ -560,7 +560,6 @@ def optimal_tile_size_pandora_plugin_libsgm(
 def estimate_color_from_disparity(
     disp_ref_to_sec: xr.Dataset,
     sec_ds: xr.Dataset,
-    disp_sec_to_ref_with_color: xr.Dataset,
 ) -> xr.Dataset:
     """
     Estimate color image of reference from the disparity map and the secondary
@@ -568,16 +567,14 @@ def estimate_color_from_disparity(
 
     :param disp_ref_to_sec: disparity map
     :param sec_ds: secondary image dataset
-    :param disp_sec_to_ref_with_color: secondary disparity map dataset with
-         color
     :return: interpolated reference color image dataset
     """
     # retrieve numpy arrays from input datasets
 
     disp_msk = disp_ref_to_sec[cst_disp.VALID].values
-    im_color = disp_sec_to_ref_with_color[cst.EPI_COLOR].values
-    if cst.EPI_COLOR_MSK in disp_sec_to_ref_with_color.variables.keys():
-        im_msk = disp_sec_to_ref_with_color[cst.EPI_COLOR_MSK].values
+    im_color = sec_ds[cst.EPI_COLOR].values
+    if cst.EPI_COLOR_MSK in sec_ds.variables.keys():
+        im_msk = sec_ds[cst.EPI_COLOR_MSK].values
 
     # retrieve image sizes
     if len(im_color.shape) == 2:
@@ -587,6 +584,8 @@ def estimate_color_from_disparity(
 
     sec_up_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][1])
     sec_left_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][0])
+
+    logging.error(sec_ds.attrs[cst.EPI_MARGINS])
 
     # instantiate final image
     final_interp_color = np.zeros(
@@ -617,13 +616,13 @@ def estimate_color_from_disparity(
             if disp_msk[i, j] == 255:
                 idx = j + disp_ref_to_sec[cst_disp.MAP].values[i, j]
                 interpolated_points[i * nb_disp_col + j, 0] = (
-                    idx - sec_left_margin
+                    idx + sec_left_margin
                 )
-                interpolated_points[i * nb_disp_col + j, 1] = i - sec_up_margin
+                interpolated_points[i * nb_disp_col + j, 1] = i + sec_up_margin
 
     # construct final image mask
     final_msk = disp_msk
-    if cst.EPI_COLOR_MSK in disp_sec_to_ref_with_color.variables.keys():
+    if cst.EPI_COLOR_MSK in sec_ds.variables.keys():
         # interpolate the color image mask to the new image referential
         # (nearest neighbor interpolation)
         msk_values = im_msk.reshape(nb_row * nb_col, 1)
@@ -654,15 +653,12 @@ def estimate_color_from_disparity(
         final_interp_color[:, :, band][final_msk != 255] = np.nan
 
     # create interpolated color image dataset
-    region = list(disp_ref_to_sec.attrs[cst.ROI_WITH_MARGINS])
+    region = list(disp_ref_to_sec.attrs[cst.ROI])
     largest_size = disp_ref_to_sec.attrs[cst.EPI_FULL_SIZE]
 
     interp_clr_ds = datasets.create_im_dataset(
         final_interp_color, region, largest_size, band_coords=True, msk=None
     )
     interp_clr_ds.attrs[cst.ROI] = disp_ref_to_sec.attrs[cst.ROI]
-    interp_clr_ds.attrs[cst.ROI_WITH_MARGINS] = disp_ref_to_sec.attrs[
-        cst.ROI_WITH_MARGINS
-    ]
 
     return interp_clr_ds
