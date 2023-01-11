@@ -298,7 +298,6 @@ class PlaneFill(
                 new_epipolar_disparity_map_left.attributes.update(
                     epipolar_disparity_map_left.attributes
                 )
-
                 # Save disparity maps
                 if self.save_disparity_map:
                     self.orchestrator.add_to_save_lists(
@@ -350,24 +349,27 @@ class PlaneFill(
                         new_epipolar_disparity_map_right,
                         cars_ds_name="epi_disp_mask_filled_right",
                     )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_ambiguity_filled_left.tif"
-                        ),
-                        cst_disp.AMBIGUITY_CONFIDENCE,
-                        new_epipolar_disparity_map_left,
-                        cars_ds_name="epi_ambiguity_filled_left",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_ambiguity_filled_right.tif"
-                        ),
-                        cst_disp.AMBIGUITY_CONFIDENCE,
-                        new_epipolar_disparity_map_right,
-                        cars_ds_name="epi_ambiguity_filled_right",
-                    )
+                    for _, item in enumerate(cst_disp.DISPARITY_CONFIDENCE):
+                        cards_ds_name_left = item + "_filled_left"
+                        self.orchestrator.add_to_save_lists(
+                            os.path.join(
+                                pair_folder,
+                                "epi_" + cards_ds_name_left + ".tif",
+                            ),
+                            item,
+                            epipolar_disparity_map_left,
+                            cars_ds_name=cards_ds_name_left,
+                        )
+                        cards_ds_name_right = item + "_filled_right"
+                        self.orchestrator.add_to_save_lists(
+                            os.path.join(
+                                pair_folder,
+                                "epi_" + cards_ds_name_right + ".tif",
+                            ),
+                            item,
+                            epipolar_disparity_map_right,
+                            cars_ds_name=cards_ds_name_right,
+                        )
 
                 # Get saving infos in order to save tiles when they are computed
                 [

@@ -341,8 +341,54 @@ def test_end2end_ventoux_unique():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
+                "write_confidence_from_intensity_std": True,
+                "write_confidence_from_risk": True,
             },
-            "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_sec_disp": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "right_disp_map": {"method": "accurate"},
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "P1": 8,
+                            "P2": 32,
+                            "p2_method": "constant",
+                            "penalty_method": "sgm_penalty",
+                            "overcounting": False,
+                            "min_cost_paths": False,
+                        },
+                        "cost_volume_confidence": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "cost_volume_confidence.std_intensity": {
+                            "confidence_method": "std_intensity"
+                        },
+                        "cost_volume_confidence.risk": {
+                            "confidence_method": "risk"
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
         }
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
@@ -386,8 +432,40 @@ def test_end2end_ventoux_unique():
         # copy2(os.path.join(out_dir, 'clr.tif'),
         #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
         # copy2(
-        #     os.path.join(out_dir, "ambiguity.tif"),
-        #     absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_ambiguity_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "confidence_from_intensity_std.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_intensity_std_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "confidence_from_risk_min.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_risk_min_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "confidence_from_risk_max.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_risk_max_end2end_ventoux.tif",
+        #         )
+        #     ),
         # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -396,8 +474,34 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "ambiguity.tif"),
-            absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            absolute_data_path(
+                "ref_output/confidence_from_ambiguity_end2end_ventoux.tif"
+            ),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_intensity_std.tif"),
+            absolute_data_path(
+                "ref_output/confidence_from_intensity_std_end2end_ventoux.tif"
+            ),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_risk_min.tif"),
+            absolute_data_path(
+                "ref_output/confidence_from_risk_min_end2end_ventoux.tif"
+            ),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_risk_max.tif"),
+            absolute_data_path(
+                "ref_output/confidence_from_risk_max_end2end_ventoux.tif"
+            ),
             atol=1.0e-7,
             rtol=1.0e-7,
         )
@@ -797,10 +901,15 @@ def test_end2end_use_epipolar_a_prior():
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
         #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
-        # copy2(
-        #     os.path.join(out_dir, "ambiguity.tif"),
-        #     absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
-        # )
+        copy2(
+            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            absolute_data_path(
+                os.path.join(
+                    "ref_output",
+                    "confidence_from_ambiguity_end2end_ventoux.tif",
+                )
+            ),
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
@@ -808,8 +917,10 @@ def test_end2end_use_epipolar_a_prior():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "ambiguity.tif"),
-            absolute_data_path("ref_output/ambiguity_end2end_ventoux.tif"),
+            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            absolute_data_path(
+                "ref_output/confidence_from_ambiguity_end2end_ventoux.tif"
+            ),
             atol=1.0e-7,
             rtol=1.0e-7,
         )
@@ -1047,8 +1158,12 @@ def test_end2end_ventoux_with_color():
 
         out_dir = input_config_low_res["output"]["out_dir"]
 
-        assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
-
+        assert (
+            os.path.exists(
+                os.path.join(out_dir, "confidence_from_ambiguity.tif")
+            )
+            is True
+        )
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")

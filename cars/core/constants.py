@@ -63,8 +63,20 @@ POINTS_CLOUD_CLR_KEY_ROOT = "clr"
 POINTS_CLOUD_COORD_EPI_GEOM_I = "coord_epi_geom_i"
 POINTS_CLOUD_COORD_EPI_GEOM_J = "coord_epi_geom_j"
 POINTS_CLOUD_IDX_IM_EPI = "idx_im_epi"
-POINTS_CLOUD_AMBIGUITY = "ambiguity_confidence"
 POINTS_CLOUD_MATCHES = "points_cloud_matches"
+POINTS_CLOUD_CONFIDENCE_FROM_AMBIGUITY = "confidence_from_ambiguity"
+POINTS_CLOUD_CONFIDENCE_FROM_AMBIGUITY = "confidence_from_ambiguity"
+POINTS_CLOUD_CONFIDENCE_FROM_INTENSITYSTD = "confidence_from_intensityStd"
+POINTS_CLOUD_CONFIDENCE_FROM_RISK_MAX = "confidence_from_risk_max"
+POINTS_CLOUD_CONFIDENCE_FROM_RISK_MIN = "confidence_from_risk_min"
+# confidence measure
+POINTS_CLOUD_CONFIDENCE = {
+    POINTS_CLOUD_CONFIDENCE_FROM_AMBIGUITY: "confidence_from_ambiguity",
+    POINTS_CLOUD_CONFIDENCE_FROM_INTENSITYSTD: "confidence_from_intensityStd",
+    POINTS_CLOUD_CONFIDENCE_FROM_RISK_MAX: "confidence_from_risk_max",
+    POINTS_CLOUD_CONFIDENCE_FROM_RISK_MIN: "confidence_from_risk_min",
+}
+
 
 # raster fields (xarray Dataset)
 RASTER_HGT = "hgt"
@@ -76,7 +88,10 @@ RASTER_HGT_MEAN = "hgt_mean"
 RASTER_HGT_STD_DEV = "hgt_stdev"
 RASTER_BAND_MEAN = "band_mean"
 RASTER_BAND_STD_DEV = "band_stdev"
-RASTER_AMBIGUITY_CONFIDENCE = "ambiguity_confidence"
+RASTER_CONFIDENCE_FROM_AMBIGUITY = "confidence_from_ambiguity"
+RASTER_CONFIDENCE_FROM_INTENSITYSTD = "confidence_from_intensityStd"
+RASTER_CONFIDENCE_FROM_RISK_MAX = "confidence_from_risk_max"
+RASTER_CONFIDENCE_FROM_RISK_MIN = "confidence_from_risk_min"
 # Geometry constants
 DISP_MODE = "disp"
 MATCHES_MODE = "matches"

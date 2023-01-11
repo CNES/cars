@@ -477,8 +477,10 @@ def create_combined_dense_cloud(  # noqa: C901
                 cst.POINTS_CLOUD_IDX_IM_EPI,
             ]
         )
-    if cst.POINTS_CLOUD_AMBIGUITY in cloud_list[0].keys():
-        nb_data.append(cst.POINTS_CLOUD_AMBIGUITY)
+    for key in cloud_list_item.keys():
+        for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
+            if key == confidence_name:
+                nb_data.append(confidence_name)
 
     # iterate through input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
@@ -542,13 +544,15 @@ def create_combined_dense_cloud(  # noqa: C901
         c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
 
         ds_values_list = [key for key, _ in cloud_list_item.items()]
-        if cst.POINTS_CLOUD_AMBIGUITY in ds_values_list:
-            c_ambiguity = cloud_list_item[cst.POINTS_CLOUD_AMBIGUITY].values[
-                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-            ]
-            c_cloud[nb_data.index(cst.POINTS_CLOUD_AMBIGUITY), :] = np.ravel(
-                c_ambiguity
-            )
+        for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
+            if confidence_name in ds_values_list:
+                c_confidence = cloud_list_item[confidence_name].values[
+                    bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+                ]
+                c_cloud[nb_data.index(confidence_name), :] = np.ravel(
+                    c_confidence
+                )
+
         if cst.POINTS_CLOUD_MSK in ds_values_list:
             c_msk = cloud_list_item[cst.POINTS_CLOUD_MSK].values[
                 bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
