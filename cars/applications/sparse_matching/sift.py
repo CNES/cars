@@ -419,7 +419,7 @@ class Sift(SparseMatching, short_name="sift"):
             epipolar_disparity_map_left.attributes.update(attributes)
 
             # Get saving infos in order to save tiles when they are computed
-            saving_info_left = self.orchestrator.get_saving_infos(
+            [saving_info_left] = self.orchestrator.get_saving_infos(
                 [epipolar_disparity_map_left]
             )
 
@@ -488,7 +488,7 @@ class Sift(SparseMatching, short_name="sift"):
 
                     # update saving_info with row and col
                     full_saving_info_left = ocht.update_saving_infos(
-                        saving_info_left[0], row=row, col=col
+                        saving_info_left, row=row, col=col
                     )
 
                     (

@@ -374,48 +374,56 @@ class LineOfSightIntersection(
                     os.path.join(pair_folder, "epi_pc_X_left.tif"),
                     cst.X,
                     epipolar_points_cloud_left,
+                    cars_ds_name="epi_pc_x_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_Y_left.tif"),
                     cst.Y,
                     epipolar_points_cloud_left,
+                    cars_ds_name="epi_pc_y_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_Z_left.tif"),
                     cst.Z,
                     epipolar_points_cloud_left,
+                    cars_ds_name="epi_pc_z_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_X_right.tif"),
                     cst.X,
                     epipolar_points_cloud_right,
+                    cars_ds_name="epi_pc_x_right",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_Y_right.tif"),
                     cst.Y,
                     epipolar_points_cloud_right,
+                    cars_ds_name="epi_pc_y_right",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_Z_right.tif"),
                     cst.Z,
                     epipolar_points_cloud_right,
+                    cars_ds_name="epi_pc_z_right",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_color_left.tif"),
                     cst.EPI_COLOR,
                     epipolar_points_cloud_left,
+                    cars_ds_name="epi_pc_color_left",
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_pc_color_right.tif"),
                     cst.EPI_COLOR,
                     epipolar_points_cloud_right,
+                    cars_ds_name="epi_pc_color_right",
                 )
 
         else:
