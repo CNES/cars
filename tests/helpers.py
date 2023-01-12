@@ -356,10 +356,31 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
     return new_dataset
 
 
-def create_corr_conf():
+def create_corr_conf(user_cfg):
     """
     Create correlator configuration for stereo testing
     TODO: put in CARS source code ? (external?)
+    """
+
+    # Import plugins before checking configuration
+    pandora.import_plugin()
+    # Check configuration and update the configuration with default values
+    # Instantiate pandora state machine
+    pandora_machine = PandoraMachine()
+    # check pipeline
+    user_cfg_pipeline = get_config_pipeline(user_cfg)
+    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
+    # check a part of input section
+    user_cfg_input = get_config_input_custom_cars(user_cfg)
+    cfg_input = check_input_section_custom_cars(user_cfg_input)
+    # concatenate updated config
+    cfg = concat_conf([cfg_input, cfg_pipeline])
+    return cfg
+
+
+def corr_conf_defaut():
+    """
+    Provide pandora default configuration for test
     """
     user_cfg = {}
     user_cfg["input"] = {}
@@ -392,20 +413,56 @@ def create_corr_conf():
     user_cfg["pipeline"]["validation"] = {}
     user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
     user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
-    # Import plugins before checking configuration
-    pandora.import_plugin()
-    # Check configuration and update the configuration with default values
-    # Instantiate pandora state machine
-    pandora_machine = PandoraMachine()
-    # check pipeline
-    user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
-    # check a part of input section
-    user_cfg_input = get_config_input_custom_cars(user_cfg)
-    cfg_input = check_input_section_custom_cars(user_cfg_input)
-    # concatenate updated config
-    cfg = concat_conf([cfg_input, cfg_pipeline])
-    return cfg
+    return user_cfg
+
+
+def corr_conf_with_confidence():
+    """
+    Provide pandora configuration with confidence option
+    """
+    user_cfg = {}
+    user_cfg["input"] = {}
+    user_cfg["pipeline"] = {}
+    user_cfg["pipeline"]["right_disp_map"] = {}
+    user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
+    user_cfg["pipeline"]["matching_cost"] = {}
+    user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
+    user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
+    user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
+    user_cfg["pipeline"]["optimization"] = {}
+    user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
+    user_cfg["pipeline"]["optimization"]["P1"] = 8
+    user_cfg["pipeline"]["optimization"]["P2"] = 32
+    user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
+    user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
+    user_cfg["pipeline"]["optimization"]["overcounting"] = False
+    user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
+    user_cfg["pipeline"]["cost_volume_confidence"] = {}
+    user_cfg["pipeline"]["cost_volume_confidence"][
+        "confidence_method"
+    ] = "ambiguity"
+    user_cfg["pipeline"]["cost_volume_confidence"]["eta_max"] = 0.7
+    user_cfg["pipeline"]["cost_volume_confidence"]["eta_step"] = 0.01
+    user_cfg["pipeline"]["cost_volume_confidence.std_intensity"] = {}
+    user_cfg["pipeline"]["cost_volume_confidence.std_intensity"][
+        "confidence_method"
+    ] = "std_intensity"
+    user_cfg["pipeline"]["cost_volume_confidence.risk"] = {}
+    user_cfg["pipeline"]["cost_volume_confidence.risk"][
+        "confidence_method"
+    ] = "risk"
+    user_cfg["pipeline"]["disparity"] = {}
+    user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
+    user_cfg["pipeline"]["disparity"]["invalid_disparity"] = 0
+    user_cfg["pipeline"]["refinement"] = {}
+    user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
+    user_cfg["pipeline"]["filter"] = {}
+    user_cfg["pipeline"]["filter"]["filter_method"] = "median"
+    user_cfg["pipeline"]["filter"]["filter_size"] = 3
+    user_cfg["pipeline"]["validation"] = {}
+    user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
+    user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
+    return user_cfg
 
 
 def read_mask_classes(mask_classes_path):

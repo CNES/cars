@@ -45,6 +45,7 @@ from cars.conf import mask_classes
 from ..helpers import (
     absolute_data_path,
     assert_same_datasets,
+    corr_conf_defaut,
     create_corr_conf,
     read_mask_classes,
 )
@@ -111,7 +112,8 @@ def test_epipolar_pipeline(
 
     region = [420, 200, 530, 320]
     # Pandora configuration
-    corr_cfg = create_corr_conf()
+    corr_cfg = corr_conf_defaut()
+    corr_cfg = create_corr_conf(corr_cfg)
 
     initial_margins = dense_match.get_margins(-13, 14, corr_cfg)
     pandora_margins = initial_margins["left_margin"].values

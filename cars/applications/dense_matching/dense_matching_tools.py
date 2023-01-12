@@ -271,17 +271,23 @@ def add_confidence(
         # remove the useless suffix
         if len(key.split(".")) > 1:
             key = key.split(".")[0]
-
-        output_dataset[key] = xr.DataArray(
-            np.copy(
-                disp.confidence_measure.data[
-                    ref_roi[1] : ref_roi[3],
-                    ref_roi[0] : ref_roi[2],
-                    confidence_idx,
-                ]
-            ),
-            dims=[cst.ROW, cst.COL],
-        )
+        # check indicator is present otherwise raise a warning
+        if key in cst_disp.DISPARITY_CONFIDENCE:
+            output_dataset[key] = xr.DataArray(
+                np.copy(
+                    disp.confidence_measure.data[
+                        ref_roi[1] : ref_roi[3],
+                        ref_roi[0] : ref_roi[2],
+                        confidence_idx,
+                    ]
+                ),
+                dims=[cst.ROW, cst.COL],
+            )
+        else:
+            if key != "validation_pandora_distanceOfDisp":
+                logging.warning(
+                    "{} disparity confidence is unknown to CARS.".format(key)
+                )
 
 
 def compute_mask_to_use_in_pandora(

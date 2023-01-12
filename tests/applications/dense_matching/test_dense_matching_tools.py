@@ -44,6 +44,8 @@ from cars.core import constants_disparity as cst_disp
 from tests.helpers import (
     absolute_data_path,
     assert_same_datasets,
+    corr_conf_defaut,
+    corr_conf_with_confidence,
     create_corr_conf,
     read_mask_classes,
 )
@@ -127,7 +129,8 @@ def test_compute_disparity_1(
         mask2_ignored_by_corr = None
 
     # Pandora configuration
-    corr_cfg = create_corr_conf()
+    corr_cfg = corr_conf_defaut()
+    corr_cfg = create_corr_conf(corr_cfg)
 
     disp_min = -13
     disp_max = 14
@@ -204,7 +207,8 @@ def test_compute_disparity_3(
         mask2_ignored_by_corr = None
 
     # Pandora configuration
-    corr_cfg = create_corr_conf()
+    corr_cfg = corr_conf_defaut()
+    corr_cfg = create_corr_conf(corr_cfg)
 
     disp_min = -43
     disp_max = 41
@@ -242,6 +246,93 @@ def test_compute_disparity_3(
     ref = xr.open_dataset(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
     assert_same_datasets(output[cst.STEREO_REF], ref, atol=5.0e-6)
     sec = xr.open_dataset(absolute_data_path("ref_output/disp3_sec_pandora.nc"))
+    assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.0e-6)
+
+
+@pytest.mark.unit_tests
+def test_compute_disparity_with_all_confidences(
+    images_and_grids_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test compute_disparity on ventoux dataset with pandora
+    """
+    left_input = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/data1_ref_left.nc")
+    )
+    right_input = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/data1_ref_right.nc")
+    )
+
+    # Get mask values
+    mask1_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
+        in_params.MASK1_CLASSES_TAG, None
+    )
+    mask2_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
+        in_params.MASK2_CLASSES_TAG, None
+    )
+
+    if mask1_classes is not None:
+        mask1_classes_dict = read_mask_classes(mask1_classes)
+        mask1_ignored_by_corr = mask1_classes_dict.get(
+            mask_classes.ignored_by_corr_tag, None
+        )
+    else:
+        mask1_ignored_by_corr = None
+    if mask2_classes is not None:
+        mask2_classes_dict = read_mask_classes(mask2_classes)
+        mask2_ignored_by_corr = mask2_classes_dict.get(
+            mask_classes.ignored_by_corr_tag, None
+        )
+    else:
+        mask2_ignored_by_corr = None
+
+    # Pandora configuration
+    corr_cfg = corr_conf_with_confidence()
+    corr_cfg = create_corr_conf(corr_cfg)
+
+    disp_min = -13
+    disp_max = 14
+
+    output = dense_matching_tools.compute_disparity(
+        left_input,
+        right_input,
+        corr_cfg,
+        disp_min,
+        disp_max,
+        mask1_ignored_by_corr=mask1_ignored_by_corr,
+        mask2_ignored_by_corr=mask2_ignored_by_corr,
+    )
+
+    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
+
+    np.testing.assert_allclose(
+        output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
+    )
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI], np.array([420, 200, 530, 320])
+    )
+    np.testing.assert_allclose(
+        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
+        np.array([387, 180, 564, 340]),
+    )
+
+    # Uncomment to update baseline
+    # output[cst.STEREO_REF].to_netcdf(
+    #     absolute_data_path("ref_output/disp_with_confidences_ref_pandora.nc")
+    # )
+    # output[cst.STEREO_SEC].to_netcdf(
+    #     absolute_data_path("ref_output/disp_with_confidences_sec_pandora.nc")
+    # )
+    ref = xr.open_dataset(
+        absolute_data_path("ref_output/disp_with_confidences_ref_pandora.nc")
+    )
+    assert_same_datasets(output[cst.STEREO_REF], ref, atol=5.0e-6)
+    sec = xr.open_dataset(
+        absolute_data_path("ref_output/disp_with_confidences_sec_pandora.nc")
+    )
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.0e-6)
 
 
@@ -285,7 +376,8 @@ def test_compute_disparity_1_msk_ref(
         mask2_ignored_by_corr = None
 
     # Pandora configuration
-    corr_cfg = create_corr_conf()
+    corr_cfg = corr_conf_defaut()
+    corr_cfg = create_corr_conf(corr_cfg)
 
     disp_min = -13
     disp_max = 14
@@ -421,7 +513,8 @@ def test_compute_disparity_1_msk_sec(
         mask2_ignored_by_corr = None
 
     # Pandora configuration
-    corr_cfg = create_corr_conf()
+    corr_cfg = corr_conf_defaut()
+    corr_cfg = create_corr_conf(corr_cfg)
 
     disp_min = -13
     disp_max = 14
