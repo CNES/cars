@@ -585,8 +585,6 @@ def estimate_color_from_disparity(
     sec_up_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][1])
     sec_left_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][0])
 
-    logging.error(sec_ds.attrs[cst.EPI_MARGINS])
-
     # instantiate final image
     final_interp_color = np.zeros(
         (nb_disp_row, nb_disp_col, nb_bands), dtype=np.float64
