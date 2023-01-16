@@ -418,7 +418,7 @@ class SimpleGaussian(
                     terrain_raster,
                     dtype=np.float32,
                     nodata=self.msk_no_data,
-                    cars_ds_name="confidence_from_intensityStd",
+                    cars_ds_name="confidence_from_intensity_std",
                 )
             if self.write_confidence_from_risk:
                 out_risk_max_file_name = os.path.join(
