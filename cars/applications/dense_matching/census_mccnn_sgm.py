@@ -78,7 +78,6 @@ class CensusMccnnSgm(
         self.epipolar_tile_margin_in_percent = self.used_config[
             "epipolar_tile_margin_in_percent"
         ]
-        self.disparity_margin = self.used_config["disparity_margin"]
         self.use_sec_disp = self.used_config["use_sec_disp"]
         self.min_elevation_offset = self.used_config["min_elevation_offset"]
         self.max_elevation_offset = self.used_config["max_elevation_offset"]
@@ -123,7 +122,6 @@ class CensusMccnnSgm(
         overloaded_conf["epipolar_tile_margin_in_percent"] = conf.get(
             "epipolar_tile_margin_in_percent", 60
         )
-        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["use_sec_disp"] = conf.get("use_sec_disp", False)
         overloaded_conf["min_elevation_offset"] = conf.get(
             "min_elevation_offset", None
@@ -153,7 +151,6 @@ class CensusMccnnSgm(
             "min_epi_tile_size": int,
             "max_epi_tile_size": int,
             "epipolar_tile_margin_in_percent": int,
-            "disparity_margin": float,
             "use_sec_disp": bool,
             "min_elevation_offset": Or(None, int),
             "max_elevation_offset": Or(None, int),
@@ -269,15 +266,6 @@ class CensusMccnnSgm(
         )
 
         return opt_epipolar_tile_size
-
-    def get_disparity_margin(self):
-        """
-        Get disparity margin corresponding to sparse matches
-
-        :return: margin in percent
-
-        """
-        return self.disparity_margin
 
     def run(
         self,

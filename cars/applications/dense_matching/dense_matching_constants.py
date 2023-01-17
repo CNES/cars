@@ -32,7 +32,6 @@ DENSE_MATCHING_RUN_TAG = "dense_matching_run"
 
 
 # PARAMS
-DISPARITY_MARGIN_TAG = "disparity_margin"
 METHOD = "method"
 MIN_EPI_TILE_SIZE = "min_epi_tile_size"
 MAX_EPI_TILE_SIZE = "max_epi_tile_size"
@@ -81,10 +80,3 @@ MASK_HASH_TABLE = {
     disp_cst.OCCLUSION: get_cst(OCCLUSION),
     disp_cst.FALSE_MATCH: get_cst(MISMATCH),
 }
-
-
-# disparity range computation
-DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation_run"
-MINIMUM_DISPARITY_TAG = "minimum_disparity"
-MAXIMUM_DISPARITY_TAG = "maximum_disparity"
-DISPARITY_MARGIN_PARAM_TAG = "disparity_margin_param"

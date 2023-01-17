@@ -68,6 +68,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         # check conf
         self.used_method = self.used_config["method"]
+        self.disparity_margin = self.used_config["disparity_margin"]
         self.elevation_delta_lower_bound = self.used_config[
             "elevation_delta_lower_bound"
         ]
@@ -131,6 +132,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "sift")
+        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
             "elevation_delta_lower_bound", -1000
         )
@@ -180,6 +182,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         sparse_matching_schema = {
             "method": str,
+            "disparity_margin": float,
             "disparity_outliers_rejection_percent": float,
             "minimum_nb_matches": int,
             "elevation_delta_lower_bound": Or(int, float),
@@ -211,6 +214,15 @@ class Sift(SparseMatching, short_name="sift"):
         """
 
         return self.save_matches
+
+    def get_disparity_margin(self):
+        """
+        Get disparity margin corresponding to sparse matches
+
+        :return: margin in percent
+
+        """
+        return self.disparity_margin
 
     def get_disp_out_reject_percent(self):
         """

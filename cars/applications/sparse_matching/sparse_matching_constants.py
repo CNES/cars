@@ -32,6 +32,7 @@ SPARSE_MATCHING_RUN_TAG = "sparse_matching_run"
 # INFOS
 
 # Sparse matching PARAMS
+DISPARITY_MARGIN_TAG = "disparity_margin"
 ELEVATION_DELTA_LOWER_BOUND = "elevation_delta_lower_bound"
 ELEVATION_DELTA_UPPER_BOUND = "elevation_delta_upper_bound"
 EPIPOLAR_ERROR_UPPER_BOUND = "epipolar_error_upper_bound"
@@ -49,6 +50,13 @@ SIFT_BACK_MATCHING = "sift_back_matching"
 DISP_LOWER_BOUND = "disp_lower_bound"
 DISP_UPPER_BOUND = "disp_upper_bound"
 
+
+# disparity range computation
+DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation_run"
+MINIMUM_DISPARITY_TAG = "minimum_disparity"
+MAXIMUM_DISPARITY_TAG = "maximum_disparity"
+MATCHES_TAG = "matches"
+DISPARITY_MARGIN_PARAM_TAG = "disparity_margin_param"
 
 # Matches filtering
 METHOD = "method"

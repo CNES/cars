@@ -34,7 +34,6 @@ import numpy as np
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.dense_matching import dense_matching_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.conf import log_conf
@@ -413,6 +412,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     pair_folder=pair_folder,
                     srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
                     default_alt=self.inputs[sens_cst.DEFAULT_ALT],
+                    save_matches=self.sparse_matching_app.get_save_matches(),
                 )
                 # Update full res pipeline configuration
                 # with grid correction and disparity range

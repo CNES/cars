@@ -216,6 +216,13 @@ def test_end2end_ventoux_unique():
                 < 15
             )
 
+            # check matches file exists
+            assert os.path.isfile(
+                out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["matches"]
+            )
+
         # Check used_conf for low res
 
         gt_used_conf_orchestrator = {
@@ -819,6 +826,7 @@ def test_prepare_ventoux_bias():
             # check matches file exists
             assert os.path.isfile(out_disp_compute["matches"])
 
+
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
     """
@@ -980,13 +988,13 @@ def test_end2end_ventoux_with_color():
         assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.0_4897173.0.laz")
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
             )
             is True
         )
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.0_4897173.0.csv")
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.csv")
             )
             is True
         )
@@ -995,7 +1003,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675431.0_4897173.0.laz",
+                    "675248.0_4897173.0.laz",
                 )
             )
             is True
@@ -1005,7 +1013,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675431.0_4897173.0.csv",
+                    "675248.0_4897173.0.csv",
                 )
             )
             is True

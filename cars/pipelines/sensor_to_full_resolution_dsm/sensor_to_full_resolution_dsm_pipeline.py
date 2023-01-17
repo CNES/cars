@@ -470,7 +470,8 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                                             geometry_loader = self.triangulation_application.get_geometry_loader(),
                                             pair_folder=pair_folder,
                                             srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                                            default_alt=self.inputs[sens_cst.DEFAULT_ALT]
+                                            default_alt=self.inputs[sens_cst.DEFAULT_ALT],
+                                            save_matches=self.sparse_mtch_app.get_save_matches(),
                                             )
                 else:
                     # load the disparity range
