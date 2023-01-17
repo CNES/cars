@@ -139,7 +139,7 @@ def triangulate(
             reversed_input_configuration,
             grid2,
             grid1,
-            roi_key=cst.ROI_WITH_MARGINS,
+            roi_key=cst.ROI,
             dataset_msk=im_sec_msk_ds,
         )
 

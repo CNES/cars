@@ -374,6 +374,7 @@ class CensusMccnnSgm(
             epipolar_disparity_map_right.create_empty_copy(
                 epipolar_images_right
             )
+            epipolar_disparity_map_right.overlaps *= 0
 
             # Update attributes to get epipolar info
             epipolar_disparity_map_left.attributes.update(
@@ -604,7 +605,6 @@ def compute_disparity(
         color_sec = dense_matching_tools.estimate_color_from_disparity(
             disp[cst.STEREO_SEC],
             left_image_object,
-            disp[cst.STEREO_REF],
         )
 
         # check bands
@@ -638,7 +638,7 @@ def compute_disparity(
             window=cars_dataset.get_window_dataset(right_image_object),
             profile=cars_dataset.get_profile_rasterio(right_image_object),
             attributes=None,
-            overlaps=cars_dataset.get_overlaps_dataset(right_image_object),
+            overlaps=None,
         )
 
     return left_disp_dataset, right_disp_dataset

@@ -144,18 +144,14 @@ def test_compute_disparity_1(
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
     assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
-    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
-    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (120, 110)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
     np.testing.assert_allclose(
         output[cst.STEREO_SEC].attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
-    np.testing.assert_allclose(
-        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-        np.array([387, 180, 564, 340]),
     )
 
     # Uncomment to update baseline
@@ -225,8 +221,8 @@ def test_compute_disparity_3(
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (90, 90)
     assert output[cst.STEREO_REF][cst_disp.VALID].shape == (90, 90)
-    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (170, 254)
-    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (170, 254)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (90, 90)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (90, 90)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI],
@@ -235,10 +231,6 @@ def test_compute_disparity_3(
     np.testing.assert_allclose(
         output[cst.STEREO_SEC].attrs[cst.ROI],
         np.array([16500, 23160, 16590, 23250]),
-    )
-    np.testing.assert_allclose(
-        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-        np.array([16417, 23120, 16671, 23290]),
     )
 
     # Uncomment to update baseline
@@ -447,18 +439,14 @@ def test_compute_disparity_1_msk_sec(
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
     assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
-    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
-    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (120, 110)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
     np.testing.assert_allclose(
         output[cst.STEREO_SEC].attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
-    np.testing.assert_allclose(
-        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-        np.array([387, 180, 564, 340]),
     )
 
     # Uncomment to update baseline
@@ -502,70 +490,13 @@ def test_compute_mask_to_use_in_pandora():
 
 
 @pytest.mark.unit_tests
-def test_create_inside_sec_roi_mask():
-    """
-    Test create_inside_sec_roi_mask function
-    """
-    # create fake dataset with margins values and image dimension
-    dataset_left_margin = 1
-    dataset_right_margin = 2
-    dataset_top_margin = 1
-    dataset_bottom_margin = 1
-    dataset_nb_col = 6
-    dataset_nb_row = 5
-    test_dataset = xr.Dataset(
-        {
-            cst.EPI_IMAGE: (
-                [cst.ROW, cst.COL],
-                np.ones((dataset_nb_row, dataset_nb_col), dtype=bool),
-            )
-        }
-    )
-    test_dataset.attrs[cst.EPI_MARGINS] = np.array(
-        [
-            dataset_left_margin,
-            dataset_top_margin,
-            dataset_right_margin,
-            dataset_bottom_margin,
-        ]
-    )
-
-    # create fake disp map and mask
-    disp_nb_col = 7
-    disp_nb_row = 6
-    disp_value = 0.5
-    disp = np.full((disp_nb_row, disp_nb_col), disp_value)
-    mask = np.full((disp_nb_row, disp_nb_col), 255, dtype=np.int16)
-
-    # add an invalid pixel in the useful zone
-    mask[1, 1] = 0
-
-    msk = dense_matching_tools.create_inside_sec_roi_mask(
-        disp, mask, test_dataset
-    )
-
-    # create reference data
-    ref_msk = np.zeros((disp_nb_row, disp_nb_col), dtype=np.int16)
-    ref_msk[
-        math.ceil(disp_value) : disp_nb_row - dataset_bottom_margin,
-        math.ceil(disp_value) : disp_nb_col
-        - dataset_right_margin
-        - math.floor(disp_value),
-    ] = 255
-    ref_msk[1, 1] = 0
-
-    assert np.allclose(msk, ref_msk)
-
-
-@pytest.mark.unit_tests
 def test_estimate_color_from_disparity():
     """
     Test estimate_color_from_disparity function
     """
     # create fake disp map and mask
-    margins = [1, 1, 1, 1]
-    disp_nb_col = 12
-    disp_nb_row = 10
+    disp_nb_col = 10
+    disp_nb_row = 8
     disp_value = 0.75
     disp_row = np.array(range(disp_nb_row))
     disp_col = np.array(range(disp_nb_col))
@@ -584,19 +515,17 @@ def test_estimate_color_from_disparity():
         coords={cst.ROW: disp_row, cst.COL: disp_col},
     )
 
-    disp_dataset.attrs[cst.ROI] = [
-        margins[0],
-        margins[1],
-        disp_nb_col - margins[2],
-        disp_nb_row - margins[3],
-    ]
-    disp_dataset.attrs[cst.ROI_WITH_MARGINS] = [0, 0, disp_nb_col, disp_nb_row]
+    disp_dataset.attrs[cst.ROI] = [0, 0, disp_nb_col, disp_nb_row]
     disp_dataset.attrs[cst.EPI_FULL_SIZE] = [100, 100]
 
     # create fake color image
-    clr_nb_col = 10
-    clr_nb_row = 8
+
+    sec_margins = [1, 1, 1, 1]
+    # Add overlaps  of 2 (2 x 1)
+    clr_nb_col = 10 + 2
+    clr_nb_row = 8 + 2
     clr_nb_band = 3
+
     clr_row = np.array(range(clr_nb_row))
     clr_col = np.array(range(clr_nb_col))
 
@@ -607,8 +536,10 @@ def test_estimate_color_from_disparity():
         clr[band, :, :] = val
 
     clr_mask = np.full((clr_nb_row, clr_nb_col), 255, dtype=np.int16)
-    clr_mask[4, 4] = 0
-    clr_dataset = xr.Dataset(
+    clr_mask[5, 5] = 0
+
+    # create fake secondary dataset with color
+    sec_dataset = xr.Dataset(
         {
             cst.EPI_COLOR: ([cst.BAND, cst.ROW, cst.COL], np.copy(clr)),
             cst.EPI_COLOR_MSK: ([cst.ROW, cst.COL], np.copy(clr_mask)),
@@ -619,20 +550,23 @@ def test_estimate_color_from_disparity():
             cst.COL: clr_col,
         },
     )
-
-    # create fake secondary dataset
-    sec_margins = [1, 1, 1, 1]
-    sec_dataset = xr.Dataset()
+    sec_dataset.attrs[cst.ROI] = [
+        sec_margins[0],
+        sec_margins[1],
+        clr_nb_col - sec_margins[2],
+        clr_nb_row - sec_margins[3],
+    ]
+    sec_dataset.attrs[cst.ROI_WITH_MARGINS] = [0, 0, clr_nb_col, clr_nb_row]
     sec_dataset.attrs[cst.EPI_MARGINS] = np.array(sec_margins)
 
     # interpolate color
     interp_clr_dataset = dense_matching_tools.estimate_color_from_disparity(
-        disp_dataset, sec_dataset, clr_dataset
+        disp_dataset, sec_dataset
     )
 
     # reference
     ref_mask = mask.astype(bool)
-    ref_mask[margins[0] + 4, margins[2] + 4 - math.ceil(disp_value)] = False
+    ref_mask[4, 4 - math.ceil(disp_value)] = False
     ref_mask = ~ref_mask
 
     assert np.allclose(
@@ -640,7 +574,12 @@ def test_estimate_color_from_disparity():
     )
 
     ref_data = np.ceil(disp)
-    ref_data[margins[1] : -margins[3], margins[0] : -margins[2]] += val
+    val = np.arange(clr_nb_row * clr_nb_col)
+    val = val.reshape(clr_nb_row, clr_nb_col)
+
+    ref_data += val[
+        sec_margins[1] : -sec_margins[3], sec_margins[0] : -sec_margins[2]
+    ]
     ref_data[ref_mask] = 0
 
     interp_clr_msk = np.isnan(interp_clr_dataset[cst.EPI_IMAGE].values[0, :, :])
