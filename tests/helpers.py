@@ -34,6 +34,7 @@ import os
 
 # Third party imports
 import numpy as np
+import pandas
 import pandora
 import rasterio as rio
 import xarray as xr
@@ -203,12 +204,38 @@ def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
     for idx, actual_tiles in enumerate(actual.tiles):
         assert len(actual_tiles) == len(expected.tiles[idx])
         for idx_tile, actual_tile in enumerate(actual_tiles):
-            np.testing.assert_allclose(
-                actual_tile,
-                expected.tiles[idx][idx_tile],
-                rtol,
-                atol,
-            )
+            if isinstance(actual_tile, np.ndarray):
+                np.testing.assert_allclose(
+                    actual_tile,
+                    expected.tiles[idx][idx_tile],
+                    rtol,
+                    atol,
+                )
+            elif isinstance(actual_tile, xr.Dataset):
+                assert_same_datasets(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, xr.DataArray):
+                assert_same_datasets(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, pandas.Dataframe):
+                assert_same_dataframes(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, dict):
+                assert all(
+                    (
+                        expected.tiles[idx][idx_tile].get(k) == v
+                        for k, v in actual_tile.items()
+                    )
+                )
+            else:
+                logging.error(
+                    "the tile format unsupported by helper.py: {}".format(
+                        type(actual_tile)
+                    )
+                )
 
 
 def assert_same_datasets(actual, expected, rtol=0, atol=0):
