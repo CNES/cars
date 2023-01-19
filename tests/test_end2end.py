@@ -911,27 +911,28 @@ def test_end2end_ventoux_with_color():
             assert out_disp_compute["maximum_disparity"] < 16
 
             assert os.path.isfile(out_disp_compute["matches"])
+
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675248.0_4897173.0.laz"
+                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
                     )
                 )
                 and os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675370.5_4897173.0.laz"
+                        out_dir, "points_cloud", "675375.0_4897185.0.csv"
                     )
                 )
             ) is True
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675248.0_4897173.0.csv"
+                        out_dir, "points_cloud", "675375.0_4897185.0.laz"
                     )
                 )
                 and os.path.exists(
                     os.path.join(
-                        out_dir, "points_cloud", "675370.5_4897173.0.csv"
+                        out_dir, "points_cloud", "675240.0_4897185.0.csv"
                     )
                 )
             ) is True
@@ -986,6 +987,7 @@ def test_end2end_ventoux_with_color():
         out_dir = input_config_low_res["output"]["out_dir"]
 
         assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
+
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
@@ -1335,10 +1337,10 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -16
-            assert out_disp_compute["minimum_disparity"] < -13
-            assert out_disp_compute["maximum_disparity"] > 8
-            assert out_disp_compute["maximum_disparity"] < 11
+            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["maximum_disparity"] > 14
+            assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(out_disp_compute["matches"])
 

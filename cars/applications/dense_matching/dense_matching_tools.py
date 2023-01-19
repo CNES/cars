@@ -47,6 +47,7 @@ from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import datasets
 
+
 def get_margins(disp_min, disp_max, corr_cfg):
     """
     Get margins for the dense matching steps

@@ -452,27 +452,30 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     )
 
                     # Compute disp_min and disp_max
+                    geom_load = (
+                        self.triangulation_application.get_geometry_loader()
+                    )
                     (dmin, dmax) = sparse_mtch_tools.compute_disp_min_disp_max(
-                                            sensor_image_left,
-                                            sensor_image_right,
-                                            epipolar_image_left,
-                                            epipolar_image_right,
-                                            grid_left,
-                                            corrected_grid_right,
-                                            grid_right,
-                                            corrected_matches_array,
-                                            orchestrator=cars_orchestrator,
-                                            disparity_margin=(
-                                                self.sparse_mtch_app.get_disparity_margin()
-                                            ),
-                                            pair_key=pair_key,
-                                            disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
-                                            geometry_loader = self.triangulation_application.get_geometry_loader(),
-                                            pair_folder=pair_folder,
-                                            srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                                            default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                                            save_matches=self.sparse_mtch_app.get_save_matches(),
-                                            )
+                        sensor_image_left,
+                        sensor_image_right,
+                        grid_left,
+                        corrected_grid_right,
+                        grid_right,
+                        corrected_matches_array,
+                        orchestrator=cars_orchestrator,
+                        disp_margin=(
+                            self.sparse_mtch_app.get_disparity_margin()
+                        ),
+                        pair_key=pair_key,
+                        disp_to_alt_ratio=grid_left.attributes[
+                            "disp_to_alt_ratio"
+                        ],
+                        geometry_loader=geom_load,
+                        pair_folder=pair_folder,
+                        srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
+                        default_alt=self.inputs[sens_cst.DEFAULT_ALT],
+                        save_matches=self.sparse_mtch_app.get_save_matches(),
+                    )
                 else:
                     # load the disparity range
                     [dmin, dmax] = self.used_conf[INPUTS]["epipolar_a_priori"][
