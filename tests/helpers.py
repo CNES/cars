@@ -34,6 +34,7 @@ import os
 
 # Third party imports
 import numpy as np
+import pandas
 import pandora
 import rasterio as rio
 import xarray as xr
@@ -177,6 +178,64 @@ def assert_same_images(actual, expected, rtol=0, atol=0):
             np.testing.assert_allclose(
                 rio_actual.read(), rio_expected.read(), rtol=rtol, atol=atol
             )
+
+
+def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
+    """
+    Compare two Carsdatasets:
+    """
+    assert (
+        list(actual.attributes.keys()).sort()
+        == list(expected.attributes.keys()).sort()
+    )
+    for key in expected.attributes.keys():
+        if isinstance(expected.attributes[key], np.ndarray):
+            np.testing.assert_allclose(
+                actual.attributes[key], expected.attributes[key]
+            )
+        else:
+            assert actual.attributes[key] == expected.attributes[key]
+
+    assert actual.shape == expected.shape
+    assert actual.tiling_grid.size == expected.tiling_grid.size
+    assert actual.overlaps.size == expected.overlaps.size
+    assert list(actual.tiling_grid).sort() == list(expected.tiling_grid).sort()
+    assert list(actual.overlaps).sort() == list(expected.overlaps).sort()
+    for idx, actual_tiles in enumerate(actual.tiles):
+        assert len(actual_tiles) == len(expected.tiles[idx])
+        for idx_tile, actual_tile in enumerate(actual_tiles):
+            if isinstance(actual_tile, np.ndarray):
+                np.testing.assert_allclose(
+                    actual_tile,
+                    expected.tiles[idx][idx_tile],
+                    rtol,
+                    atol,
+                )
+            elif isinstance(actual_tile, xr.Dataset):
+                assert_same_datasets(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, xr.DataArray):
+                assert_same_datasets(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, pandas.Dataframe):
+                assert_same_dataframes(
+                    actual_tile, expected.tiles[idx][idx_tile], rtol, atol
+                )
+            elif isinstance(actual_tile, dict):
+                assert all(
+                    (
+                        expected.tiles[idx][idx_tile].get(k) == v
+                        for k, v in actual_tile.items()
+                    )
+                )
+            else:
+                logging.error(
+                    "the tile format unsupported by helper.py: {}".format(
+                        type(actual_tile)
+                    )
+                )
 
 
 def assert_same_datasets(actual, expected, rtol=0, atol=0):
