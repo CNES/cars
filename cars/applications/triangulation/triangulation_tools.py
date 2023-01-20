@@ -29,6 +29,7 @@ from typing import Dict
 
 # Third party imports
 import numpy as np
+import pandas
 import xarray as xr
 
 from cars.conf import input_parameters
@@ -161,13 +162,20 @@ def triangulate_matches(
     :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so
                          as to cross those of img1
     :param snap_to_img1: bool
-    :returns: point_cloud as a dataset containing:
+    :returns: point_cloud as a panda DataFrame containing:
 
         - Array with shape (nb_matches,1,3), with last dimension \
         corresponding to longitude, latitude and elevation
         - Array with shape (nb_matches,1) with output mask
+        - cst.X
+        - cst.Y
+        - cst.Z
+        - corr_mask
+        - lon
+        - lat
 
-    :rtype: xarray.Dataset
+
+    :rtype: pandas.DataFrame
     """
 
     # Retrieve information from configuration
@@ -197,26 +205,28 @@ def triangulate_matches(
         grid2,
     )
 
-    row = np.array(range(llh.shape[0]))
-    col = np.array([0])
-
     disparity = np.array([matches[:, 2] - matches[:, 0]])
     disparity = np.transpose(disparity)
 
     msk = np.full(llh.shape[0:2], 255, dtype=np.uint8)
 
-    point_cloud = xr.Dataset(
-        {
-            cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
-            cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
-            cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
-            cst.DISPARITY: ([cst.ROW, cst.COL], disparity),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], msk),
-        },
-        coords={cst.ROW: row, cst.COL: col},
+    point_cloud_index = [
+        cst.X,
+        cst.Y,
+        cst.Z,
+        cst.DISPARITY,
+        cst.POINTS_CLOUD_CORR_MSK,
+    ]
+    point_cloud_array = np.zeros(
+        (np.ravel(llh[:, :, 0]).size, len(point_cloud_index)), dtype=np.float64
     )
-    point_cloud.attrs[cst.EPSG] = int(4326)
-
+    point_cloud_array[:, 0] = np.ravel(llh[:, :, 0])
+    point_cloud_array[:, 1] = np.ravel(llh[:, :, 1])
+    point_cloud_array[:, 2] = np.ravel(llh[:, :, 2])
+    point_cloud_array[:, 3] = np.ravel(disparity)
+    point_cloud_array[:, 4] = np.ravel(msk)
+    point_cloud = pandas.DataFrame(point_cloud_array, columns=point_cloud_index)
+    point_cloud.attrs[cst.EPSG] = int(cst.EPSG_WSG84)
     return point_cloud
 
 

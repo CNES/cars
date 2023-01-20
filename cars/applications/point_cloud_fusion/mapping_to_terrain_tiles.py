@@ -215,7 +215,10 @@ class MappingToTerrainTiles(
             optimal_terrain_tile_width,
         )
 
-        if list_epipolar_points_cloud_left[0].dataset_type == "arrays":
+        if list_epipolar_points_cloud_left[0].dataset_type in (
+            "arrays",
+            "points",
+        ):
             # Create CarsDataset
             merged_point_cloud = cars_dataset.CarsDataset("points")
 
@@ -458,7 +461,6 @@ def compute_point_cloud_wrapper(
     # Unpack list of clouds from tuple, and project them to correct EPSG if
     # needed
     clouds = point_clouds_left
-
     # Add clouds and colors computed from the secondary disparity map
     if point_clouds_right[0] is not None:
         cloud_sec = point_clouds_right

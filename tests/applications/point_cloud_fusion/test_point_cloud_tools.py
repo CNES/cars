@@ -41,8 +41,8 @@ from tests.helpers import add_color, assert_same_datasets
 
 
 @pytest.mark.unit_tests
-@pytest.mark.test_create_combined_cloud
-def test_create_combined_cloud():
+@pytest.mark.test_create_combined_dense_cloud
+def test_create_combined_dense_cloud():
     """
     Tests several configurations of create_combined_cloud function :
     - test only color
@@ -375,6 +375,173 @@ def test_create_combined_cloud():
     ref_cloud_coords = np.concatenate([ref_cloud_coords0, ref_cloud_coords2])
 
     assert np.allclose(cloud, ref_cloud_coords)
+
+
+@pytest.mark.unit_tests
+@pytest.mark.test_create_combined_sparse_cloud
+def test_create_combined_sparse_cloud():
+    """
+    Tests several configurations of create_combined_cloud function :
+    - test with mask
+    - test with coords
+    """
+    epsg = 4326
+
+    # test only color
+    def get_cloud0_ds(with_msk):
+        """Return local test point cloud 1x10 dataset"""
+        number = 5
+        x_coord = np.arange(number) + 40
+        y_coord = x_coord + 1
+        z_coord = y_coord + 1
+        corr_msk = np.full(number, fill_value=255, dtype=np.int16)
+        corr_msk[4] = 0
+        msk = corr_msk
+        if with_msk:
+            msk = np.full(number, fill_value=0, dtype=np.int16)
+            msk[3] = 255
+            msk[4] = 255
+
+        point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_CORR_MSK]
+        point_cloud_array = np.zeros((number, 4), dtype=np.float64)
+        point_cloud_array[:, 0] = np.array(x_coord)
+        point_cloud_array[:, 1] = np.array(y_coord)
+        point_cloud_array[:, 2] = np.array(z_coord)
+        point_cloud_array[:, 3] = msk
+        cloud0 = pandas.DataFrame(point_cloud_array, columns=point_cloud_index)
+        cloud0.attrs[cst.EPSG] = epsg
+        return cloud0
+
+    number = 7
+
+    point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_CORR_MSK]
+    point_cloud_array1 = np.zeros((number, 4), dtype=np.float64)
+    point_cloud_array1[:, 0] = np.full(number, fill_value=0, dtype=np.float64)
+    point_cloud_array1[:, 1] = np.full(number, fill_value=1, dtype=np.float64)
+    point_cloud_array1[:, 2] = np.full(number, fill_value=2, dtype=np.float64)
+    point_cloud_array1[:, 3] = np.full(number, fill_value=255, dtype=np.int16)
+    point_cloud_array1[6, 3] = 0
+    cloud1 = pandas.DataFrame(point_cloud_array1, columns=point_cloud_index)
+    cloud1.attrs[cst.EPSG] = epsg
+    number = 5
+    point_cloud_array2 = np.zeros((number, 4), dtype=np.float64)
+    point_cloud_array2[:, 0] = np.full(number, fill_value=45, dtype=np.float64)
+    point_cloud_array2[:, 1] = np.full(number, fill_value=45, dtype=np.float64)
+    point_cloud_array2[:, 2] = np.full(number, fill_value=50, dtype=np.float64)
+    point_cloud_array2[:, 3] = np.full(number, fill_value=255, dtype=np.int16)
+    point_cloud_array2[2, 3] = 0
+    cloud2 = pandas.DataFrame(point_cloud_array2, columns=point_cloud_index)
+    cloud2.attrs[cst.EPSG] = epsg
+    cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
+
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
+    cloud, epsg = point_cloud_tools.create_combined_cloud(
+        cloud_list,
+        epsg,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
+        epipolar_border_margin=1,
+        with_coords=False,
+    )
+    # check against the reference value
+    ref_point_cloud_index = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
+    number = 9
+    ref_array2 = np.zeros((number, 4), dtype=np.float64)
+
+    ref_valid = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+    ref_x = [40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
+    ref_y = [41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
+    ref_z = [42.0, 43.0, 44.0, 45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
+    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
+
+    ref_cloud = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
+
+    for key in ref_point_cloud_index:
+        assert np.allclose(cloud[key].values, ref_cloud[key].values)
+
+    # # test with coords
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
+    cloud, epsg = point_cloud_tools.create_combined_cloud(
+        cloud_list,
+        epsg,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
+        epipolar_border_margin=1,
+        with_coords=True,
+    )
+
+    ref_point_cloud_index = [
+        cst.POINTS_CLOUD_VALID_DATA,
+        cst.X,
+        cst.Y,
+        cst.Z,
+        cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+    ]
+    number = 9
+    ref_array2 = np.zeros((number, 5), dtype=np.float64)
+
+    ref_valid = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+    ref_x = [40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
+    ref_y = [41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
+    ref_z = [42.0, 43.0, 44.0, 45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
+    ref_coord = [0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 1.0, 3.0, 4.0]
+    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
+    ref_array2[:, 4] = np.asarray(ref_coord, dtype=np.float64)
+    ref_cloud2 = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
+
+    for key in ref_point_cloud_index:
+        assert np.allclose(cloud[key].values, ref_cloud2[key].values)
+
+    # test with msk
+    cloud_list = [get_cloud0_ds(with_msk=True), cloud1, cloud2]
+    cloud, epsg = point_cloud_tools.create_combined_cloud(
+        cloud_list,
+        epsg,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
+        epipolar_border_margin=1,
+        with_coords=False,
+    )
+
+    number = 6
+    ref_array2 = np.zeros((number, 4), dtype=np.float64)
+    ref_point_cloud_index = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
+
+    ref_valid = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
+    ref_x = [43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
+    ref_y = [44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
+    ref_z = [45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
+    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
+
+    ref_cloud = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
+
+    for key in ref_point_cloud_index:
+        assert np.allclose(cloud[key].values, ref_cloud[key].values)
 
 
 @pytest.mark.unit_tests

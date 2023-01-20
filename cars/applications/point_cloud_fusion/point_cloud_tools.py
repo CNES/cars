@@ -22,6 +22,7 @@
 This module is responsible for the transition between triangulation and
 rasterization steps
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 import logging
@@ -38,6 +39,340 @@ from cars.core import projection
 
 
 def create_combined_cloud(  # noqa: C901
+    cloud_list: List[xr.Dataset] or List[pandas.DataFrame],
+    dsm_epsg: int,
+    xmin: float = None,
+    xmax: float = None,
+    ymin: int = None,
+    ymax: int = None,
+    epipolar_border_margin: int = 0,
+    margin: float = 0,
+    with_coords: bool = False,
+) -> Tuple[pandas.DataFrame, int]:
+    """
+    Combine a list of clouds from sparse or dense matching
+    into a pandas dataframe.
+    The detailed cases for each cloud type are in the derived function
+    create_combined_sparse_cloud and create_combined_dense_cloud.
+
+    :param dsm_epsg: epsg code for the CRS of the final output raster
+    :param xmin: xmin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param xmax: xmax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymin: ymin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymax: ymax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param margin: Margin added for each tile, in meter or degree.
+        (default value: 0)
+    :param epipolar_border_margin: Margin used
+        to invalidate cells too close to epipolar border. (default value: 0)
+    :param with_coords: Option enabling the adding to the combined cloud
+        of information of each point to retrieve their positions
+        in the original epipolar images
+    :return: Tuple formed with the combined clouds and color
+        in a single pandas dataframe and the epsg code
+    """
+    if isinstance(cloud_list[0], xr.Dataset):
+        return create_combined_dense_cloud(
+            cloud_list,
+            dsm_epsg,
+            xmin,
+            xmax,
+            ymin,
+            ymax,
+            epipolar_border_margin,
+            margin,
+            with_coords,
+        )
+    # case of pandas.DataFrame cloud
+    return create_combined_sparse_cloud(
+        cloud_list,
+        dsm_epsg,
+        xmin,
+        xmax,
+        ymin,
+        ymax,
+        epipolar_border_margin,
+        margin,
+        with_coords,
+    )
+
+
+def create_combined_sparse_cloud(  # noqa: C901
+    cloud_list: List[pandas.DataFrame],
+    dsm_epsg: int,
+    xmin: float = None,
+    xmax: float = None,
+    ymin: int = None,
+    ymax: int = None,
+    epipolar_border_margin: int = 0,
+    margin: float = 0,
+    with_coords: bool = False,
+) -> Tuple[pandas.DataFrame, int]:
+    """
+    Combine a list of clouds (and their colors) into a pandas dataframe
+    structured with the following labels:
+
+        - if no mask data present in cloud_list datasets:
+            labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z] \
+            The combined cloud has x, y, z columns along with 'valid data' one.\
+            The valid data is a mask set to True if the data \
+            are not on the epipolar image margin (epipolar_border_margin), \
+             otherwise it is set to False.
+
+        - if mask data present in cloud_list datasets:
+            labels=[cst.POINTS_CLOUD_VALID_DATA,\
+                    cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]\
+            The mask values are added to the dataframe.
+
+    :param dsm_epsg: epsg code for the CRS of the final output raster
+    :param xmin: xmin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param xmax: xmax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymin: ymin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymax: ymax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param margin: Margin added for each tile, in meter or degree.
+        (default value: 0)
+    :param epipolar_border_margin: Margin used
+        to invalidate cells too close to epipolar border. (default value: 0)
+    :param with_coords: Option enabling the adding to the combined cloud
+        of information of each point to retrieve their positions
+        in the original epipolar images
+    :return: Tuple formed with the combined clouds and color
+        in a single pandas dataframe and the epsg code
+    """
+    worker_logger = logging.getLogger("distributed.worker")
+
+    epsg = get_epsg(cloud_list, worker_logger)
+
+    # compute margin/roi and final number of data to add to the combined cloud
+    roi = (
+        xmin is not None
+        and xmax is not None
+        and ymin is not None
+        and ymax is not None
+    )
+
+    nb_data = create_point_cloud_index(cloud_list)
+
+    if with_coords:
+        nb_data.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I])
+
+    # iterate through input clouds
+    cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
+    nb_points = 0
+    for _, cloud_list_item in enumerate(cloud_list):
+        full_x = cloud_list_item[cst.X]
+        full_y = cloud_list_item[cst.Y]
+        full_z = cloud_list_item[cst.Z]
+
+        # get mask of points inside the roi (plus margins)
+        if roi:
+            # Compute terrain tile bounds
+            # if the points clouds are not in the same referential as the roi,
+            # it is converted using the dsm_epsg
+            (
+                terrain_tile_data_msk,
+                terrain_tile_data_msk_pos,
+            ) = compute_terrain_msk(
+                dsm_epsg,
+                xmin,
+                xmax,
+                ymin,
+                ymax,
+                margin,
+                epsg,
+                cloud_list_item,
+                full_x,
+                full_y,
+            )
+
+            # if the points clouds are not in the same referential as the roi,
+            # retrieve the initial values
+            if epsg != dsm_epsg:
+                full_x = cloud_list_item[cst.X]
+                full_y = cloud_list_item[cst.Y]
+
+            # if no point is found, continue
+            if terrain_tile_data_msk_pos[0].shape[0] == 0:
+                continue
+            # get useful data bounding box
+            bbox = [
+                np.min(terrain_tile_data_msk_pos),
+                np.max(terrain_tile_data_msk_pos),
+            ]
+
+        else:
+            bbox = [0, full_y.shape[0] - 1]
+
+        # add (x, y, z) information to the current cloud
+        c_x = full_x[bbox[0] : bbox[1] + 1]
+        c_y = full_y[bbox[0] : bbox[1] + 1]
+        c_z = full_z[bbox[0] : bbox[1] + 1]
+
+        c_cloud = np.zeros((len(nb_data), (bbox[1] - bbox[0] + 1)))
+        c_cloud[nb_data.index(cst.X), :] = c_x
+        c_cloud[nb_data.index(cst.Y), :] = c_y
+        c_cloud[nb_data.index(cst.Z), :] = c_z
+
+        # add data valid mask
+        # (points that are not in the border of the epipolar image)
+        if epipolar_border_margin == 0:
+            epipolar_margin_mask = np.full(
+                cloud_list_item[cst.X].size,
+                True,
+            )
+        else:
+            epipolar_margin_mask = np.full(
+                cloud_list_item[cst.X].size,
+                False,
+            )
+            epipolar_margin_mask[
+                epipolar_border_margin:-epipolar_border_margin,
+            ] = True
+
+        c_epipolar_margin_mask = epipolar_margin_mask[bbox[0] : bbox[1] + 1]
+        c_cloud[nb_data.index(cst.POINTS_CLOUD_VALID_DATA), :] = np.ravel(
+            c_epipolar_margin_mask
+        )
+
+        # add the original image coordinates information to the current cloud
+        if with_coords:
+            coords_line = np.linspace(
+                bbox[0], bbox[1], num=bbox[1] - bbox[0] + 1
+            )
+            c_cloud[
+                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
+            ] = coords_line
+
+        # remove masked data (pandora + out of the terrain tile points)
+        c_terrain_tile_data_msk = (
+            cloud_list_item[cst.POINTS_CLOUD_CORR_MSK][bbox[0] : bbox[1]] == 255
+        )
+        if roi:
+            c_terrain_tile_data_msk = np.logical_and(
+                c_terrain_tile_data_msk,
+                terrain_tile_data_msk[bbox[0] : bbox[1]],
+            )
+
+        c_cloud = filter_cloud_with_mask(
+            nb_points, c_cloud, c_terrain_tile_data_msk
+        )
+
+        # add current cloud to the combined one
+        cloud = np.concatenate([cloud, c_cloud], axis=0)
+
+    worker_logger.debug("Received {} points to rasterize".format(nb_points))
+    worker_logger.debug(
+        "Keeping {}/{} points "
+        "inside rasterization grid".format(cloud.shape[0], nb_points)
+    )
+
+    pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
+
+    return pd_cloud, epsg
+
+
+def get_epsg(cloud_list, worker_logger):
+    """
+    Extract epsg from cloud list and check if all the same
+
+    :param cloud_list: list of the point clouds
+    :param worker_logger: the worker logger
+    """
+    epsg = None
+    for cloud_list_item in cloud_list:
+        if epsg is None:
+            epsg = int(cloud_list_item.attrs[cst.EPSG])
+        elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
+            worker_logger.error(
+                "All points clouds do not have the same epsg code"
+            )
+
+    return epsg
+
+
+def filter_cloud_with_mask(nb_points, c_cloud, c_terrain_tile_data_msk):
+    """
+    Delete masked points with terrain tile mask
+
+    :param nb_points: total number of point cloud
+        (increase at each point cloud)
+    :param c_cloud: the point cloud
+    :param c_terrain_tile_data_msk: terrain tile mask
+    """
+    c_terrain_tile_data_msk = np.ravel(c_terrain_tile_data_msk)
+
+    c_terrain_tile_data_msk_pos = np.nonzero(~c_terrain_tile_data_msk)
+
+    # compute nb points before apply the mask
+    nb_points += c_cloud.shape[1]
+
+    c_cloud = np.delete(c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0)
+
+    return c_cloud
+
+
+def compute_terrain_msk(
+    dsm_epsg,
+    xmin,
+    xmax,
+    ymin,
+    ymax,
+    margin,
+    epsg,
+    cloud_list_item,
+    full_x,
+    full_y,
+):
+    """
+    Compute terrain tile msk bounds
+
+    If the points clouds are not in the same referential as the roi,
+    it is converted using the dsm_epsg
+
+    :param dsm_epsg: epsg code for the CRS of the final output raster
+    :param xmin: xmin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param xmax: xmax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymin: ymin of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param ymax: ymax of the rasterization grid
+        (if None, the whole clouds are combined)
+    :param margin: Margin added for each tile, in meter or degree.
+        (default value: 0)
+    :param epsg: epsg code of the input cloud
+    :param cloud_list_item: the point cloud
+    :param full_x: cloud_list_item[X]
+    :param full_y: cloud_list_item[Y]
+    """
+    if epsg != dsm_epsg:
+        (
+            full_x,
+            full_y,
+        ) = projection.get_converted_xy_np_arrays_from_dataset(
+            cloud_list_item, dsm_epsg
+        )
+    msk_xmin = np.where(full_x > xmin - margin, True, False)
+    msk_xmax = np.where(full_x < xmax + margin, True, False)
+    msk_ymin = np.where(full_y > ymin - margin, True, False)
+    msk_ymax = np.where(full_y < ymax + margin, True, False)
+    terrain_tile_data_msk = np.logical_and(
+        msk_xmin,
+        np.logical_and(msk_xmax, np.logical_and(msk_ymin, msk_ymax)),
+    )
+    terrain_tile_data_msk_pos = terrain_tile_data_msk.astype(np.int8).nonzero()
+
+    return terrain_tile_data_msk, terrain_tile_data_msk_pos
+
+
+def create_combined_dense_cloud(  # noqa: C901
     cloud_list: List[xr.Dataset],
     dsm_epsg: int,
     xmin: float = None,
@@ -110,14 +445,7 @@ def create_combined_cloud(  # noqa: C901
     """
     worker_logger = logging.getLogger("distributed.worker")
 
-    epsg = None
-    for cloud_list_item in cloud_list:
-        if epsg is None:
-            epsg = int(cloud_list_item.attrs[cst.EPSG])
-        elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
-            worker_logger.error(
-                "All points clouds do not have the same epsg code"
-            )
+    epsg = get_epsg(cloud_list, worker_logger)
 
     # compute margin/roi and final number of data to add to the combined cloud
     roi = (
@@ -127,14 +455,8 @@ def create_combined_cloud(  # noqa: C901
         and ymax is not None
     )
 
-    nb_data = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
-
-    # check if the input mask values are present in the dataset
-    for cloud_list_item in cloud_list:
-        ds_values_list = [key for key, _ in cloud_list_item.items()]
-        if cst.POINTS_CLOUD_MSK in ds_values_list:
-            nb_data.append(cst.POINTS_CLOUD_MSK)
-            break
+    # create point cloud index
+    nb_data = create_point_cloud_index(cloud_list)
 
     # Find number of bands
     # get max of bands
@@ -155,7 +477,7 @@ def create_combined_cloud(  # noqa: C901
                 cst.POINTS_CLOUD_IDX_IM_EPI,
             ]
         )
-    if cst.POINTS_CLOUD_AMBIGUITY in cloud_list_item.keys():
+    if cst.POINTS_CLOUD_AMBIGUITY in cloud_list[0].keys():
         nb_data.append(cst.POINTS_CLOUD_AMBIGUITY)
 
     # iterate through input clouds
@@ -168,27 +490,24 @@ def create_combined_cloud(  # noqa: C901
 
         # get mask of points inside the roi (plus margins)
         if roi:
+            # Compute terrain tile bounds
             # if the points clouds are not in the same referential as the roi,
             # it is converted using the dsm_epsg
-            if epsg != dsm_epsg:
-                (
-                    full_x,
-                    full_y,
-                ) = projection.get_converted_xy_np_arrays_from_dataset(
-                    cloud_list_item, dsm_epsg
-                )
-
-            msk_xmin = np.where(full_x > xmin - margin, True, False)
-            msk_xmax = np.where(full_x < xmax + margin, True, False)
-            msk_ymin = np.where(full_y > ymin - margin, True, False)
-            msk_ymax = np.where(full_y < ymax + margin, True, False)
-            terrain_tile_data_msk = np.logical_and(
-                msk_xmin,
-                np.logical_and(msk_xmax, np.logical_and(msk_ymin, msk_ymax)),
+            (
+                terrain_tile_data_msk,
+                terrain_tile_data_msk_pos,
+            ) = compute_terrain_msk(
+                dsm_epsg,
+                xmin,
+                xmax,
+                ymin,
+                ymax,
+                margin,
+                epsg,
+                cloud_list_item,
+                full_x,
+                full_y,
             )
-            terrain_tile_data_msk_pos = terrain_tile_data_msk.astype(
-                np.int8
-            ).nonzero()
 
             # if the points clouds are not in the same referential as the roi,
             # retrieve the initial values
@@ -310,14 +629,8 @@ def create_combined_cloud(  # noqa: C901
                 ],
             )
 
-        c_terrain_tile_data_msk = np.ravel(c_terrain_tile_data_msk)
-
-        c_terrain_tile_data_msk_pos = np.nonzero(~c_terrain_tile_data_msk)
-
-        nb_points += c_cloud.shape[1]
-
-        c_cloud = np.delete(
-            c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0
+        c_cloud = filter_cloud_with_mask(
+            nb_points, c_cloud, c_terrain_tile_data_msk
         )
 
         # add current cloud to the combined one
@@ -332,6 +645,22 @@ def create_combined_cloud(  # noqa: C901
     pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
 
     return pd_cloud, epsg
+
+
+def create_point_cloud_index(cloud_list):
+    """
+    Create point cloud index from cloud list keys and color inputs
+    """
+    nb_data = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
+
+    # check if the input mask values are present in the dataset
+    for cloud_list_item in cloud_list:
+        ds_values_list = [key for key, _ in cloud_list_item.items()]
+        if cst.POINTS_CLOUD_MSK in ds_values_list:
+            nb_data.append(cst.POINTS_CLOUD_MSK)
+            break
+
+    return nb_data
 
 
 def add_color_information(
