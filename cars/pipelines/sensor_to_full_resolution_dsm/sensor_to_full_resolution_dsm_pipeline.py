@@ -59,7 +59,7 @@ from cars.pipelines.sensor_to_full_resolution_dsm import (
 from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 
 
-@Pipeline.register("sensor_to_full_resolution_dsm")
+@Pipeline.register("sensors_to_dense_dsm", "sensors_to_dense_point_clouds")
 class SensorToFullResolutionDsmPipeline(PipelineTemplate):
     """
     SensorToFullResolutionDsmPipeline
@@ -79,6 +79,20 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         :type config_json_dir: str
         """
 
+        # Used conf
+        self.used_conf = {}
+
+        # Pipeline
+        self.used_conf[PIPELINE] = conf.get(
+            PIPELINE, "sensor_to_full_resolution_dsm"
+        )
+
+        # set json pipeline file
+        if self.used_conf[PIPELINE] == "sensor_to_full_resolution_dsm":
+            json_conf_file_name = "sensor_to_full_resolution_dsm.json"
+        else:
+            json_conf_file_name = "sensor_to_pc.json"
+
         # Merge parameters from associated json
         # priority : cars_pipeline.json << user_inputs.json
         # Get root package directory
@@ -87,7 +101,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             package_path,
             "..",
             "conf_pipeline",
-            "sensor_to_full_resolution_dsm.json",
+            json_conf_file_name,
         )
         with open(json_file, "r", encoding="utf8") as fstream:
             pipeline_config = json.load(fstream)
@@ -96,12 +110,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
 
         # check global conf
         self.check_global_schema(self.conf)
-
-        # Used conf
-        self.used_conf = {}
-
-        # Pipeline
-        self.used_conf[PIPELINE] = "sensor_to_full_resolution_dsm"
 
         # Check conf orchestrator
         self.orchestrator_conf = self.check_orchestrator(

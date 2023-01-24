@@ -35,6 +35,7 @@ ROI = "roi"
 ROI_WITH_MARGINS = "roi_with_margins"
 EPSG = "epsg"
 DISPARITY = "disparity"
+PC_EPSG = "point_cloud_epsg"
 
 EPSG_WSG84 = 4326
 # stereo keys

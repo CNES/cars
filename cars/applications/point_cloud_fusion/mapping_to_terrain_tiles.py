@@ -36,6 +36,7 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.point_cloud_fusion import (
     cloud_fusion_constants,
+    pc_tif_tools,
     point_cloud_tools,
 )
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
@@ -217,7 +218,8 @@ class MappingToTerrainTiles(
 
         if list_epipolar_points_cloud_left[0].dataset_type in (
             "arrays",
-            "points",
+            "dict",
+            "points"
         ):
             # Create CarsDataset
             merged_point_cloud = cars_dataset.CarsDataset("points")
@@ -265,22 +267,25 @@ class MappingToTerrainTiles(
 
             number_of_epipolar_tiles_per_terrain_tiles = []
 
-            # Add epipolar_points_min and epipolar_points_max used
-            #  in point_cloud_fusion
-            # , to get corresponding tiles (terrain)
-            # TODO change method for corresponding tiles
-            list_points_min = []
-            list_points_max = []
-            for pc_left in list_epipolar_points_cloud_left:
-                points_min, points_max = tiling.terrain_grid_to_epipolar(
-                    terrain_tiling_grid,
-                    pc_left.tiling_grid,
-                    pc_left.attributes["epipolar_grid_min"],
-                    pc_left.attributes["epipolar_grid_max"],
-                    epsg,
-                )
-                list_points_min.append(points_min)
-                list_points_max.append(points_max)
+            if list_epipolar_points_cloud_left[0].dataset_type == "arrays":
+                # deall with delayed tiles, with a priori disp min and max
+
+                # Add epipolar_points_min and epipolar_points_max used
+                #  in point_cloud_fusion
+                # , to get corresponding tiles (terrain)
+                # TODO change method for corresponding tiles
+                list_points_min = []
+                list_points_max = []
+                for pc_left in list_epipolar_points_cloud_left:
+                    points_min, points_max = tiling.terrain_grid_to_epipolar(
+                        terrain_tiling_grid,
+                        pc_left.tiling_grid,
+                        pc_left.attributes["epipolar_grid_min"],
+                        pc_left.attributes["epipolar_grid_max"],
+                        epsg,
+                    )
+                    list_points_min.append(points_min)
+                    list_points_max.append(points_max)
 
             # Add infos to orchestrator.out_json
             updating_dict = {
@@ -306,22 +311,41 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
-                    # Get required point clouds
-                    (
-                        terrain_region,
-                        required_point_clouds_left,
-                        required_point_clouds_right,
-                        _rank,
-                        _pos,
-                    ) = tiling.get_corresponding_tiles_row_col(
-                        terrain_tiling_grid,
-                        row,
-                        col,
-                        list_epipolar_points_cloud_left,
-                        list_epipolar_points_cloud_right,
-                        list_points_min,
-                        list_points_max,
-                    )
+                    if (
+                        list_epipolar_points_cloud_left[0].dataset_type
+                        == "arrays"
+                    ):
+                        # Get required point clouds
+                        (
+                            terrain_region,
+                            required_point_clouds_left,
+                            required_point_clouds_right,
+                            _rank,
+                            _pos,
+                        ) = tiling.get_corresponding_tiles_row_col(
+                            terrain_tiling_grid,
+                            row,
+                            col,
+                            list_epipolar_points_cloud_left,
+                            list_epipolar_points_cloud_right,
+                            list_points_min,
+                            list_points_max,
+                        )
+                    else:
+                        # required_point_clouds_right will be empty
+                        # every point cloud is considered as left input
+                        (
+                            terrain_region,
+                            required_point_clouds_left,
+                            required_point_clouds_right,
+                        ) = pc_tif_tools.get_tiles_row_col(
+                            terrain_tiling_grid,
+                            row,
+                            col,
+                            list_epipolar_points_cloud_left,
+                            list_epipolar_points_cloud_right,
+                            margins=margins,
+                        )
 
                     if len(required_point_clouds_left) > 0:
                         logging.debug(
@@ -462,26 +486,43 @@ def compute_point_cloud_wrapper(
     # needed
     clouds = point_clouds_left
     # Add clouds and colors computed from the secondary disparity map
-    if point_clouds_right[0] is not None:
-        cloud_sec = point_clouds_right
-        clouds.extend(cloud_sec)
+    if len(point_clouds_right) > 0:
+        if point_clouds_right[0] is not None:
+            cloud_sec = point_clouds_right
+            clouds.extend(cloud_sec)
 
     # combine clouds
-    pc_pandas, cloud_epsg = point_cloud_tools.create_combined_cloud(
-        clouds,
-        epsg,
-        xmin=xmin,
-        xmax=xmax,
-        ymin=ymin,
-        ymax=ymax,
-        margin=margins,
-        epipolar_border_margin=0,
-        with_coords=True,
-    )
+    if not isinstance(clouds[0], dict):
+        pc_pandas, cloud_epsg = point_cloud_tools.create_combined_cloud(
+            clouds,
+            epsg,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            margin=margins,
+            epipolar_border_margin=0,
+            with_coords=True,
+        )
+    else:
+        # combined pc from tif files
+        pc_pandas, cloud_epsg = pc_tif_tools.create_combined_cloud_from_tif(
+            clouds,
+            epsg,
+            xmin=xmin,
+            xmax=xmax,
+            ymin=ymin,
+            ymax=ymax,
+            margin=margins,
+        )
 
     # Conversion to UTM
-    projection.points_cloud_conversion_dataframe(pc_pandas, cloud_epsg, epsg)
-    cloud_epsg = epsg
+    if cloud_epsg != epsg:
+        projection.points_cloud_conversion_dataframe(
+            pc_pandas, cloud_epsg, epsg
+        )
+        cloud_epsg = epsg
+
     # get color type list
     color_type = point_cloud_tools.get_color_type(clouds)
 

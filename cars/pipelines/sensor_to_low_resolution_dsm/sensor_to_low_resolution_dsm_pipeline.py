@@ -60,7 +60,7 @@ from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 CARS_GEOID_PATH = "geoid/egm96.grd"
 
 
-@Pipeline.register("sensor_to_low_resolution_dsm")
+@Pipeline.register("sensor_to_sparse_dsm")
 class SensorToLowResolutionDsmPipeline(PipelineTemplate):
     """
     SensorToLowResolutionDsmPipeline

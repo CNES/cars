@@ -19,10 +19,10 @@
 # limitations under the License.
 #
 """
-CARS pipelines module init file
+CARS sensor_to_full_resolution_dsm pipeline module init file
 """
 
-# Imports needed in order to register pipeline for Pipeline factory
-from . import point_clouds_to_dsm  # noqa: F401
-from . import sensor_to_full_resolution_dsm  # noqa: F401
-from . import sensor_to_low_resolution_dsm  # noqa: F401
+# Cars imports
+from cars.pipelines.point_clouds_to_dsm import (  # noqa: F401
+    point_cloud_to_dsm_pipeline,
+)

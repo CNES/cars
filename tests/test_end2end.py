@@ -1,4 +1,4 @@
-#!/usr/bin/env python # pylint: disable=too-many-lines
+#!/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -24,6 +24,7 @@ Prepare and Compute DSM run user tests through pipelines run() functions
 TODO: Cars_cli is not tested
 TODO: Refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import absolute_import
@@ -78,7 +79,7 @@ def test_end2end_gizeh_rectangle_epi_image():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -154,7 +155,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -263,7 +264,7 @@ def test_end2end_ventoux_unique():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            assert used_conf["pipeline"] == "sensor_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -416,7 +417,7 @@ def test_end2end_ventoux_unique():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -526,7 +527,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -605,7 +606,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -693,7 +694,7 @@ def test_end2end_use_epipolar_a_prior():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -792,7 +793,7 @@ def test_end2end_use_epipolar_a_prior():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            assert used_conf["pipeline"] == "sensor_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -820,7 +821,7 @@ def test_end2end_use_epipolar_a_prior():
             # check refined_config_full_res_json pipeline
             assert (
                 refined_config_full_res_json["pipeline"]
-                == "sensor_to_full_resolution_dsm"
+                == "sensors_to_dense_dsm"
             )
             # check refined_config_full_res_json sparse_matching configuration
             assert (
@@ -886,7 +887,7 @@ def test_end2end_use_epipolar_a_prior():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -948,7 +949,7 @@ def test_prepare_ventoux_bias():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1020,7 +1021,7 @@ def test_end2end_ventoux_with_color():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensor_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1252,7 +1253,7 @@ def test_compute_dsm_with_roi_ventoux():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1381,7 +1382,7 @@ def test_compute_dsm_with_snap_to_img1():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1468,7 +1469,7 @@ def test_end2end_quality_stats():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1617,7 +1618,7 @@ def test_end2end_ventoux_egm96_geoid():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1715,7 +1716,7 @@ def test_end2end_ventoux_egm96_geoid():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1791,7 +1792,7 @@ def test_end2end_paca_with_mask():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1872,7 +1873,7 @@ def test_end2end_paca_with_mask():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -1957,7 +1958,7 @@ def desactivated_test_end2end_disparity_filing():
         _, input_config_full_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
