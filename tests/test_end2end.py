@@ -818,8 +818,8 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -86
-            assert out_disp_compute["minimum_disparity"] < -84
+            assert out_disp_compute["minimum_disparity"] > -84
+            assert out_disp_compute["minimum_disparity"] < -82
             assert out_disp_compute["maximum_disparity"] > -46
             assert out_disp_compute["maximum_disparity"] < -44
 
@@ -905,10 +905,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
-            assert out_disp_compute["maximum_disparity"] > 14
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["minimum_disparity"] > -21
+            assert out_disp_compute["minimum_disparity"] < -17
+            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] < 16
 
             assert os.path.isfile(out_disp_compute["matches"])
 
@@ -918,9 +918,19 @@ def test_end2end_ventoux_with_color():
                         out_dir, "points_cloud", "675240.0_4897185.0.laz"
                     )
                 )
+                and os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675375.0_4897185.0.csv"
+                    )
+                )
             ) is True
             assert (
                 os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675375.0_4897185.0.laz"
+                    )
+                )
+                and os.path.exists(
                     os.path.join(
                         out_dir, "points_cloud", "675240.0_4897185.0.csv"
                     )
@@ -977,6 +987,7 @@ def test_end2end_ventoux_with_color():
         out_dir = input_config_low_res["output"]["out_dir"]
 
         assert os.path.exists(os.path.join(out_dir, "ambiguity.tif")) is True
+
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
@@ -994,7 +1005,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675431.5_4897173.0.laz",
+                    "675248.0_4897173.0.laz",
                 )
             )
             is True
@@ -1004,7 +1015,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675431.5_4897173.0.csv",
+                    "675248.0_4897173.0.csv",
                 )
             )
             is True
@@ -1014,7 +1025,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675431.5_4897173.0.laz",
+                    "675248.0_4897173.0.laz",
                 )
             )
             is True
@@ -1024,7 +1035,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675431.5_4897173.0.csv",
+                    "675248.0_4897173.0.csv",
                 )
             )
             is True
@@ -1335,54 +1346,68 @@ def test_end2end_quality_stats():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #      absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/
+        #       dsm_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      clr_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_mean.tif'),
-        #      absolute_data_path("ref_output/dsm_mean_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      dsm_mean_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_std.tif'),
-        #      absolute_data_path("ref_output/dsm_std_end2end_ventoux.tif"))
+        #      absolute_data_path("ref_output/
+        #      dsm_std_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_n_pts.tif'),
         #      absolute_data_path(
-        #      "ref_output/dsm_n_pts_end2end_ventoux.tif"))
+        #      "ref_output/dsm_n_pts_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_pts_in_cell.tif'),
         #      absolute_data_path(
-        #      "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"))
+        #      "ref_output/dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/clr_end2end_ventoux_quality_stats.tif"
+            ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_mean.tif"),
-            absolute_data_path("ref_output/dsm_mean_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_mean_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_std.tif"),
-            absolute_data_path("ref_output/dsm_std_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_std_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_n_pts.tif"),
-            absolute_data_path("ref_output/dsm_n_pts_end2end_ventoux.tif"),
+            absolute_data_path(
+                "ref_output/dsm_n_pts_end2end_ventoux_quality_stats.tif"
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm_pts_in_cell.tif"),
             absolute_data_path(
-                "ref_output/dsm_pts_in_cell_end2end_ventoux.tif"
+                "ref_output/dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -1476,7 +1501,7 @@ def test_end2end_ventoux_egm96_geoid():
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #      absolute_data_path("ref_output/dsm_end2end_ventoux_egm96.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #      absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #       absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -1486,7 +1511,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -1557,7 +1582,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux_egm96.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )

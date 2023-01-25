@@ -200,6 +200,9 @@ def triangulate_matches(
     row = np.array(range(llh.shape[0]))
     col = np.array([0])
 
+    disparity = np.array([matches[:, 2] - matches[:, 0]])
+    disparity = np.transpose(disparity)
+
     msk = np.full(llh.shape[0:2], 255, dtype=np.uint8)
 
     point_cloud = xr.Dataset(
@@ -207,6 +210,7 @@ def triangulate_matches(
             cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),
             cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),
             cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
+            cst.DISPARITY: ([cst.ROW, cst.COL], disparity),
             cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], msk),
         },
         coords={cst.ROW: row, cst.COL: col},

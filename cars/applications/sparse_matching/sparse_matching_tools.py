@@ -31,13 +31,17 @@ import os
 
 # Third party imports
 import numpy as np
-
-import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
-import cars.orchestrator.orchestrator as ocht
-from cars.applications import application_constants
-from cars.core.utils import safe_makedirs
+import pandas
 
 # CARS imports
+import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
+from cars.applications import application_constants
+from cars.applications.point_cloud_outliers_removing import (
+    outlier_removing_tools,
+)
+from cars.applications.triangulation import triangulation_tools
+from cars.core import constants as cst
+from cars.core import preprocessing, projection
 from cars.externals import otb_pipelines
 
 
@@ -153,89 +157,130 @@ def compute_disparity_range(matches, percent=0.1):
     return mindisp, maxdisp
 
 
-def derive_disparity_range_from_matches(
-    corrected_matches,
-    orchestrator=None,
-    disparity_margin=0.1,
-    pair_key="PAIR_0",
-    pair_folder=None,
+def compute_disp_min_disp_max(
+    sensor_image_right,
+    sensor_image_left,
+    grid_left,
+    corrected_grid_right,
+    grid_right,
+    matches,
+    orchestrator,
+    geometry_loader,
+    srtm_dir,
+    default_alt,
+    pair_folder="",
+    disp_margin=0.1,
+    pair_key=None,
     disp_to_alt_ratio=None,
-    disparity_outliers_rejection_percent=0.1,
     save_matches=False,
 ):
     """
-    Compute disp min and disp max from matches
+    Compute disp min and disp max from triangulated and filtered matches
 
-    :param cars_orchestrator: orchestrator : used for info writing
-    :param corrected_matches: matches
-    :type corrected_matches: np.ndarray
-    :param disparity_margin: disparity margin
-    :type disparity_margin: float
-    :param pair_key: id of pair : only used for info writing
-    :type pair_key: int
+    :param sensor_image_right: sensor image right
+    :type sensor_image_right: CarsDataset
+    :param sensor_image_left: sensor image left
+    :type sensor_image_left: CarsDataset
+    :param grid_left: grid left
+    :type grid_left: CarsDataset CarsDataset
+    :param corrected_grid_right: corrected grid right
+    :type corrected_grid_right: CarsDataset
+    :param grid_right: uncorrected grid right
+    :type grid_right: CarsDataset
+    :param matches: matches
+    :type matches: np.ndarray
+    :param orchestrator: orchestrator used
+    :type orchestrator: Orchestrator
+    :param geometry_loader: geometry loader to use
+    :type geometry_loader: str
+    :param srtm_dir: srtm directory
+    :type srtm_dir: str
+    :param default_alt: default altitude
+    :type default_alt: float
+    :param pair_folder: folder used for current pair
+    :type pair_folder: str
+    :param disp_margin: disparity margin
+    :type disp_margin: float
     :param disp_to_alt_ratio: used for logging info
     :type disp_to_alt_ratio: float
-    :param disparity_outliers_rejection_percent: percentage of
-            outliers to reject
-    :type disparity_outliers_rejection_percent: float
     :param save_matches: true is matches needs to be saved
     :type save_matches: bool
 
     :return: disp min and disp max
     :rtype: float, float
-
     """
-
-    # Default orchestrator
-    if orchestrator is None:
-        # Create default sequential orchestrator for current application
-        # be awere, no out_json will be shared between orchestrators
-        # No files saved
-        cars_orchestrator = ocht.Orchestrator(
-            orchestrator_conf={"mode": "sequential"}
-        )
-    else:
-        cars_orchestrator = orchestrator
-
-    if pair_folder is None:
-        pair_folder = os.path.join(cars_orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
-
-    nb_matches = corrected_matches.shape[0]
-
-    corrected_epipolar_error = corrected_matches[:, 1] - corrected_matches[:, 3]
-
-    # Compute the disparity range (we filter matches that are too off epipolar
-    # lins after correction)
-    corrected_std = np.std(corrected_epipolar_error)
-
-    corrected_matches = corrected_matches[
-        np.fabs(corrected_epipolar_error) < 3 * corrected_std
-    ]
-    logging.info(
-        "{} matches discarded because "
-        "their epipolar error is greater than 3*stdev of epipolar error "
-        "after correction (3*stddev = {:.3f} pix.)".format(
-            nb_matches - corrected_matches.shape[0], 3 * corrected_std
+    input_stereo_cfg = (
+        preprocessing.create_former_cars_post_prepare_configuration(
+            sensor_image_left,
+            sensor_image_right,
+            grid_left,
+            corrected_grid_right,
+            pair_folder,
+            uncorrected_grid_right=grid_right,
+            srtm_dir=srtm_dir,
+            default_alt=default_alt,
         )
     )
 
-    logging.info(
-        "Number of matches kept "
-        "for disparity range estimation: {} matches".format(
-            corrected_matches.shape[0]
-        )
+    point_cloud = triangulation_tools.triangulate_matches(
+        geometry_loader, input_stereo_cfg, matches
     )
 
-    # Compute disparity range
-    dmin, dmax = compute_disparity_range(
-        corrected_matches,
-        disparity_outliers_rejection_percent,
+    # compute epsg
+    epsg = preprocessing.compute_epsg(
+        sensor_image_left,
+        sensor_image_right,
+        grid_left,
+        corrected_grid_right,
+        geometry_loader,
+        orchestrator=orchestrator,
+        pair_folder=pair_folder,
+        srtm_dir=srtm_dir,
+        default_alt=default_alt,
+        disp_min=0,
+        disp_max=0,
+    )
+    # Project point cloud to UTM
+    projection.points_cloud_conversion_dataset(point_cloud, epsg)
+
+    # Convert point cloud to pandas format to allow statistical filtering
+    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINTS_CLOUD_CORR_MSK]
+    cloud_array = []
+    cloud_array.append(point_cloud[cst.X].data)
+    cloud_array.append(point_cloud[cst.Y].data)
+    cloud_array.append(point_cloud[cst.Z].data)
+    cloud_array.append(point_cloud[cst.DISPARITY].data)
+    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].data)
+    pd_cloud = pandas.DataFrame(
+        np.transpose(np.array(cloud_array)[:, :, 0]), columns=labels
     )
 
-    margin = abs(dmax - dmin) * disparity_margin
+    # Statistical filtering
+    filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(
+        pd_cloud, k=25, std_factor=3.0
+    )
+
+    # Export filtered matches
+    matches_array_path = None
+    if save_matches:
+        logging.info("Writing matches file")
+        filt_matches = np.array(filter_cloud.iloc[:, 0:4])
+        if pair_folder is None:
+            current_out_dir = orchestrator.out_dir
+        else:
+            current_out_dir = pair_folder
+        matches_array_path = os.path.join(current_out_dir, "matches.npy")
+        np.save(matches_array_path, filt_matches)
+
+    # Obtain dmin dmax
+    filt_disparity = np.array(filter_cloud.iloc[:, 3])
+    dmax = np.max(filt_disparity)
+    dmin = np.min(filt_disparity)
+
+    margin = abs(dmax - dmin) * disp_margin
     dmin -= margin
     dmax += margin
+
     logging.info(
         "Disparity range with margin: [{:.3f} pix., {:.3f} pix.] "
         "(margin = {:.3f} pix.)".format(dmin, dmax, margin)
@@ -251,23 +296,12 @@ def derive_disparity_range_from_matches(
             )
         )
 
-    # Export matches
-    matches_array_path = None
-    if save_matches:
-        logging.info("Writing matches file")
-        if pair_folder is None:
-            current_out_dir = cars_orchestrator.out_dir
-        else:
-            current_out_dir = pair_folder
-        matches_array_path = os.path.join(current_out_dir, "matches.npy")
-        np.save(matches_array_path, corrected_matches)
-
     # update orchestrator_out_json
     updating_infos = {
         application_constants.APPLICATION_TAG: {
             pair_key: {
                 sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
-                    sm_cst.DISPARITY_MARGIN_PARAM_TAG: disparity_margin,
+                    sm_cst.DISPARITY_MARGIN_PARAM_TAG: disp_margin,
                     sm_cst.MINIMUM_DISPARITY_TAG: dmin,
                     sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
                     sm_cst.MATCHES_TAG: matches_array_path,
@@ -275,6 +309,6 @@ def derive_disparity_range_from_matches(
             }
         }
     }
-    cars_orchestrator.update_out_info(updating_infos)
+    orchestrator.update_out_info(updating_infos)
 
     return dmin, dmax

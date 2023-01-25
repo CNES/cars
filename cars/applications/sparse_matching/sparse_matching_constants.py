@@ -58,7 +58,6 @@ MAXIMUM_DISPARITY_TAG = "maximum_disparity"
 MATCHES_TAG = "matches"
 DISPARITY_MARGIN_PARAM_TAG = "disparity_margin_param"
 
-
 # Matches filtering
 METHOD = "method"
 MATCHES_FILTERING_TAG = "matches_filtering"
