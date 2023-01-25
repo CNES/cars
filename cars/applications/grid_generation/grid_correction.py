@@ -411,10 +411,10 @@ def create_matches_cars_ds(corrected_matches, initial_cars_ds):
             ] = new_matches_cars_ds_left.tiling_grid[row, col, :]
 
             # Get corresponding matches
-            tile_matches = corrected_matches[corrected_matches[:, 0] > row_min]
-            tile_matches = tile_matches[tile_matches[:, 0] < row_max]
-            tile_matches = tile_matches[tile_matches[:, 1] > col_min]
-            tile_matches = tile_matches[tile_matches[:, 1] < col_max]
+            tile_matches = corrected_matches[corrected_matches[:, 1] > row_min]
+            tile_matches = tile_matches[tile_matches[:, 1] < row_max]
+            tile_matches = tile_matches[tile_matches[:, 0] > col_min]
+            tile_matches = tile_matches[tile_matches[:, 0] < col_max]
 
             # Create pandas DataFrame
             new_matches_cars_ds_left[row, col] = pandas.DataFrame(tile_matches)
