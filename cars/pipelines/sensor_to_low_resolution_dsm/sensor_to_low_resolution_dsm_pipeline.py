@@ -145,7 +145,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             safe_save=True,
         )
         self.config_full_res = self.used_conf.copy()
-        self.config_full_res[PIPELINE] = "sensor_to_full_resolution_dsm"
+        self.config_full_res[PIPELINE] = "sensor_to_sparse_dsm"
         self.config_full_res.__delitem__("applications")
         self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
 

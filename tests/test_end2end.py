@@ -46,6 +46,9 @@ from cars.conf.input_parameters import read_input_parameters
 
 # CARS imports
 from cars.core import roi_tools
+from cars.pipelines.point_clouds_to_dsm import (
+    point_cloud_to_dsm_pipeline as pipeline_dsm,
+)
 from cars.pipelines.sensor_to_full_resolution_dsm import (
     sensor_to_full_resolution_dsm_pipeline as pipeline_full_res,
 )
@@ -676,6 +679,109 @@ def test_end2end_ventoux_unique():
             atol=1.0e-7,
         )
         assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+
+
+@pytest.mark.end2end_tests
+def test_end2end_ventoux_unique_split():
+    """
+    End to end processing
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        # Run sensors_to_dense_point_clouds pipeline
+        _, input_config_pc = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_point_clouds",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": 0.5,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+            },
+        }
+
+        input_config_pc["applications"].update(application_config)
+
+        pc_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
+            input_config_pc
+        )
+        pc_pipeline.run()
+
+        out_dir = input_config_pc["output"]["out_dir"]
+
+        # Create input json for pc to dsm pipeline
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
+            epi_pc_path = os.path.join(out_dir, "left_right")
+            output_path = os.path.join(directory2, "outresults_dsm_from_pc")
+
+            input_dsm_config = {
+                "inputs": {
+                    "point_clouds": {
+                        "one": {
+                            "x": os.path.join(epi_pc_path, "epi_pc_X_left.tif"),
+                            "y": os.path.join(epi_pc_path, "epi_pc_Y_left.tif"),
+                            "z": os.path.join(epi_pc_path, "epi_pc_Z_left.tif"),
+                            "color": os.path.join(
+                                epi_pc_path, "epi_pc_color_left.tif"
+                            ),
+                        }
+                    }
+                },
+                "output": {"out_dir": output_path},
+                "pipeline": "dense_point_clouds_to_dense_dsm",
+            }
+
+            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
+                input_dsm_config
+            )
+            dsm_pipeline.run()
+
+            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+
+            # Uncomment the 2 following instructions to update reference data
+            # copy2(os.path.join(out_dir_dsm, 'dsm.tif'),
+            #     absolute_data_path(
+            #       "ref_output/dsm_end2end_ventoux_split.tif")
+            #  )
+            # copy2(os.path.join(out_dir_dsm, 'clr.tif'),
+            #     absolute_data_path(
+            #       "ref_output/clr_end2end_ventoux_split.tif")
+            # )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "dsm.tif"),
+                absolute_data_path("ref_output/dsm_end2end_ventoux_split.tif"),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "clr.tif"),
+                absolute_data_path("ref_output/clr_end2end_ventoux_split.tif"),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
 
 
 @pytest.mark.end2end_tests

@@ -137,10 +137,10 @@ def get_min_max_band(
     )
 
     lon_med, lat_med, _ = pd_cloud.median()
-    xmin = None
-    xmax = None
-    ymin = None
-    ymax = None
+    xmin = np.nan
+    xmax = np.nan
+    ymin = np.nan
+    ymax = np.nan
     if not np.isnan(lon_med) and not np.isnan(lat_med):
         projection.points_cloud_conversion_dataframe(
             pd_cloud, epsg_in, epsg_utm
