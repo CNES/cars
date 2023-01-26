@@ -6,7 +6,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 
 # add ubuntuGIS stable for rasterio last version which needs GDAL>3.1
 RUN apt-get update \
-    && apt-get install --no-install-recommends -y --quiet software-properties-common=0.99.9.8 \
+    && apt-get install --no-install-recommends -y --quiet software-properties-common=0.99.9.10 \
     && rm -rf /var/lib/apt/lists/* \
     && add-apt-repository -y ppa:ubuntugis/ppa \
     && apt-get update
