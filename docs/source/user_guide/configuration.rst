@@ -1,3 +1,4 @@
+
 .. _configuration:
 
 =============
@@ -14,7 +15,8 @@ The structure follows this organisation:
         "inputs": {},
         "orchestrator": {},
         "applications": {},
-        "output": {}
+        "output": {},
+        "pipeline": "pipeline_to_use"
     }
         
 .. warning::
@@ -25,158 +27,251 @@ The structure follows this organisation:
 
    .. tab:: Inputs
 
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | Name                    | Description                                                         | Type                  | Default value        | Required |
-    +=========================+=====================================================================+=======================+======================+==========+
-    | *sensor*                | Stereo sensor images                                                | See next section      | No                   | Yes      |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *pairing*               | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *initial_elevation*     | Field contains the path to the folder in which are located          | string                | None                 | No       |
-    |                         | the srtm tiles covering the production                              |                       |                      |          |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
-    |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *roi*                   | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *check_inputs*          | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *geoid*                 | Geoid path                                                          | string                | Cars internal geoid  | No       |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *use_epipolar_a_priori* | Active epipolar a priori                                            | bool                  | False                | Yes      |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *epipolar_a_priori*     | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
-    +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    
-    **Sensor**
+    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Point Clouds:
 
-    For each sensor images, give a particular name (what you want):
-
-    .. code-block:: json
-
-        {
-            "my_name_for_this_image": 
-            {
-                "image" : "path_to_image.tif",
-                "color" : "path_to_color.tif",
-                "mask" : "path_to_mask.tif",
-                "nodata": 0
-            }
-        }
-
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | Name              | Description                                                                              | Type           | Default value | Required |
-    +===================+==========================================================================================+================+===============+==========+
-    | *image*           | Path to the image                                                                        | string         |               | Yes      |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *color*           | image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *no_data*         | no data value of the image                                                               | int            | -9999         | No       |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *geomodel*        | geomodel associated to the image                                                         | string         |               | Yes      |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *geomodel_filters*| filters associated to the geomodel                                                       | List of string |               | No       |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds" pipelines.
+    * Point Clouds: used in  "dense_point_clouds_to_dense_dsm" pipeline.
 
 
-    **ROI**
+    .. tabs::
 
-    A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
-    or a GeoJson dictionnary. These structures must contain a single Polygon.
+        .. tab:: Sensors Images inputs
 
-    .. code-block:: json
 
-        {
-            "inputs": 
-            {
-                "roi" : {
-                    "type": "FeatureCollection",
-                    "features": [
-                        {
-                        "type": "Feature",
-                        "properties": {},
-                        "geometry": {
-                            "coordinates": [
-                            [
-                                [5.194, 44.2064],
-                                [5.194, 44.2059 ],
-                                [5.195, 44.2059],
-                                [5.195, 44.2064],
-                                [5.194, 44.2064]
-                            ]
-                            ],
-                            "type": "Polygon"
-                        }
-                        }
-                    ]
+
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | Name                    | Description                                                         | Type                  | Default value        | Required |
+            +=========================+=====================================================================+=======================+======================+==========+
+            | *sensor*                | Stereo sensor images                                                | See next section      | No                   | Yes      |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *pairing*               | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *initial_elevation*     | Field contains the path to the folder in which are located          | string                | None                 | No       |
+            |                         | the srtm tiles covering the production                              |                       |                      |          |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
+            |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *roi*                   | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *check_inputs*          | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *geoid*                 | Geoid path                                                          | string                | Cars internal geoid  | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *use_epipolar_a_priori* | Active epipolar a priori                                            | bool                  | False                | Yes      |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *epipolar_a_priori*     | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+            **Sensor**
+
+            For each sensor images, give a particular name (what you want):
+
+            .. code-block:: json
+
+                {
+                    "my_name_for_this_image":
+                    {
+                        "image" : "path_to_image.tif",
+                        "color" : "path_to_color.tif",
+                        "mask" : "path_to_mask.tif",
+                        "nodata": 0
+                    }
                 }
-            }
-        }
 
-    .. note::
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | Name              | Description                                                                              | Type           | Default value | Required |
+            +===================+==========================================================================================+================+===============+==========+
+            | *image*           | Path to the image                                                                        | string         |               | Yes      |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *color*           | image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *no_data*         | no data value of the image                                                               | int            | -9999         | No       |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *geomodel*        | geomodel associated to the image                                                         | string         |               | Yes      |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *geomodel_filters*| filters associated to the geomodel                                                       | List of string |               | No       |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
-        By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
+            .. note::
+
+                - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
+                - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as invalid data.
+                - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
+
+
+            **CARS mask multi-classes structure**
+
+
+            Multi-classes masks have a unified CARS format enabling the use of several mask information into the API.
+            The classes can be used in different ways depending on the tag used in the dict defined below.
+
+            Dict is given in the *mask_classes* fields of sensor (see previous section).
+            This dict indicate the masks's classes usage and is structured as follows :
+
+            .. code-block:: json
+
+                {
+                    "ignored_by_dense_matching": [1, 2],
+                    "set_to_ref_alt": [1, 3, 4],
+                    "ignored_by_sparse_matching": [2]
+                }
+
+
+            * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
+            * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
+            * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
+
+        **ROI**
+
+        A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
+        or a GeoJson dictionnary. These structures must contain a single Polygon.
 
         .. code-block:: json
 
             {
-                "roi": 
+                "inputs":
                 {
-                    "crs" : 
-                    {
-                        "type": "name",
-                        "properties": {
-                            "name": "EPSG:4326"
-                        }
-                        
+                    "roi" : {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                            "type": "Feature",
+                            "properties": {},
+                            "geometry": {
+                                "coordinates": [
+                                [
+                                    [5.194, 44.2064],
+                                    [5.194, 44.2059 ],
+                                    [5.195, 44.2059],
+                                    [5.195, 44.2064],
+                                    [5.194, 44.2064]
+                                ]
+                                ],
+                                "type": "Polygon"
+                            }
+                            }
+                        ]
                     }
                 }
             }
 
-            
+        .. note::
 
-    .. code-block:: json
+            By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
 
-        {
-            "inputs": 
+            .. code-block:: json
+
+                {
+                    "roi":
+                    {
+                        "crs" :
+                        {
+                            "type": "name",
+                            "properties": {
+                                "name": "EPSG:4326"
+                            }
+
+                        }
+                    }
+                }
+
+
+
+        .. code-block:: json
+
             {
-                "roi" : "roi_vector_file.shp"
+                "inputs":
+                {
+                    "roi" : "roi_vector_file.shp"
+                }
             }
-        }
 
 
 
 
-    **Epipolar a priori**
+        **Epipolar a priori**
 
-    The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
-    particularly for the sensor_to_full_resolution_dsm pipeline.
-    The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
-    However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
-    So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
-    that contains the epipolar_a_priori information for each sensor image pairs.
-    The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
+            The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+            particularly for the sensor_to_full_resolution_dsm pipeline.
+            The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
+            However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
+            So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
+            that contains the epipolar_a_priori information for each sensor image pairs.
+            The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
 
-    For each sensor images, the epipolar a priori are filled as following:
+            For each sensor images, the epipolar a priori are filled as following:
 
-    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-    | Name                  | Description                                                 | Type   | Default value  | Required                         |
-    +=======================+=============================================================+========+================+==================================+
-    | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
-    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-    | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
-    +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | Name                  | Description                                                 | Type   | Default value  | Required                         |
+            +=======================+=============================================================+========+================+==================================+
+            | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
 
-    .. note::
+            .. note::
 
-        The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
-        The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
+                The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+                The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
 
+
+        .. tab:: Point Clouds inputs
+
+
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | Name                    | Description                                                         | Type                  | Default value        | Required |
+            +=========================+=====================================================================+=======================+======================+==========+
+            | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *roi*                   | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+            **Point Clouds**
+
+            For each point cloud, give a particular name (what you want):
+
+            .. code-block:: json
+
+                {
+                    "point_clouds": {
+                        "my_name_for_this_point_cloud":
+                        {
+                            "x" : "path_to_x.tif",
+                            "y" : "path_to_y.tif",
+                            "z" : "path_to_z.tif",
+                            "color" : "path_to_color.tif",
+                            "mask": "path_to_mask.tif",
+                            "epsg": "point_cloud_epsg"
+                        }
+                    }
+                }
+
+            These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
+
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | Name        | Description                                           | Type           | Default value | Required |
+            +=============+=======================================================+================+===============+==========+
+            | *x*         | Path to the x coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *y*         | Path to the y coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *z*         | Path to the z coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *color*     | Path to the color of point cloud                      | string         |               | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *mask*      | Path to the validity mask of point cloud              | string         |               | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *epsg*      | Epsg code of point cloud                              | int            | 4326          | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
 
    .. tab:: Orchestrator
 
@@ -256,6 +351,134 @@ The structure follows this organisation:
 
         - Please use make command 'profile-memory-report' to generate a memory profiling report from the memray outputs files (after the memray profiling execution).
         - Please disabled profiling to eval memory profiling at master orchestrator level and execute make command instead: 'profile-memory-all'.
+
+
+
+   .. tab:: Pipelines
+
+    The ``pipeline`` key is optional and allows to choose the pipeline to use. By default CARS takes sensor images as inputs, and generates a DSM.
+
+    The pipeline is a preconfigured application chain. For now, there are four pipelines. By default CARS launch a Sensor to Dense DSM pipeline.
+
+    .. note::
+
+        The sensor_to_sparse_dsm pipeline can be used to prepare a refined configuration for the sensors_to_dense_dsm pipeline to facilitate and accelerate the sensors_to_dense_dsm pipeline.
+        See the `configuration/inputs/epipolar_a_priori` section for more details.
+
+
+    This section describes the pipeline available in CARS.
+
+    +----------------+-----------------------+--------+-------------------------+---------------------------------------------------------------------------------------------------------------------+----------+
+    | Name           | Description           | Type   | Default value           | Available values                                                                                                    | Required |
+    +================+=======================+========+=========================+=====================================================================================================================+==========+
+    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds",  "dense_point_clouds_to_dense_dsm" | False    |
+    +----------------+-----------------------+--------+-------------------------+---------------------------------------------------------------------------------------------------------------------+----------+
+
+
+
+
+    .. code-block:: json
+
+        {
+            "pipeline": "sensors_to_dense_dsm"
+        },
+
+    .. tabs::
+
+        .. tab:: Sensor to Dense DSM
+
+            **Name**: "sensors_to_dense_dsm"
+
+            **Description**
+
+            .. figure:: ../images/cars_pipeline_sensor2dsm.png
+                :width: 500px
+                :align: center
+
+            - For each stereo pair:
+
+                1. Create stereo-rectification grids for left and right views.
+                2. Resample the both images into epipolar geometry.
+                3. Compute sift matches between left and right views in epipolar geometry.
+                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
+                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
+                6. Compute disparity for each image pair in epipolar geometry.
+                7. Fill holes in disparity maps for each image pair in epipolar geometry.
+                8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
+
+            - Then
+
+                9. Merge points clouds coming from each stereo pairs.
+                10. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
+                11. Rasterize: Project these altitudes on a regular grid as well as the associated color.
+
+
+
+        .. tab:: Sensor to Sparse DSM
+
+            **Name**: "sensors_to_sparse_dsm"
+
+            **Description**
+
+            .. figure:: ../images/sensor_to_low_dsm.png
+                :width: 500px
+                :align: center
+
+            - For each stereo pair:
+
+                1. Create stereo-rectification grids for left and right views.
+                2. Resample the both images into epipolar geometry.
+                3. Compute sift matches between left and right views in epipolar geometry.
+                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
+                5. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
+
+            - Then
+
+                6. Merge points clouds coming from each stereo pairs.
+                7. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
+                8. Rasterize: Project these altitudes on a regular grid as well as the associated color.
+
+
+        .. tab:: Sensor to Dense Point Clouds
+
+            **Name**: "sensors_to_dense_point_clouds"
+
+            **Description**
+
+            .. figure:: ../images/cars_pipeline_sensor_to_pc.png
+                :width: 500px
+                :align: center
+
+            - For each stereo pair:
+
+                1. Create stereo-rectification grids for left and right views.
+                2. Resample the both images into epipolar geometry.
+                3. Compute sift matches between left and right views in epipolar geometry.
+                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
+                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
+                6. Compute disparity for each image pair in epipolar geometry.
+                7. Fill holes in disparity maps for each image pair in epipolar geometry.
+                8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
+
+
+        .. tab:: Dense Point Clouds to Dense DSM
+
+            **Name**: "dense_point_clouds_to_dense_dsm"
+
+            **Description**
+
+            .. figure:: ../images/pc_to_dsm.png
+                :width: 500px
+                :align: center
+
+
+            1. Merge points clouds coming from each stereo pairs.
+            2. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
+            3. Rasterize: Project these altitudes on a regular grid as well as the associated color.
+
+
+
+
 
    .. tab:: Applications
 
@@ -779,18 +1002,6 @@ The structure follows this organisation:
         * color image (if *color image* has been given)
         * information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
         * subfolder for each defined pair which can contains intermediate data
-
-   .. tab:: Pipelines
-
-        The pipeline is a preconfigured application chain. For now, there are two pipelines. The sensor_to_low_resolution_dsm pipeline can be used to prepare
-        a refined configuration for the full resolution pipeline to facilitate and accelerate the full resolution pipeline.
-        See the configuration/inputs/epipolar_a_priori section for more details.
-
-        +-----------------------+-------------------------------------------------------------------------------------------+--------+-------------------------------+----------+
-        | Name                  | Description                                                                               | Type   | Default value                 | Required |
-        +=======================+===========================================================================================+=======================+================+==========+
-        | pipeline              | The type of pipeline ( sensor_to_full_resolution_dsm, sensor_to_low_resolution_dsm )      | string | sensor_to_full_resolution_dsm | No       |
-        +-----------------------+-------------------------------------------------------------------------------------------+--------+-------------------------------+----------+
 
 
 Full example

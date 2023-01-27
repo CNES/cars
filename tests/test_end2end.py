@@ -158,7 +158,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -267,7 +267,7 @@ def test_end2end_ventoux_unique():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_sparse_dsm"
+            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -400,6 +400,8 @@ def test_end2end_ventoux_unique():
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
         input_config_full_res["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_full_res["pipeline"] = "sensors_to_dense_dsm"
 
         full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
             input_config_full_res
@@ -530,7 +532,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -580,6 +582,8 @@ def test_end2end_ventoux_unique():
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
         input_config_full_res["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_full_res["pipeline"] = "sensors_to_dense_dsm"
 
         full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
             input_config_full_res
@@ -609,7 +613,7 @@ def test_end2end_ventoux_unique():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -658,6 +662,8 @@ def test_end2end_ventoux_unique():
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
         input_config_full_res["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_full_res["pipeline"] = "sensors_to_dense_dsm"
 
         full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
             input_config_full_res
@@ -800,7 +806,7 @@ def test_end2end_use_epipolar_a_prior():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -899,7 +905,7 @@ def test_end2end_use_epipolar_a_prior():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_sparse_dsm"
+            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -1055,7 +1061,7 @@ def test_prepare_ventoux_bias():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1127,7 +1133,7 @@ def test_end2end_ventoux_with_color():
         _, input_config_low_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_sparse_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1258,6 +1264,9 @@ def test_end2end_ventoux_with_color():
         input_config_full_res["applications"].update(full_res_applications)
         # update epsg
         input_config_full_res["inputs"]["epsg"] = 32631
+
+        # update pipeline
+        input_config_full_res["pipeline"] = "sensors_to_dense_dsm"
 
         full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
             input_config_full_res

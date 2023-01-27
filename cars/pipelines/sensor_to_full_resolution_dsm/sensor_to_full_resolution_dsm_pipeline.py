@@ -83,12 +83,10 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.used_conf = {}
 
         # Pipeline
-        self.used_conf[PIPELINE] = conf.get(
-            PIPELINE, "sensor_to_full_resolution_dsm"
-        )
+        self.used_conf[PIPELINE] = conf.get(PIPELINE, "sensors_to_dense_dsm")
 
         # set json pipeline file
-        if self.used_conf[PIPELINE] == "sensor_to_full_resolution_dsm":
+        if self.used_conf[PIPELINE] == "sensors_to_dense_dsm":
             json_conf_file_name = "sensor_to_full_resolution_dsm.json"
         else:
             json_conf_file_name = "sensor_to_pc.json"

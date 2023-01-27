@@ -60,7 +60,7 @@ from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 CARS_GEOID_PATH = "geoid/egm96.grd"
 
 
-@Pipeline.register("sensor_to_sparse_dsm")
+@Pipeline.register("sensors_to_sparse_dsm")
 class SensorToLowResolutionDsmPipeline(PipelineTemplate):
     """
     SensorToLowResolutionDsmPipeline
@@ -105,7 +105,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         self.config_full_res = {}
 
         # Pipeline
-        self.used_conf[PIPELINE] = "sensor_to_low_resolution_dsm"
+        self.used_conf[PIPELINE] = "sensors_to_sparse_dsm"
 
         # Check conf orchestrator
         self.orchestrator_conf = self.check_orchestrator(
@@ -145,7 +145,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             safe_save=True,
         )
         self.config_full_res = self.used_conf.copy()
-        self.config_full_res[PIPELINE] = "sensor_to_sparse_dsm"
+        self.config_full_res[PIPELINE] = "sensors_to_dense_dsm"
         self.config_full_res.__delitem__("applications")
         self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
 
@@ -265,7 +265,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         """
         out_dir = self.output["out_dir"]
 
-        log_conf.add_log_file(out_dir, "sensor_to_low_res_dsm")
+        log_conf.add_log_file(out_dir, "sensors_to_sparse_dsm")
 
         # start cars orchestrator
         with orchestrator.Orchestrator(
@@ -279,7 +279,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             cars_orchestrator.update_out_info(
                 {
                     "version": __version__,
-                    "pipeline": "sensor_to_low_resolution_dsm_pipeline",
+                    "pipeline": "sensors_to_sparse_dsm_pipeline",
                     "inputs": self.inputs,
                 }
             )
