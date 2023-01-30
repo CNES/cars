@@ -399,41 +399,40 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     pair_key=pair_key,
                 )
 
-                # Run epipolar sparse_matching application
-                (
-                    epipolar_matches_left,
-                    _,
-                ) = self.sparse_mtch_app.run(
-                    epipolar_image_left,
-                    epipolar_image_right,
-                    grid_left.attributes["disp_to_alt_ratio"],
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                    mask1_ignored_by_sift=sensor_image_left[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
-                    mask2_ignored_by_sift=sensor_image_right[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
-                )
+                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                    # Run epipolar sparse_matching application
+                    (
+                        epipolar_matches_left,
+                        _,
+                    ) = self.sparse_mtch_app.run(
+                        epipolar_image_left,
+                        epipolar_image_right,
+                        grid_left.attributes["disp_to_alt_ratio"],
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                        mask1_ignored_by_sift=sensor_image_left[
+                            sens_cst.INPUT_MSK_CLASSES
+                        ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
+                        mask2_ignored_by_sift=sensor_image_right[
+                            sens_cst.INPUT_MSK_CLASSES
+                        ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
+                    )
 
                 # Run cluster breakpoint to compute sifts: force computation
                 cars_orchestrator.breakpoint()
 
                 # Run grid correction application
-
-                # Filter matches
-                matches_array = self.sparse_mtch_app.filter_matches(
-                    epipolar_matches_left,
-                    orchestrator=cars_orchestrator,
-                    pair_key=pair_key,
-                    pair_folder=pair_folder,
-                    save_matches=self.sparse_mtch_app.get_save_matches(),
-                )
-
-                # Estimate grid correction if no epipolar a priori
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                    # Estimate grid correction if no epipolar a priori
+                    # Filter matches
+                    matches_array = self.sparse_mtch_app.filter_matches(
+                        epipolar_matches_left,
+                        orchestrator=cars_orchestrator,
+                        pair_key=pair_key,
+                        pair_folder=pair_folder,
+                        save_matches=self.sparse_mtch_app.get_save_matches(),
+                    )
                     # Compute grid correction
                     (
                         grid_correction_coef,
@@ -477,6 +476,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                         save_matches=self.sparse_mtch_app.get_save_matches(),
                     )
                 else:
+                    # Use epipolar a priori
                     # load the disparity range
                     [dmin, dmax] = self.used_conf[INPUTS]["epipolar_a_priori"][
                         pair_key
