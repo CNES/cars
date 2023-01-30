@@ -36,6 +36,7 @@ from shapely import geometry
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing, projection, tiling
 from cars.data_structures import cars_dataset
+from cars.externals import otb_pipelines
 
 
 def create_polygon_from_list_points(list_points):
@@ -57,6 +58,39 @@ def create_polygon_from_list_points(list_points):
     poly = geometry.Polygon(list_shapely_points)
 
     return poly
+
+
+def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
+    """ "
+    Compute epsg to use from list of tif point clouds
+
+    :param list_epipolar_points_cloud: list of epipolar point clouds
+    :type list_epipolar_points_cloud: list(dict)
+
+    :return: epsg
+    :rtype: int
+    """
+
+    # Get epsg from first point cloud
+    pc_keys = list(list_epipolar_points_cloud.keys())
+    point_cloud = list_epipolar_points_cloud[pc_keys[0]]
+
+    x_y_min_max = get_min_max_band(
+        point_cloud[cst.X],
+        point_cloud[cst.Y],
+        point_cloud[cst.Z],
+        point_cloud[cst.PC_EPSG],
+        4326,
+    )
+
+    x_mean = (x_y_min_max[0] + x_y_min_max[1]) / 2
+    y_mean = (x_y_min_max[2] + x_y_min_max[3]) / 2
+
+    epsg = otb_pipelines.get_utm_zone_as_epsg_code(x_mean, y_mean)
+
+    logging.info("EPSG code: {}".format(epsg))
+
+    return epsg
 
 
 def intersect_polygons(poly1, poly2):

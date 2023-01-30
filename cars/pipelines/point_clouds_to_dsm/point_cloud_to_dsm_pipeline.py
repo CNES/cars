@@ -320,7 +320,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             epsg = self.inputs[sens_cst.EPSG]
             if epsg is None:
                 # compute epsg
-                epsg = preprocessing.compute_epsg_from_point_cloud(
+                epsg = pc_tif_tools.compute_epsg_from_point_cloud(
                     self.inputs["point_clouds"]
                 )
             # Compute roi polygon, in input EPSG

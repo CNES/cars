@@ -36,10 +36,8 @@ from shapely.geometry import Polygon
 import cars.conf.input_parameters as in_params
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.grid_generation import grids
-from cars.applications.point_cloud_fusion import pc_tif_tools
 
 # CARS imports
-from cars.core import constants as cst
 from cars.core import former_confs_utils, inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.externals import otb_pipelines
@@ -343,39 +341,6 @@ def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
             )
 
     return roi_poly
-
-
-def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
-    """ "
-    Compute epsg to use from list of tif point clouds
-
-    :param list_epipolar_points_cloud: list of epipolar point clouds
-    :type list_epipolar_points_cloud: list(dict)
-
-    :return: epsg
-    :rtype: int
-    """
-
-    # Get epsg from first point cloud
-    pc_keys = list(list_epipolar_points_cloud.keys())
-    point_cloud = list_epipolar_points_cloud[pc_keys[0]]
-
-    x_y_min_max = pc_tif_tools.get_min_max_band(
-        point_cloud[cst.X],
-        point_cloud[cst.Y],
-        point_cloud[cst.Z],
-        point_cloud[cst.PC_EPSG],
-        4326,
-    )
-
-    x_mean = (x_y_min_max[0] + x_y_min_max[1]) / 2
-    y_mean = (x_y_min_max[2] + x_y_min_max[3]) / 2
-
-    epsg = otb_pipelines.get_utm_zone_as_epsg_code(x_mean, y_mean)
-
-    logging.info("EPSG code: {}".format(epsg))
-
-    return epsg
 
 
 def compute_epsg(
