@@ -129,7 +129,7 @@ def fill_central_area_using_plane(
             )
         )
         if len(mask_polys) != 1:
-            raise Exception("Not single polygon for current mask")
+            raise RuntimeError("Not single polygon for current mask")
 
         intersect_holes = False
         for hole_poly in corresponding_poly:
@@ -250,7 +250,7 @@ def add_surrounding_nodata_to_roi(
     label_of_interest = np.unique(labeled_msk_array[np.where(roi_mask == 1)])
 
     if len(label_of_interest) != 1:
-        raise Exception(
+        raise RuntimeError(
             "More than one label found for ROI :\
             {}".format(
                 label_of_interest
@@ -415,7 +415,7 @@ def make_raster_interpolation(
     elif options["type"] == "pandora" and options["method"] == "sgm":
         interpol_raster, __ = fill_disp_pandora(raster, mask, 8)
     else:
-        raise Exception("Invalid interpolation type.")
+        raise RuntimeError("Invalid interpolation type.")
     return interpol_raster
 
 

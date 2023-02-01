@@ -193,7 +193,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                 logging.error(
                     "No {} application used in pipeline".format(app_key)
                 )
-                raise Exception(
+                raise NameError(
                     "No {} application used in pipeline".format(app_key)
                 )
 

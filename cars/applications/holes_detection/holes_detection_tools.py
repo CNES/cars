@@ -151,10 +151,10 @@ def localize_masked_areas(
     # 0: 'valid' data, 1: masked data according to key_id
     if "msk" not in dataset:
         logging.error("No mask provided")
-        raise Exception("No mask provided")
+        raise RuntimeError("No mask provided")
     if not isinstance(key_id, list):
         logging.error("no mask classes provided for DisparityFilling")
-        raise Exception("no mask classes provided for DisparityFilling")
+        raise RuntimeError("no mask classes provided for DisparityFilling")
     msk_values = get_msk_roi_to_fill(dataset["msk"].values, key_id)
     # Finds roi in msk and stores its localization as polygon list
     bbox = get_roi_coverage_as_poly_with_margins(

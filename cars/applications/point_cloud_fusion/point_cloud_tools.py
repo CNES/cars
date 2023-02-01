@@ -561,7 +561,7 @@ def add_cloud_filtering_msk(
         max_elt_index = np.max(elt_index)
 
         if min_elt_index < 0 or max_elt_index > len(clouds_list) - 1:
-            raise Exception(
+            raise RuntimeError(
                 "Index indicated in the elt_pos_infos pandas. "
                 "DataFrame is not coherent with the clouds list given in input"
             )
@@ -594,7 +594,7 @@ def add_cloud_filtering_msk(
                 try:
                     msk[i, j] = mask_value
                 except Exception as index_error:
-                    raise Exception(
+                    raise RuntimeError(
                         "Point at location ({},{}) is not accessible "
                         "in an image of size ({},{})".format(
                             i, j, msk.shape[0], msk.shape[1]

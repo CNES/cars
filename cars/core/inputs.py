@@ -58,7 +58,7 @@ def read_vector(path_to_file):
             for feat in vec_file:
                 polys.append(shape(feat["geometry"]))
     except BaseException as base_except:
-        raise Exception(
+        raise FileNotFoundError(
             "Impossible to read {} file".format(path_to_file)
         ) from base_except
 

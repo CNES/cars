@@ -91,7 +91,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             # Create wrapper object
             if self.dump_to_disk:
                 if self.out_dir is None:
-                    raise Exception("Not out_dir provided")
+                    raise RuntimeError("Not out_dir provided")
                 if not os.path.exists(self.out_dir):
                     os.makedirs(self.out_dir)
                 self.tmp_dir = os.path.join(self.out_dir, "tmp_save_disk")
@@ -339,7 +339,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                         else:
                             res[key] = transform_data(value)
                 else:
-                    raise Exception("Function only support list or dict")
+                    raise TypeError("Function only support list or dict")
 
                 return res
 
@@ -555,7 +555,7 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
 
             full_res = done_task_results[task_id][1]
             if not done_task_results[task_id][0]:
-                raise Exception("Current task failed")
+                raise RuntimeError("Current task failed")
 
             if isinstance(full_res, tuple):
                 new_data = full_res[idx]
@@ -587,7 +587,7 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
                 else:
                     list_or_dict[key] = get_data(value, done_task_results)
         else:
-            raise Exception("Function only support list or dict")
+            raise TypeError("Function only support list or dict")
 
     # replace data
     replace_data_rec(args_or_kawargs, done_task_results)

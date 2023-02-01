@@ -85,7 +85,7 @@ class PandoraLoader:
                 logging.error(
                     "No method named {} in pandora loader".format(method_name)
                 )
-                raise Exception(
+                raise NameError(
                     "No method named {} in pandora loader".format(method_name)
                 )
 

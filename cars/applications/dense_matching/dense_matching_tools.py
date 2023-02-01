@@ -310,7 +310,7 @@ def compute_mask_to_use_in_pandora(
             "No value identified by {} is "
             "present in the dataset".format(msk_key)
         )
-        raise Exception(
+        raise RuntimeError(
             "No value identified by {} is "
             "present in the dataset".format(msk_key)
         )

@@ -81,7 +81,7 @@ class Pipeline:
 
         except KeyError as kerr:
             logging.error("No pipeline named {0} supported".format(name))
-            raise Exception(
+            raise NameError(
                 "No pipeline named {0} supported".format(name)
             ) from kerr
 

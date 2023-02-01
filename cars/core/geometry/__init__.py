@@ -217,7 +217,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             if matches_msk is None:
                 logger = logging.getLogger()
                 logger.error("No disparity mask given in input")
-                raise Exception("No disparity mask given in input")
+                raise RuntimeError("No disparity mask given in input")
 
             if ul_matches_shift is None:
                 ul_matches_shift = (0, 0)
