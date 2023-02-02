@@ -36,6 +36,7 @@ ROI_WITH_MARGINS = "roi_with_margins"
 EPSG = "epsg"
 DISPARITY = "disparity"
 
+EPSG_WSG84 = 4326
 # stereo keys
 STEREO_REF = "ref"
 STEREO_SEC = "sec"
@@ -63,6 +64,7 @@ POINTS_CLOUD_COORD_EPI_GEOM_I = "coord_epi_geom_i"
 POINTS_CLOUD_COORD_EPI_GEOM_J = "coord_epi_geom_j"
 POINTS_CLOUD_IDX_IM_EPI = "idx_im_epi"
 POINTS_CLOUD_AMBIGUITY = "ambiguity_confidence"
+POINTS_CLOUD_MATCHES = "points_cloud_matches"
 
 # raster fields (xarray Dataset)
 RASTER_HGT = "hgt"

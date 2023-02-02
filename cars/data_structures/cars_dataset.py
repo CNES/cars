@@ -908,7 +908,6 @@ def save_dataset(
     :type descriptor: rasterio dataset
 
     """
-
     overlaps = get_overlaps_dataset(dataset)
     window = get_window_dataset(dataset)
 
@@ -928,7 +927,6 @@ def save_dataset(
                     overlaps["left"],
                     overlaps["right"],
                 ]
-
     if len(dataset[tag].values.shape) > 2:
         nb_rows, nb_cols = (
             dataset[tag].values.shape[1],
@@ -940,7 +938,6 @@ def save_dataset(
             overlap[0] : nb_rows - overlap[1],
             overlap[2] : nb_cols - overlap[3],
         ]
-
     else:
         nb_rows, nb_cols = (
             dataset[tag].values.shape[0],

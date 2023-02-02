@@ -25,6 +25,7 @@ Important : Uses conftest.py for shared pytest fixtures
 
 # Third party imports
 import numpy as np
+import pandas
 import pytest
 import xarray as xr
 
@@ -81,15 +82,16 @@ def test_triangulate_matches(
     llh = triangulation_tools.triangulate_matches(
         "OTBGeometry", images_and_grids_conf, matches
     )
-
     # Check properties
-    assert llh.dims == {cst.ROW: 1, cst.COL: 1}
-    np.testing.assert_almost_equal(llh.x.values[0], 5.1973629)
-    np.testing.assert_almost_equal(llh.y.values[0], 44.2079813)
-    np.testing.assert_almost_equal(llh.z.values[0], 511.4383088)
-    assert llh[cst.POINTS_CLOUD_CORR_MSK].values[0] == 255
-    assert cst.EPSG in llh.attrs
-    assert llh.attrs[cst.EPSG] == 4326
+    pandas.testing.assert_index_equal(
+        llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
+    )
+    print(llh)
+    np.testing.assert_almost_equal(llh.x[0], 5.1973629)
+    np.testing.assert_almost_equal(llh.y[0], 44.2079813)
+    np.testing.assert_almost_equal(llh.z[0], 511.4383088)
+    assert llh[cst.DISPARITY][0] == 0.0
+    assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
 
 
 @pytest.mark.unit_tests

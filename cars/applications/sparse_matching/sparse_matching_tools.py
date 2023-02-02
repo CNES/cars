@@ -246,13 +246,13 @@ def compute_disp_min_disp_max(
     # Convert point cloud to pandas format to allow statistical filtering
     labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINTS_CLOUD_CORR_MSK]
     cloud_array = []
-    cloud_array.append(point_cloud[cst.X].data)
-    cloud_array.append(point_cloud[cst.Y].data)
-    cloud_array.append(point_cloud[cst.Z].data)
-    cloud_array.append(point_cloud[cst.DISPARITY].data)
-    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].data)
+    cloud_array.append(point_cloud[cst.X].values)
+    cloud_array.append(point_cloud[cst.Y].values)
+    cloud_array.append(point_cloud[cst.Z].values)
+    cloud_array.append(point_cloud[cst.DISPARITY].values)
+    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].values)
     pd_cloud = pandas.DataFrame(
-        np.transpose(np.array(cloud_array)[:, :, 0]), columns=labels
+        np.transpose(np.array(cloud_array)), columns=labels
     )
 
     # Statistical filtering

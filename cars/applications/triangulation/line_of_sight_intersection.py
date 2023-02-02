@@ -42,7 +42,7 @@ from cars.applications.triangulation import (
 )
 from cars.applications.triangulation.triangulation import Triangulation
 from cars.core import constants as cst
-from cars.core import preprocessing, tiling
+from cars.core import preprocessing, projection, tiling
 
 # CARS imports
 from cars.core.geometry import AbstractGeometry, read_geoid_file
@@ -358,11 +358,15 @@ class LineOfSightIntersection(
         if epipolar_disparity_map_left.dataset_type in ("arrays", "points"):
             # Create CarsDataset
             # Epipolar_point_cloud
-            epipolar_points_cloud_left = cars_dataset.CarsDataset("arrays")
+            epipolar_points_cloud_left = cars_dataset.CarsDataset(
+                epipolar_disparity_map_left.dataset_type
+            )
             epipolar_points_cloud_left.create_empty_copy(epipolar_images_left)
             epipolar_points_cloud_left.overlaps *= 0  # Margins removed
 
-            epipolar_points_cloud_right = cars_dataset.CarsDataset("arrays")
+            epipolar_points_cloud_right = cars_dataset.CarsDataset(
+                epipolar_disparity_map_left.dataset_type
+            )
             epipolar_points_cloud_right.create_empty_copy(epipolar_images_right)
 
             # Update attributes to get epipolar info
@@ -370,61 +374,76 @@ class LineOfSightIntersection(
 
             # Save objects
             if self.save_points_cloud:
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_X_left.tif"),
-                    cst.X,
-                    epipolar_points_cloud_left,
-                    cars_ds_name="epi_pc_x_left",
-                )
+                # if isinstance(epipolar_points_cloud_left, xr.DataArray):
+                if epipolar_disparity_map_left.dataset_type == "arrays":
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_X_left.tif"),
+                        cst.X,
+                        epipolar_points_cloud_left,
+                        cars_ds_name="epi_pc_x_left",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_Y_left.tif"),
-                    cst.Y,
-                    epipolar_points_cloud_left,
-                    cars_ds_name="epi_pc_y_left",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_Y_left.tif"),
+                        cst.Y,
+                        epipolar_points_cloud_left,
+                        cars_ds_name="epi_pc_y_left",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_Z_left.tif"),
-                    cst.Z,
-                    epipolar_points_cloud_left,
-                    cars_ds_name="epi_pc_z_left",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_Z_left.tif"),
+                        cst.Z,
+                        epipolar_points_cloud_left,
+                        cars_ds_name="epi_pc_z_left",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_X_right.tif"),
-                    cst.X,
-                    epipolar_points_cloud_right,
-                    cars_ds_name="epi_pc_x_right",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_X_right.tif"),
+                        cst.X,
+                        epipolar_points_cloud_right,
+                        cars_ds_name="epi_pc_x_right",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_Y_right.tif"),
-                    cst.Y,
-                    epipolar_points_cloud_right,
-                    cars_ds_name="epi_pc_y_right",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_Y_right.tif"),
+                        cst.Y,
+                        epipolar_points_cloud_right,
+                        cars_ds_name="epi_pc_y_right",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_Z_right.tif"),
-                    cst.Z,
-                    epipolar_points_cloud_right,
-                    cars_ds_name="epi_pc_z_right",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_Z_right.tif"),
+                        cst.Z,
+                        epipolar_points_cloud_right,
+                        cars_ds_name="epi_pc_z_right",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_color_left.tif"),
-                    cst.EPI_COLOR,
-                    epipolar_points_cloud_left,
-                    cars_ds_name="epi_pc_color_left",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_color_left.tif"),
+                        cst.EPI_COLOR,
+                        epipolar_points_cloud_left,
+                        cars_ds_name="epi_pc_color_left",
+                    )
 
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_pc_color_right.tif"),
-                    cst.EPI_COLOR,
-                    epipolar_points_cloud_right,
-                    cars_ds_name="epi_pc_color_right",
-                )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_color_right.tif"),
+                        cst.EPI_COLOR,
+                        epipolar_points_cloud_right,
+                        cars_ds_name="epi_pc_color_right",
+                    )
+                else:
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_left"),
+                        cst.POINTS_CLOUD_MATCHES,
+                        epipolar_points_cloud_left,
+                        cars_ds_name="epi_pc_x_left",
+                    )
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_right"),
+                        cst.POINTS_CLOUD_MATCHES,
+                        epipolar_points_cloud_right,
+                        cars_ds_name="epi_pc_x_right",
+                    )
 
         else:
             logging.error(
@@ -471,6 +490,7 @@ class LineOfSightIntersection(
                     epipolar_disparity_map_right[row, col],
                     configuration,
                     self.geometry_loader,
+                    epsg,
                     geoid_data=geoid_data_futures,
                     snap_to_img1=self.snap_to_img1,
                     add_msk_info=self.add_msk_info,
@@ -488,6 +508,7 @@ def compute_points_cloud(
     right_disparity_object: xr.Dataset,
     input_stereo_cfg: dict,
     geometry_loader: str,
+    epsg,
     geoid_data: xr.Dataset = None,
     snap_to_img1: bool = False,
     add_msk_info: bool = False,
@@ -604,7 +625,6 @@ def compute_points_cloud(
         points[cst.STEREO_REF] = triangulation_tools.triangulate_matches(
             geometry_loader, input_stereo_cfg, disp_ref.to_numpy()
         )
-
     else:
         logging.error(
             "Disp ref is neither xarray Dataset  nor pandas DataFrame"
@@ -626,28 +646,63 @@ def compute_points_cloud(
 
     # Fill datasets
     left_pc_dataset = points[cst.STEREO_REF]
+
     if color_type:
         left_pc_dataset.attrs["color_type"] = color_type
-    cars_dataset.fill_dataset(
-        left_pc_dataset,
-        saving_info=saving_info_left,
-        window=cars_dataset.get_window_dataset(left_disparity_object),
-        profile=cars_dataset.get_profile_rasterio(left_disparity_object),
-        attributes=None,
-        overlaps=cars_dataset.get_overlaps_dataset(left_disparity_object),
-    )
+    attributes = None
+    if isinstance(disp_ref, pandas.DataFrame):
+        # Conversion to UTM
+        projection.points_cloud_conversion_dataframe(
+            points[cst.STEREO_REF], points[cst.STEREO_REF].attrs[cst.EPSG], epsg
+        )
+        cloud_epsg = epsg
+        left_pc_dataset.attrs["epsg"] = cloud_epsg
+        attributes = {
+            "save_points_cloud_as_laz": True,
+            "epsg": cloud_epsg,
+            "color_type": None,
+        }
+        cars_dataset.fill_dataframe(
+            left_pc_dataset, saving_info=saving_info_left, attributes=attributes
+        )
+    else:
+        cars_dataset.fill_dataset(
+            left_pc_dataset,
+            saving_info=saving_info_left,
+            window=cars_dataset.get_window_dataset(left_disparity_object),
+            profile=cars_dataset.get_profile_rasterio(left_disparity_object),
+            attributes=attributes,
+            overlaps=cars_dataset.get_overlaps_dataset(left_disparity_object),
+        )
 
     right_pc_dataset = None
     if cst.STEREO_SEC in points:
         right_pc_dataset = points[cst.STEREO_SEC]
-
-        cars_dataset.fill_dataset(
-            right_pc_dataset,
-            saving_info=saving_info_right,
-            window=cars_dataset.get_window_dataset(right_disparity_object),
-            profile=cars_dataset.get_profile_rasterio(right_disparity_object),
-            attributes=None,
-            overlaps=cars_dataset.get_overlaps_dataset(right_disparity_object),
-        )
+        if isinstance(disp_sec, pandas.DataFrame):
+            # Conversion to UTM
+            projection.points_cloud_conversion_dataframe(
+                points[cst.STEREO_SEC],
+                points[cst.STEREO_SEC].attrs[cst.EPSG],
+                epsg,
+            )
+            right_pc_dataset.attrs["epsg"] = cloud_epsg
+            cars_dataset.fill_dataframe(
+                right_pc_dataset,
+                saving_info=saving_info_right,
+                attributes=attributes,
+            )
+        else:
+            cars_dataset.fill_dataset(
+                right_pc_dataset,
+                saving_info=saving_info_right,
+                window=cars_dataset.get_window_dataset(right_disparity_object),
+                profile=cars_dataset.get_profile_rasterio(
+                    right_disparity_object
+                ),
+                attributes=attributes,
+                overlaps=cars_dataset.get_overlaps_dataset(
+                    right_disparity_object
+                ),
+            )
 
     return left_pc_dataset, right_pc_dataset

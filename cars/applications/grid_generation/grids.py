@@ -33,7 +33,9 @@ from typing import Union
 
 # Third party imports
 import numpy as np
+import pandas
 import rasterio as rio
+import xarray as xr
 from affine import Affine
 
 # TODO depends on another step (and a later one) : make it independent
@@ -222,11 +224,23 @@ def compute_epipolar_grid_min_max(
     projection.points_cloud_conversion_dataset(pc_max, epsg)
 
     # Form grid_min and grid_max
-    grid_min = np.concatenate(
-        (pc_min[cst.X].values, pc_min[cst.Y].values), axis=1
-    )
-    grid_max = np.concatenate(
-        (pc_max[cst.X].values, pc_max[cst.Y].values), axis=1
-    )
+    grid_min = None
+    grid_max = None
+    if isinstance(pc_min, xr.Dataset):
+        grid_min = np.concatenate(
+            (pc_min[cst.X].values, pc_min[cst.Y].values), axis=1
+        )
+        grid_max = np.concatenate(
+            (pc_max[cst.X].values, pc_max[cst.Y].values), axis=1
+        )
+    elif isinstance(pc_min, pandas.DataFrame):
+        grid_min = np.stack(
+            (pc_min[cst.X].to_numpy(), pc_min[cst.Y].to_numpy()), axis=-1
+        )
+        grid_max = np.stack(
+            (pc_max[cst.X].to_numpy(), pc_max[cst.Y].to_numpy()), axis=-1
+        )
+    else:
+        logging.error("pc min/max error: point cloud is unknown")
 
     return grid_min, grid_max

@@ -378,12 +378,15 @@ def get_converted_xy_np_arrays_from_dataset(
     :return: a tuple composed of the x and y numpy arrays
     """
     xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud_in)
-
-    xyz = points_cloud_conversion(xyz, int(cloud_in.attrs[cst.EPSG]), epsg_out)
+    epsg = int(cloud_in.attrs[cst.EPSG])
+    xyz = points_cloud_conversion(xyz, epsg, epsg_out)
     xyz = xyz.reshape(xyz_shape)
-    proj_x = xyz[:, :, 0]
-    proj_y = xyz[:, :, 1]
-
+    if isinstance(cloud_in, xr.Dataset):
+        proj_x = xyz[:, :, 0]
+        proj_y = xyz[:, :, 1]
+    else:
+        proj_x = xyz[:, 0]
+        proj_y = xyz[:, 1]
     return proj_x, proj_y
 
 
@@ -399,16 +402,25 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     if cloud.attrs[cst.EPSG] != epsg_out:
         xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud)
 
-        xyz = points_cloud_conversion(xyz, int(cloud.attrs[cst.EPSG]), epsg_out)
+        xyz = points_cloud_conversion(xyz, cloud.attrs[cst.EPSG], epsg_out)
         xyz = xyz.reshape(xyz_shape)
+        if isinstance(cloud, xr.Dataset):
+            # # Update cloud_in x, y and z values
+            cloud[cst.X].values = xyz[:, :, 0]
+            cloud[cst.Y].values = xyz[:, :, 1]
+            cloud[cst.Z].values = xyz[:, :, 2]
 
-        # Update cloud_in x, y and z values
-        cloud[cst.X].values = xyz[:, :, 0]
-        cloud[cst.Y].values = xyz[:, :, 1]
-        cloud[cst.Z].values = xyz[:, :, 2]
-
-        # Update EPSG code
-        cloud.attrs[cst.EPSG] = epsg_out
+            # # Update EPSG code
+            cloud.attrs[cst.EPSG] = epsg_out
+        elif isinstance(cloud, pandas.DataFrame):
+            cloud[cst.X] = xyz[:, 0]
+            cloud[cst.Y] = xyz[:, 1]
+            cloud[cst.Z] = xyz[:, 2]
+            cloud.attrs[cst.EPSG] = epsg_out
+        else:
+            logging.error(
+                "points_cloud_conversion_dataset error: point cloud is unknown"
+            )
 
 
 def points_cloud_conversion_dataframe(

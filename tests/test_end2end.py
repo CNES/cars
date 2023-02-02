@@ -172,6 +172,15 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_points_cloud": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": False,
+            },
         }
 
         input_config_low_res["applications"].update(application_config)
@@ -264,8 +273,60 @@ def test_end2end_ventoux_unique():
                 used_conf["orchestrator"]
                 == gt_used_conf_orchestrator["orchestrator"]
             )
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
+                    )
+                )
+            ) is True
+
+            for k in range(0, 8):
+                nb_str = str(k)
+                assert (
+                    os.path.exists(
+                        os.path.join(
+                            out_dir,
+                            "left_right",
+                            "epi_pc_left",
+                            nb_str + ".csv",
+                        )
+                    )
+                ) is True
+                assert (
+                    os.path.exists(
+                        os.path.join(
+                            out_dir,
+                            "left_right",
+                            "epi_pc_left",
+                            nb_str + "_attrs.json",
+                        )
+                    )
+                ) is True
+                assert (
+                    os.path.exists(
+                        os.path.join(
+                            out_dir,
+                            "left_right",
+                            "epi_pc_left",
+                            nb_str + ".laz",
+                        )
+                    )
+                ) is True
+                assert (
+                    os.path.exists(
+                        os.path.join(
+                            out_dir,
+                            "left_right",
+                            "epi_pc_left",
+                            nb_str + ".laz.prj",
+                        )
+                    )
+                ) is True
+
             # check used_conf reentry
             _ = pipeline_low_res.SensorToLowResolutionDsmPipeline(used_conf)
+
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 

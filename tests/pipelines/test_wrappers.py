@@ -184,6 +184,7 @@ def test_epipolar_pipeline(
         right_disp,
         configuration,
         "OTBGeometry",
+        32636,
         add_msk_info=True,
     )
 
