@@ -140,7 +140,7 @@ def compute_dem_intersection_with_poly(
 
     # compute dem coverage polygon over the reference polygon
     if dem_poly is None or not dem_poly.intersects(ref_poly):
-        raise Exception("The input DEM does not intersect the useful zone")
+        raise RuntimeError("The input DEM does not intersect the useful zone")
 
     dem_cover = dem_poly.intersection(ref_poly)
 
@@ -464,7 +464,7 @@ def ground_polygon_from_envelopes(
     if poly_envelope1.intersects(poly_envelope2):
         inter = poly_envelope1.intersection(poly_envelope2)
     else:
-        raise Exception("The two envelopes do not intersect one another")
+        raise RuntimeError("The two envelopes do not intersect one another")
 
     return inter, inter.bounds
 

@@ -609,7 +609,7 @@ def compute_points_cloud(
         logging.error(
             "Disp ref is neither xarray Dataset  nor pandas DataFrame"
         )
-        raise Exception(
+        raise TypeError(
             "Disp ref is neither xarray Dataset  nor pandas DataFrame"
         )
 

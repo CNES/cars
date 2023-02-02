@@ -372,10 +372,13 @@ def create_corr_conf():
     user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
     user_cfg["pipeline"]["optimization"] = {}
     user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
-    user_cfg["pipeline"]["optimization"]["P1"] = 8
-    user_cfg["pipeline"]["optimization"]["P2"] = 32
-    user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
-    user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
+    user_cfg["pipeline"]["optimization"]["penalty"] = {}
+    user_cfg["pipeline"]["optimization"]["penalty"]["P1"] = 8
+    user_cfg["pipeline"]["optimization"]["penalty"]["P2"] = 32
+    user_cfg["pipeline"]["optimization"]["penalty"]["p2_method"] = "constant"
+    user_cfg["pipeline"]["optimization"]["penalty"][
+        "penalty_method"
+    ] = "sgm_penalty"
     user_cfg["pipeline"]["optimization"]["overcounting"] = False
     user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
     user_cfg["pipeline"]["disparity"] = {}

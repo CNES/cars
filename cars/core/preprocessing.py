@@ -526,7 +526,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
         )
 
         if not roi_poly.intersects(terrain_poly):
-            raise Exception(
+            raise RuntimeError(
                 "None of the input pairs intersect the requested ROI"
             )
         # Show ROI if valid (no exception raised) :

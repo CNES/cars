@@ -396,7 +396,7 @@ def dump_single_object(obj, path):
         # is from points
         cars_dataset.CarsDataset("points").save_single_tile(obj, path)
     else:
-        raise Exception("Not an arrays or points")
+        raise TypeError("Not an arrays or points")
 
 
 def create_path(obj, tmp_dir, id_num):

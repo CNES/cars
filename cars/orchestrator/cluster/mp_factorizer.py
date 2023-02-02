@@ -279,7 +279,7 @@ def factorized_fun(*args, **kwargs):
                         current_args[iter_args] = res[pos]
                     else:
                         if pos != 0:
-                            raise Exception(
+                            raise RuntimeError(
                                 "waiting multiple output but res is not tuple"
                             )
                         current_args[iter_args] = res

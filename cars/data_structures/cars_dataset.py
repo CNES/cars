@@ -482,7 +482,7 @@ class CarsDataset:
 
         if self.tiles is None:
             logging.error("No tiles managed by CarsDatasets")
-            raise Exception("No tiles managed by CarsDatasets")
+            raise RuntimeError("No tiles managed by CarsDatasets")
 
         # save tiles info
         tiles_info_file = os.path.join(directory, TILES_INFO_FILE)
@@ -1165,7 +1165,7 @@ def rio_profile_to_dict_profile(in_profile: Dict) -> Dict:
 
     profile = copy.copy(in_profile)
 
-    profile = dict(**profile)
+    profile = {**profile}
     crs = None
     if "crs" in profile:
         if profile["crs"] is not None:

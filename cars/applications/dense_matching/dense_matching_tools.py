@@ -264,9 +264,9 @@ def add_ambiguity(
 
     """
     confidence_measure_indicator_index = list(disp.confidence_measure.indicator)
-    if "ambiguity_confidence" in confidence_measure_indicator_index:
+    if "confidence_from_ambiguity" in confidence_measure_indicator_index:
         ambiguity_idx = list(disp.confidence_measure.indicator).index(
-            "ambiguity_confidence"
+            "confidence_from_ambiguity"
         )
         output_dataset[cst_disp.AMBIGUITY_CONFIDENCE] = xr.DataArray(
             np.copy(
@@ -310,7 +310,7 @@ def compute_mask_to_use_in_pandora(
             "No value identified by {} is "
             "present in the dataset".format(msk_key)
         )
-        raise Exception(
+        raise RuntimeError(
             "No value identified by {} is "
             "present in the dataset".format(msk_key)
         )

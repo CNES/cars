@@ -153,7 +153,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
         os.path.dirname(__file__), "orchestrator", "cluster", "dask_config"
     )
     if not os.path.isdir(dask_config_path):
-        raise Exception("Wrong dask config path")
+        raise NotADirectoryError("Wrong dask config path")
     os.environ["DASK_CONFIG"] = str(dask_config_path)
 
     # Main try/except to catch all program exceptions

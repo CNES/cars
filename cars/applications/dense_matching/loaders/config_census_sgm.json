@@ -11,12 +11,13 @@
         },
         "optimization": {
             "optimization_method": "sgm",
-            "P1": 8,
-            "P2": 32,
-            "p2_method": "constant",
-            "penalty_method": "sgm_penalty",
             "overcounting": false,
-            "min_cost_paths": false
+            "penalty": {
+                "P1": 8,
+                "P2": 32,
+                "p2_method": "constant",
+                "penalty_method": "sgm_penalty"
+              }
         },
         "cost_volume_confidence":
         {

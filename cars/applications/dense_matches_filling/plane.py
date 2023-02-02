@@ -265,7 +265,7 @@ class PlaneFill(
                     "DenseMatchingFilling and multiprocessing cluster "
                     "is currently not supported"
                 )
-                raise Exception(
+                raise RuntimeError(
                     "DenseMatchingFilling and multiprocessing cluster "
                     "is currently not supported"
                 )

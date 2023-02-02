@@ -72,13 +72,6 @@ class PandoraLoader:
                 with open(conf_file_path, "r", encoding="utf8") as fstream:
                     conf = json.load(fstream)
 
-                # Override weight path
-                weight_path = os.path.join(package_path, "weight_mccnn")
-                # replace "UPDATE" by path
-                conf["pipeline"]["matching_cost"]["model_path"] = conf[
-                    "pipeline"
-                ]["matching_cost"]["model_path"].replace("UPDATE", weight_path)
-
             elif "census" in method_name:
                 # Use census sgm conf
                 conf_file_path = os.path.join(
@@ -92,7 +85,7 @@ class PandoraLoader:
                 logging.error(
                     "No method named {} in pandora loader".format(method_name)
                 )
-                raise Exception(
+                raise NameError(
                     "No method named {} in pandora loader".format(method_name)
                 )
 

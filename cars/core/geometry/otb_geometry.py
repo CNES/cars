@@ -199,7 +199,7 @@ class OTBGeometry(AbstractGeometry):
                     "roi_key have to be set to use the "
                     "triangulation disparity mode"
                 )
-                raise Exception(
+                raise RuntimeError(
                     "roi_key have to be set to use the "
                     "triangulation disparity mode"
                 )
@@ -226,7 +226,7 @@ class OTBGeometry(AbstractGeometry):
                 "Wrong triangulation mode (only 'disp' or 'matches'"
                 " can be used as mode)"
             )
-            raise Exception(
+            raise NameError(
                 "Wrong triangulation mode (only 'disp' or 'matches'"
                 " can be used as mode)"
             )

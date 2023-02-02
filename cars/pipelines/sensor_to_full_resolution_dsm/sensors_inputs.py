@@ -182,7 +182,7 @@ def sensors_check_inputs(  # noqa: C901
 
             if not filled_with_none and mask is None:
                 logging.error("Mask classes were given with no mask associated")
-                raise Exception(
+                raise RuntimeError(
                     "Mask classes were given with no mask associated"
                 )
 
@@ -225,10 +225,10 @@ def sensors_check_inputs(  # noqa: C901
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         if key1 not in overloaded_conf[sens_cst.SENSORS]:
             logging.error("{} not in sensors images".format(key1))
-            raise Exception("{} not in sensors images".format(key1))
+            raise RuntimeError("{} not in sensors images".format(key1))
         if key2 not in overloaded_conf["sensors"]:
             logging.error("{} not in sensors images".format(key2))
-            raise Exception("{} not in sensors images".format(key2))
+            raise RuntimeError("{} not in sensors images".format(key2))
 
     # Modify to absolute path
     if config_json_dir is not None:
@@ -337,7 +337,9 @@ def check_roi(roi):
 
         # TODO check roi, and if epsg is valid
         if len(roi_bbox) != 4:
-            raise Exception("Roid bounding box doesn't have the right format")
+            raise RuntimeError(
+                "Roid bounding box doesn't have the right format"
+            )
         if roi_epsg is not None:
             try:
                 _ = fiona.crs.from_epsg(4326)
@@ -413,7 +415,7 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
                 roi = ([xmin, ymin, xmax, ymax], roi_epsg)
             except AttributeError as error:
                 logging.error("ROI EPSG code {} not readable".format(error))
-                raise Exception(
+                raise AttributeError(
                     "ROI EPSG code {} not readable".format(error)
                 ) from error
 
@@ -421,7 +423,7 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
             logging.error(
                 "ROI file {} has an unsupported format".format(arg_roi_file)
             )
-            raise Exception(
+            raise AttributeError(
                 "ROI file {} has an unsupported format".format(arg_roi_file)
             )
 
@@ -443,11 +445,11 @@ def check_input_data(image, mask, color):
     """
 
     if inputs.rasterio_get_nb_bands(image) != 1:
-        raise Exception("{} is not mono-band images".format(image))
+        raise RuntimeError("{} is not mono-band images".format(image))
 
     if mask is not None:
         if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
-            raise Exception(
+            raise RuntimeError(
                 "The image {} and the mask {} "
                 "do not have the same size".format(image, mask)
             )
