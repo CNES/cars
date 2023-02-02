@@ -477,7 +477,8 @@ def create_combined_dense_cloud(  # noqa: C901
                 cst.POINTS_CLOUD_IDX_IM_EPI,
             ]
         )
-    for key in cloud_list_item.keys():
+
+    for key in cloud_list[0].keys():
         for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
             if key == confidence_name:
                 nb_data.append(confidence_name)

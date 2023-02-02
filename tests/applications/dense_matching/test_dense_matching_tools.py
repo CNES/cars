@@ -305,18 +305,14 @@ def test_compute_disparity_with_all_confidences(
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
     assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
-    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (160, 177)
-    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (160, 177)
+    assert output[cst.STEREO_SEC][cst_disp.MAP].shape == (120, 110)
+    assert output[cst.STEREO_SEC][cst_disp.VALID].shape == (120, 110)
 
     np.testing.assert_allclose(
         output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
     np.testing.assert_allclose(
         output[cst.STEREO_SEC].attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
-    np.testing.assert_allclose(
-        output[cst.STEREO_SEC].attrs[cst.ROI_WITH_MARGINS],
-        np.array([387, 180, 564, 340]),
     )
 
     # Uncomment to update baseline

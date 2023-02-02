@@ -1,0 +1,46 @@
+{
+    "input": {},
+    "pipeline": {
+        "right_disp_map": {
+            "method": "accurate"
+        },
+        "matching_cost": {
+            "matching_cost_method": "census",
+            "window_size": 5,
+            "subpix": 1
+        },
+        "optimization": {
+            "optimization_method": "sgm",
+            "overcounting": false,
+            "penalty": {
+                "P1": 8,
+                "P2": 32,
+                "p2_method": "constant",
+                "penalty_method": "sgm_penalty"
+              },
+            "min_cost_paths": false
+            
+        },
+        "cost_volume_confidence":
+        {
+            "confidence_method": "ambiguity",
+            "eta_max": 0.7,
+            "eta_step": 0.01
+        },
+        "disparity": {
+            "disparity_method": "wta",
+            "invalid_disparity": "NaN"
+        },
+        "refinement": {
+            "refinement_method": "vfit"
+        },
+        "filter": {
+            "filter_method": "median",
+            "filter_size": 3
+        },
+        "validation": {
+            "validation_method": "cross_checking",
+            "cross_checking_threshold": 1.0
+        }
+    }
+}

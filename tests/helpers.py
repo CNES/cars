@@ -383,36 +383,12 @@ def corr_conf_defaut():
     Provide pandora default configuration for test
     """
     user_cfg = {}
-    user_cfg["input"] = {}
-    user_cfg["pipeline"] = {}
-    user_cfg["pipeline"]["right_disp_map"] = {}
-    user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
-    user_cfg["pipeline"]["matching_cost"] = {}
-    user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
-    user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
-    user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
-    user_cfg["pipeline"]["optimization"] = {}
-    user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
-    user_cfg["pipeline"]["optimization"]["penalty"] = {}
-    user_cfg["pipeline"]["optimization"]["penalty"]["P1"] = 8
-    user_cfg["pipeline"]["optimization"]["penalty"]["P2"] = 32
-    user_cfg["pipeline"]["optimization"]["penalty"]["p2_method"] = "constant"
-    user_cfg["pipeline"]["optimization"]["penalty"][
-        "penalty_method"
-    ] = "sgm_penalty"
-    user_cfg["pipeline"]["optimization"]["overcounting"] = False
-    user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
-    user_cfg["pipeline"]["disparity"] = {}
-    user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
-    user_cfg["pipeline"]["disparity"]["invalid_disparity"] = 0
-    user_cfg["pipeline"]["refinement"] = {}
-    user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
-    user_cfg["pipeline"]["filter"] = {}
-    user_cfg["pipeline"]["filter"]["filter_method"] = "median"
-    user_cfg["pipeline"]["filter"]["filter_size"] = 3
-    user_cfg["pipeline"]["validation"] = {}
-    user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
-    user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
+    with open(
+        absolute_data_path(os.path.join("conf_pandora", "conf_default.json")),
+        "r",
+        encoding="utf8",
+    ) as fstream:
+        user_cfg = json.load(fstream)
     return user_cfg
 
 
@@ -421,47 +397,14 @@ def corr_conf_with_confidence():
     Provide pandora configuration with confidence option
     """
     user_cfg = {}
-    user_cfg["input"] = {}
-    user_cfg["pipeline"] = {}
-    user_cfg["pipeline"]["right_disp_map"] = {}
-    user_cfg["pipeline"]["right_disp_map"]["method"] = "accurate"
-    user_cfg["pipeline"]["matching_cost"] = {}
-    user_cfg["pipeline"]["matching_cost"]["matching_cost_method"] = "census"
-    user_cfg["pipeline"]["matching_cost"]["window_size"] = 5
-    user_cfg["pipeline"]["matching_cost"]["subpix"] = 1
-    user_cfg["pipeline"]["optimization"] = {}
-    user_cfg["pipeline"]["optimization"]["optimization_method"] = "sgm"
-    user_cfg["pipeline"]["optimization"]["P1"] = 8
-    user_cfg["pipeline"]["optimization"]["P2"] = 32
-    user_cfg["pipeline"]["optimization"]["p2_method"] = "constant"
-    user_cfg["pipeline"]["optimization"]["penalty_method"] = "sgm_penalty"
-    user_cfg["pipeline"]["optimization"]["overcounting"] = False
-    user_cfg["pipeline"]["optimization"]["min_cost_paths"] = False
-    user_cfg["pipeline"]["cost_volume_confidence"] = {}
-    user_cfg["pipeline"]["cost_volume_confidence"][
-        "confidence_method"
-    ] = "ambiguity"
-    user_cfg["pipeline"]["cost_volume_confidence"]["eta_max"] = 0.7
-    user_cfg["pipeline"]["cost_volume_confidence"]["eta_step"] = 0.01
-    user_cfg["pipeline"]["cost_volume_confidence.std_intensity"] = {}
-    user_cfg["pipeline"]["cost_volume_confidence.std_intensity"][
-        "confidence_method"
-    ] = "std_intensity"
-    user_cfg["pipeline"]["cost_volume_confidence.risk"] = {}
-    user_cfg["pipeline"]["cost_volume_confidence.risk"][
-        "confidence_method"
-    ] = "risk"
-    user_cfg["pipeline"]["disparity"] = {}
-    user_cfg["pipeline"]["disparity"]["disparity_method"] = "wta"
-    user_cfg["pipeline"]["disparity"]["invalid_disparity"] = 0
-    user_cfg["pipeline"]["refinement"] = {}
-    user_cfg["pipeline"]["refinement"]["refinement_method"] = "vfit"
-    user_cfg["pipeline"]["filter"] = {}
-    user_cfg["pipeline"]["filter"]["filter_method"] = "median"
-    user_cfg["pipeline"]["filter"]["filter_size"] = 3
-    user_cfg["pipeline"]["validation"] = {}
-    user_cfg["pipeline"]["validation"]["validation_method"] = "cross_checking"
-    user_cfg["pipeline"]["validation"]["cross_checking_threshold"] = 1.0
+    with open(
+        absolute_data_path(
+            os.path.join("conf_pandora", "conf_with_all_confidences.json")
+        ),
+        "r",
+        encoding="utf8",
+    ) as fstream:
+        user_cfg = json.load(fstream)
     return user_cfg
 
 

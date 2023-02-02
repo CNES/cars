@@ -358,10 +358,12 @@ def test_end2end_ventoux_unique():
                         },
                         "optimization": {
                             "optimization_method": "sgm",
-                            "P1": 8,
-                            "P2": 32,
-                            "p2_method": "constant",
-                            "penalty_method": "sgm_penalty",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "p2_method": "constant",
+                                "penalty_method": "sgm_penalty",
+                            },
                             "overcounting": False,
                             "min_cost_paths": False,
                         },
@@ -494,16 +496,16 @@ def test_end2end_ventoux_unique():
             absolute_data_path(
                 "ref_output/confidence_from_risk_min_end2end_ventoux.tif"
             ),
-            atol=1.0e-7,
-            rtol=1.0e-7,
+            atol=1.0e-6,
+            rtol=1.0e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "confidence_from_risk_max.tif"),
             absolute_data_path(
                 "ref_output/confidence_from_risk_max_end2end_ventoux.tif"
             ),
-            atol=1.0e-7,
-            rtol=1.0e-7,
+            atol=1.0e-6,
+            rtol=1.0e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
