@@ -1,5 +1,28 @@
 # Changelog
 
+## 0.5.4 Grid correction in the configuration file and a better estimate of disparity range (February 2023)
+
+### Added
+- A better estimate of disparity range [#538]
+- Prepare and use Epipolar A Priori data: grid correction and disparity range [#458]
+- Use custom DASK configuration for CARS [#554]
+- Use adaptative DASK cluster [#541]
+- Update Pandora to 1.3 [#459][#575][#587]
+- Point cloud saving in the low resolution pipeline [#498]
+
+### Changed
+- Update black formatting rules [#556]
+- Update dask memory logger, disable it by default [#527]
+- OTB_MAX_RAM_HINT not used for tile sizing anymore [#541]
+- Deactivate DASK dashboard by default [#343]
+
+### Fixed
+- Line artefact on right disparity map [#525]
+- Pipeline configuration override [#533] 
+- Scipy an xarray broken interfaces [#561]
+- Set masked pixels to nodata in point clouds from triangulation [#465]
+- Set log level of dask cluster to warning [#545]
+
 ## 0.5.3 Points clouds as LAZ files (December 2022)
 
 ### Added
