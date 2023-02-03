@@ -15,8 +15,9 @@ This file keeps track of authors contributions.
 * David Youssefi <david.youssefi@cnes.fr>
 * Emmanuel Dubois <emmanuel.dubois@cnes.fr>
 * Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
-* Quentin Fardet <quentin.fardet@csgroup.eu>
 * Yoann Steux <yoann.steux@csgroup.eu>
+* Florian Douziech <florian.douziech@csgroup.eu>
+* Natalia Jimenez Diaz <natalia.jimenez-diaz@csgroup.eu>
 
 ## Contributors
 
@@ -27,6 +28,9 @@ This file keeps track of authors contributions.
 * Guillaume Pasero <guillaume.pasero@csgroup.eu>
 * Jonathan Guinet <jonathan.guinet@csgroup.eu>
 * Jasmin Siefert <jasmin.siefert@csgroup.eu>
+* Quentin Fardet <quentin.fardet@csgroup.eu>
+* Teo Bouvard <teo.bouvard@thalesgroup.com>
+* Fabien Servoz <fabien.servoz@thalesgroup.com>
 
 Update here with new contributors.
 
