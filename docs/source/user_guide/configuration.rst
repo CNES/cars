@@ -229,7 +229,7 @@ The structure follows this organisation:
             +=========================+=====================================================================+=======================+======================+==========+
             | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
+            | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *roi*                   | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -252,7 +252,8 @@ The structure follows this organisation:
                             "mask": "path_to_mask.tif",
                             "epsg": "point_cloud_epsg"
                         }
-                    }
+                    },
+                    "epsg": 32644
                 }
 
             These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
@@ -371,7 +372,7 @@ The structure follows this organisation:
     +----------------+-----------------------+--------+-------------------------+---------------------------------------------------------------------------------------------------------------------+----------+
     | Name           | Description           | Type   | Default value           | Available values                                                                                                    | Required |
     +================+=======================+========+=========================+=====================================================================================================================+==========+
-    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds",  "dense_point_clouds_to_dense_dsm" | False    |
+    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds", "dense_point_clouds_to_dense_dsm" | False    |
     +----------------+-----------------------+--------+-------------------------+---------------------------------------------------------------------------------------------------------------------+----------+
 
 

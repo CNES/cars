@@ -504,9 +504,15 @@ def compute_point_cloud_wrapper(
             epipolar_border_margin=0,
             with_coords=True,
         )
+        # get color type list
+        color_type = point_cloud_tools.get_color_type(clouds)
     else:
         # combined pc from tif files
-        pc_pandas, cloud_epsg = pc_tif_tools.create_combined_cloud_from_tif(
+        (
+            pc_pandas,
+            cloud_epsg,
+            color_type,
+        ) = pc_tif_tools.create_combined_cloud_from_tif(
             clouds,
             epsg,
             xmin=xmin,
@@ -522,9 +528,6 @@ def compute_point_cloud_wrapper(
             pc_pandas, cloud_epsg, epsg
         )
         cloud_epsg = epsg
-
-    # get color type list
-    color_type = point_cloud_tools.get_color_type(clouds)
 
     # Fill attributes for rasterization
     attributes = {

@@ -254,12 +254,13 @@ def create_combined_cloud_from_tif(
     :param ymax: max y coordinate
     :type ymax: float
 
-    :return: combined cloud
-    :rtype: pandas Dataframe
+    :return: combined cloud, point cloud epsg
+    :rtype: pandas Dataframe, int
 
     """
 
     clouds_pd_list = []
+    color_types = []
 
     # Create multiple pc pandas dataframes
     for cloud in clouds:
@@ -270,6 +271,11 @@ def create_combined_cloud_from_tif(
         for type_band in cloud["data"].keys():
             # open file and get data
             band_path = cloud["data"][type_band]
+
+            if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
+                # Get color type
+                color_types.append(inputs.rasterio_get_color_type(band_path))
+
             if band_path is not None:
                 with rio.open(band_path) as desc_band:
                     if desc_band.count == 1:
@@ -279,7 +285,7 @@ def create_combined_cloud_from_tif(
                         )
                     else:
                         for index_band in range(desc_band.count):
-                            band_name = "{}{}".format(type_band, index_band + 1)
+                            band_name = "{}{}".format(type_band, index_band)
                             cloud_data_bands.append(band_name)
                             cloud_data[band_name] = np.ravel(
                                 desc_band.read(1 + index_band, window=window)
@@ -334,7 +340,15 @@ def create_combined_cloud_from_tif(
         ),
     )
 
-    return combined_pd_cloud, epsg
+    # Get color type
+    color_type_set = set(color_types)
+    if len(color_type_set) > 1:
+        logging.warning("The tiles colors don't have the same type.")
+    color_type = None
+    if len(color_types) > 0:
+        color_type = color_types[0]
+
+    return combined_pd_cloud, epsg, color_type
 
 
 def transform_input_pc(

@@ -750,7 +750,7 @@ def get_color_type(clouds):
     if color_types:
         color_type_set = set(color_types)
         if len(color_type_set) > 1:
-            logging.warning("The tiles colors haven't the same types.")
+            logging.warning("The tiles colors don't have the same type.")
         return color_types[0]
 
     return None

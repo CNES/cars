@@ -593,15 +593,11 @@ def generate_epipolar_images_wrapper(
             )
 
         # Add input color type
-        color_types = inputs.rasterio_get_color_type(color1)
-        # Check if each color bands have the same type
-        color_type_set = set(color_types)
-        if len(color_type_set) > 1:
-            logging.warning("The colors bands haven't the same types.")
-        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_types[0]
+        color_type = inputs.rasterio_get_color_type(color1)
+        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
     else:
-        color_types = inputs.rasterio_get_color_type(img1)
-        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types[0]
+        color_type = inputs.rasterio_get_color_type(img1)
+        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_type
     # Add attributes info
     attributes = {}
 
