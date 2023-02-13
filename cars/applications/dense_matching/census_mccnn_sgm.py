@@ -27,7 +27,7 @@ import collections
 import logging
 import math
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 # Third party imports
 import numpy as np
@@ -37,17 +37,13 @@ from json_checker import Checker, Or
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dense_matching import (
-    dense_matching_tools,
-    regularisation,
-)
+from cars.applications.dense_matching import dense_matching_tools
 from cars.applications.dense_matching.dense_matching import DenseMatching
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
 )
 
 # CARS imports
-from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core.utils import safe_makedirs
@@ -274,10 +270,6 @@ class CensusMccnnSgm(
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        mask1_ignored_by_corr: List[int] = None,
-        mask2_ignored_by_corr: List[int] = None,
-        mask1_set_to_ref_alt: List[int] = None,
-        mask2_set_to_ref_alt: List[int] = None,
         disp_min=None,
         disp_max=None,
         compute_disparity_masks=False,
@@ -318,18 +310,6 @@ class CensusMccnnSgm(
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param mask1_ignored_by_corr: values used in left mask to ignore
-         in correlation
-        :type mask1_ignored_by_corr: list
-        :param mask2_ignored_by_corr: values used in right mask to ignore
-         in correlation
-        :type mask2_ignored_by_corr: list
-        :param mask1_set_to_ref_alt: values used in left mask to altitude
-         to ref
-        :type mask1_set_to_ref_alt: list
-        :param mask2_set_to_ref_alt: values used in right mask to altitude
-         to ref
-        :type mask2_set_to_ref_alt: list
         :param disp_min: minimum disparity
         :type disp_min: int
         :param disp_max: maximum disparity
@@ -482,10 +462,6 @@ class CensusMccnnSgm(
                         epipolar_images_left[row, col],
                         epipolar_images_right[row, col],
                         self.corr_config,
-                        mask1_ignored_by_corr=mask1_ignored_by_corr,
-                        mask2_ignored_by_corr=mask2_ignored_by_corr,
-                        mask1_set_to_ref_alt=mask1_set_to_ref_alt,
-                        mask2_set_to_ref_alt=mask2_set_to_ref_alt,
                         disp_min=disp_min,
                         disp_max=disp_max,
                         use_sec_disp=self.use_sec_disp,
@@ -506,10 +482,6 @@ def compute_disparity(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,
-    mask1_ignored_by_corr: List[int] = None,
-    mask2_ignored_by_corr: List[int] = None,
-    mask1_set_to_ref_alt: List[int] = None,
-    mask2_set_to_ref_alt: List[int] = None,
     disp_min=None,
     disp_max=None,
     use_sec_disp=False,
@@ -559,30 +531,6 @@ def compute_disparity(
             - cst.EPI_COLOR
     """
 
-    # Check masks' classes consistency
-    if mask1_ignored_by_corr is None and cst.EPI_MSK in left_image_object:
-        if mask_classes.is_multiclasses_mask(
-            left_image_object[cst.EPI_MSK].values
-        ):
-            logging.debug(
-                "Left mask seems to have several classes but no "
-                "classes usage json file has been indicated in the "
-                "configuration file. All classes will be "
-                "considered as invalid data."
-            )
-
-    # Check masks' classes consistency
-    if mask2_ignored_by_corr is None and cst.EPI_MSK in right_image_object:
-        if mask_classes.is_multiclasses_mask(
-            right_image_object[cst.EPI_MSK].values
-        ):
-            logging.debug(
-                "Right mask seems to have several classes but no "
-                "classes usage json file has been indicated in the "
-                "configuration file. All classes will be "
-                "considered as invalid data."
-            )
-
     # Compute disparity
     # TODO : remove overwriting of EPI_MSK
     disp = dense_matching_tools.compute_disparity(
@@ -591,19 +539,8 @@ def compute_disparity(
         corr_cfg,
         disp_min,
         disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
         use_sec_disp=use_sec_disp,
         compute_disparity_masks=compute_disparity_masks,
-    )
-
-    # If necessary, set disparity to 0 for classes to be set to input dem
-    regularisation.update_disp_to_0(
-        disp,
-        left_image_object,
-        right_image_object,
-        mask1_set_to_ref_alt,
-        mask2_set_to_ref_alt,
     )
 
     color_sec = None

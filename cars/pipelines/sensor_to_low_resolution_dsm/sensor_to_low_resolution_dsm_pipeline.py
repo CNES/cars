@@ -353,12 +353,6 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    mask1_ignored_by_sift=sensor_image_left[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
-                    mask2_ignored_by_sift=sensor_image_right[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
                 )
 
                 # Run cluster breakpoint to compute sifts

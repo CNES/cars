@@ -127,8 +127,6 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        mask1_ignored_by_corr: List[int] = None,
-        mask2_ignored_by_corr: List[int] = None,
         mask1_set_to_ref_alt: List[int] = None,
         mask2_set_to_ref_alt: List[int] = None,
         disp_min=None,
@@ -150,12 +148,6 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param mask1_ignored_by_corr: values used in left mask to ignore
-         in correlation
-        :type mask1_ignored_by_corr: list
-        :param mask2_ignored_by_corr: values used in right mask to ignore
-         in correlation
-        :type mask2_ignored_by_corr: list
         :param mask1_set_to_ref_alt: values used in left mask to altitude
          to ref
         :type mask1_set_to_ref_alt: list

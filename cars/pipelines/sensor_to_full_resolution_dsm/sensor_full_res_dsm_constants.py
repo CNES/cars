@@ -38,18 +38,12 @@ GEOID = "geoid"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
-INPUT_MSK_CLASSES = "mask_classes"
 INPUT_GEO_MODEL = "geomodel"
 INPUT_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"
 INPUT_COLOR = "color"
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
-
-# mask_classes constants
-IGNORED_BY_DENSE_MATCHING = "ignored_by_dense_matching"
-SET_TO_REF_ALT = "set_to_ref_alt"
-IGNORED_BY_SPARSE_MATCHING = "ignored_by_sparse_matching"
 
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"

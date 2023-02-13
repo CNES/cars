@@ -6,20 +6,12 @@
                 "image": "img1.tif",
                 "geomodel": "img1.geom",
                 "mask": "new_mask1.tif",
-                "mask_classes": {   
-                    "ignored_by_dense_matching": [1, 2],
-                    "ignored_by_sparse_matching": [1, 2]
-                },
                 "no_data": 0
             },
             "two": {
                 "image": "img2.tif",
                 "geomodel": "img2.geom",
                 "mask": "new_mask2.tif",
-                "mask_classes": {   
-                    "ignored_by_dense_matching": [1],
-                    "ignored_by_sparse_matching": [1]
-                },
                 "no_data": 0
 
             }

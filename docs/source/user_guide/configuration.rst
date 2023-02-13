@@ -64,7 +64,6 @@ The structure follows this organisation:
                 "image" : "path_to_image.tif",
                 "color" : "path_to_color.tif",
                 "mask" : "path_to_mask.tif",
-                "mask_classes" : {},
                 "nodata": 0
             }
         }
@@ -84,37 +83,11 @@ The structure follows this organisation:
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
     | *mask*            | external mask of the image                                                               | string         | None          | No       |
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    |*mask_classes*     | mask's classes usage (see next section for more details)                                 | dict           |               | No       |
-    +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
     .. note::
 
         - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
-        - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as invalid data.
-        - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
-
-
-    **CARS mask multi-classes structure**
-
-
-    Multi-classes masks have a unified CARS format enabling the use of several mask information into the API.
-    The classes can be used in different ways depending on the tag used in the dict defined below.
-
-    Dict is given in the *mask_classes* fields of sensor (see previous section).
-    This dict indicate the masks's classes usage and is structured as follows :
-
-    .. code-block:: json
-
-        {
-            "ignored_by_dense_matching": [1, 2],
-            "set_to_ref_alt": [1, 3, 4],
-            "ignored_by_sparse_matching": [2]
-        }
-
-
-    * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
-    * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
-    * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
+        - For the mask input, the non-zeros values of the mask will be considered as invalid data.
 
     **Epipolar a priori**
 

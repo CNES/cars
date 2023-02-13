@@ -29,7 +29,7 @@ import math
 # Third party imports
 import numpy as np
 
-from cars.conf import mask_classes
+from cars.conf import mask_cst
 
 # CARS imports
 from cars.core import constants as cst
@@ -219,8 +219,8 @@ def resample_image(
             img,
             mask,
             nodata,
-            mask_classes.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-            mask_classes.VALID_VALUE,
+            mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            mask_cst.VALID_VALUE,
             grid,
             largest_size[0],
             largest_size[1],

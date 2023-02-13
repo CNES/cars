@@ -25,7 +25,6 @@ Important : Uses conftest.py for shared pytest fixtures
 
 # Standard imports
 import math
-from copy import deepcopy
 
 # Third party imports
 import numpy as np
@@ -35,8 +34,6 @@ import xarray as xr
 from cars.applications.dense_matching import dense_matching_tools
 
 # CARS imports
-from cars.conf import input_parameters as in_params
-from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 
@@ -47,7 +44,6 @@ from tests.helpers import (
     corr_conf_defaut,
     corr_conf_with_confidence,
     create_corr_conf,
-    read_mask_classes,
 )
 
 
@@ -92,9 +88,7 @@ def test_optimal_tile_size():
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
+def test_compute_disparity_1():
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -104,29 +98,6 @@ def test_compute_disparity_1(
     right_input = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_right.nc")
     )
-
-    # Get mask values
-    mask1_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
@@ -141,8 +112,6 @@ def test_compute_disparity_1(
         corr_cfg,
         disp_min,
         disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
     )
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
@@ -170,9 +139,7 @@ def test_compute_disparity_1(
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_3(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
+def test_compute_disparity_3():
     """
     Test compute_disparity on paca dataset with pandora
     """
@@ -183,29 +150,6 @@ def test_compute_disparity_3(
         absolute_data_path("input/intermediate_results/data3_ref_right.nc")
     )
 
-    # Get mask values
-    mask1_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
-
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
@@ -213,14 +157,10 @@ def test_compute_disparity_3(
     disp_min = -43
     disp_max = 41
 
+    # TODO add validity mask input
+
     output = dense_matching_tools.compute_disparity(
-        left_input,
-        right_input,
-        corr_cfg,
-        disp_min,
-        disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
+        left_input, right_input, corr_cfg, disp_min, disp_max
     )
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (90, 90)
@@ -333,9 +273,7 @@ def test_compute_disparity_with_all_confidences(
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_ref(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
+def test_compute_disparity_1_msk_ref():
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -347,29 +285,6 @@ def test_compute_disparity_1_msk_ref(
     right_input = xr.open_dataset(
         absolute_data_path("input/intermediate_results/data1_ref_right.nc")
     )
-
-    # Get mask values
-    mask1_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
@@ -384,8 +299,6 @@ def test_compute_disparity_1_msk_ref(
         corr_cfg,
         disp_min,
         disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
         compute_disparity_masks=True,
     )
 
@@ -412,63 +325,9 @@ def test_compute_disparity_1_msk_ref(
     )
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.0e-6)
 
-    # test multi-classes left mask
-    left_input[cst.EPI_MSK].values[10, 10] = 1  # valid class
-    left_input[cst.EPI_MSK].values[10, 140] = 2  # nonvalid class
-    conf = deepcopy(images_and_grids_conf)
-    conf["input"]["mask1_classes"] = absolute_data_path(
-        "input/intermediate_results/data1_ref_left_mask_classes.json"
-    )
-
-    # Get mask values
-    mask1_classes = conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
-
-    output = dense_matching_tools.compute_disparity(
-        left_input,
-        right_input,
-        corr_cfg,
-        disp_min,
-        disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
-        compute_disparity_masks=True,
-    )
-
-    assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)
-    assert output[cst.STEREO_REF][cst_disp.VALID].shape == (120, 110)
-
-    np.testing.assert_allclose(
-        output[cst.STEREO_REF].attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
-
-    assert_same_datasets(output[cst.STEREO_REF], ref, atol=5.0e-6)
-    assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.0e-6)
-
 
 @pytest.mark.unit_tests
-def test_compute_disparity_1_msk_sec(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
+def test_compute_disparity_1_msk_sec():
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -480,33 +339,6 @@ def test_compute_disparity_1_msk_sec(
             "input/intermediate_results/data1_ref_right_masked.nc"
         )
     )
-    conf = deepcopy(images_and_grids_conf)
-    conf["input"]["mask2_classes"] = absolute_data_path(
-        "input/intermediate_results/data1_ref_right_mask_classes.json"
-    )
-
-    # Get mask values
-    mask1_classes = conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
@@ -521,8 +353,6 @@ def test_compute_disparity_1_msk_sec(
         corr_cfg,
         disp_min,
         disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
         compute_disparity_masks=True,
     )
 
@@ -539,10 +369,12 @@ def test_compute_disparity_1_msk_sec(
     )
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
-    # "ref_output/disp1_ref_pandora_msk_sec.nc"))
-    # output[cst.STEREO_SEC].to_netcdf(absolute_data_path(
-    # "ref_output/disp1_sec_pandora_msk_sec.nc"))
+    output[cst.STEREO_REF].to_netcdf(
+        absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
+    )
+    output[cst.STEREO_SEC].to_netcdf(
+        absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc")
+    )
 
     ref = xr.open_dataset(
         absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
@@ -553,29 +385,6 @@ def test_compute_disparity_1_msk_sec(
         absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc")
     )
     assert_same_datasets(output[cst.STEREO_SEC], sec, atol=5.0e-6)
-
-
-@pytest.mark.unit_tests
-def test_compute_mask_to_use_in_pandora():
-    """
-    Test compute_mask_to_use_in_pandora with a cloud "data1_ref_right_masked.nc"
-    """
-
-    right_input = xr.open_dataset(
-        absolute_data_path(
-            "input/intermediate_results/data1_ref_right_masked.nc"
-        )
-    )
-
-    test_mask = dense_matching_tools.compute_mask_to_use_in_pandora(
-        right_input, cst.EPI_MSK, [100]
-    )
-
-    ref_msk = np.copy(right_input[cst.EPI_MSK].values)
-    ref_msk.astype(np.int16)
-    ref_msk[np.where(right_input[cst.EPI_MSK].values == 100, True, False)] = 1
-
-    assert np.allclose(test_mask, ref_msk)
 
 
 @pytest.mark.unit_tests

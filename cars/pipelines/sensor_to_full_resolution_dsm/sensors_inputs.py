@@ -32,7 +32,6 @@ import rasterio as rio
 from json_checker import Checker, Or
 
 # CARS imports
-from cars.conf import mask_classes
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.sensor_to_full_resolution_dsm import (
@@ -126,16 +125,8 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_GEO_MODEL: str,
         sens_cst.INPUT_MODEL_FILTER: Or([str], None),
         sens_cst.INPUT_MSK: Or(str, None),
-        sens_cst.INPUT_MSK_CLASSES: dict,
     }
     checker_sensor = Checker(sensor_schema)
-
-    mask_classes_schema = {
-        sens_cst.IGNORED_BY_DENSE_MATCHING: Or([int], None),
-        sens_cst.SET_TO_REF_ALT: Or([int], None),
-        sens_cst.IGNORED_BY_SPARSE_MATCHING: Or([int], None),
-    }
-    checker_mask_classes = Checker(mask_classes_schema)
 
     for sensor_image_key in conf[sens_cst.SENSORS]:
         # Overload optional parameters
@@ -168,52 +159,11 @@ def sensors_check_inputs(  # noqa: C901
             sens_cst.INPUT_MSK
         ] = mask
 
-        if (
-            sens_cst.INPUT_MSK_CLASSES
-            in conf[sens_cst.SENSORS][sensor_image_key]
-        ):
-            filled_with_none = True
-            for _, value in conf[sens_cst.SENSORS][sensor_image_key][
-                sens_cst.INPUT_MSK_CLASSES
-            ].items():
-                if value is not None:
-                    filled_with_none = False
-                    break
-
-            if not filled_with_none and mask is None:
-                logging.error("Mask classes were given with no mask associated")
-                raise RuntimeError(
-                    "Mask classes were given with no mask associated"
-                )
-
-        mask_classes_dict = conf[sens_cst.SENSORS][sensor_image_key].get(
-            "mask_classes", {}
-        )
-        updated_mask_classes = mask_classes_dict.copy()
-        updated_mask_classes[
-            sens_cst.IGNORED_BY_DENSE_MATCHING
-        ] = mask_classes_dict.get(sens_cst.IGNORED_BY_DENSE_MATCHING, None)
-        updated_mask_classes[sens_cst.SET_TO_REF_ALT] = mask_classes_dict.get(
-            sens_cst.SET_TO_REF_ALT, None
-        )
-        updated_mask_classes[
-            sens_cst.IGNORED_BY_SPARSE_MATCHING
-        ] = mask_classes_dict.get(sens_cst.IGNORED_BY_SPARSE_MATCHING, None)
-        # Check if protected keys are used
-        mask_classes.check_mask_classes(updated_mask_classes)
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_MSK_CLASSES
-        ] = updated_mask_classes
-
         # Validate
         checker_sensor.validate(
             overloaded_conf[sens_cst.SENSORS][sensor_image_key]
         )
-        checker_mask_classes.validate(
-            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-                sens_cst.INPUT_MSK_CLASSES
-            ]
-        )
+
     # check epipolar a priori for each image pair
     if (
         check_epipolar_a_priori

@@ -406,32 +406,3 @@ def corr_conf_with_confidence():
     ) as fstream:
         user_cfg = json.load(fstream)
     return user_cfg
-
-
-def read_mask_classes(mask_classes_path):
-    """
-    Read the json file describing the mask classes usage in the CARS API
-    and return it as a dictionary.
-
-    :param mask_classes_path: path to the json file
-    :return: dictionary of the mask classes to use in CARS
-    """
-
-    classes_usage_dict = {}
-
-    with open(mask_classes_path, "r", encoding="utf-8") as mask_classes_file:
-        classes_usage_dict = json.load(mask_classes_file)
-
-    # check that required values are not protected for CARS internal usage
-    used_values = []
-    for key in classes_usage_dict.keys():
-        used_values.extend(classes_usage_dict[key])
-
-    for i in PROTECTED_VALUES:
-        if i in used_values:
-            logging.warning(
-                "{} value cannot be used as a mask class, "
-                "it is reserved for CARS internal use".format(i)
-            )
-
-    return classes_usage_dict

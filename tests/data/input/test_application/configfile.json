@@ -1,0 +1,61 @@
+{
+    "inputs": {
+        "sensors" : {
+            "one": {
+                "image": "img1.tif",
+                "no_data": 0
+            },
+            "two": {
+                "image": "img2.tif",
+                "geomodel": "img2.geom",
+                "no_data": 0
+
+            }
+        },
+        "pairing": [["one", "two"]],
+         "initial_elevation": "srtm_dir"
+    },
+    "applications": {
+        "resampling": {
+            "save_epipolar_image": true
+        },
+        "dense_matching": {
+            "method": "census_sgm",
+            "save_disparity_map": true,
+			"min_epi_tile_size": 103,
+			"max_epi_tile_size": 103
+
+        },
+        "triangulation": {
+            "method": "line_of_sight_intersection",
+            "save_points_cloud": true
+        },
+        "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": false,
+                "save_points_cloud_as_csv": false
+        },
+        "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "save_points_cloud_as_laz": false,
+                "save_points_cloud_as_csv": false
+        },
+        "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "save_points_cloud_as_laz": true,
+                "save_points_cloud_as_csv": false
+        }
+	  },
+    "output": {
+          "out_dir": "outresults"
+    },
+    "orchestrator": {
+          "mode": "sequential",
+          "max_ram_per_worker":1,
+          "profiling": {
+            "activated": false,
+            "mode": "cprofile"
+          }
+    }
+
+}

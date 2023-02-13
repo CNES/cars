@@ -39,15 +39,13 @@ from cars.applications.triangulation.line_of_sight_intersection import (
     compute_points_cloud,
 )
 from cars.conf import input_parameters as in_params
-from cars.conf import mask_classes
 
 # CARS Tests imports
 from ..helpers import (
     absolute_data_path,
     assert_same_datasets,
     corr_conf_defaut,
-    create_corr_conf,
-    read_mask_classes,
+    create_corr_conf
 )
 
 
@@ -78,37 +76,6 @@ def test_epipolar_pipeline(
     configuration["preprocessing"]["output"].update(
         disparities_conf["preprocessing"]["output"]
     )
-
-    # retrieve masks classes usages
-    mask1_classes = configuration[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = configuration[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    mask1_ignored_by_corr = None
-    mask2_ignored_by_corr = None
-    mask1_set_to_ref_alt = None
-    mask2_set_to_ref_alt = None
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-        mask1_set_to_ref_alt = mask1_classes_dict.get(
-            mask_classes.set_to_ref_alt_tag, None
-        )
-
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-        mask2_set_to_ref_alt = mask2_classes_dict.get(
-            mask_classes.set_to_ref_alt_tag, None
-        )
 
     region = [420, 200, 530, 320]
     # Pandora configuration
@@ -173,10 +140,6 @@ def test_epipolar_pipeline(
         left_image,
         right_image,
         corr_cfg,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
-        mask1_set_to_ref_alt=mask1_set_to_ref_alt,
-        mask2_set_to_ref_alt=mask2_set_to_ref_alt,
     )
 
     left_pc, _ = compute_points_cloud(

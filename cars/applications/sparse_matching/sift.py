@@ -28,7 +28,7 @@ this module contains the dense_matching application class.
 import logging
 import math
 import os
-from typing import Dict, List, Tuple
+from typing import Dict, Tuple
 
 # Third party imports
 import numpy as np
@@ -43,7 +43,6 @@ from cars.applications import application_constants
 # CARS imports
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.applications.sparse_matching.sparse_matching import SparseMatching
-from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -296,8 +295,6 @@ class Sift(SparseMatching, short_name="sift"):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        mask1_ignored_by_sift: List[int] = None,
-        mask2_ignored_by_sift: List[int] = None,
     ):
         """
         Run Matching application.
@@ -337,12 +334,6 @@ class Sift(SparseMatching, short_name="sift"):
         :type pair_folder: str
         :param pair_key: pair key id
         :type pair_key: str
-        :param mask1_ignored_by_sift: values used in left mask to ignore
-         in correlation
-        :type mask1_ignored_by_sift: list
-        :param mask2_ignored_by_sift: values used in right mask to ignore
-         in correlation
-        :type mask2_ignored_by_sift: list
 
         :return left matches, right matches. Each CarsDataset contains:
 
@@ -466,8 +457,6 @@ class Sift(SparseMatching, short_name="sift"):
                                 )(
                                     epipolar_images_left[row, col],
                                     epipolar_images_right[row, col + offset],
-                                    mask1_ignored_by_sift=mask1_ignored_by_sift,
-                                    mask2_ignored_by_sift=mask2_ignored_by_sift,
                                     matching_threshold=(
                                         self.sift_matching_threshold
                                     ),
@@ -679,8 +668,6 @@ class Sift(SparseMatching, short_name="sift"):
 def compute_matches(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
-    mask1_ignored_by_sift: List[int] = None,
-    mask2_ignored_by_sift: List[int] = None,
     matching_threshold=None,
     n_octave=None,
     n_scale_per_octave=None,
@@ -723,24 +710,6 @@ def compute_matches(
     # TODO : remove overwriting of EPI_MSK
     saved_left_mask = np.copy(left_image_object[cst.EPI_MSK].values)
     saved_right_mask = np.copy(right_image_object[cst.EPI_MSK].values)
-
-    if mask1_ignored_by_sift is not None:
-        left_image_object[
-            cst.EPI_MSK
-        ].values = mask_classes.create_msk_from_classes(
-            left_image_object[cst.EPI_MSK].values,
-            mask1_ignored_by_sift,
-            mask_intern_no_data_val=True,
-        )
-
-    if mask2_ignored_by_sift is not None:
-        right_image_object[
-            cst.EPI_MSK
-        ].values = mask_classes.create_msk_from_classes(
-            right_image_object[cst.EPI_MSK].values,
-            mask2_ignored_by_sift,
-            mask_intern_no_data_val=True,
-        )
 
     # Compute matches
     matches = sparse_matching_tools.dataset_matching(
