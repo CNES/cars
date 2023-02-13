@@ -506,7 +506,7 @@ def crop_terrain_bounds_with_roi(roi_poly, xmin, ymin, xmax, ymax):
     )
 
     if not roi_poly.intersects(terrain_poly):
-        raise Exception("None of the input data intersect the requested ROI")
+        raise RuntimeError("None of the input data intersect the requested ROI")
     # Show ROI if valid (no exception raised) :
     logging.info("Setting terrain bounding box to the requested ROI")
     new_xmin, new_ymin, new_xmax, new_ymax = roi_poly.bounds
