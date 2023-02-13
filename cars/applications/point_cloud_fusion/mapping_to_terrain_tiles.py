@@ -219,7 +219,7 @@ class MappingToTerrainTiles(
         if list_epipolar_points_cloud_left[0].dataset_type in (
             "arrays",
             "dict",
-            "points"
+            "points",
         ):
             # Create CarsDataset
             merged_point_cloud = cars_dataset.CarsDataset("points")
