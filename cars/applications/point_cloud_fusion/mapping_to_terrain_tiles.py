@@ -267,7 +267,10 @@ class MappingToTerrainTiles(
 
             number_of_epipolar_tiles_per_terrain_tiles = []
 
-            if list_epipolar_points_cloud_left[0].dataset_type == "arrays":
+            if list_epipolar_points_cloud_left[0].dataset_type in (
+                "arrays",
+                "points",
+            ):
                 # deall with delayed tiles, with a priori disp min and max
 
                 # Add epipolar_points_min and epipolar_points_max used
@@ -311,9 +314,9 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
-                    if (
-                        list_epipolar_points_cloud_left[0].dataset_type
-                        == "arrays"
+                    if list_epipolar_points_cloud_left[0].dataset_type in (
+                        "arrays",
+                        "points",
                     ):
                         # Get required point clouds
                         (
