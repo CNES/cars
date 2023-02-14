@@ -248,7 +248,6 @@ def add_surrounding_nodata_to_roi(
     all_mask = np.logical_or(all_mask, disp == 0)
     labeled_msk_array, __ = label(all_mask.astype(int), structure=struct)
     label_of_interest = np.unique(labeled_msk_array[np.where(roi_mask == 1)])
-
     if len(label_of_interest) != 1:
         raise RuntimeError(
             "More than one label found for ROI :\
@@ -767,3 +766,27 @@ def fill_disp_using_plane(
         border_region,
         interp_options,
     )
+
+
+def fill_disp_using_zeros_padding(
+    disp_map: xr.Dataset,
+    class_index,
+) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+    """
+    Fill disparity map holes
+
+    :param disp_map: disparity map
+    :type disp_map: xr.Dataset
+    :param class_index: class index according to the classification tag
+    :type class_index: int
+
+    :return: overloaded configuration
+    :rtype: dict
+
+    """
+    # Generate a structuring element that will consider features
+    # connected even if they touch diagonally
+
+    disp_map["disp"].values[
+        np.where(disp_map["classif"].values[:, :, class_index] == 1)
+    ] = 0

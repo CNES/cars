@@ -26,7 +26,6 @@ this module contains the fill_disp application class.
 # Standard imports
 import copy
 import logging
-import os
 
 # Third party imports
 import numpy as np
@@ -35,6 +34,7 @@ from shapely.geometry import Polygon
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
+from cars.applications import application_constants
 from cars.applications.dense_matches_filling import (
     fill_disp_constants as fd_cst,
 )
@@ -44,7 +44,6 @@ from cars.applications.dense_matches_filling.dense_matches_filling import (
 )
 from cars.applications.dense_matching import dense_matching_tools
 from cars.core import constants as cst
-from cars.core import constants_disparity as cst_disp
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
@@ -88,9 +87,6 @@ class PlaneFill(
 
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
-
-        # init orchestrator
-        self.orchestrator = None
 
     def check_conf(self, conf):
         """
@@ -184,8 +180,8 @@ class PlaneFill(
         epipolar_disparity_map_left,
         epipolar_disparity_map_right,
         epipolar_images_left,
-        holes_bbox_left,
-        holes_bbox_right,
+        holes_bbox_left=None,
+        holes_bbox_right=None,
         disp_min=0,
         disp_max=0,
         orchestrator=None,
@@ -240,6 +236,8 @@ class PlaneFill(
         :rtype: Tuple(CarsDataset, CarsDataset)
 
         """
+        if holes_bbox_left is None or holes_bbox_right is None:
+            raise RuntimeError("Disparity holes bbox are inconsistent.")
 
         res = None, None
 
@@ -278,98 +276,15 @@ class PlaneFill(
             }
 
             if epipolar_disparity_map_left.dataset_type == "arrays":
-                # Create CarsDataset
-                # Epipolar_disparity
-                new_epipolar_disparity_map_left = cars_dataset.CarsDataset(
-                    "arrays"
+                (
+                    new_epipolar_disparity_map_left,
+                    new_epipolar_disparity_map_right,
+                ) = self.__register_dataset__(
+                    epipolar_disparity_map_left,
+                    epipolar_disparity_map_right,
+                    self.save_disparity_map,
+                    pair_folder,
                 )
-                new_epipolar_disparity_map_left.create_empty_copy(
-                    epipolar_disparity_map_left
-                )
-
-                new_epipolar_disparity_map_right = cars_dataset.CarsDataset(
-                    "arrays"
-                )
-                new_epipolar_disparity_map_right.create_empty_copy(
-                    epipolar_disparity_map_right
-                )
-
-                # Update attributes to get epipolar info
-                new_epipolar_disparity_map_left.attributes.update(
-                    epipolar_disparity_map_left.attributes
-                )
-                # Save disparity maps
-                if self.save_disparity_map:
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_disp_filled_left.tif"),
-                        cst_disp.MAP,
-                        new_epipolar_disparity_map_left,
-                        cars_ds_name="epi_disp_filled_left",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_disp_filled_right.tif"),
-                        cst_disp.MAP,
-                        new_epipolar_disparity_map_right,
-                        cars_ds_name="epi_disp_filled_right",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_disp_color_filled_left.tif"
-                        ),
-                        cst.EPI_COLOR,
-                        new_epipolar_disparity_map_left,
-                        cars_ds_name="epi_disp_color_filled_left",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_disp_color_filled_right.tif"
-                        ),
-                        cst.EPI_COLOR,
-                        new_epipolar_disparity_map_right,
-                        cars_ds_name="epi_disp_color_filled_right",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_disp_mask_filled_left.tif"
-                        ),
-                        cst_disp.VALID,
-                        new_epipolar_disparity_map_left,
-                        cars_ds_name="epi_disp_mask_filled_left",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_disp_mask_filled_right.tif"
-                        ),
-                        cst_disp.VALID,
-                        new_epipolar_disparity_map_right,
-                        cars_ds_name="epi_disp_mask_filled_right",
-                    )
-                    for _, item in enumerate(cst_disp.DISPARITY_CONFIDENCE):
-                        cards_ds_name_left = item + "_filled_left"
-                        self.orchestrator.add_to_save_lists(
-                            os.path.join(
-                                pair_folder,
-                                "epi_" + cards_ds_name_left + ".tif",
-                            ),
-                            item,
-                            epipolar_disparity_map_left,
-                            cars_ds_name=cards_ds_name_left,
-                        )
-                        cards_ds_name_right = item + "_filled_right"
-                        self.orchestrator.add_to_save_lists(
-                            os.path.join(
-                                pair_folder,
-                                "epi_" + cards_ds_name_right + ".tif",
-                            ),
-                            item,
-                            epipolar_disparity_map_right,
-                            cars_ds_name=cards_ds_name_right,
-                        )
 
                 # Get saving infos in order to save tiles when they are computed
                 [
@@ -380,6 +295,23 @@ class PlaneFill(
                         new_epipolar_disparity_map_left,
                         new_epipolar_disparity_map_right,
                     ]
+                )
+
+                # Add infos to orchestrator.out_json
+                updating_dict = {
+                    application_constants.APPLICATION_TAG: {
+                        pair_key: {
+                            fd_cst.FILL_DISP_WITH_PLAN_RUN_TAG: {},
+                        }
+                    }
+                }
+                self.orchestrator.update_out_info(updating_dict)
+                logging.info(
+                    "Fill missing disparity with plan model"
+                    ": number tiles: {}".format(
+                        epipolar_disparity_map_right.shape[1]
+                        * epipolar_disparity_map_right.shape[0]
+                    )
                 )
 
                 # get all polygones

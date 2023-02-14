@@ -27,8 +27,8 @@ this module contains the constants of fill_disp.
 
 
 FILL_DISP_PARAMS_TAG = "fill_dip_params"
-FILL_DISP_RUN_TAG = "fill_disp_run"
-
+FILL_DISP_WITH_PLAN_RUN_TAG = "fill_disp_with_plan_run_tag"
+FILL_DISP_WITH_ZEROS_RUN_TAG = "fill_disp_with_zeros_run_tag"
 
 # PARAMS
 METHOD = "method"  # default : 'plane'
