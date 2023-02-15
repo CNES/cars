@@ -147,31 +147,8 @@ def build_mask_pipeline(
     return msk
 
 
-def build_bundletoperfectsensor_pipeline(pan_img, ms_img):
-    """
-    This function builds the a pipeline that performs P+XS pansharpening
-
-    :param pan_img: Path to the panchromatic image
-    :type pan_img: string
-    :param ms_img: Path to the multispectral image
-    :type ms_img: string
-    :return: resample_image
-    :rtype: otb application
-    """
-    pansharpening_app = otbApplication.Registry.CreateApplication(
-        "BundleToPerfectSensor"
-    )
-
-    pansharpening_app.SetParameterString("inp", pan_img)
-    pansharpening_app.SetParameterString("inxs", ms_img)
-
-    pansharpening_app.Execute()
-
-    return pansharpening_app
-
-
 def build_image_resampling_pipeline(
-    img, grid, epipolar_size_x, epipolar_size_y, roi, lowres_color=None
+    img, grid, epipolar_size_x, epipolar_size_y, roi
 ):
     """
     This function builds a pipeline that resamples images in epipolar geometry
@@ -186,18 +163,9 @@ def build_image_resampling_pipeline(
     :type epipolar_size_y: int
     :param roi: Region over which to compute epipolar images, or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
-    :param lowres_color: Path to the low resolution color image
-    :type lowres_color: string
     :return: resampled image
     :rtype: resampled image as numpy array
     """
-
-    # Build bundletoperfectsensor (p+xs fusion) for images
-    if lowres_color is not None:
-        pansharpening_app = build_bundletoperfectsensor_pipeline(
-            img, lowres_color
-        )
-        img = pansharpening_app.GetParameterOutputImage("out")
 
     resampling_app = otbApplication.Registry.CreateApplication(
         "GridBasedImageResampling"

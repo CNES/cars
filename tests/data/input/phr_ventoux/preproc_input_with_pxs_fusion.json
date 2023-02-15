@@ -1,8 +1,0 @@
-{
-    "img1" : "left_image.tif",
-    "color1" : "lowres_color_image.tif",
-    "img2" : "right_image.tif",
-    "srtm_dir" : "srtm",
-    "nodata1": 0,
-    "nodata2": 0
-}

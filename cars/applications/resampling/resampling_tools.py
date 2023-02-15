@@ -145,9 +145,6 @@ def epipolar_rectify_images(
         if color1 is None:
             color1 = img1
 
-        # Check if p+xs fusion is not needed
-        # (color1 and img1 have the same size)
-        # TODO : Refactor inputs dependency as only here ?
         if inputs.rasterio_get_size(color1) == inputs.rasterio_get_size(img1):
             left_color_dataset = resample_image(
                 color1,
@@ -157,13 +154,13 @@ def epipolar_rectify_images(
                 band_coords=True,
             )
         else:
-            left_color_dataset = resample_image(
-                img1,
-                grid1,
-                [epipolar_size_x, epipolar_size_y],
-                region=left_region,
-                band_coords=True,
-                lowres_color=color1,
+            raise RuntimeError(
+                "The image and the color "
+                "haven't the same sizes "
+                "{} != {}".format(
+                    inputs.rasterio_get_size(color1),
+                    inputs.rasterio_get_size(img1),
+                )
             )
         # Remove region key as it duplicates coordinates span
         left_color_dataset.attrs.pop("region", None)
@@ -179,7 +176,6 @@ def resample_image(
     nodata=None,
     mask=None,
     band_coords=False,
-    lowres_color=None,
 ):
     """
     Resample image according to grid and largest size.
@@ -199,9 +195,6 @@ def resample_image(
     :type mask: None or path to mask image
     :param band_coords: Force bands coordinate in output dataset
     :type band_coords: boolean
-    :param lowres_color: Path to the multispectral image
-                         if p+xs fusion is needed
-    :type lowres_color: string
     :rtype: xarray.Dataset with resampled image and mask
     """
     # Handle region is None
@@ -236,7 +229,7 @@ def resample_image(
 
     # Build rectification pipelines for images
     resamp = otb_pipelines.build_image_resampling_pipeline(
-        img, grid, largest_size[0], largest_size[1], region, lowres_color
+        img, grid, largest_size[0], largest_size[1], region
     )
 
     dataset = datasets.create_im_dataset(

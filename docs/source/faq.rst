@@ -40,6 +40,19 @@ How to generate input images in epipolar geometry from grids ?
 To generate the images in epipolar geometry from the grids computed by cars and the original images, one can refer to the Orfeo Toolbox documentation `here <https://www.orfeo-toolbox.org/CookBook/recipes/stereo.html#resample-images-in-epipolar-geometry>`_ .
 
 
+How to make a full resolution color image performing P+XS pansharpening with OTB?
+---------------------------------------------------------------------------------
+
+If an error occurs during the CARS runtime with the following message "The image and the color haven't the same sizes".
+
+It can be recommended to apply a P+XS pansharpening with `OTB`_ from the full resolution panchromatic image and the low resolution color image.
+
+.. code-block:: console
+
+    $ otbcli_BundleToPerfectSensor -inp image.tif -inxs color.tif -out color_pxs.tif
+
+.. _`OTB`: https://www.orfeo-toolbox.org/
+
 Output data
 ===========
 

@@ -18,7 +18,7 @@
   },
   "color_pxs": {
     "input": {
-      "color1": "input/phr_ventoux/lowres_color_image.tif"
+      "color1": "input/phr_ventoux/color_image.tif"
     }
   },
   "no_data": {

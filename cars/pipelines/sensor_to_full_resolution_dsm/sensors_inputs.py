@@ -454,6 +454,13 @@ def check_input_data(image, mask, color):
                 "do not have the same size".format(image, mask)
             )
 
+    if color is not None:
+        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(color):
+            raise RuntimeError(
+                "The image {} and the color {} "
+                "do not have the same size".format(image, color)
+            )
+
     with rio.open(image) as img_reader:
         trans = img_reader.transform
         if trans.e < 0:
