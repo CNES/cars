@@ -236,8 +236,8 @@ def create_disp_dataset(
     # add color
     add_color(disp_ds, color=color, color_mask=color_mask)
 
-    # add ambiguity_confidence
-    add_ambiguity(disp_ds, disp, ref_roi)
+    # add confidence
+    add_confidence(disp_ds, disp, ref_roi)
 
     if compute_disparity_masks:
         for key, val in masks.items():
@@ -251,33 +251,43 @@ def create_disp_dataset(
     return disp_ds
 
 
-def add_ambiguity(
+def add_confidence(
     output_dataset: xr.Dataset,
     disp: xr.Dataset,
     ref_roi: List[int],
 ):
     """ "
-    Add ambiguity to dataset
+    Add confidences to dataset
 
     :param output_dataset: output dataset
     :param disp: disp xarray
 
     """
-    confidence_measure_indicator_index = list(disp.confidence_measure.indicator)
-    if "confidence_from_ambiguity" in confidence_measure_indicator_index:
-        ambiguity_idx = list(disp.confidence_measure.indicator).index(
-            "confidence_from_ambiguity"
-        )
-        output_dataset[cst_disp.AMBIGUITY_CONFIDENCE] = xr.DataArray(
-            np.copy(
-                disp.confidence_measure.data[
-                    ref_roi[1] : ref_roi[3],
-                    ref_roi[0] : ref_roi[2],
-                    ambiguity_idx,
-                ]
-            ),
-            dims=[cst.ROW, cst.COL],
-        )
+    confidence_measure_indicator_list = np.array(
+        disp.confidence_measure.indicator
+    )
+    for key in confidence_measure_indicator_list:
+        confidence_idx = list(disp.confidence_measure.indicator).index(key)
+        # remove the useless suffix
+        if len(key.split(".")) > 1:
+            key = key.split(".")[0]
+        # check indicator is present otherwise raise a warning
+        if key in cst_disp.DISPARITY_CONFIDENCE:
+            output_dataset[key] = xr.DataArray(
+                np.copy(
+                    disp.confidence_measure.data[
+                        ref_roi[1] : ref_roi[3],
+                        ref_roi[0] : ref_roi[2],
+                        confidence_idx,
+                    ]
+                ),
+                dims=[cst.ROW, cst.COL],
+            )
+        else:
+            if key != "validation_pandora_distanceOfDisp":
+                logging.warning(
+                    "{} disparity confidence is unknown to CARS.".format(key)
+                )
 
 
 def compute_mask_to_use_in_pandora(

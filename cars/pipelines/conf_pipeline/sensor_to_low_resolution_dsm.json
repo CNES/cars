@@ -4,7 +4,7 @@
             "method": "simple_gaussian",
             "resolution": 15.0,
             "write_color": false,
-            "write_ambiguity": false
+            "write_confidence_from_ambiguity": false
         }
     }
 }

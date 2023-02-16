@@ -404,7 +404,15 @@ def compute_vector_raster_and_stats(
     :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
-    out, mean, stdev, n_pts, n_in_cell, msk, ambiguity = (
+    (
+        out,
+        mean,
+        stdev,
+        n_pts,
+        n_in_cell,
+        msk,
+        confidences_out,
+    ) = (
         None,
         None,
         None,
@@ -436,20 +444,21 @@ def compute_vector_raster_and_stats(
     ]
     cloud_band = [cst.X, cst.Y, cst.Z]
     cloud_band.extend(clr_bands)
-    if (list_computed_layers is None) or list_computed_layers["stats"]:
-        out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
-            cloud.loc[:, cloud_band].values,
-            data_valid.astype(bool),
-            neighbors_id,
-            start_ids,
-            n_count,
-            grid_points,
-            resolution,
-            sigma,
-        )
+
+    out, mean, stdev, n_pts, n_in_cell = gaussian_interp(
+        cloud.loc[:, cloud_band].values,
+        data_valid.astype(bool),
+        neighbors_id,
+        start_ids,
+        n_count,
+        grid_points,
+        resolution,
+        sigma,
+    )
 
     if cst.POINTS_CLOUD_MSK in cloud.columns and (
-        (list_computed_layers is None) or list_computed_layers["msk"]
+        (list_computed_layers is None)
+        or substring_in_list(list_computed_layers, "msk")
     ):
         msk = mask_interp(
             cloud.loc[:, [cst.X, cst.Y, cst.POINTS_CLOUD_MSK]].values,
@@ -463,11 +472,20 @@ def compute_vector_raster_and_stats(
             undefined_val=msk_no_data,
         )
 
-    if cst.POINTS_CLOUD_AMBIGUITY in cloud.columns and (
-        (list_computed_layers is None) or list_computed_layers["amb"]
+    if substring_in_list(cloud.columns, "confidence_from") and (
+        (list_computed_layers is None)
+        or substring_in_list(list_computed_layers, "confidence_from")
     ):
-        ambiguity, _, _, _, _ = gaussian_interp(
-            cloud.loc[:, [cst.X, cst.Y, cst.POINTS_CLOUD_AMBIGUITY]].values,
+        cloud_band = [cst.X, cst.Y]
+        confidence_index = []
+        for key in cloud.columns:
+            for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
+                if key == confidence_name:
+                    confidence_index.append(confidence_name)
+                    cloud_band.append(confidence_name)
+
+        confidences, _, _, _, _ = gaussian_interp(
+            cloud.loc[:, cloud_band].values,
             data_valid.astype(bool),
             neighbors_id,
             start_ids,
@@ -476,8 +494,21 @@ def compute_vector_raster_and_stats(
             resolution,
             sigma,
         )
+        confidences_out = {}
+        confidences = confidences.T.reshape((len(confidence_index), -1))
+        k = 0
+        for key in confidence_index:
+            confidences_out[key] = confidences[k]
+            k += 1
+    return out, mean, stdev, n_pts, n_in_cell, msk, confidences_out
 
-    return out, mean, stdev, n_pts, n_in_cell, msk, ambiguity
+
+def substring_in_list(src_list, substring):
+    """
+    Check if the list containt substring
+    """
+    res = list(filter(lambda x: substring in x, src_list))
+    return len(res) > 0
 
 
 @njit(
@@ -750,7 +781,7 @@ def create_raster_dataset(
     n_pts: np.ndarray,
     n_in_cell: np.ndarray,
     msk: np.ndarray = None,
-    ambiguity: np.ndarray = None,
+    confidences: np.ndarray = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -770,6 +801,7 @@ def create_raster_dataset(
     :param n_pts: number of points that are stricty in a cell
     :param n_in_cell: number of points which contribute to a cell
     :param msk: raster msk
+    :param confidence_from_ambiguity: raster msk
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
@@ -823,10 +855,9 @@ def create_raster_dataset(
 
     if msk is not None:
         raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
-    if ambiguity is not None:
-        raster_out[cst.RASTER_AMBIGUITY_CONFIDENCE] = xr.DataArray(
-            ambiguity, dims=raster_dims
-        )
+    if confidences is not None:
+        for key in confidences:
+            raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
     return raster_out
 
 
@@ -897,7 +928,7 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
-        ambiguity,
+        confidences,
     ) = compute_vector_raster_and_stats(
         cloud,
         data_valid,
@@ -924,8 +955,9 @@ def rasterize(
 
     if msk is not None:
         msk = msk.reshape(shape_out)
-    if ambiguity is not None:
-        ambiguity = ambiguity.reshape(shape_out)
+    if confidences is not None:
+        for key in confidences:
+            confidences[key] = confidences[key].reshape(shape_out)
 
     # build output dataset
     raster_out = create_raster_dataset(
@@ -943,7 +975,7 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
-        ambiguity,
+        confidences,
     )
 
     return raster_out

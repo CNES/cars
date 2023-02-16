@@ -25,9 +25,18 @@ CARS Disparity Constants module
 # disparity map
 MAP = "disp"
 
-# confidence measure
-AMBIGUITY_CONFIDENCE = "ambiguity_confidence"
 
+CONFIDENCE_FROM_AMBIGUITY = "confidence_from_ambiguity"
+CONFIDENCE_FROM_INTENSITYSTD = "confidence_from_intensity_std"
+CONFIDENCE_FROM_RISK_MAX = "confidence_from_risk_max"
+CONFIDENCE_FROM_RISK_MIN = "confidence_from_risk_min"
+# confidence measure
+DISPARITY_CONFIDENCE = {
+    CONFIDENCE_FROM_AMBIGUITY: "confidence_from_ambiguity",
+    CONFIDENCE_FROM_INTENSITYSTD: "confidence_from_intensity_std",
+    CONFIDENCE_FROM_RISK_MAX: "confidence_from_risk_max",
+    CONFIDENCE_FROM_RISK_MIN: "confidence_from_risk_min",
+}
 # disparity mask
 VALID = "disp_msk"
 INVALID_REF = "msk_invalid_ref"
