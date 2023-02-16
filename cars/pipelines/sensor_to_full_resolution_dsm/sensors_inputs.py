@@ -254,21 +254,27 @@ def sensors_check_inputs(  # noqa: C901
     # Check roi
     check_roi(overloaded_conf[sens_cst.ROI])
 
-    # Check inputs data
-    if overloaded_conf[sens_cst.CHECK_INPUTS]:
-        for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
-            sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
-            check_input_data(
-                sensor_image[sens_cst.INPUT_IMG],
-                sensor_image[sens_cst.INPUT_MSK],
-                sensor_image[sens_cst.INPUT_COLOR],
-            )
-    else:
+    if not overloaded_conf[sens_cst.CHECK_INPUTS]:
         logging.info(
             "The inputs consistency will not be checked. "
             "To enable the inputs checking, add check_inputs: True "
             "to your input configuration"
         )
+
+    # Check image, msk and color size compatibility
+    for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
+        sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
+        check_input_size(
+            sensor_image[sens_cst.INPUT_IMG],
+            sensor_image[sens_cst.INPUT_MSK],
+            sensor_image[sens_cst.INPUT_COLOR],
+        )
+        # check image and color data consistency
+        if overloaded_conf[sens_cst.CHECK_INPUTS]:
+            check_input_data(
+                sensor_image[sens_cst.INPUT_IMG],
+                sensor_image[sens_cst.INPUT_COLOR],
+            )
 
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION])
@@ -430,36 +436,15 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
     return roi
 
 
-def check_input_data(image, mask, color):
+def check_input_data(image, color):
     """
-    Check image, mask and color given
-
-    Images must have same size
+    Check data of the image and color
 
     :param image: image path
     :type image: str
-    :param mask: mask path
-    :type mask: str
     :param color: color path
     :type color: str
     """
-
-    if inputs.rasterio_get_nb_bands(image) != 1:
-        raise RuntimeError("{} is not mono-band images".format(image))
-
-    if mask is not None:
-        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
-            raise RuntimeError(
-                "The image {} and the mask {} "
-                "do not have the same size".format(image, mask)
-            )
-
-    if color is not None:
-        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(color):
-            raise RuntimeError(
-                "The image {} and the color {} "
-                "do not have the same size".format(image, color)
-            )
 
     with rio.open(image) as img_reader:
         trans = img_reader.transform
@@ -475,6 +460,37 @@ def check_input_data(image, mask, color):
             logging.warning(
                 "{} seems to have an incoherent pixel size. "
                 "Input images has to be in sensor geometry.".format(image)
+            )
+
+
+def check_input_size(image, mask, color):
+    """
+    Check image, mask and color given
+
+    Images must have same size
+
+    :param image: image path
+    :type image: str
+    :param mask: mask path
+    :type mask: str
+    :param color: color path
+    :type color: str
+    """
+    if inputs.rasterio_get_nb_bands(image) != 1:
+        raise RuntimeError("{} is not mono-band images".format(image))
+
+    if mask is not None:
+        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(mask):
+            raise RuntimeError(
+                "The image {} and the mask {} "
+                "do not have the same size".format(image, mask)
+            )
+
+    if color is not None:
+        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(color):
+            raise RuntimeError(
+                "The image {} and the color {} "
+                "do not have the same size".format(image, color)
             )
 
 
