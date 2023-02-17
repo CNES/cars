@@ -68,3 +68,21 @@ Considering bulky files, it can be recommended to generate an overview file with
 
 
 .. _`GDAL`: https://gdal.org/
+
+
+Create water mask
+=================
+
+How to build water mask with gdal on rgbnir images?
+---------------------------------------------------
+
+To produce a water mask from R,G,B,NIR images, it can be recommended to compute a Normalized Difference Water Index (NDWI) and threshold the output to a low value.
+
+The low NDWI values can be considered as water area.
+
+
+.. code-block:: console
+
+    $ gdal_calc.py -G input.tif --G_band=2 -N input.tif --N_band=4 --outfile=mask.tif --calc="(G-N)/(G+N)<0.3" --NoDataValue=0
+
+.. _`GDAL`: https://gdal.org/

@@ -94,6 +94,11 @@ CARS can use a mask for each image in order to ignore some image regions (for in
 
 The masks have one band and the non zeros values will considered as invalid data and theses areas will not processed during the computation.
 
+The masks are resampled with the resampling application.
+
+The masked values are not used in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
+
+Further, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
 
 .. _output_data:
 
