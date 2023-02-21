@@ -27,12 +27,13 @@ import logging
 import os
 from typing import List, Tuple
 
-import fiona
+import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
+from shapely.geometry import LineString, Point, Polygon, shape
 
 # CARS imports
-from cars.core import inputs
+from cars.core import inputs, projection
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.sensor_to_full_resolution_dsm import (
     sensor_full_res_dsm_constants as sens_cst,
@@ -98,7 +99,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, None),
         sens_cst.DEFAULT_ALT: int,
-        sens_cst.ROI: Or(str, list, tuple, None),
+        sens_cst.ROI: Or(str, dict, None),
         sens_cst.CHECK_INPUTS: bool,
         sens_cst.GEOID: Or(None, str),
     }
@@ -190,19 +191,18 @@ def sensors_check_inputs(  # noqa: C901
             "relative path are not transformed to absolute paths"
         )
 
-    # Transform ROI if needed
-    # ROI can be list of 4 floats + epsg code, or file
-    #
-
+    roi_poly, roi_epsg = None, None
+    # Transform ROI if from shapefile
     if isinstance(overloaded_conf[sens_cst.ROI], str):
-        # Parse file and transform to roi box
+        # Transform file to shapely polygon
 
-        overloaded_conf[sens_cst.ROI] = parse_roi_file(
-            overloaded_conf[sens_cst.ROI]
-        )
+        roi_poly, roi_epsg = parse_roi_file(overloaded_conf[sens_cst.ROI])
+    elif isinstance(overloaded_conf[sens_cst.ROI], dict):
+        # Transform geosjon to shapely polygon
+        roi_poly, roi_epsg = geojson_to_shapely(overloaded_conf[sens_cst.ROI])
 
-    # Check roi
-    check_roi(overloaded_conf[sens_cst.ROI])
+    # Resample polygon to a 100m resolution
+    roi_poly = resample_polygon(roi_poly, roi_epsg, resolution=100)
 
     if not overloaded_conf[sens_cst.CHECK_INPUTS]:
         logging.info(
@@ -229,7 +229,7 @@ def sensors_check_inputs(  # noqa: C901
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION])
 
-    return overloaded_conf
+    return overloaded_conf, roi_poly, roi_epsg
 
 
 def modify_to_absolute_path(config_json_dir, overloaded_conf):
@@ -280,29 +280,6 @@ def validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar):
         )
 
 
-def check_roi(roi):
-    """
-    Check roi given
-
-    :param roi: roi : [bbox], epsg
-    :type roi: tuple(list, str)
-    """
-
-    if roi is not None:
-        roi_bbox, roi_epsg = roi
-
-        # TODO check roi, and if epsg is valid
-        if len(roi_bbox) != 4:
-            raise RuntimeError(
-                "Roid bounding box doesn't have the right format"
-            )
-        if roi_epsg is not None:
-            try:
-                _ = fiona.crs.from_epsg(4326)
-            except AttributeError as error:
-                logging.error("ROI EPSG code {} not readable".format(error))
-
-
 def check_srtm(srtm_dir):
     """
     Check srtm data
@@ -334,18 +311,90 @@ def check_srtm(srtm_dir):
         logging.info("The default altitude will be used as reference altitude.")
 
 
+def resample_polygon(roi_poly, roi_epsg, resolution=100):
+    """
+    Resample input polygon to given resolution.
+    No interpolation is applied.
+
+    :param roi_poly: input polygon
+    :type roi_poly: Shapely Polygone
+    :param roi_epsg: roi epsg
+    :type roi_epsg: int
+    :param resolution: resolution in meter to resample to
+    :type resolution: float
+
+    :return: resampled polygon
+    :rtype: Shapely Polygon
+
+    """
+
+    epsg_meter = 4978
+    new_list_points = []
+
+    points = roi_poly.boundary.coords
+
+    linestrings = [
+        LineString(points[k : k + 2]) for k in range(len(points) - 1)
+    ]
+    for line in linestrings:
+        # Get distance in meter of line
+        first, last = line.coords[0], line.coords[1]
+        in_cloud = np.array([[first[0], first[1]], [last[0], last[1]]])
+        out_cloud = projection.points_cloud_conversion(
+            in_cloud, roi_epsg, epsg_meter
+        )
+        new_first = Point(out_cloud[0, 0], out_cloud[0, 1])
+        new_last = Point(out_cloud[1, 0], out_cloud[1, 1])
+        line_distance = new_first.distance(new_last)
+
+        # Compute number of point to generate
+        nb_points = int(line_distance / resolution) + 1
+
+        # Generate new points
+        for ind in list(np.linspace(0, 1, nb_points, endpoint=True)):
+            new_list_points.append(line.interpolate(ind, normalized=True))
+
+    return Polygon(new_list_points)
+
+
+def geojson_to_shapely(geojson_dict: dict):
+    """
+    Transform Geojson dict to Shapely polygon
+
+    :param geojson_dict: geojson
+    :type geojson_dict: dict
+
+    :return: shapely polygon
+    :rtype: Shapely Polygon
+
+    """
+
+    features = geojson_dict["features"]
+    if len(features) > 1:
+        logging.info(
+            "Multi features files are not supported, "
+            "the first feature of input geojson will be used"
+        )
+
+    roi_poly = shape(features[0]["geometry"]).buffer(0)
+
+    roi_epsg = 4326
+
+    return roi_poly, roi_epsg
+
+
 def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
     """
     Parse ROI file argument and generate bounding box
 
 
     :param arg_roi_file : ROI file argument
-    :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
-    :rtype: Tuple with array of 4 floats and int
+    :return: ROI Polygon + ROI epsg
+    :rtype: Shapely polygon, int
     """
 
     # Declare output
-    roi = None
+    roi_poly, roi_epsg = None, None
 
     _, extension = os.path.splitext(arg_roi_file)
 
@@ -356,24 +405,6 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
         # if it is a vector file
         if extension in [".gpkg", ".shp", ".kml"]:
             roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
-            roi = (roi_poly.bounds, roi_epsg)
-
-        # if not, it is an image
-        elif inputs.rasterio_can_open(arg_roi_file):
-            data = rio.open(arg_roi_file)
-            xmin = min(data.bounds.left, data.bounds.right)
-            ymin = min(data.bounds.bottom, data.bounds.top)
-            xmax = max(data.bounds.left, data.bounds.right)
-            ymax = max(data.bounds.bottom, data.bounds.top)
-
-            try:
-                roi_epsg = data.crs.to_epsg()
-                roi = ([xmin, ymin, xmax, ymax], roi_epsg)
-            except AttributeError as error:
-                logging.error("ROI EPSG code {} not readable".format(error))
-                raise AttributeError(
-                    "ROI EPSG code {} not readable".format(error)
-                ) from error
 
         else:
             logging.error(
@@ -383,7 +414,7 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
                 "ROI file {} has an unsupported format".format(arg_roi_file)
             )
 
-    return roi
+    return roi_poly, roi_epsg
 
 
 def check_input_data(image, color):

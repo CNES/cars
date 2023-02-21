@@ -41,7 +41,7 @@ The structure follows this organisation:
     | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
     |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
     +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-    | *roi*                   | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
+    | *roi*                   | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
     +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
     | *check_inputs*          | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
     +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -83,6 +83,52 @@ The structure follows this organisation:
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
     | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+
+
+    **ROI**
+
+    A terrain ROI can be provided by user. It can be eather a vector file (Shapefile for instance) path,
+    or a GeoJson dictionnary. These structures must contain a single Polygon.
+
+    .. code-block:: json
+
+        {
+            "inputs": 
+            {
+                "roi" : {
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "coordinates": [
+                            [
+                                [5.194, 44.2064],
+                                [5.194, 44.2059 ],
+                                [5.195, 44.2059],
+                                [5.195, 44.2064],
+                                [5.194, 44.2064]
+                            ]
+                            ],
+                            "type": "Polygon"
+                        }
+                        }
+                    ]
+                }
+            }
+        }
+
+    .. code-block:: json
+
+        {
+            "inputs": 
+            {
+                "roi" : "roi_vector_file.shp"
+            }
+        }
+
+
 
 
     **Epipolar a priori**

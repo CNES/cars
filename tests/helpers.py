@@ -119,7 +119,7 @@ def generate_input_json(
 
     if pipeline == "sensor_to_low_resolution_dsm":
         check_epipolar_a_priori = False
-    new_config["inputs"] = sensors_inputs.sensors_check_inputs(
+    new_config["inputs"], _, _ = sensors_inputs.sensors_check_inputs(
         new_config["inputs"],
         config_json_dir=json_dir_path,
         check_epipolar_a_priori=check_epipolar_a_priori,

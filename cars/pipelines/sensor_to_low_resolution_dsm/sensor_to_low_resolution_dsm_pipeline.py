@@ -114,7 +114,11 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         self.used_conf[ORCHESTRATOR] = self.orchestrator_conf
 
         # Check conf inputs
-        self.inputs = self.check_inputs(
+        (
+            self.inputs,
+            self.input_roi_poly,
+            self.input_roi_epsg,
+        ) = self.check_inputs(
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
         self.used_conf[INPUTS] = self.inputs
@@ -283,7 +287,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             if epsg is not None:
                 # Compute roi polygon, in input EPSG
                 roi_poly = preprocessing.compute_roi_poly(
-                    self.inputs[sens_cst.ROI], epsg
+                    self.input_roi_poly, self.input_roi_epsg, epsg
                 )
 
             list_terrain_roi = []
@@ -430,7 +434,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     )
                     # Compute roi polygon, in input EPSG
                     roi_poly = preprocessing.compute_roi_poly(
-                        self.inputs[sens_cst.ROI], epsg
+                        self.input_roi_poly, self.input_roi_epsg, epsg
                     )
 
                 # Run epipolar resampling
