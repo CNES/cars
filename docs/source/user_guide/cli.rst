@@ -92,7 +92,7 @@ Masks
 
 CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
 
-The masks have one band and the non zeros values will considered as invalid data and theses areas will not processed during the computation.
+The masks have one band and the non zeros values will be considered as invalid data and theses areas will not processed during the computation.
 
 The masks are resampled with the resampling application.
 
