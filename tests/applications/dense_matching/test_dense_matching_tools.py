@@ -190,9 +190,7 @@ def test_compute_disparity_3():
 
 
 @pytest.mark.unit_tests
-def test_compute_disparity_with_all_confidences(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
+def test_compute_disparity_with_all_confidences():
     """
     Test compute_disparity on ventoux dataset with pandora
     """
@@ -203,29 +201,6 @@ def test_compute_disparity_with_all_confidences(
         absolute_data_path("input/intermediate_results/data1_ref_right.nc")
     )
 
-    # Get mask values
-    mask1_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK1_CLASSES_TAG, None
-    )
-    mask2_classes = images_and_grids_conf[in_params.INPUT_SECTION_TAG].get(
-        in_params.MASK2_CLASSES_TAG, None
-    )
-
-    if mask1_classes is not None:
-        mask1_classes_dict = read_mask_classes(mask1_classes)
-        mask1_ignored_by_corr = mask1_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask1_ignored_by_corr = None
-    if mask2_classes is not None:
-        mask2_classes_dict = read_mask_classes(mask2_classes)
-        mask2_ignored_by_corr = mask2_classes_dict.get(
-            mask_classes.ignored_by_corr_tag, None
-        )
-    else:
-        mask2_ignored_by_corr = None
-
     # Pandora configuration
     corr_cfg = corr_conf_with_confidence()
     corr_cfg = create_corr_conf(corr_cfg)
@@ -234,13 +209,7 @@ def test_compute_disparity_with_all_confidences(
     disp_max = 14
 
     output = dense_matching_tools.compute_disparity(
-        left_input,
-        right_input,
-        corr_cfg,
-        disp_min,
-        disp_max,
-        mask1_ignored_by_corr=mask1_ignored_by_corr,
-        mask2_ignored_by_corr=mask2_ignored_by_corr,
+        left_input, right_input, corr_cfg, disp_min, disp_max
     )
 
     assert output[cst.STEREO_REF][cst_disp.MAP].shape == (120, 110)

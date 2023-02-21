@@ -263,11 +263,14 @@ class SingleCarsDatasetSaver:
                             descriptor=self.descriptors[count],
                         )
                     else:
-                        logging.warning(
-                            "{} is not consistent.".format(
-                                self.tags[count].capitalize()
-                            )
+                        log_message = "{} is not consistent.".format(
+                            self.tags[count].capitalize()
                         )
+                        if "Confidence" in log_message:
+                            # confidence is not always available
+                            logging.info(log_message)
+                        else:
+                            logging.warning(log_message)
             elif self.cars_ds.dataset_type == "points":
                 # type points
                 if not self.already_seen:

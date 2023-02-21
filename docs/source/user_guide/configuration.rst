@@ -81,13 +81,9 @@ The structure follows this organisation:
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
     | *geomodel_filters*| filters associated to the geomodel                                                       | List of string |               | No       |
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-    | *mask*            | external mask of the image                                                               | string         | None          | No       |
+    | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
     +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
-    .. note::
-
-        - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
-        - For the mask input, the non-zeros values of the mask will be considered as invalid data.
 
     **Epipolar a priori**
 
