@@ -202,7 +202,8 @@ def sensors_check_inputs(  # noqa: C901
         roi_poly, roi_epsg = geojson_to_shapely(overloaded_conf[sens_cst.ROI])
 
     # Resample polygon to a 100m resolution
-    roi_poly = resample_polygon(roi_poly, roi_epsg, resolution=100)
+    if roi_poly is not None:
+        roi_poly = resample_polygon(roi_poly, roi_epsg, resolution=100)
 
     if not overloaded_conf[sens_cst.CHECK_INPUTS]:
         logging.info(
