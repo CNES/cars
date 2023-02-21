@@ -45,7 +45,7 @@ from ..helpers import (
     absolute_data_path,
     assert_same_datasets,
     corr_conf_defaut,
-    create_corr_conf
+    create_corr_conf,
 )
 
 
