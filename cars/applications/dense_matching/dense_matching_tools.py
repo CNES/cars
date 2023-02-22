@@ -42,7 +42,6 @@ from scipy import interpolate
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
 )
-from cars.conf import mask_classes
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import datasets
@@ -290,86 +289,12 @@ def add_confidence(
                 )
 
 
-def compute_mask_to_use_in_pandora(
-    dataset: xr.Dataset,
-    msk_key: str,
-    classes_to_ignore: List[int],
-    out_msk_dtype: np.dtype = np.int16,
-) -> np.ndarray:
-    """
-    Compute the mask to use in Pandora.
-    Valid pixels will be set to the value of the 'valid_pixels' field of the
-    correlation configuration file. No data pixels will be set to the value of
-    the 'no_data' field of the correlation configuration file. Nonvalid pixels
-    will be set to a value automatically determined to be different from the
-    'valid_pixels' and the 'no_data' fields of the correlation configuration
-    file.
-
-    :param dataset: dataset containing the multi-classes mask from which the
-                    mask to used in Pandora will be computed
-    :param msk_key: key to use to access the multi-classes mask in the dataset
-    :param classes_to_ignore:
-    :param out_msk_dtype: numpy dtype of the returned mask
-    :return: the mask to use in Pandora
-    """
-
-    ds_values_list = [key for key, _ in dataset.items()]
-    if msk_key not in ds_values_list:
-        worker_logger = logging.getLogger("distributed.worker")
-        worker_logger.fatal(
-            "No value identified by {} is "
-            "present in the dataset".format(msk_key)
-        )
-        raise RuntimeError(
-            "No value identified by {} is "
-            "present in the dataset".format(msk_key)
-        )
-
-    # retrieve specific values from datasets
-    # Valid values and nodata values
-    valid_pixels = dataset.attrs[cst.EPI_VALID_PIXELS]
-    nodata_pixels = dataset.attrs[cst.EPI_NO_DATA_MASK]
-
-    info_dtype = np.iinfo(out_msk_dtype)
-
-    # find a value to use for invalid pixels
-    unvalid_pixels = None
-    for i in range(info_dtype.max):
-        if i not in (valid_pixels, nodata_pixels):
-            unvalid_pixels = i
-            break
-
-    # initialization of the mask to use in Pandora
-    final_msk = np.full(
-        dataset[msk_key].values.shape,
-        dtype=out_msk_dtype,
-        fill_value=valid_pixels,
-    )
-
-    # retrieve the invalid and nodata pixels locations
-    unvalid_pixels_mask = mask_classes.create_msk_from_classes(
-        dataset[msk_key].values, classes_to_ignore, out_msk_dtype=bool
-    )
-    nodata_pixels_mask = mask_classes.create_msk_from_classes(
-        dataset[msk_key].values, [nodata_pixels], out_msk_dtype=bool
-    )
-
-    # update the mask to use in pandora with the invalid and
-    # nodata pixels values
-    final_msk = np.where(unvalid_pixels_mask, unvalid_pixels, final_msk)
-    final_msk = np.where(nodata_pixels_mask, nodata_pixels, final_msk)
-
-    return final_msk
-
-
 def compute_disparity(
     left_dataset,
     right_dataset,
     corr_cfg,
     disp_min=None,
     disp_max=None,
-    mask1_ignored_by_corr=None,
-    mask2_ignored_by_corr=None,
     use_sec_disp=True,
     compute_disparity_masks=False,
 ) -> Dict[str, xr.Dataset]:
@@ -388,10 +313,6 @@ def compute_disparity(
     :param disp_max: Maximum disparity
                      (if None, value is taken from left dataset)
     :type disp_max: int
-    :param mask1_ignored_by_corr: mask values used to ignore by correlation
-    :type mask1_ignored_by_corr: List[int]
-    :param mask2_ignored_by_corr: mask values used to ignore by correlation
-    :type mask2_ignored_by_corr: List[int]
     :param use_sec_disp: Boolean activating the use of the secondary
                          disparity map
     :type use_sec_disp: bool
@@ -434,27 +355,6 @@ def compute_disparity(
     for entry_point in iter_entry_points(group="pandora.plugin"):
         entry_point.load()
 
-    mask1_use_classes = False
-    mask2_use_classes = False
-
-    if mask1_ignored_by_corr is not None:
-        left_msk = left_dataset[cst.EPI_MSK].values
-        left_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(
-            left_dataset,
-            cst.EPI_MSK,
-            mask1_ignored_by_corr,
-        )
-        mask1_use_classes = True
-
-    if mask2_ignored_by_corr is not None:
-        right_msk = right_dataset[cst.EPI_MSK].values
-        right_dataset[cst.EPI_MSK].values = compute_mask_to_use_in_pandora(
-            right_dataset,
-            cst.EPI_MSK,
-            mask2_ignored_by_corr,
-        )
-        mask2_use_classes = True
-
     # Update nodata values
     left_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_left"]
     right_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_right"]
@@ -475,13 +375,6 @@ def compute_disparity(
         int(disp_max),
         corr_cfg["pipeline"],
     )
-
-    # Set the datasets' cst.EPI_MSK values back to the original
-    # multi-classes masks
-    if mask1_use_classes:
-        left_dataset[cst.EPI_MSK].values = left_msk
-    if mask2_use_classes:
-        right_dataset[cst.EPI_MSK].values = right_msk
 
     disp = {}
     disp[cst.STEREO_REF] = create_disp_dataset(

@@ -92,14 +92,13 @@ Masks
 
 CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
 
-The masks can be "two-states" ones: 0 values will be considered as valid data, while any other value will be considered as invalid data and thus will be masked during the 3D restitution process.
+The masks have one band and the non zeros values will be considered as invalid data and theses areas will not processed during the computation.
 
-The masks can also be multi-classes ones: they contain several values, one for each class (forest, water, cloud...). To use a multi-classes mask, a json file has to be indicated by the user in the configuration file. See the :ref:`configuration` for more details.
+The masks are resampled with the resampling application.
 
-.. warning::
+The masked values are not used in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
 
-  The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the multi-classes masks.
-
+Further, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
 
 .. _output_data:
 

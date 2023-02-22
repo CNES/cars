@@ -86,7 +86,6 @@ def test_triangulate_matches(
     pandas.testing.assert_index_equal(
         llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
     )
-    print(llh)
     np.testing.assert_almost_equal(llh.x[0], 5.1973629)
     np.testing.assert_almost_equal(llh.y[0], 44.2079813)
     np.testing.assert_almost_equal(llh.z[0], 511.4383088)

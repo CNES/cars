@@ -65,8 +65,6 @@ def read_input_parameters(filename: ConfigType) -> ConfigType:
             MODEL2_TAG,
             MASK1_TAG,
             MASK2_TAG,
-            MASK1_CLASSES_TAG,
-            MASK2_CLASSES_TAG,
             COLOR1_TAG,
             SRTM_DIR_TAG,
         ]:
@@ -119,8 +117,6 @@ SRTM_DIR_TAG = "srtm_dir"
 COLOR1_TAG = "color1"
 MASK1_TAG = "mask1"
 MASK2_TAG = "mask2"
-MASK1_CLASSES_TAG = "mask1_classes"
-MASK2_CLASSES_TAG = "mask2_classes"
 NODATA1_TAG = "nodata1"
 NODATA2_TAG = "nodata2"
 DEFAULT_ALT_TAG = "default_alt"
@@ -135,8 +131,6 @@ INPUT_CONFIGURATION_SCHEMA = {
     OptionalKey(COLOR1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK2_TAG): And(str, rasterio_can_open),
-    OptionalKey(MASK1_CLASSES_TAG): str,
-    OptionalKey(MASK2_CLASSES_TAG): str,
     OptionalKey(DEFAULT_ALT_TAG): float,
     OptionalKey(DEFAULT_ALT_TAG): float,
     NODATA1_TAG: int,

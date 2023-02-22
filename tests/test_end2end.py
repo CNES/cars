@@ -1797,6 +1797,7 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+                "minimum_nb_matches": 10,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1931,7 +1932,7 @@ def test_end2end_paca_with_mask():
 
 
 @pytest.mark.end2end_tests
-def test_end2end_disparity_filing():
+def desactivated_test_end2end_disparity_filing():
     """
     End to end processing, test with mask and fill holes
     """

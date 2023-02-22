@@ -388,12 +388,8 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     epipolar_image_right,
                     is_activated=self.dense_matches_filling.get_is_activated(),
                     margin=self.dense_matches_filling.get_poly_margin(),
-                    mask_holes_to_fill_left=sensor_image_left[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
-                    mask_holes_to_fill_right=sensor_image_right[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
+                    mask_holes_to_fill_left=None,
+                    mask_holes_to_fill_right=None,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -411,12 +407,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
                         pair_key=pair_key,
-                        mask1_ignored_by_sift=sensor_image_left[
-                            sens_cst.INPUT_MSK_CLASSES
-                        ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
-                        mask2_ignored_by_sift=sensor_image_right[
-                            sens_cst.INPUT_MSK_CLASSES
-                        ][sens_cst.IGNORED_BY_SPARSE_MATCHING],
                     )
 
                 # Run cluster breakpoint to compute sifts: force computation
@@ -556,18 +546,6 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    mask1_ignored_by_corr=sensor_image_left[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
-                    mask2_ignored_by_corr=sensor_image_right[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.IGNORED_BY_DENSE_MATCHING],
-                    mask1_set_to_ref_alt=sensor_image_left[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.SET_TO_REF_ALT],
-                    mask2_set_to_ref_alt=sensor_image_right[
-                        sens_cst.INPUT_MSK_CLASSES
-                    ][sens_cst.SET_TO_REF_ALT],
                     disp_min=disp_min,
                     disp_max=disp_max,
                     compute_disparity_masks=(

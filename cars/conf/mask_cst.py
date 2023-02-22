@@ -19,23 +19,17 @@
 # limitations under the License.
 #
 """
-this module contains the constants of fill_disp.
+CARS mask module
 """
 
+# Standard imports
 
-# USED VARIABLES
 
+# CARS imports
 
-FILL_DISP_PARAMS_TAG = "fill_dip_params"
-FILL_DISP_WITH_PLAN_RUN_TAG = "fill_disp_with_plan_run_tag"
-FILL_DISP_WITH_ZEROS_RUN_TAG = "fill_disp_with_zeros_run_tag"
-
-# PARAMS
-METHOD = "method"  # default : 'plane'
-INTERP_TYPE = "interpolation_type"
-INTERP_METHOD = "interpolation_method"
-MAX_DIST = "max_search_distance"
-SMOOTH_IT = "smoothing_iterations"
-IGNORE_NODATA = "ignore_nodata_at_disp_mask_borders"
-IGNORE_ZERO = "ignore_zero_fill_disp_mask_values"
-IGNORE_EXTREMA = "ignore_extrema_disp_values"
+# Specific values
+# 0 = valid pixels
+# 255 = value used as no data during the rectification in the epipolar geometry
+VALID_VALUE = 0
+NO_DATA_IN_EPIPOLAR_RECTIFICATION = 255
+PROTECTED_VALUES = [NO_DATA_IN_EPIPOLAR_RECTIFICATION]

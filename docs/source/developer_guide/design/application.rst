@@ -298,15 +298,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             use_sec_disp=use_sec_disp,
         )
 
-        # If necessary, set disparity to 0 for classes to be set to input dem
-        regularisation.update_disp_to_0(
-            disp,
-            left_image_object,
-            right_image_object,
-            mask1_set_to_ref_alt,
-            mask2_set_to_ref_alt,
-        )
-
         color_sec = None
         if cst.STEREO_SEC in disp:
             # compute right color image from right-left disparity map

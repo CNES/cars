@@ -188,8 +188,4 @@ def test_rio_profile_to_dict_profile():
 
     new_dict_profile = cars_dataset.rio_profile_to_dict_profile(rio_profile)
 
-    print(dict_profile)
-    print(rio_profile)
-    print(new_dict_profile)
-
     assert dict_profile == new_dict_profile
