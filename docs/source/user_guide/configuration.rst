@@ -18,7 +18,7 @@ The structure follows this organisation:
         "output": {},
         "pipeline": "pipeline_to_use"
     }
-        
+
 .. warning::
 
     Be careful with commas to separate each section. None needed for the last json element.
@@ -333,7 +333,7 @@ The structure follows this organisation:
         .. code-block:: json
 
             {
-                "orchestrator": 
+                "orchestrator":
                 {
                     "mode" : "sequential",
                     "profiling" : {},
@@ -762,8 +762,8 @@ The structure follows this organisation:
             .. warning::
 
                 DenseMatchingFiling does not support currently multiprocessing cluster.
-            
-            
+
+
 
         .. tab:: Triangulation
 
