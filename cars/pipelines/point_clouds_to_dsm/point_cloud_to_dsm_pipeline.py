@@ -39,7 +39,7 @@ from cars.applications.application import Application
 from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.conf import log_conf
 from cars.core import constants as cst
-from cars.core import preprocessing
+from cars.core import inputs, preprocessing
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
@@ -201,6 +201,19 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
             )
 
+            # check sizes
+            check_input_size(
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.X],
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Y],
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Z],
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                    cst.POINTS_CLOUD_VALID_DATA
+                ],
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                    cst.POINTS_CLOUD_CLR_KEY_ROOT
+                ],
+            )
+
         # Check roi
         sensors_inputs.check_roi(overloaded_conf[sens_cst.ROI])
 
@@ -336,7 +349,22 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 self.inputs["point_clouds"],
                 epsg,
                 roi_poly=roi_poly,
-                epipolar_tile_size=600,  # TODO change it
+                epipolar_tile_size=1000,  # TODO change it
+                orchestrator=cars_orchestrator,
+            )
+
+            # Compute number of superposing point cloud for density
+            max_number_superposing_point_clouds = (
+                pc_tif_tools.compute_max_nb_point_clouds(
+                    list_epipolar_points_cloud_by_tiles
+                )
+            )
+
+            # Compute average distance between two points
+            average_distance_point_cloud = (
+                pc_tif_tools.compute_average_distance(
+                    list_epipolar_points_cloud_by_tiles
+                )
             )
 
             # Merge point clouds
@@ -353,7 +381,35 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     resolution=(self.rasterization_application.get_resolution())
                 )
                 + self.rasterization_application.get_margins(),
-                optimal_terrain_tile_width=500,  # TODO compute it
+                optimal_terrain_tile_width=min(
+                    self.pc_outliers_removing_1_app.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                    self.pc_outliers_removing_2_app.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                    self.rasterization_application.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                ),
             )
 
             # Remove outliers with small components method
@@ -384,3 +440,36 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     out_dir, self.output[sens_cst.CLR_BASENAME]
                 ),
             )
+
+
+def check_input_size(x_path, y_path, z_path, mask, color):
+    """
+    Check x, y, z, mask and color given
+
+    Images must have same size
+
+    :param x_path: x path
+    :type x_path: str
+    :param y_path: y path
+    :type y_path: str
+    :param z_path: z path
+    :type z_path: str
+    :param mask: mask path
+    :type mask: str
+    :param color: color path
+    :type color: str
+    """
+
+    for path in [x_path, y_path, z_path]:
+        if inputs.rasterio_get_nb_bands(path) != 1:
+            raise RuntimeError("{} is not mono-band image".format(path))
+
+    for path in [mask, color]:
+        if path is not None:
+            if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
+                path
+            ):
+                raise RuntimeError(
+                    "The image {} and {} "
+                    "do not have the same size".format(x_path, path)
+                )

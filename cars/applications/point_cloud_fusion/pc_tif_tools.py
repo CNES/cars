@@ -30,12 +30,14 @@ import logging
 import numpy as np
 import pandas as pd
 import rasterio as rio
-from shapely import geometry
+from shapely import geometry, length
 
-# CARS imports
+import cars.orchestrator.orchestrator as ocht
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing, projection, tiling
-from cars.data_structures import cars_dataset
+
+# CARS imports
+from cars.data_structures import cars_dataset, cars_dict
 from cars.externals import otb_pipelines
 
 
@@ -75,13 +77,46 @@ def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
     pc_keys = list(list_epipolar_points_cloud.keys())
     point_cloud = list_epipolar_points_cloud[pc_keys[0]]
 
-    x_y_min_max = get_min_max_band(
-        point_cloud[cst.X],
-        point_cloud[cst.Y],
-        point_cloud[cst.Z],
-        point_cloud[cst.PC_EPSG],
-        4326,
+    tif_size = inputs.rasterio_get_size(point_cloud[cst.X])
+
+    tile_size = 100
+    grid = tiling.generate_tiling_grid(
+        0,
+        0,
+        tif_size[0],
+        tif_size[1],
+        tile_size,
+        tile_size,
     )
+
+    can_compute_epsg = False
+    x_y_min_max = None
+    for row in range(grid.shape[0]):
+        for col in range(grid.shape[1]):
+            if not can_compute_epsg:
+                # define window
+                window = rio.windows.Window.from_slices(
+                    (
+                        grid[row, col, 0],
+                        grid[row, col, 1],
+                    ),
+                    (
+                        grid[row, col, 2],
+                        grid[row, col, 3],
+                    ),
+                )
+                # compute min max
+                x_y_min_max = get_min_max_band(
+                    point_cloud[cst.X],
+                    point_cloud[cst.Y],
+                    point_cloud[cst.Z],
+                    point_cloud[cst.PC_EPSG],
+                    4326,
+                    window=window,
+                )
+
+                if not any(np.isnan(x_y_min_max)):
+                    can_compute_epsg = True
 
     x_mean = (x_y_min_max[0] + x_y_min_max[1]) / 2
     y_mean = (x_y_min_max[2] + x_y_min_max[3]) / 2
@@ -321,6 +356,15 @@ def create_combined_cloud_from_tif(
                 cloud_pd, cloud_epsg, epsg
             )
 
+        # filter outside points considering mmargins
+        filter_cloud(
+            cloud_pd,
+            list(
+                np.array([xmin, xmax, ymin, ymax])
+                + np.array([-margin, margin, -margin, margin])
+            ),
+        )
+
         # add to list of pandas pc
         clouds_pd_list.append(cloud_pd)
 
@@ -329,15 +373,6 @@ def create_combined_cloud_from_tif(
         clouds_pd_list,
         axis=0,
         join="outer",
-    )
-
-    # filter outside points considering mmargins
-    filter_cloud(
-        combined_pd_cloud,
-        list(
-            np.array([xmin, xmax, ymin, ymax])
-            + np.array([-margin, margin, -margin, margin])
-        ),
     )
 
     # Get color type
@@ -352,7 +387,11 @@ def create_combined_cloud_from_tif(
 
 
 def transform_input_pc(
-    list_epipolar_points_cloud, epsg, roi_poly=None, epipolar_tile_size=600
+    list_epipolar_points_cloud,
+    epsg,
+    roi_poly=None,
+    epipolar_tile_size=600,
+    orchestrator=None,
 ):
     """
     Transform point clouds from inputs into point cloud fusion application
@@ -372,6 +411,16 @@ def transform_input_pc(
     :rtype: list(CarsDataset type dict)
 
     """
+
+    if orchestrator is None:
+        # Create default sequential orchestrator for current application
+        # be awere, no out_json will be shared between orchestrators
+        # No files saved
+        cars_orchestrator = ocht.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        )
+    else:
+        cars_orchestrator = orchestrator
 
     list_epipolar_points_cloud_left_by_tiles = []
 
@@ -393,6 +442,12 @@ def transform_input_pc(
             epipolar_tile_size,
         )
 
+        # Add to replace list so tiles will be readable at the same time
+        [saving_info_pc] = cars_orchestrator.get_saving_infos([epi_pc])
+        cars_orchestrator.add_to_replace_lists(
+            epi_pc, cars_ds_name="epi_pc_min_max"
+        )
+
         # Open the TIFF and get bounds from lon/lat min and max values
         for row in range(epi_pc.shape[0]):
             for col in range(epi_pc.shape[1]):
@@ -407,40 +462,54 @@ def transform_input_pc(
                     ),
                 )
 
-                x_y_min_max = get_min_max_band(
-                    items[cst.X],
-                    items[cst.Y],
-                    items[cst.Z],
-                    items[cst.PC_EPSG],
-                    epsg,
-                    window=window,
+                # Update saving info for row and col
+                full_saving_info_pc = ocht.update_saving_infos(
+                    saving_info_pc, row=row, col=col
                 )
 
-                # fill CarsDataset
-                epi_pc[row, col] = {
-                    "data": {
-                        cst.X: items[cst.X],
-                        cst.Y: items[cst.Y],
-                        cst.Z: items[cst.Z],
-                        cst.POINTS_CLOUD_CLR_KEY_ROOT: items[
-                            cst.POINTS_CLOUD_CLR_KEY_ROOT
-                        ],
-                        cst.POINTS_CLOUD_VALID_DATA: items[
-                            cst.POINTS_CLOUD_VALID_DATA
-                        ],
-                    },
-                    "x_y_min_max": x_y_min_max,
-                    "window": window,
-                    "cloud_epsg": items[cst.PC_EPSG],
-                }
-
-                if not any(np.isnan(x_y_min_max)):
-                    xmin_list.append(x_y_min_max[0])
-                    xmax_list.append(x_y_min_max[1])
-                    ymin_list.append(x_y_min_max[2])
-                    ymax_list.append(x_y_min_max[3])
+                epi_pc[row, col] = cars_orchestrator.cluster.create_task(
+                    compute_x_y_min_max_wrapper, nout=1
+                )(
+                    items,
+                    epsg,
+                    window,
+                    saving_info=full_saving_info_pc,
+                )
 
         list_epipolar_points_cloud_left_by_tiles.append(epi_pc)
+
+    # Breakpoint : compute
+    cars_orchestrator.breakpoint()
+
+    # Get all local min and max
+    for computed_epi_pc in list_epipolar_points_cloud_left_by_tiles:
+        pc_xmin_list, pc_ymin_list, pc_xmax_list, pc_ymax_list = [], [], [], []
+        for row in range(computed_epi_pc.shape[0]):
+            for col in range(computed_epi_pc.shape[1]):
+                local_x_y_min_max = computed_epi_pc[row, col].data[
+                    "x_y_min_max"
+                ]
+                if not any(np.isnan(local_x_y_min_max)):
+                    # Add for global
+                    xmin_list.append(local_x_y_min_max[0])
+                    xmax_list.append(local_x_y_min_max[1])
+                    ymin_list.append(local_x_y_min_max[2])
+                    ymax_list.append(local_x_y_min_max[3])
+                    # Add for current CarsDS
+                    pc_xmin_list.append(local_x_y_min_max[0])
+                    pc_xmax_list.append(local_x_y_min_max[1])
+                    pc_ymin_list.append(local_x_y_min_max[2])
+                    pc_ymax_list.append(local_x_y_min_max[3])
+
+                # Simplify data
+                computed_epi_pc[row, col] = computed_epi_pc[row, col].data
+
+        # Add min max for current point cloud CarsDataset
+        computed_epi_pc.attributes["xmin"] = min(pc_xmin_list)
+        computed_epi_pc.attributes["ymin"] = min(pc_ymin_list)
+        computed_epi_pc.attributes["xmax"] = max(pc_xmax_list)
+        computed_epi_pc.attributes["ymax"] = max(pc_ymax_list)
+        computed_epi_pc.attributes["epsg"] = epsg
 
     # Define a terrain tiling from the terrain bounds (in terrain epsg)
     global_xmin = min(xmin_list)
@@ -463,6 +532,146 @@ def transform_input_pc(
     logging.info("terrain bbox in epsg {}: {}".format(str(epsg), terrain_bbox))
 
     return (terrain_bbox, list_epipolar_points_cloud_left_by_tiles)
+
+
+def compute_max_nb_point_clouds(list_epipolar_points_cloud_by_tiles):
+    """
+    Compute the maximum number of point clouds superposing.
+
+    :param list_epipolar_points_cloud_by_tiles: list of tiled point clouds
+    :type list_epipolar_points_cloud_by_tiles: list(CarsDataset)
+
+    :return: max number of point clouds
+    :rtype: int
+
+    """
+
+    # Create polygon for each CarsDataset
+
+    list_pc_polygon = []
+    for epi_pc_cars_ds in list_epipolar_points_cloud_by_tiles:
+        xmin = epi_pc_cars_ds.attributes["xmin"]
+        xmax = epi_pc_cars_ds.attributes["xmax"]
+        ymin = epi_pc_cars_ds.attributes["ymin"]
+        ymax = epi_pc_cars_ds.attributes["ymax"]
+
+        x_y_min_max = [xmin, xmax, ymin, ymax]
+        list_pc_polygon.append((convert_to_polygon(x_y_min_max), 1))
+
+    # Compute polygon intersection. A polygon is reprensented with a tuple:
+    # (shapely_polygon, nb_polygon intersection)
+
+    list_intersected_polygons = []
+
+    for poly in list_pc_polygon:
+        if len(list_intersected_polygons) == 0:
+            list_intersected_polygons.append(poly)
+        else:
+            new_poly_list = []
+            for seen_poly in list_intersected_polygons:
+                if poly[0].intersects(seen_poly[0]):
+                    # Compute intersection
+                    intersect_poly = poly[0].intersection(seen_poly[0])
+                    new_poly_list.append(
+                        (intersect_poly, poly[1] + seen_poly[1])
+                    )
+            list_intersected_polygons += new_poly_list
+
+    # Get max of intersection
+    nb_pc = 0
+    for poly in list_intersected_polygons:
+        nb_pc = max(nb_pc, poly[1])
+
+    return nb_pc
+
+
+def compute_average_distance(list_epipolar_points_cloud_by_tiles):
+    """
+    Compute average distance between points
+
+
+    :param list_epipolar_points_cloud_by_tiles: list of tiled point clouds
+    :type list_epipolar_points_cloud_by_tiles: list(CarsDataset)
+
+    :return: average distance between points
+    :rtype: float
+
+    """
+
+    # Get average for each point
+    list_average_dist = []
+    for epi_pc_cars_ds in list_epipolar_points_cloud_by_tiles:
+        xmin = epi_pc_cars_ds.attributes["xmin"]
+        xmax = epi_pc_cars_ds.attributes["xmax"]
+        ymin = epi_pc_cars_ds.attributes["ymin"]
+        ymax = epi_pc_cars_ds.attributes["ymax"]
+        data_epsg = epi_pc_cars_ds.attributes["epsg"]
+
+        x_y_min_max = [xmin, xmax, ymin, ymax]
+        # Create polygon
+        poly = convert_to_polygon(x_y_min_max)
+        # Transform polygon to epsg meter
+        epsg_meter = 4978
+        meter_poly = projection.polygon_projection(poly, data_epsg, epsg_meter)
+
+        # Compute perimeter in meter
+        perimeter_meters = length(meter_poly)
+        # Compute perimeter in pixel
+        nb_row = np.max(epi_pc_cars_ds.tiling_grid[:, :, 1])
+        nb_col = np.max(epi_pc_cars_ds.tiling_grid[:, :, 3])
+        perimeter_pixels = 2 * nb_row + 2 * nb_col
+        # Compute average distance
+        list_average_dist.append(perimeter_meters / perimeter_pixels)
+
+    return max(list_average_dist)
+
+
+def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
+    """
+    Compute bounds from item and create CarsDict filled with point cloud
+    information: file paths, bounds, epsg, window
+
+    :param items: point cloud
+    :type items: dict
+    :param epsg: epsg
+    :type epsg: int
+    :param window: window to use
+    :type window: dict
+    :param saving_info: saving infos
+    :type saving_info: dict
+
+    :return: Tile ready to use
+    :rtype: CarsDict
+
+    """
+    x_y_min_max = get_min_max_band(
+        items[cst.X],
+        items[cst.Y],
+        items[cst.Z],
+        items[cst.PC_EPSG],
+        epsg,
+        window=window,
+    )
+
+    # create dict
+    tile = {
+        "data": {
+            cst.X: items[cst.X],
+            cst.Y: items[cst.Y],
+            cst.Z: items[cst.Z],
+            cst.POINTS_CLOUD_CLR_KEY_ROOT: items[cst.POINTS_CLOUD_CLR_KEY_ROOT],
+            cst.POINTS_CLOUD_VALID_DATA: items[cst.POINTS_CLOUD_VALID_DATA],
+        },
+        "x_y_min_max": x_y_min_max,
+        "window": window,
+        "cloud_epsg": items[cst.PC_EPSG],
+    }
+
+    # add saving infos
+    res = cars_dict.CarsDict(tile)
+    cars_dataset.fill_dict(res, saving_info=saving_info)
+
+    return res
 
 
 def get_tiles_row_col(
@@ -513,7 +722,17 @@ def get_tiles_row_col(
     )
 
     # Convert the bounds of the terrain tile into shapely polygon
-    terrain_tile_polygon = convert_to_polygon(region_with_margin)
+    # region: [xmin, ymin, xmax, ymax],
+    # convert_to_polygon needs : [xmin, xmax, ymin, ymax]
+
+    terrain_tile_polygon = convert_to_polygon(
+        [
+            region_with_margin[0],
+            region_with_margin[2],
+            region_with_margin[1],
+            region_with_margin[3],
+        ]
+    )
 
     required_point_clouds_left = []
     required_point_clouds_right = []
@@ -526,7 +745,6 @@ def get_tiles_row_col(
                 # Convert the bounds of the point cloud tile into shapely point
                 if any(np.isnan(x_y_min_max)):
                     continue
-
                 point_cloud_tile_polygon = convert_to_polygon(x_y_min_max)
 
                 if intersect_polygons(
@@ -536,7 +754,6 @@ def get_tiles_row_col(
                     required_point_clouds_left.append(
                         epi_pc[tile_row, tile_col]
                     )
-
     return (
         terrain_region,
         required_point_clouds_left,

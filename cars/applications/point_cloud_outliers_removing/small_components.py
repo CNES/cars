@@ -31,6 +31,7 @@ import os
 import time
 
 # Third party imports
+import numpy as np
 from json_checker import Checker, Or
 from osgeo import osr
 
@@ -169,6 +170,44 @@ class SmallComponents(
 
         return overloaded_conf
 
+    def get_optimal_tile_size(
+        self,
+        max_ram_per_worker,
+        superposing_point_clouds=1,
+        point_cloud_resolution=0.5,
+    ):
+        """
+        Get the optimal tile size to use, depending on memory available
+
+        :param max_ram_per_worker: maximum ram available
+        :type max_ram_per_worker: int
+        :param superposing_point_clouds: number of point clouds superposing
+        :type superposing_point_clouds: int
+        :param point_cloud_resolution: resolution of point cloud
+        :type point_cloud_resolution: float
+
+        :return: optimal tile size in meter
+        :rtype: float
+
+        """
+
+        if not self.activated:
+            tile_size = 1000000
+        else:
+            tot = 10000 * superposing_point_clouds / point_cloud_resolution
+
+            import_ = 200  # MiB
+            tile_size = int(
+                np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot)
+            )
+
+        logging.info(
+            "Estimated optimal tile size for small"
+            "components removing : {} meters".format(tile_size)
+        )
+
+        return tile_size
+
     def get_method(self):
         """
         Get margins to use during point clouds fusion
@@ -234,6 +273,9 @@ class SmallComponents(
         :rtype: CarsDataset filled with xr.Dataset
         """
 
+        if not self.activated:
+            return merged_points_cloud
+
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -296,7 +338,6 @@ class SmallComponents(
                             small_components_removing_wrapper
                         )(
                             merged_points_cloud[row, col],
-                            self.activated,
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
@@ -317,7 +358,6 @@ class SmallComponents(
 
 def small_components_removing_wrapper(
     cloud,
-    activated,
     connection_distance,
     nb_points_threshold,
     clusters_distance_threshold,
@@ -330,8 +370,6 @@ def small_components_removing_wrapper(
 
     :param cloud: cloud to filter
     :type cloud: pandas DataFrame
-    :param activated: true if filtering must be done
-    :type activated: bool
     :param connection_distance: connection distance
     :type connection_distance: float
     :param nb_points_threshold:
@@ -354,48 +392,46 @@ def small_components_removing_wrapper(
     new_cloud = cloud.copy()
     new_cloud.attrs = copy.deepcopy(cloud.attrs)
 
-    if activated:
-        worker_logger = logging.getLogger("distributed.worker")
-        # Get current epsg
-        cloud_attributes = cars_dataset.get_attributes_dataframe(new_cloud)
-        cloud_epsg = cloud_attributes["epsg"]
-        current_epsg = cloud_epsg
+    # Get current epsg
+    cloud_attributes = cars_dataset.get_attributes_dataframe(new_cloud)
+    cloud_epsg = cloud_attributes["epsg"]
+    current_epsg = cloud_epsg
 
-        # Check if can be used to filter
-        spatial_ref = osr.SpatialReference()
-        spatial_ref.ImportFromEPSG(cloud_epsg)
-        if spatial_ref.IsGeographic():
-            worker_logger.debug(
-                "The points cloud to filter is not in a cartographic system. "
-                "The filter's default parameters might not be adapted "
-                "to this referential. Please, convert the points "
-                "cloud to ECEF to ensure a proper points_cloud."
-            )
-            # Convert to epsg = 4978
-            cartographic_epsg = 4978
+    worker_logger = logging.getLogger("distributed.worker")
 
-            projection.points_cloud_conversion_dataframe(
-                new_cloud, current_epsg, cartographic_epsg
-            )
-            current_epsg = cartographic_epsg
-
-        # Filter point cloud
-        tic = time.process_time()
-        (
-            new_cloud,
-            _,
-        ) = outlier_removing_tools.small_components_filtering(
-            new_cloud,
-            connection_distance,
-            nb_points_threshold,
-            clusters_distance_threshold,
-        )
-        toc = time.process_time()
+    # Check if can be used to filter
+    spatial_ref = osr.SpatialReference()
+    spatial_ref.ImportFromEPSG(cloud_epsg)
+    if spatial_ref.IsGeographic():
         worker_logger.debug(
-            "Small components cloud filtering done in {} seconds".format(
-                toc - tic
-            )
+            "The points cloud to filter is not in a cartographic system. "
+            "The filter's default parameters might not be adapted "
+            "to this referential. Please, convert the points "
+            "cloud to ECEF to ensure a proper points_cloud."
         )
+        # Convert to epsg = 4978
+        cartographic_epsg = 4978
+
+        projection.points_cloud_conversion_dataframe(
+            new_cloud, current_epsg, cartographic_epsg
+        )
+        current_epsg = cartographic_epsg
+
+    # Filter point cloud
+    tic = time.process_time()
+    (
+        new_cloud,
+        _,
+    ) = outlier_removing_tools.small_components_filtering(
+        new_cloud,
+        connection_distance,
+        nb_points_threshold,
+        clusters_distance_threshold,
+    )
+    toc = time.process_time()
+    worker_logger.debug(
+        "Small components cloud filtering done in {} seconds".format(toc - tic)
+    )
 
     # Conversion to UTM
     projection.points_cloud_conversion_dataframe(

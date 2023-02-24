@@ -35,13 +35,14 @@ import pandas
 import xarray as xr
 
 # CARS imports
-from cars.data_structures import cars_dataset
+from cars.data_structures import cars_dataset, cars_dict
 
 # Third party imports
 
 
 DENSE_NAME = "DenseDO"
 SPARSE_NAME = "SparseDO"
+DICT_NAME = "DictDO"
 
 
 class AbstractWrapper(metaclass=ABCMeta):
@@ -273,6 +274,7 @@ def disk_wrapper_fun(*argv, **kwargs):
     """
 
     # Get function to wrap and id_list
+
     id_list = kwargs["id_list"]
     func = kwargs["fun"]
     tmp_dir = kwargs["tmp_dir"]
@@ -350,7 +352,7 @@ def is_dumped_object(obj):
 
     is_dumped = False
     if isinstance(obj, str):
-        if DENSE_NAME in obj or SPARSE_NAME in obj:
+        if DENSE_NAME in obj or SPARSE_NAME in obj or DICT_NAME in obj:
             is_dumped = True
 
     return is_dumped
@@ -373,9 +375,12 @@ def load(path):
 
         elif SPARSE_NAME in path:
             obj = cars_dataset.CarsDataset("points").load_single_tile(path)
+        elif DICT_NAME in path:
+            obj = cars_dataset.CarsDataset("dict").load_single_tile(path)
 
         else:
-            logging.warning("Not a dumped arrays or points")
+            logging.warning("Not a dumped arrays or points or dict")
+
     else:
         obj = None
     return obj
@@ -395,8 +400,11 @@ def dump_single_object(obj, path):
     elif isinstance(obj, pandas.DataFrame):
         # is from points
         cars_dataset.CarsDataset("points").save_single_tile(obj, path)
+    elif isinstance(obj, cars_dict.CarsDict):
+        # is from points
+        cars_dataset.CarsDataset("dict").save_single_tile(obj, path)
     else:
-        raise TypeError("Not an arrays or points")
+        raise TypeError("Not an arrays or points or dict")
 
 
 def create_path(obj, tmp_dir, id_num):
@@ -417,8 +425,11 @@ def create_path(obj, tmp_dir, id_num):
     elif isinstance(obj, pandas.DataFrame):
         # is from points
         path = SPARSE_NAME
+    elif isinstance(obj, cars_dict.CarsDict):
+        # is from dict
+        path = DICT_NAME
     else:
-        logging.warning("Not an arrays or points")
+        logging.warning("Not an arrays or points or dict")
         path = obj
 
     path = os.path.join(tmp_dir, path + "_" + repr(id_num))

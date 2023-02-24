@@ -111,6 +111,28 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
+    def get_optimal_tile_size(
+        self,
+        max_ram_per_worker,
+        superposing_point_clouds=1,
+        point_cloud_resolution=0.5,
+    ):
+        """
+        Get the optimal tile size to use, depending on memory available
+
+        :param max_ram_per_worker: maximum ram available
+        :type max_ram_per_worker: int
+        :param superposing_point_clouds: number of point clouds superposing
+        :type superposing_point_clouds: int
+        :param point_cloud_resolution: resolution of point cloud
+        :type point_cloud_resolution: float
+
+        :return: optimal tile size in meter
+        :rtype: float
+
+        """
+
+    @abstractmethod
     def run(
         self,
         merged_points_cloud,

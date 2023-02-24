@@ -42,11 +42,10 @@ import xarray as xr
 from rasterio.profiles import DefaultGTiffProfile
 from rasterio.windows import Window
 
-from cars.core import outputs
-
 # CARS imports
+from cars.core import outputs
 from cars.core.utils import safe_makedirs
-from cars.data_structures import dataframe_converter
+from cars.data_structures import cars_dict, dataframe_converter
 
 # cars dataset dtype
 CARS_DS_TYPE_ARRAY = "arrays"
@@ -63,6 +62,7 @@ PROFILE_FILE = "profile.json"
 ATTRIBUTE_FILE = "attributes.json"
 DATASET_FILE = "dataset"
 DATAFRAME_FILE = "dataframe.csv"
+CARSDICT_FILE = "cars_dict"
 
 PROFILE = "profile"
 WINDOW = "window"
@@ -232,6 +232,7 @@ class CarsDataset:
         functions = {
             CARS_DS_TYPE_ARRAY: load_single_tile_array,
             CARS_DS_TYPE_POINTS: load_single_tile_points,
+            CARS_DS_TYPE_DICT: load_single_tile_dict,
         }
 
         return functions[self.dataset_type](tile_path_name)
@@ -248,6 +249,7 @@ class CarsDataset:
         functions = {
             CARS_DS_TYPE_ARRAY: save_single_tile_array,
             CARS_DS_TYPE_POINTS: save_single_tile_points,
+            CARS_DS_TYPE_DICT: save_single_tile_dict,
         }
 
         return functions[self.dataset_type](tile, tile_path_name)
@@ -650,6 +652,35 @@ def load_single_tile_points(tile_path_name: str):
     return dataframe
 
 
+def load_single_tile_dict(tile_path_name: str):
+    """
+    Load a CarsDict
+
+    :param tile_path_name: Path of tile to load
+    :type tile_path_name: str
+
+    :return: Tile dataframe
+    :rtype: Panda dataframe
+
+    """
+
+    # get dataframe
+    dict_file_name = os.path.join(tile_path_name, CARSDICT_FILE)
+    with open(dict_file_name, "rb") as handle:
+        dict_cars = pickle.load(handle)
+
+    # get attributes
+    attributes_file_name = os.path.join(tile_path_name, ATTRIBUTE_FILE)
+    attributes = load_dict(attributes_file_name)
+
+    # Format transformation
+
+    # add to dataframe
+    dict_cars.attrs.update(attributes)
+
+    return dict_cars
+
+
 def save_single_tile_array(dataset: xr.Dataset, tile_path_name: str):
     """
     Save xarray to directory, saving the data in a different file that
@@ -726,6 +757,44 @@ def save_single_tile_points(dataframe, tile_path_name: str):
 
     # Retrieve attrs
     dataframe.attrs = saved_dataframe_attrs
+
+
+def save_single_tile_dict(dict_cars, tile_path_name: str):
+    """
+    Save cars_dict to directory, saving the data in a different file that
+    the attributes (saved in a .json next to it).
+
+    :param dict_cars: dataframe to save
+    :type dict_cars: pd.DataFrame
+    :param tile_path_name: Path of file to save in
+    :type tile_path_name: str
+    """
+    # Create tile folder
+    safe_makedirs(tile_path_name)
+
+    # save attributes
+    saved_dict_cars_attrs = copy.copy(dict_cars.attrs)
+    attributes_file_name = os.path.join(tile_path_name, ATTRIBUTE_FILE)
+    if dict_cars.attrs is None:
+        attributes = {}
+    else:
+        attributes = dict_cars.attrs
+
+    # Format transformation
+
+    # dump
+    # separate attributes
+    dict_cars.attrs, custom_attributes = separate_dicts(
+        attributes, [SAVING_INFO, ATTRIBUTES]
+    )
+    # save
+    save_dict(custom_attributes, attributes_file_name)
+    dict_cars_file_name = os.path.join(tile_path_name, CARSDICT_FILE)
+    with open(dict_cars_file_name, "wb") as handle:
+        pickle.dump(dict_cars, handle, protocol=pickle.HIGHEST_PROTOCOL)
+
+    # Retrieve attrs
+    dict_cars.attrs = saved_dict_cars_attrs
 
 
 def fill_dataset(
@@ -810,11 +879,21 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
 
     """
 
-    if attributes is not None:
-        data_dict[ATTRIBUTES] = attributes
+    # TODO only use CarsDict
 
-    if saving_info is not None:
-        data_dict[SAVING_INFO] = saving_info
+    if isinstance(data_dict, dict):
+        if attributes is not None:
+            data_dict[ATTRIBUTES] = attributes
+
+        if saving_info is not None:
+            data_dict[SAVING_INFO] = saving_info
+
+    elif isinstance(data_dict, cars_dict.CarsDict):
+        if attributes is not None:
+            data_dict.attrs[ATTRIBUTES] = attributes
+
+        if saving_info is not None:
+            data_dict.attrs[SAVING_INFO] = saving_info
 
 
 def save_dataframe(dataframe, file_name, overwrite=True):
