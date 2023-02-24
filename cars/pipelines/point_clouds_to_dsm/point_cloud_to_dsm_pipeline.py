@@ -40,6 +40,7 @@ from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.conf import log_conf
 from cars.core import constants as cst
 from cars.core import inputs, preprocessing
+from cars.core.utils import make_relative_path_absolute
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
@@ -212,6 +213,16 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                     cst.POINTS_CLOUD_CLR_KEY_ROOT
                 ],
+            )
+
+        # Modify to absolute path
+        if config_json_dir is not None:
+            modify_to_absolute_path(config_json_dir, overloaded_conf)
+
+        else:
+            logging.debug(
+                "path of config file was not given,"
+                "relative path are not transformed to absolute paths"
             )
 
         # Check roi
@@ -473,3 +484,33 @@ def check_input_size(x_path, y_path, z_path, mask, color):
                     "The image {} and {} "
                     "do not have the same size".format(x_path, path)
                 )
+
+
+def modify_to_absolute_path(config_json_dir, overloaded_conf):
+    """
+    Modify input file path to absolute path
+
+    :param config_json_dir: directory of the json configuration
+    :type config_json_dir: str
+    :param overloaded_conf: overloaded configuration json
+    :dict overloaded_conf: dict
+    """
+    for point_cloud_key in overloaded_conf[pc_cst.POINT_CLOUDS]:
+        point_cloud = overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
+        for tag in [
+            cst.X,
+            cst.Y,
+            cst.Z,
+            cst.POINTS_CLOUD_CLR_KEY_ROOT,
+            cst.POINTS_CLOUD_VALID_DATA,
+        ]:
+            if point_cloud[tag] is not None:
+                point_cloud[tag] = make_relative_path_absolute(
+                    point_cloud[tag], config_json_dir
+                )
+
+    if overloaded_conf[sens_cst.ROI] is not None:
+        if isinstance(overloaded_conf[sens_cst.ROI], str):
+            overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
+                overloaded_conf[sens_cst.ROI], config_json_dir
+            )
