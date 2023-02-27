@@ -39,7 +39,7 @@ from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
 from cars.conf import log_conf
-from cars.core import preprocessing
+from cars.core import preprocessing, roi_tools
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -110,14 +110,18 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         self.used_conf[ORCHESTRATOR] = self.orchestrator_conf
 
         # Check conf inputs
-        (
-            self.inputs,
-            self.input_roi_poly,
-            self.input_roi_epsg,
-        ) = self.check_inputs(
+        self.inputs = self.check_inputs(
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
         self.used_conf[INPUTS] = self.inputs
+
+        # Get ROI
+        (
+            self.input_roi_poly,
+            self.input_roi_epsg,
+        ) = roi_tools.generate_roi_poly_from_inputs(
+            self.used_conf[INPUTS][sens_cst.ROI]
+        )
 
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])

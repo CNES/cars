@@ -41,12 +41,13 @@ import pytest
 import rasterio
 from shapely.ops import transform
 
-# CARS imports
 from cars.conf.input_parameters import read_input_parameters
+
+# CARS imports
+from cars.core import roi_tools
 from cars.pipelines.sensor_to_full_resolution_dsm import (
     sensor_to_full_resolution_dsm_pipeline as pipeline_full_res,
 )
-from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 from cars.pipelines.sensor_to_low_resolution_dsm import (
     sensor_to_low_resolution_dsm_pipeline as pipeline_low_res,
 )
@@ -1344,7 +1345,7 @@ def test_compute_dsm_with_roi_ventoux():
         # check final bounding box
         # create reference
         # Transform to shapely polygon, epsg
-        roi_poly, roi_epsg = sensors_inputs.geojson_to_shapely(roi_geo_json)
+        roi_poly, roi_epsg = roi_tools.geojson_to_shapely(roi_geo_json)
 
         project = pyproj.Transformer.from_proj(
             pyproj.Proj(init="epsg:{}".format(roi_epsg)),

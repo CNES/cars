@@ -119,6 +119,28 @@ The structure follows this organisation:
             }
         }
 
+    .. note::
+
+        By default epsg 4326 is used. If user defined Polygon in another epsg, "crs" must be specified.
+
+        .. code-block:: json
+
+            {
+                "roi": 
+                {
+                    "crs" : 
+                    {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+                        
+                    }
+                }
+            }
+
+            
+
     .. code-block:: json
 
         {
