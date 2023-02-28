@@ -100,7 +100,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         self.used_conf = {}
 
         # Pipeline
-        self.used_conf[PIPELINE] = "sensor_to_full_resolution_dsm"
+        self.used_conf[PIPELINE] = "dense_point_clouds_to_dense_dsm"
 
         # Check conf orchestrator
         self.orchestrator_conf = self.check_orchestrator(

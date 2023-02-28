@@ -234,7 +234,7 @@ class SimpleGaussian(
 
         """
 
-        tot = 9000 * superposing_point_clouds / point_cloud_resolution
+        tot = 7000 * superposing_point_clouds / point_cloud_resolution
 
         import_ = 200  # MiB
         tile_size = int(

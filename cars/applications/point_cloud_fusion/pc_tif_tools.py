@@ -22,6 +22,7 @@
 This module contains functions used during the fusion of
 point clouds from .tif files.
 """
+# pylint: disable=C0302
 
 # Standard imports
 import logging
@@ -674,13 +675,11 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
     return res
 
 
-def get_tiles_row_col(
+def get_tiles_corresponding_tiles_tif(
     terrain_tiling_grid,
-    row,
-    col,
-    list_epipolar_points_cloud_left_with_loc,
-    list_epipolar_points_cloud_right_with_loc,
+    list_epipolar_points_cloud_with_loc,
     margins=0,
+    orchestrator=None,
 ):
     """
     Get point cloud tiles to use for terrain region
@@ -691,71 +690,185 @@ def get_tiles_row_col(
     :type row: int
     :param col: col
     :type col: int
-    :param list_epipolar_points_cloud_left_with_loc: list of left point clouds
-    :type list_epipolar_points_cloud_left_with_loc: list(CarsDataset)
-    :param list_epipolar_points_cloud_right_with_loc: list of right point clouds
-    :type list_epipolar_points_cloud_right_with_loc: list(CarsDataset)
+    :param list_epipolar_points_cloud_with_loc: list of left point clouds
+    :type list_epipolar_points_cloud_with_loc: list(CarsDataset)
     :param margins: margin to use in point clouds
     :type margins: float
 
-    :return: list of point cloud tiles to use to terrain tile
-    :rtype: list(dict)
+    :return: CarsDataset containing list of point cloud tiles to use
+        to terrain tile
+    :rtype: CarsDataset
 
     """
 
-    if list_epipolar_points_cloud_right_with_loc is not None:
-        if len(list_epipolar_points_cloud_right_with_loc) > 0:
-            logging.warning("Right point clouds given as input, not considered")
+    if orchestrator is None:
+        # Create default sequential orchestrator for current
+        # application
+        # be awere, no out_json will be shared between orchestrators
+        # No files saved
+        cars_orchestrator = ocht.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        )
+    else:
+        cars_orchestrator = orchestrator
 
-    # Terrain grid [row, j, :] = [xmin, xmax, ymin, ymax]
-    # terrain region = [xmin, ymin, xmax, ymax]
-    terrain_region = [
-        terrain_tiling_grid[row, col, 0],
-        terrain_tiling_grid[row, col, 2],
-        terrain_tiling_grid[row, col, 1],
-        terrain_tiling_grid[row, col, 3],
-    ]
-
-    region_with_margin = list(
-        np.array(terrain_region)
-        + np.array([-margins, margins, -margins, margins])
+    # Compute correspondances for every tile
+    # Create Carsdataset containing a tile for every point cloud
+    list_corresp_cars_ds = cars_dataset.CarsDataset("dict")
+    # Create fake tiling grid , not used later
+    list_corresp_cars_ds.tiling_grid = tiling.generate_tiling_grid(
+        0,
+        0,
+        len(list_epipolar_points_cloud_with_loc),
+        len(list_epipolar_points_cloud_with_loc),
+        1,
+        len(list_epipolar_points_cloud_with_loc),
+    )
+    # Add to replace list so tiles will be readable at the same time
+    [saving_info_pc] = cars_orchestrator.get_saving_infos(
+        [list_corresp_cars_ds]
+    )
+    cars_orchestrator.add_to_replace_lists(
+        list_corresp_cars_ds, cars_ds_name="epi_pc_corresp"
     )
 
-    # Convert the bounds of the terrain tile into shapely polygon
-    # region: [xmin, ymin, xmax, ymax],
-    # convert_to_polygon needs : [xmin, xmax, ymin, ymax]
+    for row_fake_cars_ds in range(list_corresp_cars_ds.shape[0]):
+        # Update saving info for row and col
+        full_saving_info_pc = ocht.update_saving_infos(
+            saving_info_pc, row=row_fake_cars_ds, col=0
+        )
 
-    terrain_tile_polygon = convert_to_polygon(
-        [
-            region_with_margin[0],
-            region_with_margin[2],
-            region_with_margin[1],
-            region_with_margin[3],
-        ]
+        list_corresp_cars_ds[
+            row_fake_cars_ds, 0
+        ] = cars_orchestrator.cluster.create_task(
+            compute_correspondance_single_pc_terrain, nout=1
+        )(
+            list_epipolar_points_cloud_with_loc[row_fake_cars_ds],
+            terrain_tiling_grid,
+            margins=margins,
+            saving_info=full_saving_info_pc,
+        )
+
+    # Breakpoint : compute
+    cars_orchestrator.breakpoint()
+
+    # Create res
+    terrain_correspondances = cars_dataset.CarsDataset("dict")
+    terrain_correspondances.tiling_grid = terrain_tiling_grid
+
+    for row in range(terrain_correspondances.shape[0]):
+        for col in range(terrain_correspondances.shape[1]):
+            # get terrain region
+
+            # Terrain grid [row, j, :] = [xmin, xmax, ymin, ymax]
+            # terrain region = [xmin, ymin, xmax, ymax]
+            terrain_region = [
+                terrain_tiling_grid[row, col, 0],
+                terrain_tiling_grid[row, col, 2],
+                terrain_tiling_grid[row, col, 1],
+                terrain_tiling_grid[row, col, 3],
+            ]
+
+            # Get required_point_clouds_left
+            required_point_clouds = []
+            for correp_row in range(list_corresp_cars_ds.shape[0]):
+                # each tile in list_corresp contains a CarsDict,
+                # containing a CarsDataset filled with list
+                corresp = list_corresp_cars_ds[correp_row, 0].data[
+                    "corresp_cars_ds"
+                ][row, col]
+                required_point_clouds += corresp
+
+            terrain_correspondances[row, col] = {
+                "terrain_region": terrain_region,
+                "required_point_clouds_left": required_point_clouds,
+                "required_point_clouds_right": [],
+            }
+
+    return terrain_correspondances
+
+
+def compute_correspondance_single_pc_terrain(
+    epi_pc,
+    terrain_tiling_grid,
+    margins=0,
+    saving_info=None,
+):
+    """
+    Compute correspondances for each terrain tile, with current point cloud
+
+    :param epi_pc: point cloud
+    :type epi_pc: dict
+    :param terrain_tiling_grid: tiling grid
+    :type terrain_tiling_grid: np.ndarray
+    :param margins: margin to use in point clouds
+    :type margins: float
+
+    :return: CarsDict containing list of point cloud tiles to use for each
+         terrain tile:
+
+    :rtype: CarsDict
+
+    """
+
+    # Create fake CarsDataset only for 2d structure
+    terrain_corresp = cars_dataset.CarsDataset("dict")
+    terrain_corresp.tiling_grid = terrain_tiling_grid
+
+    for terrain_row in range(terrain_corresp.shape[0]):
+        for terrain_col in range(terrain_corresp.shape[1]):
+            # Initialisae to empty list
+            terrain_corresp[terrain_row, terrain_col] = []
+
+            # Terrain grid [row, j, :] = [xmin, xmax, ymin, ymax]
+            # terrain region = [xmin, ymin, xmax, ymax]
+            terrain_region = [
+                terrain_tiling_grid[terrain_row, terrain_col, 0],
+                terrain_tiling_grid[terrain_row, terrain_col, 2],
+                terrain_tiling_grid[terrain_row, terrain_col, 1],
+                terrain_tiling_grid[terrain_row, terrain_col, 3],
+            ]
+
+            region_with_margin = list(
+                np.array(terrain_region)
+                + np.array([-margins, margins, -margins, margins])
+            )
+
+            # Convert the bounds of the terrain tile into shapely polygon
+            # region: [xmin, ymin, xmax, ymax],
+            # convert_to_polygon needs : [xmin, xmax, ymin, ymax]
+
+            terrain_tile_polygon = convert_to_polygon(
+                [
+                    region_with_margin[0],
+                    region_with_margin[2],
+                    region_with_margin[1],
+                    region_with_margin[3],
+                ]
+            )
+
+            for tile_row in range(epi_pc.shape[0]):
+                for tile_col in range(epi_pc.shape[1]):
+                    x_y_min_max = epi_pc[tile_row, tile_col]["x_y_min_max"]
+
+                    # Convert the bounds of the point cloud tile into
+                    #  shapely point
+                    if any(np.isnan(x_y_min_max)):
+                        continue
+                    point_cloud_tile_polygon = convert_to_polygon(x_y_min_max)
+
+                    if intersect_polygons(
+                        terrain_tile_polygon, point_cloud_tile_polygon
+                    ):
+                        # add to required
+                        terrain_corresp[terrain_row, terrain_col].append(
+                            epi_pc[tile_row, tile_col]
+                        )
+
+    # add saving infos
+    dict_with_corresp_cars_ds = cars_dict.CarsDict(
+        {"corresp_cars_ds": terrain_corresp}
     )
+    cars_dataset.fill_dict(dict_with_corresp_cars_ds, saving_info=saving_info)
 
-    required_point_clouds_left = []
-    required_point_clouds_right = []
-
-    for epi_pc in list_epipolar_points_cloud_left_with_loc:
-        for tile_row in range(epi_pc.shape[0]):
-            for tile_col in range(epi_pc.shape[1]):
-                x_y_min_max = epi_pc[tile_row, tile_col]["x_y_min_max"]
-
-                # Convert the bounds of the point cloud tile into shapely point
-                if any(np.isnan(x_y_min_max)):
-                    continue
-                point_cloud_tile_polygon = convert_to_polygon(x_y_min_max)
-
-                if intersect_polygons(
-                    terrain_tile_polygon, point_cloud_tile_polygon
-                ):
-                    # add to required
-                    required_point_clouds_left.append(
-                        epi_pc[tile_row, tile_col]
-                    )
-    return (
-        terrain_region,
-        required_point_clouds_left,
-        required_point_clouds_right,
-    )
+    return dict_with_corresp_cars_ds

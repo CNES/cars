@@ -312,6 +312,18 @@ class MappingToTerrainTiles(
                 )
             )
 
+            # Compute corresponing tiles in parallel if from tif files
+            # list_epipolar_points_cloud_right is empty
+            if list_epipolar_points_cloud_left[0].dataset_type == "dict":
+                corresponding_tiles_cars_ds = (
+                    pc_tif_tools.get_tiles_corresponding_tiles_tif(
+                        terrain_tiling_grid,
+                        list_epipolar_points_cloud_left,
+                        margins=margins,
+                        orchestrator=self.orchestrator,
+                    )
+                )
+
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
                     if list_epipolar_points_cloud_left[0].dataset_type in (
@@ -336,18 +348,19 @@ class MappingToTerrainTiles(
                         )
                     else:
                         # required_point_clouds_right will be empty
-                        # every point cloud is considered as left input
-                        (
-                            terrain_region,
-                            required_point_clouds_left,
-                            required_point_clouds_right,
-                        ) = pc_tif_tools.get_tiles_row_col(
-                            terrain_tiling_grid,
-                            row,
-                            col,
-                            list_epipolar_points_cloud_left,
-                            list_epipolar_points_cloud_right,
-                            margins=margins,
+                        # Get correspondances previously computed
+                        terrain_region = corresponding_tiles_cars_ds[row, col][
+                            "terrain_region"
+                        ]
+                        required_point_clouds_left = (
+                            corresponding_tiles_cars_ds[row, col][
+                                "required_point_clouds_left"
+                            ]
+                        )
+                        required_point_clouds_right = (
+                            corresponding_tiles_cars_ds[row, col][
+                                "required_point_clouds_right"
+                            ]
                         )
 
                     if len(required_point_clouds_left) > 0:

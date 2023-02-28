@@ -717,14 +717,6 @@ def test_end2end_ventoux_unique_split():
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "resolution": 0.5,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "color_no_data": 0,
-            },
         }
 
         input_config_pc["applications"].update(application_config)
@@ -756,6 +748,16 @@ def test_end2end_ventoux_unique_split():
                 },
                 "output": {"out_dir": output_path},
                 "pipeline": "dense_point_clouds_to_dense_dsm",
+                "applications": {
+                    "point_cloud_rasterization": {
+                        "method": "simple_gaussian",
+                        "dsm_radius": 3,
+                        "resolution": 0.5,
+                        "sigma": 0.3,
+                        "dsm_no_data": -999,
+                        "color_no_data": 0,
+                    }
+                },
             }
 
             dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(

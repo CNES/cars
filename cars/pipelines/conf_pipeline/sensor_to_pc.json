@@ -3,12 +3,6 @@
         "triangulation": {
             "method": "line_of_sight_intersection",
             "save_points_cloud": true
-        },
-        "point_cloud_rasterization": {
-            "method": "simple_gaussian",
-            "write_color": false,
-            "write_ambiguity": false,
-            "write_dsm": false
         }
     }
 }
