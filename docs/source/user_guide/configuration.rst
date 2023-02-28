@@ -127,7 +127,87 @@ The structure follows this organisation:
             * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
             * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
-        **ROI**
+            **Epipolar a priori**
+
+            The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+            particularly for the sensor_to_full_resolution_dsm pipeline.
+            The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
+            However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
+            So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
+            that contains the epipolar_a_priori information for each sensor image pairs.
+            The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
+
+            For each sensor images, the epipolar a priori are filled as following:
+
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | Name                  | Description                                                 | Type   | Default value  | Required                         |
+            +=======================+=============================================================+========+================+==================================+
+            | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
+            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+            .. note::
+
+                The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+                The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
+
+        
+
+        .. tab:: Point Clouds inputs
+
+
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | Name                    | Description                                                         | Type                  | Default value        | Required |
+            +=========================+=====================================================================+=======================+======================+==========+
+            | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+            **Point Clouds**
+
+            For each point cloud, give a particular name (what you want):
+
+            .. code-block:: json
+
+                {
+                    "point_clouds": {
+                        "my_name_for_this_point_cloud":
+                        {
+                            "x" : "path_to_x.tif",
+                            "y" : "path_to_y.tif",
+                            "z" : "path_to_z.tif",
+                            "color" : "path_to_color.tif",
+                            "mask": "path_to_mask.tif",
+                            "epsg": "point_cloud_epsg"
+                        }
+                    },
+                    "epsg": 32644
+                }
+
+            These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
+
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | Name        | Description                                           | Type           | Default value | Required |
+            +=============+=======================================================+================+===============+==========+
+            | *x*         | Path to the x coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *y*         | Path to the y coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *z*         | Path to the z coordinates of point cloud              | string         |               | Yes      |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *color*     | Path to the color of point cloud                      | string         |               | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *mask*      | Path to the validity mask of point cloud              | string         |               | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *epsg*      | Epsg code of point cloud                              | int            | 4326          | No       |
+            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+
+        **Region Of Interest (ROI)**
 
         A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
         or a GeoJson dictionnary. These structures must contain a single Polygon.
@@ -194,85 +274,6 @@ The structure follows this organisation:
 
 
 
-
-        **Epipolar a priori**
-
-            The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
-            particularly for the sensor_to_full_resolution_dsm pipeline.
-            The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
-            However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
-            So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
-            that contains the epipolar_a_priori information for each sensor image pairs.
-            The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
-
-            For each sensor images, the epipolar a priori are filled as following:
-
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | Name                  | Description                                                 | Type   | Default value  | Required                         |
-            +=======================+=============================================================+========+================+==================================+
-            | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-
-            .. note::
-
-                The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
-                The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
-
-
-        .. tab:: Point Clouds inputs
-
-
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | Name                    | Description                                                         | Type                  | Default value        | Required |
-            +=========================+=====================================================================+=======================+======================+==========+
-            | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *roi*                   | DSM roi file or bounding box                                        | string, list or tuple | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-
-            **Point Clouds**
-
-            For each point cloud, give a particular name (what you want):
-
-            .. code-block:: json
-
-                {
-                    "point_clouds": {
-                        "my_name_for_this_point_cloud":
-                        {
-                            "x" : "path_to_x.tif",
-                            "y" : "path_to_y.tif",
-                            "z" : "path_to_z.tif",
-                            "color" : "path_to_color.tif",
-                            "mask": "path_to_mask.tif",
-                            "epsg": "point_cloud_epsg"
-                        }
-                    },
-                    "epsg": 32644
-                }
-
-            These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
-
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | Name        | Description                                           | Type           | Default value | Required |
-            +=============+=======================================================+================+===============+==========+
-            | *x*         | Path to the x coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *y*         | Path to the y coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *z*         | Path to the z coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *color*     | Path to the color of point cloud                      | string         |               | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *mask*      | Path to the validity mask of point cloud              | string         |               | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *epsg*      | Epsg code of point cloud                              | int            | 4326          | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
 
    .. tab:: Orchestrator
 

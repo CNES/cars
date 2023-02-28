@@ -744,7 +744,28 @@ def test_end2end_ventoux_unique_split():
                                 epi_pc_path, "epi_pc_color_left.tif"
                             ),
                         }
-                    }
+                    },
+                    "roi": {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                "type": "Feature",
+                                "properties": {},
+                                "geometry": {
+                                    "coordinates": [
+                                        [
+                                            [5.194, 44.2064],
+                                            [5.194, 44.2059],
+                                            [5.195, 44.2059],
+                                            [5.195, 44.2064],
+                                            [5.194, 44.2064],
+                                        ]
+                                    ],
+                                    "type": "Polygon",
+                                },
+                            }
+                        ],
+                    },
                 },
                 "output": {"out_dir": output_path},
                 "pipeline": "dense_point_clouds_to_dense_dsm",

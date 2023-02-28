@@ -22,6 +22,7 @@
 This module contains functions used during the fusion of
 point clouds from .tif files.
 """
+
 # pylint: disable=C0302
 
 # Standard imports

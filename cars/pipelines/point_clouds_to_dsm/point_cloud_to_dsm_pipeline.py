@@ -39,7 +39,7 @@ from cars.applications.application import Application
 from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.conf import log_conf
 from cars.core import constants as cst
-from cars.core import inputs, preprocessing
+from cars.core import inputs, preprocessing, roi_tools
 from cars.core.utils import make_relative_path_absolute
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -56,7 +56,6 @@ from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
 from cars.pipelines.sensor_to_full_resolution_dsm import (
     sensor_full_res_dsm_constants as sens_cst,
 )
-from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
 
 
 @Pipeline.register("dense_point_clouds_to_dense_dsm")
@@ -114,6 +113,14 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         )
         self.used_conf[INPUTS] = self.inputs
 
+        # Get ROI
+        (
+            self.input_roi_poly,
+            self.input_roi_epsg,
+        ) = roi_tools.generate_roi_poly_from_inputs(
+            self.used_conf[INPUTS][sens_cst.ROI]
+        )
+
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
         self.used_conf[OUTPUT] = self.output
@@ -157,7 +164,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         inputs_schema = {
             pc_cst.POINT_CLOUDS: dict,
             sens_cst.EPSG: Or(int, None),
-            sens_cst.ROI: Or(str, list, tuple, None),
+            sens_cst.ROI: Or(str, dict, None),
         }
 
         checker_inputs = Checker(inputs_schema)
@@ -224,9 +231,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 "path of config file was not given,"
                 "relative path are not transformed to absolute paths"
             )
-
-        # Check roi
-        sensors_inputs.check_roi(overloaded_conf[sens_cst.ROI])
 
         return overloaded_conf
 
@@ -349,7 +353,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 )
             # Compute roi polygon, in input EPSG
             roi_poly = preprocessing.compute_roi_poly(
-                self.inputs[sens_cst.ROI], epsg
+                self.input_roi_poly, self.input_roi_epsg, epsg
             )
 
             # compute terrain bounds and transform point clouds
