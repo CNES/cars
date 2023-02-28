@@ -128,7 +128,7 @@ class SimpleGaussian(
 
         # get rasterization parameter
         overloaded_conf["method"] = conf.get("method", "simple_gaussian")
-        overloaded_conf["dsm_radius"] = conf.get("dsm_radius", 1.0)
+        overloaded_conf["dsm_radius"] = conf.get("dsm_radius", 1)
         overloaded_conf["sigma"] = conf.get("sigma", None)
         overloaded_conf["grid_points_division_factor"] = conf.get(
             "grid_points_division_factor", None
@@ -554,9 +554,6 @@ class SimpleGaussian(
                             dsm_no_data=self.dsm_no_data,
                             color_no_data=self.color_no_data,
                             msk_no_data=self.msk_no_data,
-                            grid_points_division_factor=(
-                                self.grid_points_division_factor
-                            ),
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?
@@ -585,7 +582,6 @@ def rasterization_wrapper(
     dsm_no_data: int = np.nan,
     color_no_data: int = np.nan,
     msk_no_data: int = 65535,
-    grid_points_division_factor: int = None,
 ):
     """
     Wrapper for rasterization step :
@@ -612,11 +608,6 @@ def rasterization_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
-    :param grid_points_division_factor: number of blocks to use to divide
-        the grid points (memory optimization, reduce the highest memory peak).
-        If it is not set, the factor is automatically set to construct
-        700000 points blocks.
-
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
     """
@@ -648,7 +639,6 @@ def rasterization_wrapper(
         dsm_no_data=dsm_no_data,
         color_no_data=color_no_data,
         msk_no_data=msk_no_data,
-        grid_points_division_factor=grid_points_division_factor,
         list_computed_layers=list_computed_layers,
     )
 
