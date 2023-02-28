@@ -37,7 +37,7 @@ from cars.applications.application import Application
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.conf import log_conf
-from cars.core import preprocessing
+from cars.core import preprocessing, roi_tools
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -118,6 +118,14 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
         self.used_conf[INPUTS] = self.inputs
+
+        # Get ROI
+        (
+            self.input_roi_poly,
+            self.input_roi_epsg,
+        ) = roi_tools.generate_roi_poly_from_inputs(
+            self.used_conf[INPUTS][sens_cst.ROI]
+        )
 
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
@@ -283,7 +291,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             if epsg is not None:
                 # Compute roi polygon, in input EPSG
                 roi_poly = preprocessing.compute_roi_poly(
-                    self.inputs[sens_cst.ROI], epsg
+                    self.input_roi_poly, self.input_roi_epsg, epsg
                 )
 
             list_terrain_roi = []
@@ -430,7 +438,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
                     )
                     # Compute roi polygon, in input EPSG
                     roi_poly = preprocessing.compute_roi_poly(
-                        self.inputs[sens_cst.ROI], epsg
+                        self.input_roi_poly, self.input_roi_epsg, epsg
                     )
 
                 # Run epipolar resampling

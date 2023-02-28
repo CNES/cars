@@ -39,11 +39,12 @@ from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 import pyproj
 import pytest
 import rasterio
-from shapely.geometry import Polygon
 from shapely.ops import transform
 
-# CARS imports
 from cars.conf.input_parameters import read_input_parameters
+
+# CARS imports
+from cars.core import roi_tools
 from cars.pipelines.sensor_to_full_resolution_dsm import (
     sensor_to_full_resolution_dsm_pipeline as pipeline_full_res,
 )
@@ -1288,9 +1289,29 @@ def test_compute_dsm_with_roi_ventoux():
         input_config_full_res["inputs"]["epsg"] = final_epsg
 
         # Update roi
-        roi = [5.194, 44.2059, 5.195, 44.2064]
-        roi_epsg = 4326
-        input_config_full_res["inputs"]["roi"] = (roi, roi_epsg)
+        roi_geo_json = {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [5.194, 44.2064],
+                                [5.194, 44.2059],
+                                [5.195, 44.2059],
+                                [5.195, 44.2064],
+                                [5.194, 44.2064],
+                            ]
+                        ],
+                        "type": "Polygon",
+                    },
+                }
+            ],
+        }
+
+        input_config_full_res["inputs"]["roi"] = roi_geo_json
 
         full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
             input_config_full_res
@@ -1323,16 +1344,8 @@ def test_compute_dsm_with_roi_ventoux():
 
         # check final bounding box
         # create reference
-        [roi_xmin, roi_ymin, roi_xmax, roi_ymax] = roi
-        roi_poly = Polygon(
-            [
-                (roi_xmin, roi_ymin),
-                (roi_xmax, roi_ymin),
-                (roi_xmax, roi_ymax),
-                (roi_xmin, roi_ymax),
-                (roi_xmin, roi_ymin),
-            ]
-        )
+        # Transform to shapely polygon, epsg
+        roi_poly, roi_epsg = roi_tools.geojson_to_shapely(roi_geo_json)
 
         project = pyproj.Transformer.from_proj(
             pyproj.Proj(init="epsg:{}".format(roi_epsg)),

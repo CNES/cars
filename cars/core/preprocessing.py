@@ -315,12 +315,14 @@ def compute_terrain_bbox(  # noqa: 751
     return (terrain_bounding_box, epipolar_average_tile_width)
 
 
-def compute_roi_poly(input_roi, epsg):
+def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
     """
     Compute roi polygon from input roi
 
-    :param input_roi: [bounds], roi_epsg
-    :type input_roi:  list[int, int, int ,int], str
+    :param input_roi_poly: roi polygon
+    :type input_roi_poly:  shapely Polygon
+    :param input_roi_epsg: epsg of roi
+    :type input_roi_epsg: str
     :param epsg: epsg to use
     :type epsg: str
 
@@ -329,25 +331,13 @@ def compute_roi_poly(input_roi, epsg):
 
     """
 
-    # Create roi poly when given
-    roi_poly = None
-    roi_epsg = None
-    if input_roi is not None:
-        (roi_xmin, roi_ymin, roi_xmax, roi_ymax), roi_epsg = input_roi
-        roi_poly = Polygon(
-            [
-                (roi_xmin, roi_ymin),
-                (roi_xmax, roi_ymin),
-                (roi_xmax, roi_ymax),
-                (roi_xmin, roi_ymax),
-                (roi_xmin, roi_ymin),
-            ]
-        )
+    roi_poly = input_roi_poly
 
-    if roi_epsg is not None:
-        if roi_epsg != epsg:
-            roi_poly = projection.polygon_projection(roi_poly, roi_epsg, epsg)
-            roi_epsg = epsg
+    if input_roi_poly is not None:
+        if input_roi_epsg != epsg:
+            roi_poly = projection.polygon_projection(
+                roi_poly, input_roi_epsg, epsg
+            )
 
     return roi_poly
 

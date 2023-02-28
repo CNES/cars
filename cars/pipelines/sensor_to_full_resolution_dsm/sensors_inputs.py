@@ -25,9 +25,7 @@ Used for full_res and low_res pipelines
 
 import logging
 import os
-from typing import List, Tuple
 
-import fiona
 import rasterio as rio
 from json_checker import Checker, Or
 
@@ -98,7 +96,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, None),
         sens_cst.DEFAULT_ALT: int,
-        sens_cst.ROI: Or(str, list, tuple, None),
+        sens_cst.ROI: Or(str, dict, None),
         sens_cst.CHECK_INPUTS: bool,
         sens_cst.GEOID: Or(None, str),
     }
@@ -190,20 +188,6 @@ def sensors_check_inputs(  # noqa: C901
             "relative path are not transformed to absolute paths"
         )
 
-    # Transform ROI if needed
-    # ROI can be list of 4 floats + epsg code, or file
-    #
-
-    if isinstance(overloaded_conf[sens_cst.ROI], str):
-        # Parse file and transform to roi box
-
-        overloaded_conf[sens_cst.ROI] = parse_roi_file(
-            overloaded_conf[sens_cst.ROI]
-        )
-
-    # Check roi
-    check_roi(overloaded_conf[sens_cst.ROI])
-
     if not overloaded_conf[sens_cst.CHECK_INPUTS]:
         logging.info(
             "The inputs consistency will not be checked. "
@@ -280,29 +264,6 @@ def validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar):
         )
 
 
-def check_roi(roi):
-    """
-    Check roi given
-
-    :param roi: roi : [bbox], epsg
-    :type roi: tuple(list, str)
-    """
-
-    if roi is not None:
-        roi_bbox, roi_epsg = roi
-
-        # TODO check roi, and if epsg is valid
-        if len(roi_bbox) != 4:
-            raise RuntimeError(
-                "Roid bounding box doesn't have the right format"
-            )
-        if roi_epsg is not None:
-            try:
-                _ = fiona.crs.from_epsg(4326)
-            except AttributeError as error:
-                logging.error("ROI EPSG code {} not readable".format(error))
-
-
 def check_srtm(srtm_dir):
     """
     Check srtm data
@@ -332,58 +293,6 @@ def check_srtm(srtm_dir):
             pass
     else:
         logging.info("The default altitude will be used as reference altitude.")
-
-
-def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
-    """
-    Parse ROI file argument and generate bounding box
-
-
-    :param arg_roi_file : ROI file argument
-    :return: ROI Bounding box + EPSG code : xmin, ymin, xmax, ymax, epsg_code
-    :rtype: Tuple with array of 4 floats and int
-    """
-
-    # Declare output
-    roi = None
-
-    _, extension = os.path.splitext(arg_roi_file)
-
-    # test file existence
-    if not os.path.exists(arg_roi_file):
-        logging.error("File {} does not exist".format(arg_roi_file))
-    else:
-        # if it is a vector file
-        if extension in [".gpkg", ".shp", ".kml"]:
-            roi_poly, roi_epsg = inputs.read_vector(arg_roi_file)
-            roi = (roi_poly.bounds, roi_epsg)
-
-        # if not, it is an image
-        elif inputs.rasterio_can_open(arg_roi_file):
-            data = rio.open(arg_roi_file)
-            xmin = min(data.bounds.left, data.bounds.right)
-            ymin = min(data.bounds.bottom, data.bounds.top)
-            xmax = max(data.bounds.left, data.bounds.right)
-            ymax = max(data.bounds.bottom, data.bounds.top)
-
-            try:
-                roi_epsg = data.crs.to_epsg()
-                roi = ([xmin, ymin, xmax, ymax], roi_epsg)
-            except AttributeError as error:
-                logging.error("ROI EPSG code {} not readable".format(error))
-                raise AttributeError(
-                    "ROI EPSG code {} not readable".format(error)
-                ) from error
-
-        else:
-            logging.error(
-                "ROI file {} has an unsupported format".format(arg_roi_file)
-            )
-            raise AttributeError(
-                "ROI file {} has an unsupported format".format(arg_roi_file)
-            )
-
-    return roi
 
 
 def check_input_data(image, color):
