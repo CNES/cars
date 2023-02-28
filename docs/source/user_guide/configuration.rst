@@ -1,4 +1,3 @@
-
 .. _configuration:
 
 =============
@@ -87,7 +86,7 @@ The structure follows this organisation:
 
     **ROI**
 
-    A terrain ROI can be provided by user. It can be eather a vector file (Shapefile for instance) path,
+    A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
     or a GeoJson dictionnary. These structures must contain a single Polygon.
 
     .. code-block:: json
@@ -121,7 +120,7 @@ The structure follows this organisation:
 
     .. note::
 
-        By default epsg 4326 is used. If user defined Polygon in another epsg, "crs" must be specified.
+        By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
 
         .. code-block:: json
 
