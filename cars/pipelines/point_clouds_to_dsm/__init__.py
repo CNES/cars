@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS sensor_to_full_resolution_dsm pipeline module init file
+CARS sensor_to_dense_dsm pipeline module init file
 """
 
 # Cars imports

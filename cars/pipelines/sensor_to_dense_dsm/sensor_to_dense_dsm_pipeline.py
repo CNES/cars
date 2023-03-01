@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS sensor_to_full_resolution_dsm pipeline class file
+CARS sensors_to_dense_dsm pipeline class file
 """
 
 # Standard imports
@@ -52,17 +52,17 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import dsm_output
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
-from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
+from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 
 @Pipeline.register("sensors_to_dense_dsm", "sensors_to_dense_point_clouds")
-class SensorToFullResolutionDsmPipeline(PipelineTemplate):
+class SensorToDenseDsmPipeline(PipelineTemplate):
     """
-    SensorToFullResolutionDsmPipeline
+    SensorToDenseDsmPipeline
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -87,7 +87,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
 
         # set json pipeline file
         if self.used_conf[PIPELINE] == "sensors_to_dense_dsm":
-            json_conf_file_name = "sensor_to_full_resolution_dsm.json"
+            json_conf_file_name = "sensor_to_dense_dsm.json"
         else:
             json_conf_file_name = "sensor_to_pc.json"
 
@@ -174,7 +174,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return dsm_output.full_res_dsm_check_output(conf)
+        return dsm_output.dense_dsm_check_output(conf)
 
     def check_applications(self, conf):
         """
@@ -306,7 +306,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
 
         out_dir = self.output["out_dir"]
 
-        log_conf.add_log_file(out_dir, "sensor_to_full_res_dsm")
+        log_conf.add_log_file(out_dir, "sensor_to_dense_dsm")
 
         # start cars orchestrator
         with orchestrator.Orchestrator(
@@ -320,7 +320,7 @@ class SensorToFullResolutionDsmPipeline(PipelineTemplate):
             cars_orchestrator.update_out_info(
                 {
                     "version": __version__,
-                    "pipeline": "sensor_to_full_resolution_dsm_pipeline",
+                    "pipeline": "sensor_to_dense_dsm_pipeline",
                     "inputs": self.inputs,
                 }
             )

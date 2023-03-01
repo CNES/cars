@@ -24,5 +24,5 @@ CARS pipelines module init file
 
 # Imports needed in order to register pipeline for Pipeline factory
 from . import point_clouds_to_dsm  # noqa: F401
-from . import sensor_to_full_resolution_dsm  # noqa: F401
-from . import sensor_to_low_resolution_dsm  # noqa: F401
+from . import sensor_to_dense_dsm  # noqa: F401
+from . import sensor_to_sparse_dsm  # noqa: F401

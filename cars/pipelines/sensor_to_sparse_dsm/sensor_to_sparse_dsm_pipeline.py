@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS sensor_to_full_resolution_dsm pipeline class file
+CARS sensors_to_sparse_dsm pipeline class file
 """
 
 # Standard imports
@@ -50,20 +50,20 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import dsm_output
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
-from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
+from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Path in cars package (pkg)
 CARS_GEOID_PATH = "geoid/egm96.grd"
 
 
 @Pipeline.register("sensors_to_sparse_dsm")
-class SensorToLowResolutionDsmPipeline(PipelineTemplate):
+class SensorSparseDsmPipeline(PipelineTemplate):
     """
-    SensorToLowResolutionDsmPipeline
+    SensorSparseDsmPipeline
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -88,7 +88,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             package_path,
             "..",
             "conf_pipeline",
-            "sensor_to_low_resolution_dsm.json",
+            "sensor_to_sparse_dsm.json",
         )
         with open(json_file, "r", encoding="utf8") as fstream:
             pipeline_config = json.load(fstream)
@@ -176,7 +176,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
         :return: overloader output
         :rtype: dict
         """
-        return dsm_output.full_res_dsm_check_output(conf)
+        return dsm_output.dense_dsm_check_output(conf)
 
     def check_applications(self, conf):
         """
@@ -513,7 +513,7 @@ class SensorToLowResolutionDsmPipeline(PipelineTemplate):
             # Save the refined full res pipeline configuration
             cars_dataset.save_dict(
                 self.config_full_res,
-                os.path.join(out_dir, "refined_config_full_res.json"),
+                os.path.join(out_dir, "refined_config_dense_dsm.json"),
                 safe_save=True,
             )
             # compute terrain bounds

@@ -19,10 +19,10 @@
 # limitations under the License.
 #
 """
-CARS sensor_to_full_resolution_dsm pipeline module init file
+CARS sensor_to_dense_dsm pipeline module init file
 """
 
 # Cars imports
-from cars.pipelines.sensor_to_full_resolution_dsm import (  # noqa: F401
-    sensor_to_full_resolution_dsm_pipeline,
+from cars.pipelines.sensor_to_dense_dsm import (  # noqa: F401
+    sensor_to_dense_dsm_pipeline,
 )

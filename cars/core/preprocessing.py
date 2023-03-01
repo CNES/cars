@@ -41,8 +41,8 @@ from cars.applications.grid_generation import grids
 from cars.core import former_confs_utils, inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.externals import otb_pipelines
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 PREPROCESSING_TAG = "pair_preprocessing"

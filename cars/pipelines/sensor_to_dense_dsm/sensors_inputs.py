@@ -32,8 +32,8 @@ from json_checker import Checker, Or
 # CARS imports
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)

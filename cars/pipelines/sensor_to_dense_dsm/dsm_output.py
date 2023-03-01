@@ -29,12 +29,12 @@ import os
 from json_checker import Checker
 
 # CARS imports
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sensors_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sensors_cst,
 )
 
 
-def full_res_dsm_check_output(conf):
+def dense_dsm_check_output(conf):
     """
     Check the output given
 

@@ -52,9 +52,9 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_full_resolution_dsm import dsm_output
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import dsm_output
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 
@@ -244,7 +244,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return dsm_output.full_res_dsm_check_output(conf)
+        return dsm_output.dense_dsm_check_output(conf)
 
     def check_applications(self, conf):
         """

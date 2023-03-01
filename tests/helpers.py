@@ -53,7 +53,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.pipelines.sensor_to_full_resolution_dsm import sensors_inputs
+from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Specific values
 # 0 = valid pixels
