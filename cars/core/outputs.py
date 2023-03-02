@@ -31,6 +31,7 @@ import numpy as np
 import pandas
 import rasterio as rio
 import xarray as xr
+from fiona.crs import from_epsg  # pylint: disable=no-name-in-module
 from rasterio.profiles import DefaultGTiffProfile
 from shapely.geometry import mapping
 
@@ -95,7 +96,7 @@ def write_vector(polys, path_to_file, epsg, driver="GPKG"):
     :param epsg: EPSG code of the polygons
     :param driver: vector file type (default format is geopackage)
     """
-    crs = fiona.crs.from_epsg(epsg)  # pylint: disable=c-extension-no-member
+    crs = from_epsg(epsg)  # pylint: disable=c-extension-no-member
     sch = {"geometry": "Polygon", "properties": {"Type": "str:10"}}
 
     with fiona.open(
