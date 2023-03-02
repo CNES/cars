@@ -233,14 +233,17 @@ def compute_vector_raster_and_stats(
     :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
+
+    points = cloud.loc[:, [cst.X, cst.Y]].values.T
+
     # perform rasterization with gaussian interpolation
     clr_bands = [
         band
         for band in cloud
         if str.find(band, cst.POINTS_CLOUD_CLR_KEY_ROOT) >= 0
     ]
-    cloud_band = [cst.X, cst.Y, cst.Z]
-    cloud_band.extend(clr_bands)
+    values_bands = [cst.Z]
+    values_bands.extend(clr_bands)
 
     confidence_index = []
     if substring_in_list(cloud.columns, "confidence_from") and (
@@ -251,11 +254,14 @@ def compute_vector_raster_and_stats(
             for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
                 if key == confidence_name:
                     confidence_index.append(confidence_name)
-                    cloud_band.append(confidence_name)
+                    values_bands.append(confidence_name)
+    values = cloud.loc[:, values_bands].values.T
+    valid = data_valid[np.newaxis, :]
 
-    cloud_values = cloud.loc[:, cloud_band].values.T
     out, mean, stdev, nb_pts_in_disc, nb_pts_in_cell = crasterize.pc_to_dsm(
-        cloud_values,
+        points,
+        values,
+        valid,
         x_start,
         y_start,
         x_size,
