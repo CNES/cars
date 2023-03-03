@@ -28,8 +28,6 @@ TODO: refactor with code source
 # Standard imports
 from __future__ import absolute_import
 
-import logging
-
 # Third party imports
 import numpy as np
 import pandas
@@ -142,6 +140,7 @@ def test_simple_rasterization_single():
         xsize,
         ysize,
     ) = rasterization_tools.compute_xy_starts_and_sizes(resolution, cloud_df)
+
     raster = rasterization_tools.rasterize(
         cloud_df,
         resolution,
@@ -432,17 +431,12 @@ def mask_interp_inputs():  # pylint: disable=redefined-outer-name
 
     data_valid = np.ones((row * col), dtype=bool)
 
-    grid_points = rasterization_tools.compute_grid_points(
-        -0.5, row - 0.5, col, row, resolution
-    )
-
     mask_interp_cloud = {
         cst.ROW: row,
         cst.COL: col,
         cst.RESOLUTION: resolution,
         "cloud": cloud,
         "msk": msk,
-        "grid_points": grid_points,
         cst.POINTS_CLOUD_VALID_DATA: data_valid,
     }
 
@@ -456,7 +450,6 @@ def test_mask_interp_case1(
     """
     case 1 - simple mask all 100 and one 0
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # read fixture inputs and set parameters
     row = mask_interp_inputs[cst.ROW]
@@ -464,36 +457,35 @@ def test_mask_interp_case1(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    grid_points = mask_interp_inputs["grid_points"]
     data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
     undefined_val = 254
-    nodata_val = 255
 
-    # create panda dataframe and search for neighbors
+    # create panda dataframe
     cloud_pd = pandas.DataFrame(
         cloud, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
 
-    (
-        neighbors_id,
-        start_ids,
-        n_count,
-    ) = rasterization_tools.get_flatten_neighbors(
-        grid_points, cloud_pd, radius, resolution, worker_logger
-    )
-
     # test mask_interp function
-    res = rasterization_tools.mask_interp(
-        cloud,
-        data_valid.astype(bool),
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
+    (
+        __,
+        __,
+        __,
+        __,
+        __,
+        res,
+        __,
+    ) = rasterization_tools.compute_vector_raster_and_stats(
+        cloud_pd,
+        data_valid,
+        -0.5,
+        row - 0.5,
+        col,
+        row,
+        resolution,
         sigma,
-        nodata_val,
+        radius,
         undefined_val,
     )
 
@@ -510,7 +502,6 @@ def test_mask_interp_case2(
     """
     case 2 - add several points from a second class aiming the same terrain cell
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # read fixture inputs and set parameters
     row = mask_interp_inputs[cst.ROW]
@@ -518,12 +509,10 @@ def test_mask_interp_case2(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    grid_points = mask_interp_inputs["grid_points"]
     data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
     undefined_val = 254
-    nodata_val = 255
 
     # add several points from a second class aiming the same terrain cell
     tgt_terrain_cell_x_coord = 1
@@ -576,24 +565,25 @@ def test_mask_interp_case2(
         cloud_case2, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
 
-    (
-        neighbors_id,
-        start_ids,
-        n_count,
-    ) = rasterization_tools.get_flatten_neighbors(
-        grid_points, cloud_pd_case2, radius, resolution, worker_logger
-    )
-
     # test mask_interp function
-    res = rasterization_tools.mask_interp(
-        cloud_case2,
+    (
+        __,
+        __,
+        __,
+        __,
+        __,
+        res,
+        __,
+    ) = rasterization_tools.compute_vector_raster_and_stats(
+        cloud_pd_case2,
         data_valid_case2,
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
+        -0.5,
+        row - 0.5,
+        col,
+        row,
+        resolution,
         sigma,
-        nodata_val,
+        radius,
         undefined_val,
     )
 
@@ -614,7 +604,6 @@ def test_mask_interp_case3(
     case 3 - only two points from different classes at the same position in a
     single cell
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # read fixture inputs and set parameters
     row = mask_interp_inputs[cst.ROW]
@@ -622,12 +611,10 @@ def test_mask_interp_case3(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    grid_points = mask_interp_inputs["grid_points"]
     data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
     undefined_val = 254
-    nodata_val = 255
 
     # only two points from different classes at the same position
     # in a single cell
@@ -635,31 +622,32 @@ def test_mask_interp_case3(
     cloud_case3 = np.concatenate((cloud, cloud_case3), axis=0)
 
     cloud_pd_case3 = pandas.DataFrame(
-        cloud_case3, columns=[cst.X, cst.Y, "left_mask"]
+        cloud_case3, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
 
     data_valid_case3 = np.concatenate(
         (data_valid, np.ones((1), dtype=bool)), axis=0
     )
 
-    (
-        neighbors_id,
-        start_ids,
-        n_count,
-    ) = rasterization_tools.get_flatten_neighbors(
-        grid_points, cloud_pd_case3, radius, resolution, worker_logger
-    )
-
     # test mask_interp function
-    res = rasterization_tools.mask_interp(
-        cloud_case3,
+    (
+        __,
+        __,
+        __,
+        __,
+        __,
+        res,
+        __,
+    ) = rasterization_tools.compute_vector_raster_and_stats(
+        cloud_pd_case3,
         data_valid_case3,
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
+        -0.5,
+        row - 0.5,
+        col,
+        row,
+        resolution,
         sigma,
-        nodata_val,
+        radius,
         undefined_val,
     )
 
@@ -679,7 +667,6 @@ def test_mask_interp_case4(
     """
     case 4 - no data cell
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # read fixture inputs and set parameters
     row = mask_interp_inputs[cst.ROW]
@@ -687,12 +674,10 @@ def test_mask_interp_case4(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    grid_points = mask_interp_inputs["grid_points"]
     data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
     undefined_val = 254
-    nodata_val = 255
 
     # no data cell
     cloud_case4 = np.copy(cloud)
@@ -706,29 +691,30 @@ def test_mask_interp_case4(
         cloud_case4, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
 
-    (
-        neighbors_id,
-        start_ids,
-        n_count,
-    ) = rasterization_tools.get_flatten_neighbors(
-        grid_points, cloud_pd_case4, radius, resolution, worker_logger
-    )
-
     # test mask_interp function
-    res = rasterization_tools.mask_interp(
-        cloud_case4,
+    (
+        __,
+        __,
+        __,
+        __,
+        __,
+        res,
+        __,
+    ) = rasterization_tools.compute_vector_raster_and_stats(
+        cloud_pd_case4,
         data_valid_case4,
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
+        -0.5,
+        row - 0.5,
+        col,
+        row,
+        resolution,
         sigma,
-        nodata_val,
+        radius,
         undefined_val,
     )
 
     ref_msk = np.copy(msk)
-    ref_msk[int(cloud[1, 1]), int(cloud[1, 0])] = nodata_val
+    ref_msk[int(cloud[1, 1]), int(cloud[1, 0])] = undefined_val
 
     res = res.reshape((row, col))
     res = res[::-1, :]
@@ -743,7 +729,6 @@ def test_mask_interp_case5(
     """
     case 5 - add several points equal to 0 aiming the same terrain cell
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # read fixture inputs and set parameters
     row = mask_interp_inputs[cst.ROW]
@@ -751,12 +736,10 @@ def test_mask_interp_case5(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    grid_points = mask_interp_inputs["grid_points"]
     data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
     undefined_val = 254
-    nodata_val = 255
 
     # add several points equal to 0 aiming the same terrain cell
     tgt_terrain_cell_x_coord = 1
@@ -809,24 +792,25 @@ def test_mask_interp_case5(
         cloud_case5, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
 
-    (
-        neighbors_id,
-        start_ids,
-        n_count,
-    ) = rasterization_tools.get_flatten_neighbors(
-        grid_points, cloud_pd_case5, radius, resolution, worker_logger
-    )
-
     # test mask_interp function
-    res = rasterization_tools.mask_interp(
-        cloud_case5,
+    (
+        __,
+        __,
+        __,
+        __,
+        __,
+        res,
+        __,
+    ) = rasterization_tools.compute_vector_raster_and_stats(
+        cloud_pd_case5,
         data_valid_case5,
-        neighbors_id,
-        start_ids,
-        n_count,
-        grid_points,
+        -0.5,
+        row - 0.5,
+        col,
+        row,
+        resolution,
         sigma,
-        nodata_val,
+        radius,
         undefined_val,
     )
 

@@ -190,7 +190,7 @@ def compute_values_1d(
 
 def compute_vector_raster_and_stats(
     cloud: pandas.DataFrame,
-    data_valid: np.ndarray,  # pylint: disable=W0613
+    data_valid: np.ndarray,
     x_start: float,
     y_start: float,
     x_size: int,
@@ -198,8 +198,7 @@ def compute_vector_raster_and_stats(
     resolution: float,
     sigma: float,
     radius: int,
-    msk_no_data: int,  # pylint: disable=W0613
-    worker_logger: logging.Logger,  # pylint: disable=W0613
+    msk_no_data: int,
     list_computed_layers: List[str] = None,
 ) -> Tuple[
     np.ndarray,
@@ -229,23 +228,31 @@ def compute_vector_raster_and_stats(
     :param sigma: Sigma for gaussian interpolation. If None, set to resolution
     :param radius: Radius for hole filling.
     :param msk_no_data: No data value to use for the rasterized mask
-    :param worker_logger: Logger
     :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
 
+    # get points corresponding to (X, Y positions) + data_valid
     points = cloud.loc[:, [cst.X, cst.Y]].values.T
+    valid = data_valid[np.newaxis, :]
+    nb_points = points.shape[1]
 
-    # perform rasterization with gaussian interpolation
+    # create values: 1. altitudes and colors, 2. confidences, 3. masks
+    # split_indexes allows to keep indexes separating values
+    split_indexes = []
+
+    # 1. altitudes and colors
+    values_bands = [cst.Z] if cst.Z in cloud else []
     clr_bands = [
         band
         for band in cloud
         if str.find(band, cst.POINTS_CLOUD_CLR_KEY_ROOT) >= 0
     ]
-    values_bands = [cst.Z]
     values_bands.extend(clr_bands)
+    split_indexes.append(len(values_bands))
 
-    confidence_index = []
+    # 2. confidences
+    confidences_indexes = []
     if substring_in_list(cloud.columns, "confidence_from") and (
         (list_computed_layers is None)
         or substring_in_list(list_computed_layers, "confidence_from")
@@ -253,10 +260,30 @@ def compute_vector_raster_and_stats(
         for key in cloud.columns:
             for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
                 if key == confidence_name:
-                    confidence_index.append(confidence_name)
+                    confidences_indexes.append(confidence_name)
                     values_bands.append(confidence_name)
-    values = cloud.loc[:, values_bands].values.T
-    valid = data_valid[np.newaxis, :]
+    split_indexes.append(len(confidences_indexes))
+
+    # 3. masks
+    mask_values = []
+    multiband_mask = np.empty((0, nb_points))
+
+    if cst.POINTS_CLOUD_MSK in cloud.columns and (
+        (list_computed_layers is None)
+        or substring_in_list(list_computed_layers, "msk")
+    ):
+        multiclass_mask = cloud.loc[:, [cst.POINTS_CLOUD_MSK]].values.T
+        mask_values = np.unique(multiclass_mask)
+        multiband_mask = np.vstack(
+            [multiclass_mask == value for value in mask_values]
+        )
+
+    values = (
+        cloud.loc[:, values_bands].values.T
+        if len(values_bands) > 0
+        else np.empty((0, nb_points))
+    )
+    values = np.vstack((values, multiband_mask))
 
     out, mean, stdev, nb_pts_in_disc, nb_pts_in_cell = crasterize.pc_to_dsm(
         points,
@@ -271,14 +298,27 @@ def compute_vector_raster_and_stats(
         sigma,
     )
 
+    # pylint: disable=W0632
+    out, confidences, masks = np.split(out, np.cumsum(split_indexes), axis=-1)
+
     confidences_out = None
-    if len(confidence_index) > 0:
-        confidences = out[..., -len(confidence_index) :]
-        out = out[..., : -len(confidence_index)]
-        confidences = confidences.reshape((len(confidence_index), -1))
+    if len(confidences_indexes) > 0:
         confidences_out = {}
-        for k, key in enumerate(confidence_index):
-            confidences_out[key] = confidences[k]
+        for k, key in enumerate(confidences_indexes):
+            confidences_out[key] = confidences[..., k]
+
+    msk = None
+    if len(mask_values) > 0:
+        zero_class_idx = np.where(mask_values == 0)
+        masks[..., zero_class_idx] /= 100
+        maxweights = np.repeat(
+            np.amax(masks, axis=-1)[..., np.newaxis], masks.shape[-1], axis=2
+        )
+
+        undefined_vals = np.sum((maxweights == masks).astype(int), axis=-1) != 1
+
+        msk = mask_values[np.argmax(masks, axis=-1)]
+        msk = (1 - undefined_vals) * msk + undefined_vals * msk_no_data
 
     return (
         out,
@@ -286,7 +326,7 @@ def compute_vector_raster_and_stats(
         stdev,
         nb_pts_in_disc,
         nb_pts_in_cell,
-        None,
+        msk,
         confidences_out,
     )
 
@@ -468,7 +508,6 @@ def rasterize(
         sigma,
         radius,
         msk_no_data,
-        worker_logger,
         list_computed_layers,
     )
 
