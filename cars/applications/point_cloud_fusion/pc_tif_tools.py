@@ -170,7 +170,7 @@ def get_min_max_band(
         for all the input clouds
     :type epsg_utm: integer
     :param window: specify a region to open inside the image
-    :type window: an array of integer (ex: [col_off, row_off, width, height])
+    :type window: rasterio window
     :return: an array that contains [xmin, xmax, ymin, ymax] and the code epsg
         in which
     the points cloud is projected
@@ -401,7 +401,7 @@ def transform_input_pc(
     Create tiles, with x y min max informations.
 
     :param list_epipolar_points_cloud: list of epipolar point clouds
-    :type list_epipolar_points_cloud: list(dict)
+    :type list_epipolar_points_cloud: dict
     :param epsg: epsg
     :type epsg: int, str
     :param roi_poly: roi polygon

@@ -27,7 +27,6 @@ import copy
 
 # Standard imports
 import logging
-import os
 import time
 
 import numpy as np
@@ -260,30 +259,12 @@ class Statistical(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-            # Create CarsDataset
-            filtered_point_cloud = cars_dataset.CarsDataset("points")
-
-            # Get tiling grid
-            filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
-            filtered_point_cloud.generate_none_tiles()
-            filtered_point_cloud.attributes = (
-                merged_points_cloud.attributes.copy()
+            (filtered_point_cloud) = self.__register_dataset__(
+                merged_points_cloud,
+                self.save_points_cloud_as_laz,
+                self.save_points_cloud_as_csv,
+                app_name="statistical",
             )
-
-            # Save objects
-            if self.save_points_cloud_as_laz or self.save_points_cloud_as_csv:
-                # Points cloud file name
-                # TODO in input conf file
-                pc_file_name = os.path.join(
-                    self.orchestrator.out_dir,
-                    "points_cloud_post_statistical_removing",
-                )
-                self.orchestrator.add_to_save_lists(
-                    pc_file_name,
-                    None,
-                    filtered_point_cloud,
-                    cars_ds_name="filtered_merged_pc_statistical",
-                )
 
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(

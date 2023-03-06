@@ -92,6 +92,14 @@ def test_end2end_gizeh_rectangle_epi_image():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -338,6 +346,14 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -568,6 +584,14 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -648,6 +672,14 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -770,6 +802,14 @@ def test_end2end_ventoux_unique_split():
                 "output": {"out_dir": output_path},
                 "pipeline": "dense_point_clouds_to_dense_dsm",
                 "applications": {
+                    "point_cloud_outliers_removing.1": {
+                        "method": "small_components",
+                        "activated": True,
+                    },
+                    "point_cloud_outliers_removing.2": {
+                        "method": "statistical",
+                        "activated": True,
+                    },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "dsm_radius": 3,
@@ -777,7 +817,7 @@ def test_end2end_ventoux_unique_split():
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
-                    }
+                    },
                 },
             }
 
@@ -991,6 +1031,14 @@ def test_end2end_use_epipolar_a_prior():
             "applications"
         ]
         dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1276,11 +1324,13 @@ def test_end2end_ventoux_with_color():
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
+                "activated": True,
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
+                "activated": True,
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
             },
@@ -1411,6 +1461,14 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1545,6 +1603,14 @@ def test_compute_dsm_with_snap_to_img1():
                 "method": "line_of_sight_intersection",
                 "snap_to_img1": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1627,6 +1693,14 @@ def test_end2end_quality_stats():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1781,6 +1855,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "line_of_sight_intersection",
                 "use_geoid_alt": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1879,6 +1961,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "line_of_sight_intersection",
                 "use_geoid_alt": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1951,6 +2041,14 @@ def test_end2end_paca_with_mask():
                 "disparity_margin": 0.25,
                 "save_matches": True,
                 "minimum_nb_matches": 10,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -2030,6 +2128,14 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -2115,6 +2221,14 @@ def desactivated_test_end2end_disparity_filing():
             "dense_matches_filling": {
                 "method": "plane",
                 "save_disparity_map": True,
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
                 "activated": True,
             },
             "point_cloud_rasterization": {

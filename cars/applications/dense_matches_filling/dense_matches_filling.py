@@ -168,6 +168,7 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_disparity_map_right,
         save_disparity_map,
         pair_folder,
+        app_name=None,
     ):
         """
         Create dataset and registered the output in the orchestrator
@@ -176,8 +177,17 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         :type epipolar_disparity_map_left: CarsDataset
         :param epipolar_disparity_map_right:  right disparity
         :type epipolar_disparity_map_right: CarsDataset
+        :param save_disparity_map: true if save disparity map
+        :type save_disparity_map: bool
+        :param pair_folder: path to folder
+        :type pair_folder: str
+        :param app_name: application name for file names
+        :type app_name: str
 
         """
+        if app_name is None:
+            app_name = ""
+
         # Create CarsDataset Epipolar_disparity
         new_epipolar_disparity_map_left = cars_dataset.CarsDataset("arrays")
         new_epipolar_disparity_map_left.create_empty_copy(
@@ -197,63 +207,85 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         # Save disparity maps
         if save_disparity_map:
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_filled_left.tif"),
+                os.path.join(
+                    pair_folder, "epi_disp_" + app_name + "_filled_left.tif"
+                ),
                 cst_disp.MAP,
                 new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_filled_left",
+                cars_ds_name="epi_disp_" + app_name + "_filled_left",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_filled_right.tif"),
+                os.path.join(
+                    pair_folder, "epi_disp_" + app_name + "_filled_right.tif"
+                ),
                 cst_disp.MAP,
                 new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_filled_right",
+                cars_ds_name="epi_disp_" + app_name + "_filled_right",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_color_filled_left.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_disp_color_" + app_name + "_filled_left.tif",
+                ),
                 cst.EPI_COLOR,
                 new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_color_filled_left",
+                cars_ds_name="epi_disp_color_" + app_name + "_filled_left",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_color_filled_right.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_disp_color_" + app_name + "_filled_right.tif",
+                ),
                 cst.EPI_COLOR,
                 new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_color_filled_right",
+                cars_ds_name="epi_disp_color_" + app_name + "_filled_right",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_mask_filled_left.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_disp_mask_" + app_name + "_filled_left.tif",
+                ),
                 cst_disp.VALID,
                 new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_mask_filled_left",
+                cars_ds_name="epi_disp_mask_" + app_name + "_filled_left",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_disp_mask_filled_right.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_disp_mask_" + app_name + "_filled_right.tif",
+                ),
                 cst_disp.VALID,
                 new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_mask_filled_right",
+                cars_ds_name="epi_disp_mask_" + app_name + "_filled_right",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_ambiguity_filled_left.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_ambiguity_" + app_name + "_filled_left.tif",
+                ),
                 cst_disp.CONFIDENCE_FROM_AMBIGUITY,
                 new_epipolar_disparity_map_left,
-                cars_ds_name="epi_ambiguity_filled_left",
+                cars_ds_name="epi_ambiguity_" + app_name + "_filled_left",
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_ambiguity_filled_right.tif"),
+                os.path.join(
+                    pair_folder,
+                    "epi_ambiguity_" + app_name + "_filled_right.tif",
+                ),
                 cst_disp.CONFIDENCE_FROM_AMBIGUITY,
                 new_epipolar_disparity_map_right,
-                cars_ds_name="epi_ambiguity_filled_right",
+                cars_ds_name="epi_ambiguity_" + app_name + "_filled_right",
             )
 
             for _, item in enumerate(cst_disp.DISPARITY_CONFIDENCE):
-                cards_ds_name_left = item + "_filled_left"
+                cards_ds_name_left = item + "_" + app_name + "_filled_left"
                 self.orchestrator.add_to_save_lists(
                     os.path.join(
                         pair_folder,
@@ -263,7 +295,7 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
                     epipolar_disparity_map_left,
                     cars_ds_name=cards_ds_name_left,
                 )
-                cards_ds_name_right = item + "_filled_right"
+                cards_ds_name_right = item + "_" + app_name + "_filled_right"
                 self.orchestrator.add_to_save_lists(
                     os.path.join(
                         pair_folder,
