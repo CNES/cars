@@ -9,5 +9,6 @@ User guide
    overview
    cli
    configuration
+   input_image_preparation
 
 
