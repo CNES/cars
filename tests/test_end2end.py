@@ -904,15 +904,15 @@ def test_end2end_use_epipolar_a_prior():
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
         #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
-        copy2(
-            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
-            absolute_data_path(
-                os.path.join(
-                    "ref_output",
-                    "confidence_from_ambiguity_end2end_ventoux.tif",
-                )
-            ),
-        )
+        # copy2(
+        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_ambiguity_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
