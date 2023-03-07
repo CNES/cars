@@ -68,7 +68,6 @@ The Merge Request will be merged into master after being reviewed by CARS steeri
 * David Youssefi (CNES)
 * Emmanuelle Sarrazin (CNES)
 * Emmanuel Dubois (CNES)
-* Quentin Fardet (CS Group)
 
 Only the members of this committee can merge into master.
 
