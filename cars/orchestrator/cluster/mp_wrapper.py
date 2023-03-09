@@ -36,6 +36,7 @@ import xarray as xr
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
+from cars.orchestrator.cluster.mp_tools import replace_data_rec
 
 # Third party imports
 
@@ -283,8 +284,8 @@ def disk_wrapper_fun(*argv, **kwargs):
     kwargs.pop("tmp_dir")
 
     # load args
-    loaded_argv = load_args(argv)
-    loaded_kwargs = load_kwargs(kwargs)
+    loaded_argv = load_args_or_kwargs(argv)
+    loaded_kwargs = load_args_or_kwargs(kwargs)
 
     # call function
     res = func(*loaded_argv, **loaded_kwargs)
@@ -297,47 +298,31 @@ def disk_wrapper_fun(*argv, **kwargs):
     return to_disk_res
 
 
-def load_args(args):
+def load_args_or_kwargs(args_or_kwargs):
     """
-    Load args from disk to memory
+    Load args or kwargs from disk to memory
 
-    :param argv: args of func
+    :param args_or_kwargs: args or kwargs of func
 
     :return: new args
+
     """
 
-    new_args = []
-    for arg in args:
-        if isinstance(arg, list):
-            list_arg = load_args(arg)
-            new_args.append(list_arg)
+    def transform_path_to_obj(obj):
+        """
+        Transform path to object
 
-        else:
-            if is_dumped_object(arg):
-                new_args.append(load(arg))
-            else:
-                new_args.append(arg)
+        :param obj: object
 
-    return new_args
+        """
+        res = obj
+        if is_dumped_object(obj):
+            res = load(obj)
 
+        return res
 
-def load_kwargs(kwargs):
-    """
-    Load key args from disk to memory
-
-    :param kwargs: keyargs of func
-
-    :return: new kwargs
-    """
-
-    new_kwargs = {}
-    for key in kwargs:
-        if is_dumped_object(kwargs[key]):
-            new_kwargs[key] = load(kwargs[key])
-        else:
-            new_kwargs[key] = kwargs[key]
-
-    return new_kwargs
+    # replace data
+    return replace_data_rec(args_or_kwargs, transform_path_to_obj)
 
 
 def is_dumped_object(obj):

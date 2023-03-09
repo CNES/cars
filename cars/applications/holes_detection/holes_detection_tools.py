@@ -120,7 +120,6 @@ def get_roi_coverage_as_poly_with_margins(
 
 def localize_masked_areas(
     dataset: xr.Dataset,
-    key_id: List[int],
     row_offset: int = 0,
     col_offset: int = 0,
     margin: int = 0,
@@ -132,9 +131,6 @@ def localize_masked_areas(
 
     :param dataset: epipolar image dataset
     :type dataset: CarsDataset
-    :param key_id: label used in mask and specified in
-     "mask_classes" of input .json configuration file
-    :type key_id: List of int
     :param row_offset: offset on row to apply
     :type row_offset: int
     :param col_offset: offset on col to apply
@@ -152,10 +148,8 @@ def localize_masked_areas(
     if "msk" not in dataset:
         logging.error("No mask provided")
         raise RuntimeError("No mask provided")
-    if not isinstance(key_id, list):
-        logging.error("no mask classes provided for DisparityFilling")
-        raise RuntimeError("no mask classes provided for DisparityFilling")
-    msk_values = get_msk_roi_to_fill(dataset["msk"].values, key_id)
+
+    msk_values = dataset["msk"].values
     # Finds roi in msk and stores its localization as polygon list
     bbox = get_roi_coverage_as_poly_with_margins(
         msk_values, row_offset=row_offset, col_offset=col_offset, margin=margin

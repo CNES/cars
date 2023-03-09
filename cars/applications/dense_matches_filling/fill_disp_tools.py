@@ -663,7 +663,7 @@ def get_polygons_from_cars_ds(cars_ds):
         for row in range(cars_ds.shape[0]):
             for col in range(cars_ds.shape[1]):
                 if cars_ds[row, col] is not None:
-                    list_poly += cars_ds[row, col]["list_bbox"]
+                    list_poly += cars_ds[row, col].data["list_bbox"]
 
     return list_poly
 
