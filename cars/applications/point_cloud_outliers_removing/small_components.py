@@ -27,6 +27,7 @@ import copy
 
 # Standard imports
 import logging
+import math
 import time
 
 # Third party imports
@@ -191,7 +192,9 @@ class SmallComponents(
         """
 
         if not self.activated:
-            tile_size = 1000000
+            # if not activated, this tile size must not be taken into acount
+            # during the min(*tile_sizes) operations
+            tile_size = math.inf
         else:
             tot = 10000 * superposing_point_clouds / point_cloud_resolution
 
