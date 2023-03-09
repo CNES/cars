@@ -1,4 +1,4 @@
-#!/usr/bin/env python # pylint: disable=too-many-lines
+#!/usr/bin/env python  pylint: disable=too-many-lines
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -45,11 +45,14 @@ from cars.conf.input_parameters import read_input_parameters
 
 # CARS imports
 from cars.core import roi_tools
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_to_full_resolution_dsm_pipeline as pipeline_full_res,
+from cars.pipelines.point_clouds_to_dsm import (
+    point_cloud_to_dsm_pipeline as pipeline_dsm,
 )
-from cars.pipelines.sensor_to_low_resolution_dsm import (
-    sensor_to_low_resolution_dsm_pipeline as pipeline_low_res,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
+)
+from cars.pipelines.sensor_to_sparse_dsm import (
+    sensor_to_sparse_dsm_pipeline as sensor_to_sparse_dsm,
 )
 
 # CARS Tests imports
@@ -74,11 +77,11 @@ def test_end2end_gizeh_rectangle_epi_image():
             "input/data_gizeh_crop/configfile_crop.json"
         )
 
-        # Run full resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run dense dsm pipeline
+        _, input_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -87,8 +90,16 @@ def test_end2end_gizeh_rectangle_epi_image():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -101,18 +112,18 @@ def test_end2end_gizeh_rectangle_epi_image():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -150,11 +161,11 @@ def test_end2end_ventoux_unique():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -184,14 +195,14 @@ def test_end2end_ventoux_unique():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
+        input_config_sparse_dsm["applications"].update(application_config)
 
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_dsm
         )
-        low_res_pipeline.run()
+        sparse_res_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "content.json")
@@ -233,7 +244,7 @@ def test_end2end_ventoux_unique():
                 ]["matches"]
             )
 
-        # Check used_conf for low res
+        # Check used_conf for sparse res
 
         gt_used_conf_orchestrator = {
             "orchestrator": {
@@ -263,7 +274,7 @@ def test_end2end_ventoux_unique():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -326,15 +337,23 @@ def test_end2end_ventoux_unique():
                 ) is True
 
             # check used_conf reentry
-            _ = pipeline_low_res.SensorToLowResolutionDsmPipeline(used_conf)
+            _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        # full resolution pipeline
-        input_config_full_res = input_config_low_res.copy()
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
-        full_res_applications = {
+        dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -393,18 +412,20 @@ def test_end2end_ventoux_unique():
                 },
             },
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_full_res["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
-        # Check used_conf for full res
+        # Check used_conf for dense dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
         # check used_conf file exists
@@ -416,7 +437,7 @@ def test_end2end_ventoux_unique():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -428,7 +449,7 @@ def test_end2end_ventoux_unique():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = pipeline_full_res.SensorToFullResolutionDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
@@ -522,11 +543,11 @@ def test_end2end_ventoux_unique():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -547,22 +568,30 @@ def test_end2end_ventoux_unique():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
+        input_config_sparse_dsm["applications"].update(application_config)
 
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_dsm
         )
-        low_res_pipeline.run()
+        sparse_res_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        # full resolution pipeline
-        input_config_full_res = input_config_low_res.copy()
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
-        full_res_applications = {
+        dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -573,16 +602,18 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_full_res["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -601,11 +632,11 @@ def test_end2end_ventoux_unique():
     # Test we have the same results with multiprocessing
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_sparse_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -625,22 +656,30 @@ def test_end2end_ventoux_unique():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
+        input_config_sparse_dsm["applications"].update(application_config)
 
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_dsm
         )
-        low_res_pipeline.run()
+        sparse_res_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        # full resolution pipeline
-        input_config_full_res = input_config_low_res.copy()
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
-        full_res_applications = {
+        dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -651,16 +690,18 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_full_res["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -678,22 +719,18 @@ def test_end2end_ventoux_unique():
 
 
 @pytest.mark.end2end_tests
-def test_end2end_use_epipolar_a_prior():
+def test_end2end_ventoux_unique_split():
     """
-    End to end processing low res pipeline
-    and use prepared refined full res conf
-    to compute the full res pipeline
+    End to end processing
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sensors_to_dense_point_clouds pipeline
+        _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_dense_point_clouds",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -714,13 +751,151 @@ def test_end2end_use_epipolar_a_prior():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
-        )
-        low_res_pipeline.run()
+        input_config_pc["applications"].update(application_config)
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_pc
+        )
+        pc_pipeline.run()
+
+        out_dir = input_config_pc["output"]["out_dir"]
+
+        # Create input json for pc to dsm pipeline
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
+            epi_pc_path = os.path.join(out_dir, "left_right")
+            output_path = os.path.join(directory2, "outresults_dsm_from_pc")
+
+            input_dsm_config = {
+                "inputs": {
+                    "point_clouds": {
+                        "one": {
+                            "x": os.path.join(epi_pc_path, "epi_pc_X_left.tif"),
+                            "y": os.path.join(epi_pc_path, "epi_pc_Y_left.tif"),
+                            "z": os.path.join(epi_pc_path, "epi_pc_Z_left.tif"),
+                            "color": os.path.join(
+                                epi_pc_path, "epi_pc_color_left.tif"
+                            ),
+                        }
+                    },
+                    "roi": {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                "type": "Feature",
+                                "properties": {},
+                                "geometry": {
+                                    "coordinates": [
+                                        [
+                                            [5.194, 44.2064],
+                                            [5.194, 44.2059],
+                                            [5.195, 44.2059],
+                                            [5.195, 44.2064],
+                                            [5.194, 44.2064],
+                                        ]
+                                    ],
+                                    "type": "Polygon",
+                                },
+                            }
+                        ],
+                    },
+                },
+                "output": {"out_dir": output_path},
+                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "applications": {
+                    "point_cloud_outliers_removing.1": {
+                        "method": "small_components",
+                        "activated": True,
+                    },
+                    "point_cloud_outliers_removing.2": {
+                        "method": "statistical",
+                        "activated": True,
+                    },
+                    "point_cloud_rasterization": {
+                        "method": "simple_gaussian",
+                        "dsm_radius": 3,
+                        "resolution": 0.5,
+                        "sigma": 0.3,
+                        "dsm_no_data": -999,
+                        "color_no_data": 0,
+                    },
+                },
+            }
+
+            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
+                input_dsm_config
+            )
+            dsm_pipeline.run()
+
+            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+
+            # Uncomment the 2 following instructions to update reference data
+            # copy2(os.path.join(out_dir_dsm, 'dsm.tif'),
+            #     absolute_data_path(
+            #       "ref_output/dsm_end2end_ventoux_split.tif")
+            #  )
+            # copy2(os.path.join(out_dir_dsm, 'clr.tif'),
+            #     absolute_data_path(
+            #       "ref_output/clr_end2end_ventoux_split.tif")
+            # )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "dsm.tif"),
+                absolute_data_path("ref_output/dsm_end2end_ventoux_split.tif"),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "clr.tif"),
+                absolute_data_path("ref_output/clr_end2end_ventoux_split.tif"),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_use_epipolar_a_prior():
+    """
+    End to end processing sparse dsm pipeline
+    and use prepared refined dense dsm pipeline conf
+    to compute the dense dsm pipeline
+    """
+    # Force max RAM to 1000 to get stable tiling in tests
+    os.environ["OTB_MAX_RAM_HINT"] = "1000"
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        # Run sparse dsm pipeline
+        _, input_config_sparse_res = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_sparse_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": True,
+            },
+        }
+
+        input_config_sparse_res["applications"].update(application_config)
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_res
+        )
+        sparse_res_pipeline.run()
+
+        out_dir = input_config_sparse_res["output"]["out_dir"]
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "content.json")
@@ -783,7 +958,7 @@ def test_end2end_use_epipolar_a_prior():
 
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
-        # check refined_config_full_res_json file exists
+        # check refined_config_dense_dsm_json file exists
         assert os.path.isfile(used_conf_path)
 
         with open(used_conf_path, "r", encoding="utf-8") as json_file:
@@ -792,7 +967,7 @@ def test_end2end_use_epipolar_a_prior():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_low_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -804,56 +979,66 @@ def test_end2end_use_epipolar_a_prior():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = pipeline_low_res.SensorToLowResolutionDsmPipeline(used_conf)
+            _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
 
-        refined_config_full_res_json = os.path.join(
-            out_dir, "refined_config_full_res.json"
+        refined_config_dense_dsm_json = os.path.join(
+            out_dir, "refined_config_dense_dsm.json"
         )
-        assert os.path.isfile(refined_config_full_res_json)
+        assert os.path.isfile(refined_config_dense_dsm_json)
         with open(
-            refined_config_full_res_json, "r", encoding="utf-8"
+            refined_config_dense_dsm_json, "r", encoding="utf-8"
         ) as json_file:
-            refined_config_full_res_json = json.load(json_file)
-            # check refined_config_full_res_json inputs conf exists
-            assert "inputs" in refined_config_full_res_json
-            assert "sensors" in refined_config_full_res_json["inputs"]
-            # check refined_config_full_res_json pipeline
+            refined_config_dense_dsm_json = json.load(json_file)
+            # check refined_config_dense_dsm_json inputs conf exists
+            assert "inputs" in refined_config_dense_dsm_json
+            assert "sensors" in refined_config_dense_dsm_json["inputs"]
+            # check refined_config_dense_dsm_json pipeline
             assert (
-                refined_config_full_res_json["pipeline"]
-                == "sensor_to_full_resolution_dsm"
+                refined_config_dense_dsm_json["pipeline"]
+                == "sensors_to_dense_dsm"
             )
-            # check refined_config_full_res_json sparse_matching configuration
+            # check refined_config_dense_dsm_json sparse_matching configuration
             assert (
                 "use_epipolar_a_priori"
-                in refined_config_full_res_json["inputs"]
+                in refined_config_dense_dsm_json["inputs"]
             )
             assert (
-                refined_config_full_res_json["inputs"]["use_epipolar_a_priori"]
+                refined_config_dense_dsm_json["inputs"]["use_epipolar_a_priori"]
                 is True
             )
-            assert "epipolar_a_priori" in refined_config_full_res_json["inputs"]
+            assert (
+                "epipolar_a_priori" in refined_config_dense_dsm_json["inputs"]
+            )
             assert (
                 "grid_correction"
-                in refined_config_full_res_json["inputs"]["epipolar_a_priori"][
+                in refined_config_dense_dsm_json["inputs"]["epipolar_a_priori"][
                     "left_right"
                 ]
             )
             # check if orchestrator conf is the same as gt
             assert (
-                refined_config_full_res_json["orchestrator"]
+                refined_config_dense_dsm_json["orchestrator"]
                 == gt_used_conf_orchestrator["orchestrator"]
             )
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        # full resolution pipeline
-        input_config_full_res = refined_config_full_res_json.copy()
+        # dense dsm pipeline
+        input_config_dense_dsm = refined_config_dense_dsm_json.copy()
         # update applications
-        input_config_full_res["applications"] = input_config_low_res[
+        input_config_dense_dsm["applications"] = input_config_sparse_res[
             "applications"
         ]
-        full_res_applications = {
+        dense_dsm_applications = {
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -864,17 +1049,17 @@ def test_end2end_use_epipolar_a_prior():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_full_res["inputs"]["epsg"] = 32631
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        # Check used_conf for full res
+        # Check used_conf for dense_dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
 
         # check used_conf file exists
@@ -886,7 +1071,7 @@ def test_end2end_use_epipolar_a_prior():
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
             # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensor_to_full_resolution_dsm"
+            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -898,7 +1083,7 @@ def test_end2end_use_epipolar_a_prior():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = pipeline_full_res.SensorToFullResolutionDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
@@ -944,11 +1129,11 @@ def test_prepare_ventoux_bias():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input_bias.json")
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -970,14 +1155,14 @@ def test_prepare_ventoux_bias():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
+        input_config_sparse_res["applications"].update(application_config)
 
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_res
         )
-        low_res_pipeline.run()
+        sparse_res_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["out_dir"]
 
         # Check preproc properties
         out_json = os.path.join(out_dir, "content.json")
@@ -1016,11 +1201,11 @@ def test_end2end_ventoux_with_color():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_color.json"
         )
-        # Run low resolution pipeline
-        _, input_config_low_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensor_to_low_resolution_dsm",
+            "sensors_to_sparse_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1055,14 +1240,14 @@ def test_end2end_ventoux_with_color():
             },
         }
 
-        input_config_low_res["applications"].update(application_config)
+        input_config_sparse_res["applications"].update(application_config)
 
-        low_res_pipeline = pipeline_low_res.SensorToLowResolutionDsmPipeline(
-            input_config_low_res
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_res
         )
-        low_res_pipeline.run()
+        sparse_res_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["out_dir"]
 
         # Check content.json properties
         out_json = os.path.join(out_dir, "content.json")
@@ -1110,14 +1295,14 @@ def test_end2end_ventoux_with_color():
                 )
             ) is True
 
-        # Run full res dsm pipeline
+        # Run dense_dsm dsm pipeline
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
 
-        # full resolution pipeline
-        input_config_full_res = input_config_low_res.copy()
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_res.copy()
         # update applications
-        full_res_applications = {
+        dense_dsm_applications = {
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1139,25 +1324,30 @@ def test_end2end_ventoux_with_color():
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
+                "activated": True,
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
+                "activated": True,
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
             },
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_full_res["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_low_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["out_dir"]
 
         assert (
             os.path.exists(
@@ -1248,11 +1438,11 @@ def test_compute_dsm_with_roi_ventoux():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_color.json"
         )
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1261,7 +1451,7 @@ def test_compute_dsm_with_roi_ventoux():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1271,6 +1461,14 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1282,11 +1480,11 @@ def test_compute_dsm_with_roi_ventoux():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
         # Update roi
         roi_geo_json = {
@@ -1311,14 +1509,14 @@ def test_compute_dsm_with_roi_ventoux():
             ],
         }
 
-        input_config_full_res["inputs"]["roi"] = roi_geo_json
+        input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -1377,11 +1575,11 @@ def test_compute_dsm_with_snap_to_img1():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
 
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1390,7 +1588,7 @@ def test_compute_dsm_with_snap_to_img1():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1405,6 +1603,14 @@ def test_compute_dsm_with_snap_to_img1():
                 "method": "line_of_sight_intersection",
                 "snap_to_img1": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1415,18 +1621,18 @@ def test_compute_dsm_with_snap_to_img1():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -1464,11 +1670,11 @@ def test_end2end_quality_stats():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
 
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1477,7 +1683,7 @@ def test_end2end_quality_stats():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1487,6 +1693,14 @@ def test_end2end_quality_stats():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1499,18 +1713,18 @@ def test_end2end_quality_stats():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Check content.json properties
         out_json = os.path.join(out_dir, "content.json")
@@ -1613,11 +1827,11 @@ def test_end2end_ventoux_egm96_geoid():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
 
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1626,7 +1840,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1641,6 +1855,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "line_of_sight_intersection",
                 "use_geoid_alt": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1652,18 +1874,18 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Check content.json properties
         out_json = os.path.join(out_dir, "content.json")
@@ -1711,11 +1933,11 @@ def test_end2end_ventoux_egm96_geoid():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_without_color.json"
         )
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run dense dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1724,7 +1946,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1739,6 +1961,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "line_of_sight_intersection",
                 "use_geoid_alt": True,
             },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -1750,18 +1980,18 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -1787,11 +2017,11 @@ def test_end2end_paca_with_mask():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_paca/input.json")
 
-        # Run full resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run dense dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1800,7 +2030,7 @@ def test_end2end_paca_with_mask():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1811,6 +2041,14 @@ def test_end2end_paca_with_mask():
                 "disparity_margin": 0.25,
                 "save_matches": True,
                 "minimum_nb_matches": 10,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1824,18 +2062,18 @@ def test_end2end_paca_with_mask():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -1868,11 +2106,11 @@ def test_end2end_paca_with_mask():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_paca/input.json")
 
-        # Run low resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -1880,7 +2118,7 @@ def test_end2end_paca_with_mask():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -1890,6 +2128,14 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1903,18 +2149,18 @@ def test_end2end_paca_with_mask():
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -1953,11 +2199,11 @@ def desactivated_test_end2end_disparity_filing():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
 
-        # Run full resolution pipeline
-        _, input_config_full_res = generate_input_json(
+        # Run dense dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensor_to_full_resolution_dsm",
+            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1966,7 +2212,7 @@ def desactivated_test_end2end_disparity_filing():
             },
         )
         resolution = 0.5
-        full_res_applications = {
+        dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
                 "save_disparity_map": True,
@@ -1975,6 +2221,14 @@ def desactivated_test_end2end_disparity_filing():
             "dense_matches_filling": {
                 "method": "plane",
                 "save_disparity_map": True,
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
                 "activated": True,
             },
             "point_cloud_rasterization": {
@@ -1988,18 +2242,18 @@ def desactivated_test_end2end_disparity_filing():
                 "write_msk": True,
             },
         }
-        input_config_full_res["applications"].update(full_res_applications)
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_full_res["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
 
-        full_res_pipeline = pipeline_full_res.SensorToFullResolutionDsmPipeline(
-            input_config_full_res
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
         )
-        full_res_pipeline.run()
+        dense_dsm_pipeline.run()
 
-        out_dir = input_config_full_res["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),

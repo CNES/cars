@@ -99,10 +99,10 @@ class Pipeline:
             print(pipeline_name)
 
     @classmethod
-    def register(cls, pipeline_name: str):
+    def register(cls, *pipeline_names: str):
         """
         Allows to register the pipeline with its name
-        :param pipeline_name: the pipeline to be registered
+        :param pipeline_name: the pipelines to be registered
         :type pipeline_name: string
         """
 
@@ -112,7 +112,8 @@ class Pipeline:
             :param app: the app class to be registered
             :type app: object
             """
-            cls.available_pipeline[pipeline_name] = app
+            for pipeline_name in pipeline_names:
+                cls.available_pipeline[pipeline_name] = app
             return app
 
         return decorator

@@ -21,6 +21,7 @@
 """
 Preprocessing contains function used in pipelines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 from __future__ import print_function
@@ -40,8 +41,8 @@ from cars.applications.grid_generation import grids
 from cars.core import former_confs_utils, inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.externals import otb_pipelines
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 PREPROCESSING_TAG = "pair_preprocessing"
@@ -475,6 +476,44 @@ def compute_epsg(
     return epsg
 
 
+def crop_terrain_bounds_with_roi(roi_poly, xmin, ymin, xmax, ymax):
+    """
+    Crop current terrain bounds with roi
+
+    :param roi_poly: Polygon of ROI
+    :type roi_poly: Shapely Polygon
+    :param xmin: xmin
+    :type xmin: float
+    :param ymin: ymin
+    :type ymin: float
+    :param xmax: xmax
+    :type xmax: float
+    :param ymax: ymax
+    :type ymax: float
+
+    :return: new xmin, ymin, xmax, ymax
+    :rtype: (float, float, float, float)
+    """
+    # terrain bounding box polygon
+    terrain_poly = Polygon(
+        [
+            (xmin, ymin),
+            (xmax, ymin),
+            (xmax, ymax),
+            (xmin, ymax),
+            (xmin, ymin),
+        ]
+    )
+
+    if not roi_poly.intersects(terrain_poly):
+        raise RuntimeError("None of the input data intersect the requested ROI")
+    # Show ROI if valid (no exception raised) :
+    logging.info("Setting terrain bounding box to the requested ROI")
+    new_xmin, new_ymin, new_xmax, new_ymax = roi_poly.bounds
+
+    return new_xmin, new_ymin, new_xmax, new_ymax
+
+
 def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     """
     Compute Terrain bounds of merged pairs
@@ -504,24 +543,10 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     xmin, ymin, xmax, ymax = tiling.union(list_terrain_bounding_box)
 
     if roi_poly is not None:
-        # terrain bounding box polygon
-        terrain_poly = Polygon(
-            [
-                (xmin, ymin),
-                (xmax, ymin),
-                (xmax, ymax),
-                (xmin, ymax),
-                (xmin, ymin),
-            ]
+        (xmin, ymin, xmax, ymax) = crop_terrain_bounds_with_roi(
+            roi_poly, xmin, ymin, xmax, ymax
         )
 
-        if not roi_poly.intersects(terrain_poly):
-            raise RuntimeError(
-                "None of the input pairs intersect the requested ROI"
-            )
-        # Show ROI if valid (no exception raised) :
-        logging.info("Setting terrain bounding box to the requested ROI")
-        xmin, ymin, xmax, ymax = roi_poly.bounds
         xmin, ymin, xmax, ymax = tiling.snap_to_grid(
             xmin, ymin, xmax, ymax, resolution
         )

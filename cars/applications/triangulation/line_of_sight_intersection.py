@@ -48,8 +48,8 @@ from cars.core import preprocessing, projection, tiling
 from cars.core.geometry import AbstractGeometry, read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 

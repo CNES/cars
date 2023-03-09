@@ -230,6 +230,7 @@ class ZerosPadding(
                     epipolar_disparity_map_right,
                     self.save_disparity_map,
                     pair_folder,
+                    app_name="zeros_padding",
                 )
 
                 # Get saving infos in order to save tiles when they are computed

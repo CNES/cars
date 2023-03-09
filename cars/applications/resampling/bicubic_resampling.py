@@ -45,8 +45,8 @@ from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
-from cars.pipelines.sensor_to_full_resolution_dsm import (
-    sensor_full_res_dsm_constants as sens_cst,
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
 )
 
 
@@ -593,15 +593,11 @@ def generate_epipolar_images_wrapper(
             )
 
         # Add input color type
-        color_types = inputs.rasterio_get_color_type(color1)
-        # Check if each color bands have the same type
-        color_type_set = set(color_types)
-        if len(color_type_set) > 1:
-            logging.warning("The colors bands haven't the same types.")
-        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_types[0]
+        color_type = inputs.rasterio_get_color_type(color1)
+        left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
     else:
-        color_types = inputs.rasterio_get_color_type(img1)
-        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types[0]
+        color_type = inputs.rasterio_get_color_type(img1)
+        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_type
     # Add attributes info
     attributes = {}
 

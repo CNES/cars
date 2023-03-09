@@ -21,12 +21,15 @@
 """
 this module contains the abstract PointsCloudOutlierRemoving application class.
 """
+
 import logging
+import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.data_structures import cars_dataset
 
 
 @Application.register("point_cloud_outliers_removing")
@@ -80,6 +83,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
         super().__init_subclass__(**kwargs)
+        # init orchestrator
+        cls.orchestrator = None
         cls.available_applications[short_name] = cls
 
     def __init__(self, conf=None):
@@ -111,6 +116,79 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :rtype: string
 
         """
+
+    @abstractmethod
+    def get_optimal_tile_size(
+        self,
+        max_ram_per_worker,
+        superposing_point_clouds=1,
+        point_cloud_resolution=0.5,
+    ):
+        """
+        Get the optimal tile size to use, depending on memory available
+
+        :param max_ram_per_worker: maximum ram available
+        :type max_ram_per_worker: int
+        :param superposing_point_clouds: number of point clouds superposing
+        :type superposing_point_clouds: int
+        :param point_cloud_resolution: resolution of point cloud
+        :type point_cloud_resolution: float
+
+        :return: optimal tile size in meter
+        :rtype: float
+
+        """
+
+    def __register_dataset__(
+        self,
+        merged_points_cloud,
+        save_points_cloud_as_laz,
+        save_points_cloud_as_csv,
+        app_name=None,
+    ):
+        """
+        Create dataset and registered the output in the orchestrator
+
+        :param merged_points_cloud:  Merged point cloud
+        :type merged_points_cloud: CarsDataset
+        :param save_points_cloud_as_laz: true if save as laz
+        :type save_points_cloud_as_laz: bool
+        :param save_points_cloud_as_csv: true if save as csv
+        :type save_points_cloud_as_csv: bool
+        :param app_name: application name for file names
+        :type app_name: str
+
+        :return: Filtered point cloud
+        :rtype: CarsDataset
+
+        """
+        if app_name is None:
+            app_name = ""
+
+        # Create CarsDataset
+        filtered_point_cloud = cars_dataset.CarsDataset("points")
+
+        # Get tiling grid
+        filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
+        filtered_point_cloud.generate_none_tiles()
+        filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
+
+        # Save objects
+        if save_points_cloud_as_laz or save_points_cloud_as_csv:
+            # Points cloud file name
+            # TODO in input conf file
+            pc_file_name = os.path.join(
+                self.orchestrator.out_dir,
+                "points_cloud_post_" + app_name + "_removing",
+            )
+            self.orchestrator.add_to_save_lists(
+                pc_file_name,
+                None,
+                filtered_point_cloud,
+                cars_ds_name="filtered_merged_pc_" + app_name,
+            )
+
+        return filtered_point_cloud
 
     @abstractmethod
     def run(

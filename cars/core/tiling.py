@@ -78,7 +78,7 @@ def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
     Transform a 4 layer grid: (N, M, 4) containing [xmin, xmax, ymin, ymax]
     into a 2 layer grid: (N+1, M+1, 2) containing x and y
     defined like : grid[j, i, 0] = min(xmax, xmin + i * xsplit)
-        and grid[j, i, 1] = min(ymax, ymin + j * ysplit)
+    and grid[j, i, 1] = min(ymax, ymin + j * ysplit)
 
     :param tiling_grid: tiling grid
     :type tiling_grid: np.ndarray

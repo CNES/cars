@@ -92,10 +92,21 @@ def rasterio_get_color_type(raster_file: str) -> list:
     Get the color image type
 
     :param raster_file: Image file
-    :return: The number of bands
+    :return: The color type
     """
+
+    color_types = None
     with rio.open(raster_file, "r") as descriptor:
-        return descriptor.dtypes
+        color_types = descriptor.dtypes
+
+    # Check if each color bands have the same type
+    color_type_set = set(color_types)
+    if len(color_type_set) > 1:
+        logging.warning("The colors bands don't the same types.")
+
+    color_type = color_types[0]
+
+    return color_type
 
 
 def rasterio_get_size(raster_file: str) -> Tuple[int, int]:

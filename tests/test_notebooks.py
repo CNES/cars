@@ -36,9 +36,9 @@ from .helpers import cars_path, temporary_dir
 
 
 @pytest.mark.notebook_tests
-def test_sensor_to_full_resolution_dsm_step_by_step():
+def test_sensor_to_dense_dsm_dsm_step_by_step():
     """
-    Sensor to full resolution dsm step by step notebook test:
+    Sensor to dense dsm step by step notebook test:
     notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
     modify show_data matplotlib to be executable by ipython without pause,
     run the notebook with ipython and check return code
@@ -50,7 +50,7 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
             [
                 "jupyter nbconvert "
                 "--to script "
-                "{}/tutorials/sensor_to_full_resolution_dsm_step_by_step.ipynb"
+                "{}/tutorials/sensor_to_dense_dsm_step_by_step.ipynb"
                 " --output-dir {}".format(cars_path(), directory)
             ],
             shell=True,
@@ -78,9 +78,7 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
         )
         # Deactivate matplotlib show data
         for line in fileinput.input(
-            "{}/sensor_to_full_resolution_dsm_step_by_step.py".format(
-                directory
-            ),
+            "{}/sensor_to_dense_dsm_step_by_step.py".format(directory),
             inplace=True,
         ):
             if "show_data(" in line:
@@ -91,9 +89,7 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
         out = subprocess.run(
             [
                 "ipython "
-                "{}/sensor_to_full_resolution_dsm_step_by_step.py".format(
-                    directory
-                )
+                "{}/sensor_to_dense_dsm_step_by_step.py".format(directory)
             ],
             shell=True,
             check=True,
@@ -103,9 +99,9 @@ def test_sensor_to_full_resolution_dsm_step_by_step():
 
 
 @pytest.mark.notebook_tests
-def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
+def test_sensor_to_dense_dsm_matching_methods_comparison():
     """
-    sensor_to_full_resolution_dsm_matching_methods_comparison notebook test:
+    sensor_to_dense_dsm_matching_methods_comparison notebook test:
     notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
     modify show_data matplotlib to be executable by ipython without pause,
     run the notebook with ipython and check return code
@@ -117,7 +113,7 @@ def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
             [
                 "jupyter nbconvert "
                 "--to script "
-                "{}/tutorials/sensor_to_full_resolution"
+                "{}/tutorials/sensor_to_dense"
                 "_dsm_matching_methods_comparison.ipynb"
                 " --output-dir {}".format(cars_path(), directory)
             ],
@@ -146,7 +142,7 @@ def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
         )
         # Deactivate matplotlib show data
         for line in fileinput.input(
-            "{}/sensor_to_full_resolution"
+            "{}/sensor_to_dense"
             "_dsm_matching_methods_comparison.py".format(directory),
             inplace=True,
         ):
@@ -158,7 +154,7 @@ def test_sensor_to_full_resolution_dsm_matching_methods_comparison():
         out = subprocess.run(
             [
                 "ipython "
-                "{}/sensor_to_full_resolution_dsm"
+                "{}/sensor_to_dense_dsm"
                 "_matching_methods_comparison.py".format(directory)
             ],
             shell=True,

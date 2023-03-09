@@ -284,6 +284,7 @@ class PlaneFill(
                     epipolar_disparity_map_right,
                     self.save_disparity_map,
                     pair_folder,
+                    app_name="plane",
                 )
 
                 # Get saving infos in order to save tiles when they are computed
