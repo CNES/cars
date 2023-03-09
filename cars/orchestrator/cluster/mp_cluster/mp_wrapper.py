@@ -36,7 +36,7 @@ import xarray as xr
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
-from cars.orchestrator.cluster.mp_tools import replace_data_rec
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 
 # Third party imports
 

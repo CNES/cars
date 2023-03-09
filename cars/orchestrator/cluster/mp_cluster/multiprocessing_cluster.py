@@ -36,16 +36,17 @@ from multiprocessing import Queue, freeze_support
 from json_checker import Checker, Or
 
 # CARS imports
-from cars.orchestrator.cluster import abstract_cluster, mp_wrapper
-from cars.orchestrator.cluster.mp_factorizer import factorize_delayed
-from cars.orchestrator.cluster.mp_objects import (
+from cars.orchestrator.cluster import abstract_cluster
+from cars.orchestrator.cluster.mp_cluster import mp_wrapper
+from cars.orchestrator.cluster.mp_cluster.mp_factorizer import factorize_delayed
+from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpDelayed,
     MpDelayedTask,
     MpFuture,
     MpFutureIterator,
     MpJob,
 )
-from cars.orchestrator.cluster.mp_tools import replace_data_rec
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 
 RUN = 0
 TERMINATE = 1
