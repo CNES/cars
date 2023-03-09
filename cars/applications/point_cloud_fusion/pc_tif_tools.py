@@ -465,6 +465,8 @@ def transform_input_pc(
                 )
 
                 # Update saving info for row and col
+                # /!\ BE AWARE : this is not the conventionnal way
+                # to parallelise tasks in CARS
                 full_saving_info_pc = ocht.update_saving_infos(
                     saving_info_pc, row=row, col=col
                 )
@@ -481,6 +483,8 @@ def transform_input_pc(
         list_epipolar_points_cloud_left_by_tiles.append(epi_pc)
 
     # Breakpoint : compute
+    # /!\ BE AWARE : this is not the conventionnal way
+    # to parallelise tasks in CARS
     cars_orchestrator.breakpoint()
 
     # Get all local min and max
@@ -739,6 +743,9 @@ def get_tiles_corresponding_tiles_tif(
             saving_info_pc, row=row_fake_cars_ds, col=0
         )
 
+        # /!\ BE AWARE : this is not the conventionnal way
+        # to parallelise tasks in CARS
+
         list_corresp_cars_ds[
             row_fake_cars_ds, 0
         ] = cars_orchestrator.cluster.create_task(
@@ -751,6 +758,8 @@ def get_tiles_corresponding_tiles_tif(
         )
 
     # Breakpoint : compute
+    # /!\ BE AWARE : this is not the conventionnal way
+    # to parallelise tasks in CARS
     cars_orchestrator.breakpoint()
 
     # Create res
