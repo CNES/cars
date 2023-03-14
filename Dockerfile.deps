@@ -94,6 +94,7 @@ RUN sed -i 's/default(none)//g' vl/kmeans.c \
 WORKDIR /opt
 RUN rm -rf vlfeat-master
 ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
+    VLFEAT_LIBRARY_DIR=/usr/local/lib \
     LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
 
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \

@@ -47,13 +47,15 @@ def cars_otb_build(command_subclass):
         Test requirements for build : cmake, OTB, vlfeat
         """
         if which("cmake") is None:
-            raise Exception("Command cmake not found")
+            raise EnvironmentError("Command cmake not found")
         if which("otbcli_ReadImageInfo") is None:
-            raise Exception("OTB not found")
+            raise EnvironmentError("OTB not found")
         if os.environ.get("OTB_APPLICATION_PATH") is None:
-            raise Exception("OTB_APPLICATION_PATH not set")
+            raise EnvironmentError("OTB_APPLICATION_PATH not set")
         if os.environ.get("VLFEAT_INCLUDE_DIR") is None:
-            raise Exception("VLFEAT_INCLUDE_DIR not set")
+            raise EnvironmentError("VLFEAT_INCLUDE_DIR not set")
+        if os.environ.get("VLFEAT_LIBRARY_DIR") is None:
+            raise EnvironmentError("VLFEAT_LIBRARY_DIR not set")
 
     def cars_otb_build_install():
         """
@@ -70,7 +72,6 @@ def cars_otb_build(command_subclass):
             f"-DCMAKE_INSTALL_PREFIX={sys.prefix}",
             "-DOTB_BUILD_MODULE_AS_STANDALONE=ON",
             "-DCMAKE_BUILD_TYPE=Release",
-            f'-DVLFEAT_INCLUDE_DIR={os.environ["VLFEAT_INCLUDE_DIR"]}',
             "../otb_remote_module",
         ]
         run(cmd, check=True)

@@ -43,7 +43,6 @@ from cars.applications.point_cloud_outliers_removing import (
 from cars.applications.triangulation import triangulation_tools
 from cars.core import constants as cst
 from cars.core import preprocessing, projection
-from cars.externals import otb_pipelines
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -201,7 +200,6 @@ def dataset_matching(
     edge_threshold=5,
     magnification=2.0,
     backmatching=True,
-    otb=False,
 ):
     """
     Compute sift matches between two datasets
@@ -218,58 +216,29 @@ def dataset_matching(
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
     """
-    size1 = [
-        int(ds1.attrs["region"][2] - ds1.attrs["region"][0]),
-        int(ds1.attrs["region"][3] - ds1.attrs["region"][1]),
-    ]
-    roi1 = [0, 0, size1[0], size1[1]]
+    # get input data from dataset
     origin1 = [float(ds1.attrs["region"][0]), float(ds1.attrs["region"][1])]
-
-    size2 = [
-        int(ds2.attrs["region"][2] - ds2.attrs["region"][0]),
-        int(ds2.attrs["region"][3] - ds2.attrs["region"][1]),
-    ]
-    roi2 = [0, 0, size2[0], size2[1]]
     origin2 = [float(ds2.attrs["region"][0]), float(ds2.attrs["region"][1])]
+    left = ds1.im.values
+    right = ds2.im.values
+    left_mask = ds1.msk.values == 0
+    right_mask = ds2.msk.values == 0
 
-    if otb is False:
-        left = ds1.im.values
-        right = ds2.im.values
-        left_mask = ds1.msk.values == 0
-        right_mask = ds2.msk.values == 0
-        matches = compute_matches(
-            left,
-            right,
-            left_mask=left_mask,
-            right_mask=right_mask,
-            left_origin=origin1,
-            right_origin=origin2,
-            matching_threshold=matching_threshold,
-            n_octave=n_octave,
-            n_scale_per_octave=n_scale_per_octave,
-            dog_threshold=dog_threshold,
-            edge_threshold=edge_threshold,
-            magnification=magnification,
-            backmatching=backmatching,
-        )
-    else:
-        matches = otb_pipelines.epipolar_sparse_matching(
-            ds1,
-            roi1,
-            size1,
-            origin1,
-            ds2,
-            roi2,
-            size2,
-            origin2,
-            matching_threshold,
-            n_octave,
-            n_scale_per_octave,
-            dog_threshold,
-            edge_threshold,
-            magnification,
-            backmatching,
-        )
+    matches = compute_matches(
+        left,
+        right,
+        left_mask=left_mask,
+        right_mask=right_mask,
+        left_origin=origin1,
+        right_origin=origin2,
+        matching_threshold=matching_threshold,
+        n_octave=n_octave,
+        n_scale_per_octave=n_scale_per_octave,
+        dog_threshold=dog_threshold,
+        edge_threshold=edge_threshold,
+        magnification=magnification,
+        backmatching=backmatching,
+    )
 
     return matches
 
