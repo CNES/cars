@@ -85,11 +85,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         # Pipeline
         self.used_conf[PIPELINE] = conf.get(PIPELINE, "sensors_to_dense_dsm")
 
+        self.generate_terrain_products = True
         # set json pipeline file
         if self.used_conf[PIPELINE] == "sensors_to_dense_dsm":
             json_conf_file_name = "sensor_to_dense_dsm.json"
         else:
             json_conf_file_name = "sensor_to_pc.json"
+            self.generate_terrain_products = False
 
         # Merge parameters from associated json
         # priority : cars_pipeline.json << user_inputs.json
@@ -135,7 +137,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Check conf application
         application_conf = self.check_applications(
-            self.conf.get(APPLICATIONS, {})
+            self.conf.get(APPLICATIONS, {}), self.generate_terrain_products
         )
         self.used_conf[APPLICATIONS] = application_conf
 
@@ -176,12 +178,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
         return dsm_output.dense_dsm_check_output(conf)
 
-    def check_applications(self, conf):
+    def check_applications(self, conf, generate_terrain_products):
         """
         Check the given configuration for applications
 
         :param conf: configuration of applications
         :type conf: dict
+        :param generate_terrain_products: true if uses point cloud
+            fusion, pc removing, rasterization
+        :type generate_terrain_products: bool
         """
 
         # Check if all specified applications are used
@@ -193,11 +198,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "sparse_matching",
             "dense_matching",
             "triangulation",
+        ]
+
+        terrain_applications = [
             "point_cloud_fusion",
             "point_cloud_rasterization",
             "point_cloud_outliers_removing.1",
             "point_cloud_outliers_removing.2",
         ]
+
+        if generate_terrain_products:
+            needed_applications += terrain_applications
 
         # Initialize used config
         used_conf = {}
@@ -257,44 +268,56 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
 
-        # Points cloud fusion
-        self.pc_fusion_application = Application(
-            "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
-        )
-        used_conf["point_cloud_fusion"] = self.pc_fusion_application.get_conf()
+        if generate_terrain_products:
+            # Points cloud fusion
+            self.pc_fusion_application = Application(
+                "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
+            )
+            used_conf[
+                "point_cloud_fusion"
+            ] = self.pc_fusion_application.get_conf()
 
-        # Points cloud outlier removing small components
-        self.pc_outliers_removing_1_app = Application(
-            "point_cloud_outliers_removing",
-            cfg=conf.get(
-                "point_cloud_outliers_removing.1",
-                {"method": "small_components"},
-            ),
-        )
-        used_conf[
-            "point_cloud_outliers_removing.1"
-        ] = self.pc_outliers_removing_1_app.get_conf()
+            # Points cloud outlier removing small components
+            self.pc_outliers_removing_1_app = Application(
+                "point_cloud_outliers_removing",
+                cfg=conf.get(
+                    "point_cloud_outliers_removing.1",
+                    {"method": "small_components"},
+                ),
+            )
+            used_conf[
+                "point_cloud_outliers_removing.1"
+            ] = self.pc_outliers_removing_1_app.get_conf()
 
-        # Points cloud outlier removing statistical
-        self.pc_outliers_removing_2_app = Application(
-            "point_cloud_outliers_removing",
-            cfg=conf.get(
-                "point_cloud_outliers_removing.2",
-                {"method": "statistical"},
-            ),
-        )
-        used_conf[
-            "point_cloud_outliers_removing.2"
-        ] = self.pc_outliers_removing_2_app.get_conf()
+            # Points cloud outlier removing statistical
+            self.pc_outliers_removing_2_app = Application(
+                "point_cloud_outliers_removing",
+                cfg=conf.get(
+                    "point_cloud_outliers_removing.2",
+                    {"method": "statistical"},
+                ),
+            )
+            used_conf[
+                "point_cloud_outliers_removing.2"
+            ] = self.pc_outliers_removing_2_app.get_conf()
 
-        # Rasterization
-        self.rasterization_application = Application(
-            "point_cloud_rasterization",
-            cfg=conf.get("point_cloud_rasterization", {}),
-        )
-        used_conf[
-            "point_cloud_rasterization"
-        ] = self.rasterization_application.get_conf()
+            # Rasterization
+            self.rasterization_application = Application(
+                "point_cloud_rasterization",
+                cfg=conf.get("point_cloud_rasterization", {}),
+            )
+            used_conf[
+                "point_cloud_rasterization"
+            ] = self.rasterization_application.get_conf()
+        else:
+            # Points cloud fusion
+            self.pc_fusion_application = None
+            # Points cloud outlier removing small components
+            self.pc_outliers_removing_1_app = None
+            # Points cloud outlier removing statistical
+            self.pc_outliers_removing_2_app = None
+            # Rasterization
+            self.rasterization_application = None
 
         return used_conf
 
@@ -627,28 +650,34 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     disp_max=disp_max,
                 )
 
-                # Compute terrain bounding box /roi related to current images
-                current_terrain_roi_bbox = preprocessing.compute_terrain_bbox(
-                    self.inputs[sens_cst.INITIAL_ELEVATION],
-                    self.inputs[sens_cst.DEFAULT_ALT],
-                    self.inputs[sens_cst.GEOID],
-                    sensor_image_left,
-                    sensor_image_right,
-                    new_epipolar_image_left,
-                    grid_left,
-                    corrected_grid_right,
-                    epsg,
-                    self.triangulation_application.get_geometry_loader(),
-                    resolution=self.rasterization_application.get_resolution(),
-                    disp_min=disp_min,
-                    disp_max=disp_max,
-                    roi_poly=roi_poly,
-                    orchestrator=cars_orchestrator,
-                    pair_key=pair_key,
-                    pair_folder=pair_folder,
-                    check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
-                )
-                list_terrain_roi.append(current_terrain_roi_bbox)
+                if self.generate_terrain_products:
+                    # Compute terrain bounding box /roi related to
+                    # current images
+                    (
+                        current_terrain_roi_bbox
+                    ) = preprocessing.compute_terrain_bbox(
+                        self.inputs[sens_cst.INITIAL_ELEVATION],
+                        self.inputs[sens_cst.DEFAULT_ALT],
+                        self.inputs[sens_cst.GEOID],
+                        sensor_image_left,
+                        sensor_image_right,
+                        new_epipolar_image_left,
+                        grid_left,
+                        corrected_grid_right,
+                        epsg,
+                        self.triangulation_application.get_geometry_loader(),
+                        resolution=(
+                            self.rasterization_application.get_resolution()
+                        ),
+                        disp_min=disp_min,
+                        disp_max=disp_max,
+                        roi_poly=roi_poly,
+                        orchestrator=cars_orchestrator,
+                        pair_key=pair_key,
+                        pair_folder=pair_folder,
+                        check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
+                    )
+                    list_terrain_roi.append(current_terrain_roi_bbox)
 
                 # add points cloud to list
                 list_epipolar_points_cloud_left.append(
@@ -658,61 +687,68 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     epipolar_points_cloud_right
                 )
 
-            # compute terrain bounds
-            (
-                terrain_bounds,
-                optimal_terrain_tile_width,
-            ) = preprocessing.compute_terrain_bounds(
-                list_terrain_roi,
-                roi_poly=roi_poly,
-                resolution=self.rasterization_application.get_resolution(),
-            )
-
-            # Merge point clouds
-            merged_points_clouds = self.pc_fusion_application.run(
-                list_epipolar_points_cloud_left,
-                list_epipolar_points_cloud_right,
-                terrain_bounds,
-                epsg,
-                orchestrator=cars_orchestrator,
-                margins=self.pc_outliers_removing_1_app.get_on_ground_margin(
-                    resolution=(self.rasterization_application.get_resolution())
+            if self.generate_terrain_products:
+                # compute terrain bounds
+                (
+                    terrain_bounds,
+                    optimal_terrain_tile_width,
+                ) = preprocessing.compute_terrain_bounds(
+                    list_terrain_roi,
+                    roi_poly=roi_poly,
+                    resolution=self.rasterization_application.get_resolution(),
                 )
-                + self.pc_outliers_removing_2_app.get_on_ground_margin(
-                    resolution=(self.rasterization_application.get_resolution())
-                )
-                + self.rasterization_application.get_margins(),
-                optimal_terrain_tile_width=optimal_terrain_tile_width,
-            )
 
-            # Remove outliers with small components method
-            filtered_1_merged_points_clouds = (
-                self.pc_outliers_removing_1_app.run(
-                    merged_points_clouds,
+                # Merge point clouds
+                merged_points_clouds = self.pc_fusion_application.run(
+                    list_epipolar_points_cloud_left,
+                    list_epipolar_points_cloud_right,
+                    terrain_bounds,
+                    epsg,
                     orchestrator=cars_orchestrator,
+                    margins=(
+                        self.pc_outliers_removing_1_app.get_on_ground_margin(
+                            resolution=(
+                                self.rasterization_application.get_resolution()
+                            )
+                        )
+                        + self.pc_outliers_removing_2_app.get_on_ground_margin(
+                            resolution=(
+                                self.rasterization_application.get_resolution()
+                            )
+                        )
+                        + self.rasterization_application.get_margins()
+                    ),
+                    optimal_terrain_tile_width=optimal_terrain_tile_width,
                 )
-            )
 
-            # Remove outliers with statistical components method
-            filtered_2_merged_points_clouds = (
-                self.pc_outliers_removing_2_app.run(
-                    filtered_1_merged_points_clouds,
+                # Remove outliers with small components method
+                filtered_1_merged_points_clouds = (
+                    self.pc_outliers_removing_1_app.run(
+                        merged_points_clouds,
+                        orchestrator=cars_orchestrator,
+                    )
+                )
+
+                # Remove outliers with statistical components method
+                filtered_2_merged_points_clouds = (
+                    self.pc_outliers_removing_2_app.run(
+                        filtered_1_merged_points_clouds,
+                        orchestrator=cars_orchestrator,
+                    )
+                )
+
+                # rasterize point cloud
+                _ = self.rasterization_application.run(
+                    filtered_2_merged_points_clouds,
+                    epsg,
                     orchestrator=cars_orchestrator,
+                    dsm_file_name=os.path.join(
+                        out_dir, self.output[sens_cst.DSM_BASENAME]
+                    ),
+                    color_file_name=os.path.join(
+                        out_dir, self.output[sens_cst.CLR_BASENAME]
+                    ),
                 )
-            )
-
-            # rasterize point cloud
-            _ = self.rasterization_application.run(
-                filtered_2_merged_points_clouds,
-                epsg,
-                orchestrator=cars_orchestrator,
-                dsm_file_name=os.path.join(
-                    out_dir, self.output[sens_cst.DSM_BASENAME]
-                ),
-                color_file_name=os.path.join(
-                    out_dir, self.output[sens_cst.CLR_BASENAME]
-                ),
-            )
 
     def update_conf(self, grid_correction_coef, dmin, dmax, pair_key):
         """
