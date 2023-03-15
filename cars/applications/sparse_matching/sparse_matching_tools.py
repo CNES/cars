@@ -113,7 +113,8 @@ def compute_matches(
     :type n_scale_per_octave: int
     :param dog_threshold: the threshold of the DoG scale space
     :type dog_threshold: int
-    :param edge_threshold: The edge selection threshold.
+    :param edge_threshold: The edge selection threshold
+    :type edge_threshold: int
     :param magnification: Set the descriptor magnification factor
     :type magnification: float
     :param backmatching: Also check that right vs. left gives same match
