@@ -66,6 +66,8 @@ def convert_dog_threshold(n_scale_per_octave, dog_threshold):
     :type n_scale_per_octave: float
     :param dog_threshold: threshold to detect keypoints in dog
     :type dog_threshold: float
+    :return: peak threshold
+    :rtype: float
     """
     k_nspo = np.exp(np.log(2) / n_scale_per_octave)
     k_3 = np.exp(np.log(2) / 3.0)
@@ -90,6 +92,34 @@ def compute_matches(
     """
     Compute matches between left and right
     Convention for masks: True is a valid pixel
+
+    :param left: left image as numpy array
+    :type left: np.ndarray
+    :param right: right image as numpy array
+    :type right! np.ndarray
+    :param left_mask: left mask as numpy array
+    :type left_mask: np.ndarray
+    :param right_mask: right mask as numpy array
+    :type right_mask: np.ndarray
+    :param left_origin: left image origin in the full image
+    :type left_origin: [float, float]
+    :param right_origin: right image origin in the full image
+    :type right_origin: [float, float]
+    :param matching_threshold: threshold for the ratio to nearest second match
+    :type matching_threshold: float
+    :param n_octave: the number of octaves of the DoG scale space
+    :type n_octave: int
+    :param n_scale_per_octave: the nb of levels / octave of the DoG scale space
+    :type n_scale_per_octave: int
+    :param dog_threshold: the threshold of the DoG scale space
+    :type dog_threshold: int
+    :param edge_threshold: The edge selection threshold.
+    :param magnification: Set the descriptor magnification factor
+    :type magnification: float
+    :param backmatching: Also check that right vs. left gives same match
+    :type backmatching: bool
+    :return: matches
+    :rtype: numpy buffer of shape (nb_matches,4)
     """
     left_origin = [0, 0] if left_origin is None else left_origin
     right_origin = [0, 0] if right_origin is None else right_origin
@@ -209,8 +239,17 @@ def dataset_matching(
     :type ds1: xarray.Dataset as produced by stereo.epipolar_rectify_images
     :param ds2: Right image dataset
     :type ds2: xarray.Dataset as produced by stereo.epipolar_rectify_images
-    :param threshold: Threshold for matches
-    :type threshold: float
+    :param matching_threshold: threshold for the ratio to nearest second match
+    :type matching_threshold: float
+    :param n_octave: the number of octaves of the DoG scale space
+    :type n_octave: int
+    :param n_scale_per_octave: the nb of levels / octave of the DoG scale space
+    :type n_scale_per_octave: int
+    :param dog_threshold: the threshold of the DoG scale space
+    :type dog_threshold: int
+    :param edge_threshold: The edge selection threshold.
+    :param magnification: Set the descriptor magnification factor
+    :type magnification: float
     :param backmatching: Also check that right vs. left gives same match
     :type backmatching: bool
     :return: matches
