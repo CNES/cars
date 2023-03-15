@@ -154,7 +154,7 @@ def compute_matches(
 
     # Filter keypoints that falls out of the validity mask (0=valid)
     if left_mask is not None:
-        pixel_indices = np.floor(left_frames[:, 0:2]).astype(int)
+        pixel_indices = np.floor(left_frames[:, 0:2] + 0.5).astype(int)
         valid_left_frames_mask = left_mask[
             pixel_indices[:, 0], pixel_indices[:, 1]
         ]
@@ -162,7 +162,7 @@ def compute_matches(
         left_descr = left_descr[valid_left_frames_mask]
 
     if right_mask is not None:
-        pixel_indices = np.floor(right_frames[:, 0:2]).astype(int)
+        pixel_indices = np.floor(right_frames[:, 0:2] + 0.5).astype(int)
         valid_right_frames_mask = right_mask[
             pixel_indices[:, 0], pixel_indices[:, 1]
         ]
