@@ -170,7 +170,10 @@ def compute_matches(
         right_descr = right_descr[valid_right_frames_mask]
 
     # Early return for empty frames
-    if left_frames.shape[0] == 0 or right_frames.shape[0] == 0:
+    # also if there are points to match
+    # need minimum two right points to find the second nearest neighbor
+    # (and two left points for backmatching)
+    if left_frames.shape[0] < 2 or right_frames.shape[0] < 2:
         return np.empty((0, 4))
 
     # translate matches according image origin
