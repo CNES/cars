@@ -361,8 +361,7 @@ def test_end2end_ventoux_unique():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_confidence_from_intensity_std": True,
-                "write_confidence_from_risk": True,
+                "write_confidence": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -375,6 +374,17 @@ def test_end2end_ventoux_unique():
                             "matching_cost_method": "census",
                             "window_size": 5,
                             "subpix": 1,
+                        },
+                        "cost_volume_confidence.before": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "cost_volume_confidence.std_intensity_before": {
+                            "confidence_method": "std_intensity"
+                        },
+                        "cost_volume_confidence.risk_before": {
+                            "confidence_method": "risk"
                         },
                         "optimization": {
                             "optimization_method": "sgm",
@@ -465,7 +475,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_intensity_std.tif"),
+        #     os.path.join(out_dir,
+        #         "confidence_from_intensity_std_std_intensity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             "ref_output",
@@ -474,7 +485,7 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_min.tif"),
+        #     os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             "ref_output",
@@ -483,11 +494,52 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_max.tif"),
+        #     os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             "ref_output",
         #             "confidence_from_risk_max_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,
+        #         "confidence_from_ambiguity_before.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #         "ref_output",
+        #         "confidence_from_ambiguity_"+"before_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,
+        #         "confidence_from_intensity_std"+
+        #         "_std_intensity_before.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #         "ref_output",
+        #         "confidence_from_intensity_std_before_end2end_ventoux.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,
+        #         "confidence_from_risk_min_risk_before.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_risk_min_before_end2end_ventoux.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,
+        #         "confidence_from_risk_max_risk_before.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output",
+        #             "confidence_from_risk_max_before_end2end_ventoux.tif",
         #         )
         #     ),
         # )
@@ -506,7 +558,9 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_intensity_std.tif"),
+            os.path.join(
+                out_dir, "confidence_from_intensity_std_std_intensity.tif"
+            ),
             absolute_data_path(
                 "ref_output/confidence_from_intensity_std_end2end_ventoux.tif"
             ),
@@ -514,7 +568,7 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_min.tif"),
+            os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
             absolute_data_path(
                 "ref_output/confidence_from_risk_min_end2end_ventoux.tif"
             ),
@@ -522,9 +576,56 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_max.tif"),
+            os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
             absolute_data_path(
                 "ref_output/confidence_from_risk_max_end2end_ventoux.tif"
+            ),
+            atol=1.0e-6,
+            rtol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_ambiguity_before.tif"),
+            absolute_data_path(
+                os.path.join(
+                    "ref_output",
+                    "confidence_from_ambiguity_before_end2end_ventoux.tif",
+                )
+            ),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "confidence_from_intensity_std_std_intensity_before.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    "ref_output",
+                    "confidence_from_intensity_std_before_end2end_ventoux.tif",
+                )
+            ),
+            atol=1.0e-7,
+            rtol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_risk_min_risk_before.tif"),
+            absolute_data_path(
+                os.path.join(
+                    "ref_output",
+                    "confidence_from_risk_min_before_end2end_ventoux.tif",
+                )
+            ),
+            atol=1.0e-6,
+            rtol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_from_risk_max_risk_before.tif"),
+            absolute_data_path(
+                os.path.join(
+                    "ref_output",
+                    "confidence_from_risk_max_before_end2end_ventoux.tif",
+                )
             ),
             atol=1.0e-6,
             rtol=1.0e-6,

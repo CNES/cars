@@ -241,6 +241,8 @@ class SingleCarsDatasetSaver:
         try:
             if self.cars_ds.dataset_type == "arrays":
                 if not self.already_seen:
+                    self.add_confidences(future_result)
+
                     # generate descriptors
                     for count, file_name in enumerate(self.file_names):
                         if self.tags[count] in future_result.keys():
@@ -274,11 +276,15 @@ class SingleCarsDatasetSaver:
             elif self.cars_ds.dataset_type == "points":
                 # type points
                 if not self.already_seen:
+                    # get the confidence tags available in future result
+                    self.add_confidences(future_result)
+
                     # create tmp_folder
                     self.folder_name = self.file_names[0]
                     if not os.path.exists(self.folder_name):
                         os.makedirs(self.folder_name)
                     self.already_seen = True
+
                 self.cars_ds.run_save(
                     future_result,
                     os.path.join(self.folder_name, repr(self.count)),
@@ -296,6 +302,50 @@ class SingleCarsDatasetSaver:
         except:  # pylint: disable=W0702 # noqa: B001, E722
             logging.error(traceback.format_exc())
             logging.error("Tile not saved")
+
+    def add_confidences(self, future_result):
+        """
+        Add all confidence data in the register
+        Read confidence from future result outputs and rewrite
+        the confidence registered values
+        """
+
+        def test_conf(val):
+            """
+            Check if val key string contains confidence subtring
+            """
+            if isinstance(val, str):
+                return "confidence" in val
+            return False
+
+        confidence_tags = list(filter(test_conf, future_result.keys()))
+        index = None
+        if "confidence" in self.tags:
+            # get the confidence indexes in the registered tag
+            index_table = [
+                idx
+                for idx, value in enumerate(self.tags)
+                if value == "confidence"
+            ]  # self.tags.index("confidence")
+            for index in reversed(index_table):
+                ref_confidence_path = self.file_names[index]
+                confidence_dtype = self.dtypes[index]
+                confidence_nodatas = self.nodatas[index]
+                # delete the generic confidence registered values
+                self.tags.pop(index)
+                self.dtypes.pop(index)
+                self.nodatas.pop(index)
+                self.file_names.pop(index)
+
+                for item in confidence_tags:
+                    self.tags.append(item)
+                    self.file_names.append(
+                        ref_confidence_path.replace(
+                            "confidence", item.replace(".", "_")
+                        )
+                    )
+                    self.dtypes.append(confidence_dtype)
+                    self.nodatas.append(confidence_nodatas)
 
     def cleanup(self):
         """

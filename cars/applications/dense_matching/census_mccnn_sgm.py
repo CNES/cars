@@ -404,27 +404,25 @@ class CensusMccnnSgm(
                     epipolar_disparity_map_right,
                     cars_ds_name="epi_disp_mask_right",
                 )
-                for _, item in enumerate(cst_disp.DISPARITY_CONFIDENCE):
-                    cards_ds_name_left = item + "_left"
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder,
-                            "epi_" + cards_ds_name_left + ".tif",
-                        ),
-                        item,
-                        epipolar_disparity_map_left,
-                        cars_ds_name=cards_ds_name_left,
-                    )
-                    cards_ds_name_right = item + "_right"
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder,
-                            "epi_" + cards_ds_name_right + ".tif",
-                        ),
-                        item,
-                        epipolar_disparity_map_right,
-                        cars_ds_name=cards_ds_name_right,
-                    )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_confidence_left.tif",
+                    ),
+                    cst_disp.CONFIDENCE,
+                    epipolar_disparity_map_left,
+                    cars_ds_name="confidence",
+                )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_confidence_right.tif",
+                    ),
+                    cst_disp.CONFIDENCE,
+                    epipolar_disparity_map_right,
+                    cars_ds_name="confidence",
+                )
 
             # Get saving infos in order to save tiles when they are computed
             [
