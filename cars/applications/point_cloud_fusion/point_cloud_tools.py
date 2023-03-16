@@ -478,10 +478,11 @@ def create_combined_dense_cloud(  # noqa: C901
             ]
         )
 
+    confidence_list = []
     for key in cloud_list[0].keys():
-        for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
-            if key == confidence_name:
-                nb_data.append(confidence_name)
+        if cst.POINTS_CLOUD_CONFIDENCE in key:
+            nb_data.append(key)
+            confidence_list.append(key)
 
     # iterate through input clouds
     cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
@@ -543,10 +544,9 @@ def create_combined_dense_cloud(  # noqa: C901
         c_cloud[nb_data.index(cst.X), :] = np.ravel(c_x)
         c_cloud[nb_data.index(cst.Y), :] = np.ravel(c_y)
         c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
-
         ds_values_list = [key for key, _ in cloud_list_item.items()]
-        for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
-            if confidence_name in ds_values_list:
+        for confidence_name in confidence_list:
+            if cst.POINTS_CLOUD_CONFIDENCE in ds_values_list:
                 c_confidence = cloud_list_item[confidence_name].values[
                     bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
                 ]

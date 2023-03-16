@@ -267,26 +267,16 @@ def add_confidence(
     )
     for key in confidence_measure_indicator_list:
         confidence_idx = list(disp.confidence_measure.indicator).index(key)
-        # remove the useless suffix
-        if len(key.split(".")) > 1:
-            key = key.split(".")[0]
-        # check indicator is present otherwise raise a warning
-        if key in cst_disp.DISPARITY_CONFIDENCE:
-            output_dataset[key] = xr.DataArray(
-                np.copy(
-                    disp.confidence_measure.data[
-                        ref_roi[1] : ref_roi[3],
-                        ref_roi[0] : ref_roi[2],
-                        confidence_idx,
-                    ]
-                ),
-                dims=[cst.ROW, cst.COL],
-            )
-        else:
-            if key != "validation_pandora_distanceOfDisp":
-                logging.warning(
-                    "{} disparity confidence is unknown to CARS.".format(key)
-                )
+        output_dataset[key] = xr.DataArray(
+            np.copy(
+                disp.confidence_measure.data[
+                    ref_roi[1] : ref_roi[3],
+                    ref_roi[0] : ref_roi[2],
+                    confidence_idx,
+                ]
+            ),
+            dims=[cst.ROW, cst.COL],
+        )
 
 
 def compute_disparity(

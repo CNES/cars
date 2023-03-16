@@ -662,7 +662,7 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | save_disparity_map              | Save disparity map and confidence_from_ambiguity                        | boolean |                                 | false         | No       |
+            | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 
             See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
@@ -958,12 +958,7 @@ The structure follows this organisation:
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | write_dsm                            | Save dsm                            | boolean    |                 | true            | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence_from_ambiguity      | Save confidence_from_ambiguity      | boolean    |                 | true            | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence_from_intensity_std  | Save confidence_from_intensity_std  | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence_from_risk           | Save confidence_from_risk_min and   | boolean    |                 | false           | No       |
-            |                                      | confidence_from_risk_max            |            |                 |                 |          |
+            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | true            | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | compute_all                          | Compute all layers even             | boolean    |                 | false           | No       |
             |                                      | if one or more layers               |            |                 |                 |          |

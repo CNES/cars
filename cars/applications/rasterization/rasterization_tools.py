@@ -253,15 +253,14 @@ def compute_vector_raster_and_stats(
 
     # 2. confidences
     confidences_indexes = []
-    if substring_in_list(cloud.columns, "confidence_from") and (
+    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_CONFIDENCE) and (
         (list_computed_layers is None)
-        or substring_in_list(list_computed_layers, "confidence_from")
+        or substring_in_list(list_computed_layers, cst.POINTS_CLOUD_CONFIDENCE)
     ):
         for key in cloud.columns:
-            for _, confidence_name in enumerate(cst.POINTS_CLOUD_CONFIDENCE):
-                if key == confidence_name:
-                    confidences_indexes.append(confidence_name)
-                    values_bands.append(confidence_name)
+            if cst.POINTS_CLOUD_CONFIDENCE in key:
+                confidences_indexes.append(key)
+                values_bands.append(key)
     split_indexes.append(len(confidences_indexes))
 
     # 3. masks

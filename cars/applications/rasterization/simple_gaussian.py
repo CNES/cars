@@ -92,15 +92,7 @@ class SimpleGaussian(
         self.write_stats = self.used_config["write_stats"]
         self.write_mask = self.used_config["write_msk"]
         self.write_dsm = self.used_config["write_dsm"]
-        self.write_confidence_from_ambiguity = self.used_config[
-            "write_confidence_from_ambiguity"
-        ]
-        self.write_confidence_from_intensity_std = self.used_config[
-            "write_confidence_from_intensity_std"
-        ]
-        self.write_confidence_from_risk = self.used_config[
-            "write_confidence_from_risk"
-        ]
+        self.write_confidence = self.used_config["write_confidence"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -146,15 +138,7 @@ class SimpleGaussian(
         overloaded_conf["write_stats"] = conf.get("write_stats", False)
         overloaded_conf["write_msk"] = conf.get("write_msk", False)
         overloaded_conf["write_dsm"] = conf.get("write_dsm", True)
-        overloaded_conf["write_confidence_from_ambiguity"] = conf.get(
-            "write_confidence_from_ambiguity", True
-        )
-        overloaded_conf["write_confidence_from_intensity_std"] = conf.get(
-            "write_confidence_from_intensity_std", False
-        )
-        overloaded_conf["write_confidence_from_risk"] = conf.get(
-            "write_confidence_from_risk", False
-        )
+        overloaded_conf["write_confidence"] = conf.get("write_confidence", True)
 
         overloaded_conf["compute_all"] = conf.get("compute_all", False)
         if overloaded_conf["compute_all"]:
@@ -181,9 +165,7 @@ class SimpleGaussian(
             "write_msk": bool,
             "write_stats": bool,
             "write_dsm": bool,
-            "write_confidence_from_ambiguity": bool,
-            "write_confidence_from_intensity_std": bool,
-            "write_confidence_from_risk": bool,
+            "write_confidence": bool,
             "compute_all": bool,
         }
 
@@ -333,10 +315,7 @@ class SimpleGaussian(
             out_dsm_file_name = None
             out_clr_file_name = None
             out_msk_file_name = None
-            out_ambiguity_file_name = None
-            out_intensity_file_name = None
-            out_risk_min_file_name = None
-            out_risk_max_file_name = None
+            out_confidence = None
             out_dsm_mean_file_name = None
             out_dsm_std_file_name = None
             out_dsm_n_pts_file_name = None
@@ -430,53 +409,17 @@ class SimpleGaussian(
                     cars_ds_name="dsm_mask",
                 )
 
-            if self.write_confidence_from_ambiguity:
-                out_ambiguity_file_name = os.path.join(
-                    self.orchestrator.out_dir, "confidence_from_ambiguity.tif"
+            if self.write_confidence:
+                out_confidence = os.path.join(
+                    self.orchestrator.out_dir, "confidence.tif"
                 )
                 self.orchestrator.add_to_save_lists(
-                    out_ambiguity_file_name,
-                    cst.RASTER_CONFIDENCE_FROM_AMBIGUITY,
+                    out_confidence,
+                    cst.RASTER_CONFIDENCE,
                     terrain_raster,
                     dtype=np.float32,
                     nodata=self.msk_no_data,
-                    cars_ds_name="confidence_from_ambiguity",
-                )
-            if self.write_confidence_from_intensity_std:
-                out_intensity_file_name = os.path.join(
-                    self.orchestrator.out_dir,
-                    "confidence_from_intensity_std.tif",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_intensity_file_name,
-                    cst.RASTER_CONFIDENCE_FROM_INTENSITYSTD,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.msk_no_data,
-                    cars_ds_name="confidence_from_intensity_std",
-                )
-            if self.write_confidence_from_risk:
-                out_risk_max_file_name = os.path.join(
-                    self.orchestrator.out_dir, "confidence_from_risk_max.tif"
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_risk_max_file_name,
-                    cst.RASTER_CONFIDENCE_FROM_RISK_MAX,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.msk_no_data,
-                    cars_ds_name="confidence_from_risk_max",
-                )
-                out_risk_min_file_name = os.path.join(
-                    self.orchestrator.out_dir, "confidence_from_risk_min.tif"
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_risk_min_file_name,
-                    cst.RASTER_CONFIDENCE_FROM_RISK_MIN,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.msk_no_data,
-                    cars_ds_name="confidence_from_risk_min",
+                    cars_ds_name="confidence",
                 )
 
             # Get saving infos in order to save tiles when they are computed
@@ -525,10 +468,7 @@ class SimpleGaussian(
                         raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
                         raster_cst.COLOR_TAG: out_clr_file_name,
                         raster_cst.MSK_TAG: out_msk_file_name,
-                        raster_cst.AMBIGUITY_TAG: out_ambiguity_file_name,
-                        raster_cst.INTENSITY_TAG: out_intensity_file_name,
-                        raster_cst.RISK_MIN_TAG: out_risk_min_file_name,
-                        raster_cst.RISK_MAX_TAG: out_risk_max_file_name,
+                        raster_cst.CONFIDENCE_TAG: out_confidence,
                         raster_cst.DSM_MEAN_TAG: out_dsm_mean_file_name,
                         raster_cst.DSM_STD_TAG: out_dsm_std_file_name,
                         raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,
