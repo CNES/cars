@@ -65,11 +65,12 @@ from .helpers import (
 
 
 @pytest.mark.end2end_tests
-def test_end2end_gizeh_rectangle_epi_image():
+def test_end2end_gizeh_rectangle_epi_image_performance_map():
     """
     End to end processing
 
-    Test pipeline with a non square epipolar image
+    Test pipeline with a non square epipolar image, and the generation
+    of the performance map
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -92,6 +93,11 @@ def test_end2end_gizeh_rectangle_epi_image():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_sec_disp": True,
+                "generate_performance_map": True,
+            },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -110,7 +116,6 @@ def test_end2end_gizeh_rectangle_epi_image():
                 "msk_no_data": 65534,
                 "write_msk": True,
             },
-            "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
 
@@ -132,6 +137,9 @@ def test_end2end_gizeh_rectangle_epi_image():
         #       absolute_data_path("ref_output/clr_end2end_gizeh_crop.tif"))
         # copy2(os.path.join(out_dir, 'msk.tif'),
         #      absolute_data_path("ref_output/msk_end2end_gizeh_crop.tif"))
+        # copy2(os.path.join(out_dir, 'confidence_performance_map.tif'),
+        #      absolute_data_path(
+        #           "ref_output/performance_map_end2end_gizeh_crop.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -148,6 +156,14 @@ def test_end2end_gizeh_rectangle_epi_image():
         assert_same_images(
             os.path.join(out_dir, "msk.tif"),
             absolute_data_path("ref_output/msk_end2end_gizeh_crop.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_performance_map.tif"),
+            absolute_data_path(
+                "ref_output/performance_map_end2end_gizeh_crop.tif"
+            ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -960,8 +976,6 @@ def test_end2end_use_epipolar_a_prior():
     and use prepared refined dense dsm pipeline conf
     to compute the dense dsm pipeline
     """
-    # Force max RAM to 1000 to get stable tiling in tests
-    os.environ["OTB_MAX_RAM_HINT"] = "1000"
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")

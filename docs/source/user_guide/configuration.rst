@@ -78,7 +78,7 @@ The structure follows this organisation:
                         "image" : "path_to_image.tif",
                         "color" : "path_to_color.tif",
                         "mask" : "path_to_mask.tif",
-                        "nodata": 0
+                        "no_data": 0
                     }
                 }
 
@@ -662,6 +662,14 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | generate_performance_map        | Generate a performance map from disparity map                           | bool    |                                 | False         | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_ambiguity          |  Ambiguity confidence eta max used for performance map                  | float   |                                 | 0.99          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_risk               |  Risk confidence eta max used for performance map                       | float   |                                 | 0.04          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_step                   |  Risk and Ambiguity confidence eta step used for performance map        | float   |                                 | 0.6           | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 
@@ -678,6 +686,11 @@ The structure follows this organisation:
                         "loader_conf": "path_to_user_pandora_configuration"
                     }
                 },
+
+            .. note::
+
+                When user activate the generation of performance map, this map transits until being rasterized.
+                Performance map is managed as a confidence map.
 
         .. tab:: HolesDetection
 

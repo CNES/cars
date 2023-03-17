@@ -563,6 +563,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     compute_disparity_masks=(
                         self.dense_matches_filling.get_is_activated()
                     ),
+                    disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
                 )
 
                 # Fill holes in disparity map

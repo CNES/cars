@@ -19,12 +19,6 @@
                 "penalty_method": "sgm_penalty"
               }
         },
-        "cost_volume_confidence":
-        {
-            "confidence_method": "ambiguity",
-            "eta_max": 0.7,
-            "eta_step": 0.01
-        },
         "disparity": {
             "disparity_method": "wta",
             "invalid_disparity": "NaN"

@@ -25,6 +25,7 @@ CARS pandora loader file
 import json
 import logging
 import os
+from collections import OrderedDict
 from typing import Dict
 
 import numpy as np
@@ -45,7 +46,15 @@ class PandoraLoader:
 
     """
 
-    def __init__(self, conf=None, method_name=None):
+    def __init__(
+        self,
+        conf=None,
+        method_name=None,
+        generate_performance_map=False,
+        perf_eta_max_ambiguity=0.99,
+        perf_eta_max_risk=0.25,
+        perf_eta_step=0.04,
+    ):
         """
         Init function of PandoraLoader
 
@@ -56,12 +65,16 @@ class PandoraLoader:
         :param conf: configuration of pandora to use
         :type conf: dict
         :param method_name: name of method to use
+        :param performance_map_conf: true if generate performance maps
 
         """
 
         self.pandora_config = None
 
+        uses_cars_pandora_conf = False
+
         if conf is None:
+            uses_cars_pandora_conf = True
             package_path = os.path.dirname(__file__)
 
             if "mccnn" in method_name:
@@ -87,6 +100,40 @@ class PandoraLoader:
                 )
                 raise NameError(
                     "No method named {} in pandora loader".format(method_name)
+                )
+
+        # add performance map in configuration
+        if generate_performance_map:
+            perf_conf = {
+                "cost_volume_confidence.cars_1": {
+                    "confidence_method": "ambiguity",
+                    "eta_max": perf_eta_max_ambiguity,
+                    "eta_step": perf_eta_step,
+                },
+                "cost_volume_confidence.cars_2": {
+                    "confidence_method": "risk",
+                    "eta_max": perf_eta_max_risk,
+                    "eta_step": perf_eta_step,
+                },
+            }
+
+            conf["pipeline"] = overload_pandora_conf_with_confidence(
+                conf["pipeline"], perf_conf
+            )
+
+        else:
+            # by default generate ambiguity user uses
+            # cars loaded configurations
+            if uses_cars_pandora_conf:
+                ambi_conf = {
+                    "cost_volume_confidence": {
+                        "confidence_method": "ambiguity",
+                        "eta_max": 0.7,
+                        "eta_step": 0.01,
+                    },
+                }
+                conf["pipeline"] = overload_pandora_conf_with_confidence(
+                    conf["pipeline"], ambi_conf
                 )
 
         # Check conf
@@ -196,3 +243,45 @@ def check_input_section_custom_cars(
     checker.validate(cfg)
 
     return cfg
+
+
+def overload_pandora_conf_with_confidence(conf, confidence_conf):
+    """
+    Overload pandora pipeline configuration with given confidence to add
+    just before disparity computation.
+
+    :param conf: current pandora configuration
+    :type conf: OrderedDict
+    :param confidence_conf: confidence applications config
+    :type confidence_conf: OrderedDict
+
+    :return: updated pandora pipeline conf
+    :rtype: OrderedDict
+    """
+
+    out_dict = OrderedDict()
+    out_dict.update(conf)
+
+    conf_keys = list(conf.keys())
+    confidence_conf_keys = list(confidence_conf.keys())
+
+    for key in confidence_conf_keys:
+        if key in conf_keys:
+            logging.error("{} pandora key already in configuration".format(key))
+
+    # update confidence
+    out_dict.update(confidence_conf)
+
+    # move confidence keys right before disparity computation
+
+    # get position of key "disparity"
+    if "disparity" not in conf_keys:
+        raise RuntimeError("disparity key not in pandora configuration")
+    disp_index = conf_keys.index("disparity")
+
+    # move to end every key from disparity
+
+    for ind in range(disp_index, len(conf_keys)):
+        out_dict.move_to_end(conf_keys[ind])
+
+    return out_dict
