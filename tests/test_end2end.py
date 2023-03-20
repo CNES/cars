@@ -2204,7 +2204,7 @@ def desactivated_test_end2end_disparity_filing():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "mp",
             orchestrator_parameters={
                 "walltime": "00:10:00",
                 "nb_workers": 4,

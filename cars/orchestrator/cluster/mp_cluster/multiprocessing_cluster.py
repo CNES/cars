@@ -51,6 +51,7 @@ from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 RUN = 0
 TERMINATE = 1
 
+# Refresh time between every iteration, to prevent from freezing
 REFRESH_TIME = 0.5
 
 job_counter = itertools.count()
