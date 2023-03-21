@@ -546,7 +546,7 @@ def create_combined_dense_cloud(  # noqa: C901
         c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
         ds_values_list = [key for key, _ in cloud_list_item.items()]
         for confidence_name in confidence_list:
-            if cst.POINTS_CLOUD_CONFIDENCE in ds_values_list:
+            if cst.POINTS_CLOUD_CONFIDENCE in " ".join(ds_values_list):
                 c_confidence = cloud_list_item[confidence_name].values[
                     bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
                 ]

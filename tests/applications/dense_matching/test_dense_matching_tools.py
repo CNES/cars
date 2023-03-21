@@ -338,12 +338,12 @@ def test_compute_disparity_1_msk_sec():
     )
 
     # Uncomment to update baseline
-    output[cst.STEREO_REF].to_netcdf(
-        absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
-    )
-    output[cst.STEREO_SEC].to_netcdf(
-        absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc")
-    )
+    # output[cst.STEREO_REF].to_netcdf(
+    #     absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
+    # )
+    # output[cst.STEREO_SEC].to_netcdf(
+    #     absolute_data_path("ref_output/disp1_sec_pandora_msk_sec.nc")
+    # )
 
     ref = xr.open_dataset(
         absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
