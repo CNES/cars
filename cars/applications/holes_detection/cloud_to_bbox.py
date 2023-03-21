@@ -30,14 +30,13 @@ import os
 # Third party imports
 from json_checker import Checker
 
+# CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.holes_detection import holes_detection_tools
 from cars.applications.holes_detection.holes_detection import HolesDetection
-
-# CARS imports
 from cars.core.utils import safe_makedirs
-from cars.data_structures import cars_dataset
+from cars.data_structures import cars_dataset, cars_dict
 
 
 class CloudToBbox(
@@ -107,8 +106,6 @@ class CloudToBbox(
         epipolar_images_right,
         is_activated=True,
         margin=0,
-        mask_holes_to_fill_left=None,
-        mask_holes_to_fill_right=None,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -124,10 +121,6 @@ class CloudToBbox(
         :type is_activated: bool
         :param margin: margin to use
         :type margin: int
-        :param mask_holes_to_fill_left: mask classes to use
-        :type mask_holes_to_fill_left: list(int)
-        :param mask_holes_to_fill_right: mask classes to use
-        :type mask_holes_to_fill_right: list(int)
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         :param pair_folder: folder used for current pair
@@ -179,20 +172,6 @@ class CloudToBbox(
             )
 
             if is_activated:
-                # Current application is not available in MP mode
-                if (
-                    self.orchestrator.cluster.checked_conf_cluster["mode"]
-                    == "mp"
-                ):
-                    logging.error(
-                        "DenseMatchingFilling and multiprocessing cluster "
-                        "is currently not supported"
-                    )
-                    raise RuntimeError(
-                        "DenseMatchingFilling and multiprocessing cluster "
-                        "is currently not supported"
-                    )
-
                 # Get saving infos in order to save tiles when they are computed
                 [
                     saving_info_left,
@@ -248,8 +227,6 @@ class CloudToBbox(
                             window_right,
                             overlap_left,
                             overlap_right,
-                            mask_holes_to_fill_left,
-                            mask_holes_to_fill_right,
                             saving_info_left=full_saving_info_left,
                             saving_info_right=full_saving_info_right,
                         )
@@ -269,8 +246,6 @@ def compute_mask_bboxes(
     window_right,
     overlap_left,
     overlap_right,
-    mask_holes_to_fill_left,
-    mask_holes_to_fill_right,
     margin=20,
     saving_info_left=None,
     saving_info_right=None,
@@ -300,10 +275,6 @@ def compute_mask_bboxes(
     :type overlap_left: dict
     :param overlap_right: right overlaps
     :type overlap_right: dict
-    :param mask_holes_to_fill_left: mask classes to use
-    :type mask_holes_to_fill_left: list(int)
-    :param mask_holes_to_fill_right: mask classes to use
-    :type mask_holes_to_fill_right: list(int)
     :param margin: margin to use
     :type margin: int
     :param saving_info_left: saving infos left
@@ -328,7 +299,6 @@ def compute_mask_bboxes(
 
     bbox_left = holes_detection_tools.localize_masked_areas(
         left_image_dataset,
-        mask_holes_to_fill_left,
         row_offset=row_offset_left,
         col_offset=col_offset_left,
         margin=margin,
@@ -336,16 +306,16 @@ def compute_mask_bboxes(
 
     bbox_right = holes_detection_tools.localize_masked_areas(
         right_image_dataset,
-        mask_holes_to_fill_right,
         row_offset=row_offset_right,
         col_offset=col_offset_right,
         margin=margin,
     )
 
-    bbox_left_dict = {"list_bbox": bbox_left}
+    # add saving infos
+    bbox_left_dict = cars_dict.CarsDict({"list_bbox": bbox_left})
     cars_dataset.fill_dict(bbox_left_dict, saving_info=saving_info_left)
 
-    bbox_right_dict = {"list_bbox": bbox_right}
+    bbox_right_dict = cars_dict.CarsDict({"list_bbox": bbox_right})
     cars_dataset.fill_dict(bbox_right_dict, saving_info=saving_info_right)
 
     return bbox_left_dict, bbox_right_dict

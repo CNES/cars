@@ -19,17 +19,9 @@
 # limitations under the License.
 #
 """
-CARS cluster module init file
+CARS multiprocessing cluster module init file
 """
 # flake8: noqa: F401
 
-# CARS imports
-from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 
-from . import (
-    abstract_dask_cluster,
-    local_dask_cluster,
-    mp_cluster,
-    pbs_dask_cluster,
-    sequential_cluster,
-)
+from . import multiprocessing_cluster

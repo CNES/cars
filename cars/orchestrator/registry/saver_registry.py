@@ -254,6 +254,8 @@ class SingleCarsDatasetSaver:
                                 nodata=self.nodatas[count],
                             )
                             self.descriptors.append(desc)
+                        else:
+                            self.descriptors.append(None)
                     self.already_seen = True
 
                 for count, file_name in enumerate(self.file_names):
@@ -357,6 +359,7 @@ class SingleCarsDatasetSaver:
 
         # close raster files
         for desc in self.descriptors:
-            desc.close()
+            if desc is not None:
+                desc.close()
 
         # TODO merge point clouds ?

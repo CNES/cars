@@ -257,17 +257,6 @@ class PlaneFill(
             else:
                 self.orchestrator = orchestrator
 
-            # Current application is not available in MP mode
-            if self.orchestrator.cluster.checked_conf_cluster["mode"] == "mp":
-                logging.error(
-                    "DenseMatchingFilling and multiprocessing cluster "
-                    "is currently not supported"
-                )
-                raise RuntimeError(
-                    "DenseMatchingFilling and multiprocessing cluster "
-                    "is currently not supported"
-                )
-
             interp_options = {
                 "type": self.interpolation_type,
                 "method": self.interpolation_method,

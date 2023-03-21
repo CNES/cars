@@ -36,20 +36,23 @@ from multiprocessing import Queue, freeze_support
 from json_checker import Checker, Or
 
 # CARS imports
-from cars.orchestrator.cluster import abstract_cluster, mp_wrapper
-from cars.orchestrator.cluster.mp_factorizer import factorize_delayed
-from cars.orchestrator.cluster.mp_objects import (
+from cars.orchestrator.cluster import abstract_cluster
+from cars.orchestrator.cluster.mp_cluster import mp_wrapper
+from cars.orchestrator.cluster.mp_cluster.mp_factorizer import factorize_delayed
+from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpDelayed,
     MpDelayedTask,
     MpFuture,
     MpFutureIterator,
     MpJob,
 )
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 
 RUN = 0
 TERMINATE = 1
 
-REFRESH_TIME = 2
+# Refresh time between every iteration, to prevent from freezing
+REFRESH_TIME = 0.5
 
 job_counter = itertools.count()
 
@@ -299,7 +302,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             :param args_or_kawargs: list or dict of data
             """
 
-            def transform_data(obj):
+            def transform_mp_delayed_to_jobs(obj):
                 """
                 Replace MpDelayed by MpJob
 
@@ -315,36 +318,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     )
                 return new_data
 
-            def replace_data_rec(list_or_dict):
-                """
-                Replace MpJob in list or dict by their real data recursively,
-                creating a new list or dict
-
-                :param list_or_dict: list or dict of data
-                """
-
-                if isinstance(list_or_dict, list):
-                    res = []
-                    for arg in list_or_dict:
-                        if isinstance(arg, (list, dict)):
-                            res.append(replace_data_rec(arg))
-                        else:
-                            res.append(transform_data(arg))
-
-                elif isinstance(list_or_dict, dict):
-                    res = {}
-                    for key, value in list_or_dict.items():
-                        if isinstance(value, (list, dict)):
-                            res[key] = replace_data_rec(value)
-                        else:
-                            res[key] = transform_data(value)
-                else:
-                    raise TypeError("Function only support list or dict")
-
-                return res
-
             # replace data
-            return replace_data_rec(args_or_kawargs)
+            return replace_data_rec(
+                args_or_kawargs, transform_mp_delayed_to_jobs
+            )
 
         # Transform MpDelayed to MpJob
 
@@ -470,11 +447,11 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             for job_id in ready_list:
                 func, args, kw_args = wait_list[job_id]
                 # replace jobs by real data
-                replace_job_by_data(args, done_task_results)
-                replace_job_by_data(kw_args, done_task_results)
+                new_args = replace_job_by_data(args, done_task_results)
+                new_kw_args = replace_job_by_data(kw_args, done_task_results)
                 # launch task
                 in_progress_list[job_id] = pool.apply_async(
-                    func, args=args, kwds=kw_args
+                    func, args=new_args, kwds=new_kw_args
                 )
                 del wait_list[job_id]
 
@@ -555,7 +532,7 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
 
             full_res = done_task_results[task_id][1]
             if not done_task_results[task_id][0]:
-                raise RuntimeError("Current task failed")
+                raise RuntimeError("Current task failed {}".format(full_res))
 
             if isinstance(full_res, tuple):
                 new_data = full_res[idx]
@@ -566,31 +543,8 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
 
         return new_data
 
-    def replace_data_rec(list_or_dict, done_task_results):
-        """
-        Replace MpJob in list or dict by their real data recursively
-
-        :param list_or_dict: list or dict of data
-        :param done_task_results: dict of done tasks
-        """
-        if isinstance(list_or_dict, list):
-            for index_arg, arg in enumerate(list_or_dict):
-                if isinstance(arg, (list, dict)):
-                    replace_data_rec(arg, done_task_results)
-                else:
-                    list_or_dict[index_arg] = get_data(arg, done_task_results)
-
-        elif isinstance(list_or_dict, dict):
-            for key, value in list_or_dict.items():
-                if isinstance(value, (list, dict)):
-                    replace_data_rec(value, done_task_results)
-                else:
-                    list_or_dict[key] = get_data(value, done_task_results)
-        else:
-            raise TypeError("Function only support list or dict")
-
     # replace data
-    replace_data_rec(args_or_kawargs, done_task_results)
+    return replace_data_rec(args_or_kawargs, get_data, done_task_results)
 
 
 def compute_dependances(args, kw_args):
@@ -635,7 +589,7 @@ def compute_dependances(args, kw_args):
 
         list_ids = []
 
-        if isinstance(list_or_dict, list):
+        if isinstance(list_or_dict, (list, tuple)):
             for arg in list_or_dict:
                 list_ids += get_ids_rec(arg)
 

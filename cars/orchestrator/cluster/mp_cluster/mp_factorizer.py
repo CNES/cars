@@ -25,7 +25,7 @@ Contains functions needed to factorize delayed
 import copy
 
 # CARS imports
-from cars.orchestrator.cluster.mp_objects import MpDelayed
+from cars.orchestrator.cluster.mp_cluster.mp_objects import MpDelayed
 
 
 def factorize_delayed(task_list):

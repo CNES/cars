@@ -402,8 +402,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     epipolar_image_right,
                     is_activated=self.dense_matches_filling.get_is_activated(),
                     margin=self.dense_matches_filling.get_poly_margin(),
-                    mask_holes_to_fill_left=None,
-                    mask_holes_to_fill_right=None,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
