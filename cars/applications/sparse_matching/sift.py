@@ -97,7 +97,7 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_n_scale_per_octave = self.used_config[
             "sift_n_scale_per_octave"
         ]
-        self.sift_dog_threshold = self.used_config["sift_dog_threshold"]
+        self.sift_peak_threshold = self.used_config["sift_peak_threshold"]
         self.sift_edge_threshold = self.used_config["sift_edge_threshold"]
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
@@ -162,8 +162,8 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["sift_n_scale_per_octave"] = conf.get(
             "sift_n_scale_per_octave", 3
         )
-        overloaded_conf["sift_dog_threshold"] = conf.get(
-            "sift_dog_threshold", 20.0
+        overloaded_conf["sift_peak_threshold"] = conf.get(
+            "sift_peak_threshold", 20.0
         )
         overloaded_conf["sift_edge_threshold"] = conf.get(
             "sift_edge_threshold", 5.0
@@ -191,7 +191,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_matching_threshold": float,
             "sift_n_octave": int,
             "sift_n_scale_per_octave": int,
-            "sift_dog_threshold": float,
+            "sift_peak_threshold": float,
             "sift_edge_threshold": float,
             "sift_magnification": float,
             "sift_back_matching": bool,
@@ -464,7 +464,7 @@ class Sift(SparseMatching, short_name="sift"):
                                     n_scale_per_octave=(
                                         self.sift_n_scale_per_octave
                                     ),
-                                    dog_threshold=self.sift_dog_threshold,
+                                    peak_threshold=self.sift_peak_threshold,
                                     edge_threshold=self.sift_edge_threshold,
                                     magnification=self.sift_magnification,
                                     backmatching=self.sift_back_matching,
@@ -671,7 +671,7 @@ def compute_matches(
     matching_threshold=None,
     n_octave=None,
     n_scale_per_octave=None,
-    dog_threshold=None,
+    peak_threshold=None,
     edge_threshold=None,
     magnification=None,
     backmatching=None,
@@ -718,7 +718,7 @@ def compute_matches(
         matching_threshold=matching_threshold,
         n_octave=n_octave,
         n_scale_per_octave=n_scale_per_octave,
-        dog_threshold=dog_threshold,
+        peak_threshold=peak_threshold,
         edge_threshold=edge_threshold,
         magnification=magnification,
         backmatching=backmatching,

@@ -22,7 +22,7 @@
         "matching_threshold": 0.6,
         "n_octave": 8,
         "n_scale_per_octave": 3,
-        "dog_threshold": 20.0,
+        "peak_threshold": 20.0,
         "edge_threshold": 5.0,
         "magnification": 2.0,
         "back_matching": true

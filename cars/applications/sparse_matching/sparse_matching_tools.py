@@ -60,20 +60,6 @@ def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
     return np.sqrt(sq_descr1 + sq_descr2 - 2 * dot_descr12)
 
 
-def convert_dog_threshold(n_scale_per_octave, dog_threshold):
-    """Convert dog (difference of gaussians) threshold to peak thresh
-    :param n_scale_per_octave: number of levels / octave of the DoG scale space
-    :type n_scale_per_octave: float
-    :param dog_threshold: threshold to detect keypoints in dog
-    :type dog_threshold: float
-    :return: peak threshold
-    :rtype: float
-    """
-    k_nspo = np.exp(np.log(2) / n_scale_per_octave)
-    k_3 = np.exp(np.log(2) / 3.0)
-    return (k_nspo - 1.0) / (k_3 - 1.0) * dog_threshold
-
-
 def compute_matches(
     left: np.ndarray,
     right: np.ndarray,
@@ -84,8 +70,8 @@ def compute_matches(
     matching_threshold: float = 0.6,
     n_octave: int = 8,
     n_scale_per_octave: int = 3,
-    dog_threshold: int = 20,
-    edge_threshold: int = 5,
+    peak_threshold: float = 20.0,
+    edge_threshold: float = 5.0,
     magnification: float = 2.0,
     backmatching: bool = True,
 ):
@@ -96,7 +82,7 @@ def compute_matches(
     :param left: left image as numpy array
     :type left: np.ndarray
     :param right: right image as numpy array
-    :type right! np.ndarray
+    :type right: np.ndarray
     :param left_mask: left mask as numpy array
     :type left_mask: np.ndarray
     :param right_mask: right mask as numpy array
@@ -111,20 +97,19 @@ def compute_matches(
     :type n_octave: int
     :param n_scale_per_octave: the nb of levels / octave of the DoG scale space
     :type n_scale_per_octave: int
-    :param dog_threshold: the threshold of the DoG scale space
-    :type dog_threshold: int
-    :param edge_threshold: The edge selection threshold
-    :type edge_threshold: int
-    :param magnification: Set the descriptor magnification factor
+    :param peak_threshold: the peak selection threshold
+    :type peak_threshold: float
+    :param edge_threshold: the edge selection threshold
+    :type edge_threshold: float
+    :param magnification: set the descriptor magnification factor
     :type magnification: float
-    :param backmatching: Also check that right vs. left gives same match
+    :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
     """
     left_origin = [0, 0] if left_origin is None else left_origin
     right_origin = [0, 0] if right_origin is None else right_origin
-    peak_thresh = convert_dog_threshold(n_scale_per_octave, dog_threshold)
 
     # compute keypoints + descriptors
     left_frames, left_descr = sift(
@@ -132,7 +117,7 @@ def compute_matches(
         n_octaves=n_octave,
         n_levels=n_scale_per_octave,
         first_octave=-1,
-        peak_thresh=peak_thresh,
+        peak_thresh=peak_threshold,
         edge_thresh=edge_threshold,
         magnification=magnification,
         float_descriptors=True,
@@ -145,7 +130,7 @@ def compute_matches(
         n_octaves=n_octave,
         n_levels=n_scale_per_octave,
         first_octave=-1,
-        peak_thresh=peak_thresh,
+        peak_thresh=peak_threshold,
         edge_thresh=edge_threshold,
         magnification=magnification,
         float_descriptors=True,
@@ -230,8 +215,8 @@ def dataset_matching(
     matching_threshold=0.6,
     n_octave=8,
     n_scale_per_octave=3,
-    dog_threshold=20,
-    edge_threshold=5,
+    peak_threshold=20.0,
+    edge_threshold=5.0,
     magnification=2.0,
     backmatching=True,
 ):
@@ -249,12 +234,12 @@ def dataset_matching(
     :type n_octave: int
     :param n_scale_per_octave: the nb of levels / octave of the DoG scale space
     :type n_scale_per_octave: int
-    :param dog_threshold: the threshold of the DoG scale space
-    :type dog_threshold: int
-    :param edge_threshold: The edge selection threshold.
-    :param magnification: Set the descriptor magnification factor
+    :param peak_threshold: the peak selection threshold
+    :type peak_threshold: int
+    :param edge_threshold: the edge selection threshold.
+    :param magnification: set the descriptor magnification factor
     :type magnification: float
-    :param backmatching: Also check that right vs. left gives same match
+    :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
@@ -277,7 +262,7 @@ def dataset_matching(
         matching_threshold=matching_threshold,
         n_octave=n_octave,
         n_scale_per_octave=n_scale_per_octave,
-        dog_threshold=dog_threshold,
+        peak_threshold=peak_threshold,
         edge_threshold=edge_threshold,
         magnification=magnification,
         backmatching=backmatching,

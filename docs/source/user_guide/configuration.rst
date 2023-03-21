@@ -601,24 +601,24 @@ The structure follows this organisation:
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
             | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                        | int        |                 | 100           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_matching_threshold              |                                                                                             | float      |                 | 0.6           | No       |
+            | sift_matching_threshold              | Threshold for the ratio to nearest second match                                             | float      |                 | 0.6           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_n_octave                        |                                                                                             | int        |                 | 8             | No       |
+            | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                            | int        |                 | 8             | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_n_scale_per_octave              |                                                                                             | int        |                 | 3             | No       |
+            | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                 | int        |                 | 3             | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_dog_threshold                   |                                                                                             | float      |                 | 20.0          | No       |
+            | sift_peak_threshold                  | The peak selection threshold                                                                | float      |                 | 20.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_edge_threshold                  |                                                                                             | float      |                 | -5.0          | No       |
+            | sift_edge_threshold                  | The edge selection threshold                                                                | float      |                 | -5.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_magnification                   |                                                                                             | float      |                 | 2.0           | No       |
+            | sift_magnification                   | The descriptor magnification factor                                                         | float      |                 | 2.0           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_back_matching                   |                                                                                             | Boolean    |                 | true          | No       |
+            | sift_back_matching                   | Also check that right vs. left gives same match                                             | Boolean    |                 | true          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
             | save_matches                         | Save matches                                                                                | Boolean    |                 | false         | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
 
-            A lot of information about parameters can be found on `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
+	    For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
 
             **Example**
 
