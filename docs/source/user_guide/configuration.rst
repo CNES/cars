@@ -127,6 +127,39 @@ The structure follows this organisation:
             * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
             * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
+            
+            **Pairing**
+
+            The pairing attribute defines the pairs to use, using sensors keys used to define sensor images.
+
+            .. code-block:: json
+
+                {
+                "inputs": {
+                    "sensors" : {
+                        "one": {
+                            "image": "img1.tif",
+                            "geomodel": "img1.geom",
+                            "no_data": 0
+                        },
+                        "two": {
+                            "image": "img2.tif",
+                            "geomodel": "img2.geom",
+                            "no_data": 0
+
+                        },
+                        "three": {
+                            "image": "img3.tif",
+                            "geomodel": "img3.geom",
+                            "no_data": 0
+                        }
+                    },
+                    "pairing": [["one", "two"],["one", "three"]]
+                    }
+                }
+
+
+            
             **Epipolar a priori**
 
             The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
@@ -394,7 +427,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/cars_pipeline_sensor2dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -423,7 +456,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/sensor_to_low_dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -448,7 +481,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/cars_pipeline_sensor_to_pc.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -470,7 +503,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/pc_to_dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
 
@@ -1049,6 +1082,8 @@ Here is a full detailed example with **orchestrator** and **applications** capab
             "mode":"local_dask",
             "nb_workers": 4
         },
+
+        "pipeline": "sensors_to_dense_dsm",
 
         "applications":{
             "point_cloud_rasterization": {
