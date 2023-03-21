@@ -806,10 +806,6 @@ The structure follows this organisation:
                     }
                 },
 
-            .. warning::
-
-                DenseMatchingFiling does not support currently multiprocessing cluster.
-
 
 
         .. tab:: Triangulation
