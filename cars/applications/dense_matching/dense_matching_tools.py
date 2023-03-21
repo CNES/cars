@@ -350,12 +350,12 @@ def add_performance_map(
         risk_max_idx,
     ]
 
+    mask_ambi = ambiguity_map > perf_ambiguity_threshold
+    w_ambi = ambiguity_map / perf_ambiguity_threshold
+    w_ambi[mask_ambi] = 1
+
     # Compute performance map
-    performance_map = (
-        (ambiguity_map / perf_ambiguity_threshold)
-        * risk_max_map
-        * disp_to_alt_ratio
-    )
+    performance_map = w_ambi * risk_max_map * disp_to_alt_ratio
 
     # Set performance map in dataset
     performance_map_key = cst_disp.CONFIDENCE + "_performance_map"
