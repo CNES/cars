@@ -30,7 +30,6 @@ from __future__ import absolute_import
 
 import logging
 import os
-from typing import List
 
 # Third party imports
 import numpy as np
@@ -39,7 +38,6 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core.otb_adapters import encode_to_otb
 
 
 def build_extract_roi_application(img, region):
@@ -309,83 +307,3 @@ def read_lowres_dem(
         os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
 
     return dsm_as_ds
-
-
-def epipolar_sparse_matching(
-    ds1: xr.Dataset,
-    roi1: List[int],
-    size1: List[int],
-    origin1: List[float],
-    ds2: xr.Dataset,
-    roi2: List[int],
-    size2: List[int],
-    origin2: List[float],
-    matching_threshold: float,
-    n_octave: int,
-    n_scale_per_octave: int,
-    dog_threshold: int,
-    edge_threshold: int,
-    magnification: float,
-    backmatching: bool,
-) -> np.ndarray:
-    """
-    Compute SIFT using vlfeat and performs epipolar sparse matching
-
-    :param ds1: epipolar image 1 dataset
-    :param roi1: roi to use for image 1
-    :param size1: full epipolar image 1 size
-    :param origin1: origin of full epipolar image 1
-    :param ds2:  epipolar image 2 dataset
-    :param roi2: roi to use for image 2
-    :param size2: full epipolar image 2 size
-    :param origin2: origin of full epipolar image 2
-    :param matching_threshold: matching threshold to use in vlfeat
-    :param n_octave: number of octaves to use in vlfeat
-    :param n_scale_per_octave: number of scales per octave to use in vlfeat
-    :param dog_threshold: difference of gaussians threshold to use in vlfeat
-    :param edge_threshold: edge threshold to use in vlfeat
-    :param magnification: magnification value to use in vlfeat
-    :param backmatching: activation status of the back matching in vlfeat
-    :return: matches as numpy array
-    """
-    # Encode images for OTB
-    im1 = encode_to_otb(ds1[cst.EPI_IMAGE].values, size1, roi1, origin=origin1)
-    msk1 = encode_to_otb(ds1[cst.EPI_MSK].values, size1, roi1, origin=origin1)
-    im2 = encode_to_otb(ds2[cst.EPI_IMAGE].values, size2, roi2, origin=origin2)
-    msk2 = encode_to_otb(ds2[cst.EPI_MSK].values, size2, roi2, origin=origin2)
-
-    # create OTB matching application
-    matching_app = otbApplication.Registry.CreateApplication(
-        "EpipolarSparseMatching"
-    )
-
-    matching_app.ImportImage("in1", im1)
-    matching_app.ImportImage("in2", im2)
-    matching_app.EnableParameter("inmask1")
-    matching_app.ImportImage("inmask1", msk1)
-    matching_app.EnableParameter("inmask2")
-    matching_app.ImportImage("inmask2", msk2)
-
-    matching_app.SetParameterInt("maskvalue", 0)
-    matching_app.SetParameterString("algorithm", "sift")
-    matching_app.SetParameterFloat("matching", matching_threshold)
-    matching_app.SetParameterInt("octaves", n_octave)
-    matching_app.SetParameterInt("scales", n_scale_per_octave)
-    matching_app.SetParameterFloat("tdog", dog_threshold)
-    matching_app.SetParameterFloat("tedge", edge_threshold)
-    matching_app.SetParameterFloat("magnification", magnification)
-    matching_app.SetParameterInt("backmatching", backmatching)
-    matching_app.Execute()
-
-    # Retrieve number of matches
-    nb_matches = matching_app.GetParameterInt("nbmatches")
-
-    matches = np.empty((0, 4))
-
-    if nb_matches > 0:
-        # Export result to numpy
-        matches = np.copy(
-            matching_app.GetVectorImageAsNumpyArray("out")[:, :, -1]
-        )
-
-    return matches
