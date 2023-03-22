@@ -47,8 +47,8 @@ def get_msk_roi_to_fill(
 
     :param msk_values: msk layer of left or right epipolar image dataset
     :type msk_values: np.ndarray
-    :param key_id: label of masked region specified in
-     "mask_classes" of input .json file
+    :param key_id: label of region specified in
+     "classification" of input .json file
     :type key_id: List of int
 
     :return: binary mask
@@ -126,7 +126,7 @@ def localize_masked_areas(
 ) -> np.ndarray:
     """
     Calculates bbox of masked region(s) if mask exists for
-    input image file (see configuration "mask" and "mask_classes"
+    input image file (see configuration "mask" and "classification"
     in input .json configuration file)
 
     :param dataset: epipolar image dataset

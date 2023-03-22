@@ -84,16 +84,17 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         super().__init_subclass__(**kwargs)
         # init orchestrator
         cls.orchestrator = None
+
         for name in short_name:
             cls.available_applications[name] = cls
 
     @abstractmethod
-    def get_is_activated(self):
+    def get_classif(self):
         """
-        Get the activated attribute
+        Get classification band list
 
-        :return: self.activated
-        :rtype: bool
+        :return: self.classification
+        :rtype: list[str]
         """
 
     @abstractmethod

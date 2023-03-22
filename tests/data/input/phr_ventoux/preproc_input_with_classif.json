@@ -1,0 +1,9 @@
+{
+    "img1" : "left_image.tif",
+    "classification1" : "left_classif.tif",
+    "img2" : "right_image.tif",
+	"classification1" : "right_classif.tif",
+    "srtm_dir" : "srtm",
+    "nodata1": 0,
+    "nodata2": 0
+}

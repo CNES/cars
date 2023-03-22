@@ -198,7 +198,6 @@ def compute_vector_raster_and_stats(
     resolution: float,
     sigma: float,
     radius: int,
-    msk_no_data: int,
     list_computed_layers: List[str] = None,
 ) -> Tuple[
     np.ndarray,
@@ -207,6 +206,7 @@ def compute_vector_raster_and_stats(
     np.ndarray,
     np.ndarray,
     np.ndarray,
+    List[str],
     Union[None, np.ndarray],
 ]:
     """
@@ -227,7 +227,6 @@ def compute_vector_raster_and_stats(
         expressed in cloud CRS units or None.
     :param sigma: Sigma for gaussian interpolation. If None, set to resolution
     :param radius: Radius for hole filling.
-    :param msk_no_data: No data value to use for the rasterized mask
     :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
@@ -263,26 +262,38 @@ def compute_vector_raster_and_stats(
                 values_bands.append(key)
     split_indexes.append(len(confidences_indexes))
 
-    # 3. masks
-    mask_values = []
-    multiband_mask = np.empty((0, nb_points))
-
-    if cst.POINTS_CLOUD_MSK in cloud.columns and (
+    # 3. mask
+    msk_indexes = []
+    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_MSK) and (
         (list_computed_layers is None)
-        or substring_in_list(list_computed_layers, "msk")
+        or substring_in_list(list_computed_layers, cst.POINTS_CLOUD_MSK)
     ):
-        multiclass_mask = cloud.loc[:, [cst.POINTS_CLOUD_MSK]].values.T
-        mask_values = np.unique(multiclass_mask)
-        multiband_mask = np.vstack(
-            [multiclass_mask == value for value in mask_values]
+        for key in cloud.columns:
+            if cst.POINTS_CLOUD_MSK in key:
+                msk_indexes.append(key)
+                values_bands.append(key)
+    split_indexes.append(len(msk_indexes))
+
+    # 4. classification
+    classif_indexes = []
+    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT) and (
+        (list_computed_layers is None)
+        or substring_in_list(
+            list_computed_layers, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
         )
+    ):
+        classif_indexes = []
+
+        for key in cloud.columns:
+            if cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in key:
+                classif_indexes.append(key)
+                values_bands.append(key)
 
     values = (
         cloud.loc[:, values_bands].values.T
         if len(values_bands) > 0
         else np.empty((0, nb_points))
     )
-    values = np.vstack((values, multiband_mask))
 
     out, mean, stdev, nb_pts_in_disc, nb_pts_in_cell = crasterize.pc_to_dsm(
         points,
@@ -296,9 +307,10 @@ def compute_vector_raster_and_stats(
         radius,
         sigma,
     )
-
-    # pylint: disable=W0632
-    out, confidences, masks = np.split(out, np.cumsum(split_indexes), axis=-1)
+    # pylint: disable=unbalanced-tuple-unpacking
+    out, confidences, msk, classif = np.split(
+        out, np.cumsum(split_indexes), axis=-1
+    )
 
     confidences_out = None
     if len(confidences_indexes) > 0:
@@ -306,18 +318,13 @@ def compute_vector_raster_and_stats(
         for k, key in enumerate(confidences_indexes):
             confidences_out[key] = confidences[..., k]
 
-    msk = None
-    if len(mask_values) > 0:
-        zero_class_idx = np.where(mask_values == 0)
-        masks[..., zero_class_idx] /= 100
-        maxweights = np.repeat(
-            np.amax(masks, axis=-1)[..., np.newaxis], masks.shape[-1], axis=2
-        )
+    msk_out = None
+    if len(msk_indexes) > 0:
+        msk_out = msk
 
-        undefined_vals = np.sum((maxweights == masks).astype(int), axis=-1) != 1
-
-        msk = mask_values[np.argmax(masks, axis=-1)]
-        msk = (1 - undefined_vals) * msk + undefined_vals * msk_no_data
+    classif_out = None
+    if len(classif_indexes) > 0:
+        classif_out = classif
 
     return (
         out,
@@ -325,7 +332,9 @@ def compute_vector_raster_and_stats(
         stdev,
         nb_pts_in_disc,
         nb_pts_in_cell,
-        msk,
+        msk_out,
+        classif_out,
+        classif_indexes,
         confidences_out,
     )
 
@@ -347,12 +356,15 @@ def create_raster_dataset(
     resolution: float,
     hgt_no_data: int,
     color_no_data: int,
+    msk_no_data: int,
     epsg: int,
     mean: np.ndarray,
     stdev: np.ndarray,
     n_pts: np.ndarray,
     n_in_cell: np.ndarray,
     msk: np.ndarray = None,
+    classif: np.ndarray = None,
+    band_classif: List[str] = None,
     confidences: np.ndarray = None,
 ) -> xr.Dataset:
     """
@@ -367,12 +379,14 @@ def create_raster_dataset(
         expressed in cloud CRS units or None.
     :param hgt_no_data: no data value to use for height
     :param color_no_data: no data value to use for color
+    :param msk_no_data: no data value to use for mask and classif
     :param epsg: epsg code for the CRS of the final raster
     :param mean: mean of height and colors
     :param stdev: standard deviation of height and colors
     :param n_pts: number of points that are stricty in a cell
     :param n_in_cell: number of points which contribute to a cell
     :param msk: raster msk
+    :param classif: raster classif
     :param confidence_from_ambiguity: raster msk
     :return: the raster xarray dataset
     """
@@ -426,7 +440,23 @@ def create_raster_dataset(
     )
 
     if msk is not None:
+        msk = np.nan_to_num(msk, nan=msk_no_data)
         raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
+    if classif is not None:
+        if classif.shape[-1] > 1:  # rasterizer produced classif output
+            classif = np.nan_to_num(classif, nan=msk_no_data)
+            classif_out = xr.Dataset(
+                {
+                    cst.RASTER_CLASSIF: (
+                        [cst.BAND_CLASSIF, cst.Y, cst.X],
+                        classif,
+                    )
+                },
+                coords={**raster_coords, cst.BAND_CLASSIF: band_classif},
+            )
+            # update raster output with classification data
+            raster_out = xr.merge((raster_out, classif_out))
+
     if confidences is not None:
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
@@ -495,6 +525,8 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
+        classif,
+        band_list,
         confidences,
     ) = compute_vector_raster_and_stats(
         cloud,
@@ -506,7 +538,6 @@ def rasterize(
         resolution,
         sigma,
         radius,
-        msk_no_data,
         list_computed_layers,
     )
 
@@ -517,13 +548,16 @@ def rasterize(
     stdev = stdev.reshape(shape_out + (-1,))
     n_pts = n_pts.reshape(shape_out)
     n_in_cell = n_in_cell.reshape(shape_out)
+    if classif is not None:
+        classif = classif.reshape(shape_out + (-1,))
+        classif = np.moveaxis(classif, 2, 0)
 
     if msk is not None:
         msk = msk.reshape(shape_out)
+
     if confidences is not None:
         for key in confidences:
             confidences[key] = confidences[key].reshape(shape_out)
-
     # build output dataset
     raster_out = create_raster_dataset(
         out,
@@ -534,12 +568,15 @@ def rasterize(
         resolution,
         hgt_no_data,
         color_no_data,
+        msk_no_data,
         epsg,
         mean,
         stdev,
         n_pts,
         n_in_cell,
         msk,
+        classif,
+        band_list,
         confidences,
     )
 

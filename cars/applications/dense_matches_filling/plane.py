@@ -28,7 +28,6 @@ import copy
 import logging
 
 # Third party imports
-import numpy as np
 from json_checker import Checker, Or
 from shapely.geometry import Polygon
 
@@ -44,6 +43,7 @@ from cars.applications.dense_matches_filling.dense_matches_filling import (
 )
 from cars.applications.dense_matching import dense_matching_tools
 from cars.core import constants as cst
+from cars.core.datasets import get_color_bands
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
@@ -67,7 +67,6 @@ class PlaneFill(
         super().__init__(conf=conf)
 
         # get conf
-        self.activated = self.used_config["activated"]
         self.used_method = self.used_config["method"]
         self.interpolation_type = self.used_config[fd_cst.INTERP_TYPE]
         self.interpolation_method = self.used_config[fd_cst.INTERP_METHOD]
@@ -84,7 +83,7 @@ class PlaneFill(
         ]
         self.nb_pix = self.used_config["nb_pix"]
         self.percent_to_erode = self.used_config["percent_to_erode"]
-
+        self.classification = self.used_config["classification"]
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
 
@@ -109,8 +108,6 @@ class PlaneFill(
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "plane")
 
-        overloaded_conf["activated"] = conf.get("activated", False)
-
         overloaded_conf[fd_cst.INTERP_TYPE] = conf.get(
             fd_cst.INTERP_TYPE, "pandora"
         )
@@ -128,7 +125,7 @@ class PlaneFill(
         )
         overloaded_conf["nb_pix"] = conf.get("nb_pix", 20)
         overloaded_conf["percent_to_erode"] = conf.get("percent_to_erode", 0.2)
-
+        overloaded_conf["classification"] = conf.get("classification", None)
         # Saving files
         overloaded_conf["save_disparity_map"] = conf.get(
             "save_disparity_map", False
@@ -137,7 +134,6 @@ class PlaneFill(
         application_schema = {
             "method": str,
             "save_disparity_map": bool,
-            "activated": bool,
             "interpolation_type": Or(None, str),
             "interpolation_method": Or(None, str),
             "max_search_distance": Or(None, int),
@@ -147,6 +143,9 @@ class PlaneFill(
             "ignore_extrema_disp_values": bool,
             "nb_pix": Or(None, int),
             "percent_to_erode": Or(None, float),
+            "classification": Or(
+                None, list, lambda x: all(isinstance(val, str) for val in x)
+            ),
         }
 
         # Check conf
@@ -155,15 +154,14 @@ class PlaneFill(
 
         return overloaded_conf
 
-    def get_is_activated(self):
+    def get_classif(self):
         """
-        Get the activated attribute
-
-        :return: self.activated
-        :rtype: bool
+        Get classification band list
+        :return: self.classification
+        :rtype: list[str]
         """
 
-        return self.activated
+        return self.classification
 
     def get_poly_margin(self):
         """
@@ -241,7 +239,7 @@ class PlaneFill(
 
         res = None, None
 
-        if not self.activated:
+        if not self.classification:
             logging.info("Disparity hiles filling was not activated")
             res = epipolar_disparity_map_left, epipolar_disparity_map_right
 
@@ -611,9 +609,9 @@ def wrapper_fill_disparity(
 
         # check bands
         if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
-            nb_bands = left_epi_image[cst.EPI_COLOR].values.shape[0]
-            if cst.BAND not in croped_disp_right.dims:
-                croped_disp_right.assign_coords({cst.BAND: np.arange(nb_bands)})
+            if cst.BAND_IM not in croped_disp_right.dims:
+                band_im = get_color_bands(left_epi_image, cst.EPI_COLOR)
+                croped_disp_right.coords[cst.BAND_IM] = band_im
 
         # merge colors
         croped_disp_right[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]

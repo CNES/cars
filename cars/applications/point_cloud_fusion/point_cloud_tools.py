@@ -478,6 +478,18 @@ def create_combined_dense_cloud(  # noqa: C901
             ]
         )
 
+    # add classif indexes
+    band_classif = None
+    if cst.EPI_CLASSIFICATION in cloud_list[0]:
+        band_classif = list(cloud_list[0].coords[cst.BAND_CLASSIF].to_numpy())
+        for band in band_classif:
+            band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
+            nb_data.extend(
+                [
+                    band_index,
+                ]
+            )
+
     confidence_list = []
     for key in cloud_list[0].keys():
         if cst.POINTS_CLOUD_CONFIDENCE in key:
@@ -602,6 +614,25 @@ def create_combined_dense_cloud(  # noqa: C901
                 c_cloud,
             )
 
+        # add classification to the current cloud
+        if cst.EPI_CLASSIFICATION in cloud_list[cloud_list_idx]:
+            add_classification_information(
+                cloud_list,
+                nb_data,
+                band_classif,
+                cloud_list_idx,
+                bbox,
+                c_cloud,
+            )
+        # add mask to the current cloud
+        if cst.EPI_COLOR_MSK in cloud_list[cloud_list_idx]:
+            add_msk_information(
+                cloud_list,
+                nb_data,
+                cloud_list_idx,
+                bbox,
+                c_cloud,
+            )
         # add the original image coordinates information to the current cloud
         if with_coords:
             coords_line = np.linspace(bbox[0], bbox[2], bbox[2] - bbox[0] + 1)
@@ -721,7 +752,6 @@ def add_color_information(
             )
 
         c_color = color_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-
         for band in range(nb_band_clr):
             c_cloud[
                 nb_data.index(
@@ -729,6 +759,69 @@ def add_color_information(
                 ),
                 :,
             ] = np.ravel(c_color[band, :, :])
+
+
+def add_classification_information(
+    cloud_list,
+    nb_data,
+    band_classif,
+    cloud_list_idx,
+    bbox,
+    c_cloud,
+):
+    """
+    Add color information for a current cloud_list item
+
+    :param cloud_list: point cloud dataset
+    :type cloud_list: List(Dataset)
+    :param band_classif: list of band classif
+    :type band_classif: list[str]
+    :param nb_data: list of band data
+    :type nb_data: list[str]
+    :param cloud_list_idx: index of the current point cloud
+    :type cloud_list_idx: int
+    :param bbox: bbox of interest
+    :type bbox: list[int]
+    :param c_cloud: arranged point cloud
+    :type c_cloud: NDArray[float64]
+    """
+    classif_array = cloud_list[cloud_list_idx][cst.EPI_CLASSIFICATION].values
+    c_classif = classif_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+    for idx, band in enumerate(band_classif):
+        band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
+        c_cloud[
+            nb_data.index(band_index),
+            :,
+        ] = np.ravel(c_classif[idx, :, :])
+
+
+def add_msk_information(
+    cloud_list,
+    nb_data,
+    cloud_list_idx,
+    bbox,
+    c_cloud,
+):
+    """
+    Add mask information for a current cloud_list item
+
+    :param cloud_list: point cloud dataset
+    :type cloud_list: List(Dataset)
+    :param nb_data: list of band data
+    :type nb_data: list[str]
+    :param cloud_list_idx: index of the current point cloud
+    :type cloud_list_idx: int
+    :param bbox: bbox of interest
+    :type bbox: list[int]
+    :param c_cloud: arranged point cloud
+    :type c_cloud: NDArray[float64]
+    """
+    msk_array = cloud_list[cloud_list_idx][cst.EPI_COLOR_MSK].values
+    c_msk = msk_array[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+    c_cloud[
+        nb_data.index(cst.POINTS_CLOUD_MSK),
+        :,
+    ] = np.ravel(c_msk[:, :])
 
 
 def get_color_type(clouds):

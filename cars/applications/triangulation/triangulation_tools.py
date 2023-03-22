@@ -133,7 +133,6 @@ def triangulate(
                 ] = value
             else:
                 reversed_input_configuration[key] = value
-
         point_clouds[cst.STEREO_SEC] = compute_points_cloud(
             loader_to_use,
             disp_sec,
@@ -336,7 +335,16 @@ def compute_points_cloud(
 
     # add color
     if cst.EPI_COLOR in data:
-        add_color(data[cst.EPI_COLOR].values, nodata_index, point_cloud)
+        add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud, nodata_index)
+
+    # add classif
+    if cst.EPI_CLASSIFICATION in data:
+        add_layer(
+            data,
+            cst.EPI_CLASSIFICATION,
+            cst.BAND_CLASSIF,
+            point_cloud,
+        )
 
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     if roi_key == cst.ROI_WITH_MARGINS:
@@ -349,37 +357,30 @@ def compute_points_cloud(
     return point_cloud
 
 
-def add_color(color, nodata_index, point_cloud):
+def add_layer(
+    dataset, layer_name, layer_coords, point_cloud, nodata_index=None
+):
     """
-    Add color point cloud to point cloud dataset
+    Add layer point cloud to point cloud dataset
 
-    :param data: color point cloud
+    :param data: layer point cloud dataset
     :param nodata_index: nodata index array
     :param point_cloud: point cloud dataset
     """
-    nb_bands = 1
-    if len(color.shape) > 2:
-        nb_bands = color.shape[0]
+    layers = dataset[layer_name].values
+    band_layer = dataset.coords[layer_coords]
+    if nodata_index:
+        nb_bands = layers.shape[0]
         for k in range(nb_bands):
-            color[k, :, :][nodata_index] = np.nan
-        if nb_bands == 1:
-            color = color[0, :, :]
-    else:
-        color[:, :][nodata_index] = np.nan
+            layers[k, :, :][nodata_index] = np.nan
 
-    if nb_bands > 1:
-        if cst.BAND not in point_cloud.dims:
-            point_cloud.assign_coords({cst.BAND: np.arange(nb_bands)})
+    if layer_coords not in point_cloud.dims:
+        point_cloud.coords[layer_coords] = band_layer
 
-        point_cloud[cst.EPI_COLOR] = xr.DataArray(
-            color,
-            dims=[cst.BAND, cst.ROW, cst.COL],
-        )
-    else:
-        point_cloud[cst.EPI_COLOR] = xr.DataArray(
-            color,
-            dims=[cst.ROW, cst.COL],
-        )
+    point_cloud[layer_name] = xr.DataArray(
+        layers,
+        dims=[layer_coords, cst.ROW, cst.COL],
+    )
 
 
 def geoid_offset(points, geoid):

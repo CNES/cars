@@ -91,6 +91,7 @@ class SimpleGaussian(
         self.write_color = self.used_config["write_color"]
         self.write_stats = self.used_config["write_stats"]
         self.write_mask = self.used_config["write_msk"]
+        self.write_classif = self.used_config["write_classif"]
         self.write_dsm = self.used_config["write_dsm"]
         self.write_confidence = self.used_config["write_confidence"]
 
@@ -137,6 +138,7 @@ class SimpleGaussian(
         overloaded_conf["write_color"] = conf.get("write_color", True)
         overloaded_conf["write_stats"] = conf.get("write_stats", False)
         overloaded_conf["write_msk"] = conf.get("write_msk", False)
+        overloaded_conf["write_classif"] = conf.get("write_classif", False)
         overloaded_conf["write_dsm"] = conf.get("write_dsm", True)
         overloaded_conf["write_confidence"] = conf.get("write_confidence", True)
 
@@ -163,6 +165,7 @@ class SimpleGaussian(
             "color_dtype": str,
             "write_color": bool,
             "write_msk": bool,
+            "write_classif": bool,
             "write_stats": bool,
             "write_dsm": bool,
             "write_confidence": bool,
@@ -395,6 +398,18 @@ class SimpleGaussian(
                     dtype=np.uint16,
                     nodata=0,
                     cars_ds_name="dsm_pts_in_cells",
+                )
+            if self.write_classif:
+                out_classif_file_name = os.path.join(
+                    self.orchestrator.out_dir, "classif.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_classif_file_name,
+                    cst.RASTER_CLASSIF,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.msk_no_data,
+                    cars_ds_name="dsm_classif",
                 )
             if self.write_mask:
                 out_msk_file_name = os.path.join(

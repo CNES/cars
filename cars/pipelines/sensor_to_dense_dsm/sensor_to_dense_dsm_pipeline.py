@@ -21,7 +21,7 @@
 """
 CARS sensors_to_dense_dsm pipeline class file
 """
-
+# pylint: disable=too-many-lines
 # Standard imports
 from __future__ import print_function
 
@@ -40,6 +40,7 @@ from cars.applications.sparse_matching import (
 )
 from cars.conf import log_conf
 from cars.core import preprocessing, roi_tools
+from cars.core.inputs import get_descriptions_bands
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -141,6 +142,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         self.used_conf[APPLICATIONS] = application_conf
 
+        # Check conf application vs inputs application
+        self.check_inputs_with_applications(self.inputs, application_conf)
+
         # Save used conf
         out_dir = self.output["out_dir"]
         cars_dataset.save_dict(
@@ -194,7 +198,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "grid_generation",
             "resampling",
             "holes_detection",
-            "dense_matches_filling",
+            "dense_matches_filling.1",
+            "dense_matches_filling.2",
             "sparse_matching",
             "dense_matching",
             "triangulation",
@@ -214,7 +219,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Initialize used config
         used_conf = {}
-
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -248,13 +252,29 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         used_conf["holes_detection"] = self.holes_detection_app.get_conf()
 
-        # disparity filling
-        self.dense_matches_filling = Application(
-            "dense_matches_filling", cfg=conf.get("dense_matches_filling", {})
+        # disparity filling with plane
+        self.matches_filling_plane = Application(
+            "dense_matches_filling",
+            cfg=conf.get(
+                "dense_matches_filling.1",
+                {"method": "plane"},
+            ),
         )
         used_conf[
-            "dense_matches_filling"
-        ] = self.dense_matches_filling.get_conf()
+            "dense_matches_filling.1"
+        ] = self.matches_filling_plane.get_conf()
+
+        # disparity filling with zeros
+        self.dense_matches_filling_zeros = Application(
+            "dense_matches_filling",
+            cfg=conf.get(
+                "dense_matches_filling.2",
+                {"method": "zero_padding"},
+            ),
+        )
+        used_conf[
+            "dense_matches_filling.2"
+        ] = self.dense_matches_filling_zeros.get_conf()
 
         # Sparse Matching
         self.sparse_mtch_app = Application(
@@ -326,6 +346,52 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.rasterization_application = None
 
         return used_conf
+
+    def check_inputs_with_applications(self, inputs_conf, application_conf):
+        """
+        Check for each application the input configuration consistency
+
+        :param inputs_conf: inputs checked configuration
+        :type inputs_conf: dict
+        :param application_conf: application checked configuration
+        :type application_conf: dict
+        """
+
+        # check classification application parameter compare
+        # to each sensors inputs classification list
+        for application_key in application_conf:
+            if "classification" in application_conf[application_key]:
+                for item in inputs_conf["sensors"]:
+                    if "classification" in inputs_conf["sensors"][item].keys():
+                        if inputs_conf["sensors"][item]["classification"]:
+                            descriptions = get_descriptions_bands(
+                                inputs_conf["sensors"][item]["classification"]
+                            )
+                            if application_conf[application_key][
+                                "classification"
+                            ] and not set(
+                                application_conf[application_key][
+                                    "classification"
+                                ]
+                            ).issubset(
+                                set(descriptions)
+                            ):
+                                raise RuntimeError(
+                                    "The {} bands description {} ".format(
+                                        inputs_conf["sensors"][item][
+                                            "classification"
+                                        ],
+                                        list(descriptions),
+                                    )
+                                    + "and the {} config are not ".format(
+                                        application_key
+                                    )
+                                    + "consistent : {}".format(
+                                        application_conf[application_key][
+                                            "classification"
+                                        ]
+                                    )
+                                )
 
     def run(self):
         """
@@ -429,8 +495,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ) = self.holes_detection_app.run(
                     epipolar_image_left,
                     epipolar_image_right,
-                    is_activated=self.dense_matches_filling.get_is_activated(),
-                    margin=self.dense_matches_filling.get_poly_margin(),
+                    is_activated=self.matches_filling_plane.get_classif()
+                    not in (None, []),
+                    margin=self.matches_filling_plane.get_poly_margin(),
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -590,16 +657,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     disp_min=disp_min,
                     disp_max=disp_max,
                     compute_disparity_masks=(
-                        self.dense_matches_filling.get_is_activated()
+                        self.matches_filling_plane.get_classif()
+                        not in (None, [])
                     ),
                     disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
                 )
 
                 # Fill holes in disparity map
                 (
-                    filled_epipolar_disparity_map_left,
-                    filled_epipolar_disparity_map_right,
-                ) = self.dense_matches_filling.run(
+                    filled_with_plane_epipolar_disparity_map_left,
+                    filled_with_plane_epipolar_disparity_map_right,
+                ) = self.matches_filling_plane.run(
                     epipolar_disparity_map_left,
                     epipolar_disparity_map_right,
                     new_epipolar_image_left,
@@ -607,6 +675,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     holes_bbox_right,
                     disp_min=disp_min,
                     disp_max=disp_max,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=pair_folder,
+                    pair_key=pair_key,
+                )
+                (
+                    filled_epipolar_disparity_map_left,
+                    filled_epipolar_disparity_map_right,
+                ) = self.dense_matches_filling_zeros.run(
+                    filled_with_plane_epipolar_disparity_map_left,
+                    filled_with_plane_epipolar_disparity_map_right,
+                    new_epipolar_image_left,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,

@@ -27,4 +27,4 @@ from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFilling,
 )
 
-from . import plane
+from . import plane, zero_padding

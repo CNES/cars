@@ -100,6 +100,15 @@ The masked values are not used in the matching process (sparse or dense matching
 
 Further, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
 
+Classification
+--------------
+
+The considered classification image are multi-band raster with descriptions name for each band. See optional description option of the `Gdal band raster model <https://gdal.org/user/raster_data_model.html#raster-band>`_
+
+All non-zeros values of the classification image will be considered as invalid data.
+
+The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`configuration`.. 
+
 .. _output_data:
 
 Outputs

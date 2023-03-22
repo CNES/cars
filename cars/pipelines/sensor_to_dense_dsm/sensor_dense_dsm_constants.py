@@ -38,6 +38,7 @@ GEOID = "geoid"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
+INPUT_CLASSIFICATION = "classification"
 INPUT_GEO_MODEL = "geomodel"
 INPUT_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"

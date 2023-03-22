@@ -123,6 +123,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_GEO_MODEL: str,
         sens_cst.INPUT_MODEL_FILTER: Or([str], None),
         sens_cst.INPUT_MSK: Or(str, None),
+        sens_cst.INPUT_CLASSIFICATION: Or(str, None),
     }
     checker_sensor = Checker(sensor_schema)
 
@@ -156,7 +157,12 @@ def sensors_check_inputs(  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_MSK
         ] = mask
-
+        classif = conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_CLASSIFICATION, None
+        )
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            sens_cst.INPUT_CLASSIFICATION
+        ] = classif
         # Validate
         checker_sensor.validate(
             overloaded_conf[sens_cst.SENSORS][sensor_image_key]
@@ -202,6 +208,7 @@ def sensors_check_inputs(  # noqa: C901
             sensor_image[sens_cst.INPUT_IMG],
             sensor_image[sens_cst.INPUT_MSK],
             sensor_image[sens_cst.INPUT_COLOR],
+            sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
         # check image and color data consistency
         if overloaded_conf[sens_cst.CHECK_INPUTS]:
@@ -232,6 +239,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             sens_cst.INPUT_MSK,
             sens_cst.INPUT_GEO_MODEL,
             sens_cst.INPUT_COLOR,
+            sens_cst.INPUT_CLASSIFICATION,
         ]:
             if sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
@@ -322,9 +330,9 @@ def check_input_data(image, color):
             )
 
 
-def check_input_size(image, mask, color):
+def check_input_size(image, mask, color, classif):
     """
-    Check image, mask and color given
+    Check image, mask, classif and color given
 
     Images must have same size
 
@@ -334,6 +342,8 @@ def check_input_size(image, mask, color):
     :type mask: str
     :param color: color path
     :type color: str
+    :param classif: classif path
+    :type classif: str
     """
     if inputs.rasterio_get_nb_bands(image) != 1:
         raise RuntimeError("{} is not mono-band images".format(image))
@@ -350,6 +360,13 @@ def check_input_size(image, mask, color):
             raise RuntimeError(
                 "The image {} and the color {} "
                 "do not have the same size".format(image, color)
+            )
+
+    if classif is not None:
+        if inputs.rasterio_get_size(image) != inputs.rasterio_get_size(classif):
+            raise RuntimeError(
+                "The image {} and the classif {} "
+                "do not have the same size".format(image, classif)
             )
 
 

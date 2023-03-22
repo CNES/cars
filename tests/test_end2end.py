@@ -1544,6 +1544,248 @@ def test_end2end_ventoux_with_color():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_ventoux_with_classif():
+    """
+    End to end processing with p+xs fusion
+    """
+
+    input_json = read_input_parameters(
+        absolute_data_path("input/phr_ventoux/preproc_input_with_classif.json")
+    )
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_with_classif.json"
+        )
+        # Run sparse dsm pipeline
+        _, input_config_sparse_res = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_sparse_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {
+                "method": "bicubic",
+                "epi_tile_size": 250,
+                "save_epipolar_image": True,
+                "save_epipolar_color": False,
+            },
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": True,
+            },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_points_cloud": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+        }
+
+        input_config_sparse_res["applications"].update(application_config)
+
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_res
+        )
+        sparse_res_pipeline.run()
+
+        out_dir = input_config_sparse_res["output"]["out_dir"]
+
+        # Check content.json properties
+        out_json = os.path.join(out_dir, "content.json")
+        assert os.path.isfile(out_json)
+
+        with open(out_json, "r", encoding="utf-8") as out_json_file:
+            out_data = json.load(out_json_file)
+            out_grid = out_data["applications"]["left_right"][
+                "grid_generation_run"
+            ]
+            assert out_grid["epipolar_size_x"] == 612
+            assert out_grid["epipolar_size_y"] == 612
+            out_disp_compute = out_data["applications"]["left_right"][
+                "disparity_range_computation_run"
+            ]
+            assert out_disp_compute["minimum_disparity"] > -21
+            assert out_disp_compute["minimum_disparity"] < -17
+            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] < 16
+
+            assert os.path.isfile(out_disp_compute["matches"])
+
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
+                    )
+                )
+                and os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675375.0_4897185.0.csv"
+                    )
+                )
+            ) is True
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675375.0_4897185.0.laz"
+                    )
+                )
+                and os.path.exists(
+                    os.path.join(
+                        out_dir, "points_cloud", "675240.0_4897185.0.csv"
+                    )
+                )
+            ) is True
+
+        # Run dense_dsm dsm pipeline
+        # clean outdir
+        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
+
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_res.copy()
+        # update applications
+        dense_dsm_applications = {
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": 0.5,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+                "write_classif": True,
+            },
+            "dense_matching": {
+                "method": "census_sgm",
+                "loader": "pandora",
+                "save_disparity_map": True,
+                "use_sec_disp": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+                "save_points_cloud_as_laz": True,
+                "save_points_cloud_as_csv": True,
+            },
+        }
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        # update epsg
+        input_config_dense_dsm["inputs"]["epsg"] = 32631
+
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline.run()
+
+        out_dir = input_config_sparse_res["output"]["out_dir"]
+
+        assert (
+            os.path.exists(
+                os.path.join(out_dir, "confidence_from_ambiguity.tif")
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.csv")
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_small_components_removing",
+                    "675248.0_4897173.0.laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_small_components_removing",
+                    "675248.0_4897173.0.csv",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_statistical_removing",
+                    "675248.0_4897173.0.laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "points_cloud_post_statistical_removing",
+                    "675248.0_4897173.0.csv",
+                )
+            )
+            is True
+        )
+
+        # Uncomment the following instruction to update reference data
+        # copy2(os.path.join(out_dir, 'dsm.tif'),
+        #      absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        # copy2(os.path.join(out_dir, 'classif.tif'),
+        #      absolute_data_path("ref_output/classif_end2end_ventoux.tif"))
+
+        assert_same_images(
+            os.path.join(out_dir, "classif.tif"),
+            absolute_data_path("ref_output/classif_end2end_ventoux.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
 def test_compute_dsm_with_roi_ventoux():
     """
     Dask compute dsm processing with input roi (cars_stereo)
@@ -2397,4 +2639,115 @@ def desactivated_test_end2end_disparity_filing():
             atol=1.0e-7,
         )
 
-        # TODO test with mp mode
+
+@pytest.mark.end2end_tests
+def test_end2end_disparity_filing_with_zeros():
+    """
+    End to end processing, test with mask and
+    fill holes with zero_padding method
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+
+        # Run dense dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "local_dask",
+        )
+        resolution = 0.5
+        dense_dsm_applications = {
+            "dense_matching": {
+                "method": "census_sgm",
+                "save_disparity_map": True,
+                "use_sec_disp": True,
+            },
+            "dense_matches_filling.2": {
+                "method": "zero_padding",
+                "save_disparity_map": True,
+                "classification": ["bat"],
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": resolution,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+                "msk_no_data": 65534,
+                "write_msk": True,
+            },
+        }
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+
+        # update epsg
+        final_epsg = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline.run()
+
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
+
+        # Uncomment the 2 following instructions to update reference data
+        # copy2(
+        #     os.path.join(out_dir, "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output", "dsm_end2end_gizeh_fill_with_zero.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "clr.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output", "clr_end2end_gizeh_fill_with_zero.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "msk.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output", "msk_end2end_gizeh_fill_with_zero.tif"
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                "ref_output/dsm_end2end_gizeh_fill_with_zero.tif"
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path(
+                "ref_output/clr_end2end_gizeh_fill_with_zero.tif"
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "msk.tif"),
+            absolute_data_path(
+                "ref_output/msk_end2end_gizeh_fill_with_zero.tif"
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )

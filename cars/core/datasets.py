@@ -41,7 +41,7 @@ def create_im_dataset(
     region: List[int],
     largest_size: List[int],
     img_path: str = None,
-    band_coords: bool = False,
+    band_coords: str = None,
     msk: np.ndarray = None,
 ) -> xr.Dataset:
     """
@@ -51,7 +51,8 @@ def create_im_dataset(
     :param region: region as list [xmin ymin xmax ymax]
     :param largest_size: whole image size
     :param img_path: path to image
-    :param band_coords: set to true to add the coords 'band' to the dataset
+    :param band_type: set to band coord names (cst.BAND_IM or BAND_CLASSIF)
+    to add band description in the dataset
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
@@ -60,10 +61,13 @@ def create_im_dataset(
     # Get georef and transform
     img_crs = None
     img_transform = None
+    descriptions = None
     if img_path is not None:
         with rio.open(img_path) as img_srs:
             img_crs = img_srs.profile["crs"]
             img_transform = img_srs.profile["transform"]
+            descriptions = list(img_srs.descriptions)
+
     if img_crs is None:
         img_crs = "None"
     if img_transform is None:
@@ -71,18 +75,22 @@ def create_im_dataset(
 
     # Add band dimension if needed
     if band_coords or nb_bands > 1:
-        bands = range(nb_bands)
         # Reorder dimensions in color dataset in order that the first dimension
         # is band.
+        if band_coords == cst.BAND_IM:
+            if np.any(descriptions) is None:
+                default_band = ["R", "G", "B", "N"]
+                descriptions = default_band[:nb_bands]
+
         dataset = xr.Dataset(
             {
                 cst.EPI_IMAGE: (
-                    [cst.BAND, cst.ROW, cst.COL],
+                    [band_coords, cst.ROW, cst.COL],
                     np.einsum("ijk->kij", img),
                 )
             },
             coords={
-                cst.BAND: bands,
+                band_coords: descriptions,
                 cst.ROW: np.array(range(region[1], region[3])),
                 cst.COL: np.array(range(region[0], region[2])),
             },
@@ -107,5 +115,30 @@ def create_im_dataset(
     dataset.attrs[cst.EPI_CRS] = img_crs
     dataset.attrs[cst.EPI_TRANSFORM] = img_transform
     dataset.attrs["region"] = np.array(region)
-
+    dataset.attrs[cst.BAND_NAMES] = descriptions
     return dataset
+
+
+def get_color_bands(dataset, key):
+    """
+    Get band names list from the cardataset color
+
+    :param dataset: carsdataset with the color data
+    :type dataset: CarsDataset
+    :param key: dataset color data key
+    :param key: string
+
+    :return: list of color band names
+    """
+    nb_bands = dataset[key].values.shape[0]
+    band_im = None
+    if cst.BAND_NAMES in dataset.attrs.keys():
+        band_im = dataset.attrs[cst.BAND_NAMES]
+    # if description is None, fill with default value
+    # according with the number of channels
+
+    if band_im is None:  # and np.any(band_im) is None
+        default_band = ["Red", "Green", "Blue", "NIR"]
+        band_im = default_band[:nb_bands]
+
+    return band_im

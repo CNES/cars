@@ -29,7 +29,7 @@ import math
 # Third party imports
 import numpy as np
 
-from cars.conf import mask_cst
+from cars.conf import mask_cst as msk_cst
 
 # CARS imports
 from cars.core import constants as cst
@@ -49,6 +49,8 @@ def epipolar_rectify_images(
     color1=None,
     mask1=None,
     mask2=None,
+    classif1=None,
+    classif2=None,
     nodata1=0,
     nodata2=0,
     add_color=True,
@@ -151,7 +153,7 @@ def epipolar_rectify_images(
                 grid1,
                 [epipolar_size_x, epipolar_size_y],
                 region=left_region,
-                band_coords=True,
+                band_coords=cst.BAND_IM,
             )
         else:
             raise RuntimeError(
@@ -162,10 +164,37 @@ def epipolar_rectify_images(
                     inputs.rasterio_get_size(img1),
                 )
             )
-        # Remove region key as it duplicates coordinates span
-        left_color_dataset.attrs.pop("region", None)
 
-    return left_dataset, right_dataset, left_color_dataset
+    # resample the mask images
+    left_classif_dataset = None
+    if classif1:
+        left_classif_dataset = resample_image(
+            classif1,
+            grid1,
+            [epipolar_size_x, epipolar_size_y],
+            region=left_region,
+            band_coords=cst.BAND_CLASSIF,
+            interpolator="nn",
+        )
+
+    right_classif_dataset = None
+    if classif2:
+        right_classif_dataset = resample_image(
+            classif2,
+            grid2,
+            [epipolar_size_x, epipolar_size_y],
+            region=right_region,
+            band_coords=cst.BAND_CLASSIF,
+            interpolator="nn",
+        )
+
+    return (
+        left_dataset,
+        right_dataset,
+        left_color_dataset,
+        left_classif_dataset,
+        right_classif_dataset,
+    )
 
 
 def resample_image(
@@ -176,6 +205,7 @@ def resample_image(
     nodata=None,
     mask=None,
     band_coords=False,
+    interpolator=None,
 ):
     """
     Resample image according to grid and largest size.
@@ -195,6 +225,9 @@ def resample_image(
     :type mask: None or path to mask image
     :param band_coords: Force bands coordinate in output dataset
     :type band_coords: boolean
+    :param interpolator: interpolator type according with
+                        otb option (bco is default value)
+    :type interpolator: str ("nn" "linear" "bco")
     :rtype: xarray.Dataset with resampled image and mask
     """
     # Handle region is None
@@ -219,8 +252,8 @@ def resample_image(
             img,
             mask,
             nodata,
-            mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-            mask_cst.VALID_VALUE,
+            msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+            msk_cst.VALID_VALUE,
             grid,
             largest_size[0],
             largest_size[1],
@@ -229,7 +262,7 @@ def resample_image(
 
     # Build rectification pipelines for images
     resamp = otb_pipelines.build_image_resampling_pipeline(
-        img, grid, largest_size[0], largest_size[1], region
+        img, grid, largest_size[0], largest_size[1], region, interpolator
     )
 
     dataset = datasets.create_im_dataset(

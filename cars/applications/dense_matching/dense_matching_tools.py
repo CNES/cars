@@ -114,6 +114,7 @@ def add_color(
     output_dataset: xr.Dataset,
     color: np.ndarray = None,
     color_mask: np.ndarray = None,
+    band_im: list = None,
 ):
     """ "
     Add color and color mask to dataset
@@ -121,31 +122,47 @@ def add_color(
     :param output_dataset: output dataset
     :param color: color array
     :param color_mask: color mask array
+    :param band_im: list of band names
 
     """
-
     if color is not None:
-        nb_bands = 1
-        if len(color.shape) > 2:
-            nb_bands = color.shape[0]
-
-        if nb_bands > 1 and cst.BAND not in output_dataset.dims:
-            output_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
-            output_dataset[cst.EPI_COLOR] = xr.DataArray(
-                color,
-                dims=[cst.BAND, cst.ROW, cst.COL],
-            )
-        else:
-            output_dataset[cst.EPI_COLOR] = xr.DataArray(
-                color,
-                dims=[cst.ROW, cst.COL],
-            )
+        if band_im is not None and cst.BAND_IM not in output_dataset.dims:
+            output_dataset.coords[cst.BAND_IM] = band_im
+        output_dataset[cst.EPI_COLOR] = xr.DataArray(
+            color,
+            dims=[cst.BAND_IM, cst.ROW, cst.COL],
+        )
 
     # Add color mask
     if color_mask is not None:
         output_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
             color_mask,
             dims=[cst.ROW, cst.COL],
+        )
+
+
+def add_classification(
+    output_dataset: xr.Dataset,
+    classif: np.ndarray = None,
+    band_classif: list = None,
+):
+    """ "
+    Add classification to dataset
+
+    :param output_dataset: output dataset
+    :param classif: classif array
+    :param band_im: list of band names
+
+    """
+    if classif is not None:
+        if (
+            band_classif is not None
+            and cst.BAND_CLASSIF not in output_dataset.dims
+        ):
+            output_dataset.coords[cst.BAND_CLASSIF] = band_classif
+        output_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
+            classif,
+            dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
         )
 
 
@@ -181,17 +198,24 @@ def create_disp_dataset(
 
     # retrieve colors
     color = None
-    nb_bands = 1
+    band_im = None
     if cst.EPI_COLOR in ref_dataset:
         color = ref_dataset[cst.EPI_COLOR].values
-        if len(color.shape) > 2:
-            nb_bands = color.shape[0]
-            if nb_bands == 1:
-                color = color[0, :, :]
+        if ref_dataset[cst.EPI_COLOR].values.shape[0] > 1:
+            band_im = ref_dataset.coords[cst.BAND_IM]
+        else:
+            band_im = ["Gray"]
 
     color_mask = None
     if cst.EPI_COLOR_MSK in ref_dataset:
         color_mask = ref_dataset[cst.EPI_COLOR_MSK].values
+
+    # retrieve classif
+    classif = None
+    band_classif = None
+    if cst.EPI_CLASSIFICATION in ref_dataset:
+        classif = ref_dataset[cst.EPI_CLASSIFICATION].values
+        band_classif = ref_dataset.coords[cst.BAND_CLASSIF]
 
     # Crop disparity to ROI
     ref_roi = [
@@ -200,15 +224,14 @@ def create_disp_dataset(
         int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
         int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
     ]
+
     # Crop disparity map
     disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
     # Crop color
     if color is not None:
-        if nb_bands == 1:
-            color = color[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-        else:
-            color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+        color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+
     # Crop color mask
     if color_mask is not None:
         color_mask = color_mask[
@@ -220,6 +243,10 @@ def create_disp_dataset(
         masks[key] = masks[key][
             ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
         ]
+
+    # Crop classif
+    if classif is not None:
+        classif = classif[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
     # Fill disparity array with 0 value for invalid points
     disp_map[masks[cst_disp.VALID] == 0] = 0
@@ -244,7 +271,7 @@ def create_disp_dataset(
     )
 
     # add color
-    add_color(disp_ds, color=color, color_mask=color_mask)
+    add_color(disp_ds, color=color, color_mask=color_mask, band_im=band_im)
 
     # add confidence
     add_confidence(disp_ds, disp, ref_roi)
@@ -254,6 +281,8 @@ def create_disp_dataset(
         add_performance_map(
             disp_ds, disp, ref_roi, perf_ambiguity_threshold, disp_to_alt_ratio
         )
+    # add classif
+    add_classification(disp_ds, classif=classif, band_classif=band_classif)
 
     if compute_disparity_masks:
         for key, val in masks.items():
@@ -574,9 +603,6 @@ def estimate_color_from_disparity(
     if cst.EPI_COLOR_MSK in sec_ds.variables.keys():
         im_msk = sec_ds[cst.EPI_COLOR_MSK].values
 
-    # retrieve image sizes
-    if len(im_color.shape) == 2:
-        im_color = np.expand_dims(im_color, axis=0)
     nb_bands, nb_row, nb_col = im_color.shape
     nb_disp_row, nb_disp_col = disp_ref_to_sec[cst_disp.MAP].values.shape
 
@@ -634,8 +660,8 @@ def estimate_color_from_disparity(
     # interpolate each band of the color image
     for band in range(nb_bands):
         # get band values
-        band_im = im_color[band, :, :]
-        clr_values = band_im.reshape(nb_row * nb_col, 1)
+        band_img = im_color[band, :, :]
+        clr_values = band_img.reshape(nb_row * nb_col, 1)
 
         # interpolate values
         interp_values = interpolate.griddata(
@@ -653,7 +679,11 @@ def estimate_color_from_disparity(
     largest_size = disp_ref_to_sec.attrs[cst.EPI_FULL_SIZE]
 
     interp_clr_ds = datasets.create_im_dataset(
-        final_interp_color, region, largest_size, band_coords=True, msk=None
+        final_interp_color,
+        region,
+        largest_size,
+        band_coords=cst.BAND_IM,
+        msk=None,
     )
     interp_clr_ds.attrs[cst.ROI] = disp_ref_to_sec.attrs[cst.ROI]
 
