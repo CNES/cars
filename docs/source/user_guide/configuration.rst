@@ -78,7 +78,7 @@ The structure follows this organisation:
                         "image" : "path_to_image.tif",
                         "color" : "path_to_color.tif",
                         "mask" : "path_to_mask.tif",
-                        "nodata": 0
+                        "no_data": 0
                     }
                 }
 
@@ -127,6 +127,39 @@ The structure follows this organisation:
             * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
             * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
 
+            
+            **Pairing**
+
+            The pairing attribute defines the pairs to use, using sensors keys used to define sensor images.
+
+            .. code-block:: json
+
+                {
+                "inputs": {
+                    "sensors" : {
+                        "one": {
+                            "image": "img1.tif",
+                            "geomodel": "img1.geom",
+                            "no_data": 0
+                        },
+                        "two": {
+                            "image": "img2.tif",
+                            "geomodel": "img2.geom",
+                            "no_data": 0
+
+                        },
+                        "three": {
+                            "image": "img3.tif",
+                            "geomodel": "img3.geom",
+                            "no_data": 0
+                        }
+                    },
+                    "pairing": [["one", "two"],["one", "three"]]
+                    }
+                }
+
+
+            
             **Epipolar a priori**
 
             The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
@@ -394,7 +427,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/cars_pipeline_sensor2dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -423,7 +456,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/sensor_to_low_dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -448,7 +481,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/cars_pipeline_sensor_to_pc.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
             - For each stereo pair:
@@ -470,7 +503,7 @@ The structure follows this organisation:
             **Description**
 
             .. figure:: ../images/pc_to_dsm.png
-                :width: 500px
+                :width: 700px
                 :align: center
 
 
@@ -662,6 +695,14 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | generate_performance_map        | Generate a performance map from disparity map                           | bool    |                                 | False         | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_ambiguity          |  Ambiguity confidence eta max used for performance map                  | float   |                                 | 0.99          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_risk               |  Risk confidence eta max used for performance map                       | float   |                                 | 0.04          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_step                   |  Risk and Ambiguity confidence eta step used for performance map        | float   |                                 | 0.6           | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 
@@ -678,6 +719,11 @@ The structure follows this organisation:
                         "loader_conf": "path_to_user_pandora_configuration"
                     }
                 },
+
+            .. note::
+
+                When user activate the generation of performance map, this map transits until being rasterized.
+                Performance map is managed as a confidence map.
 
         .. tab:: HolesDetection
 
@@ -759,10 +805,6 @@ The structure follows this organisation:
                         "save_disparity_map": true
                     }
                 },
-
-            .. warning::
-
-                DenseMatchingFiling does not support currently multiprocessing cluster.
 
 
 
@@ -1036,6 +1078,8 @@ Here is a full detailed example with **orchestrator** and **applications** capab
             "mode":"local_dask",
             "nb_workers": 4
         },
+
+        "pipeline": "sensors_to_dense_dsm",
 
         "applications":{
             "point_cloud_rasterization": {

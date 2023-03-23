@@ -30,6 +30,7 @@ import pytest
 # CARS imports
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
+    overload_pandora_conf_with_confidence,
 )
 
 # CARS Tests imports
@@ -69,10 +70,12 @@ def test_configure_pandora_config():
             },
             "optimization": {
                 "optimization_method": "sgm",
-                "P1": 8,
-                "P2": 24,
-                "p2_method": "constant",
-                "penalty_method": "sgm_penalty",
+                "penalty": {
+                    "P1": 8,
+                    "P2": 24,
+                    "p2_method": "constant",
+                    "penalty_method": "sgm_penalty",
+                },
                 "overcounting": False,
                 "min_cost_paths": False,
             },
@@ -89,4 +92,35 @@ def test_configure_pandora_config():
     pandora_loader = PandoraLoader(conf=pandora_config, method_name=None)
     corr_config = pandora_loader.get_conf()
 
-    assert corr_config["pipeline"]["optimization"]["P2"] == 24
+    assert corr_config["pipeline"]["optimization"]["penalty"]["P2"] == 24
+
+
+@pytest.mark.unit_tests
+def test_overload_pandora_conf_with_confidence():
+    """
+    Test overload_pandora_conf_with_confidence
+
+    """
+
+    conf = {"a": 1, "b": 2, "disparity": 3, "c": 4, "d": 5}
+
+    confidence_conf = {"confidence1": 8, "confidence2": 9}
+
+    # run
+
+    new_conf = overload_pandora_conf_with_confidence(conf, confidence_conf)
+
+    # test
+
+    ref = {
+        "a": 1,
+        "b": 2,
+        "confidence1": 8,
+        "confidence2": 9,
+        "disparity": 3,
+        "c": 4,
+        "d": 5,
+    }
+
+    # transform to string to test order
+    assert " ".join(ref.keys()) == " ".join(new_conf.keys())

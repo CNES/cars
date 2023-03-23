@@ -23,7 +23,7 @@ this module contains the abstract matching application class.
 """
 import logging
 from abc import ABCMeta, abstractmethod
-from typing import Dict, List
+from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
@@ -127,10 +127,10 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        mask1_set_to_ref_alt: List[int] = None,
-        mask2_set_to_ref_alt: List[int] = None,
         disp_min=None,
         disp_max=None,
+        compute_disparity_masks=False,
+        disp_to_alt_ratio=None,
     ):
         """
         Run Matching application.
@@ -139,26 +139,51 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to epipolar disparities, on the same geometry
         that epipolar_images_left and epipolar_images_right.
 
-        :param epipolar_images_left: tiled left epipolar
+        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
+
+                - N x M Delayed tiles. \
+                    Each tile will be a future xarray Dataset containing:
+
+                    - data with keys : "im", "msk", "color"
+                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
+                        "transform", "crs", "valid_pixels", "no_data_mask",\
+                        "no_data_img"
+                - attributes containing:
+                    "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_left: CarsDataset
-        :param epipolar_images_right: tiled right epipolar
+        :param epipolar_images_right: tiled right epipolar CarsDataset contains:
+
+                - N x M Delayed tiles. \
+                    Each tile will be a future xarray Dataset containing:
+
+                    - data with keys : "im", "msk", "color"
+                    - attrs with keys: "margins" with "disp_min" and "disp_max"
+                        "transform", "crs", "valid_pixels", "no_data_mask",
+                        "no_data_img"
+                - attributes containing:
+                    "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param mask1_set_to_ref_alt: values used in left mask to altitude
-         to ref
-        :type mask1_set_to_ref_alt: list
-        :param mask2_set_to_ref_alt: values used in right mask to altitude
-         to ref
-        :type mask2_set_to_ref_alt: list
         :param disp_min: minimum disparity
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
+        :param disp_to_alt_ratio: disp to alti ratio used for performance map
+        :type disp_to_alt_ratio: float
 
-        :return: left disparity map, right disparity map
+        :return: left disparity map, right disparity map: \
+            Each CarsDataset contains:
+
+            - N x M Delayed tiles.\
+              Each tile will be a future xarray Dataset containing:
+                - data with keys : "disp", "disp_msk"
+                - attrs with keys: profile, window, overlaps
+            - attributes containing:
+                "largest_epipolar_region","opt_epipolar_tile_size"
+
         :rtype: Tuple(CarsDataset, CarsDataset)
         """

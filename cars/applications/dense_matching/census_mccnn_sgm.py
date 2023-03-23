@@ -77,6 +77,13 @@ class CensusMccnnSgm(
         self.use_sec_disp = self.used_config["use_sec_disp"]
         self.min_elevation_offset = self.used_config["min_elevation_offset"]
         self.max_elevation_offset = self.used_config["max_elevation_offset"]
+        # Performance map
+        self.generate_performance_map = self.used_config[
+            "generate_performance_map"
+        ]
+        self.perf_ambiguity_threshold = self.used_config[
+            "perf_ambiguity_threshold"
+        ]
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
 
@@ -125,6 +132,20 @@ class CensusMccnnSgm(
         overloaded_conf["max_elevation_offset"] = conf.get(
             "max_elevation_offset", None
         )
+        # Permormance map parameters
+        overloaded_conf["generate_performance_map"] = conf.get(
+            "generate_performance_map", False
+        )
+        overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
+            "perf_eta_max_ambiguity", 0.99
+        )
+        overloaded_conf["perf_eta_max_risk"] = conf.get(
+            "perf_eta_max_risk", 0.25
+        )
+        overloaded_conf["perf_eta_step"] = conf.get("perf_eta_step", 0.04)
+        overloaded_conf["perf_ambiguity_threshold"] = conf.get(
+            "perf_ambiguity_threshold", 0.6
+        )
         # Saving files
         overloaded_conf["save_disparity_map"] = conf.get(
             "save_disparity_map", False
@@ -135,7 +156,14 @@ class CensusMccnnSgm(
         loader = conf.get("loader", "pandora")
         # TODO modify, use loader directly
         pandora_loader = PandoraLoader(
-            conf=loader_conf, method_name=overloaded_conf["method"]
+            conf=loader_conf,
+            method_name=overloaded_conf["method"],
+            generate_performance_map=overloaded_conf[
+                "generate_performance_map"
+            ],
+            perf_eta_max_ambiguity=overloaded_conf["perf_eta_max_ambiguity"],
+            perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
+            perf_eta_step=overloaded_conf["perf_eta_step"],
         )
         overloaded_conf["loader"] = loader
         overloaded_conf["loader_conf"] = collections.OrderedDict(
@@ -151,6 +179,11 @@ class CensusMccnnSgm(
             "min_elevation_offset": Or(None, int),
             "max_elevation_offset": Or(None, int),
             "save_disparity_map": bool,
+            "generate_performance_map": bool,
+            "perf_eta_max_ambiguity": float,
+            "perf_eta_max_risk": float,
+            "perf_eta_step": float,
+            "perf_ambiguity_threshold": float,
             "loader_conf": dict,
             "loader": str,
         }
@@ -273,6 +306,7 @@ class CensusMccnnSgm(
         disp_min=None,
         disp_max=None,
         compute_disparity_masks=False,
+        disp_to_alt_ratio=None,
     ):
         """
         Run Matching application.
@@ -314,6 +348,8 @@ class CensusMccnnSgm(
         :type disp_min: int
         :param disp_max: maximum disparity
         :type disp_max: int
+        :param disp_to_alt_ratio: disp to alti ratio used for performance map
+        :type disp_to_alt_ratio: float
 
         :return: left disparity map, right disparity map: \
             Each CarsDataset contains:
@@ -338,6 +374,13 @@ class CensusMccnnSgm(
             )
         else:
             self.orchestrator = orchestrator
+
+        # crash if generate performance and disp_to_alt_ratio not set
+        if disp_to_alt_ratio is None and self.generate_performance_map:
+            raise RuntimeError(
+                "User wants to generate performance map without "
+                "providing disp_to_alt_ratio"
+            )
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
@@ -466,6 +509,9 @@ class CensusMccnnSgm(
                         saving_info_left=saving_info_left,
                         saving_info_right=saving_info_right,
                         compute_disparity_masks=compute_disparity_masks,
+                        generate_performance_map=self.generate_performance_map,
+                        perf_ambiguity_threshold=self.perf_ambiguity_threshold,
+                        disp_to_alt_ratio=disp_to_alt_ratio,
                     )
         else:
             logging.error(
@@ -486,6 +532,9 @@ def compute_disparity(
     saving_info_left=None,
     saving_info_right=None,
     compute_disparity_masks=False,
+    generate_performance_map=False,
+    perf_ambiguity_threshold=0.6,
+    disp_to_alt_ratio=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -518,6 +567,15 @@ def compute_disparity(
     :type use_sec_disp: bool
     :param compute_disparity_masks: Compute all the disparity \
                         pandora masks(disable by default)
+    :param generate_performance_map: True if generate performance map
+    :type generate_performance_map: bool
+    :param perf_ambiguity_threshold: ambiguity threshold used for
+         performance map
+    :type perf_ambiguity_threshold: float
+    :param disp_to_alt_ratio: disp to alti ratio used for performance map
+    :type disp_to_alt_ratio: float
+
+
     :type compute_disparity_masks: bool
     :return: Left disparity object, Right disparity object (if exists)
 
@@ -539,6 +597,9 @@ def compute_disparity(
         disp_max,
         use_sec_disp=use_sec_disp,
         compute_disparity_masks=compute_disparity_masks,
+        generate_performance_map=generate_performance_map,
+        perf_ambiguity_threshold=perf_ambiguity_threshold,
+        disp_to_alt_ratio=disp_to_alt_ratio,
     )
 
     color_sec = None
