@@ -207,8 +207,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "point_cloud_outliers_removing.2",
         ]
 
+        pipeline_name = "sensors_to_dense_dsm"
         if generate_terrain_products:
             needed_applications += terrain_applications
+            pipeline_name = "sensors_to_dense_point_clouds"
 
         # Initialize used config
         used_conf = {}
@@ -216,10 +218,14 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
-                    "No {} application used in pipeline".format(app_key)
+                    "No {} application used in pipeline {}".format(
+                        app_key, pipeline_name
+                    )
                 )
                 raise NameError(
-                    "No {} application used in pipeline".format(app_key)
+                    "No {} application used in pipeline {}".format(
+                        app_key, pipeline_name
+                    )
                 )
 
         # Epipolar grid generation
