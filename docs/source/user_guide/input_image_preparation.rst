@@ -60,3 +60,17 @@ The low NDWI values can be considered as water area.
     $ gdal_calc.py -G input.tif --G_band=2 -N input.tif --N_band=4 --outfile=mask.tif --calc="(G-N)/(G+N)<0.3" --NoDataValue=0
 
 .. _`GDAL`: https://gdal.org/
+
+See next section to apply a gdal translate to convert the mask with 1bit image struture.
+
+
+Convert image to binary image
+====================================
+
+To translate single image or multiband image with several nbits per band to 1bit per band, it can be recommended to use gdal_translate as follows:
+
+.. code-block:: console
+
+    $ gdal_translate -ot Byte -co NBITS=1 mask.tif mask_1nbit.tif
+
+.. _`GDAL`: https://gdal.org/

@@ -105,7 +105,8 @@ The structure follows this organisation:
 
                 - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
                 - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
-
+                - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
+                - The classification of second input is not necessary. In this case, the applications use only the available classification.
             
             **Pairing**
 
@@ -795,8 +796,11 @@ The structure follows this organisation:
             | classification                      | Classification band name        | List[str] |                         | None               | No       |
             +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
 
+            .. note::
+                - The classification of second input is not given. Only the first disparity will be filled with zero value.
+                - The filled area will be considered as a valid disparity mask.
 
-           .. warning::
+            .. warning::
 
                 There is a particular case with the *dense_matches_filling* application because it is called twice.
                 As described on :ref:`overview`, the eighth step consists of fill dense matches via two consecutive methods.
@@ -1021,7 +1025,7 @@ The structure follows this organisation:
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | write_dsm                            | Save dsm                            | boolean    |                 | true            | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | true            | No       |
+            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | compute_all                          | Compute all layers even             | boolean    |                 | false           | No       |
             |                                      | if one or more layers               |            |                 |                 |          |

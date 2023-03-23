@@ -790,16 +790,19 @@ def fill_disp_using_zero_padding(
 
     # get index of the application class config
     # according the coords classif band
-    class_index = np.searchsorted(
-        disp_map.coords[cst.BAND_CLASSIF], np.array(class_index)
-    )
-
-    # get index for each band classification of the non zero values
-    stack_index = np.all(
-        disp_map[cst.EPI_CLASSIFICATION].values[class_index, :, :] > 0, axis=0
-    )
-
-    # set disparity value to zero where the class is
-    # non zero value and masked region
-    disp_map["disp"].values[stack_index] = 0
-    disp_map["disp_msk"].values[stack_index] = 0
+    if cst.BAND_CLASSIF in disp_map.coords:
+        index_class = np.where(
+            np.isin(
+                np.array(disp_map.coords[cst.BAND_CLASSIF].values),
+                np.array(class_index),
+            )
+        )[0].tolist()
+        # get index for each band classification of the non zero values
+        stack_index = np.any(
+            disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
+            axis=0,
+        )
+        # set disparity value to zero where the class is
+        # non zero value and masked region
+        disp_map["disp"].values[stack_index] = 0
+        disp_map["disp_msk"].values[stack_index] = 255

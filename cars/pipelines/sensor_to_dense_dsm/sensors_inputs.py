@@ -210,6 +210,11 @@ def sensors_check_inputs(  # noqa: C901
             sensor_image[sens_cst.INPUT_COLOR],
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
+        # check band nbits of msk and classification
+        check_nbits(
+            sensor_image[sens_cst.INPUT_MSK],
+            sensor_image[sens_cst.INPUT_CLASSIFICATION],
+        )
         # check image and color data consistency
         if overloaded_conf[sens_cst.CHECK_INPUTS]:
             check_input_data(
@@ -368,6 +373,47 @@ def check_input_size(image, mask, color, classif):
                 "The image {} and the classif {} "
                 "do not have the same size".format(image, classif)
             )
+
+
+def check_nbits(mask, classif):
+    """
+    Check the bits number of the mask, classif
+    mask and classification are limited to 1 bits per band
+
+    :param mask: mask path
+    :type mask: str
+    :param classif: classif path
+    :type classif: str
+    """
+
+    if mask is not None:
+        nbits = inputs.rasterio_get_nbits(mask)
+        if not check_all_nbits_equal_one(nbits):
+            raise RuntimeError(
+                "The mask {} have {} nbits per band. ".format(mask, nbits)
+                + "Only the mask with nbits=1 is supported! "
+            )
+
+    if classif is not None:
+        nbits = inputs.rasterio_get_nbits(classif)
+        if not check_all_nbits_equal_one(nbits):
+            raise RuntimeError(
+                "The classification {} have {} nbits per band. ".format(
+                    classif, nbits
+                )
+                + "Only the classification with nbits=1 is supported! "
+            )
+
+
+def check_all_nbits_equal_one(nbits):
+    """
+    Check if all the nbits = 1
+    :param nbits: list of the nbits
+    :return: True if all the nbits = 1
+    """
+    if len(nbits) > 0 and nbits[0] == 1 and all(x == nbits[0] for x in nbits):
+        return True
+    return False
 
 
 def generate_inputs(conf):

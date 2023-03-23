@@ -115,6 +115,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "color_no_data": 0,
                 "msk_no_data": 65534,
                 "write_msk": True,
+                "write_confidence": True,
             },
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
@@ -1161,6 +1162,7 @@ def test_end2end_use_epipolar_a_prior():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
+                "write_confidence": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -1425,6 +1427,7 @@ def test_end2end_ventoux_with_color():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
+                "write_confidence": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1706,12 +1709,6 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        assert (
-            os.path.exists(
-                os.path.join(out_dir, "confidence_from_ambiguity.tif")
-            )
-            is True
-        )
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
@@ -2399,6 +2396,10 @@ def test_end2end_paca_with_mask():
                 "save_matches": True,
                 "minimum_nb_matches": 10,
             },
+            "dense_matches_filling.2": {
+                "method": "zero_padding",
+                "classification": ["water", "road"],
+            },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -2486,6 +2487,10 @@ def test_end2end_paca_with_mask():
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
+            "dense_matches_filling.2": {
+                "method": "zero_padding",
+                "classification": ["water", "road"],
+            },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -2520,12 +2525,18 @@ def test_end2end_paca_with_mask():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Uncomment the 2 following instructions to update reference data
-        # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #      absolute_data_path("ref_output/dsm_end2end_paca.tif"))
-        # copy2(os.path.join(out_dir, 'clr.tif'),
-        #       absolute_data_path("ref_output/clr_end2end_paca.tif"))
-        # copy2(os.path.join(out_dir, 'msk.tif'),
-        #      absolute_data_path("ref_output/msk_end2end_paca.tif"))
+        # copy2(
+        #     os.path.join(out_dir, "dsm.tif"),
+        #     absolute_data_path("ref_output/dsm_end2end_paca.tif"),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "clr.tif"),
+        #     absolute_data_path("ref_output/clr_end2end_paca.tif"),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "msk.tif"),
+        #     absolute_data_path("ref_output/msk_end2end_paca.tif"),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),

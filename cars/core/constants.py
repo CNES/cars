@@ -40,6 +40,7 @@ DISPARITY = "disparity"
 PC_EPSG = "point_cloud_epsg"
 
 BAND_NAMES = "band_names"
+NBITS = "nbits"
 EPSG_WSG84 = 4326
 # stereo keys
 STEREO_REF = "ref"

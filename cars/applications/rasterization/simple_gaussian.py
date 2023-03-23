@@ -140,7 +140,9 @@ class SimpleGaussian(
         overloaded_conf["write_msk"] = conf.get("write_msk", False)
         overloaded_conf["write_classif"] = conf.get("write_classif", False)
         overloaded_conf["write_dsm"] = conf.get("write_dsm", True)
-        overloaded_conf["write_confidence"] = conf.get("write_confidence", True)
+        overloaded_conf["write_confidence"] = conf.get(
+            "write_confidence", False
+        )
 
         overloaded_conf["compute_all"] = conf.get("compute_all", False)
         if overloaded_conf["compute_all"]:

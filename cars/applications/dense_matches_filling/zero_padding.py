@@ -200,17 +200,6 @@ class ZerosPadding(
             else:
                 self.orchestrator = orchestrator
 
-            # Current application is not available in MP mode
-            if self.orchestrator.cluster.checked_conf_cluster["mode"] == "mp":
-                logging.error(
-                    "DenseMatchingFilling and multiprocessing cluster "
-                    "is currently not supported"
-                )
-                raise RuntimeError(
-                    "DenseMatchingFilling and multiprocessing cluster "
-                    "is currently not supported"
-                )
-
             if epipolar_disparity_map_left.dataset_type == "arrays":
                 # Create CarsDataset Epipolar_disparity
                 # Save Disparity map
@@ -331,21 +320,22 @@ def wrapper_fill_disparity(
     :rtype: xr.Dataset, xr.Dataset
     """
     fd_tools.fill_disp_using_zero_padding(left_disp, classif_index)
-    fd_tools.fill_disp_using_zero_padding(right_disp, classif_index)
-    # compute right color image from right-left disparity map
-    color_sec = dense_matching_tools.estimate_color_from_disparity(
-        right_disp,
-        left_epi_image,
-    )
+    if right_disp is not None:
+        fd_tools.fill_disp_using_zero_padding(right_disp, classif_index)
+        # compute right color image from right-left disparity map
+        color_sec = dense_matching_tools.estimate_color_from_disparity(
+            right_disp,
+            left_epi_image,
+        )
 
-    # check bands
-    if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
-        if cst.BAND_IM not in left_epi_image.dims:
-            band_im = get_color_bands(left_epi_image, cst.EPI_COLOR)
-            right_disp.coords[cst.BAND_IM] = band_im
+        # check bands
+        if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
+            if cst.BAND_IM not in left_epi_image.dims:
+                band_im = get_color_bands(left_epi_image, cst.EPI_COLOR)
+                right_disp.coords[cst.BAND_IM] = band_im
 
-    # merge colors
-    right_disp[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
+        # merge colors
+        right_disp[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
 
     result = (copy.copy(left_disp), copy.copy(right_disp))
     # Fill with attributes
