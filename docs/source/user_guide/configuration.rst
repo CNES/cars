@@ -704,36 +704,7 @@ The structure follows this organisation:
                 When user activate the generation of performance map, this map transits until being rasterized.
                 Performance map is managed as a confidence map.
 
-        .. tab:: HolesDetection
-
-            **Name**: "holes_detection"
-
-            **Description**
-
-            Detection of holes from input maskes.
-
-            **Configuration**
-
-            +-------------------+-------------------------------+---------+------------------------------+------------------------------+----------+
-            | Name              | Description                   | Type    | available value              | Default value                | Required |
-            +===================+===============================+=========+==============================+==============================+==========+
-            | method            | Method for holes detection    | string  | "cloud_to_bbox"              | "cloud_to_bbox"              | Yes      |
-            +-------------------+-------------------------------+---------+------------------------------+------------------------------+----------+
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "holes_detection": {
-                        "method": "cloud_to_bbox"
-                    }
-                },
-
-            .. warning::
-
-              This application will not be used if DenseMatchingFiling activated parameter is false
-
+        
         .. tab:: DenseMatchingFiling
 
             **Name**: "dense_matches_filling"
