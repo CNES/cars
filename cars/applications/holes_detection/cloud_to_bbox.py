@@ -30,11 +30,12 @@ import os
 # Third party imports
 from json_checker import Checker
 
-# CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.holes_detection import holes_detection_tools
 from cars.applications.holes_detection.holes_detection import HolesDetection
+
+# CARS imports
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, cars_dict
 
@@ -104,7 +105,7 @@ class CloudToBbox(
         self,
         epipolar_images_left,
         epipolar_images_right,
-        is_activated=True,
+        classification=None,
         margin=0,
         orchestrator=None,
         pair_folder=None,
@@ -121,6 +122,8 @@ class CloudToBbox(
         :type is_activated: bool
         :param margin: margin to use
         :type margin: int
+        :param classification: mask classes to use
+        :type classification: list(str)
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         :param pair_folder: folder used for current pair
@@ -171,7 +174,7 @@ class CloudToBbox(
                 )
             )
 
-            if is_activated:
+            if classification not in (None, []):
                 # Get saving infos in order to save tiles when they are computed
                 [
                     saving_info_left,
@@ -227,6 +230,7 @@ class CloudToBbox(
                             window_right,
                             overlap_left,
                             overlap_right,
+                            classification,
                             saving_info_left=full_saving_info_left,
                             saving_info_right=full_saving_info_right,
                         )
@@ -246,6 +250,7 @@ def compute_mask_bboxes(
     window_right,
     overlap_left,
     overlap_right,
+    classification,
     margin=20,
     saving_info_left=None,
     saving_info_right=None,
@@ -275,6 +280,8 @@ def compute_mask_bboxes(
     :type overlap_left: dict
     :param overlap_right: right overlaps
     :type overlap_right: dict
+    :param classification: mask classes to use
+    :type classification: list(str)
     :param margin: margin to use
     :type margin: int
     :param saving_info_left: saving infos left
@@ -299,6 +306,7 @@ def compute_mask_bboxes(
 
     bbox_left = holes_detection_tools.localize_masked_areas(
         left_image_dataset,
+        classification,
         row_offset=row_offset_left,
         col_offset=col_offset_left,
         margin=margin,
@@ -306,6 +314,7 @@ def compute_mask_bboxes(
 
     bbox_right = holes_detection_tools.localize_masked_areas(
         right_image_dataset,
+        classification,
         row_offset=row_offset_right,
         col_offset=col_offset_right,
         margin=margin,

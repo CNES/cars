@@ -2559,7 +2559,7 @@ def test_end2end_paca_with_mask():
 
 
 @pytest.mark.end2end_tests
-def desactivated_test_end2end_disparity_filing():
+def test_end2end_disparity_filling():
     """
     End to end processing, test with mask and fill holes
     """
@@ -2574,7 +2574,6 @@ def desactivated_test_end2end_disparity_filing():
             "sensors_to_dense_dsm",
             "mp",
             orchestrator_parameters={
-                "walltime": "00:10:00",
                 "nb_workers": 4,
                 "max_ram_per_worker": 200,
             },
@@ -2586,10 +2585,10 @@ def desactivated_test_end2end_disparity_filing():
                 "save_disparity_map": True,
                 "use_sec_disp": True,
             },
-            "dense_matches_filling": {
+            "dense_matches_filling.1": {
                 "method": "plane",
                 "save_disparity_map": True,
-                "activated": True,
+                "classification": ["shadow"],
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",

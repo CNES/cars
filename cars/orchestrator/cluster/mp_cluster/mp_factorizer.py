@@ -21,6 +21,8 @@
 """
 Contains functions needed to factorize delayed
 """
+# No longer supported
+# TODO remove
 
 import copy
 

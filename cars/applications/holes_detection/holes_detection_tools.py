@@ -36,32 +36,8 @@ from affine import Affine
 from scipy.ndimage import binary_dilation, generate_binary_structure, label
 from shapely.geometry import Polygon
 
-
-def get_msk_roi_to_fill(
-    msk_values: np.ndarray,
-    key_id: List[int],
-) -> np.ndarray:
-    """
-    Calculates binary mask. All regions to fill specified in
-    multi_mask configuration will be set to 1.
-
-    :param msk_values: msk layer of left or right epipolar image dataset
-    :type msk_values: np.ndarray
-    :param key_id: label of region specified in
-     "classification" of input .json file
-    :type key_id: List of int
-
-    :return: binary mask
-
-    """
-    if len(key_id) == 1:
-        msk = msk_values == key_id[0]
-    else:
-        msk = msk_values == key_id[0]
-        for k_val in range(1, len(key_id)):
-            tmp_mask = msk_values == key_id[k_val]
-            msk = np.logical_or(msk, tmp_mask)
-    return msk
+from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
+from cars.core import constants as cst
 
 
 def get_roi_coverage_as_poly_with_margins(
@@ -120,17 +96,20 @@ def get_roi_coverage_as_poly_with_margins(
 
 def localize_masked_areas(
     dataset: xr.Dataset,
+    classification: List[str],
     row_offset: int = 0,
     col_offset: int = 0,
     margin: int = 0,
 ) -> np.ndarray:
     """
     Calculates bbox of masked region(s) if mask exists for
-    input image file (see configuration "mask" and "classification"
+    input image file (see configuration "mask" and "mask_classes"
     in input .json configuration file)
 
     :param dataset: epipolar image dataset
     :type dataset: CarsDataset
+    :param classification: label of masked region to use
+    :type classification: List of str
     :param row_offset: offset on row to apply
     :type row_offset: int
     :param col_offset: offset on col to apply
@@ -145,11 +124,13 @@ def localize_masked_areas(
     """
     # binarize msk layer of epipolar image dataset
     # 0: 'valid' data, 1: masked data according to key_id
-    if "msk" not in dataset:
-        logging.error("No mask provided")
-        raise RuntimeError("No mask provided")
-
-    msk_values = dataset["msk"].values
+    if cst.EPI_CLASSIFICATION not in dataset:
+        logging.error("No classif provided")
+        raise RuntimeError("No classif provided")
+    if not isinstance(classification, list):
+        logging.error("no mask classes provided for DisparityFilling")
+        raise RuntimeError("no mask classes provided for DisparityFilling")
+    msk_values = fd_tools.classif_to_stacked_array(dataset, classification)
     # Finds roi in msk and stores its localization as polygon list
     bbox = get_roi_coverage_as_poly_with_margins(
         msk_values, row_offset=row_offset, col_offset=col_offset, margin=margin

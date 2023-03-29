@@ -66,6 +66,7 @@ def fill_central_area_using_plane(
     ignore_extrema: bool,
     nb_pix: int,
     percent_to_erode: float,
+    class_index: list,
 ):
     """
     Finds central area of invalid region and estimates disparity values
@@ -96,6 +97,8 @@ def fill_central_area_using_plane(
     :type nb_pix: int
     :param percent_to_erode: percentage to define size of central area
     :type percent_to_erode: float
+    :param class_index: list of tag to use
+    :type class_index: list(str)
 
     :return: mask of invalid region that hasn't been filled yet (original
         invalid region - central area)
@@ -110,18 +113,16 @@ def fill_central_area_using_plane(
     disp_values = np.copy(disp_map["disp"].values)
 
     # Find invalid region of interest in disp data from polygon info
-    disp_inv_mask_mask = np.copy(disp_map["msk_invalid_sec"].values)
+    classif_mask = classif_to_stacked_array(disp_map, class_index)
 
-    labeled_disp_inv_msk_array, num_features = label(
-        (disp_inv_mask_mask == 0).astype(int), structure=struct
+    classif_mask_arrays, num_features = label(
+        (classif_mask > 0).astype(int), structure=struct
     )
 
     list_roi_msk = []
 
     for segm in range(1, num_features + 1):
-        roi_msk = np.logical_and(
-            labeled_disp_inv_msk_array == segm, disp_mask == 0
-        )
+        roi_msk = classif_mask_arrays == segm
 
         # Create Polygon of current mask
         mask_polys = (
@@ -129,13 +130,22 @@ def fill_central_area_using_plane(
                 roi_msk, row_offset=row_min, col_offset=col_min, margin=0
             )
         )
-        if len(mask_polys) != 1:
+        # Clean mask polygons, remove artefacts
+        cleaned_mask_poly = []
+        for msk_pol in mask_polys:
+            # if area > 20  : small groups to remove
+            if msk_pol.area > 20:
+                cleaned_mask_poly.append(msk_pol)
+
+        if len(cleaned_mask_poly) > 1:
             raise RuntimeError("Not single polygon for current mask")
 
         intersect_holes = False
-        for hole_poly in corresponding_poly:
-            if hole_poly.intersects(mask_polys[0]):
-                intersect_holes = True
+        # Check if main poly intersect found classif polygons
+        if len(cleaned_mask_poly) > 0:
+            for hole_poly in corresponding_poly:
+                if hole_poly.intersects(cleaned_mask_poly[0]):
+                    intersect_holes = True
 
         if intersect_holes:
             # is a hole to fill, not nodata in the border
@@ -199,27 +209,30 @@ def fill_central_area_using_plane(
                 logging.info(
                     "Valeur disparité moyenne calculée : {}".format(disp_moy)
                 )
-            # Definition of central area to fill using plane model
-            erosion_value = define_interpolation_band_width(
-                roi_msk, percent_to_erode
-            )
-            central_area = binary_erosion(
-                roi_msk, structure=struct, iterations=erosion_value
-            )
 
-            variable_disp = calculate_disp_plane(
-                band_disp_values,
-                roi_msk_tmp,
-                central_area,
-            )
+            # roi_msk can be filled with 0 if neighbours have filled mask
+            if np.sum(~roi_msk) > 0:
+                # Definition of central area to fill using plane model
+                erosion_value = define_interpolation_band_width(
+                    roi_msk, percent_to_erode
+                )
+                central_area = binary_erosion(
+                    roi_msk, structure=struct, iterations=erosion_value
+                )
 
-            disp_map["disp"].values[central_area] = variable_disp
-            disp_map["disp_msk"].values[central_area] = 255
+                variable_disp = calculate_disp_plane(
+                    band_disp_values,
+                    roi_msk_tmp,
+                    central_area,
+                )
 
-            # Retrieve borders that weren't filled yet
-            roi_msk[central_area] = 0
+                disp_map["disp"].values[central_area] = variable_disp
+                disp_map["disp_msk"].values[central_area] = 255
 
-            list_roi_msk.append(roi_msk)
+                # Retrieve borders that weren't filled yet
+                roi_msk[central_area] = 0
+
+                list_roi_msk.append(roi_msk)
     return list_roi_msk
 
 
@@ -241,6 +254,7 @@ def add_surrounding_nodata_to_roi(
 
     struct = generate_binary_structure(2, 2)
     modified_nan_disp_mask = np.nan_to_num(disp_mask, nan=0, posinf=0)
+
     all_mask = np.logical_or(
         roi_mask.astype(bool), ~modified_nan_disp_mask.astype(bool)
     )
@@ -250,13 +264,18 @@ def add_surrounding_nodata_to_roi(
     labeled_msk_array, __ = label(all_mask.astype(int), structure=struct)
     label_of_interest = np.unique(labeled_msk_array[np.where(roi_mask == 1)])
     if len(label_of_interest) != 1:
-        raise RuntimeError(
+        logging.error(
             "More than one label found for ROI :\
             {}".format(
                 label_of_interest
             )
         )
-    roi_mask[labeled_msk_array == label_of_interest] = 1
+
+        for label_o_i in label_of_interest:
+            roi_mask[labeled_msk_array == label_o_i] = 1
+
+    else:
+        roi_mask[labeled_msk_array == label_of_interest] = 1
 
 
 def define_interpolation_band_width(binary_image, percentage):
@@ -721,6 +740,7 @@ def fill_disp_using_plane(
     nb_pix: int,
     percent_to_erode: float,
     interp_options: dict,
+    classification,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Fill disparity map holes
@@ -745,6 +765,8 @@ def fill_disp_using_plane(
     :type percent_to_erode: float
     :param interp_options: interp_options
     :type interp_options: dict
+    :param classification: list of tag to use
+    :type classification: list(str)
 
     :return: overloaded configuration
     :rtype: dict
@@ -760,6 +782,7 @@ def fill_disp_using_plane(
         ignore_extrema,
         nb_pix,
         percent_to_erode,
+        classification,
     )
 
     fill_area_borders_using_interpolation(
@@ -791,18 +814,35 @@ def fill_disp_using_zero_padding(
     # get index of the application class config
     # according the coords classif band
     if cst.BAND_CLASSIF in disp_map.coords:
-        index_class = np.where(
-            np.isin(
-                np.array(disp_map.coords[cst.BAND_CLASSIF].values),
-                np.array(class_index),
-            )
-        )[0].tolist()
-        # get index for each band classification of the non zero values
-        stack_index = np.any(
-            disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
-            axis=0,
-        )
+        # get index for each band classification
+        stack_index = classif_to_stacked_array(disp_map, class_index)
         # set disparity value to zero where the class is
         # non zero value and masked region
         disp_map["disp"].values[stack_index] = 0
         disp_map["disp_msk"].values[stack_index] = 255
+
+
+def classif_to_stacked_array(disp_map, class_index):
+    """
+    Convert disparity dataset to mask correspoding to all classes
+
+    :param disp_map: disparity dataset
+    :type disp_map: xarray Dataset
+    :param class_index: classification tags
+    :type class_index: list of str
+
+    """
+
+    index_class = np.where(
+        np.isin(
+            np.array(disp_map.coords[cst.BAND_CLASSIF].values),
+            np.array(class_index),
+        )
+    )[0].tolist()
+    # get index for each band classification of the non zero values
+    stack_index = np.any(
+        disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
+        axis=0,
+    )
+
+    return stack_index

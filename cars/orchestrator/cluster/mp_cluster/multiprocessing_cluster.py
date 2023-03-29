@@ -38,7 +38,6 @@ from json_checker import Checker, Or
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
 from cars.orchestrator.cluster.mp_cluster import mp_wrapper
-from cars.orchestrator.cluster.mp_cluster.mp_factorizer import factorize_delayed
 from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpDelayed,
     MpDelayedTask,
@@ -80,7 +79,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
         self.dump_to_disk = self.checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = self.checked_conf_cluster["per_job_timeout"]
-        self.factorize_delayed = self.checked_conf_cluster["factorize_delayed"]
         self.profiling = self.checked_conf_cluster["profiling"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
@@ -170,9 +168,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         )
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
-        overloaded_conf["factorize_delayed"] = conf.get(
-            "factorize_delayed", True
-        )
 
         cluster_schema = {
             "mode": str,
@@ -180,7 +175,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "nb_workers": int,
             "max_ram_per_worker": Or(float, int),
             "per_job_timeout": Or(float, int),
-            "factorize_delayed": bool,
             "profiling": {
                 "activated": bool,
                 "mode": str,
@@ -264,10 +258,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         :param task_list: task list
         """
-
-        # factorize task
-        if self.factorize_delayed:
-            factorize_delayed(task_list)
 
         memorize = {}
         future_list = [self.rec_start(task, memorize) for task in task_list]

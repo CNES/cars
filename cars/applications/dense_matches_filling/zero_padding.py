@@ -113,15 +113,6 @@ class ZerosPadding(
 
         return overloaded_conf
 
-    def get_classif(self):
-        """
-        Get classification band list
-        :return: self.classification
-        :rtype: list[str]
-        """
-
-        return self.classification
-
     def get_poly_margin(self):
         """
         Get the margin used for polygon
