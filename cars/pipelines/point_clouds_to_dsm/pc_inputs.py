@@ -107,6 +107,16 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
         )
 
+    # Modify to absolute path
+    if config_json_dir is not None:
+        modify_to_absolute_path(config_json_dir, overloaded_conf)
+    else:
+        logging.debug(
+            "path of config file was not given,"
+            "relative path are not transformed to absolute paths"
+        )
+
+    for point_cloud_key in conf[pc_cst.POINT_CLOUDS]:
         # check sizes
         check_input_size(
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.X],
@@ -118,16 +128,6 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CLR_KEY_ROOT
             ],
-        )
-
-    # Modify to absolute path
-    if config_json_dir is not None:
-        modify_to_absolute_path(config_json_dir, overloaded_conf)
-
-    else:
-        logging.debug(
-            "path of config file was not given,"
-            "relative path are not transformed to absolute paths"
         )
 
     return overloaded_conf
