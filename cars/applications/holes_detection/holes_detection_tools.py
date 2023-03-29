@@ -36,7 +36,6 @@ from affine import Affine
 from scipy.ndimage import binary_dilation, generate_binary_structure, label
 from shapely.geometry import Polygon
 
-from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.core import constants as cst
 
 
@@ -130,9 +129,35 @@ def localize_masked_areas(
     if not isinstance(classification, list):
         logging.error("no mask classes provided for DisparityFilling")
         raise RuntimeError("no mask classes provided for DisparityFilling")
-    msk_values = fd_tools.classif_to_stacked_array(dataset, classification)
+    msk_values = classif_to_stacked_array(dataset, classification)
     # Finds roi in msk and stores its localization as polygon list
     bbox = get_roi_coverage_as_poly_with_margins(
         msk_values, row_offset=row_offset, col_offset=col_offset, margin=margin
     )
     return bbox
+
+
+def classif_to_stacked_array(disp_map, class_index):
+    """
+    Convert disparity dataset to mask correspoding to all classes
+
+    :param disp_map: disparity dataset
+    :type disp_map: xarray Dataset
+    :param class_index: classification tags
+    :type class_index: list of str
+
+    """
+
+    index_class = np.where(
+        np.isin(
+            np.array(disp_map.coords[cst.BAND_CLASSIF].values),
+            np.array(class_index),
+        )
+    )[0].tolist()
+    # get index for each band classification of the non zero values
+    stack_index = np.any(
+        disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
+        axis=0,
+    )
+
+    return stack_index

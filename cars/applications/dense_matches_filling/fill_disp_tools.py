@@ -113,7 +113,9 @@ def fill_central_area_using_plane(
     disp_values = np.copy(disp_map["disp"].values)
 
     # Find invalid region of interest in disp data from polygon info
-    classif_mask = classif_to_stacked_array(disp_map, class_index)
+    classif_mask = holes_detection_tools.classif_to_stacked_array(
+        disp_map, class_index
+    )
 
     classif_mask_arrays, num_features = label(
         (classif_mask > 0).astype(int), structure=struct
@@ -815,34 +817,10 @@ def fill_disp_using_zero_padding(
     # according the coords classif band
     if cst.BAND_CLASSIF in disp_map.coords:
         # get index for each band classification
-        stack_index = classif_to_stacked_array(disp_map, class_index)
+        stack_index = holes_detection_tools.classif_to_stacked_array(
+            disp_map, class_index
+        )
         # set disparity value to zero where the class is
         # non zero value and masked region
         disp_map["disp"].values[stack_index] = 0
         disp_map["disp_msk"].values[stack_index] = 255
-
-
-def classif_to_stacked_array(disp_map, class_index):
-    """
-    Convert disparity dataset to mask correspoding to all classes
-
-    :param disp_map: disparity dataset
-    :type disp_map: xarray Dataset
-    :param class_index: classification tags
-    :type class_index: list of str
-
-    """
-
-    index_class = np.where(
-        np.isin(
-            np.array(disp_map.coords[cst.BAND_CLASSIF].values),
-            np.array(class_index),
-        )
-    )[0].tolist()
-    # get index for each band classification of the non zero values
-    stack_index = np.any(
-        disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
-        axis=0,
-    )
-
-    return stack_index
