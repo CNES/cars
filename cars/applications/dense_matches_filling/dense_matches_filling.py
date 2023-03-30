@@ -85,17 +85,11 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         # init orchestrator
         cls.orchestrator = None
 
+        # init classification
+        cls.classification = None
+
         for name in short_name:
             cls.available_applications[name] = cls
-
-    @abstractmethod
-    def get_classif(self):
-        """
-        Get classification band list
-
-        :return: self.classification
-        :rtype: list[str]
-        """
 
     @abstractmethod
     def get_poly_margin(self):
@@ -105,6 +99,19 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         :return: self.nb_pix
         :rtype: int
         """
+
+    def get_classif(self):
+        """
+        Get classification band list
+        :return: self.classification
+        :rtype: list[str]
+        """
+
+        classif = []
+        if self.classification is not None:
+            classif = self.classification
+
+        return classif
 
     @abstractmethod
     def run(

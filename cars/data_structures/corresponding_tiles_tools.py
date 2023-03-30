@@ -73,24 +73,25 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
     nb_cols = int(col_max + ol_col_max - (col_min - ol_col_min))
 
     new_coords = {}
-    if "band" in tiles[0][2].coords:
-        new_coords["band"] = tiles[0][2].coords["band"]
-
-    new_coords["row"] = range(
-        int(row_min - ol_row_min), int(row_max + ol_row_max)
-    )
-    new_coords["col"] = range(
-        int(col_min - ol_col_min), int(col_max + ol_col_max)
-    )
+    for key in tiles[0][2].coords.keys():
+        if key == "row":
+            new_coords["row"] = range(
+                int(row_min - ol_row_min), int(row_max + ol_row_max)
+            )
+        elif key == "col":
+            new_coords["col"] = range(
+                int(col_min - ol_col_min), int(col_max + ol_col_max)
+            )
+        else:
+            new_coords[key] = tiles[0][2].coords[key]
 
     new_dataset = xr.Dataset(data_vars={}, coords=new_coords)
 
     for tag in list_tags:
         # reconstruct data
         data_shape = (nb_rows, nb_cols)
-        dims = ["row", "col"]
-        if len(tiles[0][2][tag].values.shape) == 3:
-            dims = ["band", "row", "col"]
+        dims = tiles[0][2][tag].dims
+        if len(dims) == 3:
             nb_bands = tiles[0][2][tag].values.shape[0]
             data_shape = (nb_bands, nb_rows, nb_cols)
         data = np.nan * np.zeros(data_shape)

@@ -154,15 +154,6 @@ class PlaneFill(
 
         return overloaded_conf
 
-    def get_classif(self):
-        """
-        Get classification band list
-        :return: self.classification
-        :rtype: list[str]
-        """
-
-        return self.classification
-
     def get_poly_margin(self):
         """
         Get the margin used for polygon
@@ -437,6 +428,7 @@ class PlaneFill(
                                 overlap_left,
                                 overlap_right,
                                 epipolar_images_left[row, col],
+                                self.classification,
                                 ignore_nodata_at_disp_mask_borders=(
                                     self.ignore_nodata_at_disp_mask_borders
                                 ),
@@ -474,6 +466,7 @@ def wrapper_fill_disparity(
     overlap_left,
     overlap_right,
     left_epi_image,
+    classification,
     ignore_nodata_at_disp_mask_borders=True,
     ignore_zero_fill_disp_mask_values=True,
     ignore_extrema_disp_values=True,
@@ -502,6 +495,8 @@ def wrapper_fill_disparity(
     :type overlap_right: list
     :param left_epi_image: left epipolar image
     :type left_epi_image:  xr.Dataset
+    :param classification: list of tag to use
+    :type classification: list(str)
     :param ignore_nodata_at_disp_mask_borders: ingore nodata
     :type ignore_nodata_at_disp_mask_borders: bool
     :param ignore_zero_fill_disp_mask_values: ingnore zero fill
@@ -518,6 +513,7 @@ def wrapper_fill_disparity(
     :type saving_info_left: dict
     :param saving_info_right: saving infos right
     :type saving_info_right: dict
+
 
     :return: left disp map, right disp map
     :rtype: xr.Dataset, xr.Dataset
@@ -551,6 +547,7 @@ def wrapper_fill_disparity(
         nb_pix,
         percent_to_erode,
         interp_options,
+        classification,
     )
     # Crop Dataset to get tile disparity
     # crop
@@ -589,6 +586,7 @@ def wrapper_fill_disparity(
             nb_pix,
             percent_to_erode,
             interp_options,
+            classification,
         )
 
         # crop

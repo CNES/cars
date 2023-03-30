@@ -212,10 +212,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "point_cloud_outliers_removing.2",
         ]
 
-        pipeline_name = "sensors_to_dense_dsm"
+        pipeline_name = "sensors_to_dense_point_clouds"
         if generate_terrain_products:
             needed_applications += terrain_applications
-            pipeline_name = "sensors_to_dense_point_clouds"
+            pipeline_name = "sensors_to_dense_dsm"
 
         # Initialize used config
         used_conf = {}
@@ -252,8 +252,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         used_conf["holes_detection"] = self.holes_detection_app.get_conf()
 
-        # disparity filling with plane
-        self.matches_filling_plane = Application(
+        # disparity filling 1 plane
+        self.dense_matches_filling_1 = Application(
             "dense_matches_filling",
             cfg=conf.get(
                 "dense_matches_filling.1",
@@ -262,10 +262,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         used_conf[
             "dense_matches_filling.1"
-        ] = self.matches_filling_plane.get_conf()
+        ] = self.dense_matches_filling_1.get_conf()
 
-        # disparity filling with zeros
-        self.dense_matches_filling_zeros = Application(
+        # disparity filling  2
+        self.dense_matches_filling_2 = Application(
             "dense_matches_filling",
             cfg=conf.get(
                 "dense_matches_filling.2",
@@ -274,7 +274,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         used_conf[
             "dense_matches_filling.2"
-        ] = self.dense_matches_filling_zeros.get_conf()
+        ] = self.dense_matches_filling_2.get_conf()
 
         # Sparse Matching
         self.sparse_mtch_app = Application(
@@ -489,15 +489,29 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 )
 
                 # Run holes detection
+                # Get classif depending on which filling is used
+                holes_classif = []
+                holes_poly_margin = 0
+                if self.dense_matches_filling_1.used_method == "plane":
+                    holes_classif += self.dense_matches_filling_1.get_classif()
+                    holes_poly_margin = max(
+                        holes_poly_margin,
+                        self.dense_matches_filling_1.get_poly_margin(),
+                    )
+                if self.dense_matches_filling_2.used_method == "plane":
+                    holes_classif += self.dense_matches_filling_2.get_classif()
+                    holes_poly_margin = max(
+                        holes_poly_margin,
+                        self.dense_matches_filling_2.get_poly_margin(),
+                    )
                 (
                     holes_bbox_left,
                     holes_bbox_right,
                 ) = self.holes_detection_app.run(
                     epipolar_image_left,
                     epipolar_image_right,
-                    is_activated=self.matches_filling_plane.get_classif()
-                    not in (None, []),
-                    margin=self.matches_filling_plane.get_poly_margin(),
+                    classification=holes_classif,
+                    margin=holes_poly_margin,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -656,40 +670,72 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_key=pair_key,
                     disp_min=disp_min,
                     disp_max=disp_max,
-                    compute_disparity_masks=(
-                        self.matches_filling_plane.get_classif()
-                        not in (None, [])
-                    ),
+                    compute_disparity_masks=len(holes_classif) > 0,
                     disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
                 )
 
-                # Fill holes in disparity map
-                (
-                    filled_with_plane_epipolar_disparity_map_left,
-                    filled_with_plane_epipolar_disparity_map_right,
-                ) = self.matches_filling_plane.run(
-                    epipolar_disparity_map_left,
-                    epipolar_disparity_map_right,
-                    new_epipolar_image_left,
-                    holes_bbox_left,
-                    holes_bbox_right,
-                    disp_min=disp_min,
-                    disp_max=disp_max,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                )
-                (
-                    filled_epipolar_disparity_map_left,
-                    filled_epipolar_disparity_map_right,
-                ) = self.dense_matches_filling_zeros.run(
-                    filled_with_plane_epipolar_disparity_map_left,
-                    filled_with_plane_epipolar_disparity_map_right,
-                    new_epipolar_image_left,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                )
+                # Dense matches filling
+                if self.dense_matches_filling_1.used_method == "plane":
+                    # Fill holes in disparity map
+                    (
+                        filled_with_1_epipolar_disparity_map_left,
+                        filled_with_1_epipolar_disparity_map_right,
+                    ) = self.dense_matches_filling_1.run(
+                        epipolar_disparity_map_left,
+                        epipolar_disparity_map_right,
+                        new_epipolar_image_left,
+                        holes_bbox_left,
+                        holes_bbox_right,
+                        disp_min=disp_min,
+                        disp_max=disp_max,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
+                else:
+                    # fill with zeros
+                    (
+                        filled_with_1_epipolar_disparity_map_left,
+                        filled_with_1_epipolar_disparity_map_right,
+                    ) = self.dense_matches_filling_1.run(
+                        epipolar_disparity_map_left,
+                        epipolar_disparity_map_right,
+                        new_epipolar_image_left,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
+
+                if self.dense_matches_filling_2.used_method == "plane":
+                    # Fill holes in disparity map
+                    (
+                        filled_with_2_epipolar_disparity_map_left,
+                        filled_with_2_epipolar_disparity_map_right,
+                    ) = self.dense_matches_filling_2.run(
+                        filled_with_1_epipolar_disparity_map_left,
+                        filled_with_1_epipolar_disparity_map_right,
+                        new_epipolar_image_left,
+                        holes_bbox_left,
+                        holes_bbox_right,
+                        disp_min=disp_min,
+                        disp_max=disp_max,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
+                else:
+                    # fill with zeros
+                    (
+                        filled_with_2_epipolar_disparity_map_left,
+                        filled_with_2_epipolar_disparity_map_right,
+                    ) = self.dense_matches_filling_2.run(
+                        filled_with_1_epipolar_disparity_map_left,
+                        filled_with_1_epipolar_disparity_map_right,
+                        new_epipolar_image_left,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
 
                 if epsg is None:
                     # compute epsg
@@ -722,8 +768,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     new_epipolar_image_right,
                     grid_left,
                     corrected_grid_right,
-                    filled_epipolar_disparity_map_left,
-                    filled_epipolar_disparity_map_right,
+                    filled_with_2_epipolar_disparity_map_left,
+                    filled_with_2_epipolar_disparity_map_right,
                     epsg,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
