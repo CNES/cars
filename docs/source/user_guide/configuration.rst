@@ -78,7 +78,8 @@ The structure follows this organisation:
                         "image" : "path_to_image.tif",
                         "color" : "path_to_color.tif",
                         "mask" : "path_to_mask.tif",
-                        "no_data": 0
+                        "classification" : "path_to_classification.tif",
+                        "nodata": 0
                     }
                 }
 
@@ -97,36 +98,15 @@ The structure follows this organisation:
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+            | *classification*  | Multiband classification image (label keys inside metadata): 1 values = valid data       | string         | None          | No       |
+            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
             .. note::
 
-                - *color*: This image can be composed of XS bands in which case a PAN+XS fusion will be performed.
-                - If the *mask* is a multi-classes one and no *mask_classes*  configuration file is indicated, all non-zeros values of the mask will be considered as invalid data.
-                - The value 255 is reserved for CARS internal use, thus no class can be represented by this value in the masks.
-
-
-            **CARS mask multi-classes structure**
-
-
-            Multi-classes masks have a unified CARS format enabling the use of several mask information into the API.
-            The classes can be used in different ways depending on the tag used in the dict defined below.
-
-            Dict is given in the *mask_classes* fields of sensor (see previous section).
-            This dict indicate the masks's classes usage and is structured as follows :
-
-            .. code-block:: json
-
-                {
-                    "ignored_by_dense_matching": [1, 2],
-                    "set_to_ref_alt": [1, 3, 4],
-                    "ignored_by_sparse_matching": [2]
-                }
-
-
-            * The classes listed in *ignored_by_sparse_matching* will be masked at the sparse matching step.
-            * The classes listed in *ignored_by_dense_matching* will be masked at the dense matching step.
-            * The classes listed in *set_to_ref_alt* will be set to the reference altitude (srtm or scalar). To do so, these pixels's disparity will be set to 0.
-
+                - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
+                - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
+                - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
+                - The classification of second input is not necessary. In this case, the applications use only the available classification.
             
             **Pairing**
 
@@ -766,46 +746,89 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | Name                                | Description                     | Type    | available value     | Default value      | Required |
-            +=====================================+=================================+=========+=====================+====================+==========+
-            | method                              | Method for holes detection      | string  | "plane"             | "plane"            | Yes      |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | save_disparity_map                  | Save disparity map              | boolean |                     |False               | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | activated                           | Activate application            | boolean |                     | false              | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | interpolation_type                  | Interpolation type              | string  | "pandora"           | "pandora"          | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | interpolation_method                | Method for holes interpolation  | string  | "mc_cnn"            | "mc_cnn"           | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | max_search_distance                 | Maximum search distance         | int     |                     | 100                | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | smoothing_iterations                | Number of smoothing iterations  | int     |                     | 1                  | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean |                     | true               | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean |                     | true               | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | ignore_extrema_disp_values          | Ignore extrema values           | boolean |                     | true               | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | nb_pix                              | Margin used for mask            | int     |                     | 20                 | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
-            | percent_to_erode                    | Percentage to erode             | float   |                     | 0.2                | No       |
-            +-------------------------------------+---------------------------------+---------+---------------------+--------------------+----------+
+            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+            | Name                                | Description                     | Type    | available value         | Default value      | Required |
+            +=====================================+=================================+=========+=========================+====================+==========+
+            | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | Yes      |
+            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+            | save_disparity_map                  | Save disparity map              | boolean |                         |False               | No       |
+            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+
+
+            **Method plane:**
+
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | Name                                | Description                     | Type        | available value         | Default value      | Required |
+            +=====================================+=================================+=============+=========================+====================+==========+
+            | classification                      | Classification band name        | List[str]   |                         | None               | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | interpolation_type                  | Interpolation type              | string      | "pandora"               | "pandora"          | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | interpolation_method                | Method for holes interpolation  | string      | "mc_cnn"                | "mc_cnn"           | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | max_search_distance                 | Maximum search distance         | int         |                         | 100                | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean     |                         | true               | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | ignore_extrema_disp_values          | Ignore extrema values           | boolean     |                         | true               | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | nb_pix                              | Margin used for mask            | int         |                         | 20                 | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+            | percent_to_erode                    | Percentage to erode             | float       |                         | 0.2                | No       |
+            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+
+            .. note::
+
+                In case of classification usage, the use_sec_disp option should be activated to apply right classification on right disparity map, otherwise the right classificaton is not propagated towards the next pipeline application.
+
+
+            **Method zero_padding:**
+
+            The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
+
+            +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+            | Name                                | Description                     | Type      | available value         | Default value      | Required |
+            +=====================================+=================================+===========+=========================+====================+==========+
+            | classification                      | Classification band name        | List[str] |                         | None               | No       |
+            +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+
+            .. note::
+                - The classification of second input is not given. Only the first disparity will be filled with zero value.
+                - The filled area will be considered as a valid disparity mask.
+
+            .. warning::
+
+                There is a particular case with the *dense_matches_filling* application because it is called twice.
+                As described on :ref:`overview`, the eighth step consists of fill dense matches via two consecutive methods.
+                So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
+                Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                those two applications with :
+
+                 * *dense_matches_filling.1*
+                 * *dense_matches_filling.2*
+
+                Each one is associated to a particular *dense_matches_filling* method*
 
             **Example**
 
             .. code-block:: json
 
-                "applications": {
-                    "dense_matches_filling": {
-                        "method": "plane",
-                        "activated": true,
-                        "save_disparity_map": true
-                    }
-                },
-
+                    "applications": {
+                        "dense_matches_filling.1": {
+                            "method": "plane",
+                            "classification": ["water"],
+                            "save_disparity_map": true
+                        },
+                        "dense_matches_filling.2": {
+                            "method": "zero_padding",
+                            "classification": ["cloud", "snow"],
+                            "save_disparity_map": true
+                        }
+                    },
 
 
         .. tab:: Triangulation
@@ -990,17 +1013,19 @@ The structure follows this organisation:
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | color_dtype                          |                                     | string     |                 | "uint16"        |          |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | msk_no_data                          |                                     | int        |                 | 65535           |          |
+            | msk_no_data                          | No data value for and classif       | int        |                 | 65535           |          |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | write_color                          | Save color ortho-image              | boolean    |                 | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | write_stats                          |                                     | boolean    |                 | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_msk                            |                                     | boolean    |                 | false           | No       |
+            | write_msk                            | Save mask raster                    | boolean    |                 | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
+            | write_classif                        | Save classification mask raster     | boolean    |                 | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | write_dsm                            | Save dsm                            | boolean    |                 | true            | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | true            | No       |
+            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
             | compute_all                          | Compute all layers even             | boolean    |                 | false           | No       |
             |                                      | if one or more layers               |            |                 |                 |          |

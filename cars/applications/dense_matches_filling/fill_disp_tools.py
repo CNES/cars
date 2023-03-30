@@ -53,6 +53,7 @@ from skimage.segmentation import find_boundaries
 
 # Cars import
 from cars.applications.holes_detection import holes_detection_tools
+from cars.core import constants as cst
 
 
 def fill_central_area_using_plane(
@@ -768,7 +769,7 @@ def fill_disp_using_plane(
     )
 
 
-def fill_disp_using_zeros_padding(
+def fill_disp_using_zero_padding(
     disp_map: xr.Dataset,
     class_index,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
@@ -787,6 +788,21 @@ def fill_disp_using_zeros_padding(
     # Generate a structuring element that will consider features
     # connected even if they touch diagonally
 
-    disp_map["disp"].values[
-        np.where(disp_map["classif"].values[:, :, class_index] == 1)
-    ] = 0
+    # get index of the application class config
+    # according the coords classif band
+    if cst.BAND_CLASSIF in disp_map.coords:
+        index_class = np.where(
+            np.isin(
+                np.array(disp_map.coords[cst.BAND_CLASSIF].values),
+                np.array(class_index),
+            )
+        )[0].tolist()
+        # get index for each band classification of the non zero values
+        stack_index = np.any(
+            disp_map[cst.EPI_CLASSIFICATION].values[index_class, :, :] > 0,
+            axis=0,
+        )
+        # set disparity value to zero where the class is
+        # non zero value and masked region
+        disp_map["disp"].values[stack_index] = 0
+        disp_map["disp_msk"].values[stack_index] = 255

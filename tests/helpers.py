@@ -53,6 +53,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core.datasets import get_color_bands
 from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Specific values
@@ -255,9 +256,7 @@ def assert_same_datasets(actual, expected, rtol=0, atol=0):
         list(actual.coords.keys()).sort() == list(expected.coords.keys()).sort()
     )
     for key in expected.coords.keys():
-        np.testing.assert_allclose(
-            actual.coords[key].values, expected.coords[key].values
-        )
+        np.array_equal(actual.coords[key].values, expected.coords[key].values)
     assert (
         list(actual.data_vars.keys()).sort()
         == list(expected.data_vars.keys()).sort()
@@ -321,13 +320,17 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
                 margin[0] : nb_col - margin[2],
             ] = color_array
         # multiple bands
-        if cst.BAND not in new_dataset.dims:
-            nb_bands = color_array.shape[0]
-            new_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
+        if cst.BAND_IM not in new_dataset.dims:
+            if cst.EPI_COLOR in new_dataset:
+                band_im = get_color_bands(new_dataset, cst.EPI_COLOR)
+            else:
+                default_band = ["Red", "Green", "Blue", "NIR"]
+                band_im = default_band[:nb_band]
+            new_dataset.coords[cst.BAND_IM] = band_im
 
         new_dataset[cst.EPI_COLOR] = xr.DataArray(
             new_color_array,
-            dims=[cst.BAND, cst.ROW, cst.COL],
+            dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
     else:
         if margin is None:

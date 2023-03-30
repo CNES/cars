@@ -6,12 +6,14 @@
                 "image": "img1.tif",
                 "geomodel": "img1.geom",
                 "mask": "new_mask1.tif",
+                "classification": "classif1.tif",
                 "no_data": 0
             },
             "two": {
                 "image": "img2.tif",
                 "geomodel": "img2.geom",
                 "mask": "new_mask2.tif",
+                "classification": "classif2.tif",
                 "no_data": 0
 
             }

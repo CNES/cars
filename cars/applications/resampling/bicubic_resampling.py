@@ -43,6 +43,7 @@ from cars.applications.resampling import resampling_constants, resampling_tools
 from cars.applications.resampling.resampling import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
+from cars.core.datasets import get_color_bands
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.sensor_to_dense_dsm import (
@@ -212,11 +213,11 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         :param sensor_images_left: tiled sensor left image
             Dict Must contain keys : "image", "color", "geomodel",
-            "no_data", "mask". Paths must be absolutes
+            "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_left: CarsDataset
         :param sensor_images_right: tiled sensor right image
             Dict Must contain keys : "image", "color", "geomodel",
-            "no_data", "mask". Paths must be absolutes
+            "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
             Grid CarsDataset contains :
@@ -255,7 +256,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             - N x M Delayed tiles. \
                 Each tile will be a future xarray Dataset containing:
 
-                - data with keys : "im", "msk", "color"
+                - data with keys : "im", "msk", "color", "classif"
                 - attrs with keys: "margins" with "disp_min" and "disp_max"\
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"
@@ -451,6 +452,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         nodata2 = sensor_image_right.get(sens_cst.INPUT_NODATA, None)
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)
         mask2 = sensor_image_right.get(sens_cst.INPUT_MSK, None)
+        classif1 = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
+        classif2 = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
 
         # Generate Image pair
         for col in range(epipolar_images_left.shape[1]):
@@ -486,6 +489,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     color1=color1,
                     mask1=mask1,
                     mask2=mask2,
+                    classif1=classif1,
+                    classif2=classif2,
                     nodata1=nodata1,
                     nodata2=nodata2,
                     saving_info_left=saving_info_left,
@@ -509,6 +514,8 @@ def generate_epipolar_images_wrapper(
     color1=None,
     mask1=None,
     mask2=None,
+    classif1=None,
+    classif2=None,
     nodata1=0,
     nodata2=0,
     saving_info_left=None,
@@ -549,6 +556,8 @@ def generate_epipolar_images_wrapper(
         left_dataset,
         right_dataset,
         left_color_dataset,
+        left_classif_dataset,
+        right_classif_dataset,
     ) = resampling_tools.epipolar_rectify_images(
         img1,
         img2,
@@ -561,6 +570,8 @@ def generate_epipolar_images_wrapper(
         color1=color1,
         mask1=mask1,
         mask2=mask2,
+        classif1=classif1,
+        classif2=classif2,
         nodata1=nodata1,
         nodata2=nodata2,
         add_color=add_color,
@@ -569,22 +580,9 @@ def generate_epipolar_images_wrapper(
     if add_color:
         # merge color in left dataset
         if len(left_color_dataset[cst.EPI_IMAGE].values.shape) > 2:
-            nb_bands = left_color_dataset[cst.EPI_IMAGE].values.shape[0]
-            if cst.BAND not in left_dataset.dims:
-                # add const BAND
-                if cst.BAND not in left_dataset.dims:
-                    left_dataset.assign_coords({cst.BAND: np.arange(nb_bands)})
-
-        if len(left_color_dataset[cst.EPI_IMAGE].values.shape) > 2:
-            left_dataset[cst.EPI_COLOR] = xr.DataArray(
-                left_color_dataset[cst.EPI_IMAGE].values,
-                dims=[cst.BAND, cst.ROW, cst.COL],
-            )
+            band_im = get_color_bands(left_color_dataset, cst.EPI_IMAGE)
         else:
-            left_dataset[cst.EPI_COLOR] = xr.DataArray(
-                left_color_dataset[cst.EPI_IMAGE].values,
-                dims=[cst.ROW, cst.COL],
-            )
+            band_im = ["Gray"]
 
         # Add epi color mask if exists
         if cst.EPI_MSK in left_color_dataset:
@@ -592,15 +590,39 @@ def generate_epipolar_images_wrapper(
                 left_color_dataset[cst.EPI_MSK].values, dims=[cst.ROW, cst.COL]
             )
 
+        # if cst.BAND_IM not in left_dataset.dims:
+        left_dataset.coords[cst.BAND_IM] = band_im
+        left_dataset[cst.EPI_COLOR] = xr.DataArray(
+            left_color_dataset[cst.EPI_IMAGE].values,
+            dims=[cst.BAND_IM, cst.ROW, cst.COL],
+        )
+
         # Add input color type
         color_type = inputs.rasterio_get_color_type(color1)
         left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
     else:
-        color_type = inputs.rasterio_get_color_type(img1)
-        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_type
+        color_types = inputs.rasterio_get_color_type(img1)
+        left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types
+
+    # Add classification layers to dataset
+    if left_classif_dataset:
+        left_dataset.coords[cst.BAND_CLASSIF] = left_classif_dataset.attrs[
+            cst.BAND_NAMES
+        ]
+        left_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
+            left_classif_dataset[cst.EPI_IMAGE].values,
+            dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
+        )
+    if right_classif_dataset:
+        right_dataset.coords[cst.BAND_CLASSIF] = right_classif_dataset.attrs[
+            cst.BAND_NAMES
+        ]
+        right_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
+            right_classif_dataset[cst.EPI_IMAGE].values,
+            dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
+        )
     # Add attributes info
     attributes = {}
-
     # fill datasets with saving info, window, profile, overlaps for correct
     #  saving
     cars_dataset.fill_dataset(

@@ -1,6 +1,6 @@
 [MASTER]
 # Analyze C extensions capabilities packages.
-extension-pkg-allow-list=rasterio
+extension-pkg-allow-list=rasterio,rasterize
 
 # Extend Recursion limit for RecursionError in big files
 init-hook='import sys; sys.setrecursionlimit(8 * sys.getrecursionlimit())'

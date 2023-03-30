@@ -146,7 +146,7 @@ def build_mask_pipeline(
 
 
 def build_image_resampling_pipeline(
-    img, grid, epipolar_size_x, epipolar_size_y, roi
+    img, grid, epipolar_size_x, epipolar_size_y, roi, interpolator=None
 ):
     """
     This function builds a pipeline that resamples images in epipolar geometry
@@ -161,6 +161,9 @@ def build_image_resampling_pipeline(
     :type epipolar_size_y: int
     :param roi: Region over which to compute epipolar images, or None
     :type roi: list of 4 int (xmin, ymin, xmax, ymax)
+    :param interpolator: interpolator type according
+                        with otb option (bco is default value)
+    :type interpolator: str ("nn" "linear" "bco")
     :return: resampled image
     :rtype: resampled image as numpy array
     """
@@ -182,7 +185,8 @@ def build_image_resampling_pipeline(
     resampling_app.SetParameterString("grid.type", "def")
     resampling_app.SetParameterInt("out.sizex", epipolar_size_x)
     resampling_app.SetParameterInt("out.sizey", epipolar_size_y)
-
+    if interpolator:
+        resampling_app.SetParameterString("interpolator", interpolator)
     resampling_app.Execute()
     extract_app = build_extract_roi_application(
         resampling_app.GetParameterOutputImage("io.out"), roi

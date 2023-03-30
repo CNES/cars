@@ -23,6 +23,9 @@ Test module for cars/stereo.py
 Important : Uses conftest.py for shared pytest fixtures
 """
 
+import os
+import pickle
+
 # Third party imports
 import numpy as np
 import pytest
@@ -128,8 +131,16 @@ def test_epipolar_rectify_images_1(
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
     mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
+    classif1 = configuration["input"].get(in_params.CLASSIFICATION1_TAG, None)
+    classif2 = configuration["input"].get(in_params.CLASSIFICATION2_TAG, None)
 
-    (left, right, clr) = resampling_tools.epipolar_rectify_images(
+    (
+        left,
+        right,
+        clr,
+        classif1,
+        classif2,
+    ) = resampling_tools.epipolar_rectify_images(
         img1,
         img2,
         grid1,
@@ -141,6 +152,8 @@ def test_epipolar_rectify_images_1(
         color1=color1,
         mask1=mask1,
         mask2=mask2,
+        classif1=classif1,
+        classif2=classif2,
         nodata1=nodata1,
         nodata2=nodata2,
         add_color=True,
@@ -167,10 +180,16 @@ def test_epipolar_rectify_images_1(
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
-    # clr.to_netcdf(absolute_data_path("ref_output/data1_ref_clr.nc"))
+    # with open(absolute_data_path("ref_output/data1_ref_clr"), "wb") as file:
+    #     pickle.dump(clr, file)
 
-    clr_ref = xr.open_dataset(absolute_data_path("ref_output/data1_ref_clr.nc"))
-    assert_same_datasets(clr, clr_ref)
+    with open(
+        absolute_data_path("ref_output/data1_ref_clr"),
+        "rb",
+    ) as file2:
+        # load pickle data
+        clr_ref = pickle.load(file2)
+        assert_same_datasets(clr, clr_ref)
 
 
 @pytest.mark.unit_tests
@@ -225,8 +244,15 @@ def test_epipolar_rectify_images_3(
     nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
     mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
     mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
-
-    (left, right, clr) = resampling_tools.epipolar_rectify_images(
+    classif1 = configuration["input"].get(in_params.CLASSIFICATION1_TAG, None)
+    classif2 = configuration["input"].get(in_params.CLASSIFICATION2_TAG, None)
+    (
+        left,
+        right,
+        clr,
+        class1,
+        class2,
+    ) = resampling_tools.epipolar_rectify_images(
         img1,
         img2,
         grid1,
@@ -238,6 +264,8 @@ def test_epipolar_rectify_images_3(
         color1=color1,
         mask1=mask1,
         mask2=mask2,
+        classif1=classif1,
+        classif2=classif2,
         nodata1=nodata1,
         nodata2=nodata2,
         add_color=True,
@@ -258,9 +286,18 @@ def test_epipolar_rectify_images_3(
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
-    # clr.to_netcdf(absolute_data_path("ref_output/data3_ref_clr_4bands.nc"))
+    # with open(absolute_data_path(os.path.join(
+    #           "ref_output","data3_ref_clr_4bands"
+    #      )), "wb") as file:
+    #     pickle.dump(clr, file)
 
-    clr_ref = xr.open_dataset(
-        absolute_data_path("ref_output/data3_ref_clr_4bands.nc")
-    )
-    assert_same_datasets(clr, clr_ref)
+    with open(
+        absolute_data_path(os.path.join("ref_output", "data3_ref_clr_4bands")),
+        "rb",
+    ) as file2:
+        # load pickle data
+        clr_ref = pickle.load(file2)
+        assert_same_datasets(clr, clr_ref)
+
+    assert class1 is None
+    assert class2 is None

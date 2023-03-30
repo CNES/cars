@@ -30,7 +30,6 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
-import numpy as np
 import xarray as xr
 from json_checker import Checker, Or
 
@@ -612,11 +611,9 @@ def compute_disparity(
 
         # check bands
         if len(left_image_object[cst.EPI_COLOR].values.shape) > 2:
-            nb_bands = left_image_object[cst.EPI_COLOR].values.shape[0]
-            if cst.BAND not in disp[cst.STEREO_SEC].dims:
-                disp[cst.STEREO_SEC].assign_coords(
-                    {cst.BAND: np.arange(nb_bands)}
-                )
+            band_im = left_image_object.coords[cst.BAND_IM]
+            if cst.BAND_IM not in disp[cst.STEREO_SEC].dims:
+                disp[cst.STEREO_SEC].coords[cst.BAND_IM] = band_im
 
         # merge colors
         disp[cst.STEREO_SEC][cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]

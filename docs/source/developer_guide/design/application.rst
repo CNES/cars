@@ -98,10 +98,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             epipolar_images_left,
             epipolar_images_right,
             pair_folder,
-            mask1_ignored_by_corr: List[int] = None,
-            mask2_ignored_by_corr: List[int] = None,
-            mask1_set_to_ref_alt: List[int] = None,
-            mask2_set_to_ref_alt: List[int] = None,
         ):
 
                   """
@@ -117,18 +113,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             :type epipolar_images_right: CarsDataset
             :param pair_folder: folder used for current pair
             :type pair_folder: str
-            :param mask1_ignored_by_corr: values used in left mask to ignore
-             in correlation
-            :type mask1_ignored_by_corr: list
-            :param mask2_ignored_by_corr: values used in right mask to ignore
-             in correlation
-            :type mask2_ignored_by_corr: list
-            :param mask1_set_to_ref_alt: values used in left mask to altitude
-             to ref
-            :type mask1_set_to_ref_alt: list
-            :param mask2_set_to_ref_alt: values used in right mask to altitude
-             to ref
-            :type mask2_set_to_ref_alt: list
 
             :return left disparity map, right disparity map
             :rtype: Tuple(CarsDataset, CarsDataset)
@@ -212,10 +196,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
                             self.corr_config,
-                            mask1_ignored_by_corr=mask1_ignored_by_corr,
-                            mask2_ignored_by_corr=mask2_ignored_by_corr,
-                            mask1_set_to_ref_alt=mask1_set_to_ref_alt,
-                            mask2_set_to_ref_alt=mask2_set_to_ref_alt,
                             use_sec_disp=self.use_sec_disp,
                             saving_info_left=saving_info_left,
                             saving_info_right=saving_info_right,
@@ -240,10 +220,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
         left_image_object: xr.Dataset,
         right_image_object: xr.Dataset,
         corr_cfg: dict,
-        mask1_ignored_by_corr: List[int] = None,
-        mask2_ignored_by_corr: List[int] = None,
-        mask1_set_to_ref_alt: List[int] = None,
-        mask2_set_to_ref_alt: List[int] = None,
         use_sec_disp=False,
         saving_info_left=None,
         saving_info_right=None,

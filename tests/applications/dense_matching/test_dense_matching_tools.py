@@ -408,11 +408,11 @@ def test_estimate_color_from_disparity():
     # create fake secondary dataset with color
     sec_dataset = xr.Dataset(
         {
-            cst.EPI_COLOR: ([cst.BAND, cst.ROW, cst.COL], np.copy(clr)),
+            cst.EPI_COLOR: ([cst.BAND_IM, cst.ROW, cst.COL], np.copy(clr)),
             cst.EPI_COLOR_MSK: ([cst.ROW, cst.COL], np.copy(clr_mask)),
         },
         coords={
-            cst.BAND: range(clr_nb_band),
+            cst.BAND_IM: ["R", "G", "B"],
             cst.ROW: clr_row,
             cst.COL: clr_col,
         },

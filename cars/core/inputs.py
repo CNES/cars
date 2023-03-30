@@ -109,6 +109,25 @@ def rasterio_get_color_type(raster_file: str) -> list:
     return color_type
 
 
+def rasterio_get_nbits(raster_file):
+    """
+    Get the band nbits list
+
+    :param raster_file: Image file
+    :return: The band nbits list
+    """
+    nbits = []
+    with rio.open(raster_file, "r") as descriptor:
+        for bidx in range(1, descriptor.count + 1):
+            img_structurre_band = descriptor.tags(
+                ns="IMAGE_STRUCTURE", bidx=bidx
+            )
+            if "NBITS" in img_structurre_band:
+                nbits.append(int(img_structurre_band["NBITS"]))
+
+    return nbits
+
+
 def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
     """
     Get the size of an image (file)
@@ -219,3 +238,14 @@ def check_json(conf, schema):
     schema_validator = Checker(schema)
     checked_conf = schema_validator.validate(conf)
     return checked_conf
+
+
+def get_descriptions_bands(raster_file: str) -> Dict:
+    """
+    Get the descriptions bands of an image file
+
+    :param raster_file: Image file
+    :return: The descriptions liust of the given image
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.descriptions
