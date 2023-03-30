@@ -154,10 +154,10 @@ def test_epipolar_pipeline(
     )
 
     # Uncomment to update reference
-    with open(
-        absolute_data_path("ref_output/cloud1_ref_pandora"), "wb"
-    ) as left_pc_file:
-        pickle.dump(left_pc, left_pc_file)
+    # with open(
+    #     absolute_data_path("ref_output/cloud1_ref_pandora"), "wb"
+    # ) as left_pc_file:
+    #     pickle.dump(left_pc, left_pc_file)
 
     with open(
         absolute_data_path("ref_output/cloud1_ref_pandora"), "rb"
