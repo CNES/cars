@@ -15,6 +15,7 @@
 - Input mask is now a binary validity mask used in the whole pipeline [#566]
 - Region of Interest with GeoJson or Shapefile [#580, #242]
 - Refactoring of Masks, Classifications and Color [#577, #578]
+- Move the former "set_to_ref_alt" option to DenseMatchesFilling application [#577, #578]
 
 ### Fixed
 - Bug DenseMatchesFilling Plane [#599]
