@@ -1,5 +1,24 @@
 # Changelog
 
+## 0.6.0 A new input interface (mask and classification) and new pipelines (March 2023)
+
+### Added
+- All confidence maps from Pandora are propagated [#521]
+- New pipelines: sensor to point cloud, point cloud to dsm[#567]
+- Generate performance map [#590]
+- Density parameter for terrain tile size computation in pc to dsm pipeline [#566]
+- Multiprocessing mode available for DenseMatchesFilling [#539]
+- Rasterization coded in C++ [#523]
+
+### Changed
+- P+XS Fusion is no longer available in CARS [#579]
+- Input mask is now a binary validity mask used in the whole pipeline [#566]
+- Region of Interest with GeoJson or Shapefile [#580, #242]
+- Refactoring of Masks, Classifications and Color [#577, #578]
+
+### Fixed
+- Bug DenseMatchesFilling Plane [#599]
+
 ## 0.5.4 Grid correction in the configuration file and a better estimate of disparity range (February 2023)
 
 ### Added
@@ -26,18 +45,15 @@
 ## 0.5.3 Points clouds as LAZ files (December 2022)
 
 ### Added
-
 - Dump point clouds as LAS [#438]
 - Refactoring of tiling grids and margins [#451]
 - Generate a runnable full configuration file [#422]
 - Add hole filling application for disparity maps [#275]
 
 ### Changed
-
 - Add minimum number of sift matches in configuration [#514]
 
 ### Fixed
-
 - Fix pylint errors (no-member) in application template [#437]
 - Fix bug PBS Dask [#515]
 - Fix wrong images saved in notebooks
@@ -46,54 +62,45 @@
 ## 0.5.2 Profiling and dense matching confidence information (November 2022)
 
 ### Added
-
 - Add ambiguity transmission through pipeline [#478]
 - Add memory/cpu profiling mode [#473]
 - Clean notebooks outputs [#497]
 
 ### Changed
-
 - Clean setup.cfg with optionnal package data [#467]
 - Clean disk data in Multiprocessing mode [#454]
 
 ### Fixed
-
 - Fix dimension bug during point cloud fusion [#482]
 
 
 ## 0.5.1 Minor fixes post refactoring (September 2022)
 
 ### Changed
-
 - New User Guide version [#448]
 
 ### Fixed
-
 - Fix dask upgrade bug [#436]
 - Fix temporarily local path to CARS OTB installed apps [#434]
 - Fix multiprocessing bug [#446]
 - Fix (remove) warning: tile ignored [#455]
-
 
 ## 0.5.0 Refacto CARS (August 2022)
 
 Be careful, this version changes API and configuration ! See new documentation.
 
 ### Added
-
 - Add documentation generation pre-commit when git push [#406]
 - Add docker images files for jupyter and cars tutorial [#418]
 - Add cars tutorial main_tutorial as notebook slides [#421]
 - Add pandora mccn simplified installation process [#426]
 
 ### Changed
-
 - Refactoring of all CARS code by implementing new concepts as application, CarsDataset, orchestrator, pipeline and configuration. See documentation for more details. [#332]
 - upgrade support to python 3.8 only [#372]
 - change quick_start and notebooks to tutorials structure [#419]
 
 ### Fixed
-
 - Remove setuptools pre installation [#341]
 - Remove click 8.0.4 dependency [#341]
 - Add automatic use of setup.cfg docs extra_require for readthedocs conf [#367]
@@ -102,7 +109,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 ## 0.4.2 OTB/GDAL upgrade (July 2022)
 
 ### Fixed
-
 - Fix gdal-config dependency in docker with rasterio upgrade [#404]
 - Upgrade OTB to 7.4.1 in Dockerfile [#404]
 
@@ -110,11 +116,9 @@ Be careful, this version changes API and configuration ! See new documentation.
 ## 0.4.1 Stabilization - Upgrade Pandora 1.2.* (June 2022)
 
 ### Added
-
 - Add Authors file for contributors [#400]
 
 ### Changed
-
 - Upgrade to pandora 1.2.* [#371]
 - Improve performance of CARS cli with no argument [#357]
 - Add egm96 internal geoid hdr header [#335]
@@ -124,7 +128,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 - Makefile evolution and clean [#391]
 
 ### Fixed
-
 - Fix min_elevation_offset option when user_disp_min is greater than disp_min [#348]
 - Temporary bugfix by forcing click version to avoid dask.distributed pbs cluster trouble [#383]
 - Fix CI errors with pylint upgrades and docker apt package ubuntu upgrades  [#390, #388, #385, #384, #380, #379, #376, #369, #368, #339]
@@ -139,7 +142,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 ## 0.4.0 Geometry Loader (September 2021)
 
 ### Added
-
 - Write used dask configuration in output directory. [#224]
 - Add argparse file option @"opts.txt" + doc [#265]
 - Add Contributor Licence Agreement [#257]
@@ -150,7 +152,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 - Add OTBGeometry loader [#287]
 
 ### Changed
-
 - Update/Clean package setup (add Makefile, clean requirements) [#210, #193, #305, #197]
 - Make pip install -e work [#207]
 - Update/Clean environment parameters [#166, #251]
@@ -170,7 +171,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 - Geoid file indicated via the static configuration [#287]
 
 ### Fixed
-
 - Fix epipolar size. [#206, #237, #248]
 - Fix and clean tbb support [#267, #276, #304]
 - Fix align_with_lowres_dem in mp mode [#286]
@@ -182,7 +182,6 @@ Be careful, this version changes API and configuration ! See new documentation.
 ## 0.3.0 Multi-classes mask management (December 2020)
 
 ### Added
-
 - Mask management : change input format and internal behaviors. [#147, #170]
 - Constants.py added to optimize code [#172]
 - Default elevation option [#111]
