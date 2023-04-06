@@ -391,6 +391,14 @@ class PlaneFill(
                             new_epipolar_disparity_map_right.overlaps[row, col]
                         )
 
+                        # update saving infos  for potential replacement
+                        full_saving_info_left = ocht.update_saving_infos(
+                            saving_info_left, row=row, col=col
+                        )
+                        full_saving_info_right = ocht.update_saving_infos(
+                            saving_info_right, row=row, col=col
+                        )
+
                         if (
                             len(corresponding_tiles_left)
                             + len(corresponding_tiles_right)
@@ -408,8 +416,8 @@ class PlaneFill(
                                 window,
                                 overlap_left,
                                 overlap_right,
-                                saving_info_left=saving_info_left,
-                                saving_info_right=saving_info_right,
+                                saving_info_left=full_saving_info_left,
+                                saving_info_right=full_saving_info_right,
                             )
 
                         else:
@@ -441,8 +449,8 @@ class PlaneFill(
                                 nb_pix=self.nb_pix,
                                 percent_to_erode=self.percent_to_erode,
                                 interp_options=interp_options,
-                                saving_info_left=saving_info_left,
-                                saving_info_right=saving_info_right,
+                                saving_info_left=full_saving_info_left,
+                                saving_info_right=full_saving_info_right,
                             )
                 res = (
                     new_epipolar_disparity_map_left,

@@ -244,6 +244,13 @@ class ZerosPadding(
                         overlap_right = (
                             new_epipolar_disparity_map_right.overlaps[row, col]
                         )
+                        # update saving infos  for potential replacement
+                        full_saving_info_left = ocht.update_saving_infos(
+                            saving_info_left, row=row, col=col
+                        )
+                        full_saving_info_right = ocht.update_saving_infos(
+                            saving_info_right, row=row, col=col
+                        )
 
                         # copy dataset
                         (
@@ -259,8 +266,8 @@ class ZerosPadding(
                             overlap_left,
                             overlap_right,
                             classif_index=self.classification,
-                            saving_info_left=saving_info_left,
-                            saving_info_right=saving_info_right,
+                            saving_info_left=full_saving_info_left,
+                            saving_info_right=full_saving_info_right,
                         )
 
                 res = (

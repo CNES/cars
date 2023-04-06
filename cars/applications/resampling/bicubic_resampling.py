@@ -468,6 +468,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 # get window
                 left_window = epipolar_images_left.get_window_as_dict(row, col)
 
+                # update saving infos  for potential replacement
+                full_saving_info_left = ocht.update_saving_infos(
+                    saving_info_left, row=row, col=col
+                )
+                full_saving_info_right = ocht.update_saving_infos(
+                    saving_info_right, row=row, col=col
+                )
+
                 # Compute images
                 (
                     epipolar_images_left[row, col],
@@ -493,8 +501,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     classif2=classif2,
                     nodata1=nodata1,
                     nodata2=nodata2,
-                    saving_info_left=saving_info_left,
-                    saving_info_right=saving_info_right,
+                    saving_info_left=full_saving_info_left,
+                    saving_info_right=full_saving_info_right,
                 )
         return epipolar_images_left, epipolar_images_right
 

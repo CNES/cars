@@ -326,6 +326,10 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
                     if list_epipolar_points_cloud_left[0].dataset_type in (
                         "arrays",
                         "points",
@@ -389,7 +393,7 @@ class MappingToTerrainTiles(
                             margins=margins,
                             save_pc_as_laz=self.save_points_cloud_as_laz,
                             save_pc_as_csv=self.save_points_cloud_as_csv,
-                            saving_info=saving_info,
+                            saving_info=full_saving_info,
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?

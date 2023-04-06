@@ -433,7 +433,7 @@ class Sift(SparseMatching, short_name="sift"):
                 )
             )
 
-            # Add to replace list so tiles will be readble at the same time
+            # Add to replace list so tiles will be readable at the same time
             self.orchestrator.add_to_replace_lists(
                 epipolar_disparity_map_left, cars_ds_name="epi_matches_left"
             )
