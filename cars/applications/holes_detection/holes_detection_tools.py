@@ -124,16 +124,20 @@ def localize_masked_areas(
     # binarize msk layer of epipolar image dataset
     # 0: 'valid' data, 1: masked data according to key_id
     if cst.EPI_CLASSIFICATION not in dataset:
-        logging.error("No classif provided")
-        raise RuntimeError("No classif provided")
-    if not isinstance(classification, list):
-        logging.error("no mask classes provided for DisparityFilling")
-        raise RuntimeError("no mask classes provided for DisparityFilling")
-    msk_values = classif_to_stacked_array(dataset, classification)
-    # Finds roi in msk and stores its localization as polygon list
-    bbox = get_roi_coverage_as_poly_with_margins(
-        msk_values, row_offset=row_offset, col_offset=col_offset, margin=margin
-    )
+        logging.debug("No classif provided")
+        bbox = []
+    else:
+        if not isinstance(classification, list):
+            logging.error("no mask classes provided for DisparityFilling")
+            raise RuntimeError("no mask classes provided for DisparityFilling")
+        msk_values = classif_to_stacked_array(dataset, classification)
+        # Finds roi in msk and stores its localization as polygon list
+        bbox = get_roi_coverage_as_poly_with_margins(
+            msk_values,
+            row_offset=row_offset,
+            col_offset=col_offset,
+            margin=margin,
+        )
     return bbox
 
 
