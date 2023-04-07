@@ -611,7 +611,7 @@ def estimate_color_from_disparity(
 
     # instantiate final image
     final_interp_color = np.zeros(
-        (nb_disp_row, nb_disp_col, nb_bands), dtype=np.float64
+        (nb_bands, nb_disp_row, nb_disp_col), dtype=np.float64
     )
 
     # construct secondary color image pixels positions
@@ -667,12 +667,12 @@ def estimate_color_from_disparity(
         interp_values = interpolate.griddata(
             clr_xy_positions, clr_values, interpolated_points, method="nearest"
         )
-        final_interp_color[:, :, band] = interp_values.reshape(
+        final_interp_color[band, :, :] = interp_values.reshape(
             nb_disp_row, nb_disp_col
         )
 
         # apply final mask
-        final_interp_color[:, :, band][final_msk != 255] = np.nan
+        final_interp_color[band, :, :][final_msk != 255] = np.nan
 
     # create interpolated color image dataset
     region = list(disp_ref_to_sec.attrs[cst.ROI])
