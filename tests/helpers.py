@@ -220,7 +220,7 @@ def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
                 assert_same_datasets(
                     actual_tile, expected.tiles[idx][idx_tile], rtol, atol
                 )
-            elif isinstance(actual_tile, pandas.Dataframe):
+            elif isinstance(actual_tile, pandas.DataFrame):
                 assert_same_dataframes(
                     actual_tile, expected.tiles[idx][idx_tile], rtol, atol
                 )
