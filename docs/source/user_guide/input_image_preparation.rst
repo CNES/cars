@@ -63,6 +63,7 @@ The low NDWI values can be considered as water area.
 
 See next section to apply a gdal translate to convert the mask with 1bit image struture.
 
+.. _convert_image_to_binary_image:
 
 Convert image to binary image
 ====================================
@@ -74,3 +75,18 @@ To translate single image or multiband image with several nbits per band to 1bit
     $ gdal_translate -ot Byte -co NBITS=1 mask.tif mask_1nbit.tif
 
 .. _`GDAL`: https://gdal.org/
+
+.. _add_band_description_in_image:
+
+Add band name / description in tiff files metadata
+===============================================
+
+To add a band name /description in tiff files, for classification or color files in order to be used:
+
+
+.. code-block:: python
+
+    data_in = gdal.Open(infile, gdal.GA_Update)
+    band_in = data_in.GetRasterBand(inband)
+    band_in.SetDescription(band_description)
+    data_in = None
