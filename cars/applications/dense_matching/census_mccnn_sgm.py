@@ -492,33 +492,45 @@ class CensusMccnnSgm(
             # Generate disparity maps
             for col in range(epipolar_disparity_map_right.shape[1]):
                 for row in range(epipolar_disparity_map_right.shape[0]):
-                    # update saving infos  for potential replacement
-                    full_saving_info_left = ocht.update_saving_infos(
-                        saving_info_left, row=row, col=col
-                    )
-                    full_saving_info_right = ocht.update_saving_infos(
-                        saving_info_right, row=row, col=col
-                    )
-                    # Compute disparity
-                    (
-                        epipolar_disparity_map_left[row, col],
-                        epipolar_disparity_map_right[row, col],
-                    ) = self.orchestrator.cluster.create_task(
-                        compute_disparity, nout=2
-                    )(
-                        epipolar_images_left[row, col],
-                        epipolar_images_right[row, col],
-                        self.corr_config,
-                        disp_min=disp_min,
-                        disp_max=disp_max,
-                        use_sec_disp=self.use_sec_disp,
-                        saving_info_left=full_saving_info_left,
-                        saving_info_right=full_saving_info_right,
-                        compute_disparity_masks=compute_disparity_masks,
-                        generate_performance_map=self.generate_performance_map,
-                        perf_ambiguity_threshold=self.perf_ambiguity_threshold,
-                        disp_to_alt_ratio=disp_to_alt_ratio,
-                    )
+                    if type(None) not in (
+                        type(epipolar_images_left[row, col]),
+                        type(epipolar_images_right[row, col]),
+                    ):
+                        # update saving infos  for potential replacement
+                        full_saving_info_left = ocht.update_saving_infos(
+                            saving_info_left, row=row, col=col
+                        )
+                        full_saving_info_right = ocht.update_saving_infos(
+                            saving_info_right, row=row, col=col
+                        )
+                        # Compute disparity
+                        (
+                            epipolar_disparity_map_left[row, col],
+                            epipolar_disparity_map_right[row, col],
+                        ) = self.orchestrator.cluster.create_task(
+                            compute_disparity, nout=2
+                        )(
+                            epipolar_images_left[row, col],
+                            epipolar_images_right[row, col],
+                            self.corr_config,
+                            disp_min=disp_min,
+                            disp_max=disp_max,
+                            use_sec_disp=self.use_sec_disp,
+                            saving_info_left=full_saving_info_left,
+                            saving_info_right=full_saving_info_right,
+                            compute_disparity_masks=compute_disparity_masks,
+                            generate_performance_map=(
+                                self.generate_performance_map
+                            ),
+                            perf_ambiguity_threshold=(
+                                self.perf_ambiguity_threshold
+                            ),
+                            disp_to_alt_ratio=disp_to_alt_ratio,
+                        )
+
+                        if not self.use_sec_disp:
+                            # Remove delayed by None
+                            epipolar_disparity_map_right[row, col] = None
         else:
             logging.error(
                 "DenseMatching application doesn't "

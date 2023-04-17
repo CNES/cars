@@ -234,41 +234,51 @@ class ZerosPadding(
                 # Generate disparity maps
                 for col in range(epipolar_disparity_map_right.shape[1]):
                     for row in range(epipolar_disparity_map_right.shape[0]):
-                        # get tile window and overlap
-                        window = new_epipolar_disparity_map_left.tiling_grid[
-                            row, col
-                        ]
-                        overlap_left = new_epipolar_disparity_map_left.overlaps[
-                            row, col
-                        ]
-                        overlap_right = (
-                            new_epipolar_disparity_map_right.overlaps[row, col]
-                        )
-                        # update saving infos  for potential replacement
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-                        full_saving_info_right = ocht.update_saving_infos(
-                            saving_info_right, row=row, col=col
-                        )
+                        if type(None) not in (
+                            type(epipolar_disparity_map_left[row, col]),
+                            type(epipolar_disparity_map_right[row, col]),
+                        ):
+                            # get tile window and overlap
+                            window = (
+                                new_epipolar_disparity_map_left.tiling_grid[
+                                    row, col
+                                ]
+                            )
+                            overlap_left = (
+                                new_epipolar_disparity_map_left.overlaps[
+                                    row, col
+                                ]
+                            )
+                            overlap_right = (
+                                new_epipolar_disparity_map_right.overlaps[
+                                    row, col
+                                ]
+                            )
+                            # update saving infos  for potential replacement
+                            full_saving_info_left = ocht.update_saving_infos(
+                                saving_info_left, row=row, col=col
+                            )
+                            full_saving_info_right = ocht.update_saving_infos(
+                                saving_info_right, row=row, col=col
+                            )
 
-                        # copy dataset
-                        (
-                            new_epipolar_disparity_map_left[row, col],
-                            new_epipolar_disparity_map_right[row, col],
-                        ) = self.orchestrator.cluster.create_task(
-                            wrapper_fill_disparity, nout=2
-                        )(
-                            epipolar_disparity_map_left[row, col],
-                            epipolar_disparity_map_right[row, col],
-                            epipolar_images_left[row, col],
-                            window,
-                            overlap_left,
-                            overlap_right,
-                            classif_index=self.classification,
-                            saving_info_left=full_saving_info_left,
-                            saving_info_right=full_saving_info_right,
-                        )
+                            # copy dataset
+                            (
+                                new_epipolar_disparity_map_left[row, col],
+                                new_epipolar_disparity_map_right[row, col],
+                            ) = self.orchestrator.cluster.create_task(
+                                wrapper_fill_disparity, nout=2
+                            )(
+                                epipolar_disparity_map_left[row, col],
+                                epipolar_disparity_map_right[row, col],
+                                epipolar_images_left[row, col],
+                                window,
+                                overlap_left,
+                                overlap_right,
+                                classif_index=self.classification,
+                                saving_info_left=full_saving_info_left,
+                                saving_info_right=full_saving_info_right,
+                            )
 
                 res = (
                     new_epipolar_disparity_map_left,

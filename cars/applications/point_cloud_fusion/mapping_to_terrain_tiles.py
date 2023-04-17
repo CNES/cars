@@ -367,7 +367,17 @@ class MappingToTerrainTiles(
                             ]
                         )
 
-                    if len(required_point_clouds_left) > 0:
+                    if (
+                        len(
+                            [
+                                value
+                                for value in required_point_clouds_left
+                                + required_point_clouds_right
+                                if not isinstance(value, type(None))
+                            ]
+                        )
+                        > 0
+                    ):
                         logging.debug(
                             "Number of clouds to process for this terrain"
                             " tile: {}".format(len(required_point_clouds_left))
@@ -510,6 +520,11 @@ def compute_point_cloud_wrapper(
         if point_clouds_right[0] is not None:
             cloud_sec = point_clouds_right
             clouds.extend(cloud_sec)
+
+    # Remove None tiles
+    clouds = [value for value in clouds if value is not None]
+    if len(clouds) == 0:
+        raise RuntimeError("All clouds are None")
 
     # combine clouds
     if not isinstance(clouds[0], dict):

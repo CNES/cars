@@ -23,6 +23,7 @@ Contains abstract function for multiprocessing Cluster
 """
 
 import itertools
+import logging
 
 # Standard imports
 import multiprocessing as mp
@@ -114,6 +115,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             # Variable used for cleaning
             # Clone of iterator future list
             self.cl_future_list = []
+
+            # set the exception hook
+            threading.excepthook = log_error_hook
 
             # Refresh worker
             self.refresh_worker = threading.Thread(
@@ -407,6 +411,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     except Exception as exception:
                         res = exception
                         success = False
+                        logging.error("Exception in worker : {}".format(res))
                     done_list.append(job_id)
                     done_task_results[job_id] = [success, res]
                     # remove from dependance list
@@ -431,6 +436,17 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 for depend in depending_tasks:
                     if depend not in done_task_result_keys:
                         can_run = False
+                    else:
+                        if not done_task_results[depend][0]:
+                            # not a success
+                            can_run = False
+                            # Add to done list with failed status
+                            done_list.append(job_id)
+                            done_task_results[job_id] = [
+                                False,
+                                "Failed depending task",
+                            ]
+
                 if can_run:
                     ready_list.append(job_id)
             # launch tasks ready to run
@@ -640,3 +656,10 @@ class MpFutureTask:  # pylint: disable=R0903
         del self.task_cache[self.job_id]
         self._cluster = None
         self.event.clear()
+
+
+def log_error_hook(args):
+    """
+    Exception hool for cluster thread
+    """
+    logging.error("Cluster MP thread failed: {}".format(args.exc_value))

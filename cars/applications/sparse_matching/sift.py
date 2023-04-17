@@ -451,30 +451,36 @@ class Sift(SparseMatching, short_name="sift"):
                             < epipolar_disparity_map_left.shape[1]
                         ):
                             # Compute matches
-                            delayed_matches_row_col.append(
-                                self.orchestrator.cluster.create_task(
-                                    compute_matches, nout=1
-                                )(
-                                    epipolar_images_left[row, col],
-                                    epipolar_images_right[row, col + offset],
-                                    matching_threshold=(
-                                        self.sift_matching_threshold
-                                    ),
-                                    n_octave=self.sift_n_octave,
-                                    n_scale_per_octave=(
-                                        self.sift_n_scale_per_octave
-                                    ),
-                                    peak_threshold=self.sift_peak_threshold,
-                                    edge_threshold=self.sift_edge_threshold,
-                                    magnification=self.sift_magnification,
-                                    backmatching=self.sift_back_matching,
-                                    disp_lower_bound=disp_lower_bound,
-                                    disp_upper_bound=disp_upper_bound,
+                            if None not in (
+                                type(epipolar_images_left[row, col]),
+                                type(epipolar_images_right[row, col + offset]),
+                            ):
+                                delayed_matches_row_col.append(
+                                    self.orchestrator.cluster.create_task(
+                                        compute_matches, nout=1
+                                    )(
+                                        epipolar_images_left[row, col],
+                                        epipolar_images_right[
+                                            row, col + offset
+                                        ],
+                                        matching_threshold=(
+                                            self.sift_matching_threshold
+                                        ),
+                                        n_octave=self.sift_n_octave,
+                                        n_scale_per_octave=(
+                                            self.sift_n_scale_per_octave
+                                        ),
+                                        peak_threshold=self.sift_peak_threshold,
+                                        edge_threshold=self.sift_edge_threshold,
+                                        magnification=self.sift_magnification,
+                                        backmatching=self.sift_back_matching,
+                                        disp_lower_bound=disp_lower_bound,
+                                        disp_upper_bound=disp_upper_bound,
+                                    )
                                 )
-                            )
 
-                    # Merge matches corresponding to left tile
-
+                # Merge matches corresponding to left tile
+                if len(delayed_matches_row_col) > 0:
                     # update saving_info with row and col
                     full_saving_info_left = ocht.update_saving_infos(
                         saving_info_left, row=row, col=col

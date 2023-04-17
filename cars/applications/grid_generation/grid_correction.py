@@ -37,6 +37,31 @@ from scipy import interpolate
 from cars.data_structures import cars_dataset
 
 
+def correct_grid_from_1d(grid, grid_correction_coef):
+    """
+    Correct grid from correction given in 1d
+
+    param grid: grid to correct
+    :type grid: CarsDataset
+    :param grid_correction_coef: grid correction to apply
+    :param grid_correction_coef: list(float), size 6
+    """
+
+    coefs_x = grid_correction_coef[:3]
+    coefs_x.append(0.0)
+    coefs_y = grid_correction_coef[3:6]
+    coefs_y.append(0.0)
+    grid_correction_coef = (
+        np.array(coefs_x).reshape((2, 2)),
+        np.array(coefs_y).reshape((2, 2)),
+    )
+
+    # Correct grid right with provided epipolar a priori
+    corrected_grid_right = correct_grid(grid, grid_correction_coef)
+
+    return corrected_grid_right
+
+
 def correct_grid(grid, grid_correction):
     """
     Correct grid

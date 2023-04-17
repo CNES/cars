@@ -601,19 +601,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     if grid_correction_coef is None:
                         corrected_grid_right = grid_right
                     else:
-                        # Retrieve grid correction coefficients
-                        coefs_x = grid_correction_coef[:3]
-                        coefs_x.append(0.0)
-                        coefs_y = grid_correction_coef[3:6]
-                        coefs_y.append(0.0)
-                        grid_correction_coef = (
-                            np.array(coefs_x).reshape((2, 2)),
-                            np.array(coefs_y).reshape((2, 2)),
-                        )
-
                         # Correct grid right with provided epipolar a priori
-                        corrected_grid_right = grid_correction.correct_grid(
-                            grid_right, grid_correction_coef
+                        corrected_grid_right = (
+                            grid_correction.correct_grid_from_1d(
+                                grid_right, grid_correction_coef
+                            )
                         )
 
                 self.update_conf(grid_correction_coef, dmin, dmax, pair_key)

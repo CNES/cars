@@ -22,6 +22,8 @@
 Contains class objects used by multiprocessing cluster
 """
 
+import sys
+
 # Standard imports
 import threading
 
@@ -272,6 +274,7 @@ class MpFutureIterator:
         """
         self.future_list = future_list
         self.cluster = cluster
+        self.was_killed = False
 
         # update future list for cleaning
         for future in future_list:
@@ -295,6 +298,8 @@ class MpFutureIterator:
         while res is None:
             for item in self.future_list:
                 if item.ready():
+                    if not item.successful():
+                        sys.exit(1)
                     res = item
                     break
 

@@ -351,107 +351,117 @@ class PlaneFill(
                 # Generate disparity maps
                 for col in range(epipolar_disparity_map_right.shape[1]):
                     for row in range(epipolar_disparity_map_right.shape[0]):
-                        tile_poly = tiles_polygones[(row, col)]
-                        # Get intersecting holes poly
-                        corresponding_holes_left = (
-                            fd_tools.get_corresponding_holes(
-                                tile_poly, merged_poly_list_left
-                            )
-                        )
-                        corresponding_holes_right = (
-                            fd_tools.get_corresponding_holes(
-                                tile_poly, merged_poly_list_right
-                            )
-                        )
-                        # Get corresponding_tiles
-                        # list of (tile_window, tile overlap, xr.Dataset)
-                        corresponding_tiles_left = (
-                            fd_tools.get_corresponding_tiles(
-                                tiles_polygones,
-                                corresponding_holes_left,
-                                epipolar_disparity_map_left,
-                            )
-                        )
-                        corresponding_tiles_right = (
-                            fd_tools.get_corresponding_tiles(
-                                tiles_polygones,
-                                corresponding_holes_right,
-                                epipolar_disparity_map_right,
-                            )
-                        )
-
-                        # get tile window and overlap
-                        window = new_epipolar_disparity_map_left.tiling_grid[
-                            row, col
-                        ]
-                        overlap_left = new_epipolar_disparity_map_left.overlaps[
-                            row, col
-                        ]
-                        overlap_right = (
-                            new_epipolar_disparity_map_right.overlaps[row, col]
-                        )
-
-                        # update saving infos  for potential replacement
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-                        full_saving_info_right = ocht.update_saving_infos(
-                            saving_info_right, row=row, col=col
-                        )
-
-                        if (
-                            len(corresponding_tiles_left)
-                            + len(corresponding_tiles_right)
-                            == 0
+                        if type(None) not in (
+                            type(epipolar_disparity_map_left[row, col]),
+                            type(epipolar_disparity_map_right[row, col]),
                         ):
-                            # copy dataset
-                            (
-                                new_epipolar_disparity_map_left[row, col],
-                                new_epipolar_disparity_map_right[row, col],
-                            ) = self.orchestrator.cluster.create_task(
-                                wrapper_copy_disparity, nout=2
-                            )(
-                                epipolar_disparity_map_left[row, col],
-                                epipolar_disparity_map_right[row, col],
-                                window,
-                                overlap_left,
-                                overlap_right,
-                                saving_info_left=full_saving_info_left,
-                                saving_info_right=full_saving_info_right,
+                            tile_poly = tiles_polygones[(row, col)]
+                            # Get intersecting holes poly
+                            corresponding_holes_left = (
+                                fd_tools.get_corresponding_holes(
+                                    tile_poly, merged_poly_list_left
+                                )
+                            )
+                            corresponding_holes_right = (
+                                fd_tools.get_corresponding_holes(
+                                    tile_poly, merged_poly_list_right
+                                )
+                            )
+                            # Get corresponding_tiles
+                            # list of (tile_window, tile overlap, xr.Dataset)
+                            corresponding_tiles_left = (
+                                fd_tools.get_corresponding_tiles(
+                                    tiles_polygones,
+                                    corresponding_holes_left,
+                                    epipolar_disparity_map_left,
+                                )
+                            )
+                            corresponding_tiles_right = (
+                                fd_tools.get_corresponding_tiles(
+                                    tiles_polygones,
+                                    corresponding_holes_right,
+                                    epipolar_disparity_map_right,
+                                )
                             )
 
-                        else:
-                            # Fill holes
-                            (
-                                new_epipolar_disparity_map_left[row, col],
-                                new_epipolar_disparity_map_right[row, col],
-                            ) = self.orchestrator.cluster.create_task(
-                                wrapper_fill_disparity, nout=2
-                            )(
-                                corresponding_tiles_left,
-                                corresponding_tiles_right,
-                                corresponding_holes_left,
-                                corresponding_holes_right,
-                                window,
-                                overlap_left,
-                                overlap_right,
-                                epipolar_images_left[row, col],
-                                self.classification,
-                                ignore_nodata_at_disp_mask_borders=(
-                                    self.ignore_nodata_at_disp_mask_borders
-                                ),
-                                ignore_zero_fill_disp_mask_values=(
-                                    self.ignore_zero_fill_disp_mask_values
-                                ),
-                                ignore_extrema_disp_values=(
-                                    self.ignore_extrema_disp_values
-                                ),
-                                nb_pix=self.nb_pix,
-                                percent_to_erode=self.percent_to_erode,
-                                interp_options=interp_options,
-                                saving_info_left=full_saving_info_left,
-                                saving_info_right=full_saving_info_right,
+                            # get tile window and overlap
+                            window = (
+                                new_epipolar_disparity_map_left.tiling_grid[
+                                    row, col
+                                ]
                             )
+                            overlap_left = (
+                                new_epipolar_disparity_map_left.overlaps[
+                                    row, col
+                                ]
+                            )
+                            overlap_right = (
+                                new_epipolar_disparity_map_right.overlaps[
+                                    row, col
+                                ]
+                            )
+
+                            # update saving infos  for potential replacement
+                            full_saving_info_left = ocht.update_saving_infos(
+                                saving_info_left, row=row, col=col
+                            )
+                            full_saving_info_right = ocht.update_saving_infos(
+                                saving_info_right, row=row, col=col
+                            )
+
+                            if (
+                                len(corresponding_tiles_left)
+                                + len(corresponding_tiles_right)
+                                == 0
+                            ):
+                                # copy dataset
+                                (
+                                    new_epipolar_disparity_map_left[row, col],
+                                    new_epipolar_disparity_map_right[row, col],
+                                ) = self.orchestrator.cluster.create_task(
+                                    wrapper_copy_disparity, nout=2
+                                )(
+                                    epipolar_disparity_map_left[row, col],
+                                    epipolar_disparity_map_right[row, col],
+                                    window,
+                                    overlap_left,
+                                    overlap_right,
+                                    saving_info_left=full_saving_info_left,
+                                    saving_info_right=full_saving_info_right,
+                                )
+
+                            else:
+                                # Fill holes
+                                (
+                                    new_epipolar_disparity_map_left[row, col],
+                                    new_epipolar_disparity_map_right[row, col],
+                                ) = self.orchestrator.cluster.create_task(
+                                    wrapper_fill_disparity, nout=2
+                                )(
+                                    corresponding_tiles_left,
+                                    corresponding_tiles_right,
+                                    corresponding_holes_left,
+                                    corresponding_holes_right,
+                                    window,
+                                    overlap_left,
+                                    overlap_right,
+                                    epipolar_images_left[row, col],
+                                    self.classification,
+                                    ignore_nodata_at_disp_mask_borders=(
+                                        self.ignore_nodata_at_disp_mask_borders
+                                    ),
+                                    ignore_zero_fill_disp_mask_values=(
+                                        self.ignore_zero_fill_disp_mask_values
+                                    ),
+                                    ignore_extrema_disp_values=(
+                                        self.ignore_extrema_disp_values
+                                    ),
+                                    nb_pix=self.nb_pix,
+                                    percent_to_erode=self.percent_to_erode,
+                                    interp_options=interp_options,
+                                    saving_info_left=full_saving_info_left,
+                                    saving_info_right=full_saving_info_right,
+                                )
                 res = (
                     new_epipolar_disparity_map_left,
                     new_epipolar_disparity_map_right,
