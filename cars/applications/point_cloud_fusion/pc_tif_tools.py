@@ -78,7 +78,6 @@ def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
     # Get epsg from first point cloud
     pc_keys = list(list_epipolar_points_cloud.keys())
     point_cloud = list_epipolar_points_cloud[pc_keys[0]]
-
     tif_size = inputs.rasterio_get_size(point_cloud[cst.X])
 
     tile_size = 100
@@ -298,7 +297,9 @@ def create_combined_cloud_from_tif(
 
     clouds_pd_list = []
     color_types = []
-
+    for cloud in clouds:
+        for type_band in cloud["data"].keys():
+            band_path = cloud["data"][type_band]
     # Create multiple pc pandas dataframes
     for cloud in clouds:
         window = cloud["window"]
@@ -308,25 +309,30 @@ def create_combined_cloud_from_tif(
         for type_band in cloud["data"].keys():
             # open file and get data
             band_path = cloud["data"][type_band]
-
             if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
                 # Get color type
                 color_types.append(inputs.rasterio_get_color_type(band_path))
 
             if band_path is not None:
-                with rio.open(band_path) as desc_band:
-                    if desc_band.count == 1:
-                        cloud_data_bands.append(type_band)
-                        cloud_data[type_band] = np.ravel(
-                            desc_band.read(1, window=window)
+                if isinstance(band_path, dict):
+                    for key in band_path:
+                        sub_band_path = band_path[key]
+                        sub_type_band = key
+                        read_band(
+                            sub_type_band,
+                            sub_band_path,
+                            window,
+                            cloud_data_bands,
+                            cloud_data,
                         )
-                    else:
-                        for index_band in range(desc_band.count):
-                            band_name = "{}{}".format(type_band, index_band)
-                            cloud_data_bands.append(band_name)
-                            cloud_data[band_name] = np.ravel(
-                                desc_band.read(1 + index_band, window=window)
-                            )
+                else:
+                    read_band(
+                        type_band,
+                        band_path,
+                        window,
+                        cloud_data_bands,
+                        cloud_data,
+                    )
 
         # add mask if not given
         if cst.POINTS_CLOUD_VALID_DATA not in cloud_data_bands:
@@ -386,6 +392,38 @@ def create_combined_cloud_from_tif(
         color_type = color_types[0]
 
     return combined_pd_cloud, epsg, color_type
+
+
+def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
+    """
+    Extract from tif point cloud and put in carsdataset point cloud
+    :param type_band: type of point cloud data
+    :type type_band: str
+    :param band_path: path of the tif point cloud file
+    :type band_path: str
+    :param window: window to use
+    :type window: dict
+    :param cloud_data_bands: list of point cloud
+    :type cloud_data_bands: list
+    :param cloud_data: point cloud numpy dict
+    :type cloud_data: dict
+    """
+    with rio.open(band_path) as desc_band:
+        if desc_band.count == 1:
+            cloud_data_bands.append(type_band)
+            cloud_data[type_band] = np.ravel(desc_band.read(1, window=window))
+        else:
+            band_descriptions = desc_band.descriptions
+            if isinstance(band_descriptions, tuple):
+                band_descriptions = list(band_descriptions)
+            else:
+                band_descriptions = list(range(desc_band.count))
+            for idx, description in enumerate(band_descriptions):
+                band_name = "{}_{}".format(type_band, description)
+                cloud_data_bands.append(band_name)
+                cloud_data[band_name] = np.ravel(
+                    desc_band.read(1 + idx, window=window)
+                )
 
 
 def transform_input_pc(
@@ -659,15 +697,25 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         window=window,
     )
 
+    data_dict = {
+        cst.X: items[cst.X],
+        cst.Y: items[cst.Y],
+        cst.Z: items[cst.Z],
+        cst.POINTS_CLOUD_CLR_KEY_ROOT: items[cst.POINTS_CLOUD_CLR_KEY_ROOT],
+        cst.POINTS_CLOUD_VALID_DATA: items[cst.POINTS_CLOUD_VALID_DATA],
+    }
+    if cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in items:
+        data_dict[cst.POINTS_CLOUD_CLASSIF_KEY_ROOT] = items[
+            cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+        ]
+    if cst.POINTS_CLOUD_CONFIDENCE in items:
+        data_dict[cst.POINTS_CLOUD_CONFIDENCE] = items[
+            cst.POINTS_CLOUD_CONFIDENCE
+        ]
+
     # create dict
     tile = {
-        "data": {
-            cst.X: items[cst.X],
-            cst.Y: items[cst.Y],
-            cst.Z: items[cst.Z],
-            cst.POINTS_CLOUD_CLR_KEY_ROOT: items[cst.POINTS_CLOUD_CLR_KEY_ROOT],
-            cst.POINTS_CLOUD_VALID_DATA: items[cst.POINTS_CLOUD_VALID_DATA],
-        },
+        "data": data_dict,
         "x_y_min_max": x_y_min_max,
         "window": window,
         "cloud_epsg": items[cst.PC_EPSG],

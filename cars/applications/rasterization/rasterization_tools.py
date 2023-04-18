@@ -445,6 +445,8 @@ def create_raster_dataset(
     if classif is not None:
         if classif.shape[-1] > 1:  # rasterizer produced classif output
             classif = np.nan_to_num(classif, nan=msk_no_data)
+            for idx, band_name in enumerate(band_classif):
+                band_classif[idx] = band_name.replace("classif_", "")
             classif_out = xr.Dataset(
                 {
                     cst.RASTER_CLASSIF: (

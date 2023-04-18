@@ -50,6 +50,13 @@ def generate_test_inputs():
         cst.POINTS_CLOUD_CLR_KEY_ROOT: os.path.join(
             path_pc, "epi_pc_color_left.tif"
         ),
+        cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
+            path_pc, "epi_classification.tif"
+        ),
+        cst.POINTS_CLOUD_CONFIDENCE: {
+            "confidence1": os.path.join(path_pc, "epi_confidence1.tif"),
+            "confidence2": os.path.join(path_pc, "epi_confidence2.tif"),
+        },
         cst.POINTS_CLOUD_VALID_DATA: None,
         cst.PC_EPSG: 4326,
     }

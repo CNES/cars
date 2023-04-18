@@ -43,6 +43,7 @@ from rasterio.profiles import DefaultGTiffProfile
 from rasterio.windows import Window
 
 # CARS imports
+from cars.core import constants as cst
 from cars.core import outputs
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dict, dataframe_converter
@@ -1039,12 +1040,19 @@ def save_dataset(
         new_profile["width"] = data.shape[1]
         new_profile["dtype"] = "float32"
 
+    bands_description = None
+    if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF):
+        bands_description = dataset.coords["classes"].values
+    if tag in (cst.EPI_COLOR, cst.POINTS_CLOUD_CLR_KEY_ROOT):
+        bands_description = dataset.coords["band_im"].values
+
     outputs.rasterio_write_georaster(
         file_name,
         data,
         new_profile,
         window=rio_window,
         descriptor=descriptor,
+        bands_description=bands_description,
     )
 
 
