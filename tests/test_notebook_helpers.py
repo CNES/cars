@@ -18,7 +18,7 @@
 # limitations under the License.
 #
 """
-Test module for notebooks/*
+Test module for notebook helpers
 """
 
 # Standard imports

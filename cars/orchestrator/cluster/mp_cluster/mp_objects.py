@@ -22,8 +22,6 @@
 Contains class objects used by multiprocessing cluster
 """
 
-import sys
-
 # Standard imports
 import threading
 
@@ -299,7 +297,7 @@ class MpFutureIterator:
             for item in self.future_list:
                 if item.ready():
                     if not item.successful():
-                        sys.exit(1)
+                        raise RuntimeError("Failure in tasks")
                     res = item
                     break
 

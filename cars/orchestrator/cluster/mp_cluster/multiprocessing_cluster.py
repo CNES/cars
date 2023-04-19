@@ -29,8 +29,10 @@ import logging
 import multiprocessing as mp
 import os
 import shutil
+import signal
 import threading
 import time
+import traceback
 from multiprocessing import Queue, freeze_support
 
 # Third party imports
@@ -262,7 +264,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         :param task_list: task list
         """
-
         memorize = {}
         future_list = [self.rec_start(task, memorize) for task in task_list]
         # signal that we reached the end of this batch
@@ -408,8 +409,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     try:
                         res = job_id_progress.get(timeout=per_job_timeout)
                         success = True
-                    except Exception as exception:
-                        res = exception
+                    except:  # pylint: disable=W0702 # noqa: B001, E722
+                        res = traceback.format_exc()
                         success = False
                         logging.error("Exception in worker : {}".format(res))
                     done_list.append(job_id)
@@ -428,11 +429,13 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             # check wait_list for dependent tasks
 
             ready_list = []
+            failed_list = []
             done_task_result_keys = done_task_results.keys()
             for job_id in wait_list.keys():  # pylint: disable=C0201
                 depending_tasks = dependances_list[job_id]
                 # check if all tasks are finished
                 can_run = True
+                failed = False
                 for depend in depending_tasks:
                     if depend not in done_task_result_keys:
                         can_run = False
@@ -440,15 +443,26 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                         if not done_task_results[depend][0]:
                             # not a success
                             can_run = False
-                            # Add to done list with failed status
-                            done_list.append(job_id)
-                            done_task_results[job_id] = [
-                                False,
-                                "Failed depending task",
-                            ]
+                            failed = True
 
+                if failed:
+                    # Add to done list with failed status
+                    failed_list.append(job_id)
                 if can_run:
                     ready_list.append(job_id)
+
+            # Deal with failed tasks
+            for job_id in failed_list:
+                done_list.append(job_id)
+                done_task_results[job_id] = [
+                    False,
+                    "Failed depending task",
+                ]
+                # copy results to futures
+                # (they remove themselves from task_cache
+                task_cache[job_id].set(done_task_results[job_id])
+                del wait_list[job_id]
+
             # launch tasks ready to run
             for job_id in ready_list:
                 func, args, kw_args = wait_list[job_id]
@@ -662,4 +676,8 @@ def log_error_hook(args):
     """
     Exception hool for cluster thread
     """
-    logging.error("Cluster MP thread failed: {}".format(args.exc_value))
+    exc = "Cluster MP thread failed: {}".format(args.exc_value)
+    logging.error(exc)
+    # Kill thread
+    os.kill(os.getpid(), signal.SIGKILL)
+    raise RuntimeError(exc)
