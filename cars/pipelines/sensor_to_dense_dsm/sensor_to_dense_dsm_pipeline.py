@@ -34,7 +34,7 @@ import numpy as np
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.grid_generation import grid_correction, grids
+from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
@@ -639,7 +639,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     cars_orchestrator.cluster.checked_conf_cluster["mode"]
                     == "sequential"
                 ):
-                    epipolar_roi = grids.compute_epipolar_roi(
+                    epipolar_roi = preprocessing.compute_epipolar_roi(
                         self.input_roi_poly,
                         self.input_roi_epsg,
                         self.triangulation_application.get_geometry_loader(),

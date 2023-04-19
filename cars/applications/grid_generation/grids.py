@@ -43,11 +43,10 @@ from cars.applications.triangulation.triangulation_tools import (
     triangulate_matches,
 )
 from cars.core import constants as cst
-from cars.core import former_confs_utils, preprocessing, projection, tiling
+from cars.core import former_confs_utils, projection, tiling
 
 # CARS imports
 from cars.core.geometry import AbstractGeometry
-from cars.core.utils import safe_makedirs
 
 
 def get_new_path(path):
@@ -245,67 +244,6 @@ def compute_epipolar_grid_min_max(
         logging.error("pc min/max error: point cloud is unknown")
 
     return grid_min, grid_max
-
-
-def compute_epipolar_roi(
-    terrain_roi_poly,
-    terrain_roi_epsg,
-    geometry_loader,
-    sensor_image_left,
-    sensor_image_right,
-    grid_left,
-    grid_right,
-    output_path,
-    disp_min=0,
-    disp_max=0,
-):
-    """
-    Compute epipolar roi to use
-
-    :param terrain_roi_poly: terrain  roi polygon
-    :param terrain_roi_epsg: terrain  roi epsg
-    :param geometry_loader: geometry loader to use
-    :param epsg: epsg
-    :param disp_min: minimum disparity
-    :param disp_max: maximum disparity
-
-    :return: epipolar region to use, with tile_size a sample
-    """
-
-    if terrain_roi_poly is None:
-        return None
-
-    roi_bbox = terrain_roi_poly.bounds
-
-    pair_folder = os.path.join(output_path, "tmp")
-    safe_makedirs(pair_folder)
-
-    conf = preprocessing.create_former_cars_post_prepare_configuration(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        pair_folder,
-        uncorrected_grid_right=None,
-        srtm_dir=None,
-        default_alt=0,
-        disp_min=disp_min,
-        disp_max=disp_max,
-    )
-
-    epipolar_roi = terrain_region_to_epipolar(
-        roi_bbox,
-        conf,
-        geometry_loader,
-        epsg=terrain_roi_epsg,
-        disp_min=disp_min,
-        disp_max=disp_max,
-        tile_size=100,
-        epipolar_size_x=grid_left.attributes["epipolar_size_x"],
-        epipolar_size_y=grid_left.attributes["epipolar_size_y"],
-    )
-
-    return epipolar_roi
 
 
 def terrain_region_to_epipolar(
