@@ -25,9 +25,10 @@ ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
 
-# Check CMAKE, OTB variables before venv creation
+# Check CMAKE, OTB, GDAL variables before venv creation
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
+GDAL_VERSION = $(shell gdal-config --version)
 
 # Check python install in VENV
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
@@ -58,10 +59,11 @@ help: ## this help
 ## Install section
 
 .PHONY: check
-check: ## check if cmake, OTB, VLFEAT is installed
+check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
 	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
 	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
+	@[ "${GDAL_VERSION}" ] || ( echo ">> GDAL_VERSION is not set"; exit 1 )
 	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
 	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set"; exit 1 )
 
