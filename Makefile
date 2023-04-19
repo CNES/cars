@@ -33,6 +33,7 @@ CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
+CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
 CHECK_CYVLFEAT = $(shell ${CARS_VENV}/bin/python -m pip list|grep cyvlfeat)
@@ -75,6 +76,7 @@ install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
+	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary pygdal pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
