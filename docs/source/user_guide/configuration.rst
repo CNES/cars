@@ -107,6 +107,7 @@ The structure follows this organisation:
                 - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
                 - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
                 - The classification of second input is not necessary. In this case, the applications use only the available classification.
+                - Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications
             
             **Pairing**
 
