@@ -77,7 +77,7 @@ install-deps: venv
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
-	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --use-pep517 cyvlfeat
+	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
 
 .PHONY: install
 install: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
