@@ -26,6 +26,7 @@ Contains abstract function for PBS dask Cluster
 import logging
 import math
 import os
+import sys
 import warnings
 from datetime import timedelta
 
@@ -71,6 +72,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
             self.walltime,
             self.out_dir,
             activate_dashboard=self.activate_dashboard,
+            python=self.python,
         )
 
     def cleanup(self):
@@ -83,7 +85,12 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
 
 def start_cluster(
-    nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
+    nb_workers,
+    walltime,
+    out_dir,
+    timeout=600,
+    activate_dashboard=False,
+    python=None,
 ):
     """Create a Dask cluster.
 
@@ -103,6 +110,10 @@ def start_cluster(
     :return: Dask cluster and dask client
     :rtype: (dask_jobqueue.PBSCluster, dask.distributed.Client) tuple
     """
+    # retrieve current python path if None
+    if python is None:
+        python = sys.executable
+
     # Retrieve PBS queue
     pbs_queue = os.environ.get("CARS_PBS_QUEUE")
 
@@ -197,6 +208,7 @@ def start_cluster(
         queue=pbs_queue,
         job_script_prologue=envs,
         log_directory=log_directory,
+        python=python,
         worker_extra_args=[
             "--lifetime",
             f"{int(lifetime_with_margin.total_seconds())}s",

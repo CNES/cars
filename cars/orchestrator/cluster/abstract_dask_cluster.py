@@ -73,6 +73,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         self.activate_dashboard = self.checked_conf_cluster[
             "activate_dashboard"
         ]
+        self.python = self.checked_conf_cluster["python"]
 
         if self.launch_worker:
             # Set DASK CARS specific config
@@ -123,6 +124,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["activate_dashboard"] = conf.get(
             "activate_dashboard", False
         )
+        overloaded_conf["python"] = conf.get("python", None)
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
@@ -136,6 +138,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
                 "mode": str,
                 "loop_testing": bool,
             },
+            "python": Or(None, str),
         }
 
         # Check conf
