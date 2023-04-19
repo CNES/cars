@@ -70,7 +70,7 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 .PHONY: venv
 venv: check ## create virtualenv in CARS_VENV directory if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
 .PHONY: install-deps
@@ -78,10 +78,10 @@ install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --use-pep517 pygdal==$(GDAL_VERSION).*
+	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary pygdal pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
-	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --use-pep517 cyvlfeat
+	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
 
 .PHONY: install
 install: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
@@ -93,7 +93,7 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
@@ -103,7 +103,7 @@ install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, do
 
 .PHONY: install-dev
 install-dev: install-deps ## install cars in dev editable mode (pip install -e .)
-	@test -f ${CARS_VENV}/bin/cars || CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
