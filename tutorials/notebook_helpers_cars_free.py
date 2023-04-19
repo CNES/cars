@@ -24,6 +24,7 @@ this module contains functions helpers used in notebooks without importing cars.
 
 # Standard imports
 import os
+import subprocess
 
 
 def set_dask_config():
@@ -31,15 +32,24 @@ def set_dask_config():
     Set dask config path
     """
 
+    # Get cluster file path out of current python process
+    cmd = [
+        "python",
+        "-c",
+        "from  cars.orchestrator import cluster; "
+        "import os; print(os.path.dirname(cluster.__file__))",
+    ]
+
+    cmd_output = subprocess.run(cmd, capture_output=True, check=True).stdout
+    cluster_path = str(cmd_output)[2:-3]
     # Force the use of CARS dask configuration
     dask_config_path = os.path.join(
-        os.path.dirname(__file__),
-        "..",
-        "cars",
-        "orchestrator",
-        "cluster",
+        cluster_path,
         "dask_config",
     )
+
     if not os.path.isdir(dask_config_path):
-        raise NotADirectoryError("Wrong dask config path")
+        raise NotADirectoryError(
+            "Wrong dask config path: {}".format(dask_config_path)
+        )
     os.environ["DASK_CONFIG"] = str(dask_config_path)

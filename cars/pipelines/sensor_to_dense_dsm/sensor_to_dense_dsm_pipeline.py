@@ -34,7 +34,7 @@ import numpy as np
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.grid_generation import grid_correction
+from cars.applications.grid_generation import grid_correction, grids
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
@@ -472,22 +472,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     geoid_path=self.inputs[sens_cst.GEOID],
                 )
 
-                # Run epipolar resampling
-                (
-                    epipolar_image_left,
-                    epipolar_image_right,
-                ) = self.resampling_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
-                    grid_left,
-                    grid_right,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                    margins=self.sparse_mtch_app.get_margins(),
-                    add_color=False,
-                )
-
                 # Run holes detection
                 # Get classif depending on which filling is used
                 holes_classif = []
@@ -504,18 +488,41 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         holes_poly_margin,
                         self.dense_matches_filling_2.get_poly_margin(),
                     )
-                (
-                    holes_bbox_left,
-                    holes_bbox_right,
-                ) = self.holes_detection_app.run(
-                    epipolar_image_left,
-                    epipolar_image_right,
-                    classification=holes_classif,
-                    margin=holes_poly_margin,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                )
+
+                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False or (
+                    len(holes_classif) > 0
+                ):
+                    # Run resampling only if needed:
+                    # no a priori or needs to detect holes
+
+                    # Run epipolar resampling
+                    (
+                        epipolar_image_left,
+                        epipolar_image_right,
+                    ) = self.resampling_application.run(
+                        sensor_image_left,
+                        sensor_image_right,
+                        grid_left,
+                        grid_right,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                        margins=self.sparse_mtch_app.get_margins(),
+                        add_color=False,
+                    )
+
+                    (
+                        holes_bbox_left,
+                        holes_bbox_right,
+                    ) = self.holes_detection_app.run(
+                        epipolar_image_left,
+                        epipolar_image_right,
+                        classification=holes_classif,
+                        margin=holes_poly_margin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
 
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
                     # Run epipolar sparse_matching application
@@ -626,6 +633,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     grid_left, disp_min=dmin, disp_max=dmax
                 )
 
+                # if sequential mode, apply roi
+                epipolar_roi = None
+                if (
+                    cars_orchestrator.cluster.checked_conf_cluster["mode"]
+                    == "sequential"
+                ):
+                    epipolar_roi = grids.compute_epipolar_roi(
+                        self.input_roi_poly,
+                        self.input_roi_epsg,
+                        self.triangulation_application.get_geometry_loader(),
+                        sensor_image_left,
+                        sensor_image_right,
+                        grid_left,
+                        corrected_grid_right,
+                        pair_folder,
+                        disp_min=disp_min,
+                        disp_max=disp_max,
+                    )
+
                 (
                     new_epipolar_image_left,
                     new_epipolar_image_right,
@@ -648,6 +674,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     ),
                     add_color=True,
+                    epipolar_roi=epipolar_roi,
                 )
 
                 # Run epipolar matching application
