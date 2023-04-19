@@ -25,16 +25,14 @@ ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
 
-# Check CMAKE, OTB, GDAL variables before venv creation
+# Check CMAKE, OTB variables before venv creation
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
-GDAL_VERSION = $(shell gdal-config --version)
 
 # Check python install in VENV
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
-CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
 CHECK_CYVLFEAT = $(shell ${CARS_VENV}/bin/python -m pip list|grep cyvlfeat)
@@ -59,11 +57,10 @@ help: ## this help
 ## Install section
 
 .PHONY: check
-check: ## check if cmake, OTB, VLFEAT, GDAL is installed
+check: ## check if cmake, OTB, VLFEAT is installed
 	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
 	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
 	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
-	@[ "${GDAL_VERSION}" ] || ( echo ">> GDAL_VERSION is not set"; exit 1 )
 	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
 	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set"; exit 1 )
 
@@ -78,7 +75,6 @@ install-deps: venv
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --use-pep517 pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --use-pep517 cyvlfeat
