@@ -70,7 +70,7 @@ check: ## check if cmake, OTB, VLFEAT, GDAL is installed
 .PHONY: venv
 venv: check ## create virtualenv in CARS_VENV directory if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
 .PHONY: install-deps
