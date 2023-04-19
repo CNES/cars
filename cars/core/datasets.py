@@ -56,7 +56,7 @@ def create_im_dataset(
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
-    nb_bands = img.shape[-1]
+    nb_bands = img.shape[0]
 
     # Get georef and transform
     img_crs = None
@@ -86,7 +86,7 @@ def create_im_dataset(
             {
                 cst.EPI_IMAGE: (
                     [band_coords, cst.ROW, cst.COL],
-                    np.einsum("ijk->kij", img),
+                    img,
                 )
             },
             coords={
@@ -96,8 +96,10 @@ def create_im_dataset(
             },
         )
     else:
+        if np.any(descriptions) is None:
+            descriptions = None
         dataset = xr.Dataset(
-            {cst.EPI_IMAGE: ([cst.ROW, cst.COL], img[:, :, 0])},
+            {cst.EPI_IMAGE: ([cst.ROW, cst.COL], img[0, ...])},
             coords={
                 cst.ROW: np.array(range(region[1], region[3])),
                 cst.COL: np.array(range(region[0], region[2])),
@@ -106,7 +108,7 @@ def create_im_dataset(
 
     if msk is not None:
         dataset[cst.EPI_MSK] = xr.DataArray(
-            msk.astype(np.int16), dims=[cst.ROW, cst.COL]
+            msk[0, ...].astype(np.int16), dims=[cst.ROW, cst.COL]
         )
 
     dataset.attrs[cst.EPI_VALID_PIXELS] = 0
@@ -115,7 +117,8 @@ def create_im_dataset(
     dataset.attrs[cst.EPI_CRS] = img_crs
     dataset.attrs[cst.EPI_TRANSFORM] = img_transform
     dataset.attrs["region"] = np.array(region)
-    dataset.attrs[cst.BAND_NAMES] = descriptions
+    if descriptions is not None:
+        dataset.attrs[cst.BAND_NAMES] = descriptions
     return dataset
 
 

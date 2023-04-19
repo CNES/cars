@@ -37,55 +37,6 @@ from ..helpers import absolute_data_path, assert_same_datasets, get_geoid_path
 
 
 @pytest.mark.unit_tests
-def test_build_extract_roi_application():
-    """
-    Test that input region is correctly use to build the roi extraction
-    application
-    """
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    region = [100, 200, 300, 400]
-
-    app = otb_pipelines.build_extract_roi_application(img, region)
-
-    assert app.GetParameterInt("startx") == region[0]
-    assert app.GetParameterInt("starty") == region[1]
-    assert app.GetParameterInt("sizex") == region[2] - region[0]
-    assert app.GetParameterInt("sizey") == region[3] - region[1]
-
-
-@pytest.mark.unit_tests
-def test_build_mask_pipeline():
-    """
-    Test that the pipeline is correctly built
-    """
-    img = absolute_data_path("input/phr_reunion/left_image.tif")
-    grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
-    nodata = 0
-    mask = absolute_data_path("input/phr_reunion/left_mask.tif")
-    roi = [100, 200, 300, 400]
-    out_np = otb_pipelines.build_mask_pipeline(
-        img, mask, nodata, 255, 0, grid, 2387, 2387, roi
-    )
-
-    assert out_np.shape == (200, 200)
-
-
-@pytest.mark.unit_tests
-def test_build_image_resampling_pipeline():
-    """
-    Test that the pipeline is correctly built
-    """
-    img = absolute_data_path("input/phr_reunion/left_image.tif")
-    grid = absolute_data_path("input/pipelines_input/left_epipolar_grid.tif")
-    roi = [100, 200, 300, 400]
-    out_np = otb_pipelines.build_image_resampling_pipeline(
-        img, grid, 2387, 2387, roi
-    )
-
-    assert out_np.shape == (200, 200, 1)
-
-
-@pytest.mark.unit_tests
 def test_get_utm_zone_as_epsg_code():
     """
     Test if a point in Toulouse gives the correct EPSG code
