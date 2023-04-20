@@ -29,8 +29,6 @@ import json
 import logging
 import os
 
-import numpy as np
-
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -489,6 +487,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matches_filling_2.get_poly_margin(),
                     )
 
+                holes_bbox_left = []
+                holes_bbox_right = []
+
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False or (
                     len(holes_classif) > 0
                 ):
@@ -911,14 +912,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :param pair_key: name of the inputs key pair
         :type pair_key: str
         """
+        logging.error(grid_correction_coef)
         self.used_conf[INPUTS]["epipolar_a_priori"][pair_key] = {}
         if grid_correction_coef:
             self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
                 "grid_correction"
-            ] = (
-                np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
-                + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
-            )
+            ] = list(grid_correction_coef)
         else:
             self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
                 "grid_correction"
