@@ -275,6 +275,7 @@ def test_end2end_ventoux_unique():
                     "mode": "time",
                     "loop_testing": False,
                 },
+                "python": None,
                 "use_memory_logger": False,
                 "config_name": "unknown",
             }
@@ -1065,6 +1066,7 @@ def test_end2end_use_epipolar_a_prior():
                     "mode": "time",
                     "loop_testing": False,
                 },
+                "python": None,
                 "use_memory_logger": False,
                 "activate_dashboard": False,
                 "max_ram_per_worker": 1000,
