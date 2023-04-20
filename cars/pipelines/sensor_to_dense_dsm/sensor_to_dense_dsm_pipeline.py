@@ -912,7 +912,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :param pair_key: name of the inputs key pair
         :type pair_key: str
         """
-        logging.error(grid_correction_coef)
         self.used_conf[INPUTS]["epipolar_a_priori"][pair_key] = {}
         if grid_correction_coef:
             self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
