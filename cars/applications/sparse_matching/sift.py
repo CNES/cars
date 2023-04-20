@@ -451,7 +451,7 @@ class Sift(SparseMatching, short_name="sift"):
                             < epipolar_disparity_map_left.shape[1]
                         ):
                             # Compute matches
-                            if None not in (
+                            if type(None) not in (
                                 type(epipolar_images_left[row, col]),
                                 type(epipolar_images_right[row, col + offset]),
                             ):
@@ -479,21 +479,21 @@ class Sift(SparseMatching, short_name="sift"):
                                     )
                                 )
 
-                # Merge matches corresponding to left tile
-                if len(delayed_matches_row_col) > 0:
-                    # update saving_info with row and col
-                    full_saving_info_left = ocht.update_saving_infos(
-                        saving_info_left, row=row, col=col
-                    )
+                    # Merge matches corresponding to left tile
+                    if len(delayed_matches_row_col) > 0:
+                        # update saving_info with row and col
+                        full_saving_info_left = ocht.update_saving_infos(
+                            saving_info_left, row=row, col=col
+                        )
 
-                    (
-                        epipolar_disparity_map_left[row, col]
-                    ) = self.orchestrator.cluster.create_task(
-                        merge_matches, nout=1
-                    )(
-                        delayed_matches_row_col,
-                        saving_info_left=full_saving_info_left,
-                    )
+                        (
+                            epipolar_disparity_map_left[row, col]
+                        ) = self.orchestrator.cluster.create_task(
+                            merge_matches, nout=1
+                        )(
+                            delayed_matches_row_col,
+                            saving_info_left=full_saving_info_left,
+                        )
 
         else:
             logging.error(
@@ -616,19 +616,15 @@ class Sift(SparseMatching, short_name="sift"):
         # with uncorrected grid
         # and default disparity range
         if nb_matches < self.minimum_nb_matches:
-            logging.error(
-                "Insufficient amount of matches found (< {}), can not safely "
-                "estimate epipolar error correction and disparity range".format(
-                    self.minimum_nb_matches
+            error_message_matches = (
+                "Insufficient amount of matches found ({} < {}), "
+                "can not safely estimate epipolar error correction "
+                " and disparity range".format(
+                    nb_matches, self.minimum_nb_matches
                 )
             )
-
-            raise ValueError(
-                "Insufficient amount of matches found (< {}), can not safely "
-                "estimate epipolar error correction and disparity range".format(
-                    self.minimum_nb_matches
-                )
-            )
+            logging.error(error_message_matches)
+            raise ValueError(error_message_matches)
 
         logging.info(
             "Number of matches kept for epipolar "
