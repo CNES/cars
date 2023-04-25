@@ -327,10 +327,10 @@ def terrain_region_to_epipolar(
 
     # Generate epipolar region
     epipolar_region = [
-        epipolar_region_minx,
-        epipolar_region_maxx,
         epipolar_region_miny,
         epipolar_region_maxy,
+        epipolar_region_minx,
+        epipolar_region_maxx,
     ]
 
     return epipolar_region

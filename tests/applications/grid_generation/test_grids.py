@@ -437,6 +437,6 @@ def test_terrain_region_to_epipolar(
         epipolar_size_y=epipolar_sizes["epipolar_size_y"],
     )
 
-    epipolar_region_ref = [300, 612, 0, 600]
+    epipolar_region_ref = [0, 600, 300, 612]
 
     assert epipolar_region == epipolar_region_ref
