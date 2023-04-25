@@ -25,17 +25,61 @@ this module contains functions helpers used in notebooks.
 # Standard imports
 import logging
 import os
+import subprocess
 
 # Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
-from cars.applications.grid_generation import grid_correction
-from cars.data_structures import (  # pylint: disable=E0401
+
+def set_dask_config():
+    """
+    Set dask config path
+    """
+
+    # Get cluster file path out of current python process
+    cmd = [
+        "python",
+        "-c",
+        "from  cars.orchestrator import cluster; "
+        "import os; print(os.path.dirname(cluster.__file__))",
+    ]
+
+    cmd_output = subprocess.run(cmd, capture_output=True, check=True).stdout
+    cluster_path = str(cmd_output)[2:-3]
+    # Force the use of CARS dask configuration
+    dask_config_path = os.path.join(
+        cluster_path,
+        "dask_config",
+    )
+
+    if not os.path.isdir(dask_config_path):
+        raise NotADirectoryError(
+            "Wrong dask config path: {}".format(dask_config_path)
+        )
+    os.environ["DASK_CONFIG"] = str(dask_config_path)
+
+
+# Set dask config before cars imports
+set_dask_config()
+
+# fmt: off
+# isort: off
+# pylint: disable=C0413
+from cars.applications.grid_generation import (  # noqa: E402
+    grid_correction,
+)
+from cars.data_structures import (  # noqa: E402
     corresponding_tiles_tools,
 )
-from cars.data_structures.cars_dataset import load_dict
+from cars.data_structures.cars_dataset import (  # noqa: E402
+    load_dict,
+)
+# pylint: enable=C0413
+
+# fmt: on
+# isort: on
 
 
 def compute_cell(orchestrator, list_cars_ds):
@@ -180,8 +224,11 @@ def show_data(data, figsize=(11, 11), mode=None):
     Show data with matplotlib
 
 
-    available mode : "dsm", "image"
+    available mode : "dsm", "image",
     """
+
+    # squeeze data
+    data = np.squeeze(data)
 
     # Replace Nan by 0 for visualisation
     data[np.isnan(data)] = 0
@@ -189,11 +236,14 @@ def show_data(data, figsize=(11, 11), mode=None):
     if mode in ("dsm", "image"):
         data[data < 0] = 0
 
-    p1 = np.percentile(data, 5)
-    p2 = np.percentile(data, 95)
+    if np.min(data) < 0 or np.max(data) > 1:
+        # crop
 
-    data[data < p1] = p1
-    data[data > p2] = p2
+        p1 = np.percentile(data, 5)
+        p2 = np.percentile(data, 95)
+
+        data[data < p1] = p1
+        data[data > p2] = p2
 
     plt.figure(figsize=figsize)
 

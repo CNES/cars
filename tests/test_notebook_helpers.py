@@ -33,20 +33,7 @@ import pytest
 
 from .helpers import cars_path
 
-# Import notebook_helpers_cars_free and notebook_helpers
-
-# notebook_helpers_cars_free
-spec_notebook_helpers_cars_free = importlib.util.spec_from_file_location(
-    "notebook_helpers_cars_free",
-    os.path.join(cars_path(), "tutorials/notebook_helpers_cars_free.py"),
-)
-notebook_helpers_cars_free = importlib.util.module_from_spec(
-    spec_notebook_helpers_cars_free
-)
-sys.modules["notebook_helpers_cars_free"] = notebook_helpers_cars_free
-spec_notebook_helpers_cars_free.loader.exec_module(notebook_helpers_cars_free)
-
-# notebook_helpers
+# Import notebook_helpers
 spec_notebook_helpers = importlib.util.spec_from_file_location(
     "notebook_helpers",
     os.path.join(cars_path(), "tutorials/notebook_helpers.py"),
@@ -61,4 +48,4 @@ def test_set_dask_config():
     """
     Test set_dask_config
     """
-    notebook_helpers_cars_free.set_dask_config()
+    notebook_helpers.set_dask_config()
