@@ -81,7 +81,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
-
+    confidence_conf_ref = None
     for point_cloud_key in conf[pc_cst.POINT_CLOUDS]:
         # Get point clouds with default
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key] = {}
@@ -112,10 +112,29 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE
             ] = {}
+            if (
+                confidence_conf_ref
+                and confidence_conf.keys() != confidence_conf_ref
+            ):
+                raise KeyError(
+                    "The confidence keys are not the same: \n",
+                    confidence_conf.keys(),
+                    "\n",
+                    confidence_conf_ref,
+                )
+
+            confidence_conf_ref = confidence_conf.keys()
             for confidence_name in confidence_conf:
+                output_confidence_name = confidence_name
+                if cst.POINTS_CLOUD_CONFIDENCE not in output_confidence_name:
+                    output_confidence_name = (
+                        cst.POINTS_CLOUD_CONFIDENCE
+                        + "_"
+                        + output_confidence_name
+                    )
                 overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                     cst.POINTS_CLOUD_CONFIDENCE
-                ][confidence_name] = confidence_conf[confidence_name]
+                ][output_confidence_name] = confidence_conf[confidence_name]
         else:
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE

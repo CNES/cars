@@ -134,6 +134,7 @@ class Orchestrator:
         dtype="float32",
         nodata=0,
         cars_ds_name=None,
+        optional_data=False,
     ):
         """
         Save file to list in order to be saved later
@@ -142,11 +143,18 @@ class Orchestrator:
         :param tag: tag
         :param cars_ds: cars dataset to register
         :param cars_ds_name: name corresponding to CarsDataset,
-            for information during logging
+        for information during logging
+        :param optional_data: True if the data is optionnal
+        :type optional_data: bool
         """
 
         self.cars_ds_savers_registry.add_file_to_save(
-            file_name, cars_ds, tag=tag, dtype=dtype, nodata=nodata
+            file_name,
+            cars_ds,
+            tag=tag,
+            dtype=dtype,
+            nodata=nodata,
+            optional_data=optional_data,
         )
 
         # add name if exists

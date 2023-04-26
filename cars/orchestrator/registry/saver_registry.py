@@ -143,7 +143,13 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
                 logging.debug("Future result tile is None -> not saved")
 
     def add_file_to_save(
-        self, file_name, cars_ds, tag=None, dtype=None, nodata=None
+        self,
+        file_name,
+        cars_ds,
+        tag=None,
+        dtype=None,
+        nodata=None,
+        optional_data=False,
     ):
         """
         Add file corresponding to cars_dataset to registered_cars_datasets
@@ -158,6 +164,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         :type dtype: str
         :param nodata: no data value
         :type nodata: float
+        :param optional_data: True if the data is optionnal
+        :type optional_data: bool
         """
 
         if not self.cars_dataset_in_registry(cars_ds)[0]:
@@ -173,7 +181,13 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             )
 
         # update cars_ds_saver
-        cars_ds_saver.add_file(file_name, tag=tag, dtype=dtype, nodata=nodata)
+        cars_ds_saver.add_file(
+            file_name,
+            tag=tag,
+            dtype=dtype,
+            nodata=nodata,
+            optional_data=optional_data,
+        )
 
     def cleanup(self):
         """
@@ -203,6 +217,7 @@ class SingleCarsDatasetSaver:
         self.cars_ds = cars_ds
 
         self.file_names = []
+        self.optional_data_list = []
         self.tags = []
         self.dtypes = []
         self.nodatas = []
@@ -211,7 +226,9 @@ class SingleCarsDatasetSaver:
         self.count = 0
         self.folder_name = None
 
-    def add_file(self, file_name, tag=None, dtype=None, nodata=None):
+    def add_file(
+        self, file_name, tag=None, dtype=None, nodata=None, optional_data=False
+    ):
         """
         Add file to current CarsDatasetSaver
 
@@ -223,12 +240,15 @@ class SingleCarsDatasetSaver:
         :type dtype: str
         :param nodata: no data value
         :type nodata: float
+        :param optional_data: True if the data is optionnal
+        :type optional_data: bool
         """
 
         self.file_names.append(file_name)
         self.tags.append(tag)
         self.dtypes.append(dtype)
         self.nodatas.append(nodata)
+        self.optional_data_list.append(optional_data)
 
     def save(self, future_result):
         """
@@ -270,9 +290,8 @@ class SingleCarsDatasetSaver:
                         log_message = "{} is not consistent.".format(
                             self.tags[count].capitalize()
                         )
-                        if "Confidence" in log_message:
-                            # confidence is not always available
-                            logging.info(log_message)
+                        if self.optional_data_list[count]:
+                            logging.debug(log_message)
                         else:
                             logging.warning(log_message)
             elif self.cars_ds.dataset_type == "points":

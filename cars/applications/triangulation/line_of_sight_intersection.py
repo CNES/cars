@@ -425,6 +425,7 @@ class LineOfSightIntersection(
                         cst.EPI_CLASSIFICATION,
                         epipolar_points_cloud_left,
                         cars_ds_name="epi_classification_left",
+                        optional_data=True,
                     )
                     self.orchestrator.add_to_save_lists(
                         os.path.join(
@@ -433,6 +434,7 @@ class LineOfSightIntersection(
                         cst.EPI_CLASSIFICATION,
                         epipolar_points_cloud_left,
                         cars_ds_name="epi_classification_left",
+                        optional_data=True,
                     )
 
                     self.orchestrator.add_to_save_lists(
