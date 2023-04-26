@@ -252,15 +252,6 @@ def test_sensor_to_dsm_from_a_priori():
             shell=True,
             check=True,
         )
-        subprocess.run(
-            [
-                "cp "
-                "{}/tutorials/notebook_helpers_cars_free.py "
-                "{}".format(cars_path(), directory)
-            ],
-            shell=True,
-            check=True,
-        )
         # copy data samples gizeh
         subprocess.run(
             [
