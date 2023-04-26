@@ -304,6 +304,9 @@ The structure follows this organisation:
         | *profiling*      | Configuration for CARS profiling mode                               | dict                                    |               | No       |
         +------------------+---------------------------------------------------------------------+-----------------------------------------+---------------+----------+
 
+        .. note::
+            `sequential` orchestrator purposes are mostly for studies, debug and notebooks. If you want to use it with large data, consider using a ROI and Epipolar A Priori. Only tiles needed for the specified ROI will be computed. If Epipolar A priori is not specified, Epipolar Resampling and Sparse Matching will be performed on the whole image, no matter what ROI field is filled with.
+    
 
         Depending on the used orchestrator mode, the following parameters can be added in the configuration:
 
