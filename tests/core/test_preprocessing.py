@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Test module for cars/externals/otb_pipelines.py
+Test module for cars/core/preprocessing.py
 """
 
 # Standard imports
