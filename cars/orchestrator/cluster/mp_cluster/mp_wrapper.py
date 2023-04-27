@@ -275,13 +275,19 @@ def disk_wrapper_fun(*argv, **kwargs):
     """
 
     # Get function to wrap and id_list
-
-    id_list = kwargs["id_list"]
-    func = kwargs["fun"]
-    tmp_dir = kwargs["tmp_dir"]
-    kwargs.pop("id_list")
-    kwargs.pop("fun")
-    kwargs.pop("tmp_dir")
+    try:
+        id_list = kwargs["id_list"]
+        func = kwargs["fun"]
+        tmp_dir = kwargs["tmp_dir"]
+        kwargs.pop("id_list")
+        kwargs.pop("fun")
+        kwargs.pop("tmp_dir")
+    except Exception as exc:  # pylint: disable=W0702 # noqa: B001, E722
+        raise RuntimeError(
+            "Failed in unwrapping. \n Args: {}, \n Kwargs : {}\n".format(
+                argv, kwargs
+            )
+        ) from exc
 
     # load args
     loaded_argv = load_args_or_kwargs(argv)

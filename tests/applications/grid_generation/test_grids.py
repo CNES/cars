@@ -50,6 +50,7 @@ from tests.helpers import (
     absolute_data_path,
     assert_same_carsdatasets,
     get_geoid_path,
+    get_geometry_loader,
     temporary_dir,
 )
 
@@ -399,3 +400,43 @@ def cast_swigobj_grid(grid):
     grid.attributes["grid_spacing"] = list(grid.attributes["grid_spacing"])
     grid.attributes["grid_origin"] = list(grid.attributes["grid_origin"])
     return grid
+
+
+def test_terrain_region_to_epipolar(
+    images_and_grids_conf,  # pylint: disable=redefined-outer-name
+    epipolar_sizes_conf,
+    disparities_conf,  # pylint: disable=redefined-outer-name
+):  # pylint: disable=redefined-outer-name
+    """
+    Test terrain_region_to_epipolar
+    """
+    configuration = images_and_grids_conf
+    configuration["preprocessing"]["output"].update(
+        disparities_conf["preprocessing"]["output"]
+    )
+    configuration["preprocessing"]["output"].update(
+        epipolar_sizes_conf["preprocessing"]["output"]
+    )
+
+    # fill constants with final dsm footprint
+    terrain_region = [675248, 4897075, 675460.5, 4897173]
+    disp_min, disp_max = -20, 15
+    epsg = 32631
+
+    epipolar_sizes = epipolar_sizes_conf["preprocessing"]["output"]
+
+    epipolar_region = grids.terrain_region_to_epipolar(
+        terrain_region,
+        configuration,
+        get_geometry_loader(),
+        epsg=epsg,
+        disp_min=disp_min,
+        disp_max=disp_max,
+        tile_size=100,
+        epipolar_size_x=epipolar_sizes["epipolar_size_x"],
+        epipolar_size_y=epipolar_sizes["epipolar_size_y"],
+    )
+
+    epipolar_region_ref = [0, 600, 300, 612]
+
+    assert epipolar_region == epipolar_region_ref

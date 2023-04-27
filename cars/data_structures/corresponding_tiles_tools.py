@@ -82,6 +82,18 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
             new_coords["col"] = range(
                 int(col_min - ol_col_min), int(col_max + ol_col_max)
             )
+        elif key == "y":
+            # Doesnt contain  coordinates, but pixels position
+            # after reconstruction, only used in notebooks
+            new_coords["y"] = range(
+                int(row_min - ol_row_min), int(row_max + ol_row_max)
+            )
+        elif key == "x":
+            # Doesnt contain  coordinates, but pixels position
+            # after reconstruction, only used in notebooks
+            new_coords["x"] = range(
+                int(col_min - ol_col_min), int(col_max + ol_col_max)
+            )
         else:
             new_coords[key] = tiles[0][2].coords[key]
 
@@ -140,27 +152,28 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
             real_col_max = int(real_col_max - col_min)
 
             # Fill data
-            tile_data = tile_ds[tag].values
+            if tile_ds is not None:
+                tile_data = tile_ds[tag].values
 
-            if len(tile_data.shape) == 2:
-                data[
-                    real_row_min:real_row_max, real_col_min:real_col_max
-                ] = tile_data[
-                    getter_offset_row_min : tile_data.shape[0]
-                    - getter_offset_row_max,
-                    getter_offset_col_min : tile_data.shape[1]
-                    - getter_offset_col_max,
-                ]
-            else:
-                data[
-                    :, real_row_min:real_row_max, real_col_min:real_col_max
-                ] = tile_data[
-                    :,
-                    getter_offset_row_min : tile_data.shape[1]
-                    - getter_offset_row_max,
-                    getter_offset_col_min : tile_data.shape[2]
-                    - getter_offset_col_max,
-                ]
+                if len(tile_data.shape) == 2:
+                    data[
+                        real_row_min:real_row_max, real_col_min:real_col_max
+                    ] = tile_data[
+                        getter_offset_row_min : tile_data.shape[0]
+                        - getter_offset_row_max,
+                        getter_offset_col_min : tile_data.shape[1]
+                        - getter_offset_col_max,
+                    ]
+                else:
+                    data[
+                        :, real_row_min:real_row_max, real_col_min:real_col_max
+                    ] = tile_data[
+                        :,
+                        getter_offset_row_min : tile_data.shape[1]
+                        - getter_offset_row_max,
+                        getter_offset_col_min : tile_data.shape[2]
+                        - getter_offset_col_max,
+                    ]
 
         # add arrays to data
         new_dataset[tag] = xr.DataArray(

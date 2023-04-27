@@ -25,15 +25,79 @@ this module contains functions helpers used in notebooks.
 # Standard imports
 import logging
 import os
+import subprocess
 
 # Third-party imports
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib.colors import LinearSegmentedColormap
 
-from cars.data_structures import (  # pylint: disable=E0401
+
+def set_dask_config():
+    """
+    Set dask config path
+    """
+
+    # Get cluster file path out of current python process
+    cmd = [
+        "python",
+        "-c",
+        "from  cars.orchestrator import cluster; "
+        "import os; print(os.path.dirname(cluster.__file__))",
+    ]
+
+    cmd_output = subprocess.run(cmd, capture_output=True, check=True).stdout
+    cluster_path = str(cmd_output)[2:-3]
+    # Force the use of CARS dask configuration
+    dask_config_path = os.path.join(
+        cluster_path,
+        "dask_config",
+    )
+
+    if not os.path.isdir(dask_config_path):
+        raise NotADirectoryError(
+            "Wrong dask config path: {}".format(dask_config_path)
+        )
+    os.environ["DASK_CONFIG"] = str(dask_config_path)
+
+
+# Set dask config before cars imports
+set_dask_config()
+
+# fmt: off
+# isort: off
+# pylint: disable=C0413
+from cars.applications.grid_generation import (  # noqa: E402
+    grid_correction,
+)
+from cars.data_structures import (  # noqa: E402
     corresponding_tiles_tools,
 )
+from cars.data_structures.cars_dataset import (  # noqa: E402
+    load_dict,
+)
+# pylint: enable=C0413
+
+# fmt: on
+# isort: on
+
+
+def compute_cell(orchestrator, list_cars_ds):
+    """
+    Compute notebook cell if orchestrator is not sequential.
+    Replace Delayed with clear data
+
+    :param orchestrator: orchestrator used
+    :param list_cars_ds: list of CarsDataset to compute
+
+    """
+
+    # add cars datasets to save lists
+    for cars_ds in list_cars_ds:
+        orchestrator.add_to_replace_lists(cars_ds)
+
+    # trigger computation and replacement
+    orchestrator.breakpoint()
 
 
 def get_dir_path():
@@ -87,26 +151,36 @@ def get_full_data(cars_ds, tag):
 
     if cars_ds.dataset_type != "arrays":
         logging.error("Not an arrays CarsDataset")
-        raise Exception("Not an arrays CarsDataset")
+        raise RuntimeError("Not an arrays CarsDataset")
 
     list_tiles = []
-    window = cars_ds.tiling_grid[0, 0, :]
-    overlap = cars_ds.overlaps[0, 0, :]
+    window = None
+    overlap = None
 
     for row in range(cars_ds.shape[0]):
         for col in range(cars_ds.shape[1]):
-            list_tiles.append(
-                (
-                    cars_ds.tiling_grid[row, col, :],
-                    cars_ds.overlaps[row, col, :],
-                    cars_ds[row, col],
+            if cars_ds[row, col] is not None:
+                if window is None:
+                    # first non None tile found
+                    window = cars_ds.tiling_grid[row, col, :]
+                    overlap = cars_ds.overlaps[row, col, :]
+                list_tiles.append(
+                    (
+                        cars_ds.tiling_grid[row, col, :],
+                        cars_ds.overlaps[row, col, :],
+                        cars_ds[row, col],
+                    )
                 )
-            )
 
     merged_dataset = corresponding_tiles_tools.reconstruct_data(
         list_tiles, window, overlap
     )
 
+    if merged_dataset[0] is None:
+        return None
+
+    if tag not in merged_dataset[0]:
+        raise RuntimeError("Tag {} not in dataset".format(tag))
     array = merged_dataset[0][tag].values
 
     if len(array.shape) == 3:
@@ -150,17 +224,26 @@ def show_data(data, figsize=(11, 11), mode=None):
     Show data with matplotlib
 
 
-    available mode : "dsm", "image"
+    available mode : "dsm", "image",
     """
+
+    # squeeze data
+    data = np.squeeze(data)
+
+    # Replace Nan by 0 for visualisation
+    data[np.isnan(data)] = 0
 
     if mode in ("dsm", "image"):
         data[data < 0] = 0
 
-    p1 = np.percentile(data, 5)
-    p2 = np.percentile(data, 95)
+    if np.min(data) < 0 or np.max(data) > 1:
+        # crop
 
-    data[data < p1] = p1
-    data[data > p2] = p2
+        p1 = np.percentile(data, 5)
+        p2 = np.percentile(data, 95)
+
+        data[data < p1] = p1
+        data[data > p2] = p2
 
     plt.figure(figsize=figsize)
 
@@ -188,23 +271,118 @@ def save_data(cars_ds, file_name, tag, dtype="float32", nodata=-9999):
     """
 
     # create descriptor
-    desc = cars_ds.generate_descriptor(
-        cars_ds[0, 0],
-        file_name,
-        tag=tag,
-        dtype=dtype,
-        nodata=nodata,
-    )
+    desc = None
 
     # Save tiles
     for row in range(cars_ds.shape[0]):
         for col in range(cars_ds.shape[1]):
-            cars_ds.run_save(
-                cars_ds[row, col],
-                file_name,
-                tag=tag,
-                descriptor=desc,
-            )
+            if cars_ds[row, col] is not None:
+                if desc is None:
+                    desc = cars_ds.generate_descriptor(
+                        cars_ds[row, col],
+                        file_name,
+                        tag=tag,
+                        dtype=dtype,
+                        nodata=nodata,
+                    )
+                cars_ds.run_save(
+                    cars_ds[row, col],
+                    file_name,
+                    tag=tag,
+                    descriptor=desc,
+                )
 
     # close descriptor
     desc.close()
+
+
+def show_epilolar_images(
+    img_left, mask_left, img_right, mask_right, fig_size=8
+):
+    """
+    Show both epipolar image side by side
+
+    """
+    clip_percent = 5
+    vmin_left = np.percentile(img_left, clip_percent)
+    vmax_left = np.percentile(img_left, 100 - clip_percent)
+    vmin_right = np.percentile(img_right, clip_percent)
+    vmax_right = np.percentile(img_right, 100 - clip_percent)
+    fig, axes = plt.subplots(
+        nrows=1,
+        ncols=2,
+        figsize=(fig_size, 1.05 * fig_size / 2),
+        subplot_kw={"aspect": 1},
+    )
+    axes[0].set_title("Left image")
+    axes[0].imshow(
+        img_left,
+        cmap="gray",
+        interpolation="spline36",
+        vmin=vmin_left,
+        vmax=vmax_left,
+    )
+    axes[0].imshow(
+        np.ma.masked_where(mask_left == 0, mask_left), cmap="tab10", alpha=0.5
+    )
+    axes[0].axhline(len(img_left) / 2.0, color="red")
+    axes[1].set_title("Right image")
+    axes[1].imshow(
+        img_right,
+        cmap="gray",
+        interpolation="spline36",
+        vmin=vmin_right,
+        vmax=vmax_right,
+    )
+    axes[1].imshow(
+        np.ma.masked_where(mask_right == 0, mask_right), cmap="tab10", alpha=0.5
+    )
+    axes[1].axhline(len(img_right) / 2.0, color="red")
+    fig.tight_layout()
+
+
+def overide_input_conf_with_a_priori(inputs_conf, content_json_with_a_priori):
+    """
+    Overide given input dict with a priori in .json file
+
+    :param inputs_conf: dict to overide
+    :type inputs_conf: dict
+    :param content_json_with_a_priori: json file to get a priori from
+    :type content_json_with_a_priori: str
+
+    """
+    # Get a priori in file
+    a_priori_dict_full = load_dict(content_json_with_a_priori)
+    a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
+    # set in conf
+    inputs_conf["epipolar_a_priori"] = a_priori
+    inputs_conf["use_epipolar_a_priori"] = True
+
+
+def extract_a_priori_from_config(conf):
+    """
+    Extract a priori from configuration
+    """
+
+    if "epipolar_a_priori" not in conf:
+        raise RuntimeError("Epipolar a priori not set")
+
+    epipolar_a_priori = conf["epipolar_a_priori"]
+    key = list(epipolar_a_priori.keys())[0]
+
+    grid_coefficients = epipolar_a_priori[key]["grid_correction"]
+    disparity_range = epipolar_a_priori[key]["disparity_range"]
+
+    return grid_coefficients, disparity_range
+
+
+def apply_grid_correction(grid, grid_coefficients):
+    """
+    Correct grid with grid correction
+
+    """
+    if grid_coefficients in (None, []):
+        raise RuntimeError("No grid correction provided")
+
+    # Correct grid right with provided epipolar a priori
+    return grid_correction.correct_grid_from_1d(grid, list(grid_coefficients))

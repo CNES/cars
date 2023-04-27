@@ -33,11 +33,11 @@ from typing import Dict, Tuple
 import numpy as np
 import xarray as xr
 from json_checker import Checker
-
-import cars.orchestrator.orchestrator as ocht
-from cars.applications import application_constants
+from shapely.geometry import Polygon
 
 # CARS imports
+import cars.orchestrator.orchestrator as ocht
+from cars.applications import application_constants
 from cars.applications.grid_generation import grids
 from cars.applications.resampling import resampling_constants, resampling_tools
 from cars.applications.resampling.resampling import Resampling
@@ -204,6 +204,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         margins=None,
         optimum_tile_size=None,
         add_color=True,
+        epipolar_roi=None,
     ):  # noqa: C901
         """
         Run resampling application.
@@ -249,6 +250,9 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type optimum_tile_size: int
         :param add_color: add color image to dataset
         :type add_color: bool
+        :param epipolar_roi: Epipolar roi to use if set.
+            Set None tiles outsize roi
+        :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
 
         :return: left epipolar image, right epipolar image. \
             Each CarsDataset contains:
@@ -455,47 +459,90 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         classif1 = sensor_image_left.get(sens_cst.INPUT_CLASSIFICATION, None)
         classif2 = sensor_image_right.get(sens_cst.INPUT_CLASSIFICATION, None)
 
+        # Set Epipolar roi
+        epi_tilling_grid = epipolar_images_left.tiling_grid
+        if epipolar_roi is None:
+            epipolar_roi = [
+                np.min(epi_tilling_grid[:, :, 0]),
+                np.max(epi_tilling_grid[:, :, 1]),
+                np.min(epi_tilling_grid[:, :, 2]),
+                np.max(epi_tilling_grid[:, :, 3]),
+            ]
+        # Convert roi to polygon
+        epipolar_roi_poly = Polygon(
+            [
+                [epipolar_roi[0], epipolar_roi[2]],
+                [epipolar_roi[0], epipolar_roi[3]],
+                [epipolar_roi[1], epipolar_roi[3]],
+                [epipolar_roi[1], epipolar_roi[2]],
+                [epipolar_roi[0], epipolar_roi[2]],
+            ]
+        )
+
         # Generate Image pair
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
-                # get overlaps
-                left_overlap = cars_dataset.overlap_array_to_dict(
-                    epipolar_images_left.overlaps[row, col]
+                # Create polygon corresponding to tile
+                tile = epi_tilling_grid[row, col]
+                tile_roi_poly = Polygon(
+                    [
+                        [tile[0], tile[2]],
+                        [tile[0], tile[3]],
+                        [tile[1], tile[3]],
+                        [tile[1], tile[2]],
+                        [tile[0], tile[2]],
+                    ]
                 )
-                right_overlap = cars_dataset.overlap_array_to_dict(
-                    epipolar_images_right.overlaps[row, col]
-                )
-                # get window
-                left_window = epipolar_images_left.get_window_as_dict(row, col)
 
-                # Compute images
-                (
-                    epipolar_images_left[row, col],
-                    epipolar_images_right[row, col],
-                ) = self.orchestrator.cluster.create_task(
-                    generate_epipolar_images_wrapper, nout=2
-                )(
-                    left_overlap,
-                    right_overlap,
-                    left_window,
-                    margins,
-                    epipolar_size_x,
-                    epipolar_size_y,
-                    img1,
-                    img2,
-                    grid1,
-                    grid2,
-                    add_color=add_color,
-                    color1=color1,
-                    mask1=mask1,
-                    mask2=mask2,
-                    classif1=classif1,
-                    classif2=classif2,
-                    nodata1=nodata1,
-                    nodata2=nodata2,
-                    saving_info_left=saving_info_left,
-                    saving_info_right=saving_info_right,
-                )
+                if epipolar_roi_poly.intersects(tile_roi_poly):
+                    # get overlaps
+                    left_overlap = cars_dataset.overlap_array_to_dict(
+                        epipolar_images_left.overlaps[row, col]
+                    )
+                    right_overlap = cars_dataset.overlap_array_to_dict(
+                        epipolar_images_right.overlaps[row, col]
+                    )
+                    # get window
+                    left_window = epipolar_images_left.get_window_as_dict(
+                        row, col
+                    )
+
+                    # update saving infos  for potential replacement
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_info_left, row=row, col=col
+                    )
+                    full_saving_info_right = ocht.update_saving_infos(
+                        saving_info_right, row=row, col=col
+                    )
+
+                    # Compute images
+                    (
+                        epipolar_images_left[row, col],
+                        epipolar_images_right[row, col],
+                    ) = self.orchestrator.cluster.create_task(
+                        generate_epipolar_images_wrapper, nout=2
+                    )(
+                        left_overlap,
+                        right_overlap,
+                        left_window,
+                        margins,
+                        epipolar_size_x,
+                        epipolar_size_y,
+                        img1,
+                        img2,
+                        grid1,
+                        grid2,
+                        add_color=add_color,
+                        color1=color1,
+                        mask1=mask1,
+                        mask2=mask2,
+                        classif1=classif1,
+                        classif2=classif2,
+                        nodata1=nodata1,
+                        nodata2=nodata2,
+                        saving_info_left=full_saving_info_left,
+                        saving_info_right=full_saving_info_right,
+                    )
         return epipolar_images_left, epipolar_images_right
 
 

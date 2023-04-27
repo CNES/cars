@@ -28,6 +28,7 @@ import collections
 import logging
 import os
 import shutil
+import traceback
 
 # Third party imports
 from tqdm import tqdm
@@ -282,16 +283,10 @@ class Orchestrator:
                 "orchestrator launch_worker is False, no content.json saved"
             )
 
-    def breakpoint(self):
+    def reset_registries(self):
         """
-        Breakpoint : compute all delayed, save and replace data
-        in CarsDatasets
-
+        Reset registries
         """
-
-        # Compute futures
-        self.compute_futures()
-
         # reset registries
         # CarsDataset savers registry
         self.cars_ds_savers_registry = saver_registry.CarsDatasetsRegistrySaver(
@@ -306,6 +301,24 @@ class Orchestrator:
         # reset cars_ds names infos
         self.cars_ds_names_info = []
 
+    def breakpoint(self):
+        """
+        Breakpoint : compute all delayed, save and replace data
+        in CarsDatasets
+
+        """
+
+        # Compute futures
+        try:
+            self.compute_futures()
+        except Exception as exc:
+            # reset registries
+            self.reset_registries()
+            raise RuntimeError(traceback.format_exc()) from exc
+
+        # reset registries
+        self.reset_registries()
+
     def __enter__(self):
         """
         Function run on enter
@@ -314,7 +327,7 @@ class Orchestrator:
 
         return self
 
-    def __exit__(self, exc_type, exc_value, traceback):
+    def __exit__(self, exc_type, exc_value, traceback_msg):
         """
         Function run on exit.
 
@@ -324,7 +337,7 @@ class Orchestrator:
         """
 
         # Compute futures
-        self.compute_futures()
+        self.breakpoint()
 
         # save outjson
         # TODO

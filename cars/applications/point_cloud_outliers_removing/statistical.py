@@ -291,6 +291,10 @@ class Statistical(
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
                 for row in range(filtered_point_cloud.shape[0]):
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
                     if merged_points_cloud.tiles[row][col] is not None:
                         # Delayed call to cloud filtering
                         filtered_point_cloud[
@@ -303,7 +307,7 @@ class Statistical(
                             self.std_dev_factor,
                             self.save_points_cloud_as_laz,
                             self.save_points_cloud_as_csv,
-                            saving_info=saving_info,
+                            saving_info=full_saving_info,
                         )
 
         else:

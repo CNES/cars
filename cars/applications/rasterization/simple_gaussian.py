@@ -516,6 +516,10 @@ class SimpleGaussian(
                         window = cars_dataset.window_array_to_dict(
                             terrain_raster.tiling_grid[row, col]
                         )
+                        # update saving infos  for potential replacement
+                        full_saving_info = ocht.update_saving_infos(
+                            saving_info, row=row, col=col
+                        )
 
                         # Get terrain region
                         # corresponding to point cloud tile
@@ -540,7 +544,7 @@ class SimpleGaussian(
                             window,
                             raster_profile,
                             list_computed_layers=self.list_computed_layers,
-                            saving_info=saving_info,
+                            saving_info=full_saving_info,
                             radius=self.dsm_radius,
                             sigma=self.sigma,
                             dsm_no_data=self.dsm_no_data,

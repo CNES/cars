@@ -43,7 +43,7 @@ from cars.applications.triangulation.triangulation_tools import (
     triangulate_matches,
 )
 from cars.core import constants as cst
-from cars.core import former_confs_utils, projection
+from cars.core import former_confs_utils, projection, tiling
 
 # CARS imports
 from cars.core.geometry import AbstractGeometry
@@ -244,3 +244,93 @@ def compute_epipolar_grid_min_max(
         logging.error("pc min/max error: point cloud is unknown")
 
     return grid_min, grid_max
+
+
+def terrain_region_to_epipolar(
+    region,
+    conf,
+    geometry_loader,
+    epsg=4326,
+    disp_min=0,
+    disp_max=0,
+    tile_size=100,
+    epipolar_size_x=None,
+    epipolar_size_y=None,
+):
+    """
+    Transform terrain region to epipolar region
+
+    :param region: terrain region to use
+    :param conf: config with epipolar grids infos
+    :param geometry_loader: geometry loader to use
+    :param epsg: epsg
+    :param disp_min: minimum disparity
+    :param disp_max: maximum disparity
+    :param tile_size: tile size for grid
+    :param epipolar_size_x: epipolar_size_x
+    :param epipolar_size_y: epipolar_size_y
+
+    :return: epipolar region to use, with tile_size a sample
+    """
+
+    disp_min = int(disp_min)
+    disp_max = int(disp_max)
+
+    # Generate terrain grid only on roi
+    xmin = region[0]
+    xmax = region[2]
+    ymin = region[1]
+    ymax = region[3]
+    opt_terrain_size = max((xmax - xmin), (ymax - ymin))
+    region_grid = tiling.generate_tiling_grid(
+        xmin,
+        ymin,
+        xmax,
+        ymax,
+        opt_terrain_size,
+        opt_terrain_size,
+    )
+
+    # Generate fake epipolar grid
+    epipolar_grid = tiling.generate_tiling_grid(
+        0,
+        0,
+        epipolar_size_y,
+        epipolar_size_x,
+        tile_size,
+        tile_size,
+    )
+
+    # Compute disp_min and disp_max location for epipolar grid
+    (
+        epipolar_grid_min,
+        epipolar_grid_max,
+    ) = compute_epipolar_grid_min_max(
+        geometry_loader,
+        tiling.transform_four_layers_to_two_layers_grid(epipolar_grid),
+        epsg,
+        conf,
+        disp_min,
+        disp_max,
+    )
+
+    # Compute epipolar points min and max on terrain region
+    points_min, points_max = tiling.terrain_grid_to_epipolar(
+        region_grid, epipolar_grid, epipolar_grid_min, epipolar_grid_max, epsg
+    )
+
+    # Bouding region of corresponding cell
+    epipolar_region_minx = np.min(points_min[:, :, 0])
+    epipolar_region_miny = np.min(points_min[:, :, 1])
+    epipolar_region_maxx = np.max(points_max[:, :, 0])
+    epipolar_region_maxy = np.max(points_max[:, :, 1])
+
+    # Generate epipolar region
+    epipolar_region = [
+        epipolar_region_miny,
+        epipolar_region_maxy,
+        epipolar_region_minx,
+        epipolar_region_maxx,
+    ]
+
+    return epipolar_region

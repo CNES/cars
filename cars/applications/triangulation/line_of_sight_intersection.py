@@ -145,7 +145,7 @@ class LineOfSightIntersection(
     def get_geometry_loader(self):
         return self.geometry_loader
 
-    def run(
+    def run(  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,
@@ -477,26 +477,46 @@ class LineOfSightIntersection(
 
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
-                # Compute points
-                (
-                    epipolar_points_cloud_left[row][col],
-                    epipolar_points_cloud_right[row][col],
-                ) = self.orchestrator.cluster.create_task(
-                    compute_points_cloud, nout=2
-                )(
-                    epipolar_images_left[row, col],
-                    epipolar_images_right[row, col],
-                    epipolar_disparity_map_left[row, col],
-                    epipolar_disparity_map_right[row, col],
-                    configuration,
-                    self.geometry_loader,
-                    epsg,
-                    geoid_data=geoid_data_futures,
-                    snap_to_img1=self.snap_to_img1,
-                    add_msk_info=self.add_msk_info,
-                    saving_info_left=saving_info_left,
-                    saving_info_right=saving_info_right,
-                )
+                if type(None) not in (
+                    type(epipolar_disparity_map_left[row, col]),
+                    type(epipolar_images_left[row, col]),
+                    type(epipolar_images_right[row, col]),
+                ):
+                    # update saving infos  for potential replacement
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_info_left, row=row, col=col
+                    )
+                    full_saving_info_right = ocht.update_saving_infos(
+                        saving_info_right, row=row, col=col
+                    )
+
+                    # Compute points
+                    (
+                        epipolar_points_cloud_left[row][col],
+                        epipolar_points_cloud_right[row][col],
+                    ) = self.orchestrator.cluster.create_task(
+                        compute_points_cloud, nout=2
+                    )(
+                        epipolar_images_left[row, col],
+                        epipolar_images_right[row, col],
+                        epipolar_disparity_map_left[row, col],
+                        epipolar_disparity_map_right[row, col],
+                        configuration,
+                        self.geometry_loader,
+                        epsg,
+                        geoid_data=geoid_data_futures,
+                        snap_to_img1=self.snap_to_img1,
+                        add_msk_info=self.add_msk_info,
+                        saving_info_left=full_saving_info_left,
+                        saving_info_right=full_saving_info_right,
+                    )
+
+                    if isinstance(
+                        epipolar_disparity_map_right[row, col], type(None)
+                    ):
+                        # Cannot compute right point cloud,
+                        # Set to None to replace Delayed
+                        epipolar_points_cloud_right[row][col] = None
 
         return epipolar_points_cloud_left, epipolar_points_cloud_right
 

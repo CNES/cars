@@ -253,6 +253,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             "epipolar_spacing_x": grid_spacing[0],
             "epipolar_spacing": grid_spacing[1],
             "disp_to_alt_ratio": disp_to_alt_ratio,
+            "epipolar_step": self.epi_step,
         }
         grid_left.attributes = grid_attributes
         grid_right.attributes = grid_attributes

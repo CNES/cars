@@ -326,6 +326,10 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
                     if list_epipolar_points_cloud_left[0].dataset_type in (
                         "arrays",
                         "points",
@@ -363,7 +367,17 @@ class MappingToTerrainTiles(
                             ]
                         )
 
-                    if len(required_point_clouds_left) > 0:
+                    if (
+                        len(
+                            [
+                                value
+                                for value in required_point_clouds_left
+                                + required_point_clouds_right
+                                if not isinstance(value, type(None))
+                            ]
+                        )
+                        > 0
+                    ):
                         logging.debug(
                             "Number of clouds to process for this terrain"
                             " tile: {}".format(len(required_point_clouds_left))
@@ -389,7 +403,7 @@ class MappingToTerrainTiles(
                             margins=margins,
                             save_pc_as_laz=self.save_points_cloud_as_laz,
                             save_pc_as_csv=self.save_points_cloud_as_csv,
-                            saving_info=saving_info,
+                            saving_info=full_saving_info,
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?
@@ -506,6 +520,11 @@ def compute_point_cloud_wrapper(
         if point_clouds_right[0] is not None:
             cloud_sec = point_clouds_right
             clouds.extend(cloud_sec)
+
+    # Remove None tiles
+    clouds = [value for value in clouds if value is not None]
+    if len(clouds) == 0:
+        raise RuntimeError("All clouds are None")
 
     # combine clouds
     if not isinstance(clouds[0], dict):

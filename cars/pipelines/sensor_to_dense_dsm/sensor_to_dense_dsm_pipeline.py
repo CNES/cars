@@ -29,8 +29,6 @@ import json
 import logging
 import os
 
-import numpy as np
-
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -472,22 +470,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     geoid_path=self.inputs[sens_cst.GEOID],
                 )
 
-                # Run epipolar resampling
-                (
-                    epipolar_image_left,
-                    epipolar_image_right,
-                ) = self.resampling_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
-                    grid_left,
-                    grid_right,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                    margins=self.sparse_mtch_app.get_margins(),
-                    add_color=False,
-                )
-
                 # Run holes detection
                 # Get classif depending on which filling is used
                 holes_classif = []
@@ -504,18 +486,44 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         holes_poly_margin,
                         self.dense_matches_filling_2.get_poly_margin(),
                     )
-                (
-                    holes_bbox_left,
-                    holes_bbox_right,
-                ) = self.holes_detection_app.run(
-                    epipolar_image_left,
-                    epipolar_image_right,
-                    classification=holes_classif,
-                    margin=holes_poly_margin,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
-                    pair_key=pair_key,
-                )
+
+                holes_bbox_left = []
+                holes_bbox_right = []
+
+                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False or (
+                    len(holes_classif) > 0
+                ):
+                    # Run resampling only if needed:
+                    # no a priori or needs to detect holes
+
+                    # Run epipolar resampling
+                    (
+                        epipolar_image_left,
+                        epipolar_image_right,
+                    ) = self.resampling_application.run(
+                        sensor_image_left,
+                        sensor_image_right,
+                        grid_left,
+                        grid_right,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                        margins=self.sparse_mtch_app.get_margins(),
+                        add_color=False,
+                    )
+
+                    (
+                        holes_bbox_left,
+                        holes_bbox_right,
+                    ) = self.holes_detection_app.run(
+                        epipolar_image_left,
+                        epipolar_image_right,
+                        classification=holes_classif,
+                        margin=holes_poly_margin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pair_folder,
+                        pair_key=pair_key,
+                    )
 
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
                     # Run epipolar sparse_matching application
@@ -601,19 +609,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     if grid_correction_coef is None:
                         corrected_grid_right = grid_right
                     else:
-                        # Retrieve grid correction coefficients
-                        coefs_x = grid_correction_coef[:3]
-                        coefs_x.append(0.0)
-                        coefs_y = grid_correction_coef[3:6]
-                        coefs_y.append(0.0)
-                        grid_correction_coef = (
-                            np.array(coefs_x).reshape((2, 2)),
-                            np.array(coefs_y).reshape((2, 2)),
-                        )
-
                         # Correct grid right with provided epipolar a priori
-                        corrected_grid_right = grid_correction.correct_grid(
-                            grid_right, grid_correction_coef
+                        corrected_grid_right = (
+                            grid_correction.correct_grid_from_1d(
+                                grid_right, grid_correction_coef
+                            )
                         )
 
                 self.update_conf(grid_correction_coef, dmin, dmax, pair_key)
@@ -633,6 +633,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ) = self.dense_matching_application.get_margins(
                     grid_left, disp_min=dmin, disp_max=dmax
                 )
+
+                # if sequential mode, apply roi
+                epipolar_roi = None
+                if (
+                    cars_orchestrator.cluster.checked_conf_cluster["mode"]
+                    == "sequential"
+                ):
+                    epipolar_roi = preprocessing.compute_epipolar_roi(
+                        self.input_roi_poly,
+                        self.input_roi_epsg,
+                        self.triangulation_application.get_geometry_loader(),
+                        sensor_image_left,
+                        sensor_image_right,
+                        grid_left,
+                        corrected_grid_right,
+                        pair_folder,
+                        disp_min=disp_min,
+                        disp_max=disp_max,
+                    )
 
                 (
                     new_epipolar_image_left,
@@ -656,6 +675,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     ),
                     add_color=True,
+                    epipolar_roi=epipolar_roi,
                 )
 
                 # Run epipolar matching application
@@ -896,10 +916,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         if grid_correction_coef:
             self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
                 "grid_correction"
-            ] = (
-                np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
-                + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
-            )
+            ] = list(grid_correction_coef)
         else:
             self.used_conf[INPUTS]["epipolar_a_priori"][pair_key][
                 "grid_correction"
