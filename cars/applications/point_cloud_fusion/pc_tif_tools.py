@@ -40,7 +40,6 @@ from cars.core import inputs, preprocessing, projection, tiling
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
-from cars.externals import otb_pipelines
 
 
 def create_polygon_from_list_points(list_points):
@@ -123,7 +122,7 @@ def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
     x_mean = (x_y_min_max[0] + x_y_min_max[1]) / 2
     y_mean = (x_y_min_max[2] + x_y_min_max[3]) / 2
 
-    epsg = otb_pipelines.get_utm_zone_as_epsg_code(x_mean, y_mean)
+    epsg = preprocessing.get_utm_zone_as_epsg_code(x_mean, y_mean)
 
     logging.info("EPSG code: {}".format(epsg))
 
