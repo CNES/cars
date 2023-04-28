@@ -19,5 +19,22 @@
 # limitations under the License.
 #
 """
-CARS externals test init file
+Test module for cars/core/preprocessing.py
 """
+
+# Standard imports
+
+# Third party imports
+import pytest
+
+# CARS import
+from cars.core import preprocessing
+
+
+@pytest.mark.unit_tests
+def test_get_utm_zone_as_epsg_code():
+    """
+    Test if a point in Toulouse gives the correct EPSG code
+    """
+    epsg = preprocessing.get_utm_zone_as_epsg_code(1.442299, 43.600764)
+    assert epsg == 32631

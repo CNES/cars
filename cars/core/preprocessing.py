@@ -31,6 +31,7 @@ import math
 import os
 
 import numpy as np
+import utm
 from shapely.geometry import Polygon
 
 import cars.conf.input_parameters as in_params
@@ -40,7 +41,6 @@ from cars.applications.grid_generation import grids
 # CARS imports
 from cars.core import former_confs_utils, inputs, projection, tiling
 from cars.core.utils import safe_makedirs
-from cars.externals import otb_pipelines
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
@@ -50,6 +50,24 @@ LEFT_ENVELOPE_TAG = "left_envelope"
 RIGHT_ENVELOPE_TAG = "right_envelope"
 ENVELOPES_INTERSECTION_TAG = "envelopes_intersection"
 ENVELOPES_INTERSECTION_BB_TAG = "envelopes_intersection_bounding_box"
+
+
+def get_utm_zone_as_epsg_code(lon, lat):
+    """
+    Returns the EPSG code of the UTM zone where the lat, lon point falls in
+
+    :param lon: longitude of the point
+    :type lon: float
+    :param lat: latitude of the point
+    :type lat: float
+    :return: The EPSG code corresponding to the UTM zone
+    :rtype: int
+    """
+
+    zone = utm.from_latlon(lat, lon)[2]
+
+    north_south = 600 if lat >= 0 else 700
+    return 32000 + north_south + zone
 
 
 def compute_terrain_bbox(  # noqa: 751
@@ -467,9 +485,7 @@ def compute_epsg(
         geometry_loader_to_use, corners, 4326, configuration, disp_min, disp_max
     )
 
-    epsg = otb_pipelines.get_utm_zone_as_epsg_code(
-        *np.mean(terrain_dispmin, axis=0)
-    )
+    epsg = get_utm_zone_as_epsg_code(*np.mean(terrain_dispmin, axis=0))
 
     logging.info("EPSG code: {}".format(epsg))
 
