@@ -26,6 +26,7 @@ Contains abstract function for PBS dask Cluster
 import logging
 import math
 import os
+import sys
 import warnings
 from datetime import timedelta
 
@@ -71,6 +72,7 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
             self.walltime,
             self.out_dir,
             activate_dashboard=self.activate_dashboard,
+            python=self.python,
         )
 
     def cleanup(self):
@@ -83,7 +85,12 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
 
 def start_cluster(
-    nb_workers, walltime, out_dir, timeout=600, activate_dashboard=False
+    nb_workers,
+    walltime,
+    out_dir,
+    timeout=600,
+    activate_dashboard=False,
+    python=None,
 ):
     """Create a Dask cluster.
 
@@ -103,6 +110,10 @@ def start_cluster(
     :return: Dask cluster and dask client
     :rtype: (dask_jobqueue.PBSCluster, dask.distributed.Client) tuple
     """
+    # retrieve current python path if None
+    if python is None:
+        python = sys.executable
+
     # Retrieve PBS queue
     pbs_queue = os.environ.get("CARS_PBS_QUEUE")
 
@@ -186,29 +197,51 @@ def start_cluster(
     envs = ["export {}={}".format(name, os.environ[name]) for name in names]
     log_directory = os.path.join(os.path.abspath(out_dir), "dask_log")
     local_directory = "$TMPDIR"
-    cluster = PBSCluster(
-        processes=nb_workers_per_job,
-        cores=nb_workers_per_job,
-        memory="{}MiB".format(memory),
-        local_directory=local_directory,
-        account="dask-test",
-        walltime=walltime,
-        interface="ib0",
-        queue=pbs_queue,
-        job_script_prologue=envs,
-        log_directory=log_directory,
-        worker_extra_args=[
-            "--lifetime",
-            f"{int(lifetime_with_margin.total_seconds())}s",
-            "--lifetime-stagger",
-            f"{int(stagger.total_seconds())}s",
-        ],
-        scheduler_options=scheduler_options,
-    )
-    logging.info("Dask cluster started")
-    cluster.adapt(minimum=nb_workers, maximum=nb_workers)
-    client = Client(cluster, timeout=timeout)
-    logging.info("Dashboard started at {}".format(get_dashboard_link(cluster)))
+    with warnings.catch_warnings():
+        # Ignore some internal dask_jobqueue warnings
+        # TODO remove when Future warning do not exist anymore
+        warnings.filterwarnings(
+            "ignore",
+            category=FutureWarning,
+            message=".*extra has been renamed to worker_extra_args*",
+        )
+        warnings.filterwarnings(
+            "ignore",
+            category=FutureWarning,
+            message=".*job_extra has been renamed to job_extra_directives*",
+        )
+        warnings.filterwarnings(
+            "ignore",
+            category=FutureWarning,
+            message=".*env_extra has been renamed to job_script_prologue*",
+        )
+        cluster = PBSCluster(
+            processes=nb_workers_per_job,
+            cores=nb_workers_per_job,
+            memory="{}MiB".format(memory),
+            local_directory=local_directory,
+            account="dask-test",
+            walltime=walltime,
+            interface="ib0",
+            queue=pbs_queue,
+            job_script_prologue=envs,
+            log_directory=log_directory,
+            python=python,
+            worker_extra_args=[
+                "--lifetime",
+                f"{int(lifetime_with_margin.total_seconds())}s",
+                "--lifetime-stagger",
+                f"{int(stagger.total_seconds())}s",
+            ],
+            scheduler_options=scheduler_options,
+            resource_spec="select=1:ncpus={}:mem={}MB".format(nb_cpus, memory),
+        )
+        logging.info("Dask cluster started")
+        cluster.adapt(minimum=nb_workers, maximum=nb_workers)
+        client = Client(cluster, timeout=timeout)
+        logging.info(
+            "Dashboard started at {}".format(get_dashboard_link(cluster))
+        )
     return cluster, client
 
 
