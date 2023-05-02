@@ -14,7 +14,7 @@ RUN apt-get update \
 # Dependencies packages
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     cmake-curses-gui=3.16.3-1ubuntu1.20.04.1 \
-    git=1:2.25.1-1ubuntu3.10 \
+    git=1:2.25.1-1ubuntu3.11 \
     wget=1.20.3-1ubuntu1 \
     file=1:5.38-4 \
     gcc=4:9.3.0-1ubuntu2 \
@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libfftw3-dev=3.3.8-2ubuntu1 \
     openssh-client=1:8.2p1-4ubuntu0.5 \
     curl=7.68.0-1ubuntu2.18 \
-    vim=2:8.1.2269-1ubuntu5.13 \
+    vim=2:8.1.2269-1ubuntu5.14 \
     nano=4.8-1ubuntu1 \
     && rm -rf /var/lib/apt/lists/*
 
