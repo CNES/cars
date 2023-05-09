@@ -191,6 +191,7 @@ class CensusMccnnSgm(
         checker = Checker(application_schema)
         checker.validate(overloaded_conf)
 
+        # Check consistency between bounds for optimal tile size search
         min_epi_tile_size = overloaded_conf["min_epi_tile_size"]
         max_epi_tile_size = overloaded_conf["max_epi_tile_size"]
         if min_epi_tile_size > max_epi_tile_size:
@@ -199,6 +200,7 @@ class CensusMccnnSgm(
                 "minimal tile size for optimal tile size search"
             )
 
+        # Check consistency between bounds for elevation offset
         min_elevation_offset = overloaded_conf["min_elevation_offset"]
         max_elevation_offset = overloaded_conf["max_elevation_offset"]
         if (

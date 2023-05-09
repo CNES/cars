@@ -204,6 +204,7 @@ class Sift(SparseMatching, short_name="sift"):
         checker = Checker(sparse_matching_schema)
         checker.validate(overloaded_conf)
 
+        # Check consistency between bounds for elevation delta
         elevation_delta_lower_bound = overloaded_conf[
             "elevation_delta_lower_bound"
         ]
