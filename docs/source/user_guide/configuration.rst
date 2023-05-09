@@ -543,17 +543,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | Name            | Description                                   | Type    | Default value | Required |
-            +=================+===============================================+=========+===============+==========+
-            | method          | Method for grid generation                    | string  | epipolar      | Yes      |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | epi_step        | Step of the deformation grid in nb. of pixels | int     | 30            | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | save_grids      | Save the generated grids (not available yet)  | boolean | false         | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | geometry_loader | Geometry external library                     | string  | "otb"         | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
+            +-----------------+-----------------------------------------------+---------+---------------+-----------------+----------+
+            | Name            | Description                                   | Type    | Default value | Available value | Required |
+            +=================+===============================================+=========+===============+=================+==========+
+            | method          | Method for grid generation                    | string  | epipolar      |                 | Yes      |
+            +-----------------+-----------------------------------------------+---------+---------------+-----------------+----------+
+            | epi_step        | Step of the deformation grid in nb. of pixels | int     | 30            |                 | No       |
+            +-----------------+-----------------------------------------------+---------+---------------+-----------------+----------+
+            | save_grids      | Save the generated grids (not available yet)  | boolean | false         |                 | No       |
+            +-----------------+-----------------------------------------------+---------+---------------+-----------------+----------+
+            | geometry_loader | Geometry external library                     | string  | "otb"         |                 | No       |
+            +-----------------+-----------------------------------------------+---------+---------------+-----------------+----------+
 
             **Example**
 
@@ -610,7 +610,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | Name                                 | Description                                                                                 | Type       | available value | Default value | Required |
+            | Name                                 | Description                                                                                 | Type       | Available value | Default value | Required |
             +======================================+=============================================================================================+============+=================+===============+==========+
             | method                               | Method for sparse matching                                                                  | string     | "sift"          | "sift"        | Yes      |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -669,7 +669,7 @@ The structure follows this organisation:
             **Configuration**
 
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | Name                            | Description                                                             | Type    | available value                 | Default value | Required |
+            | Name                            | Description                                                             | Type    | Available value                 | Default value | Required |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | method                          | Method for dense matching                                               | string  | "census_sgm" or "mccnn_sgm"     | "census_sgm"  | Yes      |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -683,19 +683,21 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | use_sec_disp                    | Compute secondary disparity map                                         | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | min_epi_tile_size               |                                                                         | int     |                                 | 300           | No       |
+            | min_epi_tile_size               | Lower bound of optimal epipolar tile size for dense matching            | int     |                                 | 300           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | max_epi_tile_size               |                                                                         | int     |                                 | 300           | No       |
+            | max_epi_tile_size               | Upper bound of optimal epipolar tile size for dense matching            | int     |                                 | 1500          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
+            | epipolar_tile_margin_in_percent | Size of the margin used for dense matching (percent of tile size)       | int     |                                 | 60            | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | generate_performance_map        | Generate a performance map from disparity map                           | bool    |                                 | False         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_ambiguity          |  Ambiguity confidence eta max used for performance map                  | float   |                                 | 0.99          | No       |
+            | perf_eta_max_ambiguity          | Ambiguity confidence eta max used for performance map                   | float   |                                 | 0.99          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_risk               |  Risk confidence eta max used for performance map                       | float   |                                 | 0.04          | No       |
+            | perf_eta_max_risk               | Risk confidence eta max used for performance map                        | float   |                                 | 0.25          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_step                   |  Risk and Ambiguity confidence eta step used for performance map        | float   |                                 | 0.6           | No       |
+            | perf_eta_step                   | Risk and Ambiguity confidence eta step used for performance map         | float   |                                 | 0.04          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_ambiguity_threshold        | Maximal ambiguity considered for performance map                        | float   |                                 | 0.6           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -732,18 +734,18 @@ The structure follows this organisation:
             **Configuration**
 
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type    | available value         | Default value      | Required |
+            | Name                                | Description                     | Type    | Available value         | Default value      | Required |
             +=====================================+=================================+=========+=========================+====================+==========+
             | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | Yes      |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | save_disparity_map                  | Save disparity map              | boolean |                         |False               | No       |
+            | save_disparity_map                  | Save disparity map              | boolean |                         | False              | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
 
 
             **Method plane:**
 
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type        | available value         | Default value      | Required |
+            | Name                                | Description                     | Type        | Available value         | Default value      | Required |
             +=====================================+=================================+=============+=========================+====================+==========+
             | classification                      | Classification band name        | List[str]   |                         | None               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
@@ -755,7 +757,7 @@ The structure follows this organisation:
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
             | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean     |                         | true               | No       |
+            | ignore_nodata_at_disp_mask_borders  | Ignore nodata at borders        | boolean     |                         | true               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
             | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
@@ -776,7 +778,7 @@ The structure follows this organisation:
             The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
             +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type      | available value         | Default value      | Required |
+            | Name                                | Description                     | Type      | Available value         | Default value      | Required |
             +=====================================+=================================+===========+=========================+====================+==========+
             | classification                      | Classification band name        | List[str] |                         | None               | No       |
             +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
@@ -827,7 +829,7 @@ The structure follows this organisation:
             **Configuration**
 
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-            | Name              | Description                                                                                                        | Type    | available value              | Default value                | Required |
+            | Name              | Description                                                                                                        | Type    | Available value              | Default value                | Required |
             +===================+====================================================================================================================+=========+==============================+==============================+==========+
             | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection" | "line_of_sight_intersection" | Yes      |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
@@ -866,7 +868,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                     | Description                      | Type    | available value            | Default value              | Required |
+            | Name                     | Description                      | Type    | Available value            | Default value              | Required |
             +==========================+==================================+=========+============================+============================+==========+
             | method                   | Method for fusion                | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
@@ -899,7 +901,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name                     | Description                              | Type    | available value                   | Default value | Required |
+            | Name                     | Description                              | Type    | Available value                   | Default value | Required |
             +==========================+==========================================+=========+===================================+===============+==========+
             | method                   | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | Yes      |
             +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
@@ -911,7 +913,7 @@ The structure follows this organisation:
             If method is *statistical*:
 
             +----------------+-------------+---------+-----------------+---------------+----------+
-            | Name           | Description | Type    | available value | Default value | Required |
+            | Name           | Description | Type    | Available value | Default value | Required |
             +================+=============+=========+=================+===============+==========+
             | activated      |             | boolean |                 | false         | No       |
             +----------------+-------------+---------+-----------------+---------------+----------+
@@ -923,7 +925,7 @@ The structure follows this organisation:
             If method is *small_components*
 
             +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | Name                        | Description | Type    | available value | Default value | Required |
+            | Name                        | Description | Type    | Available value | Default value | Required |
             +=============================+=============+=========+=================+===============+==========+
             | activated                   |             | boolean |                 | false         | No       |
             +-----------------------------+-------------+---------+-----------------+---------------+----------+
@@ -980,7 +982,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | Name                                 | Description                         | Type       | available value | Default value   | Required |
+            | Name                                 | Description                         | Type       | Available value | Default value   | Required |
             +======================================+=====================================+============+=================+=================+==========+
             | method                               |                                     | string     | simple_gaussian | simple_gaussian | Yes      |
             +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
