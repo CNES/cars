@@ -36,7 +36,7 @@ import traceback
 from multiprocessing import Queue, freeze_support
 
 # Third party imports
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -178,8 +178,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         cluster_schema = {
             "mode": str,
             "dump_to_disk": bool,
-            "nb_workers": int,
-            "max_ram_per_worker": Or(float, int),
+            "nb_workers": And(int, lambda x: x > 0),
+            "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
             "per_job_timeout": Or(float, int),
             "profiling": {
                 "activated": bool,

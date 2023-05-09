@@ -40,7 +40,7 @@ from dask.config import set as dask_config_set
 from dask.distributed import as_completed
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -128,8 +128,8 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
-            "nb_workers": int,
-            "max_ram_per_worker": Or(float, int),
+            "nb_workers": And(int, lambda x: x > 0),
+            "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
             "walltime": str,
             "config_name": str,
             "activate_dashboard": bool,
@@ -143,8 +143,16 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
 
         # Check conf
         checker = Checker(cluster_schema)
-
         checker.validate(overloaded_conf)
+
+        # Check walltime format
+        walltime = overloaded_conf["walltime"]
+        try:
+            time.strptime(walltime, "%H:%M:%S")
+        except ValueError as err:
+            raise ValueError(
+                "Walltime should be formatted as HH:MM:SS"
+            ) from err
 
         return overloaded_conf
 
