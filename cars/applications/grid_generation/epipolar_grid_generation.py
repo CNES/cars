@@ -28,7 +28,7 @@ import os
 
 # Third party imports
 import numpy as np
-from json_checker import Checker
+from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -104,7 +104,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
 
         grid_generation_schema = {
             "method": str,
-            "epi_step": int,
+            "epi_step": And(int, lambda x: x > 0),
             "geometry_loader": str,
             "save_grids": bool,
         }

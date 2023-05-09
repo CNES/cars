@@ -127,7 +127,7 @@ class LineOfSightIntersection(
             "save_points_cloud", False
         )
 
-        tringulation_schema = {
+        triangulation_schema = {
             "method": str,
             "use_geoid_alt": bool,
             "snap_to_img1": bool,
@@ -137,7 +137,7 @@ class LineOfSightIntersection(
         }
 
         # Check conf
-        checker = Checker(tringulation_schema)
+        checker = Checker(triangulation_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf

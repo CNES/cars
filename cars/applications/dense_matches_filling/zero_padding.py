@@ -102,9 +102,7 @@ class ZerosPadding(
         application_schema = {
             "method": str,
             "save_disparity_map": bool,
-            "classification": Or(
-                None, list, lambda x: all(isinstance(val, str) for val in x)
-            ),
+            "classification": Or(None, [str]),
         }
 
         # Check conf
