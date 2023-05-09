@@ -33,7 +33,7 @@ from typing import List
 # Third party imports
 import numpy as np
 from affine import Affine
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 # CARS imports
 import cars.applications.rasterization.rasterization_tools as rasterization_step
@@ -157,7 +157,7 @@ class SimpleGaussian(
 
         rasterization_schema = {
             "method": str,
-            "resolution": float,
+            "resolution": And(float, lambda x: x > 0),
             "dsm_radius": Or(float, int),
             "sigma": Or(float, None),
             "grid_points_division_factor": Or(None, int),

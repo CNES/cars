@@ -31,7 +31,7 @@ from typing import Dict, Tuple
 
 # Third party imports
 import xarray as xr
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -171,8 +171,8 @@ class CensusMccnnSgm(
 
         application_schema = {
             "method": str,
-            "min_epi_tile_size": int,
-            "max_epi_tile_size": int,
+            "min_epi_tile_size": And(int, lambda x: x > 0),
+            "max_epi_tile_size": And(int, lambda x: x > 0),
             "epipolar_tile_margin_in_percent": int,
             "use_sec_disp": bool,
             "min_elevation_offset": Or(None, int),

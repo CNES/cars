@@ -32,11 +32,8 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from shapely.geometry import Polygon
 from json_checker import And, Checker
-
-import cars.orchestrator.orchestrator as ocht
-from cars.applications import application_constants
+from shapely.geometry import Polygon
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
