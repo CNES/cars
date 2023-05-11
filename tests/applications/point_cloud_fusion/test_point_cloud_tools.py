@@ -638,12 +638,12 @@ def test_add_cloud_filtering_msk():
     assert_same_datasets(ds1_ref, ds1)
 
     # test exceptions
+    np_pos = np.array([[1, 2, 2], [2, 2, 1]])
+    elt_remove = pandas.DataFrame(
+        np_pos,
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+    )
     with pytest.raises(Exception) as index_error:
-        np_pos = np.array([[1, 2, 2], [2, 2, 1]])
-        elt_remove = pandas.DataFrame(
-            np_pos,
-            columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
-        )
         point_cloud_tools.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
@@ -653,12 +653,12 @@ def test_add_cloud_filtering_msk():
         "list given in input"
     )
 
+    np_pos = np.array([[1, 2, -1], [2, 2, 1]])
+    elt_remove = pandas.DataFrame(
+        np_pos,
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+    )
     with pytest.raises(Exception) as index_error:
-        np_pos = np.array([[1, 2, -1], [2, 2, 1]])
-        elt_remove = pandas.DataFrame(
-            np_pos,
-            columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
-        )
         point_cloud_tools.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
@@ -668,12 +668,12 @@ def test_add_cloud_filtering_msk():
         "with the clouds list given in input"
     )
 
+    np_pos = np.array([[11, 2, 0]])
+    elt_remove = pandas.DataFrame(
+        np_pos,
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+    )
     with pytest.raises(Exception) as index_error:
-        np_pos = np.array([[11, 2, 0]])
-        elt_remove = pandas.DataFrame(
-            np_pos,
-            columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
-        )
         point_cloud_tools.add_cloud_filtering_msk(
             [ds0, ds1], elt_remove, "mask", 255
         )
