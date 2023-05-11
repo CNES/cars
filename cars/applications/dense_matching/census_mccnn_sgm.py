@@ -438,6 +438,7 @@ class CensusMccnnSgm(
                     cst_disp.VALID,
                     epipolar_disparity_map_left,
                     cars_ds_name="epi_disp_mask_left",
+                    optional_data=True,
                 )
 
                 self.orchestrator.add_to_save_lists(
@@ -445,6 +446,7 @@ class CensusMccnnSgm(
                     cst_disp.VALID,
                     epipolar_disparity_map_right,
                     cars_ds_name="epi_disp_mask_right",
+                    optional_data=True,
                 )
 
                 self.orchestrator.add_to_save_lists(
@@ -455,6 +457,7 @@ class CensusMccnnSgm(
                     cst_disp.CONFIDENCE,
                     epipolar_disparity_map_left,
                     cars_ds_name="confidence",
+                    optional_data=True,
                 )
                 self.orchestrator.add_to_save_lists(
                     os.path.join(
@@ -464,6 +467,7 @@ class CensusMccnnSgm(
                     cst_disp.CONFIDENCE,
                     epipolar_disparity_map_right,
                     cars_ds_name="confidence",
+                    optional_data=True,
                 )
 
             # Get saving infos in order to save tiles when they are computed

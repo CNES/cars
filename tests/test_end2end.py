@@ -844,7 +844,9 @@ def test_end2end_ventoux_unique_split():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_with_classif.json"
+        )
         # Run sensors_to_dense_point_clouds pipeline
         _, input_config_pc = generate_input_json(
             input_json,
@@ -866,12 +868,62 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_matches": False,
+            },
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_sec_disp": True,
+                "save_disparity_map": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "right_disp_map": {"method": "accurate"},
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "cost_volume_confidence.before": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "p2_method": "constant",
+                                "penalty_method": "sgm_penalty",
+                            },
+                            "overcounting": False,
+                            "min_cost_paths": False,
+                        },
+                        "cost_volume_confidence": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_points_cloud": True,
             },
         }
 
         input_config_pc["applications"].update(application_config)
-
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
@@ -894,6 +946,21 @@ def test_end2end_ventoux_unique_split():
                             "color": os.path.join(
                                 epi_pc_path, "epi_pc_color_left.tif"
                             ),
+                            "classification": os.path.join(
+                                epi_pc_path, "epi_classification_left.tif"
+                            ),
+                            "confidence": {
+                                "confidence_from_ambiguity2": os.path.join(
+                                    epi_pc_path,
+                                    "epi_confidence_from"
+                                    + "_ambiguity_left.tif",
+                                ),
+                                "confidence_from_ambiguity1": os.path.join(
+                                    epi_pc_path,
+                                    "epi_confidence_from"
+                                    + "_ambiguity_before_left.tif",
+                                ),
+                            },
                         }
                     },
                     "roi": {
@@ -936,6 +1003,9 @@ def test_end2end_ventoux_unique_split():
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
+                        "write_classif": True,
+                        "write_confidence": True,
+                        "write_color": True,
                     },
                 },
             }
@@ -956,6 +1026,26 @@ def test_end2end_ventoux_unique_split():
             #     absolute_data_path(
             #       "ref_output/clr_end2end_ventoux_split.tif")
             # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "classif.tif"),
+            #     absolute_data_path(
+            #         "ref_output/classif_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+            #     absolute_data_path(
+            #         "ref_output/confidence_from"
+            #         + "_ambiguity2_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+            #     absolute_data_path(
+            #         "ref_output/confidence_from"
+            #         + "_ambiguity1_end2end_ventoux_split.tif"
+            #     ),
+            # )
 
             assert_same_images(
                 os.path.join(out_dir_dsm, "dsm.tif"),
@@ -966,6 +1056,33 @@ def test_end2end_ventoux_unique_split():
             assert_same_images(
                 os.path.join(out_dir_dsm, "clr.tif"),
                 absolute_data_path("ref_output/clr_end2end_ventoux_split.tif"),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "classif.tif"),
+                absolute_data_path(
+                    "ref_output/classif_end2end_ventoux_split.tif"
+                ),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+                absolute_data_path(
+                    "ref_output/confidence_from"
+                    + "_ambiguity1_end2end_ventoux_split.tif"
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+                absolute_data_path(
+                    "ref_output/confidence_from"
+                    + "_ambiguity2_end2end_ventoux_split.tif"
+                ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )

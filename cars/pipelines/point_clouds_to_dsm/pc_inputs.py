@@ -74,12 +74,14 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.X: str,
         cst.Y: str,
         cst.Z: str,
+        cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
+        cst.POINTS_CLOUD_CONFIDENCE: Or(dict, None),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_VALID_DATA: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
-
+    confidence_conf_ref = None
     for point_cloud_key in conf[pc_cst.POINT_CLOUDS]:
         # Get point clouds with default
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key] = {}
@@ -99,9 +101,47 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             cst.POINTS_CLOUD_VALID_DATA
         ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("mask", None)
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
+            "classification", None
+        )
+        confidence_conf = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
+            "confidence", None
+        )
+        if confidence_conf:
+            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                cst.POINTS_CLOUD_CONFIDENCE
+            ] = {}
+            if (
+                confidence_conf_ref
+                and confidence_conf.keys() != confidence_conf_ref
+            ):
+                raise KeyError(
+                    "The confidence keys are not the same: \n",
+                    confidence_conf.keys(),
+                    "\n",
+                    confidence_conf_ref,
+                )
+
+            confidence_conf_ref = confidence_conf.keys()
+            for confidence_name in confidence_conf:
+                output_confidence_name = confidence_name
+                if cst.POINTS_CLOUD_CONFIDENCE not in output_confidence_name:
+                    output_confidence_name = (
+                        cst.POINTS_CLOUD_CONFIDENCE
+                        + "_"
+                        + output_confidence_name
+                    )
+                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                    cst.POINTS_CLOUD_CONFIDENCE
+                ][output_confidence_name] = confidence_conf[confidence_name]
+        else:
+            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                cst.POINTS_CLOUD_CONFIDENCE
+            ] = None
+        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
             cst.PC_EPSG
         ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("epsg", 4326)
-
         # validate
         checker_pc.validate(
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
@@ -128,14 +168,20 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CLR_KEY_ROOT
             ],
+            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+            ],
+            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                cst.POINTS_CLOUD_CONFIDENCE
+            ],
         )
 
     return overloaded_conf
 
 
-def check_input_size(x_path, y_path, z_path, mask, color):
+def check_input_size(x_path, y_path, z_path, mask, color, classif, confidence):
     """
-    Check x, y, z, mask and color given
+    Check x, y, z, mask, color, classif and confidence given
 
     Images must have same size
 
@@ -149,13 +195,17 @@ def check_input_size(x_path, y_path, z_path, mask, color):
     :type mask: str
     :param color: color path
     :type color: str
+    :param classif: classif path
+    :type classif: str
+    :param confidence: confidence dict path
+    :type confidence: dict[str]
     """
 
     for path in [x_path, y_path, z_path]:
         if inputs.rasterio_get_nb_bands(path) != 1:
             raise RuntimeError("{} is not mono-band image".format(path))
 
-    for path in [mask, color]:
+    for path in [mask, color, classif]:
         if path is not None:
             if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
                 path
@@ -164,6 +214,17 @@ def check_input_size(x_path, y_path, z_path, mask, color):
                     "The image {} and {} "
                     "do not have the same size".format(x_path, path)
                 )
+    if confidence:
+        for key in confidence:
+            path = confidence[key]
+            if path is not None:
+                if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
+                    path
+                ):
+                    raise RuntimeError(
+                        "The image {} and {} "
+                        "do not have the same size".format(x_path, path)
+                    )
 
 
 def modify_to_absolute_path(config_json_dir, overloaded_conf):
@@ -183,11 +244,22 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.Z,
             cst.POINTS_CLOUD_CLR_KEY_ROOT,
             cst.POINTS_CLOUD_VALID_DATA,
+            cst.POINTS_CLOUD_CLASSIF_KEY_ROOT,
+            cst.POINTS_CLOUD_CONFIDENCE,
         ]:
-            if point_cloud[tag] is not None:
-                point_cloud[tag] = make_relative_path_absolute(
-                    point_cloud[tag], config_json_dir
-                )
+            if tag != cst.POINTS_CLOUD_CONFIDENCE:
+                if point_cloud[tag] is not None:
+                    point_cloud[tag] = make_relative_path_absolute(
+                        point_cloud[tag], config_json_dir
+                    )
+            else:
+                for confidence_name in point_cloud[tag]:
+                    if point_cloud[tag][confidence_name] is not None:
+                        point_cloud[tag][
+                            confidence_name
+                        ] = make_relative_path_absolute(
+                            point_cloud[tag][confidence_name], config_json_dir
+                        )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):

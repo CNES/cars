@@ -197,6 +197,11 @@ The structure follows this organisation:
                             "z" : "path_to_z.tif",
                             "color" : "path_to_color.tif",
                             "mask": "path_to_mask.tif",
+                            "classification": "path_to_the_classification.tif",
+                            "confidence": {
+                                "confidence_name1": "path_to_the_confidence1.tif",
+                                "confidence_name2": "path_to_the_confidence2.tif",
+                            }
                             "epsg": "point_cloud_epsg"
                         }
                     },
@@ -205,21 +210,25 @@ The structure follows this organisation:
 
             These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
 
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | Name        | Description                                           | Type           | Default value | Required |
-            +=============+=======================================================+================+===============+==========+
-            | *x*         | Path to the x coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *y*         | Path to the y coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *z*         | Path to the z coordinates of point cloud              | string         |               | Yes      |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *color*     | Path to the color of point cloud                      | string         |               | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *mask*      | Path to the validity mask of point cloud              | string         |               | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
-            | *epsg*      | Epsg code of point cloud                              | int            | 4326          | No       |
-            +-------------+-------------------------------------------------------+----------------+---------------+----------+
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | Name             | Description                                           | Type           | Default value | Required |
+            +==================+=======================================================+================+===============+==========+
+            | *x*              | Path to the x coordinates of point cloud              | string         |               | Yes      |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *y*              | Path to the y coordinates of point cloud              | string         |               | Yes      |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *z*              | Path to the z coordinates of point cloud              | string         |               | Yes      |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *color*          | Path to the color of point cloud                      | string         |               | No       |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *mask*           | Path to the validity mask of point cloud              | string         |               | No       |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *classification* | Path to the classification of point cloud             | string         |               | No       |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *confidence*     | Dict of paths to the confidences of point cloud       | dict           |               | No       |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
+            | *epsg*           | Epsg code of point cloud                              | int            | 4326          | No       |
+            +------------------+-------------------------------------------------------+----------------+---------------+----------+
 
         **Region Of Interest (ROI)**
 
@@ -707,8 +716,8 @@ The structure follows this organisation:
 
             .. note::
 
-                When user activate the generation of performance map, this map transits until being rasterized.
-                Performance map is managed as a confidence map.
+                * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
+                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
 
         
         .. tab:: DenseMatchingFiling
