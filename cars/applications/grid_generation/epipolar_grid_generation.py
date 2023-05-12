@@ -86,7 +86,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
 
         """
 
-        # init conf
+        # Init conf
         if conf is not None:
             overloaded_conf = conf.copy()
         else:
@@ -97,7 +97,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
         overloaded_conf["save_grids"] = conf.get("save_grids", False)
-        # Overloader loader
+        # Overload loader
         overloaded_conf["geometry_loader"] = conf.get(
             "geometry_loader", "OTBGeometry"
         )
