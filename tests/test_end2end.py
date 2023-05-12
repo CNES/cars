@@ -114,8 +114,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "write_msk": True,
-                "write_confidence": True,
+                "save_msk": True,
+                "save_confidence": True,
             },
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
@@ -379,7 +379,7 @@ def test_end2end_ventoux_unique():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_confidence": True,
+                "save_confidence": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1003,9 +1003,9 @@ def test_end2end_ventoux_unique_split():
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
-                        "write_classif": True,
-                        "write_confidence": True,
-                        "write_color": True,
+                        "save_classif": True,
+                        "save_confidence": True,
+                        "save_color": True,
                     },
                 },
             }
@@ -1281,7 +1281,7 @@ def test_end2end_use_epipolar_a_prior():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_confidence": True,
+                "save_confidence": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -1546,7 +1546,7 @@ def test_end2end_ventoux_with_color():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_confidence": True,
+                "save_confidence": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1788,7 +1788,7 @@ def test_end2end_ventoux_with_classif():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_classif": True,
+                "save_classif": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2182,7 +2182,7 @@ def test_end2end_quality_stats():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_stats": True,
+                "save_stats": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -2343,7 +2343,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_stats": True,
+                "save_stats": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -2449,7 +2449,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "write_stats": True,
+                "save_stats": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -2535,7 +2535,7 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "write_msk": True,
+                "save_msk": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -2626,7 +2626,7 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "write_msk": True,
+                "save_msk": True,
             },
             "dense_matching": {"method": "census_sgm", "use_sec_disp": True},
         }
@@ -2725,7 +2725,7 @@ def test_end2end_disparity_filling():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "write_msk": True,
+                "save_msk": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2814,7 +2814,7 @@ def test_end2end_disparity_filing_with_zeros():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "write_msk": True,
+                "save_msk": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)

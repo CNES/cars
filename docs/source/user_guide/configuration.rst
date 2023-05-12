@@ -1002,17 +1002,17 @@ The structure follows this organisation:
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
             | msk_no_data                          | No data value for and classif       | int        |                   | 65535           |          |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_color                          | Save color ortho-image              | boolean    |                   | false           | No       |
+            | save_color                           | Save color ortho-image              | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_stats                          |                                     | boolean    |                   | false           | No       |
+            | save_stats                           |                                     | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_msk                            | Save mask raster                    | boolean    |                   | false           | No       |
+            | save_msk                             | Save mask raster                    | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_classif                        | Save classification mask raster     | boolean    |                   | false           | No       |
+            | save_classif                         | Save classification mask raster     | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_dsm                            | Save dsm                            | boolean    |                   | true            | No       |
+            | save_dsm                             | Save dsm                            | boolean    |                   | true            | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
-            | write_confidence                     | Save all the disparity confidence   | boolean    |                   | false           | No       |
+            | save_confidence                      | Save all the disparity confidence   | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
             | compute_all                          | Compute all layers even             | boolean    |                   | false           | No       |
             |                                      | if one or more layers               |            |                   |                 |          |
