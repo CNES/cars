@@ -37,7 +37,8 @@ from cars.applications.grid_generation.epipolar_grid_generation import (
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for grid generation application
+    with forbidden value for epi_step
     """
     conf = {
         "method": "epipolar",

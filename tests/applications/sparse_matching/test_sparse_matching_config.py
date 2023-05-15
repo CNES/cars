@@ -32,7 +32,8 @@ from cars.applications.sparse_matching.sift import Sift
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for sparse matching application
+    with forbidden value for elevation delta (min > max)
     """
     conf = {
         "method": "sift",

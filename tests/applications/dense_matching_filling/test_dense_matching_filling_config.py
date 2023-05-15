@@ -34,7 +34,9 @@ from cars.applications.dense_matches_filling.plane import PlaneFill
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for dense matching filling application
+    with forbidden values for classification parameter (list of int
+    instead of list of str)
     """
     conf = {
         "method": "plane",

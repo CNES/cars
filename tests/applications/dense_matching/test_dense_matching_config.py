@@ -32,7 +32,8 @@ from cars.applications.dense_matching.census_mccnn_sgm import CensusMccnnSgm
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for dense matching application
+    with forbidden value for elevation offset (min > max)
     """
     conf = {
         "method": "census_sgm",

@@ -34,7 +34,8 @@ from cars.applications.rasterization.simple_gaussian import SimpleGaussian
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for rasterization application
+    with forbidden value for parameter resolution
     """
     conf = {
         "method": "simple_gaussian",

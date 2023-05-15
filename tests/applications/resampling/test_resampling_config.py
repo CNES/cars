@@ -34,7 +34,8 @@ from cars.applications.resampling.bicubic_resampling import BicubicResampling
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check with forbidden values
+    Test configuration check for resampling application
+    with forbidden value for epi_tile_size
     """
     conf = {
         "method": "bicubic",
