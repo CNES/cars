@@ -160,9 +160,9 @@ def test_correct_right_grid():
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids_default_alt():
+def test_generate_epipolar_grids_default_alt_otb():
     """
-    Test generate_epipolar_grids method with default alt and no dem
+    Test generate_epipolar_grids method with default alt and no dem with OTB
     """
     conf = {
         input_parameters.IMG1_TAG: absolute_data_path(
@@ -216,7 +216,59 @@ def test_generate_epipolar_grids_default_alt():
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids():
+def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
+    """
+    Test generate_epipolar_grids method with default alt and no dem with OTB
+    """
+    # Retrieve information from configuration
+    conf = images_and_grids_conf[input_parameters.INPUT_SECTION_TAG]
+    dem = None
+    default_alt = 500
+
+    (
+        left_grid,
+        right_grid,
+        _,
+        _,
+        epi_size,
+        baseline,
+    ) = grids.generate_epipolar_grids(
+        conf,
+        "SharelocGeometry",
+        dem,
+        default_alt=default_alt,
+        epipolar_step=30,
+        geoid=get_geoid_path(),
+    )
+
+    assert epi_size == [612, 612]
+    # test otb different shareloc (check TODO) why ?)
+    # assert baseline == 1 / 0.7039446234703064 == 1,420566287
+    np.testing.assert_almost_equal(baseline, 1.420566289522033)
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path(
+    # "ref_output/left_grid_default_alt.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid_default_alt.nc")
+    )
+    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
+    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path(
+    # "ref_output/right_grid_default_alt.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid_default_alt.nc")
+    )
+    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
+    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids_otb():
     """
     Test generate_epipolar_grids method
     """
@@ -248,6 +300,57 @@ def test_generate_epipolar_grids():
 
     assert epi_size == [612, 612]
     assert baseline == 1 / 0.7039416432380676
+
+    # Uncomment to update baseline
+    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
+
+    left_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/left_grid.nc")
+    )
+    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
+    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
+
+    # Uncomment to update baseline
+    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid.nc"))
+
+    right_grid_ref = xr.open_dataset(
+        absolute_data_path("ref_output/right_grid.nc")
+    )
+    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
+    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
+
+
+@pytest.mark.unit_tests
+def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
+    """
+    Test generate_epipolar_grids method
+    """
+    # Retrieve information from configuration
+    conf = images_and_grids_conf[input_parameters.INPUT_SECTION_TAG]
+
+    # use a file and not a directory ! (shareloc != OTB)
+    dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
+
+    (
+        left_grid,
+        right_grid,
+        _,
+        _,
+        epi_size,
+        baseline,
+    ) = grids.generate_epipolar_grids(
+        conf,
+        "SharelocGeometry",
+        dem,
+        default_alt=None,
+        epipolar_step=30,
+        geoid=get_geoid_path(),
+    )
+
+    assert epi_size == [612, 612]
+    # test otb different shareloc (check TODO) why ?)
+    # assert baseline == 1 / 0.7039416432380676 == 1,420572301
+    np.testing.assert_almost_equal(baseline, 1.420571770533341)
 
     # Uncomment to update baseline
     # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
