@@ -543,17 +543,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | Name            | Description                                   | Type    | Default value | Required |
-            +=================+===============================================+=========+===============+==========+
-            | method          | Method for grid generation                    | string  | epipolar      | Yes      |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | epi_step        | Step of the deformation grid in nb. of pixels | int     | 30            | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | save_grids      | Save the generated grids (not available yet)  | boolean | false         | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
-            | geometry_loader | Geometry external library                     | string  | "otb"         | No       |
-            +-----------------+-----------------------------------------------+---------+---------------+----------+
+            +-----------------+-----------------------------------------------+---------+-----------------+---------------+----------+
+            | Name            | Description                                   | Type    | Available value | Default value | Required |
+            +=================+===============================================+=========+=================+===============+==========+
+            | method          | Method for grid generation                    | string  | "epipolar"      | "epipolar"    | Yes      |
+            +-----------------+-----------------------------------------------+---------+-----------------+---------------+----------+
+            | epi_step        | Step of the deformation grid in nb. of pixels | int     | should be > 0   | 30            | No       |
+            +-----------------+-----------------------------------------------+---------+-----------------+---------------+----------+
+            | save_grids      | Save the generated grids (not available yet)  | boolean |                 | false         | No       |
+            +-----------------+-----------------------------------------------+---------+-----------------+---------------+----------+
+            | geometry_loader | Geometry external library                     | string  | "otb"           | "otb"         | No       |
+            +-----------------+-----------------------------------------------+---------+-----------------+---------------+----------+
 
             **Example**
 
@@ -576,17 +576,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +---------------------+--------------------------------------------------------+---------+---------------+----------+
-            | Name                | Description                                            | Type    | Default value | Required |
-            +=====================+========================================================+=========+===============+==========+
-            | method              | Method for resampling                                  | string  | bicubic       | Yes      |
-            +---------------------+--------------------------------------------------------+---------+---------------+----------+
-            | epi_tile_size       | size in pixels of tile                                 | int     | 500           | No       |
-            +---------------------+--------------------------------------------------------+---------+---------------+----------+
-            | save_epipolar_image | Save the generated images in output folder             | boolean | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+---------------+----------+
-            | save_epipolar_color | Save the generated images (only if color is available) | boolean | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+---------------+----------+
+            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | Name                | Description                                            | Type    | Available value | Default value | Required |
+            +=====================+========================================================+=========+=================+===============+==========+
+            | method              | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | Yes      |
+            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | epi_tile_size       | Size in pixels of tile                                 | int     | should be > 0   | 500           | No       |
+            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | save_epipolar_image | Save the generated images in output folder             | boolean |                 | false         | No       |
+            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | save_epipolar_color | Save the generated images (only if color is available) | boolean |                 | false         | No       |
+            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
 
             **Example**
 
@@ -610,7 +610,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | Name                                 | Description                                                                                 | Type       | available value | Default value | Required |
+            | Name                                 | Description                                                                                 | Type       | Available value | Default value | Required |
             +======================================+=============================================================================================+============+=================+===============+==========+
             | method                               | Method for sparse matching                                                                  | string     | "sift"          | "sift"        | Yes      |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -620,29 +620,29 @@ The structure follows this organisation:
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
             | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution DTM in meters | int, float |                 | 1000          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                           | float      |                 | 10.0          | No       |
+            | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                           | float      | should be > 0   | 10.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                   | float      |                 | 0.0           | No       |
+            | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                   | float      | should be >= 0  | 0.0           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                            | float      |                 | 0.1           | No       |
+            | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                            | float      | between 0 and 1 | 0.1           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                        | int        |                 | 100           | No       |
+            | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                        | int        | should be > 0   | 100           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_matching_threshold              | Threshold for the ratio to nearest second match                                             | float      |                 | 0.6           | No       |
+            | sift_matching_threshold              | Threshold for the ratio to nearest second match                                             | float      | should be > 0   | 0.6           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                            | int        |                 | 8             | No       |
+            | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                            | int        | should be > 0   | 8             | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                 | int        |                 | 3             | No       |
+            | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                 | int        | should be > 0   | 3             | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_peak_threshold                  | The peak selection threshold                                                                | float      |                 | 20.0          | No       |
+            | sift_peak_threshold                  | Constrast threshold to discard a match                                                      | float      | should be > 0   | 20.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_edge_threshold                  | The edge selection threshold                                                                | float      |                 | -5.0          | No       |
+            | sift_edge_threshold                  | Distance to image edge threshold to discard a match                                         | float      |                 | -5.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_magnification                   | The descriptor magnification factor                                                         | float      |                 | 2.0           | No       |
+            | sift_magnification                   | The descriptor magnification factor                                                         | float      | should be > 0   | 2.0           | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | sift_back_matching                   | Also check that right vs. left gives same match                                             | Boolean    |                 | true          | No       |
+            | sift_back_matching                   | Also check that right vs. left gives same match                                             | boolean    |                 | true          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | save_matches                         | Save matches                                                                                | Boolean    |                 | false         | No       |
+            | save_matches                         | Save matches                                                                                | boolean    |                 | false         | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
 
 	    For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
@@ -669,9 +669,9 @@ The structure follows this organisation:
             **Configuration**
 
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | Name                            | Description                                                             | Type    | available value                 | Default value | Required |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | method                          | Method for dense matching                                               | string  | "census_sgm" or "mccnn_sgm"     | "census_sgm"  | Yes      |
+            | Name                            | Description                                                             | Type    | Available value                 | Default value | Required |
+            +=================================+=========================================================================+=========+=================================+===============+==========+
+            | method                          | Method for dense matching                                               | string  | "census_sgm", "mccnn_sgm"       | "census_sgm"  | Yes      |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | loader                          | external library use to compute dense matching                          | string  | "pandora"                       | "pandora"     | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -679,23 +679,25 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | min_elevation_offset            | Override minimum disparity from prepare step with this offset in meters | int     |                                 | None          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | max_elevation_offset            | Override maximum disparity from prepare step with this offset in meters | int     |                                 | None          | No       |
+            | max_elevation_offset            | Override maximum disparity from prepare step with this offset in meters | int     | should be > min                 | None          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | use_sec_disp                    | Compute secondary disparity map                                         | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | min_epi_tile_size               |                                                                         | int     |                                 | 300           | No       |
+            | min_epi_tile_size               | Lower bound of optimal epipolar tile size for dense matching            | int     | should be > 0                   | 300           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | max_epi_tile_size               |                                                                         | int     |                                 | 300           | No       |
+            | max_epi_tile_size               | Upper bound of optimal epipolar tile size for dense matching            | int     | should be > 0 and > min         | 1500          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | epipolar_tile_margin_in_percent |                                                                         | int     |                                 | 60            | No       |
+            | epipolar_tile_margin_in_percent | Size of the margin used for dense matching (percent of tile size)       | int     |                                 | 60            | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | generate_performance_map        | Generate a performance map from disparity map                           | bool    |                                 | False         | No       |
+            | generate_performance_map        | Generate a performance map from disparity map                           | boolean |                                 | False         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_ambiguity          |  Ambiguity confidence eta max used for performance map                  | float   |                                 | 0.99          | No       |
+            | perf_eta_max_ambiguity          | Ambiguity confidence eta max used for performance map                   | float   |                                 | 0.99          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_risk               |  Risk confidence eta max used for performance map                       | float   |                                 | 0.04          | No       |
+            | perf_eta_max_risk               | Risk confidence eta max used for performance map                        | float   |                                 | 0.25          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_step                   |  Risk and Ambiguity confidence eta step used for performance map        | float   |                                 | 0.6           | No       |
+            | perf_eta_step                   | Risk and Ambiguity confidence eta step used for performance map         | float   |                                 | 0.04          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_ambiguity_threshold        | Maximal ambiguity considered for performance map                        | float   |                                 | 0.6           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
@@ -720,7 +722,7 @@ The structure follows this organisation:
                 * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
 
         
-        .. tab:: DenseMatchingFiling
+        .. tab:: Dense matches filling
 
             **Name**: "dense_matches_filling"
 
@@ -732,18 +734,18 @@ The structure follows this organisation:
             **Configuration**
 
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type    | available value         | Default value      | Required |
+            | Name                                | Description                     | Type    | Available value         | Default value      | Required |
             +=====================================+=================================+=========+=========================+====================+==========+
             | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | Yes      |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | save_disparity_map                  | Save disparity map              | boolean |                         |False               | No       |
+            | save_disparity_map                  | Save disparity map              | boolean |                         | False              | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
 
 
             **Method plane:**
 
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type        | available value         | Default value      | Required |
+            | Name                                | Description                     | Type        | Available value         | Default value      | Required |
             +=====================================+=================================+=============+=========================+====================+==========+
             | classification                      | Classification band name        | List[str]   |                         | None               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
@@ -755,7 +757,7 @@ The structure follows this organisation:
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
             | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | ignore_nodata_at_disp_mask_borders  | Ingnore nodata at borders       | boolean     |                         | true               | No       |
+            | ignore_nodata_at_disp_mask_borders  | Ignore nodata at borders        | boolean     |                         | true               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
             | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
@@ -776,7 +778,7 @@ The structure follows this organisation:
             The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
 
             +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type      | available value         | Default value      | Required |
+            | Name                                | Description                     | Type      | Available value         | Default value      | Required |
             +=====================================+=================================+===========+=========================+====================+==========+
             | classification                      | Classification band name        | List[str] |                         | None               | No       |
             +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
@@ -827,7 +829,7 @@ The structure follows this organisation:
             **Configuration**
 
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-            | Name              | Description                                                                                                        | Type    | available value              | Default value                | Required |
+            | Name              | Description                                                                                                        | Type    | Available value              | Default value                | Required |
             +===================+====================================================================================================================+=========+==============================+==============================+==========+
             | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection" | "line_of_sight_intersection" | Yes      |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
@@ -835,11 +837,11 @@ The structure follows this organisation:
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
             | use_geoid_alt     | Use geoid grid as altimetric reference.                                                                            | boolean |                              | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-            | snap_to_img1      | if all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                              | false                        | No       |
+            | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                              | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
             | add_msk_info      |                                                                                                                    | boolean |                              | true                         | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
-            | save_points_cloud | save points_cloud                                                                                                  | boolean |                              | false                        | No       |
+            | save_points_cloud | Save points cloud                                                                                                  | boolean |                              | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+------------------------------+------------------------------+----------+
 
             **Example**
@@ -866,7 +868,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                     | Description                      | Type    | available value            | Default value              | Required |
+            | Name                     | Description                      | Type    | Available value            | Default value              | Required |
             +==========================+==================================+=========+============================+============================+==========+
             | method                   | Method for fusion                | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | Yes      |
             +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
@@ -899,7 +901,7 @@ The structure follows this organisation:
             **Configuration**
 
             +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name                     | Description                              | Type    | available value                   | Default value | Required |
+            | Name                     | Description                              | Type    | Available value                   | Default value | Required |
             +==========================+==========================================+=========+===================================+===============+==========+
             | method                   | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | Yes      |
             +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
@@ -911,19 +913,19 @@ The structure follows this organisation:
             If method is *statistical*:
 
             +----------------+-------------+---------+-----------------+---------------+----------+
-            | Name           | Description | Type    | available value | Default value | Required |
+            | Name           | Description | Type    | Available value | Default value | Required |
             +================+=============+=========+=================+===============+==========+
             | activated      |             | boolean |                 | false         | No       |
             +----------------+-------------+---------+-----------------+---------------+----------+
             | k              |             | int     | should be > 0   | 50            | No       |
             +----------------+-------------+---------+-----------------+---------------+----------+
-            | std_dev_factor |             | float   |                 | 5.0           | No       |
+            | std_dev_factor |             | float   | should be > 0   | 5.0           | No       |
             +----------------+-------------+---------+-----------------+---------------+----------+
 
             If method is *small_components*
 
             +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | Name                        | Description | Type    | available value | Default value | Required |
+            | Name                        | Description | Type    | Available value | Default value | Required |
             +=============================+=============+=========+=================+===============+==========+
             | activated                   |             | boolean |                 | false         | No       |
             +-----------------------------+-------------+---------+-----------------+---------------+----------+
@@ -979,44 +981,44 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | Name                                 | Description                         | Type       | available value | Default value   | Required |
-            +======================================+=====================================+============+=================+=================+==========+
-            | method                               |                                     | string     | simple_gaussian | simple_gaussian | Yes      |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | dsm_radius                           |                                     | float, int |                 | 1.0             | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | sigma                                |                                     | float      |                 | None            | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | grid_points_division_factor          |                                     | int        |                 | None            | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | resolution                           |altitude grid step (dsm)             | float      |                 | 0.5             | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | dsm_no_data                          |                                     | int        |                 | -32768          |          |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | color_no_data                        |                                     | int        |                 | 0               |          |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | color_dtype                          |                                     | string     |                 | "uint16"        |          |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | msk_no_data                          | No data value for and classif       | int        |                 | 65535           |          |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_color                          | Save color ortho-image              | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_stats                          |                                     | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_msk                            | Save mask raster                    | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_classif                        | Save classification mask raster     | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_dsm                            | Save dsm                            | boolean    |                 | true            | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | write_confidence                     | Save all the disparity confidence   | boolean    |                 | false           | No       |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
-            | compute_all                          | Compute all layers even             | boolean    |                 | false           | No       |
-            |                                      | if one or more layers               |            |                 |                 |          |
-            |                                      | are not saved (color                |            |                 |                 |          |
-            |                                      | , dsm, msk..)                       |            |                 |                 |          |
-            +--------------------------------------+-------------------------------------+------------+-----------------+-----------------+----------+
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | Name                                 | Description                         | Type       | Available value   | Default value   | Required |
+            +======================================+=====================================+============+===================+=================+==========+
+            | method                               |                                     | string     | "simple_gaussian" | simple_gaussian | Yes      |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | dsm_radius                           |                                     | float, int |                   | 1.0             | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | sigma                                |                                     | float      |                   | None            | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | grid_points_division_factor          |                                     | int        |                   | None            | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | resolution                           | Altitude grid step (dsm)            | float      | should be > 0     | 0.5             | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | dsm_no_data                          |                                     | int        |                   | -32768          |          |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | color_no_data                        |                                     | int        |                   | 0               |          |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | color_dtype                          |                                     | string     |                   | "uint16"        |          |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | msk_no_data                          | No data value for and classif       | int        |                   | 65535           |          |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_color                           | Save color ortho-image              | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_stats                           |                                     | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_msk                             | Save mask raster                    | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_classif                         | Save classification mask raster     | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_dsm                             | Save dsm                            | boolean    |                   | true            | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_confidence                      | Save all the disparity confidence   | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | compute_all                          | Compute all layers even             | boolean    |                   | false           | No       |
+            |                                      | if one or more layers               |            |                   |                 |          |
+            |                                      | are not saved (color                |            |                   |                 |          |
+            |                                      | , dsm, msk..)                       |            |                   |                 |          |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
 
             **Example**
 

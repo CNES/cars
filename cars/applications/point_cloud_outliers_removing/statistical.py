@@ -33,7 +33,7 @@ import time
 import numpy as np
 
 # Third party imports
-from json_checker import Checker
+from json_checker import And, Checker
 from osgeo import osr
 
 # CARS imports
@@ -137,8 +137,8 @@ class Statistical(
             "save_points_cloud_as_laz": bool,
             "save_points_cloud_as_csv": bool,
             "activated": bool,
-            "k": int,
-            "std_dev_factor": float,
+            "k": And(int, lambda x: x > 0),
+            "std_dev_factor": And(float, lambda x: x > 0),
         }
 
         # Check conf

@@ -143,9 +143,7 @@ class PlaneFill(
             "ignore_extrema_disp_values": bool,
             "nb_pix": Or(None, int),
             "percent_to_erode": Or(None, float),
-            "classification": Or(
-                None, list, lambda x: all(isinstance(val, str) for val in x)
-            ),
+            "classification": Or(None, [str]),
         }
 
         # Check conf

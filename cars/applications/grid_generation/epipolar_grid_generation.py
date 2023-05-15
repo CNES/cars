@@ -28,7 +28,7 @@ import os
 
 # Third party imports
 import numpy as np
-from json_checker import Checker
+from json_checker import And, Checker
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -86,7 +86,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
 
         """
 
-        # init conf
+        # Init conf
         if conf is not None:
             overloaded_conf = conf.copy()
         else:
@@ -97,14 +97,14 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
         overloaded_conf["save_grids"] = conf.get("save_grids", False)
-        # Overloader loader
+        # Overload loader
         overloaded_conf["geometry_loader"] = conf.get(
             "geometry_loader", "OTBGeometry"
         )
 
         grid_generation_schema = {
             "method": str,
-            "epi_step": int,
+            "epi_step": And(int, lambda x: x > 0),
             "geometry_loader": str,
             "save_grids": bool,
         }

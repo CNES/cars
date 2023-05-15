@@ -34,7 +34,7 @@ from typing import Dict, Tuple
 import numpy as np
 import pandas
 import xarray as xr
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -182,18 +182,20 @@ class Sift(SparseMatching, short_name="sift"):
         sparse_matching_schema = {
             "method": str,
             "disparity_margin": float,
-            "disparity_outliers_rejection_percent": float,
-            "minimum_nb_matches": int,
+            "disparity_outliers_rejection_percent": And(
+                float, lambda x: x >= 0, lambda x: x <= 1
+            ),
+            "minimum_nb_matches": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float),
             "elevation_delta_upper_bound": Or(int, float),
-            "epipolar_error_upper_bound": float,
-            "epipolar_error_maximum_bias": float,
-            "sift_matching_threshold": float,
-            "sift_n_octave": int,
-            "sift_n_scale_per_octave": int,
-            "sift_peak_threshold": float,
+            "epipolar_error_upper_bound": And(float, lambda x: x > 0),
+            "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
+            "sift_matching_threshold": And(float, lambda x: x > 0),
+            "sift_n_octave": And(int, lambda x: x > 0),
+            "sift_n_scale_per_octave": And(int, lambda x: x > 0),
+            "sift_peak_threshold": And(float, lambda x: x > 0),
             "sift_edge_threshold": float,
-            "sift_magnification": float,
+            "sift_magnification": And(float, lambda x: x > 0),
             "sift_back_matching": bool,
             "save_matches": bool,
         }
@@ -201,6 +203,19 @@ class Sift(SparseMatching, short_name="sift"):
         # Check conf
         checker = Checker(sparse_matching_schema)
         checker.validate(overloaded_conf)
+
+        # Check consistency between bounds for elevation delta
+        elevation_delta_lower_bound = overloaded_conf[
+            "elevation_delta_lower_bound"
+        ]
+        elevation_delta_upper_bound = overloaded_conf[
+            "elevation_delta_upper_bound"
+        ]
+        if elevation_delta_lower_bound > elevation_delta_upper_bound:
+            raise ValueError(
+                "Upper bound must be bigger than "
+                "lower bound for expected elevation delta"
+            )
 
         return overloaded_conf
 

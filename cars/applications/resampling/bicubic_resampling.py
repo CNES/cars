@@ -32,7 +32,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import Checker
+from json_checker import And, Checker
 from shapely.geometry import Polygon
 
 # CARS imports
@@ -114,7 +114,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         rectification_schema = {
             "method": str,
-            "epi_tile_size": int,
+            "epi_tile_size": And(int, lambda x: x > 0),
             "save_epipolar_image": bool,
             "save_epipolar_color": bool,
         }

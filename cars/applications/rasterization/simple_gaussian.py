@@ -88,12 +88,12 @@ class SimpleGaussian(
         self.color_dtype = self.used_config["color_dtype"]
         self.msk_no_data = self.used_config["msk_no_data"]
         # Get if color, mask and stats are saved
-        self.write_color = self.used_config["write_color"]
-        self.write_stats = self.used_config["write_stats"]
-        self.write_mask = self.used_config["write_msk"]
-        self.write_classif = self.used_config["write_classif"]
-        self.write_dsm = self.used_config["write_dsm"]
-        self.write_confidence = self.used_config["write_confidence"]
+        self.save_color = self.used_config["save_color"]
+        self.save_stats = self.used_config["save_stats"]
+        self.save_mask = self.used_config["save_msk"]
+        self.save_classif = self.used_config["save_classif"]
+        self.save_dsm = self.used_config["save_dsm"]
+        self.save_confidence = self.used_config["save_confidence"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -135,14 +135,12 @@ class SimpleGaussian(
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 65535)
 
         # Get if color, mask and stats are saved
-        overloaded_conf["write_color"] = conf.get("write_color", True)
-        overloaded_conf["write_stats"] = conf.get("write_stats", False)
-        overloaded_conf["write_msk"] = conf.get("write_msk", False)
-        overloaded_conf["write_classif"] = conf.get("write_classif", False)
-        overloaded_conf["write_dsm"] = conf.get("write_dsm", True)
-        overloaded_conf["write_confidence"] = conf.get(
-            "write_confidence", False
-        )
+        overloaded_conf["save_color"] = conf.get("save_color", True)
+        overloaded_conf["save_stats"] = conf.get("save_stats", False)
+        overloaded_conf["save_msk"] = conf.get("save_msk", False)
+        overloaded_conf["save_classif"] = conf.get("save_classif", False)
+        overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
+        overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
 
         overloaded_conf["compute_all"] = conf.get("compute_all", False)
         if overloaded_conf["compute_all"]:
@@ -152,8 +150,8 @@ class SimpleGaussian(
             # only the saved layers will be saved
             self.list_computed_layers = []
             for key in overloaded_conf.keys():
-                if "write_" in key and overloaded_conf[key]:
-                    self.list_computed_layers.append(key.split("write_")[1])
+                if "save_" in key and overloaded_conf[key]:
+                    self.list_computed_layers.append(key.split("save_")[1])
 
         rasterization_schema = {
             "method": str,
@@ -165,12 +163,12 @@ class SimpleGaussian(
             "msk_no_data": int,
             "color_no_data": int,
             "color_dtype": str,
-            "write_color": bool,
-            "write_msk": bool,
-            "write_classif": bool,
-            "write_stats": bool,
-            "write_dsm": bool,
-            "write_confidence": bool,
+            "save_color": bool,
+            "save_msk": bool,
+            "save_classif": bool,
+            "save_stats": bool,
+            "save_dsm": bool,
+            "save_confidence": bool,
             "compute_all": bool,
         }
 
@@ -326,7 +324,7 @@ class SimpleGaussian(
             out_dsm_n_pts_file_name = None
             out_dsm_points_in_cell_file_name = None
 
-            if self.write_dsm:
+            if self.save_dsm:
                 if dsm_file_name is not None:
                     out_dsm_file_name = dsm_file_name
                 else:
@@ -341,7 +339,7 @@ class SimpleGaussian(
                     nodata=self.dsm_no_data,
                     cars_ds_name="dsm",
                 )
-            if self.write_color:
+            if self.save_color:
                 if color_file_name is not None:
                     out_clr_file_name = color_file_name
                 else:
@@ -356,7 +354,7 @@ class SimpleGaussian(
                     nodata=self.color_no_data,
                     cars_ds_name="color",
                 )
-            if self.write_stats:
+            if self.save_stats:
                 out_dsm_mean_file_name = os.path.join(
                     self.orchestrator.out_dir, "dsm_mean.tif"
                 )
@@ -401,7 +399,7 @@ class SimpleGaussian(
                     nodata=0,
                     cars_ds_name="dsm_pts_in_cells",
                 )
-            if self.write_classif:
+            if self.save_classif:
                 out_classif_file_name = os.path.join(
                     self.orchestrator.out_dir, "classif.tif"
                 )
@@ -413,7 +411,7 @@ class SimpleGaussian(
                     nodata=self.msk_no_data,
                     cars_ds_name="dsm_classif",
                 )
-            if self.write_mask:
+            if self.save_mask:
                 out_msk_file_name = os.path.join(
                     self.orchestrator.out_dir, "msk.tif"
                 )
@@ -426,7 +424,7 @@ class SimpleGaussian(
                     cars_ds_name="dsm_mask",
                 )
 
-            if self.write_confidence:
+            if self.save_confidence:
                 out_confidence = os.path.join(
                     self.orchestrator.out_dir, "confidence.tif"
                 )

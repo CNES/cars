@@ -31,7 +31,7 @@ from typing import Dict, Tuple
 
 # Third party imports
 import xarray as xr
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -171,8 +171,8 @@ class CensusMccnnSgm(
 
         application_schema = {
             "method": str,
-            "min_epi_tile_size": int,
-            "max_epi_tile_size": int,
+            "min_epi_tile_size": And(int, lambda x: x > 0),
+            "max_epi_tile_size": And(int, lambda x: x > 0),
             "epipolar_tile_margin_in_percent": int,
             "use_sec_disp": bool,
             "min_elevation_offset": Or(None, int),
@@ -190,6 +190,28 @@ class CensusMccnnSgm(
         # Check conf
         checker = Checker(application_schema)
         checker.validate(overloaded_conf)
+
+        # Check consistency between bounds for optimal tile size search
+        min_epi_tile_size = overloaded_conf["min_epi_tile_size"]
+        max_epi_tile_size = overloaded_conf["max_epi_tile_size"]
+        if min_epi_tile_size > max_epi_tile_size:
+            raise ValueError(
+                "Maximal tile size should be bigger than "
+                "minimal tile size for optimal tile size search"
+            )
+
+        # Check consistency between bounds for elevation offset
+        min_elevation_offset = overloaded_conf["min_elevation_offset"]
+        max_elevation_offset = overloaded_conf["max_elevation_offset"]
+        if (
+            min_elevation_offset is not None
+            and max_elevation_offset is not None
+            and min_elevation_offset > max_elevation_offset
+        ):
+            raise ValueError(
+                "Maximal elevation should be bigger than "
+                "minimal elevation for dense matching"
+            )
 
         return overloaded_conf
 

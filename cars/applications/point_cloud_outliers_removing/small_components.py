@@ -32,7 +32,7 @@ import time
 
 # Third party imports
 import numpy as np
-from json_checker import Checker, Or
+from json_checker import And, Checker, Or
 from osgeo import osr
 
 # CARS imports
@@ -159,8 +159,8 @@ class SmallComponents(
             "save_points_cloud_as_csv": bool,
             "activated": bool,
             "on_ground_margin": int,
-            "connection_distance": float,
-            "nb_points_threshold": int,
+            "connection_distance": And(float, lambda x: x > 0),
+            "nb_points_threshold": And(int, lambda x: x > 0),
             "clusters_distance_threshold": Or(None, float),
         }
 
