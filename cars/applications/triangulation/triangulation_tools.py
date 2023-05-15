@@ -328,8 +328,7 @@ def compute_points_cloud(
                         values[key] = ([cst.ROW, cst.COL], val.values)
 
         else:
-            worker_logger = logging.getLogger("distributed.worker")
-            worker_logger.warning("No mask is present in the image dataset")
+            logging.warning("No mask is present in the image dataset")
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 

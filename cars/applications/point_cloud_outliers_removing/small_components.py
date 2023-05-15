@@ -384,12 +384,10 @@ def small_components_removing_wrapper(
     cloud_epsg = cloud_attributes["epsg"]
     current_epsg = cloud_epsg
 
-    worker_logger = logging.getLogger("distributed.worker")
-
     # Check if can be used to filter
     spatial_ref = CRS.from_epsg(cloud_epsg)
     if spatial_ref.is_geographic:
-        worker_logger.debug(
+        logging.debug(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
             "to this referential. Please, convert the points "
@@ -415,7 +413,7 @@ def small_components_removing_wrapper(
         clusters_distance_threshold,
     )
     toc = time.process_time()
-    worker_logger.debug(
+    logging.debug(
         "Small components cloud filtering done in {} seconds".format(toc - tic)
     )
 

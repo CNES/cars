@@ -54,12 +54,11 @@ def compute_xy_starts_and_sizes(
         by the create_combined_cloud function
     :return: a tuple (xstart, ystart, xsize, ysize)
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     # Derive xstart
     xmin = np.nanmin(cloud[cst.X].values)
     xmax = np.nanmax(cloud[cst.X].values)
-    worker_logger.debug("Points x coordinate range: [{},{}]".format(xmin, xmax))
+    logging.debug("Points x coordinate range: [{},{}]".format(xmin, xmax))
 
     # Clamp to a regular grid
     x_start = np.floor(xmin / resolution) * resolution
@@ -68,7 +67,7 @@ def compute_xy_starts_and_sizes(
     # Derive ystart
     ymin = np.nanmin(cloud[cst.Y].values)
     ymax = np.nanmax(cloud[cst.Y].values)
-    worker_logger.debug("Points y coordinate range: [{},{}]".format(ymin, ymax))
+    logging.debug("Points y coordinate range: [{},{}]".format(ymin, ymax))
 
     # Clamp to a regular grid
     y_start = np.ceil(ymax / resolution) * resolution
@@ -501,7 +500,6 @@ def rasterize(
     :param list_computed_layers: list of computed output data
     :return: Rasterized cloud color and statistics.
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
     if sigma is None:
         sigma = resolution
@@ -511,10 +509,10 @@ def rasterize(
 
     # If no valid points are found in cloud, return default values
     if np.size(data_valid) == 0:
-        worker_logger.debug("No points to rasterize, returning None")
+        logging.debug("No points to rasterize, returning None")
         return None
 
-    worker_logger.debug(
+    logging.debug(
         "Rasterization grid: start=[{},{}], size=[{},{}], resolution={}".format(
             x_start, y_start, x_size, y_size, resolution
         )

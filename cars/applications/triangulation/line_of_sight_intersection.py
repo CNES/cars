@@ -628,19 +628,13 @@ def compute_points_cloud(
         if cst.EPI_MSK in ref_values_list:
             im_ref_msk = left
         else:
-            worker_logger = logging.getLogger("distributed.worker")
-            worker_logger.warning(
-                "Left image does not have a mask to rasterize"
-            )
+            logging.warning("Left image does not have a mask to rasterize")
         if disp_sec is not None:
             sec_values_list = [key for key, _ in right.items()]
             if cst.EPI_MSK in sec_values_list:
                 im_sec_msk = right
             else:
-                worker_logger = logging.getLogger("distributed.worker")
-                worker_logger.warning(
-                    "Right image does not have a mask to rasterize"
-                )
+                logging.warning("Right image does not have a mask to rasterize")
 
     # Triangulate
     if isinstance(disp_ref, xr.Dataset):

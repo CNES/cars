@@ -274,10 +274,6 @@ def log_message(func, message):
     logging.info(func.__module__)
     print(message)
     print(func.__module__)
-    worker_logger = logging.getLogger("distributed.worker")
-    # dask logger
-    worker_logger.info(message)
-    worker_logger.info(func.__module__)
 
 
 def loop_function(argv, kwargs, func, nb_iteration=5):
@@ -321,7 +317,7 @@ def get_current_memory():
     process = psutil.Process(os.getpid())
     process_memory = process.memory_info().rss
 
-    # Convert nbytes size for logging
+    # Convert nbytes size for logger
     process_memory = float(process_memory) / 1000000
 
     return process_memory

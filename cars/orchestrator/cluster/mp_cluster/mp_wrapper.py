@@ -96,7 +96,6 @@ class WrapperNone(AbstractWrapper):
     def __init__(self, tmp_dir):
         """
         Init function of WrapperDisk
-
         :param tmp_dir: temporary directory
         """
 
@@ -154,10 +153,8 @@ class WrapperDisk(AbstractWrapper):
     def __init__(self, tmp_dir):
         """
         Init function of WrapperDisk
-
         :param tmp_dir: temporary directory
         """
-
         self.tmp_dir = os.path.join(tmp_dir, "tmp")
         if not os.path.exists(self.tmp_dir):
             os.makedirs(self.tmp_dir)
@@ -219,7 +216,6 @@ class WrapperDisk(AbstractWrapper):
         for _ in range(nout):
             id_list.append(self.current_object_id)
             self.current_object_id += 1
-
         new_kwargs = kwargs
         new_kwargs["id_list"] = id_list
         new_kwargs["fun"] = func
@@ -260,7 +256,6 @@ def none_wrapper_fun(*argv, **kwargs):
 
     func = kwargs["fun"]
     kwargs.pop("fun")
-
     return func(*argv, **kwargs)
 
 
@@ -294,7 +289,7 @@ def disk_wrapper_fun(*argv, **kwargs):
     loaded_kwargs = load_args_or_kwargs(kwargs)
 
     # call function
-    res = func(*loaded_argv, **loaded_kwargs)
+    res = func(*loaded_argv[:], **loaded_kwargs)
 
     if res is not None:
         to_disk_res = dump(res, tmp_dir, id_list)

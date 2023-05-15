@@ -215,8 +215,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             vec_epi_pos_right = matches[:, 2:4]
         elif matches_type == cst.DISP_MODE:
             if matches_msk is None:
-                logger = logging.getLogger()
-                logger.error("No disparity mask given in input")
+                logging.error("No disparity mask given in input")
                 raise RuntimeError("No disparity mask given in input")
 
             if ul_matches_shift is None:

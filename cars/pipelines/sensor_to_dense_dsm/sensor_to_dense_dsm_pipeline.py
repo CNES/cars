@@ -36,8 +36,7 @@ from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
-from cars.conf import log_conf
-from cars.core import preprocessing, roi_tools
+from cars.core import cars_logging, preprocessing, roi_tools
 from cars.core.inputs import get_descriptions_bands
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -398,8 +397,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
 
         out_dir = self.output["out_dir"]
-
-        log_conf.add_log_file(out_dir, "sensor_to_dense_dsm")
+        cars_logging.add_log_file(out_dir, "sensor_to_dense_dsm")
 
         # start cars orchestrator
         with orchestrator.Orchestrator(

@@ -36,8 +36,7 @@ from cars import __version__
 from cars.applications.application import Application
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
-from cars.conf import log_conf
-from cars.core import preprocessing, roi_tools
+from cars.core import cars_logging, preprocessing, roi_tools
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -265,7 +264,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         """
         out_dir = self.output["out_dir"]
 
-        log_conf.add_log_file(out_dir, "sensors_to_sparse_dsm")
+        cars_logging.add_log_file(out_dir, "sensors_to_sparse_dsm")
 
         # start cars orchestrator
         with orchestrator.Orchestrator(

@@ -779,7 +779,6 @@ def merge_matches(list_of_matches, saving_info_left=None):
     :type list_of_matches: list(pandas.DataFrame)
 
     """
-
     concatenated_matches = pandas.concat(
         list_of_matches,
         ignore_index=True,

@@ -194,8 +194,7 @@ class OTBGeometry(AbstractGeometry):
 
         if mode == cst.DISP_MODE:
             if roi_key is None:
-                worker_logger = logging.getLogger("distributed.worker")
-                worker_logger.warning(
+                logging.warning(
                     "roi_key have to be set to use the "
                     "triangulation disparity mode"
                 )
@@ -221,8 +220,7 @@ class OTBGeometry(AbstractGeometry):
                 "mode.sift.inmatches", matches
             )
         else:
-            worker_logger = logging.getLogger("distributed.worker")
-            worker_logger.warning(
+            logging.warning(
                 "Wrong triangulation mode (only 'disp' or 'matches'"
                 " can be used as mode)"
             )
@@ -302,7 +300,7 @@ class OTBGeometry(AbstractGeometry):
         if geoid is not None:
             stereo_app.SetParameterString("epi.elevation.geoid", geoid)
         stereo_app.Execute()
-        # OTB doesn't do a new line, force it for next logging seen by user
+        # OTB doesn't do a new line, force it for next logger seen by user
         print("\n")
         # Export grids to numpy
         left_grid_as_array = np.copy(

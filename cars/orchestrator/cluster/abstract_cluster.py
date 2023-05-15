@@ -90,7 +90,10 @@ class AbstractCluster(metaclass=ABCMeta):
                     safe_makedirs(profiling_memory_dir, cleanup=True)
         conf_cluster["profiling"] = profiling
         logging.info("The AbstractCluster {} will be used".format(cluster_mode))
-
+        cls.worker_log_dir = os.path.join(out_dir, "workers_log")
+        if not os.path.exists(cls.worker_log_dir):
+            os.makedirs(cls.worker_log_dir)
+        cls.log_level = logging.getLogger().getEffectiveLevel()
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]
         )

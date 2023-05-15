@@ -146,9 +146,8 @@ def create_combined_sparse_cloud(  # noqa: C901
     :return: Tuple formed with the combined clouds and color
         in a single pandas dataframe and the epsg code
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
-    epsg = get_epsg(cloud_list, worker_logger)
+    epsg = get_epsg(cloud_list)
 
     # compute margin/roi and final number of data to add to the combined cloud
     roi = (
@@ -267,8 +266,8 @@ def create_combined_sparse_cloud(  # noqa: C901
         # add current cloud to the combined one
         cloud = np.concatenate([cloud, c_cloud], axis=0)
 
-    worker_logger.debug("Received {} points to rasterize".format(nb_points))
-    worker_logger.debug(
+    logging.debug("Received {} points to rasterize".format(nb_points))
+    logging.debug(
         "Keeping {}/{} points "
         "inside rasterization grid".format(cloud.shape[0], nb_points)
     )
@@ -278,21 +277,18 @@ def create_combined_sparse_cloud(  # noqa: C901
     return pd_cloud, epsg
 
 
-def get_epsg(cloud_list, worker_logger):
+def get_epsg(cloud_list):
     """
     Extract epsg from cloud list and check if all the same
 
     :param cloud_list: list of the point clouds
-    :param worker_logger: the worker logger
     """
     epsg = None
     for cloud_list_item in cloud_list:
         if epsg is None:
             epsg = int(cloud_list_item.attrs[cst.EPSG])
         elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
-            worker_logger.error(
-                "All points clouds do not have the same epsg code"
-            )
+            logging.error("All points clouds do not have the same epsg code")
 
     return epsg
 
@@ -443,9 +439,8 @@ def create_combined_dense_cloud(  # noqa: C901
     :return: Tuple formed with the combined clouds and color
         in a single pandas dataframe and the epsg code
     """
-    worker_logger = logging.getLogger("distributed.worker")
 
-    epsg = get_epsg(cloud_list, worker_logger)
+    epsg = get_epsg(cloud_list)
 
     # compute margin/roi and final number of data to add to the combined cloud
     roi = (
@@ -606,7 +601,6 @@ def create_combined_dense_cloud(  # noqa: C901
         if cst.EPI_COLOR in cloud_list[cloud_list_idx]:
             add_color_information(
                 cloud_list,
-                worker_logger,
                 nb_data,
                 nb_band_clr,
                 cloud_list_idx,
@@ -672,8 +666,8 @@ def create_combined_dense_cloud(  # noqa: C901
         # add current cloud to the combined one
         cloud = np.concatenate([cloud, c_cloud], axis=0)
 
-    worker_logger.debug("Received {} points to rasterize".format(nb_points))
-    worker_logger.debug(
+    logging.debug("Received {} points to rasterize".format(nb_points))
+    logging.debug(
         "Keeping {}/{} points "
         "inside rasterization grid".format(cloud.shape[0], nb_points)
     )
@@ -701,7 +695,6 @@ def create_point_cloud_index(cloud_list):
 
 def add_color_information(
     cloud_list,
-    worker_logger,
     nb_data,
     nb_band_clr,
     cloud_list_idx,
@@ -713,8 +706,6 @@ def add_color_information(
 
     :param cloud_list: point cloud dataset
     :type cloud_list: List(Dataset)
-    :param worker_logger: logger
-    :type worker_logger: Logger
     :param nb_data: list of band data
     :type nb_data: list[str]
     :param nb_band_clr: number of color band
@@ -744,7 +735,7 @@ def add_color_information(
         color_array = cloud_list[cloud_list_idx][cst.EPI_COLOR].values
         if len(color_array.shape) == 2:
             # point cloud created with pancro, needs to duplicate
-            worker_logger.debug(
+            logging.debug(
                 "Not the same number of color bands for all point clouds"
             )
             color_array = np.stack(
@@ -912,8 +903,7 @@ def filter_cloud(
         and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
         and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns
     ):
-        worker_logger = logging.getLogger("distributed.worker")
-        worker_logger.warning(
+        logging.warning(
             "In filter_cloud: the filtered_elt_pos has been activated but "
             "the cloud Datafram has not been build with option with_coords. "
             "The positions cannot be retrieved."
@@ -974,8 +964,7 @@ def add_cloud_filtering_msk(
         or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
         or cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns
     ):
-        worker_logger = logging.getLogger("distributed.worker")
-        worker_logger.warning(
+        logging.warning(
             "Cannot generate filtered elements mask, "
             "no information about the point's"
             " original position in the epipolar image is given"
