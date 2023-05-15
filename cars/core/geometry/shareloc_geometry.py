@@ -390,9 +390,10 @@ class SharelocGeometry(AbstractGeometry):
         loc = localization.Localization(
             shareloc_model, image=shareloc_image, elevation=elevation, epsg=4326
         )
-
+        # Bug : inversion of y_coord and x_coord to fit OTB standards.
+        # TODO: clean geometry convention calls in API
         lonlatalt = loc.direct(
-            x_coord, y_coord, z_coord, using_geotransform=True
+            y_coord, x_coord, z_coord, using_geotransform=True
         )
         lonlatalt = np.squeeze(lonlatalt)
         latlonalt = np.array([lonlatalt[1], lonlatalt[0], lonlatalt[2]])
