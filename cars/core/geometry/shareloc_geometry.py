@@ -122,7 +122,7 @@ class SharelocGeometry(AbstractGeometry):
         (new early check input common application ?)
         - update with former cars clean with otb evolution.
 
-        :param: cars_conf: cars input configuration dictionary
+        :param cars_conf: cars input configuration dictionary
         :return: True if the products are readable, False otherwise
         """
         # get inputs paths
@@ -161,12 +161,12 @@ class SharelocGeometry(AbstractGeometry):
 
         :param cars_conf: cars input configuration dictionary
         :param mode: triangulation mode
-        (constants.DISP_MODE or constants.MATCHES)
+         (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
         :param grid1: path to epipolar grid of img1
         :param grid2: path to epipolar grid of image 2
         :param roi_key: dataset roi to use
-        (can be cst.ROI or cst.ROI_WITH_MARGINS)
+         (can be cst.ROI or cst.ROI_WITH_MARGINS)
 
         :return: the long/lat/height numpy array in output of the triangulation
         """
@@ -352,15 +352,15 @@ class SharelocGeometry(AbstractGeometry):
 
         :param cars_conf: cars input configuration dictionary
         :param product_key: input_parameters.PRODUCT1_KEY or
-        input_parameters.PRODUCT2_KEY to identify which geometric model shall
-        be taken to perform the method
+         input_parameters.PRODUCT2_KEY to identify which geometric model shall
+         be taken to perform the method
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
         :param dem: if z not defined, take this DEM directory input
         :param geoid: if z and dem not defined, take GEOID directory input
         :param default_elevation: if z, dem, geoid not defined, take default
-        elevation
+          elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
         # read required product paths and model type

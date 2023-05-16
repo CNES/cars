@@ -45,7 +45,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
 
         :param conf: configuration of orchestrator
         :type conf: dict
-        return: overloaded orchestrator conf
+        :return: overloaded orchestrator conf
         :rtype: dict
         """
 
