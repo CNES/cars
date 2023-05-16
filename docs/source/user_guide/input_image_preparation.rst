@@ -79,7 +79,7 @@ To translate single image or multiband image with several nbits per band to 1bit
 .. _add_band_description_in_image:
 
 Add band name / description in tiff files metadata
-===============================================
+===================================================
 
 To add a band name /description in tiff files, for classification or color files in order to be used:
 

@@ -10,5 +10,6 @@ User guide
    cli
    configuration
    input_image_preparation
+   plugins
 
 
