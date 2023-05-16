@@ -189,7 +189,7 @@ lint/pylint: ## check linting with pylint
 .PHONY: docs
 docs: install ## build sphinx documentation
 	@${CARS_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
-	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build
+	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
 ## Notebook section
 
