@@ -308,11 +308,14 @@ def create_combined_cloud_from_tif(
         for type_band in cloud["data"].keys():
             # open file and get data
             band_path = cloud["data"][type_band]
-            if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
-                # Get color type
-                color_types.append(inputs.rasterio_get_color_type(band_path))
 
             if band_path is not None:
+                if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
+                    # Get color type
+                    color_types.append(
+                        inputs.rasterio_get_color_type(band_path)
+                    )
+
                 if isinstance(band_path, dict):
                     for key in band_path:
                         sub_band_path = band_path[key]

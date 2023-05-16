@@ -253,13 +253,15 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                         point_cloud[tag], config_json_dir
                     )
             else:
-                for confidence_name in point_cloud[tag]:
-                    if point_cloud[tag][confidence_name] is not None:
-                        point_cloud[tag][
-                            confidence_name
-                        ] = make_relative_path_absolute(
-                            point_cloud[tag][confidence_name], config_json_dir
-                        )
+                if point_cloud[tag] is not None:
+                    for confidence_name in point_cloud[tag]:
+                        if point_cloud[tag][confidence_name] is not None:
+                            point_cloud[tag][
+                                confidence_name
+                            ] = make_relative_path_absolute(
+                                point_cloud[tag][confidence_name],
+                                config_json_dir,
+                            )
 
     if overloaded_conf[sens_cst.ROI] is not None:
         if isinstance(overloaded_conf[sens_cst.ROI], str):
