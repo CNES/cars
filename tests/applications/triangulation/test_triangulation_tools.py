@@ -136,11 +136,11 @@ def test_triangulate_matches_shareloc(
     pandas.testing.assert_index_equal(
         llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
     )
-    np.testing.assert_almost_equal(llh.x[0], 5.1973629)
-    np.testing.assert_almost_equal(llh.y[0], 44.2079813)
-    # otb triangulation (TODO: check difference with shareloc?)
-    # np.testing.assert_almost_equal(llh.z[0], 511.4383088)
-    np.testing.assert_almost_equal(llh.z[0], 511.4382467)
+    # for long/lat, keep OTB standards to 10**(-8)
+    np.testing.assert_almost_equal(llh.x[0], 5.1973629, decimal=8)
+    np.testing.assert_almost_equal(llh.y[0], 44.2079813, decimal=8)
+    # for altitude, keep OTB standards to 10**(-3) (following shareloc code)
+    np.testing.assert_almost_equal(llh.z[0], 511.4383088, decimal=3)
     assert llh[cst.DISPARITY][0] == 0.0
     assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
 
