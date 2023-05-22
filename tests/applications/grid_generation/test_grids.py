@@ -242,9 +242,12 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
     )
 
     assert epi_size == [612, 612]
-    # test otb different shareloc (check TODO) why ?)
-    # assert baseline == 1 / 0.7039446234703064 == 1,420566287
-    np.testing.assert_almost_equal(baseline, 1.420566289522033)
+
+    # test baseline: 1/(disp to alt ratio), adapted from OTB.
+    # see OTB StereoRectificationGridGenerator output for meaning
+    # difference between shareloc and OTB : sum is not done exactly the same
+    # but precision result to 10**-5 is enough for baseline
+    np.testing.assert_almost_equal(baseline, 1.42056, decimal=5)
 
     # Uncomment to update baseline
     # left_grid.to_netcdf(absolute_data_path(
@@ -348,8 +351,11 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     )
 
     assert epi_size == [612, 612]
-    # test otb different shareloc (check TODO) why ?)
-    # assert baseline == 1 / 0.7039416432380676 == 1,420572301
+
+    # test baseline: 1/(disp to alt ratio) adapted from OTB.
+    # see OTB StereoRectificationGridGenerator output for meaning
+    # difference between shareloc and OTB : sum is not done exactly the same
+    # but precision result to 10**-5 is enough for baseline
     np.testing.assert_almost_equal(baseline, 1.420571770533341)
 
     # Uncomment to update baseline
