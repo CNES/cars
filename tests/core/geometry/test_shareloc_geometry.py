@@ -60,6 +60,7 @@ def test_dir_loc_rpc():
     )
 
     # test lat, lon, alt value
-    assert lat == pytest.approx(44.20805591262138, abs=1e-8)
-    assert lon == pytest.approx(5.193409396203882, abs=1e-8)
-    assert alt == pytest.approx(503.5502439683996, abs=1e-4)
+    # put decimal values to 10 to know if modifications are done.
+    assert lat == pytest.approx(44.20805591262138, abs=1e-10)
+    assert lon == pytest.approx(5.193409396203882, abs=1e-10)
+    assert alt == pytest.approx(503.5502439683996, abs=1e-10)
