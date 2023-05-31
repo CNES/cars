@@ -64,7 +64,7 @@ def create_polygon_from_list_points(list_points):
 
 
 def compute_epsg_from_point_cloud(list_epipolar_points_cloud):
-    """ "
+    """
     Compute epsg to use from list of tif point clouds
 
     :param list_epipolar_points_cloud: list of epipolar point clouds
@@ -170,8 +170,7 @@ def get_min_max_band(
     :param window: specify a region to open inside the image
     :type window: rasterio window
     :return: an array that contains [xmin, xmax, ymin, ymax] and the code epsg
-        in which
-    the points cloud is projected
+        in which the points cloud is projected
     """
     cloud_data = {}
     with rio.open(image_path_x) as image_x:
@@ -228,7 +227,7 @@ def convert_to_polygon(x_y_min_max):
     Resample a bounding box and convert it into an shapely polygon
 
     :param x_y_min_max: the x/y coordinates of the upper left and lower
-    right points
+     right points
     :type x_y_min_max: an array of float [x_min, x_max, y_min, y_max]
 
     :return: an shapely polygon
@@ -291,7 +290,6 @@ def create_combined_cloud_from_tif(
 
     :return: combined cloud, point cloud epsg
     :rtype: pandas Dataframe, int
-
     """
 
     clouds_pd_list = []
@@ -399,6 +397,7 @@ def create_combined_cloud_from_tif(
 def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
     """
     Extract from tif point cloud and put in carsdataset point cloud
+
     :param type_band: type of point cloud data
     :type type_band: str
     :param band_path: path of the tif point cloud file

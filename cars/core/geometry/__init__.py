@@ -420,7 +420,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             default_elevation=default_alt,
             geoid=geoid,
         )
-        lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
+        lat_upper_right, lon_upper_right, _ = self.direct_loc(
             conf,
             product_key,
             img_size_x + shift_x,
@@ -429,7 +429,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             default_elevation=default_alt,
             geoid=geoid,
         )
-        lat_upper_right, lon_upper_right, _ = self.direct_loc(
+        lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
             conf,
             product_key,
             shift_x,

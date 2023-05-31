@@ -28,7 +28,7 @@ import os
 from typing import Any, Dict
 
 # Third party imports
-from json_checker import And, OptionalKey
+from json_checker import And, OptionalKey, Or
 
 # CARS imports
 from cars.core.inputs import rasterio_can_open
@@ -102,17 +102,33 @@ def create_model_tag_from_product_key(product_key: str):
     return "{}{}".format(MODEL_TAG_ROOT, product_key)
 
 
+def create_model_type_tag_from_product_key(product_key: str):
+    """
+    Create images tags from MODEL_TAG_ROOT and the given product key
+    :param product_key: PRODUCT1_KEY or PRODUCT2_KEY
+    :return: MODEL1_TAG or MODEL2_TAG
+    """
+    if product_key not in [PRODUCT1_KEY, PRODUCT2_KEY]:
+        logger = logging.getLogger()
+        logger.warning(
+            "product_key shall be {} or {}".format(PRODUCT1_KEY, PRODUCT2_KEY)
+        )
+    return "{}{}".format(MODEL_TYPE_TAG_ROOT, product_key)
+
+
 # tags for input parameters
 INPUT_SECTION_TAG = "input"
 PRODUCT1_KEY = "1"
 PRODUCT2_KEY = "2"
 IMG_TAG_ROOT = "img"
 MODEL_TAG_ROOT = "model"
+MODEL_TYPE_TAG_ROOT = "model_type"
 IMG1_TAG = create_img_tag_from_product_key(PRODUCT1_KEY)
 IMG2_TAG = create_img_tag_from_product_key(PRODUCT2_KEY)
 MODEL1_TAG = create_model_tag_from_product_key(PRODUCT1_KEY)
 MODEL2_TAG = create_model_tag_from_product_key(PRODUCT2_KEY)
-MODEL_TYPE_TAG = "model_type"
+MODEL1_TYPE_TAG = create_model_type_tag_from_product_key(PRODUCT1_KEY)
+MODEL2_TYPE_TAG = create_model_type_tag_from_product_key(PRODUCT1_KEY)
 SRTM_DIR_TAG = "srtm_dir"
 COLOR1_TAG = "color1"
 MASK1_TAG = "mask1"
@@ -125,11 +141,11 @@ DEFAULT_ALT_TAG = "default_alt"
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 
-# Schema for input configuration json
+# Schema for former input configuration json (TODO : remove)
 INPUT_CONFIGURATION_SCHEMA = {
     IMG1_TAG: And(str, rasterio_can_open),
     IMG2_TAG: And(str, rasterio_can_open),
-    OptionalKey(SRTM_DIR_TAG): And(str, os.path.isdir),
+    OptionalKey(SRTM_DIR_TAG): And(str, Or(os.path.isfile, os.path.isdir)),
     OptionalKey(COLOR1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK1_TAG): And(str, rasterio_can_open),
     OptionalKey(MASK2_TAG): And(str, rasterio_can_open),

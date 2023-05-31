@@ -116,7 +116,7 @@ def add_color(
     color_mask: np.ndarray = None,
     band_im: list = None,
 ):
-    """ "
+    """
     Add color and color mask to dataset
 
     :param output_dataset: output dataset
@@ -146,7 +146,7 @@ def add_classification(
     classif: np.ndarray = None,
     band_classif: list = None,
 ):
-    """ "
+    """
     Add classification to dataset
 
     :param output_dataset: output dataset
@@ -301,7 +301,7 @@ def add_confidence(
     disp: xr.Dataset,
     ref_roi: List[int],
 ):
-    """ "
+    """
     Add confidences to dataset
 
     :param output_dataset: output dataset
@@ -332,7 +332,7 @@ def add_performance_map(
     perf_ambiguity_threshold: float,
     disp_to_alt_ratio: float,
 ):
-    """ "
+    """
     Add performance map to dataset
 
     :param output_dataset: output dataset

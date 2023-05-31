@@ -121,7 +121,8 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_COLOR: str,
         sens_cst.INPUT_NODATA: int,
         sens_cst.INPUT_GEO_MODEL: str,
-        sens_cst.INPUT_MODEL_FILTER: Or([str], None),
+        sens_cst.INPUT_GEO_MODEL_TYPE: str,
+        sens_cst.INPUT_GEO_MODEL_FILTER: Or([str], None),
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_CLASSIFICATION: Or(str, None),
     }
@@ -137,11 +138,18 @@ def sensors_check_inputs(  # noqa: C901
             sens_cst.INPUT_COLOR
         ] = color
 
-        geomodel_filters = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_MODEL_FILTER, None
+        geomodel_type = conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_GEO_MODEL_TYPE, "RPC"
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_MODEL_FILTER
+            sens_cst.INPUT_GEO_MODEL_TYPE
+        ] = geomodel_type
+
+        geomodel_filters = conf[sens_cst.SENSORS][sensor_image_key].get(
+            sens_cst.INPUT_GEO_MODEL_FILTER, None
+        )
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            sens_cst.INPUT_GEO_MODEL_FILTER
         ] = geomodel_filters
 
         no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
@@ -283,7 +291,6 @@ def check_srtm(srtm_dir):
 
     :param srtm_dir: directory of srtm
     :type srtm_dir: str
-
     """
 
     if srtm_dir is not None:

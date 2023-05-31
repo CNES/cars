@@ -731,7 +731,7 @@ def create_former_cars_post_prepare_configuration(
     return configuration
 
 
-def create_former_cars_conf(
+def create_former_cars_conf(  # noqa: C901
     sensor_image_left, sensor_image_right, srtm_dir=None, default_alt=0
 ):
     """
@@ -768,6 +768,14 @@ def create_former_cars_conf(
     if "geomodel" in sensor_image_right:
         if sensor_image_right["geomodel"] is not None:
             conf["model2"] = sensor_image_right["geomodel"]
+
+    if "geomodel_type" in sensor_image_left:
+        if sensor_image_left["geomodel"] is not None:
+            conf["model_type1"] = sensor_image_left["geomodel_type"]
+
+    if "geomodel_type" in sensor_image_right:
+        if sensor_image_right["geomodel"] is not None:
+            conf["model_type2"] = sensor_image_right["geomodel_type"]
 
     if "geomodel_filters" in sensor_image_left:
         if sensor_image_left["geomodel_filters"] is not None:

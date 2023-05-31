@@ -44,7 +44,7 @@ from tests.helpers import (
 
 
 @pytest.mark.unit_tests
-def test_triangulation_1(
+def test_triangulation_ventoux_otb(
     images_and_grids_conf,
 ):  # pylint: disable=redefined-outer-name
     """
@@ -70,7 +70,33 @@ def test_triangulation_1(
 
 
 @pytest.mark.unit_tests
-def test_triangulate_matches(
+def test_triangulation_ventoux_shareloc(
+    images_and_grids_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test triangulation ventoux dataset
+    """
+    disp1_ref = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/disp1_ref.nc")
+    )
+    point_cloud_dict = triangulation_tools.triangulate(
+        "SharelocGeometry", images_and_grids_conf, disp1_ref, None
+    )
+
+    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
+
+    # Uncomment to update baseline
+    # point_cloud_dict[cst.STEREO_REF].to_netcdf(
+    # absolute_data_path("ref_output/triangulation1_ref.nc"))
+
+    ref = xr.open_dataset(
+        absolute_data_path("ref_output/triangulation1_ref.nc")
+    )
+    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
+
+
+@pytest.mark.unit_tests
+def test_triangulate_matches_otb(
     images_and_grids_conf,
 ):  # pylint: disable=redefined-outer-name
     """
@@ -89,6 +115,34 @@ def test_triangulate_matches(
     np.testing.assert_almost_equal(llh.x[0], 5.1973629)
     np.testing.assert_almost_equal(llh.y[0], 44.2079813)
     np.testing.assert_almost_equal(llh.z[0], 511.4383088)
+    assert llh[cst.DISPARITY][0] == 0.0
+    assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
+
+
+@pytest.mark.unit_tests
+def test_triangulate_matches_shareloc(
+    images_and_grids_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test triangulate_matches function from images_and_grids_conf
+    """
+
+    matches = np.array([[0.0, 0.0, 0.0, 0.0]])
+
+    llh = triangulation_tools.triangulate_matches(
+        "SharelocGeometry", images_and_grids_conf, matches
+    )
+    # Check properties
+    pandas.testing.assert_index_equal(
+        llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
+    )
+    # put decimal values to 10 to know if modifications are done.
+    # for long/lat, OTB standards to 10**(-8) have been checked
+    np.testing.assert_almost_equal(llh.x[0], 5.197362922602653, decimal=10)
+    np.testing.assert_almost_equal(llh.y[0], 44.207981250033235, decimal=10)
+    # for altitude, OTB standards to 10**(-3) have been checked
+    np.testing.assert_almost_equal(llh.z[0], 511.4382467297837, decimal=10)
+    # np.testing.assert_almost_equal(llh.z[0], 511.4383088)
     assert llh[cst.DISPARITY][0] == 0.0
     assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
 

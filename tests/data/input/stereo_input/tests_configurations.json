@@ -2,7 +2,11 @@
   "images_and_grids": {
     "input": {
       "img1": "input/phr_ventoux/left_image.tif",
-      "img2": "input/phr_ventoux/right_image.tif"
+      "model1": "input/phr_ventoux/left_image.geom",
+      "model_type1": "RPC",
+      "img2": "input/phr_ventoux/right_image.tif",
+      "model2": "input/phr_ventoux/right_image.geom",
+      "model_type2": "RPC"
     },
     "preprocessing": {
       "output": {
@@ -27,7 +31,7 @@
       "nodata1": 0
     }
   },
-  "epipolar_sizes":{
+  "epipolar_sizes": {
     "preprocessing": {
       "output": {
         "epipolar_size_x": 612,
@@ -35,7 +39,7 @@
       }
     }
   },
-  "epipolar_origins_spacings":{
+  "epipolar_origins_spacings": {
     "preprocessing": {
       "output": {
         "epipolar_origin_y": 0.0,
@@ -45,7 +49,7 @@
       }
     }
   },
-  "disparities":{
+  "disparities": {
     "preprocessing": {
       "output": {
         "minimum_disparity": -19.346296653747558,

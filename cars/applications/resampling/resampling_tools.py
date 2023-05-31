@@ -29,7 +29,7 @@ import math
 # Third party imports
 import numpy as np
 import rasterio as rio
-import resample as cresample  # pylint:disable=E0401
+import resample as cresample
 from rasterio.windows import Window, from_bounds
 
 from cars.conf import mask_cst as msk_cst

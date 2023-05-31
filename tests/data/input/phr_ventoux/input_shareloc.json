@@ -1,0 +1,26 @@
+{
+  "inputs": {
+    "sensors": {
+      "left": {
+        "image": "left_image.tif",
+        "color": "left_image.tif",
+        "geomodel": "left_image.geom",
+        "geomodel_type": "RPC",
+        "no_data": 0
+      },
+      "right": {
+        "image": "right_image.tif",
+        "geomodel": "right_image.geom",
+        "geomodel_type": "RPC",
+        "no_data": 0
+      }
+    },
+    "pairing": [
+      [
+        "left",
+        "right"
+      ]
+    ],
+    "initial_elevation": "srtm/N44E005.hgt"
+  }
+}

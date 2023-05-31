@@ -48,7 +48,7 @@ def images_and_grids_conf():  # pylint: disable=redefined-outer-name
         json_dict = json.load(json_file)
         configuration = json_dict["images_and_grids"]
 
-    for tag in ["img1", "img2"]:
+    for tag in ["img1", "img2", "model1", "model2"]:
         configuration["input"][tag] = absolute_data_path(
             configuration["input"][tag]
         )

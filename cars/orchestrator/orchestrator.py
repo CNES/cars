@@ -143,7 +143,7 @@ class Orchestrator:
         :param tag: tag
         :param cars_ds: cars dataset to register
         :param cars_ds_name: name corresponding to CarsDataset,
-        for information during logging
+          for information during logging
         :param optional_data: True if the data is optionnal
         :type optional_data: bool
         """

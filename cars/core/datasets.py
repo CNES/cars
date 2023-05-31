@@ -52,7 +52,7 @@ def create_im_dataset(
     :param largest_size: whole image size
     :param img_path: path to image
     :param band_type: set to band coord names (cst.BAND_IM or BAND_CLASSIF)
-    to add band description in the dataset
+     to add band description in the dataset
     :param msk: image mask as a numpy array (default None)
     :return: The image dataset as used in cars
     """
