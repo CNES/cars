@@ -57,7 +57,7 @@ The low NDWI values can be considered as water area.
 
 .. code-block:: console
 
-    $ gdal_calc.py -G input.tif --G_band=2 -N input.tif --N_band=4 --outfile=mask.tif --calc="(G-N)/(G+N)<0.3" --NoDataValue=0
+    $ gdal_calc.py -G input.tif --G_band=2 -N input.tif --N_band=4 --outfile=mask.tif --calc="((1.0*G-1.0*N)/(1.0*G+1.0*N))>0.3" --NoDataValue=0
 
 .. _`GDAL`: https://gdal.org/
 
