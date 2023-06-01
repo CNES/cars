@@ -1,0 +1,3 @@
+prune docs
+prune tests
+prune tutorials
