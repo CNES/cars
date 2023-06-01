@@ -32,7 +32,7 @@ from typing import Dict, List, Tuple
 
 # Third party imports
 import numpy as np
-from osgeo import osr
+from pyproj import CRS
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
@@ -427,9 +427,8 @@ def terrain_grid_to_epipolar(
     )
 
     # in the following code a factor is used to increase the precision
-    spatial_ref = osr.SpatialReference()
-    spatial_ref.ImportFromEPSG(epsg)
-    if spatial_ref.IsGeographic():
+    spatial_ref = CRS.from_epsg(epsg)
+    if spatial_ref.is_geographic:
         precision_factor = 1000.0
     else:
         precision_factor = 1.0

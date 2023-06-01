@@ -34,7 +34,7 @@ import numpy as np
 
 # Third party imports
 from json_checker import And, Checker
-from osgeo import osr
+from pyproj import CRS
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
@@ -361,9 +361,8 @@ def statistical_removing_wrapper(
     worker_logger = logging.getLogger("distributed.worker")
 
     # Check if can be used to filter
-    spatial_ref = osr.SpatialReference()
-    spatial_ref.ImportFromEPSG(cloud_epsg)
-    if spatial_ref.IsGeographic():
+    spatial_ref = CRS.from_epsg(cloud_epsg)
+    if spatial_ref.is_geographic:
         worker_logger.debug(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "

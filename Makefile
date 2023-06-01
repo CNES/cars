@@ -19,22 +19,22 @@ SHELL := /bin/bash
 ifndef CARS_VENV
 	CARS_VENV = "venv"
 endif
+CARS_VENV := $(abspath $(CARS_VENV))
+
 # Set pytest LOGLEVEL if not defined in command line
 # Example: LOGLEVEL="DEBUG" make test
 ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
 
-# Check CMAKE, OTB, GDAL variables before venv creation
+# Check CMAKE, OTB variables before venv creation
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
-GDAL_VERSION = $(shell gdal-config --version)
 
 # Check python install in VENV
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
-CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
 CHECK_CYVLFEAT = $(shell ${CARS_VENV}/bin/python -m pip list|grep cyvlfeat)
@@ -46,7 +46,7 @@ CHECK_DOCKER = $(shell docker -v)
 # CARS version from setup.py
 CARS_VERSION = $(shell python3 -c 'from cars import __version__; print(__version__)')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
-CARS_VERSION_TUTO=0.5.0
+CARS_VERSION_TUTO = 0.5.0
 
 ################ MAKE targets by sections ######################
 
@@ -59,11 +59,7 @@ help: ## this help
 ## Install section
 
 .PHONY: check
-check: ## check if cmake, OTB, VLFEAT, GDAL is installed
-	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
-	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
-	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
-	@[ "${GDAL_VERSION}" ] || ( echo ">> GDAL_VERSION is not set"; exit 1 )
+check: ## check if VLFEAT is installed
 	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
 	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set"; exit 1 )
 
@@ -73,12 +69,28 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
+.PHONY: vlfeat
+vlfeat:
+	@test -d vlfeat || git clone https://github.com/CNES/vlfeat.git
+	@cd vlfeat && make
+	@echo "vlfeat is installed. Please set the following environment variables:"
+	@echo "export VLFEAT_INCLUDE_DIR=${PWD}/vlfeat"
+	@echo "export VLFEAT_LIBRARY_DIR=${PWD}/vlfeat/bin/glnxa64"
+
+.PHONY: otb-remote-module
+otb-remote-module:
+	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
+	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
+	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
+	@mkdir -p build
+	@cd build && cmake -DCMAKE_INSTALL_PREFIX=${CARS_VENV} -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release ../otb_remote_module && make install
+	@cp env_cars.sh ${CARS_VENV}/bin/.
+
 .PHONY: install-deps
-install-deps: venv
+install-deps: venv otb-remote-module
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary pygdal pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
@@ -90,7 +102,7 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
@@ -98,8 +110,7 @@ install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, do
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
-
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 .PHONY: install-dev
 install-dev: install-deps ## install cars in dev editable mode (pip install -e .)
@@ -108,7 +119,7 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 ## Test section
 
