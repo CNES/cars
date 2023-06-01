@@ -1,5 +1,5 @@
 <div align="center">
-  <a href="https://github.com/CNES/cars"><img src="docs/source/images/picto_transparent.png" alt="CARS" title="CARS"  width="20%"></a>
+  <a href="https://github.com/CNES/cars"><img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_transparent.png" alt="CARS" title="CARS"  width="20%"></a>
 
 <h4>CARS, a satellite multi view stereo framework </h4>
 
@@ -21,14 +21,14 @@
 
 From stereo images  |  CARS produces a Digital Surface Model (DSM)
 :-------------------------:|:-------------------------:
-<img src="docs/source/images/animation_sat.gif" alt="drawing" width="400"/> |  <img src="docs/source/images/overview_dsm_3d.gif" alt="drawing" width="400"/>
+<img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/animation_sat.gif" alt="drawing" width="400"/> |  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/overview_dsm_3d.gif" alt="drawing" width="400"/>
 
 
 **CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
 This Multiview Stereo framework is intended for massive DSM production with a robust, performant and modular design.
 
 Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
-- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="docs/source/images/logo_co3D_cnes.jpg" width="20" height="20"/></a>
+- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.jpg" width="20" height="20"/></a>
 - <a href="https://www.ai4geo.eu/">AI4GEO project &nbsp;&nbsp;&nbsp;  </a>
 
 ## Quick start
@@ -92,17 +92,19 @@ You're at a dead end? This [quick start script](https://raw.githubusercontent.co
 
 ## Documentation
 
-Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest)
-See [CARS generation README](docs/README.md) to rebuild documentation.
+Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest).
+
+See [CARS generation README](https://github.com/CNES/cars/blob/master/docs/README.md) to rebuild documentation.
 
 ## Contribution
 
-To do a bug report or a contribution, see the [**Contribution Guide**](CONTRIBUTING.md).
-For project evolution, see [**Changelog**](CHANGELOG.md)
+To do a bug report or a contribution, see the [**Contribution Guide**](https://github.com/CNES/cars/blob/master/CONTRIBUTING.md).
+
+For project evolution, see [**Changelog**](https://github.com/CNES/cars/blob/master/CHANGELOG.md).
 
 ## Credits
 
-See [Authors file](AUTHORS.md)
+See [Authors file](https://github.com/CNES/cars/blob/master/AUTHORS.md)
 
 
 ## References
