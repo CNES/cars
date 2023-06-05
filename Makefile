@@ -142,32 +142,32 @@ install-dev-otb-free: install-deps-otb-free ## install cars in dev editable mode
 ## Test section
 
 .PHONY: test
-test: install ## run all tests + coverage html
+test: ## run all tests + coverage html
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 .PHONY: test-ci
-test-ci: install ## run unit and pbs tests + coverage for cars-ci
+test-ci: ## run unit and pbs tests + coverage for cars-ci
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-end2end
-test-end2end: install ## run end2end tests only
+test-end2end: ## run end2end tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-unit
-test-unit: install ## run unit tests only
+test-unit: ## run unit tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-pbs-cluster
-test-pbs-cluster: install ## run pbs cluster tests only
+test-pbs-cluster: ## run pbs cluster tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-notebook
-test-notebook: install-pandora-mccnn ## run notebook tests only
+test-notebook: ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
@@ -176,22 +176,22 @@ test-notebook: install-pandora-mccnn ## run notebook tests only
 ### Format with isort and black
 
 .PHONY: format
-format: install format/isort format/black  ## run black and isort formatting (depends install)
+format: format/isort format/black  ## run black and isort formatting (depends install)
 
 .PHONY: format/isort
-format/isort: install  ## run isort formatting (depends install)
+format/isort: ## run isort formatting (depends install)
 	@echo "+ $@"
 	@${CARS_VENV}/bin/isort cars tests
 
 .PHONY: format/black
-format/black: install  ## run black formatting (depends install)
+format/black: ## run black formatting (depends install)
 	@echo "+ $@"
 	@${CARS_VENV}/bin/black cars tests
 
 ### Check code quality and linting : isort, black, flake8, pylint
 
 .PHONY: lint
-lint: install lint/isort lint/black lint/flake8 lint/pylint ## check code quality and linting
+lint: lint/isort lint/black lint/flake8 lint/pylint ## check code quality and linting
 
 .PHONY: lint/isort
 lint/isort: ## check imports style with isort
@@ -216,14 +216,14 @@ lint/pylint: ## check linting with pylint
 ## Documentation section
 
 .PHONY: docs
-docs: install ## build sphinx documentation
+docs: ## build sphinx documentation
 	@${CARS_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
 	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
 ## Notebook section
 
 .PHONY: notebook
-notebook: install ## install Jupyter notebook kernel with venv and cars install
+notebook: ## install Jupyter notebook kernel with venv and cars install
 	@echo "Install Jupyter Kernel in virtualenv dir"
 	@${CARS_VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-${CARS_VERSION_MIN} --display-name=cars-${CARS_VERSION_MIN}
 	@echo "Use jupyter kernelspec list to know where is the kernel"
