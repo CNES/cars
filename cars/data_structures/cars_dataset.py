@@ -1029,6 +1029,11 @@ def save_dataset(
             overlap[2] : nb_cols - overlap[3],
         ]
 
+    if tag == cst.EPI_COLOR and "int" in descriptor.dtypes[0]:
+        # Prepare color data for cast
+        data = np.nan_to_num(data, nan=descriptor.nodata)
+        data = np.round(data)
+
     profile = get_profile_for_tag_dataset(dataset, tag)
 
     new_profile = profile
