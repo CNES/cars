@@ -236,70 +236,70 @@ The structure follows this organisation:
             | *epsg*           | Epsg code of point cloud                              | int            | 4326          | No       |
             +------------------+-------------------------------------------------------+----------------+---------------+----------+
 
-        **Region Of Interest (ROI)**
+    **Region Of Interest (ROI)**
 
-        A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
-        or a GeoJson dictionnary. These structures must contain a single Polygon.
+    A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
+    or a GeoJson dictionnary. These structures must contain a single Polygon.
 
-        .. code-block:: json
+    .. code-block:: json
 
+        {
+            "inputs":
             {
-                "inputs":
-                {
-                    "roi" : {
-                        "type": "FeatureCollection",
-                        "features": [
-                            {
-                            "type": "Feature",
-                            "properties": {},
-                            "geometry": {
-                                "coordinates": [
-                                [
-                                    [5.194, 44.2064],
-                                    [5.194, 44.2059 ],
-                                    [5.195, 44.2059],
-                                    [5.195, 44.2064],
-                                    [5.194, 44.2064]
-                                ]
-                                ],
-                                "type": "Polygon"
-                            }
-                            }
-                        ]
-                    }
-                }
-            }
-
-        .. note::
-
-            By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
-
-            .. code-block:: json
-
-                {
-                    "roi":
-                    {
-                        "crs" :
+                "roi" : {
+                    "type": "FeatureCollection",
+                    "features": [
                         {
-                            "type": "name",
-                            "properties": {
-                                "name": "EPSG:4326"
-                            }
-
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "coordinates": [
+                            [
+                                [5.194, 44.2064],
+                                [5.194, 44.2059 ],
+                                [5.195, 44.2059],
+                                [5.195, 44.2064],
+                                [5.194, 44.2064]
+                            ]
+                            ],
+                            "type": "Polygon"
                         }
-                    }
+                        }
+                    ]
                 }
+            }
+        }
 
+    .. note::
 
+        By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
 
         .. code-block:: json
 
             {
-                "inputs":
+                "roi":
                 {
-                    "roi" : "roi_vector_file.shp"
+                    "crs" :
+                    {
+                        "type": "name",
+                        "properties": {
+                            "name": "EPSG:4326"
+                        }
+
+                    }
                 }
             }
+
+
+
+    .. code-block:: json
+
+        {
+            "inputs":
+            {
+                "roi" : "roi_vector_file.shp"
+            }
+        }
 
 
 
