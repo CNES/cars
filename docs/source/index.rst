@@ -37,6 +37,7 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
 
    getting_started
    install
+   install_with_otb
    user_guide/index.rst
    developer_guide/index.rst
    docker_guide
