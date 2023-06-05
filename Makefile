@@ -60,8 +60,8 @@ help: ## this help
 
 .PHONY: check
 check: ## check if VLFEAT is installed
-	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
-	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set"; exit 1 )
+	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set (see make vlfeat)"; exit 1 )
+	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set (see make vlfeat)"; exit 1 )
 
 .PHONY: venv
 venv: check ## create virtualenv in CARS_VENV directory if not exists
@@ -76,6 +76,7 @@ vlfeat:
 	@echo "vlfeat is installed. Please set the following environment variables:"
 	@echo "export VLFEAT_INCLUDE_DIR=${PWD}/vlfeat"
 	@echo "export VLFEAT_LIBRARY_DIR=${PWD}/vlfeat/bin/glnxa64"
+	@echo "export LD_LIBRARY_PATH=${PWD}/vlfeat/bin/glnxa64:$$""LD_LIBRARY_PATH"
 
 .PHONY: otb-remote-module
 otb-remote-module:
@@ -104,6 +105,7 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
+.PHONY: install-pandora-mccnn
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
@@ -120,6 +122,22 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+
+.PHONY: install-deps-otb-free
+install-deps-otb-free: venv
+	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
+	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
+	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
+	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
+
+.PHONY: install-dev-otb-free
+install-dev-otb-free: install-deps-otb-free ## install cars in dev editable mode (pip install -e .) without otb
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
 
 ## Test section
 
@@ -272,7 +290,7 @@ endif
 ## Clean section
 
 .PHONY: clean
-clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
+clean: clean-venv clean-build clean-vlfeat clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-venv
 clean-venv:
@@ -342,6 +360,11 @@ clean-docker: ## clean docker image
 	@docker image rm -f cnes/cars-jupyter:latest
 	@docker image rm -f cnes/cars-tutorial:${CARS_VERSION_TUTO}
 	@docker image rm -f cnes/cars-tutorial:latest
+
+.PHONY: clean-vlfeat
+clean-vlfeat:
+	@echo "+ $@"
+	@rm -rf vlfeat
 
 .PHONY: profile-memory-report
 profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
