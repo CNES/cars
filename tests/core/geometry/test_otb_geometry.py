@@ -28,7 +28,7 @@ from shutil import copy2
 
 # Third party imports
 import numpy as np
-import otbApplication
+import otbApplication  # pylint: disable=import-error
 import pytest
 import rasterio as rio
 
