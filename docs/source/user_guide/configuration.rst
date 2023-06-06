@@ -387,7 +387,11 @@ The structure follows this organisation:
         - Please use make command 'profile-memory-report' to generate a memory profiling report from the memray outputs files (after the memray profiling execution).
         - Please disabled profiling to eval memory profiling at master orchestrator level and execute make command instead: 'profile-memory-all'.
 
+        .. note::
 
+            The logging system provides messages for all orchestration modes, both for the main process and the worker processes.
+            The logging output file of the main process is located in the output directory.
+            In the case of distributed orchestration, the worker's logging output file is located in the workers_log directory (the message format indicates thread ID and process ID). 
 
    .. tab:: Pipelines
 
