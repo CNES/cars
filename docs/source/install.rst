@@ -47,7 +47,7 @@ and install it from PyPI:
     $ pip install cars
 
 
-Clone the repository (option 2)
+Install from source repository (option 2)
 ===============================
 
 You can also clone CARS repository:
