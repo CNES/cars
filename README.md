@@ -94,7 +94,6 @@ You're at a dead end? This [quick start script](https://raw.githubusercontent.co
 
 Go to [CARS Main Documentation](https://cars.readthedocs.io/?badge=latest).
 
-See [CARS generation README](https://github.com/CNES/cars/blob/master/docs/README.md) to rebuild documentation.
 
 ## Contribution
 
