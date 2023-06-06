@@ -70,7 +70,7 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 	@touch ${CARS_VENV}/bin/activate
 
 .PHONY: vlfeat
-vlfeat:
+vlfeat: ## install vlfeat cnes fork library locally
 	@test -d vlfeat || git clone https://github.com/CNES/vlfeat.git
 	@cd vlfeat && make
 	@echo "vlfeat is installed. Please set the following environment variables:"
