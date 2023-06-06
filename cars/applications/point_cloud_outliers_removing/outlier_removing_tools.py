@@ -285,8 +285,7 @@ def filter_cloud(
         and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
         and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns
     ):
-        worker_logger = logging.getLogger("distributed.worker")
-        worker_logger.warning(
+        logging.warning(
             "In filter_cloud: the filtered_elt_pos has been activated but "
             "the cloud Datafram has not been build with option with_coords. "
             "The positions cannot be retrieved."
@@ -345,8 +344,7 @@ def add_cloud_filtering_msk(
         or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
         or cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns
     ):
-        worker_logger = logging.getLogger("distributed.worker")
-        worker_logger.warning(
+        logging.warning(
             "Cannot generate filtered elements mask, "
             "no information about the point's"
             " original position in the epipolar image is given"

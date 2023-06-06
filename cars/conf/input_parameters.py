@@ -80,8 +80,7 @@ def create_img_tag_from_product_key(product_key: str):
     :return: IMG1_TAG or IMG2_TAG
     """
     if product_key not in [PRODUCT1_KEY, PRODUCT2_KEY]:
-        logger = logging.getLogger()
-        logger.warning(
+        logging.warning(
             "product_key shall be {} or {}".format(PRODUCT1_KEY, PRODUCT2_KEY)
         )
 
@@ -95,8 +94,7 @@ def create_model_tag_from_product_key(product_key: str):
     :return: MODEL1_TAG or MODEL2_TAG
     """
     if product_key not in [PRODUCT1_KEY, PRODUCT2_KEY]:
-        logger = logging.getLogger()
-        logger.warning(
+        logging.warning(
             "product_key shall be {} or {}".format(PRODUCT1_KEY, PRODUCT2_KEY)
         )
     return "{}{}".format(MODEL_TAG_ROOT, product_key)

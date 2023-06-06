@@ -35,6 +35,7 @@ import sys
 
 # CARS imports
 from cars import __version__
+from cars.core import cars_logging
 
 
 class StreamCapture:
@@ -132,16 +133,12 @@ def main_cli(args, dry_run=False):  # noqa: C901
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
 
-    # CARS imports
-    from cars.conf.log_conf import setup_log
-
     # Change stdout to clean (Os) OTB output from image_envelope app.
     original_stdout = sys.stdout
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # Logging configuration with args Loglevel
-    setup_log(getattr(args, "loglevel", "WARNING").upper())
-
+    cars_logging.create(getattr(args, "loglevel", "WARNING").upper())
     # Debug argparse show args
     logging.debug("Show argparse arguments: {}".format(args))
 

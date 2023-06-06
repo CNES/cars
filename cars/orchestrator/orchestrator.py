@@ -357,7 +357,7 @@ class Orchestrator:
         if self.launch_worker:
             self.cluster.cleanup()
 
-        # clean tmp dir
+        # # clean tmp dir
         for tmp_dir in self.tmp_dir_list:
             if tmp_dir is not None and os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)

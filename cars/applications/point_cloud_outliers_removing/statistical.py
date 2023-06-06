@@ -358,12 +358,10 @@ def statistical_removing_wrapper(
     cloud_epsg = cloud_attributes["epsg"]
     current_epsg = cloud_epsg
 
-    worker_logger = logging.getLogger("distributed.worker")
-
     # Check if can be used to filter
     spatial_ref = CRS.from_epsg(cloud_epsg)
     if spatial_ref.is_geographic:
-        worker_logger.debug(
+        logging.debug(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
             "to this referential. Convert the points "
@@ -382,7 +380,7 @@ def statistical_removing_wrapper(
         new_cloud, statistical_k, std_dev_factor
     )
     toc = time.process_time()
-    worker_logger.debug(
+    logging.debug(
         "Statistical cloud filtering done in {} seconds".format(toc - tic)
     )
 

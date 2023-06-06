@@ -42,6 +42,8 @@ from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
 from json_checker import And, Checker, Or
 
+from cars.core import cars_logging
+
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
 
@@ -169,8 +171,10 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         :param func: function
         :param nout: number of outputs
         """
-
-        return dask.delayed(func, nout=nout)
+        return dask.delayed(
+            cars_logging.wrap_logger(func, self.worker_log_dir, self.log_level),
+            nout=nout,
+        )
 
     def start_tasks(self, task_list):
         """
@@ -345,9 +349,6 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
         # TODO Pylint Exception : Inherited attributes outside __init__
         # pylint: disable=attribute-defined-outside-init
 
-        # Setup logging
-        worker_logger = logging.getLogger("distributed.worker")
-
         # Define cumulants
         total_in_memory = 0
         total_nbytes = 0
@@ -382,12 +383,12 @@ class ComputeDSMMemoryLogger(WorkerPlugin):
                 ),
             )
         )
-        # Convert nbytes size for logging
+        # Convert nbytes size for logger
         total_nbytes = float(total_nbytes) / 1000000
         process_memory = float(process_memory) / 1000000
 
         # Log memory state
-        worker_logger.info(
+        logging.info(
             "Memory report: data created = {} ({} Mb), "
             "python process memory = {} Mb".format(
                 total_in_memory,

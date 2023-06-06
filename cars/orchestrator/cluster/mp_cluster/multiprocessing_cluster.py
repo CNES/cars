@@ -24,6 +24,7 @@ Contains abstract function for multiprocessing Cluster
 
 import itertools
 import logging
+import logging.handlers
 
 # Standard imports
 import multiprocessing as mp
@@ -37,6 +38,8 @@ from multiprocessing import Queue, freeze_support
 
 # Third party imports
 from json_checker import And, Checker, Or
+
+from cars.core import cars_logging
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
@@ -74,7 +77,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         """
         self.out_dir = out_dir
-
         # call parent init
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
 
@@ -90,7 +92,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.launch_worker = launch_worker
 
         self.tmp_dir = None
-
         if self.launch_worker:
             # Create wrapper object
             if self.dump_to_disk:
@@ -238,9 +239,14 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             :param argv: args of func
             :param kwargs: kwargs of func
             """
-
+            new_kwargs = kwargs
+            new_kwargs["log_dir"] = self.worker_log_dir
+            new_kwargs["log_level"] = self.log_level
+            new_kwargs["log_fun"] = func
             # create delayed_task
-            delayed_task = MpDelayedTask(func, list(argv), kwargs)
+            delayed_task = MpDelayedTask(
+                cars_logging.logger_func, list(argv), new_kwargs
+            )
 
             delayed_object_list = []
             for idx in range(nout):
@@ -369,7 +375,6 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param cl_future_list: current future list used in iterator
         :param wrapper_obj: wrapper (disk or None)
         :type wrapper_obj: AbstractWrapper
-
         """
         thread = threading.current_thread()
 

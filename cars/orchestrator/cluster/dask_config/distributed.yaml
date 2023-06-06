@@ -3,7 +3,10 @@ distributed:
   logging:  # Logging dask distributed module conf
     distributed: warning
     distributed.client: warning
-#    distributed.worker: debug
+    distributed.worker: warning
+    distributed.scheduler: warning
+    distributed.nanny: warning
+    distributed.core: warning
     bokeh: critical
     # http://stackoverflow.com/questions/21234772/python-tornado-disable-logging-to-stderr
     tornado: critical

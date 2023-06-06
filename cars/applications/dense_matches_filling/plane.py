@@ -229,7 +229,7 @@ class PlaneFill(
         res = None, None
 
         if not self.classification:
-            logging.info("Disparity hiles filling was not activated")
+            logging.info("Disparity holes filling was not activated")
             res = epipolar_disparity_map_left, epipolar_disparity_map_right
 
         else:

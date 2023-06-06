@@ -457,7 +457,6 @@ class CarsDataset:
                 "CarsDataset doesn't have a profile, default is given"
             )
             new_profile = DefaultGTiffProfile(count=new_profile["count"])
-
             new_profile["height"] = np.max(self.tiling_grid[:, :, 1])
             new_profile["width"] = np.max(self.tiling_grid[:, :, 3])
 
@@ -1035,7 +1034,6 @@ def save_dataset(
     if "width" not in new_profile or "height" not in new_profile:
         logging.debug("CarsDataset doesn't have a profile, default is given")
         new_profile = DefaultGTiffProfile(count=new_profile["count"])
-
         new_profile["height"] = data.shape[0]
         new_profile["width"] = data.shape[1]
         new_profile["dtype"] = "float32"
