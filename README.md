@@ -74,7 +74,7 @@ with one configuration input file ("configfile.json") located in a "data" folder
                 }
             },
             "pairing": [["one", "two"],["one", "three"]],
-            "initial_elevation": "srtm_dir"
+            "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
         },
 
         "output": {
