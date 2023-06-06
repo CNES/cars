@@ -8,6 +8,10 @@ Frequently Asked Questions
 Installation
 ============
 
+
+ImportError: libvl.so
+---------------------
+
 CARS is correctly installed but I get the following error at runtime:
 
 .. code-block:: console
