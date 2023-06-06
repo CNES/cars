@@ -388,6 +388,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     matches_array,
                     grid_right,
                     initial_cars_ds=epipolar_matches_left,
+                    save_matches=self.sparse_matching_app.get_save_matches(),
+                    pair_folder=pair_folder,
                 )
 
                 # Correct grid right
@@ -414,8 +416,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pair_folder=pair_folder,
                     srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
                     default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                    save_matches=self.sparse_matching_app.get_save_matches(),
                 )
+
+                # Clean variables
+                del corrected_matches_array
+                del matches_array
+                del epipolar_matches_left
+
                 # Update full res pipeline configuration
                 # with grid correction and disparity range
                 self.update_full_res_conf(

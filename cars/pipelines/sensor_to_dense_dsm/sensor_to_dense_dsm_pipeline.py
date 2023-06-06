@@ -553,6 +553,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_folder=pair_folder,
                         save_matches=self.sparse_mtch_app.get_save_matches(),
                     )
+
                     # Compute grid correction
                     (
                         grid_correction_coef,
@@ -562,12 +563,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         _,
                         _,
                     ) = grid_correction.estimate_right_grid_correction(
-                        matches_array, grid_right
+                        matches_array,
+                        grid_right,
+                        save_matches=self.sparse_mtch_app.get_save_matches(),
+                        pair_folder=pair_folder,
                     )
 
                     # Correct grid right
                     corrected_grid_right = grid_correction.correct_grid(
-                        grid_right, grid_correction_coef
+                        grid_right,
+                        grid_correction_coef,
                     )
 
                     # Compute disp_min and disp_max
@@ -593,8 +598,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_folder=pair_folder,
                         srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
                         default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                        save_matches=self.sparse_mtch_app.get_save_matches(),
                     )
+
+                    # Clean variables
+                    del corrected_matches_array
+                    del matches_array
+                    del epipolar_matches_left
                 else:
                     # Use epipolar a priori
                     # load the disparity range

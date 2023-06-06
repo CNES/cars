@@ -27,6 +27,7 @@ contains functions used for epipolar grid  correction
 from __future__ import absolute_import
 
 import logging
+import os
 
 # Third party imports
 import numpy as np
@@ -121,7 +122,13 @@ def correct_grid(grid, grid_correction):
     return corrected_grid_right
 
 
-def estimate_right_grid_correction(matches, grid_right, initial_cars_ds=None):
+def estimate_right_grid_correction(
+    matches,
+    grid_right,
+    initial_cars_ds=None,
+    save_matches=False,
+    pair_folder="",
+):
     """
     Estimates grid correction, and correct matches
 
@@ -129,6 +136,10 @@ def estimate_right_grid_correction(matches, grid_right, initial_cars_ds=None):
     :type matches: np.ndarray
     :param grid_right: grid to correct
     :type grid_right: CarsDataset
+    :param save_matches: true is matches needs to be saved
+    :type save_matches: bool
+    :param pair_folder: folder used for current pair
+    :type pair_folder: str
 
     :return: grid_correction to apply, corrected_matches, info before,
              info after
@@ -383,6 +394,17 @@ def estimate_right_grid_correction(matches, grid_right, initial_cars_ds=None):
             np.max(np.fabs(corrected_epipolar_error)),
         )
     )
+
+    # Export filtered matches
+    matches_array_path = None
+    if save_matches:
+        logging.info("Writing matches file")
+        if pair_folder is None:
+            logging.error("Pair folder not provided")
+        else:
+            current_out_dir = pair_folder
+        matches_array_path = os.path.join(current_out_dir, "matches.npy")
+        np.save(matches_array_path, corrected_matches)
 
     # Create CarsDataset containing corrected matches, with same tiling as input
     corrected_matches_cars_ds_left = None
