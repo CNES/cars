@@ -26,7 +26,7 @@ import os
 from typing import List, Tuple, Union
 
 import numpy as np
-import otbApplication
+import otbApplication  # pylint: disable=import-error
 import rasterio as rio
 import xarray as xr
 from json_checker import And

@@ -21,7 +21,7 @@
 """
 this module contains the data adapters to use the otb
 """
-import otbApplication
+import otbApplication  # pylint: disable=import-error
 
 
 def encode_to_otb(data_array, largest_size, roi, origin=None, spacing=None):
