@@ -19,22 +19,22 @@ SHELL := /bin/bash
 ifndef CARS_VENV
 	CARS_VENV = "venv"
 endif
+CARS_VENV := $(abspath $(CARS_VENV))
+
 # Set pytest LOGLEVEL if not defined in command line
 # Example: LOGLEVEL="DEBUG" make test
 ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
 
-# Check CMAKE, OTB, GDAL variables before venv creation
+# Check CMAKE, OTB variables before venv creation
 CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
 CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
-GDAL_VERSION = $(shell gdal-config --version)
 
 # Check python install in VENV
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
-CHECK_PYGDAL = $(shell ${CARS_VENV}/bin/python -m pip list|grep pygdal)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
 CHECK_CYVLFEAT = $(shell ${CARS_VENV}/bin/python -m pip list|grep cyvlfeat)
@@ -46,7 +46,7 @@ CHECK_DOCKER = $(shell docker -v)
 # CARS version from setup.py
 CARS_VERSION = $(shell python3 -c 'from cars import __version__; print(__version__)')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
-CARS_VERSION_TUTO=0.5.0
+CARS_VERSION_TUTO = 0.5.0
 
 ################ MAKE targets by sections ######################
 
@@ -59,13 +59,9 @@ help: ## this help
 ## Install section
 
 .PHONY: check
-check: ## check if cmake, OTB, VLFEAT, GDAL is installed
-	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
-	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
-	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
-	@[ "${GDAL_VERSION}" ] || ( echo ">> GDAL_VERSION is not set"; exit 1 )
-	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set"; exit 1 )
-	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set"; exit 1 )
+check: ## check if VLFEAT is installed
+	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set (see make vlfeat)"; exit 1 )
+	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set (see make vlfeat)"; exit 1 )
 
 .PHONY: venv
 venv: check ## create virtualenv in CARS_VENV directory if not exists
@@ -73,12 +69,29 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
+.PHONY: vlfeat
+vlfeat: ## install vlfeat cnes fork library locally
+	@test -d vlfeat || git clone https://github.com/CNES/vlfeat.git
+	@cd vlfeat && make MEX=$MATLABROOT/bin/
+	@echo "vlfeat is installed. Please set the following environment variables:"
+	@echo "export VLFEAT_INCLUDE_DIR=${PWD}/vlfeat"
+	@echo "export VLFEAT_LIBRARY_DIR=${PWD}/vlfeat/bin/glnxa64"
+	@echo "export LD_LIBRARY_PATH=${PWD}/vlfeat/bin/glnxa64:$$""LD_LIBRARY_PATH"
+
+.PHONY: otb-remote-module
+otb-remote-module:
+	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
+	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
+	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
+	@mkdir -p build
+	@cd build && cmake -DCMAKE_INSTALL_PREFIX=${CARS_VENV} -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release ../otb_remote_module && make install
+	@cp env_cars.sh ${CARS_VENV}/bin/.
+
 .PHONY: install-deps
-install-deps: venv
+install-deps: venv otb-remote-module
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
-	@[ "${CHECK_PYGDAL}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary pygdal pygdal==$(GDAL_VERSION).*
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
@@ -90,16 +103,16 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
+.PHONY: install-pandora-mccnn
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
-
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 .PHONY: install-dev
 install-dev: install-deps ## install cars in dev editable mode (pip install -e .)
@@ -108,37 +121,53 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage : source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+
+.PHONY: install-deps-otb-free
+install-deps-otb-free: venv
+	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
+	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
+	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
+	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
+
+.PHONY: install-dev-otb-free
+install-dev-otb-free: install-deps-otb-free ## install cars in dev editable mode (pip install -e .) without otb
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
 
 ## Test section
 
 .PHONY: test
-test: install ## run all tests + coverage html
+test: ## run all tests + coverage html
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 .PHONY: test-ci
-test-ci: install ## run unit and pbs tests + coverage for cars-ci
+test-ci: ## run unit and pbs tests + coverage for cars-ci
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-end2end
-test-end2end: install ## run end2end tests only
+test-end2end: ## run end2end tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-unit
-test-unit: install ## run unit tests only
+test-unit: ## run unit tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-pbs-cluster
-test-pbs-cluster: install ## run pbs cluster tests only
+test-pbs-cluster: ## run pbs cluster tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-notebook
-test-notebook: install-pandora-mccnn ## run notebook tests only
+test-notebook: ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
@@ -147,22 +176,22 @@ test-notebook: install-pandora-mccnn ## run notebook tests only
 ### Format with isort and black
 
 .PHONY: format
-format: install format/isort format/black  ## run black and isort formatting (depends install)
+format: format/isort format/black  ## run black and isort formatting (depends install)
 
 .PHONY: format/isort
-format/isort: install  ## run isort formatting (depends install)
+format/isort: ## run isort formatting (depends install)
 	@echo "+ $@"
 	@${CARS_VENV}/bin/isort cars tests
 
 .PHONY: format/black
-format/black: install  ## run black formatting (depends install)
+format/black: ## run black formatting (depends install)
 	@echo "+ $@"
 	@${CARS_VENV}/bin/black cars tests
 
 ### Check code quality and linting : isort, black, flake8, pylint
 
 .PHONY: lint
-lint: install lint/isort lint/black lint/flake8 lint/pylint ## check code quality and linting
+lint: lint/isort lint/black lint/flake8 lint/pylint ## check code quality and linting
 
 .PHONY: lint/isort
 lint/isort: ## check imports style with isort
@@ -187,14 +216,14 @@ lint/pylint: ## check linting with pylint
 ## Documentation section
 
 .PHONY: docs
-docs: install ## build sphinx documentation
+docs: ## build sphinx documentation
 	@${CARS_VENV}/bin/sphinx-build -M clean docs/source/ docs/build
 	@${CARS_VENV}/bin/sphinx-build -M html docs/source/ docs/build -W --keep-going
 
 ## Notebook section
 
 .PHONY: notebook
-notebook: install ## install Jupyter notebook kernel with venv and cars install
+notebook: ## install Jupyter notebook kernel with venv and cars install
 	@echo "Install Jupyter Kernel in virtualenv dir"
 	@${CARS_VENV}/bin/python -m ipykernel install --sys-prefix --name=cars-${CARS_VERSION_MIN} --display-name=cars-${CARS_VERSION_MIN}
 	@echo "Use jupyter kernelspec list to know where is the kernel"
@@ -261,7 +290,7 @@ endif
 ## Clean section
 
 .PHONY: clean
-clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
+clean: clean-venv clean-build clean-vlfeat clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-venv
 clean-venv:
@@ -331,6 +360,11 @@ clean-docker: ## clean docker image
 	@docker image rm -f cnes/cars-jupyter:latest
 	@docker image rm -f cnes/cars-tutorial:${CARS_VERSION_TUTO}
 	@docker image rm -f cnes/cars-tutorial:latest
+
+.PHONY: clean-vlfeat
+clean-vlfeat:
+	@echo "+ $@"
+	@rm -rf vlfeat
 
 .PHONY: profile-memory-report
 profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file

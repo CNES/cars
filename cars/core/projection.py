@@ -32,12 +32,10 @@ from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
-import osgeo
 import pandas
 import pyproj
 import rasterio as rio
 import xarray as xr
-from osgeo import osr
 from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
@@ -150,20 +148,20 @@ def compute_dem_intersection_with_poly(
     return dem_cover, area_cover / area_inter * 100.0
 
 
-def polygon_projection(poly: Polygon, from_epsg: int, to_epsg: int) -> Polygon:
+def polygon_projection(poly: Polygon, epsg_in: int, epsg_out: int) -> Polygon:
     """
     Projects a polygon from an initial epsg code to another
 
     :param poly: poly to project
-    :param from_epsg: initial epsg code
-    :param to_epsg: final epsg code
+    :param epsg_in: initial epsg code
+    :param epsg_out: final epsg code
     :return: The polygon in the final projection
     """
     # Get CRS from input EPSG codes
-    from_crs = pyproj.CRS("EPSG:{}".format(from_epsg))
-    to_crs = pyproj.CRS("EPSG:{}".format(to_epsg))
+    crs_in = pyproj.CRS.from_epsg(epsg_in)
+    crs_out = pyproj.CRS.from_epsg(epsg_out)
     # Project polygon between CRS (keep always_xy for compatibility)
-    project = pyproj.Transformer.from_crs(from_crs, to_crs, always_xy=True)
+    project = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
     poly = transform(project.transform, poly)
 
     return poly
@@ -185,7 +183,9 @@ def geo_to_ecef(
     epsg_in = 4979  # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
     epsg_out = 4978  # EPSG code for ECEF WGS84 in x, y, z (meters)
 
-    return points_cloud_conversion([(lon, lat, alt)], epsg_in, epsg_out)[0]
+    return points_cloud_conversion(
+        np.array([[lon, lat, alt]]), epsg_in, epsg_out
+    )[0]
 
 
 def ecef_to_enu(
@@ -199,8 +199,6 @@ def ecef_to_enu(
     """
     Coordinates conversion from ECEF Earth Centered to
     East North Up Coordinate from a reference point (lat0, lon0, alt0)
-
-    Reminder: Use OSR lib if ENU conversion is available in next OSR versions.
 
     See Wikipedia page for details:
     https://en.wikipedia.org/wiki/Geographic_coordinate_conversion
@@ -324,18 +322,15 @@ def points_cloud_conversion(
     :param epsg_out: EPSG code of the output SRS
     :return: Projected point cloud
     """
-    srs_in = osr.SpatialReference()
-    srs_in.ImportFromEPSG(epsg_in)
-    srs_out = osr.SpatialReference()
-    srs_out.ImportFromEPSG(epsg_out)
-    # GDAL 3.0 Coordinate transformation (backwards compatibility)
-    # https://github.com/OSGeo/gdal/issues/1546
-    if int(osgeo.__version__[0]) >= 3:
-        srs_in.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
-        srs_out.SetAxisMappingStrategy(osr.OAMS_TRADITIONAL_GIS_ORDER)
-    conversion = osr.CoordinateTransformation(srs_in, srs_out)
-    cloud_in = conversion.TransformPoints(cloud_in)
-    cloud_in = np.array(cloud_in)
+    # Get CRS from input EPSG codes
+    crs_in = pyproj.CRS.from_epsg(epsg_in)
+    crs_out = pyproj.CRS.from_epsg(epsg_out)
+
+    # Project point cloud between CRS (keep always_xy for compatibility)
+    cloud_in = np.array(cloud_in).T
+    transformer = pyproj.Transformer.from_crs(crs_in, crs_out, always_xy=True)
+    cloud_in = transformer.transform(*cloud_in)
+    cloud_in = np.array(cloud_in).T
 
     return cloud_in
 

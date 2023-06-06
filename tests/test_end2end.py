@@ -165,8 +165,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             absolute_data_path(
                 "ref_output/performance_map_end2end_gizeh_crop.tif"
             ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
+            rtol=1.0e-6,
+            atol=1.0e-6,
         )
 
 

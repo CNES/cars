@@ -23,6 +23,7 @@ this module contains the epipolar grid generation application class.
 """
 
 # Standard imports
+import importlib.util
 import logging
 import os
 
@@ -97,9 +98,14 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
         overloaded_conf["save_grids"] = conf.get("save_grids", False)
-        # Overload loader
+
+        # check geometry tool availability
+        otb_app = importlib.util.find_spec("otbApplication")
+        geometry = "OTBGeometry" if otb_app is not None else "SharelocGeometry"
+
+        # Overloader loader
         overloaded_conf["geometry_loader"] = conf.get(
-            "geometry_loader", "OTBGeometry"
+            "geometry_loader", geometry
         )
 
         grid_generation_schema = {

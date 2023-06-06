@@ -21,12 +21,18 @@
 """
 CARS application module init file
 """
-from pkg_resources import iter_entry_points
-
 # CARS imports
 # TODO: remove the following import if the core/geometry/otb_geometry.py
 # file is removed from CARS
-from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
+import logging
+
+from pkg_resources import iter_entry_points
+
+try:
+    from cars.core.geometry.otb_geometry import OTBGeometry  # noqa
+except ModuleNotFoundError:
+    logging.info("OTBGeometry not available")
+
 from cars.core.geometry.shareloc_geometry import SharelocGeometry  # noqa
 
 # Imports needed in order to register application for Application factory

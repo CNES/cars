@@ -23,6 +23,7 @@ this module contains the dense_matching application class.
 """
 
 # Standard imports
+import importlib.util
 import logging
 import os
 from typing import Dict, Tuple
@@ -118,10 +119,16 @@ class LineOfSightIntersection(
         overloaded_conf["use_geoid_alt"] = conf.get("use_geoid_alt", False)
         overloaded_conf["snap_to_img1"] = conf.get("snap_to_img1", False)
         overloaded_conf["add_msk_info"] = conf.get("add_msk_info", True)
+
+        # check geometry tool availability
+        otb_app = importlib.util.find_spec("otbApplication")
+        geometry = "OTBGeometry" if otb_app is not None else "SharelocGeometry"
+
         # Overloader loader
         overloaded_conf["geometry_loader"] = conf.get(
-            "geometry_loader", "OTBGeometry"
+            "geometry_loader", geometry
         )
+
         # Saving files
         overloaded_conf["save_points_cloud"] = conf.get(
             "save_points_cloud", False
