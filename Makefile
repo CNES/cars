@@ -72,7 +72,7 @@ venv: check ## create virtualenv in CARS_VENV directory if not exists
 .PHONY: vlfeat
 vlfeat: ## install vlfeat cnes fork library locally
 	@test -d vlfeat || git clone https://github.com/CNES/vlfeat.git
-	@cd vlfeat && make
+	@cd vlfeat && make MEX=$MATLABROOT/bin/
 	@echo "vlfeat is installed. Please set the following environment variables:"
 	@echo "export VLFEAT_INCLUDE_DIR=${PWD}/vlfeat"
 	@echo "export VLFEAT_LIBRARY_DIR=${PWD}/vlfeat/bin/glnxa64"
