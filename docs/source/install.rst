@@ -48,7 +48,7 @@ and install it from PyPI:
 
 
 Install from source repository (option 2)
-===============================
+=========================================
 
 You can also clone CARS repository:
 
