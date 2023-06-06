@@ -7,7 +7,7 @@ Install
 VLFeat installation
 ===================
 
-Besides third parties python packages, CARS depends on `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_.
+Besides third-parties python packages, CARS depends on `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_.
 If this tool is not already installed on your system, you will need to compile it as follows:
 
 .. code-block:: console
