@@ -8,7 +8,7 @@ Install with Orfeo Toolbox
 Dependencies
 =============
 
-Besides thirparties python packages, CARS depends on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
+Besides third-parties python packages, this CARS installation depends therefore on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and also `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
 
 * Check OTB install:
 
