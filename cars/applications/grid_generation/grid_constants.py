@@ -27,6 +27,9 @@ GRID_GENERATION_RUN_TAG = "grid_generation_run"
 
 # Run infos
 
+GRID_CORRECTION_TAG = "grid_correction"
+CORRECTED_MATCHES_TAG = "corrected_filtered_matches"
+
 EPIPOLAR_SIZE_X_TAG = "epipolar_size_x"
 EPIPOLAR_SIZE_Y_TAG = "epipolar_size_y"
 EPIPOLAR_ORIGIN_X_TAG = "epipolar_origin_x"

@@ -34,6 +34,10 @@ import numpy as np
 import pandas
 from scipy import interpolate
 
+import cars.applications.grid_generation.grid_constants as grid_cst
+import cars.orchestrator.orchestrator as ocht
+from cars.applications import application_constants
+
 # CARS imports
 from cars.data_structures import cars_dataset
 
@@ -128,6 +132,8 @@ def estimate_right_grid_correction(
     initial_cars_ds=None,
     save_matches=False,
     pair_folder="",
+    pair_key="pair_0",
+    orchestrator=None,
 ):
     """
     Estimates grid correction, and correct matches
@@ -147,6 +153,16 @@ def estimate_right_grid_correction(
             grid_correction is : (coefsx_2d, coefsy_2d) , each of size (2,2)
 
     """
+    # Default orchestrator
+    if orchestrator is None:
+        # Create default sequential orchestrator for current application
+        # be awere, no out_json will be shared between orchestrators
+        # No files saved
+        cars_orchestrator = ocht.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        )
+    else:
+        cars_orchestrator = orchestrator
 
     if matches.shape[0] < 100:
         logging.error(
@@ -403,7 +419,9 @@ def estimate_right_grid_correction(
             logging.error("Pair folder not provided")
         else:
             current_out_dir = pair_folder
-        matches_array_path = os.path.join(current_out_dir, "matches.npy")
+        matches_array_path = os.path.join(
+            current_out_dir, "corrected_filtered_matches.npy"
+        )
         np.save(matches_array_path, corrected_matches)
 
     # Create CarsDataset containing corrected matches, with same tiling as input
@@ -414,6 +432,18 @@ def estimate_right_grid_correction(
             corrected_matches_cars_ds_left,
             corrected_matches_cars_ds_right,
         ) = create_matches_cars_ds(corrected_matches, initial_cars_ds)
+
+    # Update orchestrator out_json
+    corrected_matches_infos = {
+        application_constants.APPLICATION_TAG: {
+            pair_key: {
+                grid_cst.GRID_CORRECTION_TAG: {
+                    grid_cst.CORRECTED_MATCHES_TAG: matches_array_path
+                }
+            }
+        }
+    }
+    cars_orchestrator.update_out_info(corrected_matches_infos)
 
     return (
         grid_correction,

@@ -390,6 +390,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     initial_cars_ds=epipolar_matches_left,
                     save_matches=self.sparse_matching_app.get_save_matches(),
                     pair_folder=pair_folder,
+                    pair_key=pair_key,
+                    orchestrator=cars_orchestrator,
                 )
 
                 # Correct grid right

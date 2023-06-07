@@ -567,6 +567,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         grid_right,
                         save_matches=self.sparse_mtch_app.get_save_matches(),
                         pair_folder=pair_folder,
+                        pair_key=pair_key,
+                        orchestrator=cars_orchestrator,
                     )
 
                     # Correct grid right
