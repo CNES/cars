@@ -256,9 +256,9 @@ def test_end2end_ventoux_unique():
 
             # check matches file exists
             assert os.path.isfile(
-                out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
-                ]["matches"]
+                out_json["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
             )
 
         # Check used_conf for sparse res
@@ -1166,9 +1166,9 @@ def test_end2end_use_epipolar_a_prior():
 
             # check matches file exists
             assert os.path.isfile(
-                out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
-                ]["matches"]
+                out_json["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
             )
 
         # Check used_conf for low res
@@ -1420,7 +1420,11 @@ def test_prepare_ventoux_bias():
             assert out_disp_compute["maximum_disparity"] < -44
 
             # check matches file exists
-            assert os.path.isfile(out_disp_compute["matches"])
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
 
 
 @pytest.mark.end2end_tests
@@ -1504,7 +1508,11 @@ def test_end2end_ventoux_with_color():
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 16
 
-            assert os.path.isfile(out_disp_compute["matches"])
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
 
             assert (
                 os.path.exists(
@@ -1746,7 +1754,11 @@ def test_end2end_ventoux_with_classif():
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 16
 
-            assert os.path.isfile(out_disp_compute["matches"])
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
 
             assert (
                 os.path.exists(
@@ -2218,7 +2230,11 @@ def test_end2end_quality_stats():
             assert out_disp_compute["maximum_disparity"] > 14
             assert out_disp_compute["maximum_disparity"] < 15
 
-            assert os.path.isfile(out_disp_compute["matches"])
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
@@ -2379,7 +2395,11 @@ def test_end2end_ventoux_egm96_geoid():
             assert out_disp_compute["maximum_disparity"] > 14
             assert out_disp_compute["maximum_disparity"] < 15
 
-            assert os.path.isfile(out_disp_compute["matches"])
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
