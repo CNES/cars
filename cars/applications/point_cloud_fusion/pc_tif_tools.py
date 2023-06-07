@@ -414,16 +414,11 @@ def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
             cloud_data_bands.append(type_band)
             cloud_data[type_band] = np.ravel(desc_band.read(1, window=window))
         else:
-            band_descriptions = desc_band.descriptions
-            if isinstance(band_descriptions, tuple):
-                band_descriptions = list(band_descriptions)
-            else:
-                band_descriptions = list(range(desc_band.count))
-            for idx, description in enumerate(band_descriptions):
-                band_name = "{}_{}".format(type_band, description)
+            for id_band in range(desc_band.count):
+                band_name = "{}{}".format(type_band, id_band)
                 cloud_data_bands.append(band_name)
                 cloud_data[band_name] = np.ravel(
-                    desc_band.read(1 + idx, window=window)
+                    desc_band.read(1 + id_band, window=window)
                 )
 
 

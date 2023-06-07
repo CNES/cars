@@ -43,7 +43,7 @@ from cars.applications.triangulation import (
 )
 from cars.applications.triangulation.triangulation import Triangulation
 from cars.core import constants as cst
-from cars.core import preprocessing, projection, tiling
+from cars.core import inputs, preprocessing, projection, tiling
 
 # CARS imports
 from cars.core.geometry import AbstractGeometry, read_geoid_file
@@ -383,6 +383,17 @@ class LineOfSightIntersection(
             if self.save_points_cloud:
                 # if isinstance(epipolar_points_cloud_left, xr.DataArray):
                 if epipolar_disparity_map_left.dataset_type == "arrays":
+                    # Propagate color type in output file
+                    color_type = None
+                    if sens_cst.INPUT_COLOR in sensor_image_left:
+                        color_type = inputs.rasterio_get_color_type(
+                            sensor_image_left[sens_cst.INPUT_COLOR]
+                        )
+                    else:
+                        color_type = inputs.rasterio_get_color_type(
+                            sensor_image_left[sens_cst.INPUT_IMG]
+                        )
+
                     self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_pc_X_left.tif"),
                         cst.X,
@@ -449,6 +460,7 @@ class LineOfSightIntersection(
                         cst.EPI_COLOR,
                         epipolar_points_cloud_left,
                         cars_ds_name="epi_pc_color_left",
+                        dtype=color_type,
                     )
                     self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_pc_color_right.tif"),

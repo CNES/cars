@@ -231,26 +231,6 @@ class MappingToTerrainTiles(
             merged_point_cloud.attributes["bounds"] = bounds
             merged_point_cloud.attributes["epsg"] = epsg
 
-            # Save objects
-
-            if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
-                # Points cloud file name
-                # TODO in input conf file
-                pc_file_name = os.path.join(
-                    self.orchestrator.out_dir, "points_cloud"
-                )
-                self.orchestrator.add_to_save_lists(
-                    pc_file_name,
-                    None,
-                    merged_point_cloud,
-                    cars_ds_name="merged_points_cloud",
-                )
-
-            # Get saving infos in order to save tiles when they are computed
-            [saving_info] = self.orchestrator.get_saving_infos(
-                [merged_point_cloud]
-            )
-
             number_of_terrain_tiles = (
                 merged_point_cloud.tiling_grid.shape[1]
                 * merged_point_cloud.tiling_grid.shape[0]
@@ -323,6 +303,26 @@ class MappingToTerrainTiles(
                         orchestrator=self.orchestrator,
                     )
                 )
+
+            # Save objects
+
+            if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
+                # Points cloud file name
+                # TODO in input conf file
+                pc_file_name = os.path.join(
+                    self.orchestrator.out_dir, "points_cloud"
+                )
+                self.orchestrator.add_to_save_lists(
+                    pc_file_name,
+                    None,
+                    merged_point_cloud,
+                    cars_ds_name="merged_points_cloud",
+                )
+
+            # Get saving infos in order to save tiles when they are computed
+            [saving_info] = self.orchestrator.get_saving_infos(
+                [merged_point_cloud]
+            )
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
