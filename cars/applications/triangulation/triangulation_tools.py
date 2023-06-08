@@ -398,37 +398,68 @@ def geoid_offset(points, geoid):
     # deep copy the given point cloud that will be used as output
     out_pc = points.copy(deep=True)
 
+    logging.error(points[cst.X].values.shape)
+    logging.error(points[cst.Y].values.shape)
+    logging.error(points[cst.Z].values.shape)
+
     # currently assumes that the OTB EGM96 geoid will be used with longitude
     # ranging from 0 to 360, so we must unwrap longitudes to this range.
     longitudes = np.copy(out_pc[cst.X].values)
     longitudes[longitudes < 0] += 360
 
     # perform interpolation using point cloud coordinates.
-    if (
-        not geoid.lat_min
-        <= out_pc[cst.Y].min()
-        <= out_pc[cst.Y].max()
-        <= geoid.lat_max
-        and geoid.lon_min
-        <= np.min(longitudes)
-        <= np.max(longitudes)
-        <= geoid.lat_max
-    ):
-        raise RuntimeError(
-            "Geoid does not fully cover the area spanned by the point cloud."
+    if sum(longitudes.shape) != 0:
+        if (
+            not geoid.lat_min
+            <= out_pc[cst.Y].min()
+            <= out_pc[cst.Y].max()
+            <= geoid.lat_max
+            and geoid.lon_min
+            <= np.min(longitudes)
+            <= np.max(longitudes)
+            <= geoid.lat_max
+        ):
+            raise RuntimeError(
+                "Geoid does not fully cover the area spanned by"
+                " the point cloud."
+            )
+
+        logging.error("longitudes.shape {}".format(longitudes.shape))
+
+        out_pc[cst.Z] = points[cst.Z]
+
+        # interpolate data
+        if isinstance(out_pc, xr.Dataset):
+            ref_interp = geoid.interp(
+                {
+                    "lat": out_pc[cst.Y],
+                    "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
+                }
+            )
+
+            ref_interp_hgt = ref_interp.hgt.values
+
+        else:
+            # one dimension is equal to 1, happens with matches tiangulation
+            ref_interp = geoid.interp(
+                {
+                    "lat": out_pc[cst.Y].values,
+                    "lon": longitudes,
+                }
+            )
+
+            ref_interp_hgt = ref_interp.hgt.values.diagonal()
+
+        # offset using geoid height
+        logging.error("ref_interp_hgt {}".format(ref_interp_hgt.shape))
+
+        logging.error(
+            "out_pc[cst.Z].values {}".format(out_pc[cst.Z].values.shape)
         )
+        out_pc[cst.Z] -= ref_interp_hgt
 
-    # interpolate data
-    ref_interp = geoid.interp(
-        {
-            "lat": out_pc[cst.Y],
-            "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
-        }
-    )
-    # offset using geoid height
-    out_pc[cst.Z] = points[cst.Z] - ref_interp.hgt
-
-    # remove coordinates lat & lon added by the interpolation
-    out_pc = out_pc.reset_coords(["lat", "lon"], drop=True)
+        # remove coordinates lat & lon added by the interpolation
+        if isinstance(out_pc, xr.Dataset):
+            out_pc = out_pc.reset_coords(["lat", "lon"], drop=True)
 
     return out_pc
