@@ -27,7 +27,6 @@ contains sift sparse matching method
 from __future__ import absolute_import
 
 import logging
-import os
 
 # Third party imports
 import numpy as np
@@ -337,7 +336,6 @@ def compute_disp_min_disp_max(
     disp_margin=0.1,
     pair_key=None,
     disp_to_alt_ratio=None,
-    save_matches=False,
 ):
     """
     Compute disp min and disp max from triangulated and filtered matches
@@ -368,8 +366,6 @@ def compute_disp_min_disp_max(
     :type disp_margin: float
     :param disp_to_alt_ratio: used for logging info
     :type disp_to_alt_ratio: float
-    :param save_matches: true is matches needs to be saved
-    :type save_matches: bool
 
     :return: disp min and disp max
     :rtype: float, float
@@ -425,18 +421,6 @@ def compute_disp_min_disp_max(
         pd_cloud, k=25, std_factor=3.0
     )
 
-    # Export filtered matches
-    matches_array_path = None
-    if save_matches:
-        logging.info("Writing matches file")
-        filt_matches = np.array(filter_cloud.iloc[:, 0:4])
-        if pair_folder is None:
-            current_out_dir = orchestrator.out_dir
-        else:
-            current_out_dir = pair_folder
-        matches_array_path = os.path.join(current_out_dir, "matches.npy")
-        np.save(matches_array_path, filt_matches)
-
     # Obtain dmin dmax
     filt_disparity = np.array(filter_cloud.iloc[:, 3])
     dmax = np.max(filt_disparity)
@@ -469,7 +453,6 @@ def compute_disp_min_disp_max(
                     sm_cst.DISPARITY_MARGIN_PARAM_TAG: disp_margin,
                     sm_cst.MINIMUM_DISPARITY_TAG: dmin,
                     sm_cst.MAXIMUM_DISPARITY_TAG: dmax,
-                    sm_cst.MATCHES_TAG: matches_array_path,
                 }
             }
         }

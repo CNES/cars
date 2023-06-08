@@ -623,6 +623,14 @@ class Sift(SparseMatching, short_name="sift"):
 
         logging.info(matches_discarded_message)
 
+        filtered_matches_array_path = None
+        if save_matches:
+            logging.info("Writing filtered matches file")
+            filtered_matches_array_path = os.path.join(
+                pair_folder, "filtered_matches.npy"
+            )
+            np.save(filtered_matches_array_path, matches)
+
         # Retrieve number of matches
         nb_matches = matches.shape[0]
 
@@ -666,6 +674,9 @@ class Sift(SparseMatching, short_name="sift"):
                 pair_key: {
                     sm_cst.MATCHES_FILTERING_TAG: {
                         sm_cst.RAW_MATCHES_TAG: raw_matches_array_path,
+                        sm_cst.FILTERED_MATCHES_TAG: (
+                            filtered_matches_array_path
+                        ),
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: (
