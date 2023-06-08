@@ -398,10 +398,6 @@ def geoid_offset(points, geoid):
     # deep copy the given point cloud that will be used as output
     out_pc = points.copy(deep=True)
 
-    logging.error(points[cst.X].values.shape)
-    logging.error(points[cst.Y].values.shape)
-    logging.error(points[cst.Z].values.shape)
-
     # currently assumes that the OTB EGM96 geoid will be used with longitude
     # ranging from 0 to 360, so we must unwrap longitudes to this range.
     longitudes = np.copy(out_pc[cst.X].values)
@@ -423,8 +419,6 @@ def geoid_offset(points, geoid):
                 "Geoid does not fully cover the area spanned by"
                 " the point cloud."
             )
-
-        logging.error("longitudes.shape {}".format(longitudes.shape))
 
         out_pc[cst.Z] = points[cst.Z]
 
@@ -451,11 +445,6 @@ def geoid_offset(points, geoid):
             ref_interp_hgt = ref_interp.hgt.values.diagonal()
 
         # offset using geoid height
-        logging.error("ref_interp_hgt {}".format(ref_interp_hgt.shape))
-
-        logging.error(
-            "out_pc[cst.Z].values {}".format(out_pc[cst.Z].values.shape)
-        )
         out_pc[cst.Z] -= ref_interp_hgt
 
         # remove coordinates lat & lon added by the interpolation
