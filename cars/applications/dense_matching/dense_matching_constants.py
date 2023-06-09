@@ -36,7 +36,6 @@ METHOD = "method"
 MIN_EPI_TILE_SIZE = "min_epi_tile_size"
 MAX_EPI_TILE_SIZE = "max_epi_tile_size"
 EPI_TILE_MARGIN_IN_PERCENT = "epipolar_tile_margin_in_percent"
-USE_SEC_DISP = "use_sec_disp"
 MIN_ELEVATION_OFFSET = "min_elevation_offset"
 MAX_ELEVATION_OFFSET = "max_elevation_offset"
 

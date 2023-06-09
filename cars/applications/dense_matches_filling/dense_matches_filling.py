@@ -116,31 +116,14 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
-        epipolar_images_left,
+        epipolar_disparity_map,
         **kwargs,
     ):
         """
         Run Refill application using plane method.
 
-        :param epipolar_disparity_map_left:  left disparity
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right:  right disparity
-        :type epipolar_disparity_map_right: CarsDataset
-        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
-
-                - N x M Delayed tiles. \
-                    Each tile will be a future xarray Dataset containing:
-
-                    - data with keys : "im", "msk", "color"
-                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
-                        "transform", "crs", "valid_pixels", "no_data_mask",\
-                        "no_data_img"
-                - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
-        :type epipolar_images_left: CarsDataset
+        :param epipolar_disparity_map:  left disparity
+        :type epipolar_disparity_map: CarsDataset
         :param holes_bbox_left:  left holes
         :type holes_bbox_left: CarsDataset
         :param holes_bbox_right:  right holes
@@ -155,8 +138,8 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         :param pair_key: pair id
         :type pair_key: str
 
-        :return: filled left disparity map, filled right disparity map: \
-            Each CarsDataset contains:
+        :return: filled disparity map: \
+            The CarsDataset contains:
 
             - N x M Delayed tiles.\
               Each tile will be a future xarray Dataset containing:
@@ -166,14 +149,13 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
                 "largest_epipolar_region","opt_epipolar_tile_size",
                     "epipolar_regions_grid"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
 
         """
 
     def __register_dataset__(
         self,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
+        epipolar_disparity_map,
         save_disparity_map,
         pair_folder,
         app_name=None,
@@ -181,10 +163,8 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         """
         Create dataset and registered the output in the orchestrator
 
-        :param epipolar_disparity_map_left:  left disparity
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right:  right disparity
-        :type epipolar_disparity_map_right: CarsDataset
+        :param epipolar_disparity_map:  left disparity
+        :type epipolar_disparity_map: CarsDataset
         :param save_disparity_map: true if save disparity map
         :type save_disparity_map: bool
         :param pair_folder: path to folder
@@ -197,99 +177,53 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
             app_name = ""
 
         # Create CarsDataset Epipolar_disparity
-        new_epipolar_disparity_map_left = cars_dataset.CarsDataset("arrays")
-        new_epipolar_disparity_map_left.create_empty_copy(
-            epipolar_disparity_map_left
-        )
-
-        new_epipolar_disparity_map_right = cars_dataset.CarsDataset("arrays")
-        new_epipolar_disparity_map_right.create_empty_copy(
-            epipolar_disparity_map_right
-        )
+        new_epipolar_disparity_map = cars_dataset.CarsDataset("arrays")
+        new_epipolar_disparity_map.create_empty_copy(epipolar_disparity_map)
 
         # Update attributes to get epipolar info
-        new_epipolar_disparity_map_left.attributes.update(
-            epipolar_disparity_map_left.attributes
+        new_epipolar_disparity_map.attributes.update(
+            epipolar_disparity_map.attributes
         )
 
         # Save disparity maps
         if save_disparity_map:
             self.orchestrator.add_to_save_lists(
                 os.path.join(
-                    pair_folder, "epi_disp_" + app_name + "_filled_left.tif"
+                    pair_folder, "epi_disp_" + app_name + "_filled.tif"
                 ),
                 cst_disp.MAP,
-                new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_" + app_name + "_filled_left",
-            )
-
-            self.orchestrator.add_to_save_lists(
-                os.path.join(
-                    pair_folder, "epi_disp_" + app_name + "_filled_right.tif"
-                ),
-                cst_disp.MAP,
-                new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_" + app_name + "_filled_right",
+                new_epipolar_disparity_map,
+                cars_ds_name="epi_disp_" + app_name + "_filled",
             )
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder,
-                    "epi_disp_color_" + app_name + "_filled_left.tif",
+                    "epi_disp_color_" + app_name + "_filled.tif",
                 ),
                 cst.EPI_COLOR,
-                new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_color_" + app_name + "_filled_left",
+                new_epipolar_disparity_map,
+                cars_ds_name="epi_disp_color_" + app_name + "_filled",
             )
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder,
-                    "epi_disp_color_" + app_name + "_filled_right.tif",
-                ),
-                cst.EPI_COLOR,
-                new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_color_" + app_name + "_filled_right",
-            )
-
-            self.orchestrator.add_to_save_lists(
-                os.path.join(
-                    pair_folder,
-                    "epi_disp_mask_" + app_name + "_filled_left.tif",
+                    "epi_disp_mask_" + app_name + "_filled.tif",
                 ),
                 cst_disp.VALID,
-                new_epipolar_disparity_map_left,
-                cars_ds_name="epi_disp_mask_" + app_name + "_filled_left",
+                new_epipolar_disparity_map,
+                cars_ds_name="epi_disp_mask_" + app_name + "_filled",
             )
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder,
-                    "epi_disp_mask_" + app_name + "_filled_right.tif",
-                ),
-                cst_disp.VALID,
-                new_epipolar_disparity_map_right,
-                cars_ds_name="epi_disp_mask_" + app_name + "_filled_right",
-            )
-
-            self.orchestrator.add_to_save_lists(
-                os.path.join(
-                    pair_folder,
-                    "epi_confidence_" + app_name + "_filled_left.tif",
+                    "epi_confidence_" + app_name + "_filled.tif",
                 ),
                 cst_disp.CONFIDENCE,
-                new_epipolar_disparity_map_left,
-                cars_ds_name="epi_ambiguity_" + app_name + "_filled_left",
+                new_epipolar_disparity_map,
+                cars_ds_name="epi_ambiguity_" + app_name + "_filled",
             )
 
-            self.orchestrator.add_to_save_lists(
-                os.path.join(
-                    pair_folder,
-                    "epi_confidence_" + app_name + "_filled_right.tif",
-                ),
-                cst_disp.CONFIDENCE,
-                new_epipolar_disparity_map_right,
-                cars_ds_name="epi_ambiguity_" + app_name + "_filled_right",
-            )
-
-        return new_epipolar_disparity_map_left, new_epipolar_disparity_map_right
+        return new_epipolar_disparity_map

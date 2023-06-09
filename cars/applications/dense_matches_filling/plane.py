@@ -41,9 +41,6 @@ from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFilling,
 )
-from cars.applications.dense_matching import dense_matching_tools
-from cars.core import constants as cst
-from cars.core.datasets import get_color_bands
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
@@ -164,9 +161,7 @@ class PlaneFill(
 
     def run(
         self,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
-        epipolar_images_left,
+        epipolar_disparity_map,
         holes_bbox_left=None,
         holes_bbox_right=None,
         disp_min=0,
@@ -178,23 +173,8 @@ class PlaneFill(
         """
         Run Refill application using plane method.
 
-        :param epipolar_disparity_map_left:  left disparity
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right:  right disparity
-        :type epipolar_disparity_map_right: CarsDataset
-        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
-
-                - N x M Delayed tiles. \
-                    Each tile will be a future xarray Dataset containing:
-
-                    - data with keys : "im", "msk", "color"
-                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
-                        "transform", "crs", "valid_pixels", "no_data_mask",\
-                        "no_data_img"
-                - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
-        :type epipolar_images_left: CarsDataset
+        :param epipolar_disparity_map:  left to right disparity
+        :type epipolar_disparity_map: CarsDataset
         :param holes_bbox_left:  left holes
         :type holes_bbox_left: CarsDataset
         :param holes_bbox_right:  right holes
@@ -209,7 +189,7 @@ class PlaneFill(
         :param pair_key: pair id
         :type pair_key: str
 
-        :return: filled left disparity map, filled right disparity map: \
+        :return: filled disparity map: \
             Each CarsDataset contains:
 
             - N x M Delayed tiles.\
@@ -220,17 +200,17 @@ class PlaneFill(
                 "largest_epipolar_region","opt_epipolar_tile_size",
                     "epipolar_regions_grid"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
 
         """
         if holes_bbox_left is None or holes_bbox_right is None:
             raise RuntimeError("Disparity holes bbox are inconsistent.")
 
-        res = None, None
+        res = None
 
         if not self.classification:
             logging.info("Disparity holes filling was not activated")
-            res = epipolar_disparity_map_left, epipolar_disparity_map_right
+            res = epipolar_disparity_map
 
         else:
             # Default orchestrator
@@ -251,27 +231,17 @@ class PlaneFill(
                 "max_search_distance": self.max_search_distance,
             }
 
-            if epipolar_disparity_map_left.dataset_type == "arrays":
-                (
-                    new_epipolar_disparity_map_left,
-                    new_epipolar_disparity_map_right,
-                ) = self.__register_dataset__(
-                    epipolar_disparity_map_left,
-                    epipolar_disparity_map_right,
+            if epipolar_disparity_map.dataset_type == "arrays":
+                new_epipolar_disparity_map = self.__register_dataset__(
+                    epipolar_disparity_map,
                     self.save_disparity_map,
                     pair_folder,
                     app_name="plane",
                 )
 
                 # Get saving infos in order to save tiles when they are computed
-                [
-                    saving_info_left,
-                    saving_info_right,
-                ] = self.orchestrator.get_saving_infos(
-                    [
-                        new_epipolar_disparity_map_left,
-                        new_epipolar_disparity_map_right,
-                    ]
+                [saving_info] = self.orchestrator.get_saving_infos(
+                    [new_epipolar_disparity_map]
                 )
 
                 # Add infos to orchestrator.out_json
@@ -286,8 +256,8 @@ class PlaneFill(
                 logging.info(
                     "Fill missing disparity with plan model"
                     ": number tiles: {}".format(
-                        epipolar_disparity_map_right.shape[1]
-                        * epipolar_disparity_map_right.shape[0]
+                        epipolar_disparity_map.shape[1]
+                        * epipolar_disparity_map.shape[0]
                     )
                 )
 
@@ -299,7 +269,7 @@ class PlaneFill(
                     holes_bbox_right
                 )
 
-                # Estimate right poly on left and left poly on right
+                # Estimate right poly on left
                 # using disparity range
                 poly_list_right_on_left = [
                     fd_tools.estimate_poly_with_disp(
@@ -307,35 +277,22 @@ class PlaneFill(
                     )
                     for p in poly_list_right
                 ]
-                poly_list_left_on_right = [
-                    fd_tools.estimate_poly_with_disp(
-                        p, dmin=disp_min, dmax=disp_max
-                    )
-                    for p in poly_list_left
-                ]
 
                 # Merge polygones
-                merged_poly_list_left = fd_tools.merge_intersecting_polygones(
+                merged_poly_list = fd_tools.merge_intersecting_polygones(
                     poly_list_left + poly_list_right_on_left
-                )
-                merged_poly_list_right = fd_tools.merge_intersecting_polygones(
-                    poly_list_right + poly_list_left_on_right
                 )
 
                 logging.info(
                     "Disparity filling: {} holes on"
-                    " left to fill, {} on right".format(
-                        len(merged_poly_list_left), len(merged_poly_list_right)
-                    )
+                    " left to fill".format(len(merged_poly_list))
                 )
 
                 # Generate polygones for tiles
                 tiles_polygones = {}
-                for col in range(epipolar_disparity_map_right.shape[1]):
-                    for row in range(epipolar_disparity_map_right.shape[0]):
-                        tile = epipolar_disparity_map_right.tiling_grid[
-                            row, col
-                        ]
+                for col in range(epipolar_disparity_map.shape[1]):
+                    for row in range(epipolar_disparity_map.shape[0]):
+                        tile = epipolar_disparity_map.tiling_grid[row, col]
                         tiles_polygones[(row, col)] = Polygon(
                             [
                                 [tile[0], tile[2]],
@@ -347,103 +304,64 @@ class PlaneFill(
                         )
 
                 # Generate disparity maps
-                for col in range(epipolar_disparity_map_right.shape[1]):
-                    for row in range(epipolar_disparity_map_right.shape[0]):
-                        if type(None) not in (
-                            type(epipolar_disparity_map_left[row, col]),
-                            type(epipolar_disparity_map_right[row, col]),
-                        ):
+                for col in range(epipolar_disparity_map.shape[1]):
+                    for row in range(epipolar_disparity_map.shape[0]):
+                        if epipolar_disparity_map[row, col] is not None:
                             tile_poly = tiles_polygones[(row, col)]
                             # Get intersecting holes poly
-                            corresponding_holes_left = (
+                            corresponding_holes = (
                                 fd_tools.get_corresponding_holes(
-                                    tile_poly, merged_poly_list_left
+                                    tile_poly, merged_poly_list
                                 )
                             )
-                            corresponding_holes_right = (
-                                fd_tools.get_corresponding_holes(
-                                    tile_poly, merged_poly_list_right
-                                )
-                            )
+
                             # Get corresponding_tiles
                             # list of (tile_window, tile overlap, xr.Dataset)
-                            corresponding_tiles_left = (
+                            corresponding_tiles = (
                                 fd_tools.get_corresponding_tiles(
                                     tiles_polygones,
-                                    corresponding_holes_left,
-                                    epipolar_disparity_map_left,
-                                )
-                            )
-                            corresponding_tiles_right = (
-                                fd_tools.get_corresponding_tiles(
-                                    tiles_polygones,
-                                    corresponding_holes_right,
-                                    epipolar_disparity_map_right,
+                                    corresponding_holes,
+                                    epipolar_disparity_map,
                                 )
                             )
 
                             # get tile window and overlap
-                            window = (
-                                new_epipolar_disparity_map_left.tiling_grid[
-                                    row, col
-                                ]
-                            )
-                            overlap_left = (
-                                new_epipolar_disparity_map_left.overlaps[
-                                    row, col
-                                ]
-                            )
-                            overlap_right = (
-                                new_epipolar_disparity_map_right.overlaps[
-                                    row, col
-                                ]
-                            )
+                            window = new_epipolar_disparity_map.tiling_grid[
+                                row, col
+                            ]
+                            overlap = new_epipolar_disparity_map.overlaps[
+                                row, col
+                            ]
 
                             # update saving infos  for potential replacement
-                            full_saving_info_left = ocht.update_saving_infos(
-                                saving_info_left, row=row, col=col
-                            )
-                            full_saving_info_right = ocht.update_saving_infos(
-                                saving_info_right, row=row, col=col
+                            full_saving_info = ocht.update_saving_infos(
+                                saving_info, row=row, col=col
                             )
 
-                            if (
-                                len(corresponding_tiles_left)
-                                + len(corresponding_tiles_right)
-                                == 0
-                            ):
+                            if len(corresponding_tiles) == 0:
                                 # copy dataset
                                 (
-                                    new_epipolar_disparity_map_left[row, col],
-                                    new_epipolar_disparity_map_right[row, col],
+                                    new_epipolar_disparity_map[row, col]
                                 ) = self.orchestrator.cluster.create_task(
-                                    wrapper_copy_disparity, nout=2
+                                    wrapper_copy_disparity
                                 )(
-                                    epipolar_disparity_map_left[row, col],
-                                    epipolar_disparity_map_right[row, col],
+                                    epipolar_disparity_map[row, col],
                                     window,
-                                    overlap_left,
-                                    overlap_right,
-                                    saving_info_left=full_saving_info_left,
-                                    saving_info_right=full_saving_info_right,
+                                    overlap,
+                                    saving_info=full_saving_info,
                                 )
 
                             else:
                                 # Fill holes
                                 (
-                                    new_epipolar_disparity_map_left[row, col],
-                                    new_epipolar_disparity_map_right[row, col],
+                                    new_epipolar_disparity_map[row, col]
                                 ) = self.orchestrator.cluster.create_task(
-                                    wrapper_fill_disparity, nout=2
+                                    wrapper_fill_disparity
                                 )(
-                                    corresponding_tiles_left,
-                                    corresponding_tiles_right,
-                                    corresponding_holes_left,
-                                    corresponding_holes_right,
+                                    corresponding_tiles,
+                                    corresponding_holes,
                                     window,
-                                    overlap_left,
-                                    overlap_right,
-                                    epipolar_images_left[row, col],
+                                    overlap,
                                     self.classification,
                                     ignore_nodata_at_disp_mask_borders=(
                                         self.ignore_nodata_at_disp_mask_borders
@@ -457,13 +375,9 @@ class PlaneFill(
                                     nb_pix=self.nb_pix,
                                     percent_to_erode=self.percent_to_erode,
                                     interp_options=interp_options,
-                                    saving_info_left=full_saving_info_left,
-                                    saving_info_right=full_saving_info_right,
+                                    saving_info=full_saving_info,
                                 )
-                res = (
-                    new_epipolar_disparity_map_left,
-                    new_epipolar_disparity_map_right,
-                )
+                res = new_epipolar_disparity_map
 
             else:
                 logging.error(
@@ -474,14 +388,10 @@ class PlaneFill(
 
 
 def wrapper_fill_disparity(
-    corresponding_tiles_left,
-    corresponding_tiles_right,
-    corresponding_poly_left,
-    corresponding_poly_right,
+    corresponding_tiles,
+    corresponding_poly,
     window,
-    overlap_left,
-    overlap_right,
-    left_epi_image,
+    overlap,
     classification,
     ignore_nodata_at_disp_mask_borders=True,
     ignore_zero_fill_disp_mask_values=True,
@@ -489,26 +399,19 @@ def wrapper_fill_disparity(
     nb_pix=20,
     percent_to_erode=0.3,
     interp_options=None,
-    saving_info_left=None,
-    saving_info_right=None,
+    saving_info=None,
 ):
     """
     Wrapper to Fill disparity map holes
 
-    :param corresponding_tiles_left: left disparity map tiles
-    :type corresponding_tiles_left: list(tuple(list, list, xr.Dataset))
-    :param corresponding_tiles_right: right disparity map tiles
-    :type corresponding_tiles_right: list(tuple(list, list, xr.Dataset))
-    :param corresponding_poly_left: left holes polygons
-    :type corresponding_poly_left: list(Polygon)
-    :param corresponding_poly_right: right holes polygons
-    :type corresponding_poly_right: list(Polygon)
+    :param corresponding_tiles: disparity map tiles
+    :type corresponding_tiles: list(tuple(list, list, xr.Dataset))
+    :param corresponding_poly: holes polygons
+    :type corresponding_poly: list(Polygon)
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
-    :param overlap_left: left overlap [row min, row max, col min col max]
-    :type overlap_left: list
-    :param overlap_right: left overlap  [row min, row max, col min col max]
-    :type overlap_right: list
+    :param overlap: overlap [row min, row max, col min col max]
+    :type overlap: list
     :param left_epi_image: left epipolar image
     :type left_epi_image:  xr.Dataset
     :param classification: list of tag to use
@@ -525,38 +428,36 @@ def wrapper_fill_disparity(
     :type percent_to_erode: float
     :param interp_options: interp_options
     :type interp_options: dict
-    :param saving_info_left: saving infos left
-    :type saving_info_left: dict
-    :param saving_info_right: saving infos right
-    :type saving_info_right: dict
+    :param saving_info: saving infos
+    :type saving_info: dict
 
 
-    :return: left disp map, right disp map
-    :rtype: xr.Dataset, xr.Dataset
+    :return: disp map
+    :rtype: xr.Dataset
     """
 
     # find xarray Dataset corresponding to current tile
-    input_disp_left = corresponding_tiles_tools.find_tile_dataset(
-        corresponding_tiles_left, window
+    input_disp = corresponding_tiles_tools.find_tile_dataset(
+        corresponding_tiles, window
     )
 
     # Create combined xarray Dataset
 
     (
-        combined_dataset_left,
-        row_min_left,
-        col_min_left,
+        combined_dataset,
+        row_min,
+        col_min,
     ) = corresponding_tiles_tools.reconstruct_data(
-        corresponding_tiles_left, window, overlap_left
+        corresponding_tiles, window, overlap
     )
 
     # Fill disparity
 
     fd_tools.fill_disp_using_plane(
-        combined_dataset_left,
-        corresponding_poly_left,
-        row_min_left,
-        col_min_left,
+        combined_dataset,
+        corresponding_poly,
+        row_min,
+        col_min,
         ignore_nodata_at_disp_mask_borders,
         ignore_zero_fill_disp_mask_values,
         ignore_extrema_disp_values,
@@ -567,143 +468,60 @@ def wrapper_fill_disparity(
     )
     # Crop Dataset to get tile disparity
     # crop
-    croped_disp_left = corresponding_tiles_tools.crop_dataset(
-        combined_dataset_left,
-        input_disp_left,
+    croped_disp = corresponding_tiles_tools.crop_dataset(
+        combined_dataset,
+        input_disp,
         window,
-        overlap_left,
-        row_min_left,
-        col_min_left,
+        overlap,
+        row_min,
+        col_min,
     )
-
-    # find xarray Dataset corresponding to current tile
-    input_disp_right = corresponding_tiles_tools.find_tile_dataset(
-        corresponding_tiles_right, window
-    )
-
-    croped_disp_right = None
-    if input_disp_right is not None:
-        (
-            combined_dataset_right,
-            row_min_right,
-            col_min_right,
-        ) = corresponding_tiles_tools.reconstruct_data(
-            corresponding_tiles_right, window, overlap_right
-        )
-
-        fd_tools.fill_disp_using_plane(
-            combined_dataset_right,
-            corresponding_poly_right,
-            row_min_right,
-            col_min_right,
-            ignore_nodata_at_disp_mask_borders,
-            ignore_zero_fill_disp_mask_values,
-            ignore_extrema_disp_values,
-            nb_pix,
-            percent_to_erode,
-            interp_options,
-            classification,
-        )
-
-        # crop
-        croped_disp_right = corresponding_tiles_tools.crop_dataset(
-            combined_dataset_right,
-            input_disp_right,
-            window,
-            overlap_right,
-            row_min_right,
-            col_min_right,
-        )
-
-        # compute right color image from right-left disparity map
-        color_sec = dense_matching_tools.estimate_color_from_disparity(
-            croped_disp_right,
-            left_epi_image,
-        )
-
-        # check bands
-        if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
-            if cst.BAND_IM not in croped_disp_right.dims:
-                band_im = get_color_bands(left_epi_image, cst.EPI_COLOR)
-                croped_disp_right.coords[cst.BAND_IM] = band_im
-
-        # merge colors
-        croped_disp_right[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
 
     # Fill with attributes
     cars_dataset.fill_dataset(
-        croped_disp_left,
-        saving_info=saving_info_left,
+        croped_disp,
+        saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
         attributes=None,
-        overlaps=cars_dataset.overlap_array_to_dict(overlap_left),
+        overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
 
-    if croped_disp_right is not None:
-        cars_dataset.fill_dataset(
-            croped_disp_right,
-            saving_info=saving_info_right,
-            window=cars_dataset.window_array_to_dict(window),
-            profile=None,
-            attributes=None,
-            overlaps=cars_dataset.overlap_array_to_dict(overlap_right),
-        )
-
-    return croped_disp_left, croped_disp_right
+    return croped_disp
 
 
 def wrapper_copy_disparity(
-    left_disp,
-    right_disp,
+    disp,
     window,
-    overlap_left,
-    overlap_right,
-    saving_info_left=None,
-    saving_info_right=None,
+    overlap,
+    saving_info=None,
 ):
     """
     Wrapper to copy previous disparity
 
-    :param left_disp: left disparity map
-    :type left_disp: xr.Dataset
-    :param right_disp: right disparity map
-    :type right_disp: xr.Dataset
+    :param disp: disparity map
+    :type disp: xr.Dataset
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
-    :param overlap_left: left overlap [row min, row max, col min col max]
-    :type overlap_left: list
-    :param overlap_right: left overlap  [row min, row max, col min col max]
-    :type overlap_right: list
-    :param saving_info_left: saving infos left
-    :type saving_info_left: dict
-    :param saving_info_right: saving infos right
-    :type saving_info_right: dict
+    :param overlap: overlap [row min, row max, col min col max]
+    :type overlap: list
+    :param saving_info: saving infos
+    :type saving_info: dict
 
-    :return: left disp map, right disp map
-    :rtype: xr.Dataset, xr.Dataset
+    :return: disp map
+    :rtype: xr.Dataset
     """
 
-    res = (copy.copy(left_disp), copy.copy(right_disp))
+    res = copy.copy(disp)
 
     # Fill with attributes
     cars_dataset.fill_dataset(
-        res[0],
-        saving_info=saving_info_left,
+        res,
+        saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
         attributes=None,
-        overlaps=cars_dataset.overlap_array_to_dict(overlap_left),
+        overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
-
-    if res[1] is not None:
-        cars_dataset.fill_dataset(
-            res[1],
-            saving_info=saving_info_right,
-            window=cars_dataset.window_array_to_dict(window),
-            profile=None,
-            attributes=None,
-            overlaps=cars_dataset.overlap_array_to_dict(overlap_right),
-        )
 
     return res

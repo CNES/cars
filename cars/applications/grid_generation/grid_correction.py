@@ -425,13 +425,11 @@ def estimate_right_grid_correction(
         np.save(matches_array_path, corrected_matches)
 
     # Create CarsDataset containing corrected matches, with same tiling as input
-    corrected_matches_cars_ds_left = None
-    corrected_matches_cars_ds_right = None
+    corrected_matches_cars_ds = None
     if initial_cars_ds is not None:
-        (
-            corrected_matches_cars_ds_left,
-            corrected_matches_cars_ds_right,
-        ) = create_matches_cars_ds(corrected_matches, initial_cars_ds)
+        corrected_matches_cars_ds = create_matches_cars_ds(
+            corrected_matches, initial_cars_ds
+        )
 
     # Update orchestrator out_json
     corrected_matches_infos = {
@@ -448,8 +446,7 @@ def estimate_right_grid_correction(
     return (
         grid_correction,
         corrected_matches,
-        corrected_matches_cars_ds_left,
-        corrected_matches_cars_ds_right,  # filled with None
+        corrected_matches_cars_ds,
         in_stats,
         out_stats,
     )
@@ -467,25 +464,22 @@ def create_matches_cars_ds(corrected_matches, initial_cars_ds):
     :param initial_cars_ds: cars dataset to use tiling from
     :type initial_cars_ds: CarsDataset
 
-    :return matches_left, matches_right
-    :rtype: CarsDataset, CarsDataset
+    :return new_matches_cars_ds
+    :rtype: CarsDataset
     """
 
     # initialize CarsDataset
-    new_matches_cars_ds_left = cars_dataset.CarsDataset("points")
-    new_matches_cars_ds_left.create_empty_copy(initial_cars_ds)
+    new_matches_cars_ds = cars_dataset.CarsDataset("points")
+    new_matches_cars_ds.create_empty_copy(initial_cars_ds)
 
-    new_matches_cars_ds_right = cars_dataset.CarsDataset("points")
-    new_matches_cars_ds_right.create_empty_copy(initial_cars_ds)
-
-    for row in range(new_matches_cars_ds_left.shape[0]):
-        for col in range(new_matches_cars_ds_left.shape[1]):
+    for row in range(new_matches_cars_ds.shape[0]):
+        for col in range(new_matches_cars_ds.shape[1]):
             [
                 row_min,
                 row_max,
                 col_min,
                 col_max,
-            ] = new_matches_cars_ds_left.tiling_grid[row, col, :]
+            ] = new_matches_cars_ds.tiling_grid[row, col, :]
 
             # Get corresponding matches
             tile_matches = corrected_matches[corrected_matches[:, 1] > row_min]
@@ -494,6 +488,6 @@ def create_matches_cars_ds(corrected_matches, initial_cars_ds):
             tile_matches = tile_matches[tile_matches[:, 0] < col_max]
 
             # Create pandas DataFrame
-            new_matches_cars_ds_left[row, col] = pandas.DataFrame(tile_matches)
+            new_matches_cars_ds[row, col] = pandas.DataFrame(tile_matches)
 
-    return new_matches_cars_ds_left, new_matches_cars_ds_right
+    return new_matches_cars_ds

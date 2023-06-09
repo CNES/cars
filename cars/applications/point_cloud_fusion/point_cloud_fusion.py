@@ -96,8 +96,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        list_epipolar_points_cloud_left,
-        list_epipolar_points_cloud_right,
+        list_epipolar_points_cloud,
         bounds,
         epsg,
         orchestrator=None,
@@ -110,11 +109,8 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         Creates a CarsDataset corresponding to the merged points clouds,
         tiled with the terrain grid used during rasterization.
 
-        :param list_epipolar_points_cloud_left: list with left points clouds
-        :type list_epipolar_points_cloud_left: list(CarsDataset) filled with
-          xr.Dataset
-        :param list_epipolar_points_cloud_right: list with right points clouds
-        :type list_epipolar_points_cloud_right: list(CarsDataset) filled with
+        :param list_epipolar_points_cloud: list with points clouds
+        :type list_epipolar_points_cloud: list(CarsDataset) filled with
           xr.Dataset
         :param bounds: terrain bounds
         :type bounds: list

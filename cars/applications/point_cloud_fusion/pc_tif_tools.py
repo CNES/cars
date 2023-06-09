@@ -458,7 +458,7 @@ def transform_input_pc(
     else:
         cars_orchestrator = orchestrator
 
-    list_epipolar_points_cloud_left_by_tiles = []
+    list_epipolar_points_cloud_by_tiles = []
 
     # For each stereo pair
     xmin_list = []
@@ -514,7 +514,7 @@ def transform_input_pc(
                     saving_info=full_saving_info_pc,
                 )
 
-        list_epipolar_points_cloud_left_by_tiles.append(epi_pc)
+        list_epipolar_points_cloud_by_tiles.append(epi_pc)
 
     # Breakpoint : compute
     # /!\ BE AWARE : this is not the conventionnal way
@@ -522,7 +522,7 @@ def transform_input_pc(
     cars_orchestrator.breakpoint()
 
     # Get all local min and max
-    for computed_epi_pc in list_epipolar_points_cloud_left_by_tiles:
+    for computed_epi_pc in list_epipolar_points_cloud_by_tiles:
         pc_xmin_list, pc_ymin_list, pc_xmax_list, pc_ymax_list = [], [], [], []
         for row in range(computed_epi_pc.shape[0]):
             for col in range(computed_epi_pc.shape[1]):
@@ -571,7 +571,7 @@ def transform_input_pc(
 
     logging.info("terrain bbox in epsg {}: {}".format(str(epsg), terrain_bbox))
 
-    return (terrain_bbox, list_epipolar_points_cloud_left_by_tiles)
+    return (terrain_bbox, list_epipolar_points_cloud_by_tiles)
 
 
 def compute_max_nb_point_clouds(list_epipolar_points_cloud_by_tiles):
@@ -835,8 +835,7 @@ def get_tiles_corresponding_tiles_tif(
 
             terrain_correspondances[row, col] = {
                 "terrain_region": terrain_region,
-                "required_point_clouds_left": required_point_clouds,
-                "required_point_clouds_right": [],
+                "required_point_clouds": required_point_clouds,
             }
 
     return terrain_correspondances

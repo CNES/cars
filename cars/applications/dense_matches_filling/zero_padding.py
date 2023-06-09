@@ -40,9 +40,6 @@ from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFilling,
 )
-from cars.applications.dense_matching import dense_matching_tools
-from cars.core import constants as cst
-from cars.core.datasets import get_color_bands
 from cars.data_structures import cars_dataset
 
 
@@ -123,9 +120,7 @@ class ZerosPadding(
 
     def run(
         self,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
-        epipolar_images_left,
+        epipolar_disparity_map,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -133,31 +128,16 @@ class ZerosPadding(
         """
         Run Refill application using zero_padding method.
 
-        :param epipolar_disparity_map_left:  left disparity
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right:  right disparity
-        :type epipolar_disparity_map_right: CarsDataset
-        :param epipolar_images_left: tiled left epipolar CarsDataset contains:
-
-                - N x M Delayed tiles. \
-                    Each tile will be a future xarray Dataset containing:
-
-                    - data with keys : "im", "msk", "color"
-                    - attrs with keys: "margins" with "disp_min" and "disp_max"\
-                        "transform", "crs", "valid_pixels", "no_data_mask",\
-                        "no_data_img"
-                - attributes containing:
-                    "largest_epipolar_region","opt_epipolar_tile_size",
-                    "epipolar_regions_grid"
-        :type epipolar_images_left: CarsDataset
+        :param epipolar_disparity_map:  left to right disparity
+        :type epipolar_disparity_map: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
 
-        :return: filled left disparity map, filled right disparity map: \
-            Each CarsDataset contains:
+        :return: filled disparity map: \
+            The CarsDataset contains:
 
             - N x M Delayed tiles.\
               Each tile will be a future xarray Dataset containing:
@@ -167,15 +147,15 @@ class ZerosPadding(
                 "largest_epipolar_region","opt_epipolar_tile_size",
                     "epipolar_regions_grid"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
 
         """
 
-        res = None, None
+        res = None
 
         if not self.classification:
             logging.info("Disparity holes filling was not activated")
-            res = epipolar_disparity_map_left, epipolar_disparity_map_right
+            res = epipolar_disparity_map
 
         else:
             # Default orchestrator
@@ -189,15 +169,11 @@ class ZerosPadding(
             else:
                 self.orchestrator = orchestrator
 
-            if epipolar_disparity_map_left.dataset_type == "arrays":
+            if epipolar_disparity_map.dataset_type == "arrays":
                 # Create CarsDataset Epipolar_disparity
                 # Save Disparity map
-                (
-                    new_epipolar_disparity_map_left,
-                    new_epipolar_disparity_map_right,
-                ) = self.__register_dataset__(
-                    epipolar_disparity_map_left,
-                    epipolar_disparity_map_right,
+                (new_epipolar_disparity_map) = self.__register_dataset__(
+                    epipolar_disparity_map,
                     self.save_disparity_map,
                     pair_folder,
                     app_name="zero_padding",
@@ -205,13 +181,9 @@ class ZerosPadding(
 
                 # Get saving infos in order to save tiles when they are computed
                 [
-                    saving_info_left,
-                    saving_info_right,
+                    saving_info,
                 ] = self.orchestrator.get_saving_infos(
-                    [
-                        new_epipolar_disparity_map_left,
-                        new_epipolar_disparity_map_right,
-                    ]
+                    [new_epipolar_disparity_map]
                 )
                 # Add infos to orchestrator.out_json
                 updating_dict = {
@@ -225,63 +197,40 @@ class ZerosPadding(
                 logging.info(
                     "Fill missing disparities with zeros values"
                     ": number tiles: {}".format(
-                        epipolar_disparity_map_right.shape[1]
-                        * epipolar_disparity_map_right.shape[0]
+                        epipolar_disparity_map.shape[1]
+                        * epipolar_disparity_map.shape[0]
                     )
                 )
                 # Generate disparity maps
-                for col in range(epipolar_disparity_map_right.shape[1]):
-                    for row in range(epipolar_disparity_map_right.shape[0]):
-                        if type(None) not in (
-                            type(epipolar_disparity_map_left[row, col]),
-                            type(epipolar_disparity_map_right[row, col]),
-                        ):
+                for col in range(epipolar_disparity_map.shape[1]):
+                    for row in range(epipolar_disparity_map.shape[0]):
+                        if epipolar_disparity_map[row, col] is not None:
                             # get tile window and overlap
-                            window = (
-                                new_epipolar_disparity_map_left.tiling_grid[
-                                    row, col
-                                ]
-                            )
-                            overlap_left = (
-                                new_epipolar_disparity_map_left.overlaps[
-                                    row, col
-                                ]
-                            )
-                            overlap_right = (
-                                new_epipolar_disparity_map_right.overlaps[
-                                    row, col
-                                ]
-                            )
+                            window = new_epipolar_disparity_map.tiling_grid[
+                                row, col
+                            ]
+                            overlap = new_epipolar_disparity_map.overlaps[
+                                row, col
+                            ]
                             # update saving infos  for potential replacement
-                            full_saving_info_left = ocht.update_saving_infos(
-                                saving_info_left, row=row, col=col
-                            )
-                            full_saving_info_right = ocht.update_saving_infos(
-                                saving_info_right, row=row, col=col
+                            full_saving_info = ocht.update_saving_infos(
+                                saving_info, row=row, col=col
                             )
 
                             # copy dataset
                             (
-                                new_epipolar_disparity_map_left[row, col],
-                                new_epipolar_disparity_map_right[row, col],
+                                new_epipolar_disparity_map[row, col]
                             ) = self.orchestrator.cluster.create_task(
-                                wrapper_fill_disparity, nout=2
+                                wrapper_fill_disparity
                             )(
-                                epipolar_disparity_map_left[row, col],
-                                epipolar_disparity_map_right[row, col],
-                                epipolar_images_left[row, col],
+                                epipolar_disparity_map[row, col],
                                 window,
-                                overlap_left,
-                                overlap_right,
+                                overlap,
                                 classif_index=self.classification,
-                                saving_info_left=full_saving_info_left,
-                                saving_info_right=full_saving_info_right,
+                                saving_info=full_saving_info,
                             )
 
-                res = (
-                    new_epipolar_disparity_map_left,
-                    new_epipolar_disparity_map_right,
-                )
+                res = new_epipolar_disparity_map
 
             else:
                 logging.error(
@@ -292,76 +241,41 @@ class ZerosPadding(
 
 
 def wrapper_fill_disparity(
-    left_disp,
-    right_disp,
-    left_epi_image,
+    disp,
     window,
-    overlap_left,
-    overlap_right,
+    overlap,
     classif_index,
-    saving_info_left=None,
-    saving_info_right=None,
+    saving_info=None,
 ):
     """
     Wrapper to copy previous disparity
 
-    :param left_disp: left disparity map
-    :type left_disp: xr.Dataset
-    :param right_disp: right disparity map
-    :type right_disp: xr.Dataset
+    :param disp: left to right disparity map
+    :type disp: xr.Dataset
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
-    :param overlap_left: left overlap [row min, row max, col min col max]
-    :type overlap_left: list
-    :param overlap_right: left overlap  [row min, row max, col min col max]
-    :type overlap_right: list
+    :param overlap: overlap [row min, row max, col min col max]
+    :type overlap: list
     :param class_index: class index according to the classification tag
     :type class_index: list
-    :param saving_info_left: saving infos left
-    :type saving_info_left: dict
-    :param saving_info_right: saving infos right
-    :type saving_info_right: dict
+    :param saving_info: saving infos
+    :type saving_info: dict
 
-    :return: left disp map, right disp map
+    :return: disp map
     :rtype: xr.Dataset, xr.Dataset
     """
-    fd_tools.fill_disp_using_zero_padding(left_disp, classif_index)
-    if right_disp is not None:
-        fd_tools.fill_disp_using_zero_padding(right_disp, classif_index)
-        # compute right color image from right-left disparity map
-        color_sec = dense_matching_tools.estimate_color_from_disparity(
-            right_disp,
-            left_epi_image,
-        )
+    fd_tools.fill_disp_using_zero_padding(disp, classif_index)
 
-        # check bands
-        if len(left_epi_image[cst.EPI_COLOR].values.shape) > 2:
-            if cst.BAND_IM not in left_epi_image.dims:
-                band_im = get_color_bands(left_epi_image, cst.EPI_COLOR)
-                right_disp.coords[cst.BAND_IM] = band_im
+    result = copy.copy(disp)
 
-        # merge colors
-        right_disp[cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
-
-    result = (copy.copy(left_disp), copy.copy(right_disp))
     # Fill with attributes
     cars_dataset.fill_dataset(
-        result[0],
-        saving_info=saving_info_left,
+        result,
+        saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
         attributes=None,
-        overlaps=cars_dataset.overlap_array_to_dict(overlap_left),
+        overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
-
-    if result[1] is not None:
-        cars_dataset.fill_dataset(
-            result[1],
-            saving_info=saving_info_right,
-            window=cars_dataset.window_array_to_dict(window),
-            profile=None,
-            attributes=None,
-            overlaps=cars_dataset.overlap_array_to_dict(overlap_right),
-        )
 
     return result

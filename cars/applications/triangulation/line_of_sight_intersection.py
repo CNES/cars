@@ -156,12 +156,10 @@ class LineOfSightIntersection(
         self,
         sensor_image_left,
         sensor_image_right,
-        epipolar_images_left,
-        epipolar_images_right,
+        epipolar_image,
         grid_left,
         grid_right,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
+        epipolar_disparity_map,
         epsg,
         orchestrator=None,
         pair_folder=None,
@@ -185,10 +183,8 @@ class LineOfSightIntersection(
             Dict Must contain keys : "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
-        :param epipolar_images_left: tiled epipolar left image
-        :type epipolar_images_left: CarsDataset
-        :param epipolar_images_right: tiled epipolar right image
-        :type epipolar_images_right: CarsDataset
+        :param epipolar_image: tiled epipolar left image
+        :type epipolar_image: CarsDataset
         :param grid_left: left epipolar grid. Grid CarsDataset contains :
 
             - A single tile stored in [0,0], containing a (N, M, 2) shape \
@@ -207,7 +203,7 @@ class LineOfSightIntersection(
                 "epipolar_origin_y","epipolar_spacing_x",
                 "epipolar_spacing", "disp_to_alt_ratio",
         :type grid_right: CarsDataset
-        :param epipolar_disparity_map_left: tiled left disparity map or \
+        :param epipolar_disparity_map: tiled left disparity map or \
             sparse matches:
 
             - if CarsDataset is instance of "arrays", CarsDataset contains:
@@ -229,10 +225,7 @@ class LineOfSightIntersection(
                 - attributes containing:"disp_lower_bound","disp_upper_bound",\
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right: tiled right disparity map or
-             sparse matches
-        :type epipolar_disparity_map_right: CarsDataset
+        :type epipolar_disparity_map: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
@@ -248,8 +241,8 @@ class LineOfSightIntersection(
         :param disp_max: maximum disparity
         :type disp_max: int
 
-        :return: left points cloud, right points cloud. \
-                 Each CarsDataset contains:
+        :return: points cloud \
+                The CarsDataset contains:
 
             - N x M Delayed tiles \
                 Each tile will be a future xarray Dataset containing:
@@ -339,7 +332,7 @@ class LineOfSightIntersection(
         ) = grids.compute_epipolar_grid_min_max(
             self.geometry_loader,
             tiling.transform_four_layers_to_two_layers_grid(
-                epipolar_images_left.tiling_grid
+                epipolar_image.tiling_grid
             ),
             epsg,
             configuration,
@@ -352,37 +345,30 @@ class LineOfSightIntersection(
             "used_epsg_for_terrain_grid": epsg,
             "epipolar_grid_min": epipolar_grid_min,
             "epipolar_grid_max": epipolar_grid_max,
-            "largest_epipolar_region": epipolar_images_left.attributes[
+            "largest_epipolar_region": epipolar_image.attributes[
                 "largest_epipolar_region"
             ],
-            "opt_epipolar_tile_size": epipolar_images_left.attributes[
+            "opt_epipolar_tile_size": epipolar_image.attributes[
                 "opt_epipolar_tile_size"
             ],
         }
 
-        epipolar_points_cloud_left, epipolar_points_cloud_right = None, None
-
-        if epipolar_disparity_map_left.dataset_type in ("arrays", "points"):
+        if epipolar_disparity_map.dataset_type in ("arrays", "points"):
             # Create CarsDataset
             # Epipolar_point_cloud
-            epipolar_points_cloud_left = cars_dataset.CarsDataset(
-                epipolar_disparity_map_left.dataset_type
+            epipolar_points_cloud = cars_dataset.CarsDataset(
+                epipolar_disparity_map.dataset_type
             )
-            epipolar_points_cloud_left.create_empty_copy(epipolar_images_left)
-            epipolar_points_cloud_left.overlaps *= 0  # Margins removed
-
-            epipolar_points_cloud_right = cars_dataset.CarsDataset(
-                epipolar_disparity_map_left.dataset_type
-            )
-            epipolar_points_cloud_right.create_empty_copy(epipolar_images_right)
+            epipolar_points_cloud.create_empty_copy(epipolar_image)
+            epipolar_points_cloud.overlaps *= 0  # Margins removed
 
             # Update attributes to get epipolar info
-            epipolar_points_cloud_left.attributes.update(pc_attributes)
+            epipolar_points_cloud.attributes.update(pc_attributes)
 
             # Save objects
             if self.save_points_cloud:
-                # if isinstance(epipolar_points_cloud_left, xr.DataArray):
-                if epipolar_disparity_map_left.dataset_type == "arrays":
+                # if isinstance(epipolar_points_cloud, xr.DataArray):
+                if epipolar_disparity_map.dataset_type == "arrays":
                     # Propagate color type in output file
                     color_type = None
                     if sens_cst.INPUT_COLOR in sensor_image_left:
@@ -395,91 +381,47 @@ class LineOfSightIntersection(
                         )
 
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_X_left.tif"),
+                        os.path.join(pair_folder, "epi_pc_X.tif"),
                         cst.X,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_pc_x_left",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_x",
                     )
 
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_Y_left.tif"),
+                        os.path.join(pair_folder, "epi_pc_Y.tif"),
                         cst.Y,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_pc_y_left",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_y",
                     )
 
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_Z_left.tif"),
+                        os.path.join(pair_folder, "epi_pc_Z.tif"),
                         cst.Z,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_pc_z_left",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_z",
                     )
 
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_X_right.tif"),
-                        cst.X,
-                        epipolar_points_cloud_right,
-                        cars_ds_name="epi_pc_x_right",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_Y_right.tif"),
-                        cst.Y,
-                        epipolar_points_cloud_right,
-                        cars_ds_name="epi_pc_y_right",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_Z_right.tif"),
-                        cst.Z,
-                        epipolar_points_cloud_right,
-                        cars_ds_name="epi_pc_z_right",
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_classification_left.tif"
-                        ),
+                        os.path.join(pair_folder, "epi_classification.tif"),
                         cst.EPI_CLASSIFICATION,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_classification_left",
-                        optional_data=True,
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            pair_folder, "epi_classification_right.tif"
-                        ),
-                        cst.EPI_CLASSIFICATION,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_classification_left",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_classification",
                         optional_data=True,
                     )
 
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_color_left.tif"),
+                        os.path.join(pair_folder, "epi_pc_color.tif"),
                         cst.EPI_COLOR,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_pc_color_left",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_color",
                         dtype=color_type,
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_color_right.tif"),
-                        cst.EPI_COLOR,
-                        epipolar_points_cloud_right,
-                        cars_ds_name="epi_pc_color_right",
                     )
                 else:
                     self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_left"),
+                        os.path.join(pair_folder, "epi_pc"),
                         cst.POINTS_CLOUD_MATCHES,
-                        epipolar_points_cloud_left,
-                        cars_ds_name="epi_pc_x_left",
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_folder, "epi_pc_right"),
-                        cst.POINTS_CLOUD_MATCHES,
-                        epipolar_points_cloud_right,
-                        cars_ds_name="epi_pc_x_right",
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_x",
                     )
 
         else:
@@ -489,11 +431,8 @@ class LineOfSightIntersection(
             )
 
         # Get saving infos in order to save tiles when they are computed
-        [
-            saving_info_left,
-            saving_info_right,
-        ] = self.orchestrator.get_saving_infos(
-            [epipolar_points_cloud_left, epipolar_points_cloud_right]
+        [saving_info] = self.orchestrator.get_saving_infos(
+            [epipolar_points_cloud]
         )
 
         # Generate Point clouds
@@ -512,94 +451,66 @@ class LineOfSightIntersection(
                 geoid_data, broadcast=True
             )
 
-        for col in range(epipolar_images_left.shape[1]):
-            for row in range(epipolar_images_left.shape[0]):
+        for col in range(epipolar_image.shape[1]):
+            for row in range(epipolar_image.shape[0]):
                 if type(None) not in (
-                    type(epipolar_disparity_map_left[row, col]),
-                    type(epipolar_images_left[row, col]),
-                    type(epipolar_images_right[row, col]),
+                    type(epipolar_disparity_map[row, col]),
+                    type(epipolar_image[row, col]),
                 ):
                     # update saving infos  for potential replacement
-                    full_saving_info_left = ocht.update_saving_infos(
-                        saving_info_left, row=row, col=col
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
                     )
-                    full_saving_info_right = ocht.update_saving_infos(
-                        saving_info_right, row=row, col=col
-                    )
-
                     # Compute points
                     (
-                        epipolar_points_cloud_left[row][col],
-                        epipolar_points_cloud_right[row][col],
+                        epipolar_points_cloud[row][col]
                     ) = self.orchestrator.cluster.create_task(
-                        compute_points_cloud, nout=2
+                        compute_points_cloud
                     )(
-                        epipolar_images_left[row, col],
-                        epipolar_images_right[row, col],
-                        epipolar_disparity_map_left[row, col],
-                        epipolar_disparity_map_right[row, col],
+                        epipolar_image[row, col],
+                        epipolar_disparity_map[row, col],
                         configuration,
                         self.geometry_loader,
                         epsg,
                         geoid_data=geoid_data_futures,
                         snap_to_img1=self.snap_to_img1,
                         add_msk_info=self.add_msk_info,
-                        saving_info_left=full_saving_info_left,
-                        saving_info_right=full_saving_info_right,
+                        saving_info=full_saving_info,
                     )
 
-                    if isinstance(
-                        epipolar_disparity_map_right[row, col], type(None)
-                    ):
-                        # Cannot compute right point cloud,
-                        # Set to None to replace Delayed
-                        epipolar_points_cloud_right[row][col] = None
-
-        return epipolar_points_cloud_left, epipolar_points_cloud_right
+        return epipolar_points_cloud
 
 
 def compute_points_cloud(
-    left_image_object: xr.Dataset,
-    right_image_object: xr.Dataset,
-    left_disparity_object: xr.Dataset,
-    right_disparity_object: xr.Dataset,
+    image_object: xr.Dataset,
+    disparity_object: xr.Dataset,
     input_stereo_cfg: dict,
     geometry_loader: str,
     epsg,
     geoid_data: xr.Dataset = None,
     snap_to_img1: bool = False,
     add_msk_info: bool = False,
-    saving_info_left=None,
-    saving_info_right=None,
+    saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute points clouds from image objects and disparity objects.
 
-    :param left_image_object: Left image dataset with :
+    :param image_object: Left image dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
             - cst.EPI_COLOR (for left, if given)
-    :type left_image_object: xr.Dataset with :
+    :type image_object: xr.Dataset with :
 
             - cst.EPI_IMAGE
             - cst.EPI_MSK (if given)
             - cst.EPI_COLOR (for left, if given)
-    :param right_image_object: Right image
-    :type right_image_object: xr.Dataset
-    :param left_disparity_object: Left disparity map dataset with :
+    :param disparity_object: Left disparity map dataset with :
 
             - cst_disp.MAP
             - cst_disp.VALID
             - cst.EPI_COLOR
-    :type left_disparity_object: xr.Dataset
-    :param right_disparity_object: Right disparity map dataset \
-           (None if use_sec_disp not activated) with :
-
-            - cst_disp.MAP
-            - cst_disp.VALID
-            - cst.EPI_COLOR
-    :type right_disparity_object: xr.Dataset
+    :type disparity_object: xr.Dataset
     :param input_stereo_cfg: Configuration for stereo processing
     :type input_stereo_cfg: dict
     :param geometry_loader: name of geometry loader to use
@@ -614,11 +525,11 @@ def compute_points_cloud(
                          information in the point clouds final dataset
     :type add_msk_info: bool
 
-    :return: Left disparity object, Right disparity object (if exists)
+    :return: Left disparity object
 
-    Returned objects are composed of :
+    Returned object is composed of :
 
-        - dataset (None for right object if use_sec_disp not activated) with :
+        - dataset with :
 
             - cst.X
             - cst.Y
@@ -627,49 +538,31 @@ def compute_points_cloud(
     """
 
     # Get disparity maps
-    disp_ref = left_disparity_object
-    disp_sec = right_disparity_object
+    disp_ref = disparity_object
 
     # Get masks
-    left = left_image_object
-    right = right_image_object
+    left = image_object
     im_ref_msk = None
-    im_sec_msk = None
     if add_msk_info:
         ref_values_list = [key for key, _ in left.items()]
         if cst.EPI_MSK in ref_values_list:
             im_ref_msk = left
         else:
-            logging.warning("Left image does not have a mask to rasterize")
-        if disp_sec is not None:
-            sec_values_list = [key for key, _ in right.items()]
-            if cst.EPI_MSK in sec_values_list:
-                im_sec_msk = right
-            else:
-                logging.warning("Right image does not have a mask to rasterize")
+            worker_logger = logging.getLogger("distributed.worker")
+            worker_logger.warning(
+                "Left image does not have a mask to rasterize"
+            )
 
     # Triangulate
     if isinstance(disp_ref, xr.Dataset):
         # Triangulate epipolar dense disparities
-        if disp_sec is not None:
-            points = triangulation_tools.triangulate(
-                geometry_loader,
-                input_stereo_cfg,
-                disp_ref,
-                disp_sec,
-                snap_to_img1=snap_to_img1,
-                im_ref_msk_ds=im_ref_msk,
-                im_sec_msk_ds=im_sec_msk,
-            )
-        else:
-            points = triangulation_tools.triangulate(
-                geometry_loader,
-                input_stereo_cfg,
-                disp_ref,
-                snap_to_img1=snap_to_img1,
-                im_ref_msk_ds=im_ref_msk,
-                im_sec_msk_ds=im_sec_msk,
-            )
+        points = triangulation_tools.triangulate(
+            geometry_loader,
+            input_stereo_cfg,
+            disp_ref,
+            snap_to_img1=snap_to_img1,
+            im_ref_msk_ds=im_ref_msk,
+        )
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches
         points = {}
@@ -690,16 +583,16 @@ def compute_points_cloud(
 
     # propagate the color type
     color_type = None
-    if cst.EPI_COLOR in left_image_object.data_vars.keys():
-        color_type = left_image_object[cst.EPI_COLOR].attrs["color_type"]
+    if cst.EPI_COLOR in image_object.data_vars.keys():
+        color_type = image_object[cst.EPI_COLOR].attrs["color_type"]
     else:
-        color_type = left_image_object[cst.EPI_IMAGE].attrs["color_type"]
+        color_type = image_object[cst.EPI_IMAGE].attrs["color_type"]
 
     # Fill datasets
-    left_pc_dataset = points[cst.STEREO_REF]
+    pc_dataset = points[cst.STEREO_REF]
 
     if color_type:
-        left_pc_dataset.attrs["color_type"] = color_type
+        pc_dataset.attrs["color_type"] = color_type
     attributes = None
     if isinstance(disp_ref, pandas.DataFrame):
         # Conversion to UTM
@@ -707,53 +600,23 @@ def compute_points_cloud(
             points[cst.STEREO_REF], points[cst.STEREO_REF].attrs[cst.EPSG], epsg
         )
         cloud_epsg = epsg
-        left_pc_dataset.attrs["epsg"] = cloud_epsg
+        pc_dataset.attrs["epsg"] = cloud_epsg
         attributes = {
             "save_points_cloud_as_laz": True,
             "epsg": cloud_epsg,
             "color_type": None,
         }
         cars_dataset.fill_dataframe(
-            left_pc_dataset, saving_info=saving_info_left, attributes=attributes
+            pc_dataset, saving_info=saving_info, attributes=attributes
         )
     else:
         cars_dataset.fill_dataset(
-            left_pc_dataset,
-            saving_info=saving_info_left,
-            window=cars_dataset.get_window_dataset(left_disparity_object),
-            profile=cars_dataset.get_profile_rasterio(left_disparity_object),
+            pc_dataset,
+            saving_info=saving_info,
+            window=cars_dataset.get_window_dataset(disparity_object),
+            profile=cars_dataset.get_profile_rasterio(disparity_object),
             attributes=attributes,
-            overlaps=cars_dataset.get_overlaps_dataset(left_disparity_object),
+            overlaps=cars_dataset.get_overlaps_dataset(disparity_object),
         )
 
-    right_pc_dataset = None
-    if cst.STEREO_SEC in points:
-        right_pc_dataset = points[cst.STEREO_SEC]
-        if isinstance(disp_sec, pandas.DataFrame):
-            # Conversion to UTM
-            projection.points_cloud_conversion_dataframe(
-                points[cst.STEREO_SEC],
-                points[cst.STEREO_SEC].attrs[cst.EPSG],
-                epsg,
-            )
-            right_pc_dataset.attrs["epsg"] = cloud_epsg
-            cars_dataset.fill_dataframe(
-                right_pc_dataset,
-                saving_info=saving_info_right,
-                attributes=attributes,
-            )
-        else:
-            cars_dataset.fill_dataset(
-                right_pc_dataset,
-                saving_info=saving_info_right,
-                window=cars_dataset.get_window_dataset(right_disparity_object),
-                profile=cars_dataset.get_profile_rasterio(
-                    right_disparity_object
-                ),
-                attributes=attributes,
-                overlaps=cars_dataset.get_overlaps_dataset(
-                    right_disparity_object
-                ),
-            )
-
-    return left_pc_dataset, right_pc_dataset
+    return pc_dataset

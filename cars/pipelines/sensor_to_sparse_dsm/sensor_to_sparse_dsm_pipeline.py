@@ -296,8 +296,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             list_terrain_roi = []
 
             # initialise lists of points
-            list_epipolar_points_cloud_left = []
-            list_epipolar_points_cloud_right = []
+            list_epipolar_points_cloud = []
 
             list_sensor_pairs = sensors_inputs.generate_inputs(self.inputs)
             logging.info(
@@ -379,8 +378,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 (
                     grid_correction_coef,
                     corrected_matches_array,
-                    corrected_matches_cars_ds_left,
-                    corrected_matches_cars_ds_right,
+                    corrected_matches_cars_ds,
                     _,
                     _,
                 ) = grid_correction.estimate_right_grid_correction(
@@ -452,7 +450,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 # Run epipolar resampling
                 (
                     new_epipolar_image_left,
-                    new_epipolar_image_right,
+                    _,
                 ) = self.resampling_application.run(
                     sensor_image_left,
                     sensor_image_right,
@@ -466,18 +464,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
 
                 # Run epipolar triangulation application
-                (
-                    epipolar_points_cloud_left,
-                    epipolar_points_cloud_right,
-                ) = self.triangulation_application.run(
+                (epipolar_points_cloud) = self.triangulation_application.run(
                     sensor_image_left,
                     sensor_image_right,
                     new_epipolar_image_left,
-                    new_epipolar_image_right,
                     grid_left,
                     corrected_grid_right,
-                    corrected_matches_cars_ds_left,
-                    corrected_matches_cars_ds_right,
+                    corrected_matches_cars_ds,
                     epsg,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
@@ -512,12 +505,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 list_terrain_roi.append(current_terrain_roi_bbox)
 
                 # add points cloud to list
-                list_epipolar_points_cloud_left.append(
-                    epipolar_points_cloud_left
-                )
-                list_epipolar_points_cloud_right.append(
-                    epipolar_points_cloud_right
-                )
+                list_epipolar_points_cloud.append(epipolar_points_cloud)
             # Save the refined full res pipeline configuration
             cars_dataset.save_dict(
                 self.config_full_res,
@@ -536,8 +524,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
             # Merge point clouds
             merged_points_clouds = self.pc_fusion_application.run(
-                list_epipolar_points_cloud_left,
-                list_epipolar_points_cloud_right,
+                list_epipolar_points_cloud,
                 terrain_bounds,
                 epsg,
                 orchestrator=cars_orchestrator,

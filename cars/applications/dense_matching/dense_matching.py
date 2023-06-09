@@ -175,8 +175,8 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
 
-        :return: left disparity map, right disparity map: \
-            Each CarsDataset contains:
+        :return: disparity map: \
+            The CarsDataset contains:
 
             - N x M Delayed tiles.\
               Each tile will be a future xarray Dataset containing:
@@ -185,5 +185,5 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
             - attributes containing:
                 "largest_epipolar_region","opt_epipolar_tile_size"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
         """

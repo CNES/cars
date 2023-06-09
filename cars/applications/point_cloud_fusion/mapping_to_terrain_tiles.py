@@ -124,8 +124,7 @@ class MappingToTerrainTiles(
 
     def run(
         self,
-        list_epipolar_points_cloud_left,
-        list_epipolar_points_cloud_right,
+        list_epipolar_points_cloud,
         bounds,
         epsg,
         orchestrator=None,
@@ -138,7 +137,7 @@ class MappingToTerrainTiles(
         Creates a CarsDataset corresponding to the merged points clouds,
         tiled with the terrain grid used during rasterization.
 
-        :param list_epipolar_points_cloud_left: list with left points clouds\
+        :param list_epipolar_points_cloud: list with points clouds\
             Each CarsDataset contains:
 
             - N x M Delayed tiles. \
@@ -149,7 +148,7 @@ class MappingToTerrainTiles(
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
-        :type list_epipolar_points_cloud_left: list(CarsDataset) filled with
+        :type list_epipolar_points_cloud: list(CarsDataset) filled with
           xr.Dataset
         :param list_epipolar_points_cloud_right: list with right points clouds.\
             Each CarsDataset contains:
@@ -216,7 +215,7 @@ class MappingToTerrainTiles(
             optimal_terrain_tile_width,
         )
 
-        if list_epipolar_points_cloud_left[0].dataset_type in (
+        if list_epipolar_points_cloud[0].dataset_type in (
             "arrays",
             "dict",
             "points",
@@ -247,7 +246,7 @@ class MappingToTerrainTiles(
 
             number_of_epipolar_tiles_per_terrain_tiles = []
 
-            if list_epipolar_points_cloud_left[0].dataset_type in (
+            if list_epipolar_points_cloud[0].dataset_type in (
                 "arrays",
                 "points",
             ):
@@ -259,12 +258,12 @@ class MappingToTerrainTiles(
                 # TODO change method for corresponding tiles
                 list_points_min = []
                 list_points_max = []
-                for pc_left in list_epipolar_points_cloud_left:
+                for points_cloud in list_epipolar_points_cloud:
                     points_min, points_max = tiling.terrain_grid_to_epipolar(
                         terrain_tiling_grid,
-                        pc_left.tiling_grid,
-                        pc_left.attributes["epipolar_grid_min"],
-                        pc_left.attributes["epipolar_grid_max"],
+                        points_cloud.tiling_grid,
+                        points_cloud.attributes["epipolar_grid_min"],
+                        points_cloud.attributes["epipolar_grid_max"],
                         epsg,
                     )
                     list_points_min.append(points_min)
@@ -294,11 +293,11 @@ class MappingToTerrainTiles(
 
             # Compute corresponing tiles in parallel if from tif files
             # list_epipolar_points_cloud_right is empty
-            if list_epipolar_points_cloud_left[0].dataset_type == "dict":
+            if list_epipolar_points_cloud[0].dataset_type == "dict":
                 corresponding_tiles_cars_ds = (
                     pc_tif_tools.get_tiles_corresponding_tiles_tif(
                         terrain_tiling_grid,
-                        list_epipolar_points_cloud_left,
+                        list_epipolar_points_cloud,
                         margins=margins,
                         orchestrator=self.orchestrator,
                     )
@@ -330,23 +329,21 @@ class MappingToTerrainTiles(
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
                     )
-                    if list_epipolar_points_cloud_left[0].dataset_type in (
+                    if list_epipolar_points_cloud[0].dataset_type in (
                         "arrays",
                         "points",
                     ):
                         # Get required point clouds
                         (
                             terrain_region,
-                            required_point_clouds_left,
-                            required_point_clouds_right,
+                            required_point_clouds,
                             _rank,
                             _pos,
                         ) = tiling.get_corresponding_tiles_row_col(
                             terrain_tiling_grid,
                             row,
                             col,
-                            list_epipolar_points_cloud_left,
-                            list_epipolar_points_cloud_right,
+                            list_epipolar_points_cloud,
                             list_points_min,
                             list_points_max,
                         )
@@ -356,23 +353,15 @@ class MappingToTerrainTiles(
                         terrain_region = corresponding_tiles_cars_ds[row, col][
                             "terrain_region"
                         ]
-                        required_point_clouds_left = (
-                            corresponding_tiles_cars_ds[row, col][
-                                "required_point_clouds_left"
-                            ]
-                        )
-                        required_point_clouds_right = (
-                            corresponding_tiles_cars_ds[row, col][
-                                "required_point_clouds_right"
-                            ]
-                        )
+                        required_point_clouds = corresponding_tiles_cars_ds[
+                            row, col
+                        ]["required_point_clouds"]
 
                     if (
                         len(
                             [
                                 value
-                                for value in required_point_clouds_left
-                                + required_point_clouds_right
+                                for value in required_point_clouds
                                 if not isinstance(value, type(None))
                             ]
                         )
@@ -380,10 +369,10 @@ class MappingToTerrainTiles(
                     ):
                         logging.debug(
                             "Number of clouds to process for this terrain"
-                            " tile: {}".format(len(required_point_clouds_left))
+                            " tile: {}".format(len(required_point_clouds))
                         )
                         number_of_epipolar_tiles_per_terrain_tiles.append(
-                            len(required_point_clouds_left)
+                            len(required_point_clouds)
                         )
 
                         # Delayed call to rasterization operations using all
@@ -393,8 +382,7 @@ class MappingToTerrainTiles(
                         ] = self.orchestrator.cluster.create_task(
                             compute_point_cloud_wrapper
                         )(
-                            required_point_clouds_left,
-                            required_point_clouds_right,
+                            required_point_clouds,
                             epsg,
                             xmin=terrain_region[0],
                             ymin=terrain_region[1],
@@ -452,8 +440,7 @@ class MappingToTerrainTiles(
 
 
 def compute_point_cloud_wrapper(
-    point_clouds_left,
-    point_clouds_right,
+    point_clouds,
     epsg,
     xmin: float = None,
     ymin: float = None,
@@ -468,21 +455,13 @@ def compute_point_cloud_wrapper(
     Wrapper for points clouds fusion step :
     - Convert a list of clouds to correct epsg
 
-    :param point_clouds_left: list of clouds, list of datasets with :
+    :param point_clouds: list of clouds, list of datasets with :
 
             - cst.X
             - cst.Y
             - cst.Z
             - cst.EPI_COLOR
-    :type point_clouds_left: list(xr.Dataset)
-    :param point_clouds_right: list of cloud, list of datasets \
-           (list of None if use_sec_disp not activated) with :
-
-            - cst.X
-            - cst.Y
-            - cst.Z
-            - cst.EPI_COLOR
-    :type point_clouds_right: list of DataObject
+    :type point_clouds: list(xr.Dataset)
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
     :param  stereo_out_epsg: epsg code to convert point cloud to, if needed
@@ -514,12 +493,7 @@ def compute_point_cloud_wrapper(
     """
     # Unpack list of clouds from tuple, and project them to correct EPSG if
     # needed
-    clouds = point_clouds_left
-    # Add clouds and colors computed from the secondary disparity map
-    if len(point_clouds_right) > 0:
-        if point_clouds_right[0] is not None:
-            cloud_sec = point_clouds_right
-            clouds.extend(cloud_sec)
+    clouds = point_clouds
 
     # Remove None tiles
     clouds = [value for value in clouds if value is not None]
