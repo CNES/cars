@@ -44,11 +44,11 @@ def generate_test_inputs():
     path_pc = absolute_data_path("input/epi_pc_gizeh")
 
     data = {
-        cst.X: os.path.join(path_pc, "epi_pc_X_left.tif"),
-        cst.Y: os.path.join(path_pc, "epi_pc_Y_left.tif"),
-        cst.Z: os.path.join(path_pc, "epi_pc_Z_left.tif"),
+        cst.X: os.path.join(path_pc, "epi_pc_X.tif"),
+        cst.Y: os.path.join(path_pc, "epi_pc_Y.tif"),
+        cst.Z: os.path.join(path_pc, "epi_pc_Z.tif"),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: os.path.join(
-            path_pc, "epi_pc_color_left.tif"
+            path_pc, "epi_pc_color.tif"
         ),
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
             path_pc, "epi_classification.tif"
@@ -131,7 +131,7 @@ def test_transform_input_pc_and_metrics():
 
     (
         terrain_bbox,
-        list_epipolar_points_cloud_left_by_tiles,
+        list_epipolar_points_cloud_by_tiles,
     ) = pc_tif_tools.transform_input_pc(
         list_epi_pc, 32636, epipolar_tile_size=200
     )
@@ -143,21 +143,21 @@ def test_transform_input_pc_and_metrics():
         3318157.288182468,
     ]
 
-    assert len(list_epipolar_points_cloud_left_by_tiles) == 2
+    assert len(list_epipolar_points_cloud_by_tiles) == 2
 
-    assert list_epipolar_points_cloud_left_by_tiles[0].shape == (5, 5)
+    assert list_epipolar_points_cloud_by_tiles[0].shape == (5, 5)
 
     # tes compute_max_nb_point_clouds
 
     nb_max_nb_pc = pc_tif_tools.compute_max_nb_point_clouds(
-        list_epipolar_points_cloud_left_by_tiles
+        list_epipolar_points_cloud_by_tiles
     )
 
     assert nb_max_nb_pc == 2
 
     # test compute_average_distance
     average_dist = pc_tif_tools.compute_average_distance(
-        list_epipolar_points_cloud_left_by_tiles
+        list_epipolar_points_cloud_by_tiles
     )
 
     assert int(100 * average_dist) / 100 == 0.46
@@ -177,7 +177,7 @@ def test_transform_input_pc_and_correspondance():
 
     (
         terrain_bbox,
-        list_epipolar_points_cloud_left_by_tiles,
+        list_epipolar_points_cloud_by_tiles,
     ) = pc_tif_tools.transform_input_pc(
         list_epi_pc, 32636, epipolar_tile_size=200
     )
@@ -200,10 +200,10 @@ def test_transform_input_pc_and_correspondance():
     )
 
     corresponding_tiles = pc_tif_tools.get_tiles_corresponding_tiles_tif(
-        terrain_tiling_grid, list_epipolar_points_cloud_left_by_tiles, margins=0
+        terrain_tiling_grid, list_epipolar_points_cloud_by_tiles, margins=0
     )
 
-    assert len(corresponding_tiles[0, 0]["required_point_clouds_left"]) == 8
-    assert len(corresponding_tiles[1, 0]["required_point_clouds_left"]) == 14
-    assert len(corresponding_tiles[2, 2]["required_point_clouds_left"]) == 8
-    assert len(corresponding_tiles[1, 2]["required_point_clouds_left"]) == 10
+    assert len(corresponding_tiles[0, 0]["required_point_clouds"]) == 8
+    assert len(corresponding_tiles[1, 0]["required_point_clouds"]) == 14
+    assert len(corresponding_tiles[2, 2]["required_point_clouds"]) == 8
+    assert len(corresponding_tiles[1, 2]["required_point_clouds"]) == 10

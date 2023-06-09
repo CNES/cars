@@ -254,16 +254,12 @@ def test_tiles_pairing(
 
     # Create empty manager with needed epipolar image information
     pc_left = cars_dataset.CarsDataset("arrays")
-    pc_right = cars_dataset.CarsDataset("arrays")
     pc_left.tiling_grid = epipolar_tiling_grid
     pc_left.generate_none_tiles()
-    pc_right.tiling_grid = epipolar_tiling_grid
-    pc_right.generate_none_tiles()
     pc_left.attributes["largest_epipolar_region"] = largest_epipolar_region
     pc_left.attributes["opt_epipolar_tile_size"] = epipolar_tile_size
 
     list_points_clouds_left = [pc_left]
-    list_points_clouds_right = [pc_right]
     list_epipolar_points_min = [points_min]
     list_epipolar_points_max = [points_max]
 
@@ -281,14 +277,12 @@ def test_tiles_pairing(
                 terrain_region,
                 corresp_tiles_left,
                 __,
-                __,
                 list_indexes,
             ) = tiling.get_corresponding_tiles_row_col(
                 terrain_tiling_grid,
                 row,
                 col,
                 list_points_clouds_left,
-                list_points_clouds_right,
                 list_epipolar_points_min,
                 list_epipolar_points_max,
             )
