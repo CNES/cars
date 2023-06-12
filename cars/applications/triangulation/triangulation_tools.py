@@ -404,31 +404,47 @@ def geoid_offset(points, geoid):
     longitudes[longitudes < 0] += 360
 
     # perform interpolation using point cloud coordinates.
-    if (
-        not geoid.lat_min
-        <= out_pc[cst.Y].min()
-        <= out_pc[cst.Y].max()
-        <= geoid.lat_max
-        and geoid.lon_min
-        <= np.min(longitudes)
-        <= np.max(longitudes)
-        <= geoid.lat_max
-    ):
-        raise RuntimeError(
-            "Geoid does not fully cover the area spanned by the point cloud."
-        )
+    if sum(longitudes.shape) != 0:
+        if (
+            not geoid.lat_min
+            <= out_pc[cst.Y].min()
+            <= out_pc[cst.Y].max()
+            <= geoid.lat_max
+            and geoid.lon_min
+            <= np.min(longitudes)
+            <= np.max(longitudes)
+            <= geoid.lat_max
+        ):
+            raise RuntimeError(
+                "Geoid does not fully cover the area spanned by"
+                " the point cloud."
+            )
 
-    # interpolate data
-    ref_interp = geoid.interp(
-        {
-            "lat": out_pc[cst.Y],
-            "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
-        }
-    )
-    # offset using geoid height
-    out_pc[cst.Z] = points[cst.Z] - ref_interp.hgt
+        out_pc[cst.Z] = points[cst.Z]
 
-    # remove coordinates lat & lon added by the interpolation
-    out_pc = out_pc.reset_coords(["lat", "lon"], drop=True)
+        # interpolate data
+        if isinstance(out_pc, xr.Dataset):
+            ref_interp = geoid.interp(
+                {
+                    "lat": out_pc[cst.Y],
+                    "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
+                }
+            )
+
+            ref_interp_hgt = ref_interp.hgt.values
+
+        else:
+            # one dimension is equal to 1, happens with matches tiangulation
+            ref_interp = geoid.interp(
+                {
+                    "lat": out_pc[cst.Y].values,
+                    "lon": longitudes,
+                }
+            )
+
+            ref_interp_hgt = ref_interp.hgt.values.diagonal()
+
+        # offset using geoid height
+        out_pc[cst.Z] -= ref_interp_hgt
 
     return out_pc
