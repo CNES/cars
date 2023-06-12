@@ -62,8 +62,6 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 
             # check conf
 
-            self.use_sec_disp = conf_matching["use_sec_disp"]
-
             self.corr_config = None
             if "corr_config" in conf_matching:
                 self.corr_config = conf_matching["corr_config"]
@@ -114,8 +112,8 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             :param pair_folder: folder used for current pair
             :type pair_folder: str
 
-            :return left disparity map, right disparity map
-            :rtype: Tuple(CarsDataset, CarsDataset)
+            :return Disparity map
+            :rtype: CarsDataset
             """
 
 
@@ -126,16 +124,11 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             if epipolar_images_left.dataset_type == "arrays":
                 # Create CarsDataset
                 # Epipolar_disparity
-                epipolar_disparity_map_left = cars_dataset.CarsDataset("arrays")
-                epipolar_disparity_map_left.create_empty_copy(epipolar_images_left)
-
-                epipolar_disparity_map_right = cars_dataset.CarsDataset("arrays")
-                epipolar_disparity_map_right.create_empty_copy(
-                    epipolar_images_right
-                )
+                epipolar_disparity_map = cars_dataset.CarsDataset("arrays")
+                epipolar_disparity_map.create_empty_copy(epipolar_images_left)
 
                 # Update attributes to get epipolar info
-                epipolar_disparity_map_left.attributes.update(
+                epipolar_disparity_map.attributes.update(
                     epipolar_images_left.attributes
                 )
 
@@ -148,9 +141,9 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             # Save disparity maps
             if self.save_disparity_map:
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_left.tif"),
+                    os.path.join(pair_folder, "epi_disp.tif"),
                     cst_disp.MAP,
-                    epipolar_disparity_map_left,
+                    epipolar_disparity_map,
                 )
 
                 ....
@@ -166,10 +159,9 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 
                 # Get saving infos in order to save tiles when they are computed
                 [
-                    saving_info_left,
-                    saving_info_right,
+                    saving_info
                 ] = self.orchestrator.get_saving_infos(
-                    [epipolar_disparity_map_left, epipolar_disparity_map_right]
+                    [epipolar_disparity_map]
                 )
 
 
@@ -183,22 +175,18 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 .. sourcecode:: python
 
                 # Generate disparity maps
-                for col in range(epipolar_disparity_map_right.shape[1]):
-                    for row in range(epipolar_disparity_map_right.shape[0]):
+                for col in range(epipolar_disparity_map.shape[1]):
+                    for row in range(epipolar_disparity_map.shape[0]):
 
                         # Compute disparity
                         (
-                            epipolar_disparity_map_left[row, col],
-                            epipolar_disparity_map_right[row, col],
+                            epipolar_disparity_map[row, col],
                         ) = self.orchestrator.cluster.create_task(
-                            compute_disparity, nout=2
+                            compute_disparity
                         )(
-                            epipolar_images_left[row, col],
-                            epipolar_images_right[row, col],
+                            epipolar_images[row, col],
                             self.corr_config,
-                            use_sec_disp=self.use_sec_disp,
-                            saving_info_left=saving_info_left,
-                            saving_info_right=saving_info_right,
+                            saving_info=saving_info,
                         )
             else:
                 logging.error(
@@ -206,8 +194,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
                     "support this input data format"
                 )
 
-            return epipolar_disparity_map_left, epipolar_disparity_map_right
-
+            return epipolar_disparity_map
 
 3. For each tile, the core algorithm function is called.
 
@@ -217,15 +204,12 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 .. sourcecode:: python
 
     def compute_disparity(
-        left_image_object: xr.Dataset,
-        right_image_object: xr.Dataset,
+        image_object: xr.Dataset,
         corr_cfg: dict,
-        use_sec_disp=False,
-        saving_info_left=None,
-        saving_info_right=None,
-    ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+        saving_info=None,
+    ) -> Dict[str, xr.Dataset]:
         """
-        Compute disparity maps from image objects.
+        Compute disparity map from image objects.
         This function will be run as a delayed task.
 
         User must provide saving infos to save properly created datasets
@@ -244,15 +228,12 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
         :type right_image_object: xr.Dataset
         :param corr_cfg: Correlator configuration
         :type corr_cfg: dict
-        :param use_sec_disp: Boolean activating the use of the secondary
-                             disparity map
-        :type use_sec_disp: bool
 
 
-        :returns: Left disparity object, Right disparity object (if exists)
+        :returns: Disparity object
 
         Returned objects are composed of :
-            * dataset (None for right object if use_sec_disp not activated) with :
+            * dataset with :
                 - cst_disp.MAP
                 - cst_disp.VALID
                 - cst.EPI_COLOR
@@ -271,28 +252,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             disp_max,
             mask1_ignored_by_corr=mask1_ignored_by_corr,
             mask2_ignored_by_corr=mask2_ignored_by_corr,
-            use_sec_disp=use_sec_disp,
         )
-
-        color_sec = None
-        if cst.STEREO_SEC in disp:
-            # compute right color image from right-left disparity map
-            color_sec = dense_matching_tools.estimate_color_from_disparity(
-                disp[cst.STEREO_SEC],
-                left_image_object,
-                disp[cst.STEREO_REF],
-            )
-
-            # check bands
-            if len(left_image_object[cst.EPI_COLOR].values.shape) > 2:
-                nb_bands = left_image_object[cst.EPI_COLOR].values.shape[0]
-                if cst.BAND not in disp[cst.STEREO_SEC].dims:
-                    disp[cst.STEREO_SEC].assign_coords(
-                        {cst.BAND: np.arange(nb_bands)}
-                    )
-
-            # merge colors
-            disp[cst.STEREO_SEC][cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
 
         # Fill with attributes
         left_disp_dataset = disp[cst.STEREO_REF]
@@ -305,19 +265,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             overlaps=None,  # overlaps are removed
         )
 
-        right_disp_dataset = None
-        if cst.STEREO_SEC in disp:
-            right_disp_dataset = disp[cst.STEREO_SEC]
-            cars_dataset.fill_dataset(
-                right_disp_dataset,
-                saving_info=saving_info_right,
-                window=cars_dataset.get_window_dataset(right_image_object),
-                profile=cars_dataset.get_profile_rasterio(right_image_object),
-                attributes=None,
-                overlaps=cars_dataset.get_overlaps_dataset(right_image_object),
-            )
-
-        return left_disp_dataset, right_disp_dataset
+        return disp_dataset
 
 
 At the end of the application, we can obtain *CarsDatasets* filled with delayed, one per tile.
