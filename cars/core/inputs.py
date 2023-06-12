@@ -139,6 +139,17 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
         return (descriptor.width, descriptor.height)
 
 
+def rasterio_get_bounds(raster_file: str) -> Tuple[int, int]:
+    """
+    Get the bounds of an image (file)
+
+    :param raster_file: Image file
+    :return: The size (width, height)
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.bounds
+
+
 def rasterio_get_list_min_max(raster_file: str) -> Tuple[int, int]:
     """
     Get the stats of an image (file)

@@ -44,6 +44,7 @@ from cars.applications.resampling.resampling import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.datasets import get_color_bands
+from cars.core.geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.sensor_to_dense_dsm import (
@@ -479,6 +480,11 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             ]
         )
 
+        # Get dimension of sensors
+        left_sensor_bounds, right_sensor_bounds = get_sensors_bounds(
+            sensor_image_left, sensor_image_right
+        )
+
         # Generate Image pair
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
@@ -494,7 +500,17 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     ]
                 )
 
-                if epipolar_roi_poly.intersects(tile_roi_poly):
+                in_sensor_left, in_sensor_right = check_tile_inclusion(
+                    left_sensor_bounds,
+                    right_sensor_bounds,
+                    grid_left,
+                    grid_right,
+                    tile,
+                )
+
+                if epipolar_roi_poly.intersects(tile_roi_poly) and (
+                    in_sensor_left or in_sensor_right
+                ):
                     # get overlaps
                     left_overlap = cars_dataset.overlap_array_to_dict(
                         epipolar_images_left.overlaps[row, col]
@@ -691,3 +707,147 @@ def generate_epipolar_images_wrapper(
     )
 
     return left_dataset, right_dataset
+
+
+def get_sensors_bounds(sensor_image_left, sensor_image_right):
+    """
+    Get bounds of sensor images
+
+    :param sensor_image_left: left sensor
+    :type sensor_image_left: dict
+    :param sensor_image_right: right sensor
+    :type sensor_image_right: dict
+
+    :return: left image bounds, right image bounds
+    :rtype: tuple(list, list)
+    """
+
+    left_sensor_bounds = list(
+        inputs.rasterio_get_bounds(sensor_image_left[sens_cst.INPUT_IMG])
+    )
+
+    right_sensor_bounds = list(
+        inputs.rasterio_get_bounds(sensor_image_right[sens_cst.INPUT_IMG])
+    )
+
+    return left_sensor_bounds, right_sensor_bounds
+
+
+def check_tile_inclusion(
+    left_sensor_bounds,
+    right_sensor_bounds,
+    grid_left,
+    grid_right,
+    epi_tile_coord,
+):
+    """
+    Check if tile is in sensor image
+
+    :param left_sensor_bounds: bounds of left sensor
+    :type left_sensor_bounds: list
+    :param right_sensor_bounds: bounds of right sensor
+    :type right_sensor_bounds: list
+    :param grid_left: left epipolar grid
+    :type grid_left: CarsDataset
+    :param grid_right: right epipolar grid
+    :type grid_right: CarsDataset
+    :param epi_tile_coord: epipolar bounds of tile
+    :type epi_tile_coord: list
+
+    :return: left tile in sensor image left, right tile in sensor image right
+    :rtype: tuple(bool, bool)
+    """
+
+    # Get tile epipolar corners
+    interpolation_margin = 20  # abitrary
+
+    x_min, x_max, y_min, y_max = epi_tile_coord
+    x_min -= interpolation_margin
+    y_min -= interpolation_margin
+    x_max += interpolation_margin
+    y_max += interpolation_margin
+
+    tile_coord = np.array(
+        [
+            [x_min, y_min],
+            [x_min, y_max],
+            [x_max, y_max],
+            [x_max, y_min],
+        ]
+    )
+
+    # create artificial matches
+    tiles_coords_as_matches = np.concatenate([tile_coord, tile_coord], axis=1)
+
+    # Transform to sensor coordinates
+    (
+        sensor_pos_left,
+        sensor_pos_right,
+    ) = AbstractGeometry.matches_to_sensor_coords(
+        grid_left,
+        grid_right,
+        tiles_coords_as_matches,
+        cst.MATCHES_MODE,
+    )
+
+    # check if outside of image
+    # Do not use tile if the whole tile is outside sensor
+    in_sensor_left = True
+    if (
+        (
+            np.all(
+                sensor_pos_left[:, 0]
+                < min(left_sensor_bounds[0], left_sensor_bounds[2])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_left[:, 0]
+                > max(left_sensor_bounds[0], left_sensor_bounds[2])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_left[:, 1]
+                > max(left_sensor_bounds[1], left_sensor_bounds[3])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_left[:, 1]
+                < min(left_sensor_bounds[1], left_sensor_bounds[3])
+            )
+        )
+    ):
+        in_sensor_left = False
+
+    in_sensor_right = True
+    if (
+        (
+            np.all(
+                sensor_pos_right[:, 0]
+                < min(right_sensor_bounds[0], right_sensor_bounds[2])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_right[:, 0]
+                > max(right_sensor_bounds[0], right_sensor_bounds[2])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_right[:, 1]
+                > max(right_sensor_bounds[1], right_sensor_bounds[3])
+            )
+        )
+        or (
+            np.all(
+                sensor_pos_right[:, 1]
+                < min(right_sensor_bounds[1], right_sensor_bounds[3])
+            )
+        )
+    ):
+        sensor_pos_right = False
+
+    return in_sensor_left, in_sensor_right

@@ -36,6 +36,7 @@ from shapely.geometry import Polygon
 from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import inputs, outputs
+from cars.data_structures import cars_dataset
 
 
 class AbstractGeometry(metaclass=ABCMeta):
@@ -167,8 +168,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     def matches_to_sensor_coords(
-        grid1: str,
-        grid2: str,
+        grid1: Union[str, cars_dataset.CarsDataset],
+        grid2: Union[str, cars_dataset.CarsDataset],
         matches: np.ndarray,
         matches_type: str,
         matches_msk: np.ndarray = None,
@@ -213,6 +214,7 @@ class AbstractGeometry(metaclass=ABCMeta):
             # retrieve left and right matches
             vec_epi_pos_left = matches[:, 0:2]
             vec_epi_pos_right = matches[:, 2:4]
+
         elif matches_type == cst.DISP_MODE:
             if matches_msk is None:
                 logging.error("No disparity mask given in input")
@@ -282,12 +284,13 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     def sensor_position_from_grid(
-        grid: str, positions: np.ndarray
+        grid: Union[str, cars_dataset.CarsDataset],
+        positions: np.ndarray,
     ) -> np.ndarray:
         """
         Interpolate the positions given as inputs using the grid
 
-        :param grid: path to epipolar grid
+        :param grid: path to epipolar grid, or numpy array
         :param positions: epipolar positions to interpolate given as a numpy
                array of size [number of points, 2]. The last index indicates
                the 'x' coordinate (last index set to 0) or the 'y' coordinate
@@ -298,23 +301,43 @@ class AbstractGeometry(metaclass=ABCMeta):
                  the 'y' coordinate (last index set to 1).
         """
 
-        # open epipolar grid
-        ds_grid = rio.open(grid)
+        if isinstance(grid, str):
+            # open epipolar grid
+            ds_grid = rio.open(grid)
 
-        # retrieve grid step
-        transform = ds_grid.transform
-        step_col = transform[0]
-        step_row = transform[4]
+            # retrieve grid step
+            transform = ds_grid.transform
+            step_col = transform[0]
+            step_row = transform[4]
 
-        # center-pixel positions
-        [ori_col, ori_row] = transform * (0.5, 0.5)
+            # center-pixel positions
+            [ori_col, ori_row] = transform * (0.5, 0.5)
 
-        last_col = ori_col + step_col * ds_grid.width
-        last_row = ori_row + step_row * ds_grid.height
+            last_col = ori_col + step_col * ds_grid.width
+            last_row = ori_row + step_row * ds_grid.height
 
-        # transform dep to positions
-        row_dep = ds_grid.read(2)
-        col_dep = ds_grid.read(1)
+            # transform dep to positions
+            row_dep = ds_grid.read(2)
+            col_dep = ds_grid.read(1)
+
+        elif isinstance(grid, cars_dataset.CarsDataset):
+            # Get data
+            grid_data = grid[0, 0]
+            row_dep = grid_data[:, :, 1]
+            col_dep = grid_data[:, :, 0]
+
+            # Get step
+            step_col = grid.attributes["grid_spacing"][0]
+            step_row = grid.attributes["grid_spacing"][1]
+            ori_col = step_col / 2
+            ori_row = step_row / 2
+            last_col = ori_col + step_col * grid_data.shape[0]
+            last_row = ori_row + step_row * grid_data.shape[1]
+
+        else:
+            raise RuntimeError(
+                "Grid type {} not a path or CarsDataset".format(type(grid))
+            )
 
         cols = np.arange(ori_col, last_col, step_col)
         rows = np.arange(ori_row, last_row, step_row)
