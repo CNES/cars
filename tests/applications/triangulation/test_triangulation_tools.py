@@ -148,7 +148,7 @@ def test_triangulate_matches_shareloc(
 
 
 @pytest.mark.unit_tests
-def test_geoid_offset():
+def test_geoid_offset_from_xarray():
     """
     Returns test result of reference and computed geoid comparison
     """
@@ -173,4 +173,35 @@ def test_geoid_offset():
 
     assert np.allclose(
         geoid_ref.z.values, computed_geoid.z.values, atol=1e-3, rtol=1e-12
+    )
+
+
+@pytest.mark.unit_tests
+def test_geoid_offset_from_pandas():
+    """
+    Returns test result of reference and computed geoid comparison
+    """
+    # ref file contains 32x32 points issued from proj 6.2
+    ref_file = absolute_data_path("ref_output/egm96_15_ref_hgt.nc")
+
+    geoid_ref = xr.open_dataset(ref_file)
+
+    # create a zero elevation Dataset with the same geodetic coordinates
+    data = {
+        cst.X: np.ravel(geoid_ref.x),
+        cst.Y: np.ravel(geoid_ref.y),
+        cst.Z: np.zeros_like(np.ravel(geoid_ref.x)),
+    }
+    points = pandas.DataFrame(data=data)
+
+    # Set the geoid file from code source
+    geoid = read_geoid_file(get_geoid_path())
+
+    computed_geoid = triangulation_tools.geoid_offset(points, geoid)
+
+    assert np.allclose(
+        np.ravel(geoid_ref.z.values),
+        computed_geoid.z.values,
+        atol=1e-3,
+        rtol=1e-12,
     )

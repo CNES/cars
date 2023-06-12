@@ -447,8 +447,4 @@ def geoid_offset(points, geoid):
         # offset using geoid height
         out_pc[cst.Z] -= ref_interp_hgt
 
-        # remove coordinates lat & lon added by the interpolation
-        if isinstance(out_pc, xr.Dataset):
-            out_pc = out_pc.reset_coords(["lat", "lon"], drop=True)
-
     return out_pc
