@@ -299,7 +299,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
                 }
             }
         }
-        orchestrator.update_out_info(updating_dict)
+        self.orchestrator.update_out_info(updating_dict)
 
         logging.info(
             "Size of epipolar images: {}x{} pixels".format(

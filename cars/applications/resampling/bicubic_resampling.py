@@ -24,6 +24,8 @@ this module contains the dense_matching application class.
 # pylint: disable=too-many-lines
 # TODO refacto: factorize disributed code, and remove too-many-lines
 
+import copy
+
 # Standard imports
 import logging
 import os
@@ -107,7 +109,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["epi_tile_size"] = conf.get("epi_tile_size", 500)
         # Saving bools
         overloaded_conf["save_epipolar_image"] = conf.get(
-            "save_epipolar_image", False
+            "save_epipolar_image", True
         )
         overloaded_conf["save_epipolar_color"] = conf.get(
             "save_epipolar_color", False
@@ -480,9 +482,13 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             ]
         )
 
-        # Get dimension of sensors
-        left_sensor_bounds, right_sensor_bounds = get_sensors_bounds(
-            sensor_image_left, sensor_image_right
+        # Check if tiles are in sensors
+        in_sensor_left_array, in_sensor_right_array = check_tiles_in_sensor(
+            sensor_image_left,
+            sensor_image_right,
+            epi_tilling_grid,
+            grid_left,
+            grid_right,
         )
 
         # Generate Image pair
@@ -500,16 +506,9 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     ]
                 )
 
-                in_sensor_left, in_sensor_right = check_tile_inclusion(
-                    left_sensor_bounds,
-                    right_sensor_bounds,
-                    grid_left,
-                    grid_right,
-                    tile,
-                )
-
                 if epipolar_roi_poly.intersects(tile_roi_poly) and (
-                    in_sensor_left or in_sensor_right
+                    in_sensor_left_array[row, col]
+                    or in_sensor_right_array[row, col]
                 ):
                     # get overlaps
                     left_overlap = cars_dataset.overlap_array_to_dict(
@@ -712,6 +711,7 @@ def generate_epipolar_images_wrapper(
 def get_sensors_bounds(sensor_image_left, sensor_image_right):
     """
     Get bounds of sensor images
+    Bounds: BoundingBox(left, bottom, right, top)
 
     :param sensor_image_left: left sensor
     :type sensor_image_left: dict
@@ -733,52 +733,71 @@ def get_sensors_bounds(sensor_image_left, sensor_image_right):
     return left_sensor_bounds, right_sensor_bounds
 
 
-def check_tile_inclusion(
-    left_sensor_bounds,
-    right_sensor_bounds,
+def check_tiles_in_sensor(
+    sensor_image_left,
+    sensor_image_right,
+    image_tiling,
     grid_left,
     grid_right,
-    epi_tile_coord,
 ):
     """
-    Check if tile is in sensor image
+    Check if epipolar tiles will be used.
+    A tile is not used if is outside sensor bounds
 
-    :param left_sensor_bounds: bounds of left sensor
-    :type left_sensor_bounds: list
-    :param right_sensor_bounds: bounds of right sensor
-    :type right_sensor_bounds: list
+    :param sensor_image_left: left sensor
+    :type sensor_image_left: dict
+    :param sensor_image_right: right sensor
+    :type sensor_image_right: dict
+    :param image_tiling: epipolar tiling grid
+    :type image_tiling: np.array
     :param grid_left: left epipolar grid
     :type grid_left: CarsDataset
     :param grid_right: right epipolar grid
     :type grid_right: CarsDataset
-    :param epi_tile_coord: epipolar bounds of tile
-    :type epi_tile_coord: list
 
-    :return: left tile in sensor image left, right tile in sensor image right
-    :rtype: tuple(bool, bool)
+    :return: left in sensor, right in sensor
+    :rtype: np.array(bool), np.array(bool)
+
     """
+
+    # Get sensor image bounds
+    # BoundingBox: left, bottom, right, top:
+    left_sensor_bounds, right_sensor_bounds = get_sensors_bounds(
+        sensor_image_left, sensor_image_right
+    )
 
     # Get tile epipolar corners
     interpolation_margin = 20  # abitrary
 
-    x_min, x_max, y_min, y_max = epi_tile_coord
-    x_min -= interpolation_margin
-    y_min -= interpolation_margin
-    x_max += interpolation_margin
-    y_max += interpolation_margin
+    # add margin
+    tiling_grid = copy.copy(image_tiling)
+    tiling_grid[:, :, 0] -= interpolation_margin
+    tiling_grid[:, :, 1] += interpolation_margin
+    tiling_grid[:, :, 2] -= interpolation_margin
+    tiling_grid[:, :, 3] += interpolation_margin
 
-    tile_coord = np.array(
-        [
-            [x_min, y_min],
-            [x_min, y_max],
-            [x_max, y_max],
-            [x_max, y_min],
-        ]
-    )
+    # Generate matches
+    matches = np.empty((4 * tiling_grid.shape[0] * tiling_grid.shape[1], 2))
+    nb_row = tiling_grid.shape[0]
+    for row in range(tiling_grid.shape[0]):
+        for col in range(tiling_grid.shape[1]):
+            # x_min, x_max, y_min, y_max = tiling_grid[row, col]
+            y_min, y_max, x_min, x_max = tiling_grid[row, col]
+            matches[
+                4 * nb_row * col + 4 * row : 4 * nb_row * col + 4 * row + 4, :
+            ] = np.array(
+                [
+                    [x_min, y_min],
+                    [x_min, y_max],
+                    [x_max, y_max],
+                    [x_max, y_min],
+                ]
+            )
 
     # create artificial matches
-    tiles_coords_as_matches = np.concatenate([tile_coord, tile_coord], axis=1)
+    tiles_coords_as_matches = np.concatenate([matches, matches], axis=1)
 
+    # Compute sensors positions
     # Transform to sensor coordinates
     (
         sensor_pos_left,
@@ -789,6 +808,71 @@ def check_tile_inclusion(
         tiles_coords_as_matches,
         cst.MATCHES_MODE,
     )
+
+    in_sensor_left_array = np.ones(
+        (image_tiling.shape[0], image_tiling.shape[1]), dtype=bool
+    )
+    in_sensor_right_array = np.ones(
+        (image_tiling.shape[0], image_tiling.shape[1]), dtype=bool
+    )
+
+    for row in range(tiling_grid.shape[0]):
+        for col in range(tiling_grid.shape[1]):
+            # Get sensors position for tile
+            left_sensor_tile = sensor_pos_left[
+                4 * nb_row * col + 4 * row : 4 * nb_row * col + 4 * row + 4, :
+            ]
+            right_sensor_tile = sensor_pos_right[
+                4 * nb_row * col + 4 * row : 4 * nb_row * col + 4 * row + 4, :
+            ]
+
+            in_sensor_left, in_sensor_right = check_tile_inclusion(
+                left_sensor_bounds,
+                right_sensor_bounds,
+                left_sensor_tile,
+                right_sensor_tile,
+            )
+
+            in_sensor_left_array[row, col] = in_sensor_left
+            in_sensor_right_array[row, col] = in_sensor_right
+
+    nb_tiles = tiling_grid.shape[0] * tiling_grid.shape[1]
+    tiles_dumped_left = nb_tiles - np.sum(in_sensor_left)
+    tiles_dumped_right = nb_tiles - np.sum(in_sensor_right)
+
+    logging.info(
+        "Number of left epipolar image tiles outside left sensor "
+        "image and removed : {}".format(tiles_dumped_left)
+    )
+    logging.info(
+        "Number of right epipolar image tiles outside right sensor "
+        "image and removed : {}".format(tiles_dumped_right)
+    )
+
+    return in_sensor_left_array, in_sensor_right_array
+
+
+def check_tile_inclusion(
+    left_sensor_bounds,
+    right_sensor_bounds,
+    sensor_pos_left,
+    sensor_pos_right,
+):
+    """
+    Check if tile is in sensor image
+
+    :param left_sensor_bounds: bounds of left sensor
+    :type left_sensor_bounds: list
+    :param right_sensor_bounds: bounds of right sensor
+    :type right_sensor_bounds: list
+    :param sensor_pos_left: left sensor position
+    :type sensor_pos_left: np.array
+    :param sensor_pos_right: right sensor position
+    :type sensor_pos_right: np.array
+
+    :return: left tile in sensor image left, right tile in sensor image right
+    :rtype: tuple(bool, bool)
+    """
 
     # check if outside of image
     # Do not use tile if the whole tile is outside sensor
@@ -848,6 +932,6 @@ def check_tile_inclusion(
             )
         )
     ):
-        sensor_pos_right = False
+        in_sensor_right = False
 
     return in_sensor_left, in_sensor_right
