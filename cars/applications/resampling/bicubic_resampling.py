@@ -836,8 +836,8 @@ def check_tiles_in_sensor(
             in_sensor_right_array[row, col] = in_sensor_right
 
     nb_tiles = tiling_grid.shape[0] * tiling_grid.shape[1]
-    tiles_dumped_left = nb_tiles - np.sum(in_sensor_left)
-    tiles_dumped_right = nb_tiles - np.sum(in_sensor_right)
+    tiles_dumped_left = nb_tiles - np.sum(in_sensor_left_array)
+    tiles_dumped_right = nb_tiles - np.sum(in_sensor_right_array)
 
     logging.info(
         "Number of left epipolar image tiles outside left sensor "

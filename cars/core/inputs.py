@@ -146,8 +146,18 @@ def rasterio_get_bounds(raster_file: str) -> Tuple[int, int]:
     :param raster_file: Image file
     :return: The size (width, height)
     """
+
+    # get sign of resolution
+    profile = rasterio_get_profile(raster_file)
+    transform = list(profile["transform"])
+    res_x = transform[0]
+    res_y = transform[4]
+    res_x /= abs(res_x)
+    res_y /= abs(res_y)
+    res_signs = np.array([res_x, res_y, res_x, res_y])
+
     with rio.open(raster_file, "r") as descriptor:
-        return descriptor.bounds
+        return np.array(list(descriptor.bounds)) * res_signs
 
 
 def rasterio_get_list_min_max(raster_file: str) -> Tuple[int, int]:
