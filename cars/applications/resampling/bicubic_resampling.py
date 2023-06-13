@@ -781,7 +781,6 @@ def check_tiles_in_sensor(
     nb_row = tiling_grid.shape[0]
     for row in range(tiling_grid.shape[0]):
         for col in range(tiling_grid.shape[1]):
-            # x_min, x_max, y_min, y_max = tiling_grid[row, col]
             y_min, y_max, x_min, x_max = tiling_grid[row, col]
             matches[
                 4 * nb_row * col + 4 * row : 4 * nb_row * col + 4 * row + 4, :
