@@ -327,12 +327,12 @@ class AbstractGeometry(metaclass=ABCMeta):
             col_dep = grid_data[:, :, 0]
 
             # Get step
-            step_col = grid.attributes["grid_spacing"][0]
-            step_row = grid.attributes["grid_spacing"][1]
+            step_col = grid.attributes["grid_spacing"][1]
+            step_row = grid.attributes["grid_spacing"][0]
             ori_col = step_col / 2
             ori_row = step_row / 2
-            last_col = ori_col + step_col * grid_data.shape[0]
-            last_row = ori_row + step_row * grid_data.shape[1]
+            last_row = ori_row + step_row * grid_data.shape[0]
+            last_col = ori_col + step_col * grid_data.shape[1]
 
         else:
             raise RuntimeError(

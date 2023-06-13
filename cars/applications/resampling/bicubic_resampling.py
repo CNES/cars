@@ -109,7 +109,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["epi_tile_size"] = conf.get("epi_tile_size", 500)
         # Saving bools
         overloaded_conf["save_epipolar_image"] = conf.get(
-            "save_epipolar_image", True
+            "save_epipolar_image", False
         )
         overloaded_conf["save_epipolar_color"] = conf.get(
             "save_epipolar_color", False
