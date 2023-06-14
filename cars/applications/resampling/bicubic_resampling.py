@@ -767,7 +767,7 @@ def check_tiles_in_sensor(
     )
 
     # Get tile epipolar corners
-    interpolation_margin = 20  # abitrary
+    interpolation_margin = 20  # arbitrary
 
     # add margin
     tiling_grid = copy.copy(image_tiling)
