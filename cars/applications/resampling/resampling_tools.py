@@ -363,7 +363,7 @@ def resample_image(
     # create msk
     msk = None
     if nodata is not None or mask is not None:
-        if (left < right) and (top < bottom):
+        if in_sensor:
             # get mask in source geometry
             nodata_index = img_as_array == nodata
 
