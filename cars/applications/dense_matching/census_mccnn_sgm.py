@@ -73,7 +73,6 @@ class CensusMccnnSgm(
         self.epipolar_tile_margin_in_percent = self.used_config[
             "epipolar_tile_margin_in_percent"
         ]
-        self.use_sec_disp = self.used_config["use_sec_disp"]
         self.min_elevation_offset = self.used_config["min_elevation_offset"]
         self.max_elevation_offset = self.used_config["max_elevation_offset"]
         # Performance map
@@ -124,7 +123,6 @@ class CensusMccnnSgm(
         overloaded_conf["epipolar_tile_margin_in_percent"] = conf.get(
             "epipolar_tile_margin_in_percent", 60
         )
-        overloaded_conf["use_sec_disp"] = conf.get("use_sec_disp", False)
         overloaded_conf["min_elevation_offset"] = conf.get(
             "min_elevation_offset", None
         )
@@ -174,7 +172,6 @@ class CensusMccnnSgm(
             "min_epi_tile_size": And(int, lambda x: x > 0),
             "max_epi_tile_size": And(int, lambda x: x > 0),
             "epipolar_tile_margin_in_percent": int,
-            "use_sec_disp": bool,
             "min_elevation_offset": Or(None, int),
             "max_elevation_offset": Or(None, int),
             "save_disparity_map": bool,
@@ -332,9 +329,9 @@ class CensusMccnnSgm(
         """
         Run Matching application.
 
-        Create left and right CarsDataset filled with xarray.Dataset ,
-        corresponding to epipolar disparities, on the same geometry
-        that epipolar_images_left and epipolar_images_right.
+        Create CarsDataset filled with xarray.Dataset, corresponding
+        to epipolar disparities, on the same geometry than
+        epipolar_images_left.
 
         :param epipolar_images_left: tiled left epipolar CarsDataset contains:
 
@@ -372,8 +369,8 @@ class CensusMccnnSgm(
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
 
-        :return: left disparity map, right disparity map: \
-            Each CarsDataset contains:
+        :return: disparity map: \
+            The CarsDataset contains:
 
             - N x M Delayed tiles.\
               Each tile will be a future xarray Dataset containing:
@@ -382,7 +379,7 @@ class CensusMccnnSgm(
             - attributes containing:
                 "largest_epipolar_region","opt_epipolar_tile_size"
 
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
         """
 
         # Default orchestrator
@@ -410,94 +407,53 @@ class CensusMccnnSgm(
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
             # Epipolar_disparity
-            epipolar_disparity_map_left = cars_dataset.CarsDataset("arrays")
-            epipolar_disparity_map_left.create_empty_copy(epipolar_images_left)
-            epipolar_disparity_map_left.overlaps *= 0
-
-            epipolar_disparity_map_right = cars_dataset.CarsDataset("arrays")
-            epipolar_disparity_map_right.create_empty_copy(
-                epipolar_images_right
-            )
-            epipolar_disparity_map_right.overlaps *= 0
+            epipolar_disparity_map = cars_dataset.CarsDataset("arrays")
+            epipolar_disparity_map.create_empty_copy(epipolar_images_left)
+            epipolar_disparity_map.overlaps *= 0
 
             # Update attributes to get epipolar info
-            epipolar_disparity_map_left.attributes.update(
+            epipolar_disparity_map.attributes.update(
                 epipolar_images_left.attributes
             )
 
             # Save disparity maps
             if self.save_disparity_map:
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_left.tif"),
+                    os.path.join(pair_folder, "epi_disp.tif"),
                     cst_disp.MAP,
-                    epipolar_disparity_map_left,
-                    cars_ds_name="epi_disp_left",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp",
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_right.tif"),
-                    cst_disp.MAP,
-                    epipolar_disparity_map_right,
-                    cars_ds_name="epi_disp_right",
-                )
-
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_color_left.tif"),
+                    os.path.join(pair_folder, "epi_disp_color.tif"),
                     cst.EPI_COLOR,
-                    epipolar_disparity_map_left,
-                    cars_ds_name="epi_disp_color_left",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_color",
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_color_right.tif"),
-                    cst.EPI_COLOR,
-                    epipolar_disparity_map_right,
-                    cars_ds_name="epi_disp_color_right",
-                )
-
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_mask_left.tif"),
+                    os.path.join(pair_folder, "epi_disp_mask.tif"),
                     cst_disp.VALID,
-                    epipolar_disparity_map_left,
-                    cars_ds_name="epi_disp_mask_left",
-                    optional_data=True,
-                )
-
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_disp_mask_right.tif"),
-                    cst_disp.VALID,
-                    epipolar_disparity_map_right,
-                    cars_ds_name="epi_disp_mask_right",
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_mask",
                     optional_data=True,
                 )
 
                 self.orchestrator.add_to_save_lists(
                     os.path.join(
                         pair_folder,
-                        "epi_confidence_left.tif",
+                        "epi_confidence.tif",
                     ),
                     cst_disp.CONFIDENCE,
-                    epipolar_disparity_map_left,
-                    cars_ds_name="confidence",
-                    optional_data=True,
-                )
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(
-                        pair_folder,
-                        "epi_confidence_right.tif",
-                    ),
-                    cst_disp.CONFIDENCE,
-                    epipolar_disparity_map_right,
+                    epipolar_disparity_map,
                     cars_ds_name="confidence",
                     optional_data=True,
                 )
 
             # Get saving infos in order to save tiles when they are computed
-            [
-                saving_info_left,
-                saving_info_right,
-            ] = self.orchestrator.get_saving_infos(
-                [epipolar_disparity_map_left, epipolar_disparity_map_right]
+            [saving_info] = self.orchestrator.get_saving_infos(
+                [epipolar_disparity_map]
             )
 
             # Add infos to orchestrator.out_json
@@ -511,39 +467,30 @@ class CensusMccnnSgm(
             self.orchestrator.update_out_info(updating_dict)
             logging.info(
                 "Compute disparity: number tiles: {}".format(
-                    epipolar_disparity_map_right.shape[1]
-                    * epipolar_disparity_map_right.shape[0]
+                    epipolar_disparity_map.shape[1]
+                    * epipolar_disparity_map.shape[0]
                 )
             )
             # Generate disparity maps
-            for col in range(epipolar_disparity_map_right.shape[1]):
-                for row in range(epipolar_disparity_map_right.shape[0]):
-                    if type(None) not in (
-                        type(epipolar_images_left[row, col]),
-                        type(epipolar_images_right[row, col]),
-                    ):
+            for col in range(epipolar_disparity_map.shape[1]):
+                for row in range(epipolar_disparity_map.shape[0]):
+                    if epipolar_images_left[row, col] is not None:
                         # update saving infos  for potential replacement
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-                        full_saving_info_right = ocht.update_saving_infos(
-                            saving_info_right, row=row, col=col
+                        full_saving_info = ocht.update_saving_infos(
+                            saving_info, row=row, col=col
                         )
                         # Compute disparity
                         (
-                            epipolar_disparity_map_left[row, col],
-                            epipolar_disparity_map_right[row, col],
+                            epipolar_disparity_map[row, col]
                         ) = self.orchestrator.cluster.create_task(
-                            compute_disparity, nout=2
+                            compute_disparity
                         )(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
                             self.corr_config,
                             disp_min=disp_min,
                             disp_max=disp_max,
-                            use_sec_disp=self.use_sec_disp,
-                            saving_info_left=full_saving_info_left,
-                            saving_info_right=full_saving_info_right,
+                            saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
                             generate_performance_map=(
                                 self.generate_performance_map
@@ -553,17 +500,13 @@ class CensusMccnnSgm(
                             ),
                             disp_to_alt_ratio=disp_to_alt_ratio,
                         )
-
-                        if not self.use_sec_disp:
-                            # Remove delayed by None
-                            epipolar_disparity_map_right[row, col] = None
         else:
             logging.error(
                 "DenseMatching application doesn't "
                 "support this input data format"
             )
 
-        return epipolar_disparity_map_left, epipolar_disparity_map_right
+        return epipolar_disparity_map
 
 
 def compute_disparity(
@@ -572,9 +515,7 @@ def compute_disparity(
     corr_cfg: dict,
     disp_min=None,
     disp_max=None,
-    use_sec_disp=False,
-    saving_info_left=None,
-    saving_info_right=None,
+    saving_info=None,
     compute_disparity_masks=False,
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
@@ -606,11 +547,9 @@ def compute_disparity(
     :type disp_min: int
     :param disp_max: maximum disparity
     :type disp_max: int
-    :param use_sec_disp: Boolean activating the use of the secondary \
-                         disparity map
-    :type use_sec_disp: bool
     :param compute_disparity_masks: Compute all the disparity \
                         pandora masks(disable by default)
+    :type compute_disparity_masks: bool
     :param generate_performance_map: True if generate performance map
     :type generate_performance_map: bool
     :param perf_ambiguity_threshold: ambiguity threshold used for
@@ -618,72 +557,37 @@ def compute_disparity(
     :type perf_ambiguity_threshold: float
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
+    :return: Left to right disparity dataset
+        Returned dataset is composed of :
 
+        - cst_disp.MAP
+        - cst_disp.VALID
+        - cst.EPI_COLOR
 
-    :type compute_disparity_masks: bool
-    :return: Left disparity object, Right disparity object (if exists)
-
-    Returned objects are composed of :
-        - dataset (None for right object if use_sec_disp not activated) with :
-
-            - cst_disp.MAP
-            - cst_disp.VALID
-            - cst.EPI_COLOR
     """
 
     # Compute disparity
     # TODO : remove overwriting of EPI_MSK
-    disp = dense_matching_tools.compute_disparity(
+    disp_dataset = dense_matching_tools.compute_disparity(
         left_image_object,
         right_image_object,
         corr_cfg,
         disp_min,
         disp_max,
-        use_sec_disp=use_sec_disp,
         compute_disparity_masks=compute_disparity_masks,
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,
         disp_to_alt_ratio=disp_to_alt_ratio,
     )
 
-    color_sec = None
-    if cst.STEREO_SEC in disp:
-        # compute right color image from right-left disparity map
-        color_sec = dense_matching_tools.estimate_color_from_disparity(
-            disp[cst.STEREO_SEC],
-            left_image_object,
-        )
-
-        # check bands
-        if len(left_image_object[cst.EPI_COLOR].values.shape) > 2:
-            band_im = left_image_object.coords[cst.BAND_IM]
-            if cst.BAND_IM not in disp[cst.STEREO_SEC].dims:
-                disp[cst.STEREO_SEC].coords[cst.BAND_IM] = band_im
-
-        # merge colors
-        disp[cst.STEREO_SEC][cst.EPI_COLOR] = color_sec[cst.EPI_IMAGE]
-
     # Fill with attributes
-    left_disp_dataset = disp[cst.STEREO_REF]
     cars_dataset.fill_dataset(
-        left_disp_dataset,
-        saving_info=saving_info_left,
+        disp_dataset,
+        saving_info=saving_info,
         window=cars_dataset.get_window_dataset(left_image_object),
         profile=cars_dataset.get_profile_rasterio(left_image_object),
         attributes=None,
         overlaps=None,  # overlaps are removed
     )
 
-    right_disp_dataset = None
-    if cst.STEREO_SEC in disp:
-        right_disp_dataset = disp[cst.STEREO_SEC]
-        cars_dataset.fill_dataset(
-            right_disp_dataset,
-            saving_info=saving_info_right,
-            window=cars_dataset.get_window_dataset(right_image_object),
-            profile=cars_dataset.get_profile_rasterio(right_image_object),
-            attributes=None,
-            overlaps=None,
-        )
-
-    return left_disp_dataset, right_disp_dataset
+    return disp_dataset

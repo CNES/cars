@@ -207,7 +207,6 @@ def test_simple_rasterization_dataset_1():
 
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [cloud],
-        [None],
         epsg,
         xmin=xmin,
         xmax=xmax,
@@ -284,7 +283,6 @@ def test_simple_rasterization_dataset_2():
 
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [cloud],
-        [None],
         epsg,
         xmin=xmin,
         xmax=xmax,
@@ -367,7 +365,6 @@ def test_simple_rasterization_multiple_datasets():
 
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [utm1, utm2],
-        [None, None],
         epsg,
         xmin=xmin,
         xmax=xmax,

@@ -429,8 +429,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             list_terrain_roi = []
 
             # initialise lists of points
-            list_epipolar_points_cloud_left = []
-            list_epipolar_points_cloud_right = []
+            list_epipolar_points_cloud = []
 
             list_sensor_pairs = sensors_inputs.generate_inputs(self.inputs)
             logging.info(
@@ -556,7 +555,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     (
                         grid_correction_coef,
                         corrected_matches_array,
-                        _,
                         _,
                         _,
                         _,
@@ -688,10 +686,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 )
 
                 # Run epipolar matching application
-                (
-                    epipolar_disparity_map_left,
-                    epipolar_disparity_map_right,
-                ) = self.dense_matching_application.run(
+                epipolar_disparity_map = self.dense_matching_application.run(
                     new_epipolar_image_left,
                     new_epipolar_image_right,
                     orchestrator=cars_orchestrator,
@@ -707,12 +702,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if self.dense_matches_filling_1.used_method == "plane":
                     # Fill holes in disparity map
                     (
-                        filled_with_1_epipolar_disparity_map_left,
-                        filled_with_1_epipolar_disparity_map_right,
+                        filled_with_1_epipolar_disparity_map
                     ) = self.dense_matches_filling_1.run(
-                        epipolar_disparity_map_left,
-                        epipolar_disparity_map_right,
-                        new_epipolar_image_left,
+                        epipolar_disparity_map,
                         holes_bbox_left,
                         holes_bbox_right,
                         disp_min=disp_min,
@@ -724,12 +716,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     # fill with zeros
                     (
-                        filled_with_1_epipolar_disparity_map_left,
-                        filled_with_1_epipolar_disparity_map_right,
+                        filled_with_1_epipolar_disparity_map
                     ) = self.dense_matches_filling_1.run(
-                        epipolar_disparity_map_left,
-                        epipolar_disparity_map_right,
-                        new_epipolar_image_left,
+                        epipolar_disparity_map,
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
                         pair_key=pair_key,
@@ -738,12 +727,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if self.dense_matches_filling_2.used_method == "plane":
                     # Fill holes in disparity map
                     (
-                        filled_with_2_epipolar_disparity_map_left,
-                        filled_with_2_epipolar_disparity_map_right,
+                        filled_with_2_epipolar_disparity_map
                     ) = self.dense_matches_filling_2.run(
-                        filled_with_1_epipolar_disparity_map_left,
-                        filled_with_1_epipolar_disparity_map_right,
-                        new_epipolar_image_left,
+                        filled_with_1_epipolar_disparity_map,
                         holes_bbox_left,
                         holes_bbox_right,
                         disp_min=disp_min,
@@ -755,12 +741,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     # fill with zeros
                     (
-                        filled_with_2_epipolar_disparity_map_left,
-                        filled_with_2_epipolar_disparity_map_right,
+                        filled_with_2_epipolar_disparity_map
                     ) = self.dense_matches_filling_2.run(
-                        filled_with_1_epipolar_disparity_map_left,
-                        filled_with_1_epipolar_disparity_map_right,
-                        new_epipolar_image_left,
+                        filled_with_1_epipolar_disparity_map,
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
                         pair_key=pair_key,
@@ -787,18 +770,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
 
                 # Run epipolar triangulation application
-                (
-                    epipolar_points_cloud_left,
-                    epipolar_points_cloud_right,
-                ) = self.triangulation_application.run(
+                (epipolar_points_cloud) = self.triangulation_application.run(
                     sensor_image_left,
                     sensor_image_right,
                     new_epipolar_image_left,
-                    new_epipolar_image_right,
                     grid_left,
                     corrected_grid_right,
-                    filled_with_2_epipolar_disparity_map_left,
-                    filled_with_2_epipolar_disparity_map_right,
+                    filled_with_2_epipolar_disparity_map,
                     epsg,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
@@ -839,12 +817,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     list_terrain_roi.append(current_terrain_roi_bbox)
 
                 # add points cloud to list
-                list_epipolar_points_cloud_left.append(
-                    epipolar_points_cloud_left
-                )
-                list_epipolar_points_cloud_right.append(
-                    epipolar_points_cloud_right
-                )
+                list_epipolar_points_cloud.append(epipolar_points_cloud)
 
             if self.generate_terrain_products:
                 # compute terrain bounds
@@ -859,8 +832,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Merge point clouds
                 merged_points_clouds = self.pc_fusion_application.run(
-                    list_epipolar_points_cloud_left,
-                    list_epipolar_points_cloud_right,
+                    list_epipolar_points_cloud,
                     terrain_bounds,
                     epsg,
                     orchestrator=cars_orchestrator,

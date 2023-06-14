@@ -136,17 +136,15 @@ def test_epipolar_pipeline(
         nodata2=nodata2,
     )
 
-    left_disp, right_disp = compute_disparity(
+    disp_map = compute_disparity(
         left_image,
         right_image,
         corr_cfg,
     )
 
-    left_pc, _ = compute_points_cloud(
+    points_cloud = compute_points_cloud(
         left_image,
-        right_image,
-        left_disp,
-        right_disp,
+        disp_map,
         configuration,
         "OTBGeometry",
         32636,
@@ -156,11 +154,11 @@ def test_epipolar_pipeline(
     # Uncomment to update reference
     # with open(
     #     absolute_data_path("ref_output/cloud1_ref_pandora"), "wb"
-    # ) as left_pc_file:
-    #     pickle.dump(left_pc, left_pc_file)
+    # ) as points_cloud_file:
+    #     pickle.dump(points_cloud, points_cloud_file)
 
     with open(
         absolute_data_path("ref_output/cloud1_ref_pandora"), "rb"
-    ) as left_pc_file:
-        ref_pc = pickle.load(left_pc_file)
-        assert_same_datasets(left_pc, ref_pc, atol=1.0e-3)
+    ) as points_cloud_file:
+        ref_pc = pickle.load(points_cloud_file)
+        assert_same_datasets(points_cloud, ref_pc, atol=1.0e-3)

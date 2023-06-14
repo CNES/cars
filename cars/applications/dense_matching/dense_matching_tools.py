@@ -36,7 +36,6 @@ from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
 from pkg_resources import iter_entry_points
-from scipy import interpolate
 
 # CARS imports
 from cars.applications.dense_matching import (
@@ -44,7 +43,6 @@ from cars.applications.dense_matching import (
 )
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.core import datasets
 
 
 def get_margins(disp_min, disp_max, corr_cfg):
@@ -401,7 +399,6 @@ def compute_disparity(
     corr_cfg,
     disp_min=None,
     disp_max=None,
-    use_sec_disp=True,
     compute_disparity_masks=False,
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
@@ -422,9 +419,6 @@ def compute_disparity(
     :param disp_max: Maximum disparity
                      (if None, value is taken from left dataset)
     :type disp_max: int
-    :param use_sec_disp: Boolean activating the use of the secondary
-                         disparity map
-    :type use_sec_disp: bool
     :param compute_disparity_masks: Activation of compute_disparity_masks mode
     :type compute_disparity_masks: Boolean
     :param generate_performance_map: True if generate performance map
@@ -434,12 +428,7 @@ def compute_disparity(
     :type perf_ambiguity_threshold: float
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
-    :return: Dictionary of disparity dataset. Keys are \
-             (if it is computed by Pandora):
-
-        - 'ref' for the left to right disparity map
-        - 'sec' for the right to left disparity map
-
+    :return: Disparity dataset
     """
 
     # Check disp min and max bounds with respect to margin used for
@@ -483,7 +472,7 @@ def compute_disparity(
     check_dataset(right_dataset)
 
     # Run the Pandora pipeline
-    ref, sec = pandora.run(
+    ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
         right_dataset,
@@ -492,8 +481,7 @@ def compute_disparity(
         corr_cfg["pipeline"],
     )
 
-    disp = {}
-    disp[cst.STEREO_REF] = create_disp_dataset(
+    disp_dataset = create_disp_dataset(
         ref,
         left_dataset,
         compute_disparity_masks=compute_disparity_masks,
@@ -502,23 +490,7 @@ def compute_disparity(
         disp_to_alt_ratio=disp_to_alt_ratio,
     )
 
-    if bool(sec.dims) and use_sec_disp:
-        # for the secondary disparity map, the reference is the right dataset
-        # and the secondary image is the left one
-        logging.info(
-            "Secondary disparity map will be used to densify "
-            "the points cloud"
-        )
-        disp[cst.STEREO_SEC] = create_disp_dataset(
-            sec,
-            right_dataset,
-            compute_disparity_masks=compute_disparity_masks,
-            generate_performance_map=generate_performance_map,
-            perf_ambiguity_threshold=perf_ambiguity_threshold,
-            disp_to_alt_ratio=disp_to_alt_ratio,
-        )
-
-    return disp
+    return disp_dataset
 
 
 def optimal_tile_size_pandora_plugin_libsgm(
@@ -582,109 +554,3 @@ def optimal_tile_size_pandora_plugin_libsgm(
         tile_size = min_tile_size
 
     return tile_size
-
-
-def estimate_color_from_disparity(
-    disp_ref_to_sec: xr.Dataset,
-    sec_ds: xr.Dataset,
-) -> xr.Dataset:
-    """
-    Estimate color image of reference from the disparity map and the secondary
-    color image.
-
-    :param disp_ref_to_sec: disparity map
-    :param sec_ds: secondary image dataset
-    :return: interpolated reference color image dataset
-    """
-    # retrieve numpy arrays from input datasets
-
-    disp_msk = disp_ref_to_sec[cst_disp.VALID].values
-    im_color = sec_ds[cst.EPI_COLOR].values
-    if cst.EPI_COLOR_MSK in sec_ds.variables.keys():
-        im_msk = sec_ds[cst.EPI_COLOR_MSK].values
-
-    nb_bands, nb_row, nb_col = im_color.shape
-    nb_disp_row, nb_disp_col = disp_ref_to_sec[cst_disp.MAP].values.shape
-
-    sec_up_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][1])
-    sec_left_margin = abs(sec_ds.attrs[cst.EPI_MARGINS][0])
-
-    # instantiate final image
-    final_interp_color = np.zeros(
-        (nb_bands, nb_disp_row, nb_disp_col), dtype=np.float64
-    )
-
-    # construct secondary color image pixels positions
-    clr_x_positions, clr_y_positions = np.meshgrid(
-        np.linspace(0, nb_col - 1, nb_col), np.linspace(0, nb_row - 1, nb_row)
-    )
-    clr_xy_positions = np.concatenate(
-        [
-            clr_x_positions.reshape(1, nb_row * nb_col).transpose(),
-            clr_y_positions.reshape(1, nb_row * nb_col).transpose(),
-        ],
-        axis=1,
-    )
-
-    # construct the positions for which the interpolation has to be done
-    interpolated_points = np.zeros(
-        (nb_disp_row * nb_disp_col, 2), dtype=np.float64
-    )
-    for i in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[0]):
-        for j in range(0, disp_ref_to_sec[cst_disp.MAP].values.shape[1]):
-            # if the pixel is valid,
-            # else the position is left to (0,0)
-            # and the final image pixel value will be set to np.nan
-            if disp_msk[i, j] == 255:
-                idx = j + disp_ref_to_sec[cst_disp.MAP].values[i, j]
-                interpolated_points[i * nb_disp_col + j, 0] = (
-                    idx + sec_left_margin
-                )
-                interpolated_points[i * nb_disp_col + j, 1] = i + sec_up_margin
-
-    # construct final image mask
-    final_msk = disp_msk
-    if cst.EPI_COLOR_MSK in sec_ds.variables.keys():
-        # interpolate the color image mask to the new image referential
-        # (nearest neighbor interpolation)
-        msk_values = im_msk.reshape(nb_row * nb_col, 1)
-        interp_msk_value = interpolate.griddata(
-            clr_xy_positions, msk_values, interpolated_points, method="nearest"
-        )
-        interp_msk = interp_msk_value.reshape(nb_disp_row, nb_disp_col)
-
-        # remove from the final mask all values which are interpolated from non
-        # valid values (strictly non equal to 255)
-        final_msk[interp_msk == 0] = 0
-
-    # interpolate each band of the color image
-    for band in range(nb_bands):
-        # get band values
-        band_img = im_color[band, :, :]
-        clr_values = band_img.reshape(nb_row * nb_col, 1)
-
-        # interpolate values
-        interp_values = interpolate.griddata(
-            clr_xy_positions, clr_values, interpolated_points, method="nearest"
-        )
-        final_interp_color[band, :, :] = interp_values.reshape(
-            nb_disp_row, nb_disp_col
-        )
-
-        # apply final mask
-        final_interp_color[band, :, :][final_msk != 255] = np.nan
-
-    # create interpolated color image dataset
-    region = list(disp_ref_to_sec.attrs[cst.ROI])
-    largest_size = disp_ref_to_sec.attrs[cst.EPI_FULL_SIZE]
-
-    interp_clr_ds = datasets.create_im_dataset(
-        final_interp_color,
-        region,
-        largest_size,
-        band_coords=cst.BAND_IM,
-        msk=None,
-    )
-    interp_clr_ds.attrs[cst.ROI] = disp_ref_to_sec.attrs[cst.ROI]
-
-    return interp_clr_ds

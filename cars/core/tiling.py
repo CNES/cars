@@ -522,8 +522,7 @@ def get_corresponding_tiles_row_col(
     terrain_tiling_grid: np.ndarray,
     row: int,
     col: int,
-    list_points_clouds_left: list,
-    list_points_clouds_right: list,
+    list_points_clouds: list,
     list_epipolar_points_min: list,
     list_epipolar_points_max: list,
 ) -> Tuple[List, List, List]:
@@ -563,26 +562,27 @@ def get_corresponding_tiles_row_col(
     logging.debug("Corresponding terrain region: {}".format(terrain_region))
 
     # This list will hold the required points clouds for this terrain tile
-    required_point_clouds_left = []
-    required_point_clouds_right = []
+    required_point_clouds = []
 
     # This list contains indexes of tiles (debug purpose)
     list_indexes = []
 
     # For each stereo configuration
     for (
-        pc_left,
-        pc_right,
+        points_cloud,
         epipolar_points_min,
         epipolar_points_max,
     ) in zip(  # noqa: B905
-        list_points_clouds_left,
-        list_points_clouds_right,
+        list_points_clouds,
         list_epipolar_points_min,
         list_epipolar_points_max,
     ):
-        largest_epipolar_region = pc_left.attributes["largest_epipolar_region"]
-        opt_epipolar_tile_size = pc_left.attributes["opt_epipolar_tile_size"]
+        largest_epipolar_region = points_cloud.attributes[
+            "largest_epipolar_region"
+        ]
+        opt_epipolar_tile_size = points_cloud.attributes[
+            "opt_epipolar_tile_size"
+        ]
 
         tile_min = np.minimum(
             np.minimum(
@@ -666,22 +666,20 @@ def get_corresponding_tiles_row_col(
                 id_x = epipolar_tile["idx"]
                 id_y = epipolar_tile["idy"]
 
-                epi_grid_shape = pc_left.tiling_grid.shape
+                epi_grid_shape = points_cloud.tiling_grid.shape
 
                 if (
                     0 <= id_x < epi_grid_shape[1]
                     and 0 <= id_y < epi_grid_shape[0]
                 ):
-                    required_point_clouds_left.append(pc_left[id_y, id_x])
-                    required_point_clouds_right.append(pc_right[id_y, id_x])
+                    required_point_clouds.append(points_cloud[id_y, id_x])
                     list_indexes.append([id_y, id_x])
 
     rank = col * col + row * row
 
     return (
         terrain_region,
-        required_point_clouds_left,
-        required_point_clouds_right,
+        required_point_clouds,
         rank,
         list_indexes,
     )

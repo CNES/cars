@@ -98,12 +98,10 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         self,
         sensor_image_left,
         sensor_image_right,
-        epipolar_images_left,
-        epipolar_images_right,
+        epipolar_image,
         grid_left,
         grid_right,
-        epipolar_disparity_map_left,
-        epipolar_disparity_map_right,
+        epipolar_disparity_map,
         epsg,
         orchestrator=None,
         pair_folder=None,
@@ -123,20 +121,15 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type sensor_image_left: CarsDataset
         :param sensor_image_right: tiled sensor right image
         :type sensor_image_right: CarsDataset
-        :param epipolar_images_left: tiled epipolar left image
-        :type epipolar_images_left: CarsDataset
-        :param epipolar_images_right: tiled epipolar right image
-        :type epipolar_images_right: CarsDataset
+        :param epipolar_images: tiled epipolar left image
+        :type epipolar_images: CarsDataset
         :param grid_left: left epipolar grid
         :type grid_left: CarsDataset
         :param grid_right: right epipolar grid
         :type grid_right: CarsDataset
-        :param epipolar_disparity_map_left: tiled left disparity map or
+        :param epipolar_disparity_map: tiled disparity map or
             sparse matches
-        :type epipolar_disparity_map_left: CarsDataset
-        :param epipolar_disparity_map_right: tiled right disparity map or
-             sparse matches
-        :type epipolar_disparity_map_right: CarsDataset
+        :type epipolar_disparity_map: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
@@ -153,5 +146,5 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type disp_max: int
 
         :return left points cloud, right points cloud
-        :rtype: Tuple(CarsDataset, CarsDataset)
+        :rtype: CarsDataset
         """

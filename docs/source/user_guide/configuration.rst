@@ -693,8 +693,6 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | max_elevation_offset            | Override maximum disparity from prepare step with this offset in meters | int     | should be > min                 | None          | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | use_sec_disp                    | Compute secondary disparity map                                         | boolean |                                 | false         | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | min_epi_tile_size               | Lower bound of optimal epipolar tile size for dense matching            | int     | should be > 0                   | 300           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | max_epi_tile_size               | Upper bound of optimal epipolar tile size for dense matching            | int     | should be > 0 and > min         | 1500          | No       |
@@ -779,10 +777,6 @@ The structure follows this organisation:
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
             | percent_to_erode                    | Percentage to erode             | float       |                         | 0.2                | No       |
             +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-
-            .. note::
-
-                In case of classification usage, the use_sec_disp option should be activated to apply right classification on right disparity map, otherwise the right classificaton is not propagated towards the next pipeline application.
 
 
             **Method zero_padding:**

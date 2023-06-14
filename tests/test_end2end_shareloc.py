@@ -109,7 +109,6 @@ def test_end2end_ventoux_unique_shareloc():
             },
             "dense_matching": {
                 "method": "census_sgm",
-                "use_sec_disp": True,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
