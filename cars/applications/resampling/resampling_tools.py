@@ -301,13 +301,13 @@ def resample_image(
         res_y = int(transform[4] / abs(transform[4]))
 
         (full_left, full_bottom, full_right, full_top) = img_reader.bounds
-        if res_x < 0:
-            left, right = -left, -right
-        if res_y < 0:
-            top, bottom = (
-                -top,
-                -bottom,
-            )
+
+        left, right, top, bottom = (
+            res_x * left,
+            res_x * right,
+            res_y * top,
+            res_y * bottom,
+        )
 
         full_bounds_window = from_bounds(
             full_left, full_bottom, full_right, full_top, transform
@@ -317,19 +317,22 @@ def resample_image(
         in_sensor = True
         try:
             img_window = img_window.intersection(full_bounds_window)
-        except Exception:
+        except rio.errors.WindowError:
             # Window not in sensor image
             logging.debug("Window not in sensor image")
             in_sensor = False
 
         # Compute offset
         tile_bounds = bounds(img_window, transform)
-        x_offset = min(tile_bounds[0], tile_bounds[2])
-        if res_x < 0:
-            x_offset = min(-tile_bounds[0], -tile_bounds[2])
-        y_offset = min(tile_bounds[1], tile_bounds[3])
-        if res_y < 0:
-            y_offset = min(-tile_bounds[1], -tile_bounds[3])
+        tile_bounds_with_res = [
+            res_x * tile_bounds[0],
+            res_y * tile_bounds[1],
+            res_x * tile_bounds[2],
+            res_y * tile_bounds[3],
+        ]
+
+        x_offset = min(tile_bounds_with_res[0], tile_bounds_with_res[2])
+        y_offset = min(tile_bounds_with_res[1], tile_bounds_with_res[3])
 
         if in_sensor:
             # Get sensor data
