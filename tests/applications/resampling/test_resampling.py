@@ -25,20 +25,32 @@ Important : Uses conftest.py for shared pytest fixtures
 
 import os
 import pickle
+import tempfile
 
 # Third party imports
 import numpy as np
 import pytest
 import xarray as xr
 
-from cars.applications.resampling import resampling_tools
-from cars.conf import input_parameters as in_params
+from cars.applications.application import Application
 
 # CARS imports
+from cars.applications.resampling import bicubic_resampling, resampling_tools
+from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
+from cars.core import tiling
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
+)
+from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # CARS Tests imports
-from tests.helpers import absolute_data_path, assert_same_datasets
+from ...helpers import (
+    absolute_data_path,
+    assert_same_datasets,
+    generate_input_json,
+    temporary_dir,
+)
 
 
 @pytest.mark.unit_tests
@@ -301,3 +313,78 @@ def test_epipolar_rectify_images_3(
 
     assert class1 is None
     assert class2 is None
+
+
+@pytest.mark.unit_tests
+def test_check_tiles_in_sensor():
+    """
+    Test tile dumping
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+
+        _, input_data = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+
+        inputs = input_data["inputs"]
+        list_sensor_pairs = sensors_inputs.generate_inputs(inputs)
+
+        sensor_image_left = list_sensor_pairs[0][1]
+
+        sensor_image_right = list_sensor_pairs[0][2]
+
+        # Generate grids
+        epipolar_grid_generation_application = Application("grid_generation")
+        (
+            grid_left,
+            grid_right,
+        ) = epipolar_grid_generation_application.run(
+            sensor_image_left,
+            sensor_image_right,
+            pair_folder=directory,
+            pair_key="one_two",
+            srtm_dir=inputs[sens_cst.INITIAL_ELEVATION],
+            default_alt=inputs[sens_cst.DEFAULT_ALT],
+            geoid_path=inputs[sens_cst.GEOID],
+        )
+
+        opt_epipolar_tile_size = 10
+
+        # generate epipolar image tiling grid
+        epi_tilling_grid = tiling.generate_tiling_grid(
+            0,
+            0,
+            grid_left.attributes["epipolar_size_y"],
+            grid_left.attributes["epipolar_size_x"],
+            opt_epipolar_tile_size,
+            opt_epipolar_tile_size,
+        )
+
+        # Check if tiles are in sensors
+        (
+            in_sensor_left_array,
+            in_sensor_right_array,
+        ) = bicubic_resampling.check_tiles_in_sensor(
+            sensor_image_left,
+            sensor_image_right,
+            epi_tilling_grid,
+            grid_left,
+            grid_right,
+        )
+
+        # Assert number of tiles used
+
+        # 3023 tiles used on 3844
+        assert np.sum(in_sensor_left_array) == 3023
+        # 1350 tiles used on 3844
+        assert np.sum(in_sensor_right_array) == 1350
