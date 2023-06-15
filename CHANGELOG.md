@@ -1,28 +1,28 @@
 # Changelog
 
 
-## 0.7.0 CARS without OTB
+## 0.7.0 CARS installable without OTB (June 2023)
 
 ### Added
-- Notebook: add masks and classification options? [#615]
-- Option: Set python interpreter to use in PBS Dask Cluster. [#611]
-- DensePointCloudToDenseDSM Pipeline: now re-entrance with confidence and classification. [#602]
-- Shareloc Geometry plugin is now internal. [#618]
-- Use_sec_disp option allowing to use right disparity map is removed. [#638]
-- CARS can now be installed without OTB. [#637]
-- Epipolar tiles corresponding to region outside sensor images are removed before any computation. [#635]
-
+- Notebook: add masks and classification options [#615]
+- Option: Set python interpreter to use in PBS Dask Cluster [#611]
+- DensePointCloudToDenseDSM Pipeline: now re-entrance with confidence and classification [#602]
+- Shareloc Geometry plugin is now internal [#618]
+- Use_sec_disp option allowing to use right disparity map is removed [#638]
+- CARS can now be installed without OTB [#637]
+- Epipolar tiles corresponding to region outside sensor images are removed before any computation [#635]
+- Add CARS progress messages [#658]
 
 ### Changed
-- Multiprocessing cluster doesn't freeze when bug occur anymore. [#607]
-- Resampling is not done with OTB anymore. [#508]
-- Pyproj is no longer constrained. [#646]
+- Multiprocessing cluster doesn't freeze when bug occur anymore [#607]
+- Resampling is not done with OTB anymore [#508]
+- Pyproj is no longer constrained [#646]
 
 
 
 ### Fixed
-- Notebook: retrieve dsm. [#614]
-- Doc: Roi parameter disappearing . [#616]
+- Notebook: retrieve dsm [#614]
+- Doc: Roi parameter disappearing [#616]
 
 
 ## 0.6.0 A new input interface (mask and classification) and new pipelines (March 2023)
