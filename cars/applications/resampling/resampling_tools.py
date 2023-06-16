@@ -23,6 +23,8 @@ Resampling module:
 contains functions used for epipolar resampling
 """
 
+import logging
+
 # Standard imports
 import math
 
@@ -30,7 +32,7 @@ import math
 import numpy as np
 import rasterio as rio
 import resample as cresample
-from rasterio.windows import Window, from_bounds
+from rasterio.windows import Window, bounds, from_bounds
 
 from cars.conf import mask_cst as msk_cst
 
@@ -295,21 +297,50 @@ def resample_image(
     # extract src according to grid values
     with rio.open(img) as img_reader:
         transform = img_reader.transform
+        res_x = int(transform[0] / abs(transform[0]))
+        res_y = int(transform[4] / abs(transform[4]))
 
         (full_left, full_bottom, full_right, full_top) = img_reader.bounds
-        left = int(max(full_left, left))
-        bottom = int(min(full_bottom, bottom))
-        right = int(min(full_right, right))
-        top = int(max(full_top, top))
 
-        if (left < right) and (top < bottom):
-            img_window = from_bounds(left, bottom, right, top, transform)
+        left, right, top, bottom = (
+            res_x * left,
+            res_x * right,
+            res_y * top,
+            res_y * bottom,
+        )
 
+        full_bounds_window = from_bounds(
+            full_left, full_bottom, full_right, full_top, transform
+        )
+        img_window = from_bounds(left, bottom, right, top, transform)
+        # Crop window to be in image
+        in_sensor = True
+        try:
+            img_window = img_window.intersection(full_bounds_window)
+        except rio.errors.WindowError:
+            # Window not in sensor image
+            logging.debug("Window not in sensor image")
+            in_sensor = False
+
+        # Compute offset
+        tile_bounds = bounds(img_window, transform)
+        tile_bounds_with_res = [
+            res_x * tile_bounds[0],
+            res_y * tile_bounds[1],
+            res_x * tile_bounds[2],
+            res_y * tile_bounds[3],
+        ]
+
+        x_offset = min(tile_bounds_with_res[0], tile_bounds_with_res[2])
+        y_offset = min(tile_bounds_with_res[1], tile_bounds_with_res[3])
+
+        if in_sensor:
+            # Get sensor data
             img_as_array = img_reader.read(window=img_window)
 
             # shift grid regarding the img extraction
-            grid_as_array[0, ...] -= left
-            grid_as_array[1, ...] -= top
+            grid_as_array[0, ...] -= x_offset
+            grid_as_array[1, ...] -= y_offset
 
             resamp = cresample.grid(
                 img_as_array,
@@ -335,7 +366,7 @@ def resample_image(
     # create msk
     msk = None
     if nodata is not None or mask is not None:
-        if (left < right) and (top < bottom):
+        if in_sensor:
             # get mask in source geometry
             nodata_index = img_as_array == nodata
 
