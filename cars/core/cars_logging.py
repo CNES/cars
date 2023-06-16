@@ -54,6 +54,24 @@ def create(loglevel=logging.WARNING):
     )
 
 
+def add_info_message(message):
+    """
+    Add enforced message with INFO level
+    to stdout and logging file
+
+    :param message: logging message
+    """
+    cars_logger = logging.getLogger()
+    loglevel = cars_logger.getEffectiveLevel()
+    for logger in cars_logger.handlers:
+        logger.setLevel(logging.INFO)
+    cars_logger.setLevel(logging.INFO)
+    logging.info(message)
+    for logger in cars_logger.handlers:
+        logger.setLevel(loglevel)
+    cars_logger.setLevel(loglevel)
+
+
 def add_log_file(out_dir, command):
     """
     Add dated file handler to the logger.

@@ -33,6 +33,8 @@ import traceback
 # Third party imports
 from tqdm import tqdm
 
+from cars.core.cars_logging import add_info_message
+
 # CARS imports
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
@@ -264,11 +266,14 @@ class Orchestrator:
 
             # Save objects when they are computed
             logging.info("Wait for futures results ...")
+            add_info_message(
+                "Data list to process: [ {} ] ...".format(
+                    " , ".join(list(set(self.cars_ds_names_info)))
+                )
+            )
             pbar = tqdm(
                 total=len(future_objects),
-                desc="Processing Tiles : [ {} ] ...".format(
-                    " , ".join(list(set(self.cars_ds_names_info)))
-                ),
+                desc="Tiles Processing Progression: ",
                 position=0,
                 leave=True,
             )
