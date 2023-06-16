@@ -168,7 +168,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
             pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
             # Generate pipeline and check conf
-            cars_logging.add_info_message("CARS configuration...")
+            cars_logging.add_info_message("Check configuration...")
             used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
             cars_logging.add_info_message("CARS pipeline is started")
             if not dry_run:
