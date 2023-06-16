@@ -273,7 +273,7 @@ class Orchestrator:
             )
             pbar = tqdm(
                 total=len(future_objects),
-                desc="Tiles Processing Progression: ",
+                desc="Tiles processing progression: ",
                 position=0,
                 leave=True,
             )

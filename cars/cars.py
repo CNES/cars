@@ -170,11 +170,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
             # Generate pipeline and check conf
             cars_logging.add_info_message("Check configuration...")
             used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
-            cars_logging.add_info_message("CARS pipeline is started")
+            cars_logging.add_info_message("CARS pipeline is started.")
             if not dry_run:
                 # run pipeline
                 used_pipeline.run()
-            cars_logging.add_info_message("CARS have successfully completed")
+            cars_logging.add_info_message(
+                "CARS has successfully completed the pipeline."
+            )
         else:
             raise SystemExit("CARS wrong subcommand. Use cars --help")
     except BaseException:
