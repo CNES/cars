@@ -177,15 +177,12 @@ def setup_logger(log_dir, log_level):
                 + ":: %(process)d :: %(message)s",
                 datefmt="%y-%m-%d %H:%M:%S",
             )
-        now = datetime.now()
         if os.path.exists(log_dir):
             h_log_file = logging.FileHandler(
                 os.path.join(
                     log_dir,
-                    "{}_{}.log".format(
-                        now.strftime("%y-%m-%d_%Hh%Mm"), "workers"
-                    ),
-                ),
+                    "workers.log",
+                )
             )
             h_log_file.setFormatter(formatter)
             h_log_file.setLevel(log_level)
