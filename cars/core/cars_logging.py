@@ -33,15 +33,21 @@ import os
 import sys
 from datetime import datetime
 
+PROGRESS = 21
+logging.addLevelName(PROGRESS, "PROGRESS")
 
-def create(loglevel=logging.WARNING):
+
+def create(loglevel="PROGRESS"):
     """
     Setup the CARS logging configuration
 
     :param loglevel: log level default WARNING
     """
     # logging
-    numeric_level = getattr(logging, loglevel, None)
+    if loglevel == "PROGRESS":
+        numeric_level = PROGRESS
+    else:
+        numeric_level = getattr(logging, loglevel, None)
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
@@ -54,22 +60,14 @@ def create(loglevel=logging.WARNING):
     )
 
 
-def add_info_message(message):
+def add_progress_message(message):
     """
     Add enforced message with INFO level
     to stdout and logging file
 
     :param message: logging message
     """
-    cars_logger = logging.getLogger()
-    loglevel = cars_logger.getEffectiveLevel()
-    for logger in cars_logger.handlers:
-        logger.setLevel(logging.INFO)
-    cars_logger.setLevel(logging.INFO)
-    logging.info(message)
-    for logger in cars_logger.handlers:
-        logger.setLevel(loglevel)
-    cars_logger.setLevel(loglevel)
+    logging.log(PROGRESS, message)
 
 
 def add_log_file(out_dir, command):

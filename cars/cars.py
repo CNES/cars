@@ -107,10 +107,10 @@ def cars_parser() -> CarsArgumentParser:
 
     parser.add_argument(
         "--loglevel",
-        default="WARNING",
-        choices=("DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"),
+        default="PROGRESS",
+        choices=("DEBUG", "INFO", "PROGRESS", "WARNING", "ERROR", "CRITICAL"),
         help="Logger level (default: WARNING. Should be one of "
-        "(DEBUG, INFO, WARNING, ERROR, CRITICAL)",
+        "(DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)",
     )
 
     # General arguments at first level
@@ -138,9 +138,8 @@ def main_cli(args, dry_run=False):  # noqa: C901
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # Logging configuration with args Loglevel
-    loglevel = getattr(args, "loglevel", "WARNING").upper()
+    loglevel = getattr(args, "loglevel", "PROGRESS").upper()
     cars_logging.create(loglevel)
-    cars_logging.add_info_message("CARS is starting...")
     logging.debug("Show argparse arguments: {}".format(args))
 
     # Force the use of OpenMP in numba
@@ -168,13 +167,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
             pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
             # Generate pipeline and check conf
-            cars_logging.add_info_message("Check configuration...")
+            cars_logging.add_progress_message("Check configuration...")
             used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
-            cars_logging.add_info_message("CARS pipeline is started.")
+            cars_logging.add_progress_message("CARS pipeline is started.")
             if not dry_run:
                 # run pipeline
                 used_pipeline.run()
-            cars_logging.add_info_message(
+            cars_logging.add_progress_message(
                 "CARS has successfully completed the pipeline."
             )
         else:

@@ -33,7 +33,7 @@ import traceback
 # Third party imports
 from tqdm import tqdm
 
-from cars.core.cars_logging import add_info_message
+from cars.core.cars_logging import add_progress_message
 
 # CARS imports
 from cars.data_structures import cars_dataset
@@ -266,14 +266,20 @@ class Orchestrator:
 
             # Save objects when they are computed
             logging.info("Wait for futures results ...")
-            add_info_message(
-                "Data list to process: [ {} ] ...".format(
+            add_progress_message(
+                "Data list to process : [ {} ] ...".format(
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
             )
+            tqdm_message = "Tiles processing : "
+            # if loglevel > PROGRESS level tqdm display the data list
+            if logging.getLogger().getEffectiveLevel() > 21:
+                tqdm_message = "Processing Tiles : [ {} ] ...".format(
+                    " , ".join(list(set(self.cars_ds_names_info)))
+                )
             pbar = tqdm(
                 total=len(future_objects),
-                desc="Tiles processing progression: ",
+                desc=tqdm_message,
                 position=0,
                 leave=True,
             )

@@ -12,7 +12,7 @@ Command line
 
     cars -h
 
-    usage: cars [-h] [--loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}] [--version] conf
+    usage: cars [-h] [--loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}] [--version] conf
 
     CARS: CNES Algorithms to Reconstruct Surface
 
@@ -21,8 +21,8 @@ Command line
 
     optional arguments:
       -h, --help            show this help message and exit
-      --loglevel {DEBUG,INFO,WARNING,ERROR,CRITICAL}
-                            Logger level (default: WARNING. Should be one of (DEBUG, INFO, WARNING, ERROR, CRITICAL)
+      --loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}
+                            Logger level (default: PROGRESS. Should be one of (DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)
       --version, -v         show program's version number and exit
 
 CARS cli takes only one ``.json`` file as command line argument:
@@ -39,7 +39,7 @@ parameters and can be used as an input configuration file to re-run cars.
 Loglevel parameter
 ==================
 
-The ``loglevel`` option allows to parameter the loglevel. By default, the WARNING loglevel gives few information: only criticals, errors and warnings execution messages.
+The ``loglevel`` option allows to parameter the loglevel. By default, the PROGRESS loglevel gives few information: only criticals, errors and warnings execution messages.
 
 .. note::
 
