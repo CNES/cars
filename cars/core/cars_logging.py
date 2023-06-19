@@ -143,7 +143,7 @@ def logger_func(*args, **kwargs):
         kwargs.pop("log_fun")
     except Exception as exc:  # pylint: disable=W0702 # noqa: B001, E722
         raise RuntimeError(
-            "Failed in unwrapping. \n Args: {}, \n Kwargs : {}\n".format(
+            "Failed in unwrapping. \n Args: {}, \n Kwargs: {}\n".format(
                 args, kwargs
             )
         ) from exc

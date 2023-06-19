@@ -267,14 +267,14 @@ class Orchestrator:
             # Save objects when they are computed
             logging.info("Wait for futures results ...")
             add_progress_message(
-                "Data list to process : [ {} ] ...".format(
+                "Data list to process: [ {} ] ...".format(
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
             )
-            tqdm_message = "Tiles processing : "
+            tqdm_message = "Tiles processing: "
             # if loglevel > PROGRESS level tqdm display the data list
             if logging.getLogger().getEffectiveLevel() > 21:
-                tqdm_message = "Processing Tiles : [ {} ] ...".format(
+                tqdm_message = "Processing Tiles: [ {} ] ...".format(
                     " , ".join(list(set(self.cars_ds_names_info)))
                 )
             pbar = tqdm(
@@ -291,7 +291,7 @@ class Orchestrator:
                     # Replace future in cars_ds if needs to
                     self.cars_ds_replacer_registry.replace(future_obj)
                 else:
-                    logging.debug("None tile : not saved")
+                    logging.debug("None tile: not saved")
                 pbar.update()
 
             # close files

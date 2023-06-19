@@ -417,7 +417,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     except:  # pylint: disable=W0702 # noqa: B001, E722
                         res = traceback.format_exc()
                         success = False
-                        logging.error("Exception in worker : {}".format(res))
+                        logging.error("Exception in worker: {}".format(res))
                     done_list.append(job_id)
                     done_task_results[job_id] = [success, res]
                     # remove from dependance list
