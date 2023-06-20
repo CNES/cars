@@ -206,7 +206,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         )
 
         logging.info(
-            "Right satellite coverture: Azimuth angle: {:.1f}°, "
+            "Right satellite acquisition angles: Azimuth angle: {:.1f}°, "
             "Elevation angle: {:.1f}°".format(right_az, right_elev_angle)
         )
 
