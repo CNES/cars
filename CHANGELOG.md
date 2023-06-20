@@ -1,5 +1,27 @@
 # Changelog
 
+## 0.7.0 CARS installable without OTB (June 2023)
+
+### Added
+- Notebook: add masks and classification options [#615]
+- Option: Set python interpreter to use in PBS Dask Cluster [#611]
+- DensePointCloudToDenseDSM Pipeline: now re-entrance with confidence and classification [#602]
+- Shareloc Geometry plugin is now internal [#618]
+- Use_sec_disp option allowing to use right disparity map is removed [#638]
+- CARS can now be installed without OTB [#637]
+- Epipolar tiles corresponding to region outside sensor images are removed before any computation [#635]
+- Add CARS progress messages [#658]
+
+### Changed
+- Multiprocessing cluster doesn't freeze when bug occur anymore [#607]
+- Resampling is not done with OTB anymore [#508]
+- Pyproj is no longer constrained [#646]
+
+### Fixed
+- Notebook: retrieve dsm [#614]
+- Doc: Roi parameter disappearing [#616]
+
+
 ## 0.6.0 A new input interface (mask and classification) and new pipelines (March 2023)
 
 ### Added
@@ -19,6 +41,7 @@
 
 ### Fixed
 - Bug DenseMatchesFilling Plane [#599]
+
 
 ## 0.5.4 Grid correction in the configuration file and a better estimate of disparity range (February 2023)
 
@@ -43,6 +66,7 @@
 - Set masked pixels to nodata in point clouds from triangulation [#465]
 - Set log level of dask cluster to warning [#545]
 
+
 ## 0.5.3 Points clouds as LAZ files (December 2022)
 
 ### Added
@@ -59,6 +83,7 @@
 - Fix bug PBS Dask [#515]
 - Fix wrong images saved in notebooks
 - Fix bug in disparity map saving [#484]
+
 
 ## 0.5.2 Profiling and dense matching confidence information (November 2022)
 
@@ -85,6 +110,7 @@
 - Fix temporarily local path to CARS OTB installed apps [#434]
 - Fix multiprocessing bug [#446]
 - Fix (remove) warning: tile ignored [#455]
+
 
 ## 0.5.0 Refacto CARS (August 2022)
 
@@ -180,6 +206,7 @@ Be careful, this version changes API and configuration ! See new documentation.
 - Handle margins when setting the disparity to 0 [#201]
 - Fix car cli with setuptools_scm version [#199]
 
+
 ## 0.3.0 Multi-classes mask management (December 2020)
 
 ### Added
@@ -198,6 +225,7 @@ Be careful, this version changes API and configuration ! See new documentation.
 - Fix CLI parsing for ROI option : **CLI API changes** (-i for input json file and -o for output directory) [#93, #174]
 - Pylint code clean [#191]
 - Add constants.py file [#172]
+
 
 ## 0.2.0 First Open Source Official Release (July 2020)
 
