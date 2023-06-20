@@ -22,18 +22,19 @@
 this module contains the orchestrator class
 """
 
-import collections
-
 # Standard imports
+import collections
 import logging
 import os
 import shutil
+import sys
 import traceback
 
 # Third party imports
 from tqdm import tqdm
 
 # CARS imports
+from cars.core.cars_logging import add_progress_message
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 from cars.orchestrator.orchestrator_constants import CARS_DS_COL, CARS_DS_ROW
@@ -264,13 +265,23 @@ class Orchestrator:
 
             # Save objects when they are computed
             logging.info("Wait for futures results ...")
+            add_progress_message(
+                "Data list to process: [ {} ] ...".format(
+                    " , ".join(list(set(self.cars_ds_names_info)))
+                )
+            )
+            tqdm_message = "Tiles processing: "
+            # if loglevel > PROGRESS level tqdm display the data list
+            if logging.getLogger().getEffectiveLevel() > 21:
+                tqdm_message = "Processing Tiles: [ {} ] ...".format(
+                    " , ".join(list(set(self.cars_ds_names_info)))
+                )
             pbar = tqdm(
                 total=len(future_objects),
-                desc="Processing Tiles : [ {} ] ...".format(
-                    " , ".join(list(set(self.cars_ds_names_info)))
-                ),
+                desc=tqdm_message,
                 position=0,
                 leave=True,
+                file=sys.stdout,
             )
             for future_obj in self.cluster.future_iterator(future_objects):
                 # get corresponding CarsDataset and save tile
@@ -280,7 +291,7 @@ class Orchestrator:
                     # Replace future in cars_ds if needs to
                     self.cars_ds_replacer_registry.replace(future_obj)
                 else:
-                    logging.debug("None tile : not saved")
+                    logging.debug("None tile: not saved")
                 pbar.update()
 
             # close files

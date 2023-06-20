@@ -227,7 +227,7 @@ class SimpleGaussian(
         )
 
         logging.info(
-            "Estimated optimal tile size for rasterization : {} meters".format(
+            "Estimated optimal tile size for rasterization: {} meters".format(
                 tile_size
             )
         )
@@ -465,9 +465,9 @@ class SimpleGaussian(
 
             # Get number of tiles
             logging.info(
-                "Number of tiles in cloud rasterization :"
-                "row : {} "
-                "col : {}".format(
+                "Number of tiles in cloud rasterization: "
+                "row: {} "
+                "col: {}".format(
                     terrain_raster.tiling_grid.shape[0],
                     terrain_raster.tiling_grid.shape[1],
                 )

@@ -383,7 +383,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                     + "and the {} config are not ".format(
                                         application_key
                                     )
-                                    + "consistent : {}".format(
+                                    + "consistent: {}".format(
                                         application_conf[application_key][
                                             "classification"
                                         ]

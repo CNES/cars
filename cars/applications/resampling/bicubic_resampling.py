@@ -407,9 +407,9 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         )
 
         logging.info(
-            "Number of tiles in epipolar resampling :"
-            "row : {} "
-            "col : {}".format(
+            "Number of tiles in epipolar resampling: "
+            "row: {} "
+            "col: {}".format(
                 epipolar_images_left.tiling_grid.shape[0],
                 epipolar_images_left.tiling_grid.shape[1],
             )
@@ -841,11 +841,11 @@ def check_tiles_in_sensor(
 
     logging.info(
         "Number of left epipolar image tiles outside left sensor "
-        "image and removed : {}".format(tiles_dumped_left)
+        "image and removed: {}".format(tiles_dumped_left)
     )
     logging.info(
         "Number of right epipolar image tiles outside right sensor "
-        "image and removed : {}".format(tiles_dumped_right)
+        "image and removed: {}".format(tiles_dumped_right)
     )
 
     return in_sensor_left_array, in_sensor_right_array

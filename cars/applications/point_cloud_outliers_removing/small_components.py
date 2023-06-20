@@ -205,7 +205,7 @@ class SmallComponents(
 
         logging.info(
             "Estimated optimal tile size for small"
-            "components removing : {} meters".format(tile_size)
+            "components removing: {} meters".format(tile_size)
         )
 
         return tile_size

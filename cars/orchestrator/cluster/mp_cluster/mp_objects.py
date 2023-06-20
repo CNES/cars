@@ -78,12 +78,12 @@ class MpDelayedTask:  # pylint: disable=R0903
         """
 
         res = (
-            "MpDelayedTask : \n "
+            "MpDelayedTask: \n "
             + str(self.func)
             + "\n"
             + "args : "
             + str(self.args)
-            + "\n kw_args :  \n"
+            + "\n kw_args:  \n"
             + str(self.kw_args)
         )
 
@@ -138,9 +138,9 @@ class MpDelayed:  # pylint: disable=R0903
 
         res = (
             ("MpDELAYED : \n " + str(self.delayed_task.func) + "\n")
-            + "return index : "
+            + "return index: "
             + str(self.return_index)
-            + "\n Associated objects :  \n"
+            + "\n Associated objects:  \n"
             + str(self.delayed_task.associated_objects)
         )
 

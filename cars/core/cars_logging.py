@@ -33,15 +33,21 @@ import os
 import sys
 from datetime import datetime
 
+PROGRESS = 21
+logging.addLevelName(PROGRESS, "PROGRESS")
 
-def create(loglevel=logging.WARNING):
+
+def create(loglevel="PROGRESS"):
     """
     Setup the CARS logging configuration
 
     :param loglevel: log level default WARNING
     """
     # logging
-    numeric_level = getattr(logging, loglevel, None)
+    if loglevel == "PROGRESS":
+        numeric_level = PROGRESS
+    else:
+        numeric_level = getattr(logging, loglevel, None)
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
@@ -52,6 +58,16 @@ def create(loglevel=logging.WARNING):
         datefmt="%y-%m-%d %H:%M:%S",
         format="%(asctime)s :: %(levelname)s :: %(message)s",
     )
+
+
+def add_progress_message(message):
+    """
+    Add enforced message with INFO level
+    to stdout and logging file
+
+    :param message: logging message
+    """
+    logging.log(PROGRESS, message)
 
 
 def add_log_file(out_dir, command):
@@ -127,7 +143,7 @@ def logger_func(*args, **kwargs):
         kwargs.pop("log_fun")
     except Exception as exc:  # pylint: disable=W0702 # noqa: B001, E722
         raise RuntimeError(
-            "Failed in unwrapping. \n Args: {}, \n Kwargs : {}\n".format(
+            "Failed in unwrapping. \n Args: {}, \n Kwargs: {}\n".format(
                 args, kwargs
             )
         ) from exc

@@ -279,7 +279,7 @@ def disk_wrapper_fun(*argv, **kwargs):
         kwargs.pop("tmp_dir")
     except Exception as exc:  # pylint: disable=W0702 # noqa: B001, E722
         raise RuntimeError(
-            "Failed in unwrapping. \n Args: {}, \n Kwargs : {}\n".format(
+            "Failed in unwrapping. \n Args: {}, \n Kwargs: {}\n".format(
                 argv, kwargs
             )
         ) from exc

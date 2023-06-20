@@ -182,7 +182,7 @@ class Statistical(
 
         logging.info(
             "Estimated optimal tile size for statistical "
-            "removing : {} meters".format(tile_size)
+            "removing: {} meters".format(tile_size)
         )
 
         return tile_size

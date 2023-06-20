@@ -244,22 +244,22 @@ def switch_messages(func, total_time):
     :param total_time : elapsed time of the function
     """
     if total_time >= 1:
-        message = "# {} : {:.3f} s LONG".format(
+        message = "# {}: {:.3f} s LONG".format(
             func.__name__.capitalize(), total_time
         )
         log_message(func, message)
     elif 1 > total_time >= 0.001:
-        message = "# {} : {:.4f} s FAST".format(
+        message = "# {}: {:.4f} s FAST".format(
             func.__name__.capitalize(), total_time
         )
         log_message(func, message)
     elif 0.001 > total_time >= 0.000001:
-        message = "# {} : {:.4f} ms VERY FAST".format(
+        message = "# {}: {:.4f} ms VERY FAST".format(
             func.__name__.capitalize(), total_time * 1000.0
         )
         log_message(func, message)
     else:
-        message = "# {} : TOO FAST".format(func.__name__.capitalize())
+        message = "# {}: TOO FAST".format(func.__name__.capitalize())
         log_message(func, message)
 
 
@@ -335,7 +335,7 @@ def log_delta_memory(func, memory_start, memory_end):
 
     """
 
-    message = "Memory before run : {}Mb, Memory after run: {}Mb".format(
+    message = "Memory before run: {}Mb, Memory after run: {}Mb".format(
         str(memory_start), str(memory_end)
     )
 
