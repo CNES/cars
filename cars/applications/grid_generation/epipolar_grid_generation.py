@@ -201,7 +201,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         ) = projection.get_ground_angles(config, self.geometry_loader)
 
         logging.info(
-            "Left  satellite coverture: Azimuth angle: {:.1f}°, "
+            "Left satellite coverture: Azimuth angle: {:.1f}°, "
             "Elevation angle: {:.1f}°".format(left_az, left_elev_angle)
         )
 
