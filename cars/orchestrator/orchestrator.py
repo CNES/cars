@@ -22,20 +22,19 @@
 this module contains the orchestrator class
 """
 
-import collections
-
 # Standard imports
+import collections
 import logging
 import os
 import shutil
+import sys
 import traceback
 
 # Third party imports
 from tqdm import tqdm
 
-from cars.core.cars_logging import add_progress_message
-
 # CARS imports
+from cars.core.cars_logging import add_progress_message
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 from cars.orchestrator.orchestrator_constants import CARS_DS_COL, CARS_DS_ROW
@@ -282,6 +281,7 @@ class Orchestrator:
                 desc=tqdm_message,
                 position=0,
                 leave=True,
+                file=sys.stdout,
             )
             for future_obj in self.cluster.future_iterator(future_objects):
                 # get corresponding CarsDataset and save tile
