@@ -166,6 +166,11 @@ test-pbs-cluster: ## run pbs cluster tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
+.PHONY: test-slurm-cluster
+test-slurm-cluster: ## run slurm cluster tests only
+	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
+	@${CARS_VENV}/bin/pytest -m "slurm_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
+
 .PHONY: test-notebook
 test-notebook: ## run notebook tests only
 	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"

@@ -32,4 +32,5 @@ from . import (
     mp_cluster,
     pbs_dask_cluster,
     sequential_cluster,
+    slurm_dask_cluster,
 )

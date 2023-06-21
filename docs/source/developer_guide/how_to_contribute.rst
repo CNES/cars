@@ -257,6 +257,7 @@ Several kinds of tests are identified by specific pytest markers:
 
 - the unit tests defined by the ``unit_tests`` marker: ``make test-unit``
 - the PBS cluster tests defined by the ``pbs_cluster_tests`` marker: ``make test-pbs-cluster``
+- the SLURM cluster tests defined by the ``slurm_cluster_tests`` marker: ``make test-slurm-cluster``
 - the Jupyter notebooks test defined by the ``notebook_tests`` marker: ``make test-notebook``
 
 Advanced testing

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Contains abstract function for PBS dask Cluster
+Contains abstract function for SLURM dask Cluster
 """
 
 # Standard imports
@@ -53,7 +53,7 @@ with warnings.catch_warnings():
         category=FutureWarning,
         message=".*tmpfile is deprecated.*",
     )
-    from dask_jobqueue import PBSCluster
+    from dask_jobqueue import SLURMCluster
 
 # CARS imports
 from cars.orchestrator.cluster import (  # pylint: disable=C0412
@@ -62,10 +62,10 @@ from cars.orchestrator.cluster import (  # pylint: disable=C0412
 )
 
 
-@abstract_cluster.AbstractCluster.register_subclass("pbs_dask")
-class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
+@abstract_cluster.AbstractCluster.register_subclass("slurm_dask")
+class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
     """
-    PbsDaskCluster
+    SlurmDaskCluster
     """
 
     def start_dask_cluster(self):
@@ -104,8 +104,8 @@ def start_cluster(
     allocated to it, and will use a single process. This is done to maximize
     CPU utilization and minimize scheduling delay.
 
-    The CARS_PBS_QUEUE environment variable, if defined, is used to specify the
-    queue in which worker jobs are scheduled.
+    The CARS_SLURM_QUEUE environment variable, if defined, is used
+    to specify the queue in which worker jobs are scheduled.
 
     :param nb_workers: Number of dask workers
     :type nb_workers: int
@@ -114,14 +114,17 @@ def start_cluster(
     :param out_dir: Output directory
     :type out_dir: string
     :return: Dask cluster and dask client
-    :rtype: (dask_jobqueue.PBSCluster, dask.distributed.Client) tuple
+    :rtype: (dask_jobqueue.SLURMCluster, dask.distributed.Client) tuple
     """
+    # Retrieve SLURM queue
+    slurm_queue = os.environ.get("CARS_SLURM_QUEUE")
 
+    # retrieve current python path if None
     (
         python,
         nb_workers_per_job,
         memory,
-        nb_cpus,
+        _,
         stagger,
         lifetime_with_margin,
         scheduler_options,
@@ -131,9 +134,6 @@ def start_cluster(
     ) = init_cluster_variables(
         nb_workers, walltime, out_dir, activate_dashboard, python
     )
-
-    # Retrieve PBS queue
-    pbs_queue = os.environ.get("CARS_PBS_QUEUE")
 
     with warnings.catch_warnings():
         # Ignore some internal dask_jobqueue warnings
@@ -153,15 +153,15 @@ def start_cluster(
             category=FutureWarning,
             message=".*env_extra has been renamed to job_script_prologue*",
         )
-        cluster = PBSCluster(
+        cluster = SLURMCluster(
             processes=nb_workers_per_job,
             cores=nb_workers_per_job,
             memory="{}MiB".format(memory),
             local_directory=local_directory,
-            account="dask-test",
+            account="cnes_level2",
             walltime=walltime,
             interface="ib0",
-            queue=pbs_queue,
+            queue=slurm_queue,
             job_script_prologue=envs,
             log_directory=log_directory,
             python=python,
@@ -172,7 +172,6 @@ def start_cluster(
                 f"{int(stagger.total_seconds())}s",
             ],
             scheduler_options=scheduler_options,
-            resource_spec="select=1:ncpus={}:mem={}MB".format(nb_cpus, memory),
         )
         logging.info("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
