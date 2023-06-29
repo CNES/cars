@@ -23,14 +23,12 @@ Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 """
 
 import logging
-import os
-from typing import Dict, List, Tuple, Union
+from typing import List, Tuple, Union
 
 import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
-from json_checker import And
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.dtm_intersection import DTMIntersection
 from shareloc.geofunctions.triangulation import epipolar_triangulation
@@ -38,43 +36,48 @@ from shareloc.geomodels.grid import Grid
 from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
 
-from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core.geometry import AbstractGeometry
 
 GRID_TYPE = "GRID"
 RPC_TYPE = "RPC"
+GEO_MODEL_PATH_TAG = "path"
+GEO_MODEL_TYPE_TAG = "model_type"
 
 
 @AbstractGeometry.register_subclass("SharelocGeometry")
 class SharelocGeometry(AbstractGeometry):
     """
-    shareloc geometry class
+    Shareloc geometry class
     """
 
-    @property
-    def conf_schema(self) -> Dict[str, str]:
-        """
-        Defines shareloc loader user configuration specificities
+    def __init__(
+        self,
+        geometry_plugin,
+        dem=None,
+        geoid=None,
+        default_alt=None,
+        roi_from_pairs=None,
+    ):
+        super().__init__(
+            geometry_plugin, dem, geoid, default_alt, roi_from_pairs
+        )
 
-        TODO: not needed
-        To remove, with abstract geometry class evolution
-        and with CARS former configuration update (with OTB evolution)
-        """
+        roi = None
+        if roi_from_pairs is not None:
+            roi = None  # TODO compute ROI from epipolar footprint of all pairs
 
-        schema = {
-            input_parameters.IMG1_TAG: And(str, os.path.isfile),
-            input_parameters.IMG2_TAG: And(str, os.path.isfile),
-            input_parameters.MODEL1_TAG: And(str, os.path.isfile),
-            input_parameters.MODEL2_TAG: And(str, os.path.isfile),
-            input_parameters.MODEL1_TYPE_TAG: str,
-            input_parameters.MODEL2_TYPE_TAG: str,
-        }
-
-        return schema
+        if self.dem is not None:
+            # fill_nodata option should be set when dealing with void in DTM
+            # see shareloc DTM limitations in sphinx doc for further details
+            self.elevation = DTMIntersection(
+                self.dem, self.geoid, roi=roi, fill_nodata="mean"
+            )
+        else:
+            self.elevation = self.default_alt
 
     @staticmethod
-    def load_geom_model(model: str, model_type: str) -> Union[Grid, RPC]:
+    def load_geom_model(model: dict) -> Union[Grid, RPC]:
         """
         Load geometric model and returns it as a shareloc object
 
@@ -84,16 +87,18 @@ class SharelocGeometry(AbstractGeometry):
         :param model_type: model type (RPC or Grid)
         :return: geometric model as a shareloc object (Grid or RPC)
         """
+        geomodel = model[GEO_MODEL_PATH_TAG]
+        geomodel_type = model[GEO_MODEL_TYPE_TAG]
 
-        if model_type == GRID_TYPE:
-            shareloc_model = Grid(model)
-        elif model_type == RPC_TYPE:
-            shareloc_model = RPC.from_any(model)
+        if geomodel_type == GRID_TYPE:
+            shareloc_model = Grid(geomodel)
+        elif geomodel_type == RPC_TYPE:
+            shareloc_model = RPC.from_any(geomodel)
         else:
-            raise ValueError(f"Model type {model_type} is not supported")
+            raise ValueError(f"Model type {geomodel_type} is not supported")
 
         if shareloc_model is None:
-            raise ValueError(f"Model {model} could not be read by shareloc")
+            raise ValueError(f"Model {geomodel} could not be read by shareloc")
 
         return shareloc_model
 
@@ -113,33 +118,24 @@ class SharelocGeometry(AbstractGeometry):
         return shareloc_img
 
     @staticmethod
-    def check_products_consistency(cars_conf) -> bool:
+    def check_product_consistency(sensor: str, geomodel: dict) -> bool:
         """
-        Test if the product is readable by the shareloc loader
+        Test if the product is readable by the shareloc plugin
 
         TODO: not used
         - to evolve and use in CARS configuration early in pipeline process
         (new early check input common application ?)
         - update with former cars clean with otb evolution.
 
-        :param cars_conf: cars input configuration dictionary
+        :param sensor: path to sensor image
+        :param geomodel: path to geometrical model
         :return: True if the products are readable, False otherwise
         """
-        # get inputs paths
-        img1 = cars_conf[input_parameters.IMG1_TAG]
-        img2 = cars_conf[input_parameters.IMG2_TAG]
-        model1 = cars_conf[input_parameters.MODEL1_TAG]
-        model2 = cars_conf[input_parameters.MODEL2_TAG]
-        model1_type = cars_conf[input_parameters.MODEL1_TYPE_TAG]
-        model2_type = cars_conf[input_parameters.MODEL2_TYPE_TAG]
-
         # Try to read them using shareloc
         status = True
         try:
-            SharelocGeometry.load_image(img1)
-            SharelocGeometry.load_image(img2)
-            SharelocGeometry.load_geom_model(model1, model1_type)
-            SharelocGeometry.load_geom_model(model2, model2_type)
+            SharelocGeometry.load_image(sensor)
+            SharelocGeometry.load_geom_model(geomodel)
         except Exception:
             status = False
 
@@ -147,7 +143,10 @@ class SharelocGeometry(AbstractGeometry):
 
     @staticmethod
     def triangulate(
-        cars_conf,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         mode: str,
         matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
@@ -156,29 +155,23 @@ class SharelocGeometry(AbstractGeometry):
     ) -> np.ndarray:
         """
         Performs triangulation from cars disparity or matches dataset
-
-        TODO: evolve with CARS new API with CARS conf clean
-
-        :param cars_conf: cars input configuration dictionary
+        :param sensor1: path to left sensor image
+        :param sensor2: path to right sensor image
+        :param geomodel1: path to left geomodel
+        :param geomodel2: path to right geomodel
         :param mode: triangulation mode
-         (constants.DISP_MODE or constants.MATCHES)
+        (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of img1
-        :param grid2: path to epipolar grid of image 2
+        :param grid1: path to epipolar grid of sensor1
+        :param grid2: path to epipolar grid of sensor2
         :param roi_key: dataset roi to use
-         (can be cst.ROI or cst.ROI_WITH_MARGINS)
+        (can be cst.ROI or cst.ROI_WITH_MARGINS)
 
         :return: the long/lat/height numpy array in output of the triangulation
         """
-        # get inputs paths
-        model1 = cars_conf[input_parameters.MODEL1_TAG]
-        model2 = cars_conf[input_parameters.MODEL2_TAG]
-        model1_type = cars_conf[input_parameters.MODEL1_TYPE_TAG]
-        model2_type = cars_conf[input_parameters.MODEL2_TYPE_TAG]
-
         # read them using shareloc
-        shareloc_model1 = SharelocGeometry.load_geom_model(model1, model1_type)
-        shareloc_model2 = SharelocGeometry.load_geom_model(model2, model2_type)
+        shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
+        shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
         # perform matches triangulation
         if mode is cst.MATCHES_MODE:
@@ -220,21 +213,21 @@ class SharelocGeometry(AbstractGeometry):
         else:
             logging.error(
                 "{} mode is not available in the "
-                "shareloc loader triangulation".format(mode)
+                "shareloc plugin triangulation".format(mode)
             )
             raise ValueError(
                 f"{mode} mode is not available"
-                " in the shareloc loader triangulation"
+                " in the shareloc plugin triangulation"
             )
 
         return llh
 
-    @staticmethod
     def generate_epipolar_grids(
-        cars_conf,
-        dem: Union[None, str] = None,
-        geoid: Union[None, str] = None,
-        default_alt: Union[None, float] = None,
+        self,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         epipolar_step: int = 30,
     ) -> Tuple[
         np.ndarray, np.ndarray, List[float], List[float], List[int], float
@@ -244,10 +237,10 @@ class SharelocGeometry(AbstractGeometry):
 
         TODO: evolve with CARS new API with CARS conf clean
 
-        :param cars_conf: cars input configuration dictionary
-        :param dem: path to the dem folder
-        :param geoid: path to the geoid file
-        :param default_alt: default altitude to use in the missing dem regions
+        :param sensor1: path to left sensor image
+        :param sensor2: path to right sensor image
+        :param geomodel1: path to left geomodel
+        :param geomodel2: path to right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
             - the left epipolar grid as a numpy array
@@ -259,33 +252,12 @@ class SharelocGeometry(AbstractGeometry):
             - the disparity to altitude ratio as a float
 
         """
-        # get inputs paths and value
-        model1 = cars_conf[input_parameters.MODEL1_TAG]
-        model2 = cars_conf[input_parameters.MODEL2_TAG]
-        img1 = cars_conf[input_parameters.IMG1_TAG]
-        img2 = cars_conf[input_parameters.IMG2_TAG]
-        model1_type = cars_conf[input_parameters.MODEL1_TYPE_TAG]
-        model2_type = cars_conf[input_parameters.MODEL2_TYPE_TAG]
-
         # read inputs using shareloc
-        shareloc_model1 = SharelocGeometry.load_geom_model(model1, model1_type)
-        shareloc_model2 = SharelocGeometry.load_geom_model(model2, model2_type)
+        shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
+        shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
-        image1 = Image(img1)
-        image2 = Image(img2)
-
-        # set elevation from geoid/dem/default_alt
-        if dem is not None:
-            extent = rectif.get_epipolar_extent(
-                image1, shareloc_model1, shareloc_model2, margin=0.0056667
-            )
-            # fill_nodata option should be set when dealing with void in DTM
-            # see shareloc DTM limitations in sphinx doc for further details
-            elevation = DTMIntersection(
-                dem, geoid, roi=extent, fill_nodata="mean"
-            )
-        else:
-            elevation = default_alt
+        image1 = Image(sensor1)
+        image2 = Image(sensor2)
 
         # compute epipolar grids
         (
@@ -299,7 +271,7 @@ class SharelocGeometry(AbstractGeometry):
             shareloc_model1,
             image2,
             shareloc_model2,
-            elevation,
+            self.elevation,
             epi_step=epipolar_step,
         )
 
@@ -308,7 +280,7 @@ class SharelocGeometry(AbstractGeometry):
         grid2 = np.moveaxis(grid2.data[::-1, :, :], 0, -1)
 
         # compute associated characteristics
-        with rio.open(img1, "r") as rio_dst:
+        with rio.open(sensor1, "r") as rio_dst:
             pixel_size_x, pixel_size_y = (
                 rio_dst.transform[0],
                 rio_dst.transform[4],
@@ -332,63 +304,36 @@ class SharelocGeometry(AbstractGeometry):
             disp_to_alt_ratio,
         )
 
-    @staticmethod
     def direct_loc(
-        cars_conf,
-        product_key: str,
+        self,
+        sensor,
+        geomodel,
         x_coord: float,
         y_coord: float,
         z_coord: float = None,
-        dem: str = None,
-        geoid: str = None,
-        default_elevation: float = None,
     ) -> np.ndarray:
         """
         For a given image point, compute the latitude, longitude, altitude
 
         Advice: to be sure, use x,y,z inputs only
 
-        TODO: evolve with CARS new API with CARS conf clean
-
-        :param cars_conf: cars input configuration dictionary
-        :param product_key: input_parameters.PRODUCT1_KEY or
-         input_parameters.PRODUCT2_KEY to identify which geometric model shall
-         be taken to perform the method
+        :param sensor: path to sensor image
+        :param geomodel: path to geomodel
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
-        :param dem: if z not defined, take this DEM directory input
-        :param geoid: if z and dem not defined, take GEOID directory input
-        :param default_elevation: if z, dem, geoid not defined, take default
-          elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
-        # read required product paths and model type
-        model = cars_conf[
-            input_parameters.create_model_tag_from_product_key(product_key)
-        ]
-        image = cars_conf[
-            input_parameters.create_img_tag_from_product_key(product_key)
-        ]
-        model_type = cars_conf[
-            input_parameters.create_model_type_tag_from_product_key(product_key)
-        ]
-
         # load model and image with shareloc
-        shareloc_model = SharelocGeometry.load_geom_model(model, model_type)
-        shareloc_image = Image(image)
-
-        # set elevation from geoid/dem/default_alt
-        if dem is not None:
-            # fill_nodata option should be set when dealing with void in DTM
-            # see shareloc DTM limitations in sphinx doc for further details
-            elevation = DTMIntersection(dem, geoid, fill_nodata="mean")
-        else:
-            elevation = default_elevation
+        shareloc_model = SharelocGeometry.load_geom_model(geomodel)
+        shareloc_image = Image(sensor)
 
         # perform direct localization operation
         loc = localization.Localization(
-            shareloc_model, image=shareloc_image, elevation=elevation, epsg=4326
+            shareloc_model,
+            image=shareloc_image,
+            elevation=self.elevation,
+            epsg=4326,
         )
         # Bug: y_coord and x_coord inversion to fit Shareloc standards row/col.
         # TODO: clean geometry convention calls in API

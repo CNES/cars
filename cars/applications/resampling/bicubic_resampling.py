@@ -77,9 +77,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.save_epipolar_image = self.used_config["save_epipolar_image"]
         self.save_epipolar_color = self.used_config["save_epipolar_color"]
 
-        # check loader
-        # TODO use loaders
-
         # Init orchestrator
         self.orchestrator = None
 

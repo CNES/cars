@@ -27,6 +27,7 @@ contains sift sparse matching method
 from __future__ import absolute_import
 
 import logging
+import os
 
 # Third party imports
 import numpy as np
@@ -36,12 +37,17 @@ from cyvlfeat.sift.sift import sift
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications import application_constants
+from cars.applications.grid_generation import grids
 from cars.applications.point_cloud_outliers_removing import (
     outlier_removing_tools,
 )
 from cars.applications.triangulation import triangulation_tools
 from cars.core import constants as cst
 from cars.core import preprocessing, projection
+from cars.core.utils import safe_makedirs
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
+)
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -325,13 +331,10 @@ def compute_disp_min_disp_max(
     sensor_image_left,
     sensor_image_right,
     grid_left,
-    corrected_grid_right,
     grid_right,
     matches,
     orchestrator,
-    geometry_loader,
-    srtm_dir,
-    default_alt,
+    geometry_plugin,
     pair_folder="",
     disp_margin=0.1,
     pair_key=None,
@@ -354,8 +357,8 @@ def compute_disp_min_disp_max(
     :type matches: np.ndarray
     :param orchestrator: orchestrator used
     :type orchestrator: Orchestrator
-    :param geometry_loader: geometry loader to use
-    :type geometry_loader: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: str
     :param srtm_dir: srtm directory
     :type srtm_dir: str
     :param default_alt: default altitude
@@ -370,21 +373,36 @@ def compute_disp_min_disp_max(
     :return: disp min and disp max
     :rtype: float, float
     """
-    input_stereo_cfg = (
-        preprocessing.create_former_cars_post_prepare_configuration(
-            sensor_image_left,
-            sensor_image_right,
-            grid_left,
-            corrected_grid_right,
-            pair_folder,
-            uncorrected_grid_right=grid_right,
-            srtm_dir=srtm_dir,
-            default_alt=default_alt,
-        )
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
+    # Save grids TODO remove
+    safe_makedirs(os.path.join(pair_folder, "tmp"))
+    grid_origin = grid_left.attributes["grid_origin"]
+    grid_spacing = grid_left.attributes["grid_spacing"]
+    left_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
+    )
+    grids.write_grid(grid_left[0, 0], left_grid_path, grid_origin, grid_spacing)
+
+    right_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
+    )
+    grids.write_grid(
+        grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
     )
 
     point_cloud = triangulation_tools.triangulate_matches(
-        geometry_loader, input_stereo_cfg, matches
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        left_grid_path,
+        right_grid_path,
+        matches,
     )
 
     # compute epsg
@@ -392,12 +410,10 @@ def compute_disp_min_disp_max(
         sensor_image_left,
         sensor_image_right,
         grid_left,
-        corrected_grid_right,
-        geometry_loader,
+        grid_right,
+        geometry_plugin,
         orchestrator=orchestrator,
         pair_folder=pair_folder,
-        srtm_dir=srtm_dir,
-        default_alt=default_alt,
         disp_min=0,
         disp_max=0,
     )

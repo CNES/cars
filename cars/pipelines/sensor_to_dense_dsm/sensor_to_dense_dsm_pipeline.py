@@ -44,6 +44,7 @@ from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
+    GEOMETRY_PLUGIN,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
@@ -121,6 +122,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
         self.used_conf[INPUTS] = self.inputs
 
+        # Check geometry plugin
+        (
+            self.used_conf[GEOMETRY_PLUGIN],
+            self.geom_plugin_without_dem_and_geoid,
+            self.geom_plugin_with_dem_and_geoid,
+        ) = sensors_inputs.check_geometry_plugin(
+            self.conf.get(GEOMETRY_PLUGIN, None), self.inputs
+        )
+
         # Get ROI
         (
             self.input_roi_poly,
@@ -134,13 +144,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         self.used_conf[OUTPUT] = self.output
 
         # Check conf application
-        application_conf = self.check_applications(
+        self.application_conf = self.check_applications(
             self.conf.get(APPLICATIONS, {}), self.generate_terrain_products
         )
-        self.used_conf[APPLICATIONS] = application_conf
+        self.used_conf[APPLICATIONS] = self.application_conf
 
         # Check conf application vs inputs application
-        self.check_inputs_with_applications(self.inputs, application_conf)
+        self.check_inputs_with_applications(self.inputs, self.application_conf)
 
         # Save used conf
         out_dir = self.output["out_dir"]
@@ -150,7 +160,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             safe_save=True,
         )
 
-    def check_inputs(self, conf, config_json_dir=None):
+    @staticmethod
+    def check_inputs(conf, config_json_dir=None):
         """
         Check the inputs given
 
@@ -167,7 +178,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             conf, config_json_dir=config_json_dir
         )
 
-    def check_output(self, conf):
+    @staticmethod
+    def check_output(conf):
         """
         Check the output given
 
@@ -344,7 +356,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    def check_inputs_with_applications(self, inputs_conf, application_conf):
+    @staticmethod
+    def check_inputs_with_applications(inputs_conf, application_conf):
         """
         Check for each application the input configuration consistency
 
@@ -459,12 +472,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ) = self.epipolar_grid_generation_application.run(
                     sensor_image_left,
                     sensor_image_right,
+                    self.geom_plugin_with_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                    default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                    geoid_path=self.inputs[sens_cst.GEOID],
                 )
 
                 # Run holes detection
@@ -574,15 +585,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
 
                     # Compute disp_min and disp_max
-                    geom_load = (
-                        self.triangulation_application.get_geometry_loader()
-                    )
                     (dmin, dmax) = sparse_mtch_tools.compute_disp_min_disp_max(
                         sensor_image_left,
                         sensor_image_right,
                         grid_left,
                         corrected_grid_right,
-                        grid_right,
                         corrected_matches_array,
                         orchestrator=cars_orchestrator,
                         disp_margin=(
@@ -592,10 +599,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         disp_to_alt_ratio=grid_left.attributes[
                             "disp_to_alt_ratio"
                         ],
-                        geometry_loader=geom_load,
+                        geometry_plugin=self.geom_plugin_with_dem_and_geoid,
                         pair_folder=pair_folder,
-                        srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                        default_alt=self.inputs[sens_cst.DEFAULT_ALT],
                     )
 
                     # Clean variables
@@ -650,7 +655,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     epipolar_roi = preprocessing.compute_epipolar_roi(
                         self.input_roi_poly,
                         self.input_roi_epsg,
-                        self.triangulation_application.get_geometry_loader(),
+                        self.geom_plugin_with_dem_and_geoid,
                         sensor_image_left,
                         sensor_image_right,
                         grid_left,
@@ -756,11 +761,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         sensor_image_right,
                         grid_left,
                         corrected_grid_right,
-                        self.triangulation_application.get_geometry_loader(),
+                        self.geom_plugin_with_dem_and_geoid,
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
-                        srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                        default_alt=self.inputs[sens_cst.DEFAULT_ALT],
                         disp_min=disp_min,
                         disp_max=disp_max,
                     )
@@ -778,6 +781,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     corrected_grid_right,
                     filled_with_2_epipolar_disparity_map,
                     epsg,
+                    self.geom_plugin_without_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -793,16 +797,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     (
                         current_terrain_roi_bbox
                     ) = preprocessing.compute_terrain_bbox(
-                        self.inputs[sens_cst.INITIAL_ELEVATION],
-                        self.inputs[sens_cst.DEFAULT_ALT],
-                        self.inputs[sens_cst.GEOID],
                         sensor_image_left,
                         sensor_image_right,
                         new_epipolar_image_left,
                         grid_left,
                         corrected_grid_right,
                         epsg,
-                        self.triangulation_application.get_geometry_loader(),
+                        self.geom_plugin_with_dem_and_geoid,
                         resolution=(
                             self.rasterization_application.get_resolution()
                         ),

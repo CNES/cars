@@ -29,7 +29,6 @@ from __future__ import absolute_import
 import logging
 import math
 import os
-from typing import Union
 
 # Third party imports
 import numpy as np
@@ -43,10 +42,7 @@ from cars.applications.triangulation.triangulation_tools import (
     triangulate_matches,
 )
 from cars.core import constants as cst
-from cars.core import former_confs_utils, projection, tiling
-
-# CARS imports
-from cars.core.geometry import AbstractGeometry
+from cars.core import projection, tiling
 
 
 def get_new_path(path):
@@ -111,19 +107,14 @@ def write_grid(grid, fname, origin, spacing):
 
 
 def generate_epipolar_grids(
-    conf,
-    geometry_loader_to_use,
-    dem: Union[None, str],
-    default_alt: Union[None, float] = None,
-    epipolar_step: int = 30,
-    geoid: Union[str, None] = None,
+    sensor1, sensor2, geomodel1, geomodel2, geometry_plugin, epipolar_step
 ):
     """
     Computes the left and right epipolar grids
 
     :param conf: input configuration dictionary
-    :param geometry_loader_to_use: geometry loader to use
-    :type geometry_loader_to_use: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: str
     :param dem: path to the dem folder
     :param default_alt: default altitude to use in the missing dem regions
     :param epipolar_step: step to use to construct the epipolar grids
@@ -140,29 +131,33 @@ def generate_epipolar_grids(
     """
     logging.info("Generating epipolar rectification grid ...")
 
-    geometry_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            geometry_loader_to_use
-        )
-    )
-
-    return geometry_loader.generate_epipolar_grids(
-        conf,
-        dem=dem,
-        geoid=geoid,
-        default_alt=default_alt,
+    return geometry_plugin.generate_epipolar_grids(
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         epipolar_step=epipolar_step,
     )
 
 
 def compute_epipolar_grid_min_max(
-    geometry_loader_to_use, grid, epsg, conf, disp_min=None, disp_max=None
+    geometry_plugin,
+    grid,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid1,
+    grid2,
+    epsg,
+    disp_min=None,
+    disp_max=None,
 ):
     """
     Compute ground terrain location of epipolar grids at disp_min and disp_max
 
-    :param geometry_loader_to_use: geometry loader to use
-    :type geometry_loader_to_use: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: str
     :param grid: The epipolar grid to project
     :type grid: np.ndarray of shape (N,M,2)
     :param epsg: EPSG code of the terrain projection
@@ -178,22 +173,8 @@ def compute_epipolar_grid_min_max(
     :return: a tuple of location grid at disp_min and disp_max
     :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param
     """
-
-    # Retrieve disp min and disp max if needed
-    (
-        minimum_disparity,
-        maximum_disparity,
-    ) = former_confs_utils.get_disp_min_max(conf)
-
-    if disp_min is None:
-        disp_min = int(math.floor(minimum_disparity))
-    else:
-        disp_min = int(math.floor(disp_min))
-
-    if disp_max is None:
-        disp_max = int(math.ceil(maximum_disparity))
-    else:
-        disp_max = int(math.ceil(disp_max))
+    disp_min = int(math.floor(disp_min))
+    disp_max = int(math.ceil(disp_max))
 
     # Generate disp_min and disp_max matches
     matches_min = np.stack(
@@ -216,8 +197,26 @@ def compute_epipolar_grid_min_max(
     )
 
     # Generate corresponding points clouds
-    pc_min = triangulate_matches(geometry_loader_to_use, conf, matches_min)
-    pc_max = triangulate_matches(geometry_loader_to_use, conf, matches_max)
+    pc_min = triangulate_matches(
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid1,
+        grid2,
+        matches_min,
+    )
+    pc_max = triangulate_matches(
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid1,
+        grid2,
+        matches_max,
+    )
 
     # Convert to correct EPSG
     projection.points_cloud_conversion_dataset(pc_min, epsg)
@@ -248,8 +247,13 @@ def compute_epipolar_grid_min_max(
 
 def terrain_region_to_epipolar(
     region,
-    conf,
-    geometry_loader,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid_left,
+    grid_right,
+    geometry_plugin,
     epsg=4326,
     disp_min=0,
     disp_max=0,
@@ -262,7 +266,7 @@ def terrain_region_to_epipolar(
 
     :param region: terrain region to use
     :param conf: config with epipolar grids infos
-    :param geometry_loader: geometry loader to use
+    :param geometry_plugin: geometry plugin to use
     :param epsg: epsg
     :param disp_min: minimum disparity
     :param disp_max: maximum disparity
@@ -306,10 +310,15 @@ def terrain_region_to_epipolar(
         epipolar_grid_min,
         epipolar_grid_max,
     ) = compute_epipolar_grid_min_max(
-        geometry_loader,
+        geometry_plugin,
         tiling.transform_four_layers_to_two_layers_grid(epipolar_grid),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
         epsg,
-        conf,
         disp_min,
         disp_max,
     )

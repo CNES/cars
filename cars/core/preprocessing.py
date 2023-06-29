@@ -71,16 +71,13 @@ def get_utm_zone_as_epsg_code(lon, lat):
 
 
 def compute_terrain_bbox(  # noqa: 751
-    srtm_dir,
-    default_alt,
-    geoid,
     sensor_image_left,
     sensor_image_right,
     epipolar_image_left,
     grid_left,
     grid_right,
     epsg,
-    geometry_loader_to_use,
+    geometry_plugin,
     disp_min=-10,
     disp_max=10,
     resolution=0.5,
@@ -130,8 +127,8 @@ def compute_terrain_bbox(  # noqa: 751
     :type grid_right: CarsDataset
     :param epsg: epsg to use
     :type epsg: str
-    :param geometry_loader_to_use: geometry loader to use
-    :type geometry_loader_to_use: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: str
     :param disp_min: minimum disparity
     :type disp_min: int
     :param disp_max: maximum disparity
@@ -177,12 +174,10 @@ def compute_terrain_bbox(  # noqa: 751
         out_dir, "envelopes_intersection.gpkg"
     )
 
-    input_configuration = create_former_cars_conf(
-        sensor_image_left,
-        sensor_image_right,
-        srtm_dir=srtm_dir,
-        default_alt=default_alt,
-    )
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
     inter_poly, (
         inter_xmin,
@@ -190,14 +185,14 @@ def compute_terrain_bbox(  # noqa: 751
         inter_xmax,
         inter_ymax,
     ) = projection.ground_intersection_envelopes(
-        input_configuration,
-        geometry_loader_to_use,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        geometry_plugin,
         shp1,
         shp2,
         out_envelopes_intersection,
-        geoid=geoid,
-        dem_dir=srtm_dir,
-        default_alt=default_alt,
     )
 
     # update out_json
@@ -223,7 +218,7 @@ def compute_terrain_bbox(  # noqa: 751
         logging.info("Checking DEM coverage")
         _, epsg1 = inputs.read_vector(shp1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
-            srtm_dir, inter_poly, epsg1
+            geometry_plugin.dem, inter_poly, epsg1
         )
 
         if dem_coverage < 100.0:
@@ -258,21 +253,40 @@ def compute_terrain_bbox(  # noqa: 751
         dtype=np.float64,
     )
 
-    # Create fake configuration  TODO remove
-    configuration = create_former_cars_post_prepare_configuration(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        pair_folder,
-        uncorrected_grid_right=None,
-        srtm_dir=srtm_dir,
-        default_alt=default_alt,
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
+    # Save grids TODO remove
+    safe_makedirs(os.path.join(pair_folder, "tmp"))
+    grid_origin = grid_left.attributes["grid_origin"]
+    grid_spacing = grid_left.attributes["grid_spacing"]
+    left_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
+    )
+    grids.write_grid(grid_left[0, 0], left_grid_path, grid_origin, grid_spacing)
+
+    right_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
+    )
+    grids.write_grid(
+        grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
     )
 
     # Compute terrain min and max again, this time using estimated epsg code
     terrain_dispmin, terrain_dispmax = grids.compute_epipolar_grid_min_max(
-        geometry_loader_to_use, corners, epsg, configuration, disp_min, disp_max
+        geometry_plugin,
+        corners,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        left_grid_path,
+        right_grid_path,
+        epsg,
+        disp_min,
+        disp_max,
     )
 
     # Compute bounds from epipolar image corners and dispmin/dispmax
@@ -366,11 +380,9 @@ def compute_epsg(
     sensor_image_right,
     grid_left,
     grid_right,
-    geometry_loader_to_use,
+    geometry_plugin,
     orchestrator=None,
     pair_folder=None,
-    srtm_dir=None,
-    default_alt=None,
     disp_min=-10,
     disp_max=10,
 ):
@@ -405,8 +417,8 @@ def compute_epsg(
                 "epipolar_spacing_x", "epipolar_spacing", \
                 "disp_to_alt_ratio",
     :type grid_right: CarsDataset
-    :param geometry_loader_to_use: geometry loader to use
-    :type geometry_loader_to_use: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: str
     :param orchestrator: orchestrator
     :type orchestrator: Orchestrator
     :param pair_folder: pair folder to save data to
@@ -424,6 +436,25 @@ def compute_epsg(
     :rtype: str
 
     """
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
+    safe_makedirs(os.path.join(pair_folder, "tmp"))
+    grid_origin = grid_left.attributes["grid_origin"]
+    grid_spacing = grid_left.attributes["grid_spacing"]
+    left_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
+    )
+    grids.write_grid(grid_left[0, 0], left_grid_path, grid_origin, grid_spacing)
+
+    right_grid_path = grids.get_new_path(
+        os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
+    )
+    grids.write_grid(
+        grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
+    )
 
     if pair_folder is None:
         # Default orchestrator
@@ -436,20 +467,6 @@ def compute_epsg(
             )
 
         pair_folder = os.path.join(orchestrator.out_dir, "pair_0")
-
-    # get UTM zone with the middle point of terrain_min if epsg is None
-
-    # Create fake configuration  TODO remove
-    configuration = create_former_cars_post_prepare_configuration(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        pair_folder,
-        uncorrected_grid_right=None,
-        srtm_dir=srtm_dir,
-        default_alt=default_alt,
-    )
 
     # Get largest epipolar regions from configuration file
     largest_epipolar_region = [
@@ -482,7 +499,17 @@ def compute_epsg(
         terrain_dispmin,
         _,
     ) = grids.compute_epipolar_grid_min_max(
-        geometry_loader_to_use, corners, 4326, configuration, disp_min, disp_max
+        geometry_plugin,
+        corners,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        left_grid_path,
+        right_grid_path,
+        4326,
+        disp_min,
+        disp_max,
     )
 
     epsg = get_utm_zone_as_epsg_code(*np.mean(terrain_dispmin, axis=0))
@@ -664,7 +691,7 @@ def create_former_cars_post_prepare_configuration(
     )
 
     configuration = {}
-    # TODO change it, modify geometry loader inputs
+    # TODO change it, modify geometry plugin inputs
     configuration[in_params.INPUT_SECTION_TAG] = input_configuration
     # Save grids
     safe_makedirs(os.path.join(pair_folder, "tmp"))
@@ -755,7 +782,7 @@ def create_former_cars_conf(  # noqa: C901
 
     """
 
-    # TODO remove this function, update geometry loader
+    # TODO remove this function, update geometry plugin
     conf = {
         "img1": sensor_image_left[sens_cst.INPUT_IMG],
         "img2": sensor_image_right[sens_cst.INPUT_IMG],
@@ -806,7 +833,7 @@ def create_former_cars_conf(  # noqa: C901
 def compute_epipolar_roi(
     terrain_roi_poly,
     terrain_roi_epsg,
-    geometry_loader,
+    geometry_plugin,
     sensor_image_left,
     sensor_image_right,
     grid_left,
@@ -820,7 +847,7 @@ def compute_epipolar_roi(
 
     :param terrain_roi_poly: terrain  roi polygon
     :param terrain_roi_epsg: terrain  roi epsg
-    :param geometry_loader: geometry loader to use
+    :param geometry_plugin: geometry plugin to use
     :param epsg: epsg
     :param disp_min: minimum disparity
     :param disp_max: maximum disparity
@@ -836,23 +863,20 @@ def compute_epipolar_roi(
     pair_folder = os.path.join(output_path, "tmp")
     safe_makedirs(pair_folder)
 
-    conf = create_former_cars_post_prepare_configuration(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        pair_folder,
-        uncorrected_grid_right=None,
-        srtm_dir=None,
-        default_alt=0,
-        disp_min=disp_min,
-        disp_max=disp_max,
-    )
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
     epipolar_roi = grids.terrain_region_to_epipolar(
         roi_bbox,
-        conf,
-        geometry_loader,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        geometry_plugin,
         epsg=terrain_roi_epsg,
         disp_min=disp_min,
         disp_max=disp_max,

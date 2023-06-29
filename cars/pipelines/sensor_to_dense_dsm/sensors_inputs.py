@@ -31,6 +31,7 @@ from json_checker import Checker, Or
 
 # CARS imports
 from cars.core import inputs
+from cars.core.geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
@@ -120,9 +121,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_IMG: str,
         sens_cst.INPUT_COLOR: str,
         sens_cst.INPUT_NODATA: int,
-        sens_cst.INPUT_GEO_MODEL: str,
-        sens_cst.INPUT_GEO_MODEL_TYPE: str,
-        sens_cst.INPUT_GEO_MODEL_FILTER: Or([str], None),
+        sens_cst.INPUT_GEO_MODEL: dict,
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_CLASSIFICATION: Or(str, None),
     }
@@ -137,20 +136,6 @@ def sensors_check_inputs(  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_COLOR
         ] = color
-
-        geomodel_type = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_GEO_MODEL_TYPE, "RPC"
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_GEO_MODEL_TYPE
-        ] = geomodel_type
-
-        geomodel_filters = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_GEO_MODEL_FILTER, None
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_GEO_MODEL_FILTER
-        ] = geomodel_filters
 
         no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_NODATA, -9999
@@ -236,6 +221,64 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
+def check_geometry_plugin(conf_geom_plugin, conf_inputs):
+    """
+    Check the geometry plugin with inputs
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
+    :param conf_inputs: checked configuration of inputs
+    :type conf_inputs: type
+
+    :return overloaded geometry plugin conf, TODO
+    """
+    # Make OTB the default geometry plugin
+    if conf_geom_plugin is None:
+        conf_geom_plugin = "OTBGeometry"
+
+    # Initialize the desired geometry plugin without elevation information
+    geom_plugin_without_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin
+        )
+    )
+
+    # Check products consistency with this plugin
+    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
+        sensor = sensor_image[sens_cst.INPUT_IMG]
+        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
+        geom_plugin_without_dem_and_geoid.check_product_consistency(
+            sensor, geomodel
+        )
+
+    # Get image pairs for DTM intersection with ROI
+    roi_from_pairs = []
+    for key1, key2 in conf_inputs[sens_cst.PAIRING]:
+        sensor_image_1 = conf_inputs[sens_cst.SENSORS][key1]
+        sensor_image_2 = conf_inputs[sens_cst.SENSORS][key2]
+        sensor1 = sensor_image_1[sens_cst.INPUT_IMG]
+        sensor2 = sensor_image_2[sens_cst.INPUT_IMG]
+        geomodel1 = sensor_image_1[sens_cst.INPUT_GEO_MODEL]
+        geomodel2 = sensor_image_2[sens_cst.INPUT_GEO_MODEL]
+        roi_from_pairs.append((sensor1, sensor2, geomodel1, geomodel2))
+
+    # Initialize a second geometry plugin with elevation information
+    geom_plugin_with_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin,
+            dem=conf_inputs[sens_cst.INITIAL_ELEVATION],
+            geoid=conf_inputs[sens_cst.GEOID],
+            default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
+            roi_from_pairs=roi_from_pairs,
+        )
+    )
+
+    return (
+        conf_geom_plugin,
+        geom_plugin_without_dem_and_geoid,
+        geom_plugin_with_dem_and_geoid,
+    )
+
+
 def modify_to_absolute_path(config_json_dir, overloaded_conf):
     """
     Modify input file path to absolute path
@@ -254,7 +297,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             sens_cst.INPUT_COLOR,
             sens_cst.INPUT_CLASSIFICATION,
         ]:
-            if sensor_image[tag] is not None:
+            if isinstance(sensor_image[tag], dict):
+                sensor_image[tag]["path"] = make_relative_path_absolute(
+                    sensor_image[tag]["path"], config_json_dir
+                )
+            elif sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
                     sensor_image[tag], config_json_dir
                 )

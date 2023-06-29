@@ -103,6 +103,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         grid_right,
         epipolar_disparity_map,
         epsg,
+        geometry_plugin,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
