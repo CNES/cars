@@ -129,7 +129,12 @@ def start_cluster(
         log_directory,
         local_directory,
     ) = init_cluster_variables(
-        nb_workers, walltime, out_dir, activate_dashboard, python
+        nb_workers,
+        walltime,
+        out_dir,
+        activate_dashboard,
+        python,
+        core_memory=5000,
     )
 
     # Retrieve PBS queue

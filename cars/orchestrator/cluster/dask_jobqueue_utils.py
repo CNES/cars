@@ -31,7 +31,7 @@ from datetime import timedelta
 
 
 def init_cluster_variables(
-    nb_workers, walltime, out_dir, activate_dashboard, python
+    nb_workers, walltime, out_dir, activate_dashboard, python, core_memory
 ):
     """
     Initialize global cluster variables
@@ -40,6 +40,7 @@ def init_cluster_variables(
     :param out_dir: ouput result directory
     :param activate_dashboard: option to activate dashboard mode
     :param python: target python used by workers (retrun system python if None)
+    :param core_memory: cluster node memory (Mo)
     :return: all cluster parameters (python,
     nb_workers_per_job,
     memory,
@@ -69,8 +70,8 @@ def init_cluster_variables(
     # (number of workers per job)
     nb_cpus = nb_threads_per_worker * nb_workers_per_job
     nb_jobs = int(math.ceil(nb_workers / nb_workers_per_job))
-    # Cluster nodes have 5GB per core
-    memory = nb_cpus * 5000
+    # Cluster nodes have core_memory Mo per core
+    memory = nb_cpus * core_memory
 
     # Configure worker lifetime for adaptative scaling.
     # See https://jobqueue.dask.org/en/latest/advanced-tips-and-tricks.html
