@@ -283,7 +283,7 @@ def filter_cloud(
     if filtered_elt_pos and not (
         cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
         and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
-        and cst.POINTS_CLOUD_IDX_IM_EPI in cloud.columns
+        and cst.POINTS_CLOUD_ID_IM_EPI in cloud.columns
     ):
         logging.warning(
             "In filter_cloud: the filtered_elt_pos has been activated but "
@@ -297,7 +297,7 @@ def filter_cloud(
         labels = [
             cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
             cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-            cst.POINTS_CLOUD_IDX_IM_EPI,
+            cst.POINTS_CLOUD_ID_IM_EPI,
         ]
 
         removed_elt_pos_infos = cloud.loc[
@@ -329,7 +329,7 @@ def add_cloud_filtering_msk(
     :param clouds_list: Input list of clouds
     :param elt_pos_infos: pandas dataframe
         composed of cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_IDX_IM_EPI columns
+        cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_ID_IM_EPI columns
         as computed in the create_combined_cloud function.
         Those information are used to retrieve the point position
         in its original epipolar image.
@@ -342,7 +342,7 @@ def add_cloud_filtering_msk(
         elt_pos_infos is None
         or cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns
         or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
-        or cst.POINTS_CLOUD_IDX_IM_EPI not in elt_pos_infos.columns
+        or cst.POINTS_CLOUD_ID_IM_EPI not in elt_pos_infos.columns
     ):
         logging.warning(
             "Cannot generate filtered elements mask, "
@@ -351,7 +351,7 @@ def add_cloud_filtering_msk(
         )
 
     else:
-        elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_IDX_IM_EPI].to_numpy()
+        elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_ID_IM_EPI].to_numpy()
 
         min_elt_index = np.min(elt_index)
         max_elt_index = np.max(elt_index)

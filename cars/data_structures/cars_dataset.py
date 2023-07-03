@@ -1045,9 +1045,11 @@ def save_dataset(
 
     bands_description = None
     if tag in (cst.EPI_CLASSIFICATION, cst.RASTER_CLASSIF):
-        bands_description = dataset.coords["classes"].values
+        bands_description = dataset.coords[cst.BAND_CLASSIF].values
     if tag in (cst.EPI_COLOR, cst.POINTS_CLOUD_CLR_KEY_ROOT):
-        bands_description = dataset.coords["band_im"].values
+        bands_description = dataset.coords[cst.BAND_IM].values
+    if tag == cst.RASTER_SOURCE_PC:
+        bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
 
     outputs.rasterio_write_georaster(
         file_name,

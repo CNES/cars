@@ -275,7 +275,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 self.input_roi_poly, self.input_roi_epsg, epsg
             )
 
-            # compute terrain bounds and transform point clouds
+            # Compute terrain bounds and transform point clouds
             (
                 terrain_bounds,
                 list_epipolar_points_cloud_by_tiles,
@@ -344,6 +344,10 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     ),
                 ),
             )
+
+            # Add file names to retrieve source file of each point
+            pc_file_names = list(self.inputs["point_clouds"])
+            merged_points_clouds.attributes["source_pc_names"] = pc_file_names
 
             # Remove outliers with small components method
             filtered_1_merged_points_clouds = (

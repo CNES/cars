@@ -94,6 +94,7 @@ class SimpleGaussian(
         self.save_classif = self.used_config["save_classif"]
         self.save_dsm = self.used_config["save_dsm"]
         self.save_confidence = self.used_config["save_confidence"]
+        self.save_source_pc = self.used_config["save_source_pc"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -141,6 +142,7 @@ class SimpleGaussian(
         overloaded_conf["save_classif"] = conf.get("save_classif", False)
         overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
         overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
+        overloaded_conf["save_source_pc"] = conf.get("save_source_pc", False)
 
         overloaded_conf["compute_all"] = conf.get("compute_all", False)
         if overloaded_conf["compute_all"]:
@@ -169,6 +171,7 @@ class SimpleGaussian(
             "save_stats": bool,
             "save_dsm": bool,
             "save_confidence": bool,
+            "save_source_pc": bool,
             "compute_all": bool,
         }
 
@@ -312,6 +315,8 @@ class SimpleGaussian(
                 "DSM output image size: {}x{} pixels".format(xsize, ysize)
             )
 
+            source_pc_names = merged_points_cloud.attributes["source_pc_names"]
+
             # Save objects
             # Initialize files names
             # TODO get from config ?
@@ -437,6 +442,19 @@ class SimpleGaussian(
                     cars_ds_name="confidence",
                 )
 
+            if self.save_source_pc:
+                out_source_pc = os.path.join(
+                    self.orchestrator.out_dir, "source_pc.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_source_pc,
+                    cst.RASTER_SOURCE_PC,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.msk_no_data,
+                    cars_ds_name="source_pc",
+                )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos([terrain_raster])
 
@@ -548,6 +566,7 @@ class SimpleGaussian(
                             dsm_no_data=self.dsm_no_data,
                             color_no_data=self.color_no_data,
                             msk_no_data=self.msk_no_data,
+                            source_pc_names=source_pc_names,
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?
@@ -576,6 +595,7 @@ def rasterization_wrapper(
     dsm_no_data: int = np.nan,
     color_no_data: int = np.nan,
     msk_no_data: int = 65535,
+    source_pc_names=None,
 ):
     """
     Wrapper for rasterization step :
@@ -634,6 +654,7 @@ def rasterization_wrapper(
         color_no_data=color_no_data,
         msk_no_data=msk_no_data,
         list_computed_layers=list_computed_layers,
+        source_pc_names=source_pc_names,
     )
 
     # Fill raster

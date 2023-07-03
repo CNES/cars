@@ -270,13 +270,22 @@ def filter_cloud(pd_cloud, bounds):
 
 
 def create_combined_cloud_from_tif(
-    clouds, epsg, xmin=None, xmax=None, ymin=None, ymax=None, margin=0
+    clouds,
+    clouds_id,
+    epsg,
+    xmin=None,
+    xmax=None,
+    ymin=None,
+    ymax=None,
+    margin=0,
 ):
     """
     Create combined cloud from tif point clouds
 
     :param clouds: list of clouds
     :type clouds: list(dict)
+    :param clouds_id: list of global identificators associated to clouds
+    :type clouds_id: list(str)
     :param epsg: epsg to convert point clouds to
     :type epsg: int or str
     :param xmin: min x coordinate
@@ -298,7 +307,7 @@ def create_combined_cloud_from_tif(
         for type_band in cloud["data"].keys():
             band_path = cloud["data"][type_band]
     # Create multiple pc pandas dataframes
-    for cloud in clouds:
+    for cloud_file_id, cloud in zip(clouds_id, clouds):  # noqa: B905
         window = cloud["window"]
         cloud_epsg = cloud["cloud_epsg"]
         cloud_data_bands = []
@@ -340,6 +349,12 @@ def create_combined_cloud_from_tif(
                 cloud_data[cst.X].shape
             )
             cloud_data_bands.append(cst.POINTS_CLOUD_VALID_DATA)
+
+        # add source file id
+        cloud_data[cst.POINTS_CLOUD_GLOBAL_ID] = (
+            np.ones(cloud_data[cst.X].shape) * cloud_file_id
+        )
+        cloud_data_bands.append(cst.POINTS_CLOUD_GLOBAL_ID)
 
         # Create cloud pandas
         cloud_pd = pd.DataFrame(cloud_data, columns=cloud_data_bands)
@@ -724,7 +739,7 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
     return res
 
 
-def get_tiles_corresponding_tiles_tif(
+def get_corresponding_tiles_tif(
     terrain_tiling_grid,
     list_epipolar_points_cloud_with_loc,
     margins=0,
@@ -753,7 +768,7 @@ def get_tiles_corresponding_tiles_tif(
     if orchestrator is None:
         # Create default sequential orchestrator for current
         # application
-        # be awere, no out_json will be shared between orchestrators
+        # be aware, no out_json will be shared between orchestrators
         # No files saved
         cars_orchestrator = ocht.Orchestrator(
             orchestrator_conf={"mode": "sequential"}
@@ -796,6 +811,7 @@ def get_tiles_corresponding_tiles_tif(
             compute_correspondance_single_pc_terrain, nout=1
         )(
             list_epipolar_points_cloud_with_loc[row_fake_cars_ds],
+            row_fake_cars_ds,
             terrain_tiling_grid,
             margins=margins,
             saving_info=full_saving_info_pc,
@@ -825,10 +841,10 @@ def get_tiles_corresponding_tiles_tif(
 
             # Get required_point_clouds_left
             required_point_clouds = []
-            for correp_row in range(list_corresp_cars_ds.shape[0]):
+            for corresp_row in range(list_corresp_cars_ds.shape[0]):
                 # each tile in list_corresp contains a CarsDict,
                 # containing a CarsDataset filled with list
-                corresp = list_corresp_cars_ds[correp_row, 0].data[
+                corresp = list_corresp_cars_ds[corresp_row, 0].data[
                     "corresp_cars_ds"
                 ][row, col]
                 required_point_clouds += corresp
@@ -843,6 +859,7 @@ def get_tiles_corresponding_tiles_tif(
 
 def compute_correspondance_single_pc_terrain(
     epi_pc,
+    epi_pc_id,
     terrain_tiling_grid,
     margins=0,
     saving_info=None,
@@ -915,7 +932,7 @@ def compute_correspondance_single_pc_terrain(
                     ):
                         # add to required
                         terrain_corresp[terrain_row, terrain_col].append(
-                            epi_pc[tile_row, tile_col]
+                            (epi_pc[tile_row, tile_col], epi_pc_id)
                         )
 
     # add saving infos
