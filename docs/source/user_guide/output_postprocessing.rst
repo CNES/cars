@@ -9,7 +9,7 @@ Output Post Processing
 Merge Laz files
 =====================
 
-CARS generates several laz files corresponding the tiles processed.
+CARS generates several laz files corresponding to the tiles processed.
 Merge can be done with `laszip`_. 
 
 To merge them:
