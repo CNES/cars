@@ -199,7 +199,7 @@ def test_transform_input_pc_and_correspondance():
         optimal_terrain_tile_width,
     )
 
-    corresponding_tiles = pc_tif_tools.get_tiles_corresponding_tiles_tif(
+    corresponding_tiles = pc_tif_tools.get_corresponding_tiles_tif(
         terrain_tiling_grid, list_epipolar_points_cloud_by_tiles, margins=0
     )
 

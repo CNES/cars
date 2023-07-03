@@ -129,6 +129,7 @@ def test_create_combined_dense_cloud():
     cloud2.attrs[cst.EPSG] = epsg
 
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
+    cloud_id = list(range(3))
 
     # Compute margin
     on_ground_margin = 1
@@ -140,6 +141,7 @@ def test_create_combined_dense_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -152,27 +154,28 @@ def test_create_combined_dense_cloud():
 
     ref_cloud0 = np.array(
         [
-            [0.0, 39.0, 40.0, 41.0],
-            [0.0, 40.0, 41.0, 42.0],
-            [1.0, 41.0, 42.0, 43.0],
-            [1.0, 42.0, 43.0, 44.0],
-            [1.0, 43.0, 44.0, 45.0],
-            [1.0, 45.0, 46.0, 47.0],
-            [1.0, 46.0, 47.0, 48.0],
-            [1.0, 47.0, 48.0, 49.0],
-            [1.0, 48.0, 49.0, 50.0],
-            [0.0, 49.0, 50.0, 51.0],
-            [0.0, 50.0, 51.0, 52.0],
+            [0.0, 0.0, 39.0, 40.0, 41.0],
+            [0.0, 0.0, 40.0, 41.0, 42.0],
+            [0.0, 1.0, 41.0, 42.0, 43.0],
+            [0.0, 1.0, 42.0, 43.0, 44.0],
+            [0.0, 1.0, 43.0, 44.0, 45.0],
+            [0.0, 1.0, 45.0, 46.0, 47.0],
+            [0.0, 1.0, 46.0, 47.0, 48.0],
+            [0.0, 1.0, 47.0, 48.0, 49.0],
+            [0.0, 1.0, 48.0, 49.0, 50.0],
+            [0.0, 0.0, 49.0, 50.0, 51.0],
+            [0.0, 0.0, 50.0, 51.0, 52.0],
         ]
     )
 
-    ref_cloud2 = np.zeros((row * col, 4))
-    ref_cloud2[:, 1] = 45
+    ref_cloud2 = np.zeros((row * col, 5))
+    ref_cloud2[:, 0] = 2
     ref_cloud2[:, 2] = 45
-    ref_cloud2[:, 3] = 50
+    ref_cloud2[:, 3] = 45
+    ref_cloud2[:, 4] = 50
 
     for i in range(1, col - 1):
-        ref_cloud2[i * row + 1 : i * row + 4, 0] = 1
+        ref_cloud2[i * row + 1 : i * row + 4, 1] = 1
     ref_cloud2 = np.delete(ref_cloud2, 2 * col + 2, 0)
 
     ref_cloud = np.concatenate([ref_cloud0, ref_cloud2])
@@ -181,6 +184,7 @@ def test_create_combined_dense_cloud():
 
     # test with mask
     cloud_list = [get_cloud0_ds(with_msk=True), cloud2]
+    cloud_id = [0, 2]
 
     # Compute margin
     on_ground_margin = 1
@@ -192,6 +196,7 @@ def test_create_combined_dense_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -204,17 +209,17 @@ def test_create_combined_dense_cloud():
 
     ref_cloud0_with_msk = np.array(
         [
-            [0.0, 39.0, 40.0, 41.0, 0.0],
-            [0.0, 40.0, 41.0, 42.0, 0.0],
-            [1.0, 41.0, 42.0, 43.0, 0.0],
-            [1.0, 42.0, 43.0, 44.0, 0.0],
-            [1.0, 43.0, 44.0, 45.0, 0.0],
-            [1.0, 45.0, 46.0, 47.0, 0.0],
-            [1.0, 46.0, 47.0, 48.0, 255.0],
-            [1.0, 47.0, 48.0, 49.0, 0.0],
-            [1.0, 48.0, 49.0, 50.0, 0.0],
-            [0.0, 49.0, 50.0, 51.0, 0.0],
-            [0.0, 50.0, 51.0, 52.0, 0.0],
+            [0.0, 0.0, 39.0, 40.0, 41.0, 0.0],
+            [0.0, 0.0, 40.0, 41.0, 42.0, 0.0],
+            [0.0, 1.0, 41.0, 42.0, 43.0, 0.0],
+            [0.0, 1.0, 42.0, 43.0, 44.0, 0.0],
+            [0.0, 1.0, 43.0, 44.0, 45.0, 0.0],
+            [0.0, 1.0, 45.0, 46.0, 47.0, 0.0],
+            [0.0, 1.0, 46.0, 47.0, 48.0, 255.0],
+            [0.0, 1.0, 47.0, 48.0, 49.0, 0.0],
+            [0.0, 1.0, 48.0, 49.0, 50.0, 0.0],
+            [0.0, 0.0, 49.0, 50.0, 51.0, 0.0],
+            [0.0, 0.0, 50.0, 51.0, 52.0, 0.0],
         ]
     )
 
@@ -252,6 +257,7 @@ def test_create_combined_dense_cloud():
         cloud_with_color1,
         cloud_with_color2,
     ]
+    cloud_id = list(range(3))
 
     # Compute margin
     on_ground_margin = 1
@@ -263,6 +269,7 @@ def test_create_combined_dense_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list_with_color,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -301,6 +308,7 @@ def test_create_combined_dense_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list_with_color,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -360,6 +368,7 @@ def test_create_combined_dense_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -433,6 +442,7 @@ def test_create_combined_sparse_cloud():
     cloud2 = pandas.DataFrame(point_cloud_array2, columns=point_cloud_index)
     cloud2.attrs[cst.EPSG] = epsg
     cloud_list = [get_cloud0_ds(with_msk=False), cloud1, cloud2]
+    cloud_id = list(range(3))
 
     # Compute margin
     on_ground_margin = 1
@@ -444,6 +454,7 @@ def test_create_combined_sparse_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -476,6 +487,7 @@ def test_create_combined_sparse_cloud():
     # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -515,6 +527,7 @@ def test_create_combined_sparse_cloud():
     cloud_list = [get_cloud0_ds(with_msk=True), cloud1, cloud2]
     cloud, epsg = point_cloud_tools.create_combined_cloud(
         cloud_list,
+        cloud_id,
         epsg,
         xmin=40.0,
         ymin=37.0,
@@ -559,7 +572,7 @@ def test_filter_cloud():
             "z",
             "coord_epi_geom_i",
             "coord_epi_geom_j",
-            "idx_im_epi",
+            "id_im_epi",
         ],
     )
 
@@ -578,7 +591,7 @@ def test_filter_cloud():
             )
 
     ref_removed_elt_pos = pandas.DataFrame(
-        pos_arr, columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"]
+        pos_arr, columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"]
     )
 
     assert ref_removed_elt_pos.equals(removed_elt_pos)
@@ -616,7 +629,7 @@ def test_add_cloud_filtering_msk():
 
     pos_arr = np.array([[1, 2, 0], [2, 2, 1]])
     elt_remove = pandas.DataFrame(
-        pos_arr, columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"]
+        pos_arr, columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"]
     )
 
     point_cloud_tools.add_cloud_filtering_msk(
@@ -641,7 +654,7 @@ def test_add_cloud_filtering_msk():
     np_pos = np.array([[1, 2, 2], [2, 2, 1]])
     elt_remove = pandas.DataFrame(
         np_pos,
-        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
         point_cloud_tools.add_cloud_filtering_msk(
@@ -656,7 +669,7 @@ def test_add_cloud_filtering_msk():
     np_pos = np.array([[1, 2, -1], [2, 2, 1]])
     elt_remove = pandas.DataFrame(
         np_pos,
-        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
         point_cloud_tools.add_cloud_filtering_msk(
@@ -671,7 +684,7 @@ def test_add_cloud_filtering_msk():
     np_pos = np.array([[11, 2, 0]])
     elt_remove = pandas.DataFrame(
         np_pos,
-        columns=["coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"],
+        columns=["coord_epi_geom_i", "coord_epi_geom_j", "id_im_epi"],
     )
     with pytest.raises(Exception) as index_error:
         point_cloud_tools.add_cloud_filtering_msk(
