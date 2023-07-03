@@ -16,7 +16,7 @@ To merge them:
 
 .. code-block:: console
 
-    $ laszip -i data\*.las -merged -o merged.laz
+    $ laszip -i data\*.laz -merged -o merged.laz
 
 
 .. _`laszip`: https://laszip.org/
