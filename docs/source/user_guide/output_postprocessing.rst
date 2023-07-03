@@ -9,8 +9,14 @@ Output Post Processing
 Merge Laz files
 =====================
 
-CARS generates multiples Laz files corresponding to processed tiles. To merge them:
+CARS generates multiples Laz files corresponding to processed tiles. 
+Merge can be done with `laszip`_. 
+
+To merge them:
 
 .. code-block:: console
 
     $ laszip -i data\*.las -merged -o merged.laz
+
+
+.. _`laszip`: https://laszip.org/
