@@ -898,6 +898,10 @@ The structure follows this organisation:
                         }
                     },
 
+            .. note::
+                When `save_points_cloud_as_laz` is activated, multiple Laz files are saved, corresponding to each processed terrain tiles.
+                Please, see the section :ref:`merge_laz_files` to merge them into one single file.
+
         .. tab:: Point Cloud outliers removing
 
             **Name**: "point_cloud_outliers_removing"
