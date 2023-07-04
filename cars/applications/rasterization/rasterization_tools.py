@@ -290,19 +290,27 @@ def compute_vector_raster_and_stats(  # noqa: C901
 
     # 5. original point cloud index
     source_pc_indexes = []
-    number_of_pc = int(np.round(np.max(cloud[cst.POINTS_CLOUD_GLOBAL_ID]))) + 1
-    for pc_id in range(number_of_pc):
-        # Create binary list that indicates from each point whether it comes
-        # from point cloud number "pc_id"
-        point_is_from_pc = list(
-            map(int, cloud[cst.POINTS_CLOUD_GLOBAL_ID] == pc_id)
+    if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
+        (list_computed_layers is None)
+        or substring_in_list(
+            list_computed_layers, cst.POINTS_CLOUD_SOURCE_KEY_ROOT
         )
-        pc_key = "{}{}".format(cst.POINTS_CLOUD_ORIGIN_KEY_ROOT, pc_id)
-        cloud[pc_key] = point_is_from_pc
-    for key in cloud.columns:
-        if cst.POINTS_CLOUD_ORIGIN_KEY_ROOT in key:
-            source_pc_indexes.append(key)
-            values_bands.append(key)
+    ):
+        number_of_pc = (
+            int(np.round(np.max(cloud[cst.POINTS_CLOUD_GLOBAL_ID]))) + 1
+        )
+        for pc_id in range(number_of_pc):
+            # Create binary list that indicates from each point whether it comes
+            # from point cloud number "pc_id"
+            point_is_from_pc = list(
+                map(int, cloud[cst.POINTS_CLOUD_GLOBAL_ID] == pc_id)
+            )
+            pc_key = "{}{}".format(cst.POINTS_CLOUD_SOURCE_KEY_ROOT, pc_id)
+            cloud[pc_key] = point_is_from_pc
+        for key in cloud.columns:
+            if cst.POINTS_CLOUD_SOURCE_KEY_ROOT in key:
+                source_pc_indexes.append(key)
+                values_bands.append(key)
 
     values = (
         cloud.loc[:, values_bands].values.T
@@ -486,7 +494,7 @@ def create_raster_dataset(
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
-    if source_pc is not None:
+    if source_pc is not None and source_pc_names is not None:
         if source_pc.shape[-1] > 1:
             source_pc = np.nan_to_num(
                 np.rollaxis(source_pc, 2), nan=msk_no_data

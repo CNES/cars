@@ -236,7 +236,7 @@ class SimpleGaussian(
         )
         return tile_size
 
-    def run(
+    def run(  # noqa: C901 function is too complex
         self,
         merged_points_cloud,
         epsg,
@@ -315,7 +315,12 @@ class SimpleGaussian(
                 "DSM output image size: {}x{} pixels".format(xsize, ysize)
             )
 
-            source_pc_names = merged_points_cloud.attributes["source_pc_names"]
+            if self.save_source_pc:
+                source_pc_names = merged_points_cloud.attributes[
+                    "source_pc_names"
+                ]
+            else:
+                source_pc_names = None
 
             # Save objects
             # Initialize files names
