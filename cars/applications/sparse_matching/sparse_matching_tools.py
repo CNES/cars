@@ -322,8 +322,8 @@ def compute_disparity_range(matches, percent=0.1):
 
 
 def compute_disp_min_disp_max(
-    sensor_image_right,
     sensor_image_left,
+    sensor_image_right,
     grid_left,
     corrected_grid_right,
     grid_right,
