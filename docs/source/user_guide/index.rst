@@ -11,5 +11,6 @@ User guide
    configuration
    input_image_preparation
    plugins
+   output_postprocessing
 
 
