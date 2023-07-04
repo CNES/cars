@@ -340,7 +340,7 @@ The structure follows this organisation:
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
         | *activate_dashboard*| Usage of dask dashboard                                          | bool, True if use dashboard             | False         | No       |
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *python*            | Python path to binary to use in workers (not used in local dask) | str                                     | Null         | No        |
+        | *python*            | Python path to binary to use in workers (not used in local dask) | str                                     | Null          | No       |
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
 
 
