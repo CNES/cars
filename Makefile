@@ -46,7 +46,6 @@ CHECK_DOCKER = $(shell docker -v)
 # CARS version from setup.py
 CARS_VERSION = $(shell python3 -c 'from cars import __version__; print(__version__)')
 CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
-CARS_VERSION_TUTO = 0.5.0
 
 ################ MAKE targets by sections ######################
 
@@ -264,28 +263,20 @@ else
 	@docker build ${DOCKER_OPTIONS} -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
 endif
 
-.PHONY: docker-tuto
-docker-tuto: ## Check and build docker image cnes/cars-jupyter and cnes/tutorials
+.PHONY: docker-jupyter
+docker-jupyter: ## Check and build docker image cnes/cars-jupyter
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@docker pull hadolint/hadolint
 	@echo "Check Dockerfile.jupyter with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
-	@echo "Check Dockerfile.tutorial with hadolint"
-	@docker run --rm -i hadolint/hadolint < Dockerfile.tutorial
 	@echo "Build Docker jupyter notebook image from CARS"
 # Set docker options like --build-arg
 ifndef DOCKER_OPTIONS
-	@docker build -t cnes/cars-jupyter:$(CARS_VERSION_TUTO) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
+	@docker build -t cnes/cars-jupyter:$(CARS_VERSION_MIN) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
 else
-	@docker build ${DOCKER_OPTIONS} -t cnes/cars-jupyter:$(CARS_VERSION_TUTO) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars-jupyter:$(CARS_VERSION_MIN) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
 endif
-	@echo "Build Docker jupyter tutorial notebook image from CARS"
-# Set docker options like --build-arg
-ifndef DOCKER_OPTIONS
-	@docker build -t cnes/cars-tutorial:$(CARS_VERSION_TUTO) -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
-else
-	@docker build ${DOCKER_OPTIONS} -t cnes/cars-tutorial:$(CARS_VERSION_TUTO) -t cnes/cars-tutorial:latest . -f Dockerfile.tutorial
-endif
+	@echo "Build Docker jupyter notebook image from CARS"
 
 ## Clean section
 
@@ -351,15 +342,13 @@ clean-dask:
 .PHONY: clean-docker
 clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Clean Docker images cars-deps, cars ${CARS_VERSION_MIN} + cars-jupyter, cars-tutorial $(CARS_VERSION_TUTO)"
+	@echo "Clean Docker images cars-deps, cars, cars-jupyter ${CARS_VERSION_MIN}"
 	@docker image rm -f cnes/cars-deps:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars-deps:latest
 	@docker image rm -f cnes/cars:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars:latest
-	@docker image rm -f cnes/cars-jupyter:${CARS_VERSION_TUTO}
+	@docker image rm -f cnes/cars-jupyter:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars-jupyter:latest
-	@docker image rm -f cnes/cars-tutorial:${CARS_VERSION_TUTO}
-	@docker image rm -f cnes/cars-tutorial:latest
 
 .PHONY: clean-vlfeat
 clean-vlfeat:
