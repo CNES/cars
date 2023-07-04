@@ -56,6 +56,7 @@ def create_combined_cloud(  # noqa: C901
     The detailed cases for each cloud type are in the derived function
     create_combined_sparse_cloud and create_combined_dense_cloud.
 
+    :param cloud_list: list of every point cloud to merge
     :param cloud_ids: list of global identificators of clouds in cloud_list
     :param dsm_epsg: epsg code for the CRS of the final output raster
     :param xmin: xmin of the rasterization grid

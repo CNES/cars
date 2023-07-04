@@ -443,7 +443,7 @@ def compute_point_cloud_wrapper(
     Wrapper for points clouds fusion step :
     - Convert a list of clouds to correct epsg
 
-    :param point_clouds: list of clouds, list of datasets with :
+    :param point_clouds: list of clouds, list of (dataset, dataset_id) with :
             - cst.X
             - cst.Y
             - cst.Z

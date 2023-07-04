@@ -537,9 +537,11 @@ def get_corresponding_tiles_row_col(
            epipolar_points_min, epipolar_points_max, largest_epipolar_region,
            opt_epipolar_tile_size
 
-    :return: Terrain regions, Corresponding tiles selected from
-             delayed_point_clouds and Terrain regions "rank" allowing to
-             sorting tiles for dask processing
+    :return: Terrain regions
+             Corresponding tiles selected from delayed_point_clouds with
+             associated id
+             Terrain regions "rank" allowing to sorting tiles for dask
+             processing
     """
 
     logging.debug(

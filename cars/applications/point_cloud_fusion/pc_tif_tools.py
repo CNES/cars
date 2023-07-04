@@ -869,6 +869,8 @@ def compute_correspondance_single_pc_terrain(
 
     :param epi_pc: point cloud
     :type epi_pc: dict
+    :param epi_pc_id: identificator of the file of the point cloud
+    :type epi_pc_id: int
     :param terrain_tiling_grid: tiling grid
     :type terrain_tiling_grid: np.ndarray
     :param margins: margin to use in point clouds

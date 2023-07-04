@@ -627,6 +627,8 @@ def rasterization_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
+    :param source_pc_names: list of names of points cloud before merging :
+        name of sensors pair or name of point cloud file
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
     """
