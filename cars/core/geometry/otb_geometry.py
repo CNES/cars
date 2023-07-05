@@ -67,6 +67,18 @@ class OTBGeometry(AbstractGeometry):
         return geo_conf_schema
 
     @staticmethod
+    def check_otb_remote_modules() -> List[str]:
+        """
+        Check all remote module compiled by cars
+        :return list of not available modules
+        """
+        not_available = []
+        for module in ["ConvertSensorToGeoPointFast", "EpipolarTriangulation"]:
+            if otbApplication.Registry.CreateApplication(module) is None:
+                not_available.append(module)
+        return not_available
+
+    @staticmethod
     def check_products_consistency(cars_conf) -> bool:
         """
         Test if the product is readable by the OTB

@@ -121,8 +121,21 @@ class LineOfSightIntersection(
         overloaded_conf["add_msk_info"] = conf.get("add_msk_info", True)
 
         # check geometry tool availability
+        geometry = "OTBGeometry"
+
+        # 1/ check otbApplication python module
         otb_app = importlib.util.find_spec("otbApplication")
-        geometry = "OTBGeometry" if otb_app is not None else "SharelocGeometry"
+        # 2/ check remote modules
+        if otb_app is not None:
+            otb_geometry = (
+                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                    "OTBGeometry"
+                )
+            )
+            missing_remote = otb_geometry.check_otb_remote_modules()
+
+        if otb_app is None or len(missing_remote) > 0:
+            geometry = "SharelocGeometry"
 
         # Overloader loader
         overloaded_conf["geometry_loader"] = conf.get(
