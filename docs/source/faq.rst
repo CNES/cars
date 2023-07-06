@@ -26,6 +26,25 @@ The GNU standards recommend installing (or copying) by default all libraries in 
 If your don't have sudo rights, you should add the parent directory of this library to `LD_LIBRARY_PATH` and export it.
 
 
+CRSError: Not a valid EPSG codes: None
+--------------------------------------
+
+As explained in the rasterio FAQ (https://rasterio.readthedocs.io/en/stable/faq.html), rasterio wheels on PyPI include PROJ 7.x and GDAL 3.x.. This can lead to incompatibilities between libraries:
+
+.. code-block:: console
+
+   WARNING :: CPLE_AppDefined in PROJ: internal_proj_create_from_database
+   ERROR 1: PROJ: internal_proj_identify [...] proj.db lacks DATABASE.LAYOUT.VERSION.MAJOR / DATABASE.LAYOUT.VERSION.MINOR metadata. It comes from another PROJ installation.
+   rasterio.errors.CRSError: Not a valid EPSG codes: None
+
+
+If GDAL and its dependencies are installed on your computer, we strongly recommend to build rasterio using `--no-binary` option:
+
+.. code-block:: console
+
+   pip install --no-binary rasterio rasterio
+
+
 Input data
 ==========
 
