@@ -194,46 +194,49 @@ class CloudToBbox(
                 # Generate disparity maps
                 for col in range(epipolar_images_left.shape[1]):
                     for row in range(epipolar_images_left.shape[0]):
-                        # update saving_info with row and col needed for
-                        # replacement
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-                        full_saving_info_right = ocht.update_saving_infos(
-                            saving_info_right, row=row, col=col
-                        )
+                        if (epipolar_images_left[row, col] is not None) or (
+                            epipolar_images_right[row, col] is not None
+                        ):
+                            # update saving_info with row and col needed for
+                            # replacement
+                            full_saving_info_left = ocht.update_saving_infos(
+                                saving_info_left, row=row, col=col
+                            )
+                            full_saving_info_right = ocht.update_saving_infos(
+                                saving_info_right, row=row, col=col
+                            )
 
-                        # get window and overlaps
-                        window_left = epipolar_images_left.tiling_grid[
-                            row, col, :
-                        ]
-                        window_right = epipolar_images_right.tiling_grid[
-                            row, col, :
-                        ]
-                        overlap_left = epipolar_images_left.overlaps[
-                            row, col, :
-                        ]
-                        overlap_right = epipolar_images_right.overlaps[
-                            row, col, :
-                        ]
+                            # get window and overlaps
+                            window_left = epipolar_images_left.tiling_grid[
+                                row, col, :
+                            ]
+                            window_right = epipolar_images_right.tiling_grid[
+                                row, col, :
+                            ]
+                            overlap_left = epipolar_images_left.overlaps[
+                                row, col, :
+                            ]
+                            overlap_right = epipolar_images_right.overlaps[
+                                row, col, :
+                            ]
 
-                        # Compute bbox
-                        (
-                            left_bbox_cars_ds[row, col],
-                            right_bbox_cars_ds[row, col],
-                        ) = self.orchestrator.cluster.create_task(
-                            compute_mask_bboxes, nout=2
-                        )(
-                            epipolar_images_left[row, col],
-                            epipolar_images_right[row, col],
-                            window_left,
-                            window_right,
-                            overlap_left,
-                            overlap_right,
-                            classification,
-                            saving_info_left=full_saving_info_left,
-                            saving_info_right=full_saving_info_right,
-                        )
+                            # Compute bbox
+                            (
+                                left_bbox_cars_ds[row, col],
+                                right_bbox_cars_ds[row, col],
+                            ) = self.orchestrator.cluster.create_task(
+                                compute_mask_bboxes, nout=2
+                            )(
+                                epipolar_images_left[row, col],
+                                epipolar_images_right[row, col],
+                                window_left,
+                                window_right,
+                                overlap_left,
+                                overlap_right,
+                                classification,
+                                saving_info_left=full_saving_info_left,
+                                saving_info_right=full_saving_info_right,
+                            )
         else:
             logging.error(
                 "CloudToBbox application doesn't "
@@ -304,21 +307,27 @@ def compute_mask_bboxes(
     row_offset_right = window_right[0] - overlap_right[0]
     col_offset_right = window_right[2] - overlap_right[2]
 
-    bbox_left = holes_detection_tools.localize_masked_areas(
-        left_image_dataset,
-        classification,
-        row_offset=row_offset_left,
-        col_offset=col_offset_left,
-        margin=margin,
-    )
+    bbox_left = {}
 
-    bbox_right = holes_detection_tools.localize_masked_areas(
-        right_image_dataset,
-        classification,
-        row_offset=row_offset_right,
-        col_offset=col_offset_right,
-        margin=margin,
-    )
+    if left_image_dataset is not None:
+        bbox_left = holes_detection_tools.localize_masked_areas(
+            left_image_dataset,
+            classification,
+            row_offset=row_offset_left,
+            col_offset=col_offset_left,
+            margin=margin,
+        )
+
+    bbox_right = {}
+
+    if right_image_dataset is not None:
+        bbox_right = holes_detection_tools.localize_masked_areas(
+            right_image_dataset,
+            classification,
+            row_offset=row_offset_right,
+            col_offset=col_offset_right,
+            margin=margin,
+        )
 
     # add saving infos
     bbox_left_dict = cars_dict.CarsDict({"list_bbox": bbox_left})
