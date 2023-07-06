@@ -147,21 +147,8 @@ class MappingToTerrainTiles(
                     optional: "color", "msk",
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
-                "elevation_delta_lower_bound","elevation_delta_upper_bound"
+                "elevation_delta_lower_bound", "elevation_delta_upper_bound"
         :type list_epipolar_points_cloud: list(CarsDataset) filled with
-          xr.Dataset
-        :param list_epipolar_points_cloud_right: list with right points clouds.\
-            Each CarsDataset contains:
-
-            - N x M Delayed tiles.\
-                Each tile will be a future xarray Dataset containing:
-
-                - data : with keys : "x", "y", "z", "corr_msk" \
-                    optional: "color", "msk",
-                - attrs with keys: "margins", "epi_full_size", "epsg"
-            - attributes containing: "disp_lower_bound",  "disp_upper_bound",\
-                "elevation_delta_lower_bound","elevation_delta_upper_bound"
-        :type list_epipolar_points_cloud_right: list(CarsDataset) filled with
           xr.Dataset
         :param bounds: terrain bounds
         :type bounds: list
@@ -215,7 +202,10 @@ class MappingToTerrainTiles(
             optimal_terrain_tile_width,
         )
 
-        if list_epipolar_points_cloud[0].dataset_type in (
+        # Get dataset type of first item in list_epipolar_points_cloud
+        pc_dataset_type = list_epipolar_points_cloud[0].dataset_type
+
+        if pc_dataset_type in (
             "arrays",
             "dict",
             "points",
@@ -246,11 +236,11 @@ class MappingToTerrainTiles(
 
             number_of_epipolar_tiles_per_terrain_tiles = []
 
-            if list_epipolar_points_cloud[0].dataset_type in (
+            if pc_dataset_type in (
                 "arrays",
                 "points",
             ):
-                # deall with delayed tiles, with a priori disp min and max
+                # deal with delayed tiles, with a priori disp min and max
 
                 # Add epipolar_points_min and epipolar_points_max used
                 #  in point_cloud_fusion
@@ -292,10 +282,9 @@ class MappingToTerrainTiles(
             )
 
             # Compute corresponing tiles in parallel if from tif files
-            # list_epipolar_points_cloud_right is empty
-            if list_epipolar_points_cloud[0].dataset_type == "dict":
+            if pc_dataset_type == "dict":
                 corresponding_tiles_cars_ds = (
-                    pc_tif_tools.get_tiles_corresponding_tiles_tif(
+                    pc_tif_tools.get_corresponding_tiles_tif(
                         terrain_tiling_grid,
                         list_epipolar_points_cloud,
                         margins=margins,
@@ -329,7 +318,7 @@ class MappingToTerrainTiles(
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
                     )
-                    if list_epipolar_points_cloud[0].dataset_type in (
+                    if pc_dataset_type in (
                         "arrays",
                         "points",
                     ):
@@ -348,7 +337,6 @@ class MappingToTerrainTiles(
                             list_points_max,
                         )
                     else:
-                        # required_point_clouds_right will be empty
                         # Get correspondances previously computed
                         terrain_region = corresponding_tiles_cars_ds[row, col][
                             "terrain_region"
@@ -455,13 +443,12 @@ def compute_point_cloud_wrapper(
     Wrapper for points clouds fusion step :
     - Convert a list of clouds to correct epsg
 
-    :param point_clouds: list of clouds, list of datasets with :
-
+    :param point_clouds: list of clouds, list of (dataset, dataset_id) with :
             - cst.X
             - cst.Y
             - cst.Z
             - cst.EPI_COLOR
-    :type point_clouds: list(xr.Dataset)
+    :type point_clouds: list((xr.Dataset, int))
     :param  epsg_code: epsg code for the CRS of the output DSM
     :type epsg_code: int
     :param  stereo_out_epsg: epsg code to convert point cloud to, if needed
@@ -491,12 +478,13 @@ def compute_point_cloud_wrapper(
             - attrs : xmin, xmax, ymin, ymax, saving_info
     :rtype: pandas.DataFrame
     """
-    # Unpack list of clouds from tuple, and project them to correct EPSG if
-    # needed
-    clouds = point_clouds
-
     # Remove None tiles
-    clouds = [value for value in clouds if value is not None]
+    clouds = []
+    clouds_ids = []
+    for value, pc_id in point_clouds:
+        if value is not None:
+            clouds.append(value)
+            clouds_ids.append(pc_id)
     if len(clouds) == 0:
         raise RuntimeError("All clouds are None")
 
@@ -504,6 +492,7 @@ def compute_point_cloud_wrapper(
     if not isinstance(clouds[0], dict):
         pc_pandas, cloud_epsg = point_cloud_tools.create_combined_cloud(
             clouds,
+            clouds_ids,
             epsg,
             xmin=xmin,
             xmax=xmax,
@@ -523,6 +512,7 @@ def compute_point_cloud_wrapper(
             color_type,
         ) = pc_tif_tools.create_combined_cloud_from_tif(
             clouds,
+            clouds_ids,
             epsg,
             xmin=xmin,
             xmax=xmax,

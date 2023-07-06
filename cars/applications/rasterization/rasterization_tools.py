@@ -23,7 +23,6 @@ This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
-# pylint: disable=C0302
 
 # Standard imports
 import logging
@@ -90,6 +89,7 @@ def simple_rasterization_dataset_wrapper(
     color_no_data: int = np.nan,
     msk_no_data: int = 65535,
     list_computed_layers: List[str] = None,
+    source_pc_names: List[str] = None,
 ) -> xr.Dataset:
     """
     Wrapper of simple_rasterization
@@ -116,6 +116,8 @@ def simple_rasterization_dataset_wrapper(
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
     :param list_computed_layers: list of computed output data
+    :param source_pc_names: list of names of points cloud before merging :
+        name of sensors pair or name of point cloud file
     :return: Rasterized cloud
     """
 
@@ -152,6 +154,7 @@ def simple_rasterization_dataset_wrapper(
         color_no_data=color_no_data,
         msk_no_data=msk_no_data,
         list_computed_layers=list_computed_layers,
+        source_pc_names=source_pc_names,
     )
 
     return raster
@@ -187,7 +190,36 @@ def compute_values_1d(
     return x_values_1d, y_values_1d
 
 
-def compute_vector_raster_and_stats(
+def substring_in_list(src_list, substring):
+    """
+    Check if the list contains substring
+    """
+    res = list(filter(lambda x: substring in x, src_list))
+    return len(res) > 0
+
+
+def find_indexes_in_point_cloud(
+    cloud: pandas.DataFrame, tag: str, list_computed_layers: List[str]
+) -> List[str]:
+    """
+    Find all indexes in point cloud that contains the key tag
+    if it needs to be computed
+    :param cloud: Combined cloud
+    :param tag: substring of desired columns in cloud
+    :param list_computed_layers: list of computed output data
+    """
+    indexes = []
+    if substring_in_list(cloud.columns, tag) and (
+        (list_computed_layers is None)
+        or substring_in_list(list_computed_layers, tag)
+    ):
+        for key in cloud.columns:
+            if tag in key:
+                indexes.append(key)
+    return indexes
+
+
+def compute_vector_raster_and_stats(  # noqa: C901
     cloud: pandas.DataFrame,
     data_valid: np.ndarray,
     x_start: float,
@@ -229,7 +261,6 @@ def compute_vector_raster_and_stats(
     :param list_computed_layers: list of computed output data
     :return: a tuple with rasterization results and statistics.
     """
-
     # get points corresponding to (X, Y positions) + data_valid
     points = cloud.loc[:, [cst.X, cst.Y]].values.T
     valid = data_valid[np.newaxis, :]
@@ -250,43 +281,51 @@ def compute_vector_raster_and_stats(
     split_indexes.append(len(values_bands))
 
     # 2. confidences
-    confidences_indexes = []
-    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_CONFIDENCE) and (
-        (list_computed_layers is None)
-        or substring_in_list(list_computed_layers, cst.POINTS_CLOUD_CONFIDENCE)
-    ):
-        for key in cloud.columns:
-            if cst.POINTS_CLOUD_CONFIDENCE in key:
-                confidences_indexes.append(key)
-                values_bands.append(key)
+    confidences_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_CONFIDENCE, list_computed_layers
+    )
+    values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
     # 3. mask
-    msk_indexes = []
-    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_MSK) and (
-        (list_computed_layers is None)
-        or substring_in_list(list_computed_layers, cst.POINTS_CLOUD_MSK)
-    ):
-        for key in cloud.columns:
-            if cst.POINTS_CLOUD_MSK in key:
-                msk_indexes.append(key)
-                values_bands.append(key)
+    msk_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_MSK, list_computed_layers
+    )
+    values_bands.extend(msk_indexes)
     split_indexes.append(len(msk_indexes))
 
     # 4. classification
-    classif_indexes = []
-    if substring_in_list(cloud.columns, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT) and (
+    classif_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(classif_indexes)
+    split_indexes.append(len(classif_indexes))
+
+    # 5. source point cloud
+    # Fill the dataframe with additional column :
+    # each column refers to a point cloud id
+    if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(
-            list_computed_layers, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+            list_computed_layers, cst.POINTS_CLOUD_SOURCE_KEY_ROOT
         )
     ):
-        classif_indexes = []
+        number_of_pc = (
+            int(np.round(np.max(cloud[cst.POINTS_CLOUD_GLOBAL_ID]))) + 1
+        )
+        for pc_id in range(number_of_pc):
+            # Create binary list that indicates from each point whether it comes
+            # from point cloud number "pc_id"
+            point_is_from_pc = list(
+                map(int, cloud[cst.POINTS_CLOUD_GLOBAL_ID] == pc_id)
+            )
+            pc_key = "{}{}".format(cst.POINTS_CLOUD_SOURCE_KEY_ROOT, pc_id)
+            cloud[pc_key] = point_is_from_pc
 
-        for key in cloud.columns:
-            if cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in key:
-                classif_indexes.append(key)
-                values_bands.append(key)
+    source_pc_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_SOURCE_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(source_pc_indexes)
 
     values = (
         cloud.loc[:, values_bands].values.T
@@ -306,8 +345,9 @@ def compute_vector_raster_and_stats(
         radius,
         sigma,
     )
+
     # pylint: disable=unbalanced-tuple-unpacking
-    out, confidences, msk, classif = np.split(
+    out, confidences, msk, classif, source_pc = np.split(
         out, np.cumsum(split_indexes), axis=-1
     )
 
@@ -325,6 +365,9 @@ def compute_vector_raster_and_stats(
     if len(classif_indexes) > 0:
         classif_out = classif
 
+    # Change values of source_pc to one if positive and 0 otherwise
+    source_pc_out = np.ceil(source_pc)
+
     return (
         out,
         mean,
@@ -335,15 +378,8 @@ def compute_vector_raster_and_stats(
         classif_out,
         classif_indexes,
         confidences_out,
+        source_pc_out,
     )
-
-
-def substring_in_list(src_list, substring):
-    """
-    Check if the list contains substring
-    """
-    res = list(filter(lambda x: substring in x, src_list))
-    return len(res) > 0
 
 
 def create_raster_dataset(
@@ -365,6 +401,8 @@ def create_raster_dataset(
     classif: np.ndarray = None,
     band_classif: List[str] = None,
     confidences: np.ndarray = None,
+    source_pc: np.ndarray = None,
+    source_pc_names: List[str] = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -387,6 +425,9 @@ def create_raster_dataset(
     :param msk: raster msk
     :param classif: raster classif
     :param confidence_from_ambiguity: raster msk
+    :param source_pc: binary raster with source point cloud information
+    :param source_pc_names: list of names of points cloud before merging :
+        name of sensors pair or name of point cloud file
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
@@ -441,6 +482,7 @@ def create_raster_dataset(
     if msk is not None:
         msk = np.nan_to_num(msk, nan=msk_no_data)
         raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
+
     if classif is not None:
         if classif.shape[-1] > 1:  # rasterizer produced classif output
             classif = np.nan_to_num(classif, nan=msk_no_data)
@@ -461,6 +503,21 @@ def create_raster_dataset(
     if confidences is not None:
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
+
+    if source_pc is not None and source_pc_names is not None:
+        source_pc = np.nan_to_num(np.rollaxis(source_pc, 2), nan=msk_no_data)
+        source_pc_out = xr.Dataset(
+            {
+                cst.RASTER_SOURCE_PC: (
+                    [cst.BAND_SOURCE_PC, cst.Y, cst.X],
+                    source_pc,
+                )
+            },
+            coords={**raster_coords, cst.BAND_SOURCE_PC: source_pc_names},
+        )
+        # update raster output with classification data
+        raster_out = xr.merge((raster_out, source_pc_out))
+
     return raster_out
 
 
@@ -478,6 +535,7 @@ def rasterize(
     color_no_data: int = 0,
     msk_no_data: int = 65535,
     list_computed_layers: List[str] = None,
+    source_pc_names: List[str] = None,
 ) -> Union[xr.Dataset, None]:
     """
     Rasterize a point cloud with its color bands to a Dataset
@@ -528,6 +586,7 @@ def rasterize(
         classif,
         band_list,
         confidences,
+        source_pc,
     ) = compute_vector_raster_and_stats(
         cloud,
         data_valid,
@@ -548,6 +607,7 @@ def rasterize(
     stdev = stdev.reshape(shape_out + (-1,))
     n_pts = n_pts.reshape(shape_out)
     n_in_cell = n_in_cell.reshape(shape_out)
+
     if classif is not None:
         classif = classif.reshape(shape_out + (-1,))
         classif = np.moveaxis(classif, 2, 0)
@@ -558,6 +618,10 @@ def rasterize(
     if confidences is not None:
         for key in confidences:
             confidences[key] = confidences[key].reshape(shape_out)
+
+    if source_pc is not None:
+        source_pc = source_pc.reshape(shape_out + (-1,))
+
     # build output dataset
     raster_out = create_raster_dataset(
         out,
@@ -578,6 +642,8 @@ def rasterize(
         classif,
         band_list,
         confidences,
+        source_pc,
+        source_pc_names,
     )
 
     return raster_out

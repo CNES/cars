@@ -770,7 +770,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
 
                 # Run epipolar triangulation application
-                (epipolar_points_cloud) = self.triangulation_application.run(
+                epipolar_points_cloud = self.triangulation_application.run(
                     sensor_image_left,
                     sensor_image_right,
                     new_epipolar_image_left,
@@ -851,6 +851,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
                 )
+
+                # Add pair names to retrieve source pair of each point
+                pairs_names = [
+                    pair_name for pair_name, _, _ in list_sensor_pairs
+                ]
+                merged_points_clouds.attributes["source_pc_names"] = pairs_names
 
                 # Remove outliers with small components method
                 filtered_1_merged_points_clouds = (

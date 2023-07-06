@@ -537,9 +537,11 @@ def get_corresponding_tiles_row_col(
            epipolar_points_min, epipolar_points_max, largest_epipolar_region,
            opt_epipolar_tile_size
 
-    :return: Terrain regions, Corresponding tiles selected from
-             delayed_point_clouds and Terrain regions "rank" allowing to
-             sorting tiles for dask processing
+    :return: Terrain regions
+             Corresponding tiles selected from delayed_point_clouds with
+             associated id
+             Terrain regions "rank" allowing to sorting tiles for dask
+             processing
     """
 
     logging.debug(
@@ -568,14 +570,16 @@ def get_corresponding_tiles_row_col(
     list_indexes = []
 
     # For each stereo configuration
-    for (
+    for pc_id, (
         points_cloud,
         epipolar_points_min,
         epipolar_points_max,
-    ) in zip(  # noqa: B905
-        list_points_clouds,
-        list_epipolar_points_min,
-        list_epipolar_points_max,
+    ) in enumerate(
+        zip(  # noqa: B905
+            list_points_clouds,
+            list_epipolar_points_min,
+            list_epipolar_points_max,
+        )
     ):
         largest_epipolar_region = points_cloud.attributes[
             "largest_epipolar_region"
@@ -672,7 +676,9 @@ def get_corresponding_tiles_row_col(
                     0 <= id_x < epi_grid_shape[1]
                     and 0 <= id_y < epi_grid_shape[0]
                 ):
-                    required_point_clouds.append(points_cloud[id_y, id_x])
+                    required_point_clouds.append(
+                        (points_cloud[id_y, id_x], pc_id)
+                    )
                     list_indexes.append([id_y, id_x])
 
     rank = col * col + row * row

@@ -1026,6 +1026,8 @@ The structure follows this organisation:
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
             | save_confidence                      | Save all the disparity confidence   | boolean    |                   | false           | No       |
             +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
+            | save_source_pc                       | Save mask with data source          | boolean    |                   | false           | No       |
+            +--------------------------------------+-------------------------------------+------------+-------------------+-----------------+----------+
             | compute_all                          | Compute all layers even             | boolean    |                   | false           | No       |
             |                                      | if one or more layers               |            |                   |                 |          |
             |                                      | are not saved (color                |            |                   |                 |          |
