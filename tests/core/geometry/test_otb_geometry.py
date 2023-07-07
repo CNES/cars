@@ -28,7 +28,6 @@ from shutil import copy2
 
 # Third party imports
 import numpy as np
-import otbApplication  # pylint: disable=import-error
 import pytest
 import rasterio as rio
 
@@ -39,29 +38,6 @@ from cars.core.inputs import read_vector
 
 # CARS Tests imports
 from ...helpers import absolute_data_path, get_geoid_path, temporary_dir
-
-
-def rigid_transform_resample(
-    img: str, scale_x: float, scale_y: float, img_transformed: str
-):
-    """
-    Execute RigidTransformResample OTB application
-
-    :param img: path to the image to transform
-    :param scale_x: scale factor to apply along x axis
-    :param scale_y: scale factor to apply along y axis
-    :param img_transformed: output image path
-    """
-
-    # create otb app to rescale input images
-    app = otbApplication.Registry.CreateApplication("RigidTransformResample")
-
-    app.SetParameterString("in", img)
-    app.SetParameterString("transform.type", "id")
-    app.SetParameterFloat("transform.type.id.scalex", abs(scale_x))
-    app.SetParameterFloat("transform.type.id.scaley", abs(scale_y))
-    app.SetParameterString("out", img_transformed)
-    app.ExecuteAndWriteOutput()
 
 
 @pytest.mark.unit_tests
@@ -174,6 +150,32 @@ def test_generate_epipolar_grids_scaled_inputs():
     """
     test different pixel sizes in input images
     """
+    import otbApplication  # pylint: disable=import-error, C0415
+
+    def rigid_transform_resample(
+        img: str, scale_x: float, scale_y: float, img_transformed: str
+    ):
+        """
+        Execute RigidTransformResample OTB application
+
+        :param img: path to the image to transform
+        :param scale_x: scale factor to apply along x axis
+        :param scale_y: scale factor to apply along y axis
+        :param img_transformed: output image path
+        """
+
+        # create otb app to rescale input images
+        app = otbApplication.Registry.CreateApplication(
+            "RigidTransformResample"
+        )
+
+        app.SetParameterString("in", img)
+        app.SetParameterString("transform.type", "id")
+        app.SetParameterFloat("transform.type.id.scalex", abs(scale_x))
+        app.SetParameterFloat("transform.type.id.scaley", abs(scale_y))
+        app.SetParameterString("out", img_transformed)
+        app.ExecuteAndWriteOutput()
+
     img1 = absolute_data_path("input/phr_ventoux/left_image.tif")
     img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
     conf = {input_parameters.IMG1_TAG: img1, input_parameters.IMG2_TAG: img2}

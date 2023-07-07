@@ -79,6 +79,7 @@ There are already 4 plugins, each one representing a mode:
 
    * *local_dask*
    * *pbs_dask*
+   * *slurm_dask*
 
 * *mp* (for mutliprocessing)
 * *sequential* : (note: `delayed` is note a real one, it is directly the data type, so `Xarray.dataset` or `Panda.Dataframe`)

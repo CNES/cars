@@ -43,73 +43,51 @@ from ...helpers import temporary_dir
 
 def step1_mp(data):
     """
-    Step 1
+    Step 1 cluster mode mp
     """
     return data + "_step1a", data + "_step1b"
 
 
 def step2_mp(data1, data2):
     """
-    Step 2
+    Step 2 cluster mode mp
     """
     return data1 + "_" + data2
 
 
 def step3_mp(data):
     """
-    Step 3
+    Step 3 cluster mode mp
     """
     return data + "_step3"
 
 
-# Configurations
-
-conf_sequential = {"mode": "sequential"}
-
-conf_mp = {"mode": "mp", "dump_to_disk": False}
-
-conf_local_dask = {"mode": "local_dask"}
-
-conf_pbs_dask = {
-    "mode": "pbs_dask",
-    "nb_workers": 2,
-    "walltime": "00:01:00",
-    "use_memory_logger": False,
-}
-
-
-@pytest.mark.unit_tests
-@pytest.mark.parametrize(
-    "conf", [conf_sequential, conf_local_dask, conf_mp, conf_pbs_dask]
-)
-def test_tasks_pipeline(conf):
+def pipeline_step_by_step(conf):
     """
-    Test full distributed pipeline with task creation and execution
-
-    :param conf: distributed conf
+    Check full distributed pipeline
     """
 
+    # Multiprocressing : functions must me defined outside
+    # PBS dask : function can't be imported from test_cluster (not a module)
+    #       Step Functions located in pytest function
     def step1_dask(data):
         """
-        Step 1
+        Step 1 cluster mode dask
         """
         return data + "_step1a", data + "_step1b"
 
     def step2_dask(data1, data2):
         """
-        Step 2
+        Step 2 cluster mode dask
         """
         return data1 + "_" + data2
 
     def step3_dask(data):
         """
-        Step 3
+        Step 3 cluster mode dask
         """
         return data + "_step3"
 
-    # Multiprocressing : functions must me defined outside
-    # PBS dask : function can't be imported from test_cluster (not a module)
-    #       Step Functions located in pytest function
     if "dask" in conf["mode"]:
         step1 = step1_dask
         step2 = step2_dask
@@ -159,6 +137,58 @@ def test_tasks_pipeline(conf):
 
         # Close cluster
         cluster.cleanup()
+
+
+# Configurations
+
+conf_sequential = {"mode": "sequential"}
+
+conf_mp = {"mode": "mp", "dump_to_disk": False}
+
+conf_local_dask = {"mode": "local_dask"}
+
+conf_pbs_dask = {
+    "mode": "pbs_dask",
+    "nb_workers": 2,
+    "walltime": "00:01:00",
+    "use_memory_logger": False,
+}
+
+conf_slurm_dask = {
+    "mode": "slurm_dask",
+    "nb_workers": 2,
+    "walltime": "00:01:00",
+    "use_memory_logger": False,
+}
+
+
+@pytest.mark.unit_tests
+@pytest.mark.parametrize("conf", [conf_sequential, conf_local_dask, conf_mp])
+def test_tasks_pipeline(conf):
+    """
+    Test full distributed pipeline with task creation and execution
+
+    :param conf: distributed conf
+    """
+    pipeline_step_by_step(conf)
+
+
+@pytest.mark.pbs_cluster_tests
+def test_pbs_tasks_pipeline():
+    """
+    Test full distributed pipeline on PBS cluster
+
+    """
+    pipeline_step_by_step(conf_mp)
+
+
+@pytest.mark.slurm_cluster_tests
+def test_slurm_tasks_pipeline():
+    """
+    Test full distributed pipeline on SLURM cluster
+
+    """
+    pipeline_step_by_step(conf_slurm_dask)
 
 
 def step1_array(data):
