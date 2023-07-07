@@ -78,25 +78,27 @@ vlfeat: ## install vlfeat cnes fork library locally
 	@echo "export LD_LIBRARY_PATH=${PWD}/vlfeat/bin/glnxa64:$$""LD_LIBRARY_PATH"
 
 .PHONY: otb-remote-module
-otb-remote-module:
+otb-remote-module: ## install remote module otb
 	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
 	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
 	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
 	@mkdir -p build
 	@cd build && cmake -DCMAKE_INSTALL_PREFIX=${CARS_VENV} -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release ../otb_remote_module && make install
-	@cp env_cars.sh ${CARS_VENV}/bin/.
 
 .PHONY: install-deps
-install-deps: venv otb-remote-module
+install-deps: venv ## install python libs
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
-	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
-	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
 
+.PHONY: install-deps-gdal
+install-deps-gdal: install-deps ## create an healthy python environment for OTB / GDAL
+	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
+	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
+
 .PHONY: install
-install: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
+install: install-deps-gdal otb-remote-module ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -105,7 +107,7 @@ install: install-deps  ## install cars (not editable) with dev, docs, notebook d
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 .PHONY: install-pandora-mccnn
-install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
+install-pandora-mccnn: install-deps-gdal otb-remote-module  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -114,7 +116,7 @@ install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, do
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 .PHONY: install-dev
-install-dev: install-deps ## install cars in dev editable mode (pip install -e .)
+install-dev: install-deps-gdal otb-remote-module ## install cars in dev editable mode (pip install -e .)
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -122,15 +124,8 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
-.PHONY: install-deps-otb-free
-install-deps-otb-free: venv
-	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
-	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
-	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
-	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
-
 .PHONY: install-dev-otb-free
-install-dev-otb-free: install-deps-otb-free ## install cars in dev editable mode (pip install -e .) without otb
+install-dev-otb-free: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling otb remote modules, rasterio, fiona
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -238,7 +233,7 @@ notebook: ## install Jupyter notebook kernel with venv and cars install
 # Dev section
 
 .PHONY: dev
-dev: install-dev docs notebook ## Install CARS in dev mode : install-dev, notebook and docs
+dev: install-dev docs notebook ## install CARS in dev mode : install-dev, notebook and docs
 
 ## Docker section
 
