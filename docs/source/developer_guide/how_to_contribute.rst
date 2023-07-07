@@ -108,7 +108,7 @@ Documentation can be edited in docs/source/ RST files.
 Jupyter notebooks tutorials
 ============================
 
-CARS contains tutorials and quick start scripts in tutorials directory.
+CARS contains notebooks and quick start scripts in tutorials directory.
 
 To generate a Jupyter kernel with CARS installation, use:
 
@@ -129,27 +129,6 @@ To run the jupyter notebook, use:
 .. code-block:: console
 
   $ jupyter notebook
-
-To generate slides of CARS main tutorial jupyter notebook :
-
-.. code-block:: console
-
-  $ cd tutorials
-  $ jupyter nbconvert main_tutorial.ipynb --to slides --post serve # for remote reveal.js lib
-  
-or
-
-.. code-block:: console
-
-  $ cd tutorials
-  $ git clone https://github.com/hakimel/reveal.js.git
-  $ jupyter nbconvert main_tutorial.ipynb --to slides --reveal-prefix reveal.js
-  $ jupyter nbconvert main_tutorial.ipynb --to html --template reveal --reveal-prefix reveal.js # Same
-  $ python -m server.http 8000
-
-Slides can be then seen following http://localhost:8000/ URL.
-  
-Go to `Jupyter Nbconvert <https://nbconvert.readthedocs.io/en/latest/usage.html#reveal-js-html-slideshow>`_ documentation for details.
 
 
 Code quality

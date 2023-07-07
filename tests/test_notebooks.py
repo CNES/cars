@@ -165,64 +165,6 @@ def test_sensor_to_dense_dsm_matching_methods_comparison():
 
 
 @pytest.mark.notebook_tests
-def test_main_tutorial():
-    """
-    Main tutorial test:
-    notebook conversion (.ipynb->.py), copy data_samples and notebooks helper,
-    modify show_data matplotlib to be executable by ipython without pause,
-    run the notebook with ipython and check return code
-    """
-
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        subprocess.run(
-            [
-                "jupyter nbconvert "
-                "--to script "
-                "{}/tutorials/main_tutorial.ipynb"
-                " --output-dir {}".format(cars_path(), directory)
-            ],
-            shell=True,
-            check=True,
-        )
-        # copy notebook helpers
-        subprocess.run(
-            [
-                "cp "
-                "{}/tutorials/notebook_helpers.py "
-                "{}".format(cars_path(), directory)
-            ],
-            shell=True,
-            check=True,
-        )
-        # copy data samples gizeh
-        subprocess.run(
-            [
-                "cp "
-                "{}/tutorials/data_gizeh_small.tar.bz2 "
-                "{}".format(cars_path(), directory)
-            ],
-            shell=True,
-            check=True,
-        )
-        # Deactivate matplotlib show data
-        for line in fileinput.input(
-            "{}/main_tutorial.py".format(directory),
-            inplace=True,
-        ):
-            if "show_data(" in line:
-                line = line.replace("show_data(", "#show_data(")
-            print(line)  # keep this print
-
-        out = subprocess.run(
-            ["ipython {}/main_tutorial.py".format(directory)],
-            shell=True,
-            check=True,
-        )
-
-        out.check_returncode()
-
-
-@pytest.mark.notebook_tests
 def test_sensor_to_dsm_from_a_priori():
     """
     sensor_to_dsm_from_a_priori notebook test:
