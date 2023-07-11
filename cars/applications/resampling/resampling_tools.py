@@ -248,7 +248,7 @@ def resample_image(
     largest_size = [int(x) for x in largest_size]
 
     # Build rectification pipelines for images
-    with rio.open(grid) as grid_reader:
+    with rio.open(grid.attributes["path"]) as grid_reader:
         res_x, res_y = grid_reader.res
         assert res_x == res_y
         oversampling = int(res_x)

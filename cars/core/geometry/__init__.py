@@ -45,14 +45,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     available_plugins: Dict = {}
 
-    def __new__(
-        cls,
-        geometry_plugin,
-        dem=None,
-        geoid=None,
-        default_alt=None,
-        roi_from_pairs=None,
-    ):
+    def __new__(cls, geometry_plugin=None, **kwargs):
         """
         Return the required plugin
         :raises:
@@ -62,37 +55,38 @@ class AbstractGeometry(metaclass=ABCMeta):
         :return: a geometry_plugin object
         """
 
-        if geometry_plugin not in cls.available_plugins:
-            logging.error(
-                "No geometry plugin named {} registered".format(geometry_plugin)
-            )
-            raise KeyError(
-                "No geometry plugin named {} registered".format(geometry_plugin)
+        if geometry_plugin is not None:
+            if geometry_plugin not in cls.available_plugins:
+                logging.error(
+                    "No geometry plugin named {} registered".format(
+                        geometry_plugin
+                    )
+                )
+                raise KeyError(
+                    "No geometry plugin named {} registered".format(
+                        geometry_plugin
+                    )
+                )
+
+            logging.info(
+                "The AbstractGeometry {} plugin will be used".format(
+                    geometry_plugin
+                )
             )
 
-        logging.info(
-            "The AbstractGeometry {} plugin will be used".format(
-                geometry_plugin
+            return super(AbstractGeometry, cls).__new__(
+                cls.available_plugins[geometry_plugin]
             )
-        )
-
-        return super(AbstractGeometry, cls).__new__(
-            cls.available_plugins[geometry_plugin]
-        )
+        return super().__new__(cls)
 
     def __init__(
-        self,
-        geometry_plugin,
-        dem=None,
-        geoid=None,
-        default_alt=None,
-        roi_from_pairs=None,
+        self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
     ):
         self.plugin_name = geometry_plugin
         self.dem = dem
         self.geoid = geoid
         self.default_alt = default_alt
-        self.roi_from_pairs = roi_from_pairs
+        self.kwargs = kwargs
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -184,6 +178,15 @@ class AbstractGeometry(metaclass=ABCMeta):
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
+
+    def load_geomodel(self, geomodel: dict) -> dict:
+        """
+        By default return the geomodel
+        This method can be overloaded by plugins to load geomodel in memory
+
+        :param geomodel
+        """
+        return geomodel
 
     @staticmethod
     def matches_to_sensor_coords(
@@ -420,7 +423,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
 
-    def image_envelope(self, sensor, geomodel, shp: str):
+    def image_envelope(self, sensor, geomodel, shp=None):
         """
         Export the image footprint to a shapefile
 
@@ -429,9 +432,6 @@ class AbstractGeometry(metaclass=ABCMeta):
                input_parameters.PRODUCT2_KEY to identify which geometric model
                shall be taken to perform the method
         :param shp: Path to the output shapefile
-        :param dem: Directory containing DEM tiles
-        :param default_alt: Default altitude above ellipsoid
-        :param geoid: path to geoid file
         """
         # retrieve image size
         img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
@@ -464,18 +464,17 @@ class AbstractGeometry(metaclass=ABCMeta):
             img_size_y + shift_y,
         )
 
-        # create envelope polygon and save it as a shapefile
-        poly_bb = Polygon(
-            [
-                (lon_upper_left, lat_upper_left),
-                (lon_upper_right, lat_upper_right),
-                (lon_bottom_right, lat_bottom_right),
-                (lon_bottom_left, lat_bottom_left),
-                (lon_upper_left, lat_upper_left),
-            ]
-        )
+        u_l = (lon_upper_left, lat_upper_left)
+        u_r = (lon_upper_right, lat_upper_right)
+        l_l = (lon_bottom_left, lat_bottom_left)
+        l_r = (lon_bottom_right, lat_bottom_right)
 
-        outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
+        if shp is not None:
+            # create envelope polygon and save it as a shapefile
+            poly_bb = Polygon([u_l, u_r, l_r, l_l, u_l])
+            outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
+
+        return u_l, u_r, l_l, l_r
 
 
 def read_geoid_file(geoid_path: str) -> xr.Dataset:

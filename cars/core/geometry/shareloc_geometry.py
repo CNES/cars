@@ -57,31 +57,38 @@ class SharelocGeometry(AbstractGeometry):
         dem=None,
         geoid=None,
         default_alt=None,
-        roi_from_pairs=None,
+        images_for_roi=None,
+        margin=0.006,
     ):
-        super().__init__(
-            geometry_plugin, dem, geoid, default_alt, roi_from_pairs
-        )
+        super().__init__(geometry_plugin)
 
         roi = None
-        if roi_from_pairs is not None:
-            roi = None  # TODO compute ROI from epipolar footprint of all pairs
+        self.elevation = None
+        if images_for_roi is not None:
+            coords_list = []
+            for sensor in images_for_roi:
+                coords_list.extend(self.image_envelope(*sensor))
+            lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+            roi = [
+                min(lat_list) - margin,
+                min(lon_list) - margin,
+                max(lat_list) + margin,
+                max(lon_list) + margin,
+            ]
 
-        if self.dem is not None:
+        if dem is not None:
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
             self.elevation = DTMIntersection(
-                self.dem, self.geoid, roi=roi, fill_nodata="mean"
+                dem, geoid, roi=roi, fill_nodata="mean"
             )
         else:
-            self.elevation = self.default_alt
+            self.elevation = default_alt
 
     @staticmethod
     def load_geom_model(model: dict) -> Union[Grid, RPC]:
         """
         Load geometric model and returns it as a shareloc object
-
-        TODO: evolve with CARS new API with CARS conf clean
 
         :param model: Path to the model file
         :param model_type: model type (RPC or Grid)
@@ -169,7 +176,7 @@ class SharelocGeometry(AbstractGeometry):
 
         :return: the long/lat/height numpy array in output of the triangulation
         """
-        # read them using shareloc
+        # read geomodels using shareloc
         shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
         shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
@@ -181,8 +188,8 @@ class SharelocGeometry(AbstractGeometry):
                 matches_type="sift",
                 geometrical_model_left=shareloc_model1,
                 geometrical_model_right=shareloc_model2,
-                grid_left=grid1,
-                grid_right=grid2,
+                grid_left=grid1.attributes["path"],
+                grid_right=grid2.attributes["path"],
                 residues=True,
                 fill_nan=True,
             )
@@ -196,8 +203,8 @@ class SharelocGeometry(AbstractGeometry):
                 matches_type="disp",
                 geometrical_model_left=shareloc_model1,
                 geometrical_model_right=shareloc_model2,
-                grid_left=grid1,
-                grid_right=grid2,
+                grid_left=grid1.attributes["path"],
+                grid_right=grid2.attributes["path"],
                 residues=True,
                 fill_nan=True,
             )

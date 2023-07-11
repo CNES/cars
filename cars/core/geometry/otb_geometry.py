@@ -393,7 +393,7 @@ class OTBGeometry(AbstractGeometry):
 
         return np.array([lat, lon, alt])
 
-    def image_envelope(self, sensor, geomodel, shp):
+    def image_envelope(self, sensor, geomodel, shp=None):
         """
         Export the image footprint to a shapefile
 

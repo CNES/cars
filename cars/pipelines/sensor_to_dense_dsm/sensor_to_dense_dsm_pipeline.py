@@ -443,8 +443,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             # initialise lists of points
             list_epipolar_points_cloud = []
-
-            list_sensor_pairs = sensors_inputs.generate_inputs(self.inputs)
+            list_sensor_pairs = sensors_inputs.generate_inputs(
+                self.inputs, self.geom_plugin_without_dem_and_geoid
+            )
             logging.info(
                 "Received {} stereo pairs configurations".format(
                     len(list_sensor_pairs)
@@ -551,6 +552,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 cars_orchestrator.breakpoint()
 
                 # Run grid correction application
+                save_corrected_grid = (
+                    self.epipolar_grid_generation_application.save_grids
+                )
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
                     # Estimate grid correction if no epipolar a priori
                     # Filter matches
@@ -582,6 +586,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     corrected_grid_right = grid_correction.correct_grid(
                         grid_right,
                         grid_correction_coef,
+                        save_corrected_grid,
+                        pair_folder,
                     )
 
                     # Compute disp_min and disp_max
@@ -624,7 +630,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         # Correct grid right with provided epipolar a priori
                         corrected_grid_right = (
                             grid_correction.correct_grid_from_1d(
-                                grid_right, grid_correction_coef
+                                grid_right,
+                                grid_correction_coef,
+                                save_corrected_grid,
+                                pair_folder,
                             )
                         )
 

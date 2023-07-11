@@ -239,11 +239,35 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             "epipolar_spacing": grid_spacing[1],
             "disp_to_alt_ratio": disp_to_alt_ratio,
             "epipolar_step": self.epi_step,
+            "path": None,
         }
-        grid_left.attributes = grid_attributes
-        grid_right.attributes = grid_attributes
+        grid_left.attributes = grid_attributes.copy()
+        grid_right.attributes = grid_attributes.copy()
 
-        # add logs
+        grid_origin = grid_left.attributes["grid_origin"]
+        grid_spacing = grid_left.attributes["grid_spacing"]
+
+        if self.save_grids:
+            left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
+            right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
+        else:
+            safe_makedirs(os.path.join(pair_folder, "tmp"))
+            left_grid_path = os.path.join(
+                pair_folder, "tmp", "left_epi_grid.tif"
+            )
+            right_grid_path = os.path.join(
+                pair_folder, "tmp", "right_epi_grid.tif"
+            )
+
+        grids.write_grid(
+            grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
+        )
+        grids.write_grid(
+            grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
+        )
+
+        grid_left.attributes["path"] = left_grid_path
+        grid_right.attributes["path"] = right_grid_path
 
         # Add infos to orchestrator.out_json
         updating_dict = {

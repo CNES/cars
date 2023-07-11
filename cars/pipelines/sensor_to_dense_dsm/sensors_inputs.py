@@ -251,15 +251,11 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
         )
 
     # Get image pairs for DTM intersection with ROI
-    roi_from_pairs = []
-    for key1, key2 in conf_inputs[sens_cst.PAIRING]:
-        sensor_image_1 = conf_inputs[sens_cst.SENSORS][key1]
-        sensor_image_2 = conf_inputs[sens_cst.SENSORS][key2]
-        sensor1 = sensor_image_1[sens_cst.INPUT_IMG]
-        sensor2 = sensor_image_2[sens_cst.INPUT_IMG]
-        geomodel1 = sensor_image_1[sens_cst.INPUT_GEO_MODEL]
-        geomodel2 = sensor_image_2[sens_cst.INPUT_GEO_MODEL]
-        roi_from_pairs.append((sensor1, sensor2, geomodel1, geomodel2))
+    images_for_roi = []
+    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
+        sensor = sensor_image[sens_cst.INPUT_IMG]
+        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
+        images_for_roi.append((sensor, geomodel))
 
     # Initialize a second geometry plugin with elevation information
     geom_plugin_with_dem_and_geoid = (
@@ -268,7 +264,7 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
             dem=conf_inputs[sens_cst.INITIAL_ELEVATION],
             geoid=conf_inputs[sens_cst.GEOID],
             default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
-            roi_from_pairs=roi_from_pairs,
+            images_for_roi=images_for_roi,
         )
     )
 
@@ -470,7 +466,7 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
-def generate_inputs(conf):
+def generate_inputs(conf, geometry_plugin):
     """
     Generate sensors inputs form inputs conf :
 
@@ -483,6 +479,12 @@ def generate_inputs(conf):
     :rtype: list(tuple(dict, dict))
 
     """
+    # Load geomodels directly on conf object
+    sensors = conf[sens_cst.SENSORS]
+    for key in sensors:
+        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
+        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
+        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
 
     # Get needed pairs
     pairs = conf[sens_cst.PAIRING]

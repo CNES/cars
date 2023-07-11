@@ -45,7 +45,7 @@ from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 
 # CARS imports
-from cars.core.geometry import AbstractGeometry, read_geoid_file
+from cars.core.geometry import read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.sensor_to_dense_dsm import (
@@ -300,24 +300,6 @@ class LineOfSightIntersection(
                     "Uncorrected grid was not given in order to snap it to img1"
                 )
 
-        # Save grids TODO remove
-        safe_makedirs(os.path.join(pair_folder, "tmp"))
-        grid_origin = grid_left.attributes["grid_origin"]
-        grid_spacing = grid_left.attributes["grid_spacing"]
-        left_grid_path = grids.get_new_path(
-            os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
-        )
-        grids.write_grid(
-            grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
-        )
-
-        right_grid_path = grids.get_new_path(
-            os.path.join(pair_folder, "tmp", "right_epi_grid.tif")
-        )
-        grids.write_grid(
-            grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
-        )
-
         # Compute disp_min and disp_max location for epipolar grid
         (
             epipolar_grid_min,
@@ -331,8 +313,8 @@ class LineOfSightIntersection(
             sensor2,
             geomodel1,
             geomodel2,
-            left_grid_path,
-            right_grid_path,
+            grid_left,
+            grid_right,
             epsg,
             disp_min,
             disp_max,
@@ -471,9 +453,9 @@ class LineOfSightIntersection(
                         sensor2,
                         geomodel1,
                         geomodel2,
-                        left_grid_path,
-                        right_grid_path,
-                        geometry_plugin.plugin_name,
+                        grid_left,
+                        grid_right,
+                        geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
                         add_msk_info=self.add_msk_info,
@@ -542,11 +524,11 @@ def compute_points_cloud(
             - cst.Z
             - cst.EPI_COLOR
     """
-    geometry_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            geometry_plugin=geometry_plugin
-        )
-    )
+    # geometry_plugin = (
+    #     AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+    #         geometry_plugin=geometry_plugin
+    #     )
+    # )
 
     # Get disparity maps
     disp_ref = disparity_object

@@ -253,27 +253,6 @@ def compute_terrain_bbox(  # noqa: 751
         dtype=np.float64,
     )
 
-    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
-    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
-    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
-    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
-
-    # Save grids TODO remove
-    safe_makedirs(os.path.join(pair_folder, "tmp"))
-    grid_origin = grid_left.attributes["grid_origin"]
-    grid_spacing = grid_left.attributes["grid_spacing"]
-    left_grid_path = grids.get_new_path(
-        os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
-    )
-    grids.write_grid(grid_left[0, 0], left_grid_path, grid_origin, grid_spacing)
-
-    right_grid_path = grids.get_new_path(
-        os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
-    )
-    grids.write_grid(
-        grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
-    )
-
     # Compute terrain min and max again, this time using estimated epsg code
     terrain_dispmin, terrain_dispmax = grids.compute_epipolar_grid_min_max(
         geometry_plugin,
@@ -282,8 +261,8 @@ def compute_terrain_bbox(  # noqa: 751
         sensor2,
         geomodel1,
         geomodel2,
-        left_grid_path,
-        right_grid_path,
+        grid_left,
+        grid_right,
         epsg,
         disp_min,
         disp_max,
@@ -441,21 +420,6 @@ def compute_epsg(
     geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
     geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
-    safe_makedirs(os.path.join(pair_folder, "tmp"))
-    grid_origin = grid_left.attributes["grid_origin"]
-    grid_spacing = grid_left.attributes["grid_spacing"]
-    left_grid_path = grids.get_new_path(
-        os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
-    )
-    grids.write_grid(grid_left[0, 0], left_grid_path, grid_origin, grid_spacing)
-
-    right_grid_path = grids.get_new_path(
-        os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
-    )
-    grids.write_grid(
-        grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
-    )
-
     if pair_folder is None:
         # Default orchestrator
         if orchestrator is None:
@@ -505,8 +469,8 @@ def compute_epsg(
         sensor2,
         geomodel1,
         geomodel2,
-        left_grid_path,
-        right_grid_path,
+        grid_left,
+        grid_right,
         4326,
         disp_min,
         disp_max,
