@@ -38,6 +38,7 @@ from cars.core import inputs
 from cars.core.geometry import AbstractGeometry
 from cars.core.otb_adapters import encode_to_otb
 from cars.core.utils import get_elevation_range_from_metadata
+from cars.data_structures import cars_dataset
 
 
 @AbstractGeometry.register_subclass("OTBGeometry")
@@ -79,7 +80,7 @@ class OTBGeometry(AbstractGeometry):
         return not_available
 
     @staticmethod
-    def check_product_consistency(sensor: str, geomodel: str) -> bool:
+    def check_product_consistency(sensor: str, geomodel: str = None) -> bool:
         """
         Check if the image have RPC information readable by the OTB
         :param sensor: path to the image
@@ -88,7 +89,19 @@ class OTBGeometry(AbstractGeometry):
         """
         can_open_status = False
         try:
-            geom_path = geomodel["path"]
+            if geomodel is None:
+                geom_path = "./otb_can_open_test.geom"
+
+                # try to dump .geom with ReadImageInfo app
+                read_im_app = otbApplication.Registry.CreateApplication(
+                    "ReadImageInfo"
+                )
+                read_im_app.SetParameterString("in", sensor)
+                read_im_app.SetParameterString("outkwl", geom_path)
+
+                read_im_app.ExecuteAndWriteOutput()
+            else:
+                geom_path = geomodel["path"]
             # check geom consistency
             if os.path.exists(geom_path):
                 can_open_status = True
@@ -121,6 +134,8 @@ class OTBGeometry(AbstractGeometry):
                             )
                         )
                         can_open_status = False
+                if geomodel is None:
+                    os.remove("./otb_can_open_test.geom")
             else:
                 logging.warning(
                     "{} does not have associated geom file".format(sensor)
@@ -167,6 +182,12 @@ class OTBGeometry(AbstractGeometry):
         # Retrieve elevation range from imgs
         (min_elev1, max_elev1) = get_elevation_range_from_metadata(sensor1)
         (min_elev2, max_elev2) = get_elevation_range_from_metadata(sensor2)
+
+        # get path if grid is of type CarsDataset
+        if isinstance(grid1, cars_dataset.CarsDataset):
+            grid1 = grid1.attributes["path"]
+        if isinstance(grid2, cars_dataset.CarsDataset):
+            grid2 = grid2.attributes["path"]
 
         # Build triangulation app
         triangulation_app = otbApplication.Registry.CreateApplication(
@@ -296,8 +317,8 @@ class OTBGeometry(AbstractGeometry):
             stereo_app.GetParameterFloat("epi.baseline"),
         )
 
-        origin = stereo_app.GetImageOrigin("io.outleft")
-        spacing = stereo_app.GetImageSpacing("io.outleft")
+        origin = np.copy(stereo_app.GetImageOrigin("io.outleft"))
+        spacing = np.copy(stereo_app.GetImageSpacing("io.outleft"))
 
         # Convert epipolar size depending on the pixel size
         # TODO: remove this patch when OTB issue

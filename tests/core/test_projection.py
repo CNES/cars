@@ -40,12 +40,7 @@ from cars.conf import input_parameters
 from cars.core import inputs, projection
 
 # CARS Tests imports
-from ..helpers import (
-    absolute_data_path,
-    get_geoid_path,
-    get_geometry_loader,
-    temporary_dir,
-)
+from ..helpers import absolute_data_path, get_geometry_plugin, temporary_dir
 
 # Register otbgeometry to be able to use it
 
@@ -181,16 +176,10 @@ def test_ground_intersection_envelopes():
     Test ground_intersection_envelopes generation
     """
     # test on paca
-    img1 = absolute_data_path("input/phr_paca/left_image.tif")
-    img2 = absolute_data_path("input/phr_paca/right_image.tif")
-    conf = {
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT1_KEY
-        ): img1,
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT2_KEY
-        ): img2,
-    }
+    sensor1 = absolute_data_path("input/phr_paca/left_image.tif")
+    sensor2 = absolute_data_path("input/phr_paca/right_image.tif")
+    geomodel1 = {"path": absolute_data_path("input/phr_paca/left_image.geom")}
+    geomodel2 = {"path": absolute_data_path("input/phr_paca/right_image.geom")}
     srtm_dir = absolute_data_path("input/phr_paca/srtm")
     # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
     intersect_xymin_xymax_ref_1 = (
@@ -213,12 +202,14 @@ def test_ground_intersection_envelopes():
         out_intersect = os.path.join(tmp_dir, "envelopes_intersection.gpkg")
 
         _, intersect_xymin_xymax = projection.ground_intersection_envelopes(
-            conf,
-            get_geometry_loader(),
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            get_geometry_plugin(geometry_plugin="OTBGeometry", dem=srtm_dir),
             out_shp1,
             out_shp2,
             out_intersect,
-            dem_dir=srtm_dir,
         )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -232,12 +223,7 @@ def test_ground_intersection_envelopes():
         )
 
     # test paca and ventoux for no intersection
-    img2 = absolute_data_path("input/phr_ventoux/right_image.tif")
-    conf[
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT2_KEY
-        )
-    ] = img2
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as tmp_dir:
         out_shp1 = os.path.join(tmp_dir, "left_envelope_void.shp")
         out_shp2 = os.path.join(tmp_dir, "right_envelope_void.shp")
@@ -248,12 +234,16 @@ def test_ground_intersection_envelopes():
                 _,
                 intersect_xymin_xymax,
             ) = projection.ground_intersection_envelopes(
-                conf,
-                get_geometry_loader(),
+                sensor1,
+                sensor2,
+                geomodel1,
+                geomodel2,
+                get_geometry_plugin(
+                    geometry_plugin="OTBGeometry", dem=srtm_dir
+                ),
                 out_shp1,
                 out_shp2,
                 out_intersect,
-                dem_dir=srtm_dir,
             )
         # Check files creations
         assert os.path.isfile(out_shp1)
@@ -275,28 +265,27 @@ def test_get_time_ground_direction():
     # Force use of DEM if test is ran standalone
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
-    img = absolute_data_path("input/phr_ventoux/left_image.tif")
     conf = {
         input_parameters.create_img_tag_from_product_key(
             input_parameters.PRODUCT1_KEY
-        ): img
+        ): absolute_data_path("input/phr_ventoux/left_image.tif"),
+        input_parameters.create_model_tag_from_product_key(
+            input_parameters.PRODUCT1_KEY
+        ): absolute_data_path("input/phr_ventoux/right_image.geom"),
     }
 
     vec = projection.get_time_ground_direction(
         conf,
-        get_geometry_loader(),
+        get_geometry_plugin(geometry_plugin="OTBGeometry"),
         input_parameters.PRODUCT1_KEY,
-        geoid=get_geoid_path(),
     )
     assert vec[0] == -0.02356248001209794
     assert vec[1] == 0.999722366227584
 
     vec = projection.get_time_ground_direction(
         conf,
-        get_geometry_loader(),
+        get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem),
         input_parameters.PRODUCT1_KEY,
-        dem=dem,
-        geoid=get_geoid_path(),
     )
     assert vec[0] == -0.03760314420222626
     assert vec[1] == 0.9992927516729553
@@ -307,19 +296,21 @@ def test_get_ground_angles():
     """
     Test the get_ground_angles function
     """
-
-    left_img = absolute_data_path("input/phr_ventoux/left_image.tif")
-    right_img = absolute_data_path("input/phr_ventoux/right_image.tif")
-
-    conf = {
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT1_KEY
-        ): left_img,
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT2_KEY
-        ): right_img,
+    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    geomodel1 = {
+        "path": absolute_data_path("input/phr_ventoux/left_image.geom")
     }
-    angles = projection.get_ground_angles(conf, get_geometry_loader())
+    geomodel2 = {
+        "path": absolute_data_path("input/phr_ventoux/right_image.geom")
+    }
+    angles = projection.get_ground_angles(
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+    )
     angles = np.asarray(angles)  # transform tuple to array
 
     np.testing.assert_allclose(

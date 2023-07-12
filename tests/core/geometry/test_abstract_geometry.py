@@ -141,8 +141,8 @@ def test_missing_abstract_methods():
         )
     assert (
         str(error.value) == "Can't instantiate abstract class"
-        " NoMethodClass with abstract methods check_products_consistency, "
-        "conf_schema, direct_loc, generate_epipolar_grids, triangulate"
+        " NoMethodClass with abstract methods check_product_consistency, "
+        "direct_loc, generate_epipolar_grids, triangulate"
     )
 
 
@@ -153,7 +153,7 @@ def test_wrong_class_name():
     """
     with pytest.raises(KeyError) as error:
         AbstractGeometry("test")  # pylint: disable=abstract-class-instantiated
-    assert str(error.value) == "'No geometry loader named test registered'"
+    assert str(error.value) == "'No geometry plugin named test registered'"
 
 
 @pytest.mark.unit_tests

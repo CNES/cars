@@ -49,8 +49,7 @@ from cars.orchestrator import orchestrator
 from tests.helpers import (
     absolute_data_path,
     assert_same_carsdatasets,
-    get_geoid_path,
-    get_geometry_loader,
+    get_geometry_plugin,
     temporary_dir,
 )
 
@@ -163,17 +162,15 @@ def test_generate_epipolar_grids_default_alt_otb():
     """
     Test generate_epipolar_grids method with default alt and no dem with OTB
     """
-    conf = {
-        input_parameters.IMG1_TAG: absolute_data_path(
-            "input/phr_ventoux/left_image.tif"
-        ),
-        input_parameters.IMG2_TAG: absolute_data_path(
-            "input/phr_ventoux/right_image.tif"
-        ),
+    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    geomodel1 = {
+        "path": absolute_data_path("input/phr_ventoux/left_image.geom")
     }
-    dem = None
+    geomodel2 = {
+        "path": absolute_data_path("input/phr_ventoux/right_image.geom")
+    }
     default_alt = 500
-
     (
         left_grid,
         right_grid,
@@ -182,12 +179,14 @@ def test_generate_epipolar_grids_default_alt_otb():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        conf,
-        "OTBGeometry",
-        dem,
-        default_alt=default_alt,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        get_geometry_plugin(
+            geometry_plugin="OTBGeometry", default_alt=default_alt
+        ),
         epipolar_step=30,
-        geoid=get_geoid_path(),
     )
 
     assert epi_size == [612, 612]
@@ -221,8 +220,11 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
     """
     # Retrieve information from configuration
     conf = images_and_grids_conf[input_parameters.INPUT_SECTION_TAG]
-    dem = None
     default_alt = 500
+    sensor1 = conf["img1"]
+    sensor2 = conf["img2"]
+    geomodel1 = {"path": conf["model1"], "model_type": conf["model_type1"]}
+    geomodel2 = {"path": conf["model2"], "model_type": conf["model_type2"]}
 
     (
         left_grid,
@@ -232,12 +234,12 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        conf,
-        "SharelocGeometry",
-        dem,
-        default_alt=default_alt,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        get_geometry_plugin("SharelocGeometry", default_alt=default_alt),
         epipolar_step=30,
-        geoid=get_geoid_path(),
     )
 
     assert epi_size == [612, 612]
@@ -276,13 +278,13 @@ def test_generate_epipolar_grids_otb():
     """
     Test generate_epipolar_grids method
     """
-    conf = {
-        input_parameters.IMG1_TAG: absolute_data_path(
-            "input/phr_ventoux/left_image.tif"
-        ),
-        input_parameters.IMG2_TAG: absolute_data_path(
-            "input/phr_ventoux/right_image.tif"
-        ),
+    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    geomodel1 = {
+        "path": absolute_data_path("input/phr_ventoux/left_image.geom")
+    }
+    geomodel2 = {
+        "path": absolute_data_path("input/phr_ventoux/right_image.geom")
     }
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
@@ -294,12 +296,12 @@ def test_generate_epipolar_grids_otb():
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        conf,
-        "OTBGeometry",
-        dem,
-        default_alt=None,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem),
         epipolar_step=30,
-        geoid=get_geoid_path(),
     )
 
     assert epi_size == [612, 612]
@@ -331,6 +333,10 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     """
     # Retrieve information from configuration
     conf = images_and_grids_conf[input_parameters.INPUT_SECTION_TAG]
+    sensor1 = conf["img1"]
+    sensor2 = conf["img2"]
+    geomodel1 = {"path": conf["model1"], "model_type": conf["model_type1"]}
+    geomodel2 = {"path": conf["model2"], "model_type": conf["model_type2"]}
 
     # use a file and not a directory ! (shareloc != OTB)
     dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
@@ -343,12 +349,12 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         epi_size,
         baseline,
     ) = grids.generate_epipolar_grids(
-        conf,
-        "SharelocGeometry",
-        dem,
-        default_alt=None,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        get_geometry_plugin("SharelocGeometry", dem=dem),
         epipolar_step=30,
-        geoid=get_geoid_path(),
     )
 
     assert epi_size == [612, 612]
@@ -358,7 +364,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     # difference between shareloc and OTB : sum is not done exactly the same
     # but precision result to 10**-5 is enough for baseline (shareloc vs OTB)
     # put decimal values to 10 to know if modifications are done.
-    np.testing.assert_almost_equal(baseline, 1.420571770533341, decimal=10)
+    np.testing.assert_almost_equal(baseline, 1.4205717708948564, decimal=10)
 
     # Uncomment to update baseline
     # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
@@ -428,28 +434,21 @@ def test_grid_generation(save_reference, input_file, ref_file):
                 # load pickle data
                 data = pickle.load(file)
                 adapt_path_for_test_dir(data, input_path, input_relative_path)
-                package_path = os.path.dirname(__file__)
                 # Run grid generation
+                geometry_plugin = get_geometry_plugin(
+                    "OTBGeometry",
+                    dem=os.path.join(input_path, "srtm_dir"),
+                    default_alt=0,
+                )
                 (
                     grid_left,
                     grid_right,
                 ) = epipolar_grid_generation_application.run(
                     data["sensor_image_left"],
                     data["sensor_image_right"],
+                    geometry_plugin,
                     orchestrator=cars_orchestrator,
                     pair_folder=os.path.join(directory, "pair_0"),
-                    srtm_dir=os.path.join(input_path, "srtm_dir"),
-                    default_alt=0,
-                    geoid_path=os.path.join(
-                        package_path,
-                        "..",
-                        "..",
-                        "..",
-                        "cars",
-                        "conf",
-                        "geoid",
-                        "egm96.grd",
-                    ),
                 )
                 ref_data_path = absolute_data_path(
                     os.path.join(
@@ -536,10 +535,22 @@ def test_terrain_region_to_epipolar(
 
     epipolar_sizes = epipolar_sizes_conf["preprocessing"]["output"]
 
+    sensor1 = configuration["input"]["img1"]
+    sensor2 = configuration["input"]["img2"]
+    geomodel1 = {"path": configuration["input"]["model1"]}
+    geomodel2 = {"path": configuration["input"]["model2"]}
+    grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+
     epipolar_region = grids.terrain_region_to_epipolar(
         terrain_region,
-        configuration,
-        get_geometry_loader(),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        get_geometry_plugin(geometry_plugin="OTBGeometry"),
         epsg=epsg,
         disp_min=disp_min,
         disp_max=disp_max,

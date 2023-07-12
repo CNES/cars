@@ -43,7 +43,7 @@ from cars.core import tiling
 from cars.data_structures import cars_dataset
 
 # CARS Tests import
-from ..helpers import get_geometry_loader, temporary_dir
+from ..helpers import get_geometry_plugin, temporary_dir
 
 
 @pytest.mark.unit_tests
@@ -233,12 +233,24 @@ def test_tiles_pairing(
     ]
     epipolar_tiling_grid = tiling.generate_tiling_grid(*epipolar_regions_params)
 
+    sensor1 = configuration["input"]["img1"]
+    sensor2 = configuration["input"]["img2"]
+    geomodel1 = {"path": configuration["input"]["model1"]}
+    geomodel2 = {"path": configuration["input"]["model2"]}
+    grid_left = configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    grid_right = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+
     # compute epipolar grid min max
     epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
-        get_geometry_loader(),
+        get_geometry_plugin(geometry_plugin="OTBGeometry"),
         tiling.transform_four_layers_to_two_layers_grid(epipolar_tiling_grid),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
         epsg,
-        configuration,
         disp_min,
         disp_max,
     )

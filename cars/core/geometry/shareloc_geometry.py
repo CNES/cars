@@ -38,6 +38,7 @@ from shareloc.image import Image
 
 from cars.core import constants as cst
 from cars.core.geometry import AbstractGeometry
+from cars.data_structures import cars_dataset
 
 GRID_TYPE = "GRID"
 RPC_TYPE = "RPC"
@@ -180,6 +181,12 @@ class SharelocGeometry(AbstractGeometry):
         shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
         shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
+        # get path if grid is of type CarsDataset TODO remove
+        if isinstance(grid1, cars_dataset.CarsDataset):
+            grid1 = grid1.attributes["path"]
+        if isinstance(grid2, cars_dataset.CarsDataset):
+            grid2 = grid2.attributes["path"]
+
         # perform matches triangulation
         if mode is cst.MATCHES_MODE:
             __, point_wgs84, __ = epipolar_triangulation(
@@ -188,8 +195,8 @@ class SharelocGeometry(AbstractGeometry):
                 matches_type="sift",
                 geometrical_model_left=shareloc_model1,
                 geometrical_model_right=shareloc_model2,
-                grid_left=grid1.attributes["path"],
-                grid_right=grid2.attributes["path"],
+                grid_left=grid1,
+                grid_right=grid2,
                 residues=True,
                 fill_nan=True,
             )
@@ -203,8 +210,8 @@ class SharelocGeometry(AbstractGeometry):
                 matches_type="disp",
                 geometrical_model_left=shareloc_model1,
                 geometrical_model_right=shareloc_model2,
-                grid_left=grid1.attributes["path"],
-                grid_right=grid2.attributes["path"],
+                grid_left=grid1,
+                grid_right=grid2,
                 residues=True,
                 fill_nan=True,
             )

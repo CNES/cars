@@ -336,12 +336,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 ) = self.epipolar_grid_generation_application.run(
                     sensor_image_left,
                     sensor_image_right,
+                    self.geom_plugin_with_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                    default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                    geoid_path=self.inputs[sens_cst.GEOID],
                 )
 
                 # Run epipolar resampling
@@ -444,8 +442,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         sensor_image_left,
                         sensor_image_right,
                         grid_left,
-                        grid_right,
-                        self.triangulation_application.get_geometry_plugin(),
+                        corrected_grid_right,
+                        self.geom_plugin_with_dem_and_geoid,
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
                         disp_min=dmin,
@@ -481,6 +479,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     corrected_grid_right,
                     corrected_matches_cars_ds,
                     epsg,
+                    self.geom_plugin_without_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -498,7 +497,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     grid_left,
                     corrected_grid_right,
                     epsg,
-                    self.triangulation_application.get_geometry_plugin(),
+                    self.geom_plugin_with_dem_and_geoid,
                     resolution=self.rasterization_application.get_resolution(),
                     disp_min=dmin,
                     disp_max=dmax,

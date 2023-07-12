@@ -4,7 +4,9 @@
             "left": {
                 "image": "left_image.tif",
                 "color": "left_image.tif",
-                "geomodel": "left_image.geom",
+                "geomodel": {
+                    "path": "left_image.geom"
+                },
                 "classification": "left_classif.tif",
                 "no_data": 0
                 
@@ -12,7 +14,9 @@
             },
             "right": {
                 "image": "right_image.tif",
-                "geomodel": "right_image.geom",
+                "geomodel": {
+                    "path": "right_image.geom"
+                },
                 "classification": "right_classif.tif",
                 "no_data": 0
 

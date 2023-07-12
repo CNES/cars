@@ -43,7 +43,9 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
-def correct_grid_from_1d(grid, grid_correction_coef, save_grid, pair_folder):
+def correct_grid_from_1d(
+    grid, grid_correction_coef, save_grid=False, pair_folder=None
+):
     """
     Correct grid from correction given in 1d
 
@@ -70,7 +72,7 @@ def correct_grid_from_1d(grid, grid_correction_coef, save_grid, pair_folder):
     return corrected_grid_right
 
 
-def correct_grid(grid, grid_correction, save_grid, pair_folder):
+def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     """
     Correct grid
 
@@ -122,7 +124,7 @@ def correct_grid(grid, grid_correction, save_grid, pair_folder):
 
     # create new cars ds
     corrected_grid_right = cars_dataset.CarsDataset("arrays")
-    corrected_grid_right.attributes = grid.attributes
+    corrected_grid_right.attributes = grid.attributes.copy()
     corrected_grid_right.tiling_grid = grid.tiling_grid
     corrected_grid_right[0, 0] = corrected_right_grid
 
@@ -131,19 +133,22 @@ def correct_grid(grid, grid_correction, save_grid, pair_folder):
     grid_spacing = grid.attributes["grid_spacing"]
 
     # Get save folder (permanent or temporay according to save_grids parameter)
-    if save_grid:
-        save_folder = os.path.join(pair_folder, "corrected_right_epi_grid.tif")
-    else:
-        safe_makedirs(os.path.join(pair_folder, "tmp"))
-        save_folder = os.path.join(
-            pair_folder, "tmp", "corrected_right_epi_grid.tif"
+    if save_grid is not None:
+        if save_grid:
+            save_folder = os.path.join(
+                pair_folder, "corrected_right_epi_grid.tif"
+            )
+        else:
+            safe_makedirs(os.path.join(pair_folder, "tmp"))
+            save_folder = os.path.join(
+                pair_folder, "tmp", "corrected_right_epi_grid.tif"
+            )
+
+        grids.write_grid(
+            corrected_grid_right[0, 0], save_folder, grid_origin, grid_spacing
         )
 
-    grids.write_grid(
-        corrected_grid_right[0, 0], save_folder, grid_origin, grid_spacing
-    )
-
-    corrected_grid_right.attributes["path"] = save_folder
+        corrected_grid_right.attributes["path"] = save_folder
 
     return corrected_grid_right
 

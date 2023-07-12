@@ -40,6 +40,7 @@ from tests.helpers import (
     absolute_data_path,
     assert_same_datasets,
     get_geoid_path,
+    get_geometry_plugin,
 )
 
 
@@ -53,8 +54,26 @@ def test_triangulation_ventoux_otb(
     disp1_ref = xr.open_dataset(
         absolute_data_path("input/intermediate_results/disp1_ref.nc")
     )
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
+    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
+
     point_cloud_dict = triangulation_tools.triangulate(
-        "OTBGeometry", images_and_grids_conf, disp1_ref, None
+        get_geometry_plugin("OTBGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
     )
 
     assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
@@ -79,8 +98,32 @@ def test_triangulation_ventoux_shareloc(
     disp1_ref = xr.open_dataset(
         absolute_data_path("input/intermediate_results/disp1_ref.nc")
     )
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {
+        "path": images_and_grids_conf["input"]["model1"],
+        "model_type": images_and_grids_conf["input"]["model_type1"],
+    }
+    geomodel2 = {
+        "path": images_and_grids_conf["input"]["model2"],
+        "model_type": images_and_grids_conf["input"]["model_type2"],
+    }
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
+
     point_cloud_dict = triangulation_tools.triangulate(
-        "SharelocGeometry", images_and_grids_conf, disp1_ref, None
+        get_geometry_plugin("SharelocGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
     )
 
     assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
@@ -104,10 +147,28 @@ def test_triangulate_matches_otb(
     """
 
     matches = np.array([[0.0, 0.0, 0.0, 0.0]])
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
+    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
 
     llh = triangulation_tools.triangulate_matches(
-        "OTBGeometry", images_and_grids_conf, matches
+        get_geometry_plugin("OTBGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        matches,
     )
+
     # Check properties
     pandas.testing.assert_index_equal(
         llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
@@ -128,9 +189,32 @@ def test_triangulate_matches_shareloc(
     """
 
     matches = np.array([[0.0, 0.0, 0.0, 0.0]])
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {
+        "path": images_and_grids_conf["input"]["model1"],
+        "model_type": images_and_grids_conf["input"]["model_type1"],
+    }
+    geomodel2 = {
+        "path": images_and_grids_conf["input"]["model2"],
+        "model_type": images_and_grids_conf["input"]["model_type2"],
+    }
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
 
     llh = triangulation_tools.triangulate_matches(
-        "SharelocGeometry", images_and_grids_conf, matches
+        get_geometry_plugin("SharelocGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        matches,
     )
     # Check properties
     pandas.testing.assert_index_equal(

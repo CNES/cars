@@ -50,6 +50,7 @@ from ...helpers import (
     absolute_data_path,
     assert_same_datasets,
     generate_input_json,
+    get_geometry_plugin,
     temporary_dir,
 )
 
@@ -338,13 +339,21 @@ def test_check_tiles_in_sensor():
         )
 
         inputs = input_data["inputs"]
-        list_sensor_pairs = sensors_inputs.generate_inputs(inputs)
+        list_sensor_pairs = sensors_inputs.generate_inputs(
+            inputs, get_geometry_plugin("OTBGeometry")
+        )
 
         sensor_image_left = list_sensor_pairs[0][1]
 
         sensor_image_right = list_sensor_pairs[0][2]
 
         # Generate grids
+        geometry_plugin = get_geometry_plugin(
+            "OTBGeometry",
+            dem=inputs[sens_cst.INITIAL_ELEVATION],
+            default_alt=inputs[sens_cst.DEFAULT_ALT],
+        )
+
         with orchestrator.Orchestrator(
             orchestrator_conf={"mode": "sequential"}
         ) as cars_orchestrator:
@@ -357,12 +366,10 @@ def test_check_tiles_in_sensor():
             ) = epipolar_grid_generation_application.run(
                 sensor_image_left,
                 sensor_image_right,
+                geometry_plugin,
                 orchestrator=cars_orchestrator,
                 pair_folder=directory,
                 pair_key="one_two",
-                srtm_dir=inputs[sens_cst.INITIAL_ELEVATION],
-                default_alt=inputs[sens_cst.DEFAULT_ALT],
-                geoid_path=inputs[sens_cst.GEOID],
             )
 
         opt_epipolar_tile_size = 10

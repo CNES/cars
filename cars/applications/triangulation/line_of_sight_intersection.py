@@ -524,12 +524,6 @@ def compute_points_cloud(
             - cst.Z
             - cst.EPI_COLOR
     """
-    # geometry_plugin = (
-    #     AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-    #         geometry_plugin=geometry_plugin
-    #     )
-    # )
-
     # Get disparity maps
     disp_ref = disparity_object
 
