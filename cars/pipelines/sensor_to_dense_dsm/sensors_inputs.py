@@ -23,6 +23,7 @@ CARS containing inputs checking for sensor input data
 Used for full_res and low_res pipelines
 """
 
+import importlib.util
 import logging
 import os
 
@@ -231,9 +232,23 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
 
     :return overloaded geometry plugin conf, TODO
     """
-    # Make OTB the default geometry plugin
+    # Make OTB the default geometry plugin if available
     if conf_geom_plugin is None:
-        conf_geom_plugin = "OTBGeometry"
+        # 1/ Check otbApplication python module
+        otb_app = importlib.util.find_spec("otbApplication")
+        # 2/ Check remote modules
+        if otb_app is not None:
+            otb_geometry = (
+                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                    "OTBGeometry"
+                )
+            )
+            missing_remote = otb_geometry.check_otb_remote_modules()
+
+        if otb_app is None or len(missing_remote) > 0:
+            conf_geom_plugin = "SharelocGeometry"
+        else:
+            conf_geom_plugin = "OTBGeometry"
 
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (

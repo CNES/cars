@@ -157,12 +157,6 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         else:
             self.orchestrator = orchestrator
 
-        if pair_folder is None:
-            pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
-
-        # TODO save grid
-
         sensor1 = image_left[sens_cst.INPUT_IMG]
         sensor2 = image_right[sens_cst.INPUT_IMG]
         geomodel1 = image_left[sens_cst.INPUT_GEO_MODEL]
@@ -251,13 +245,13 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
         else:
-            safe_makedirs(os.path.join(pair_folder, "tmp"))
-            left_grid_path = os.path.join(
-                pair_folder, "tmp", "left_epi_grid.tif"
-            )
-            right_grid_path = os.path.join(
-                pair_folder, "tmp", "right_epi_grid.tif"
-            )
+            if pair_folder is None:
+                tmp_folder = os.path.join(self.orchestrator.out_dir, "tmp")
+            else:
+                tmp_folder = os.path.join(pair_folder, "tmp")
+            safe_makedirs(tmp_folder)
+            left_grid_path = os.path.join(tmp_folder, "left_epi_grid.tif")
+            right_grid_path = os.path.join(tmp_folder, "right_epi_grid.tif")
 
         grids.write_grid(
             grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
