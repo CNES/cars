@@ -38,7 +38,7 @@ To install CARS like any other python library, you can use a virtual environment
 
     $ python -m venv venv
     $ source ./venv/bin/activate
-    $ pip install --upgrade "pip<=23.0.1" "numpy>=1.17.0" cython
+    $ pip install --upgrade "pip<=23.0.1" "numpy>=1.17.0" "cython<3.0.0"
 
 and install it from PyPI:
 
