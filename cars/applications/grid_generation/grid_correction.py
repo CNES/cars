@@ -53,6 +53,10 @@ def correct_grid_from_1d(
     :type grid: CarsDataset
     :param grid_correction_coef: grid correction to apply
     :type grid_correction_coef: list(float), size 6
+    :param save_grid: if True grids are saved in root or pair_folder
+    :type save_grid: bool
+    :param pair_folder: directory where grids are saved
+    :type pair_folder: str
     """
 
     coefs_x = grid_correction_coef[:3]
@@ -79,9 +83,12 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     :param grid: grid to correct
     :type grid: CarsDataset
     :param grid_correction: grid correction to apply
-    :param grid_correction: Tuple(np.ndarray, np.ndarray)
+    :type grid_correction: Tuple(np.ndarray, np.ndarray)
             (coefsx_2d, coefsy_2d) , each of size (2,2)
-
+    :param save_grid: if True grids are saved in root or pair_folder
+    :type save_grid: bool
+    :param pair_folder: directory where grids are saved
+    :type pair_folder: str
     """
 
     coefsx_2d, coefsy_2d = grid_correction

@@ -494,7 +494,10 @@ def ground_intersection_envelopes(
 
     :raise: Exception when the envelopes don't intersect one to each other
 
-    :param conf: cars input configuration dictionary
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
     :param geometry_plugin: name of geometry plugin to use
     :param shp1_path: Path to the output shapefile left
     :param shp2_path: Path to the output shapefile right

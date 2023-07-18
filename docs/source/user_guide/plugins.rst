@@ -30,30 +30,25 @@ To use Shareloc library, CARS input configuration should be defined as :
         "sensors": {
           "one": {
             "image": "img1.tif",
-            "geomodel": "img1.geom",
-            "geomodel_type": "RPC"
+            "geomodel": {
+              "path": "img1.geom",
+              "model_type": "RPC"
+            },
           },
           "two": {
             "image": "img2.tif",
-            "geomodel": "img2.geom",
-            "geomodel_type": "RPC"
+            "geomodel": {
+              "path": "img2.geom",
+              "model_type": "RPC"
+            },
           }
         },
         "pairing": [["one", "two"]],
         "initial_elevation": "path/to/srtm_file"
       },
+      "geometry_plugin": "SharelocGeometry",
       "output": {
         "out_dir": "outresults"
-      },
-      "applications": {
-        "grid_generation": {
-          "method": "epipolar",
-          "geometry_loader": "SharelocGeometry"
-        },
-        "triangulation": {
-          "method": "line_of_sight_intersection",
-          "geometry_loader": "SharelocGeometry"
-        }
       }
     }
 
@@ -61,17 +56,14 @@ The standards parts are described in CARS :ref:`configuration`.
 
 The particularities in the configuration file are:
 
-* **geomodel**: field contain the paths to the geometric model files related to `img1` and `img2` respectively. These files have to be supported by the Shareloc library.
-* **geomodel_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC"
+* **geomodel.path**: field contain the paths to the geometric model files related to `img1` and `img2` respectively. These files have to be supported by the Shareloc library.
+* **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC"
 * **initial_elevation**: Shareloc must have **a file**, typically a SRTM tile (and **not** a directory as |otb| default configuration !!)
-* **geometry_loader**: field in `grid_generation` and `triangulation` applications configured to "SharelocGeometry" to use Shareloc plugin.
+* **geometry_plugin**: parameter configured to "SharelocGeometry" to use Shareloc plugin.
 
 
 .. note::
 
   This library is foreseen to replace |otb| default in CARS for maintenance and installation ease.
   Be aware that geometric models must therefore be opened by shareloc directly in this case, and supported sensors may evolve.
-
-
-
 

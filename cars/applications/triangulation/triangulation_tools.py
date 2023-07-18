@@ -51,15 +51,22 @@ def triangulate(
     This function will perform triangulation from a disparity map
 
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
-    :param configuration: StereoConfiguration
-    :type configuration: StereoConfiguration
+    :type geometry_plugin: AbstractGeometry
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param disp_ref: left to right disparity map dataset
     :param im_ref_msk_ds: reference image dataset (image and
                           mask (if indicated by the user) in epipolar geometry)
-    :param snap_to_img1: If True, Lines of Sight of img2 are moved so as to
-                         cross those of img1
-    :param snap_to_img1: bool
     :returns: point_cloud as a dictionary of dataset containing:
 
         - Array with shape (roi_size_x,roi_size_y,3), with last dimension \
@@ -104,10 +111,20 @@ def triangulate_matches(
     """
     This function will perform triangulation from sift matches
 
-    :param TODO
-    :type TODO
-    :param configuration: StereoConfiguration
-    :type configuration: StereoConfiguration
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param matches: numpy.array of matches of shape (nb_matches, 4)
     :type data: numpy.ndarray
     :returns: point_cloud as a panda DataFrame containing:
@@ -179,9 +196,12 @@ def compute_points_cloud(
 
     :param geometry_plugin: geometry plugin to use
     :param data: The reference to disparity map dataset
-    :param cars_conf: cars input configuration dictionary
-    :param grid1: path to the reference image grid file
-    :param grid2: path to the secondary image grid file
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
+    :param grid1: dataset of the reference image grid file
+    :param grid2: dataset of the secondary image grid file
     :param roi_key: roi of the disparity map key
           ('roi' if cropped while calling create_disp_dataset,
           otherwise 'roi_with_margins')

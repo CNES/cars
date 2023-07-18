@@ -91,8 +91,8 @@ class SharelocGeometry(AbstractGeometry):
         """
         Load geometric model and returns it as a shareloc object
 
-        :param model: Path to the model file
-        :param model_type: model type (RPC or Grid)
+        :param model: Path and attributes for geometrical model
+        :type model: dict with keys "path" and "model_type"
         :return: geometric model as a shareloc object (Grid or RPC)
         """
         geomodel = model[GEO_MODEL_PATH_TAG]
@@ -136,7 +136,7 @@ class SharelocGeometry(AbstractGeometry):
         - update with former cars clean with otb evolution.
 
         :param sensor: path to sensor image
-        :param geomodel: path to geometrical model
+        :param geomodel: path and attributes for geometrical model
         :return: True if the products are readable, False otherwise
         """
         # Try to read them using shareloc
@@ -165,13 +165,13 @@ class SharelocGeometry(AbstractGeometry):
         Performs triangulation from cars disparity or matches dataset
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodel2: path and attributes for right geomodel
         :param mode: triangulation mode
         (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of sensor1
-        :param grid2: path to epipolar grid of sensor2
+        :param grid1: path or dataset for epipolar grid of sensor1
+        :param grid2: path or dataset for epipolar grid of sensor2
         :param roi_key: dataset roi to use
         (can be cst.ROI or cst.ROI_WITH_MARGINS)
 
@@ -253,8 +253,8 @@ class SharelocGeometry(AbstractGeometry):
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodel2: path and attributes for right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
             - the left epipolar grid as a numpy array
@@ -332,7 +332,7 @@ class SharelocGeometry(AbstractGeometry):
         Advice: to be sure, use x,y,z inputs only
 
         :param sensor: path to sensor image
-        :param geomodel: path to geomodel
+        :param geomodel: path and attributes for geomodel
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image

@@ -112,9 +112,12 @@ def generate_epipolar_grids(
     """
     Computes the left and right epipolar grids
 
-    :param conf: input configuration dictionary
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
+    :type geometry_plugin: AbstractGeometry
     :param dem: path to the dem folder
     :param default_alt: default altitude to use in the missing dem regions
     :param epipolar_step: step to use to construct the epipolar grids
@@ -157,13 +160,23 @@ def compute_epipolar_grid_min_max(
     Compute ground terrain location of epipolar grids at disp_min and disp_max
 
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
+    :type geometry_plugin: AbstractGeometry
     :param grid: The epipolar grid to project
     :type grid: np.ndarray of shape (N,M,2)
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param epsg: EPSG code of the terrain projection
     :type epsg: Int
-    :param conf: Configuration dictionary from prepare step
-    :type conf: Dict
     :param disp_min: Minimum disparity
                      (if None, read from configuration dictionary)
     :type disp_min: Float or None
@@ -265,7 +278,12 @@ def terrain_region_to_epipolar(
     Transform terrain region to epipolar region
 
     :param region: terrain region to use
-    :param conf: config with epipolar grids infos
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
+    :param grid1: dataset of the reference image grid file
+    :param grid2: dataset of the secondary image grid file
     :param geometry_plugin: geometry plugin to use
     :param epsg: epsg
     :param disp_min: minimum disparity

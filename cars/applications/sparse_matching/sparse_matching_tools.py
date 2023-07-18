@@ -353,7 +353,7 @@ def compute_disp_min_disp_max(
     :param orchestrator: orchestrator used
     :type orchestrator: Orchestrator
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
+    :type geometry_plugin: AbstractGeometry
     :param srtm_dir: srtm directory
     :type srtm_dir: str
     :param default_alt: default altitude

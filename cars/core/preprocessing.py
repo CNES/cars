@@ -128,7 +128,7 @@ def compute_terrain_bbox(  # noqa: 751
     :param epsg: epsg to use
     :type epsg: str
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
+    :type geometry_plugin: AbstractGeometry
     :param disp_min: minimum disparity
     :type disp_min: int
     :param disp_max: maximum disparity
@@ -397,7 +397,7 @@ def compute_epsg(
                 "disp_to_alt_ratio",
     :type grid_right: CarsDataset
     :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: str
+    :type geometry_plugin: AbstractGeometry
     :param orchestrator: orchestrator
     :type orchestrator: Orchestrator
     :param pair_folder: pair folder to save data to

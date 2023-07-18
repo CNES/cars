@@ -499,10 +499,20 @@ def compute_points_cloud(
             - cst_disp.VALID
             - cst.EPI_COLOR
     :type disparity_object: xr.Dataset
-    :param input_stereo_cfg: Configuration for stereo processing
-    :type input_stereo_cfg: dict
-    :param geometry_plugin: name of geometry plugin to use
-    :type geometry_plugin: str
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
     :param geoid_data: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
     :type geoid_data: str

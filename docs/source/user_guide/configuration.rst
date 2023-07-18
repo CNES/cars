@@ -16,7 +16,8 @@ The structure follows this organisation:
         "orchestrator": {},
         "applications": {},
         "output": {},
-        "pipeline": "pipeline_to_use"
+        "pipeline": "pipeline_to_use",
+        "geometry_plugin": "geometry_plugin_to_use"
     }
 
 .. warning::
@@ -96,11 +97,7 @@ The structure follows this organisation:
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *no_data*         | no data value of the image                                                               | int            | -9999         | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel*        | geomodel associated to the image                                                         | string         |               | Yes      |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel_type*   | geomodel type = "RPC", "GRID"                                                            | string         |  "RPC"        | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel_filters*| filters associated to the geomodel                                                       | List of string |               | No       |
+            | *geomodel*        | path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | dict           |               | Yes      |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
@@ -516,8 +513,23 @@ The structure follows this organisation:
             3. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
 
+   .. tab:: Geometry plugin
 
+    This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on geometry plugins configuration.
 
+    +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
+    | Name              | Description           | Type   | Default value           | Available values                      | Required |
+    +===================+=======================+========+=========================+=======================================+==========+
+    | *geometry_plugin* | The plugin to use     | str    | "OTBGeometry"           | "OTBGeometry", "SharelocGeometry"     | False    |
+    +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
+
+    If the parameter "geometry_plugin" is not specified but OTB is not installed or CARS-specific remote modules are unavailable, the value of geometry_plugin switchs to "SharelocGeometry"
+
+    .. code-block:: json
+
+        {
+            "geometry_plugin": "OTBGeometry"
+        },
 
    .. tab:: Applications
 
@@ -560,12 +572,8 @@ The structure follows this organisation:
             +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
             | epi_step        | Step of the deformation grid in nb. of pixels | int     |   should be > 0                   | 30            | No       |
             +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_grids      | Save the generated grids (not available yet)  | boolean |                                   | false         | No       |
+            | save_grids      | Save the generated grids                      | boolean |                                   | false         | No       |
             +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | geometry_loader | Geometry external library                     | string  | "OTBGeometry", "SharelocGeometry" | "OTBGeometry" | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-
-            For geometry loader/plugin configuration, please refer to :ref:`plugins` section for details.
 
             **Example**
 
@@ -843,8 +851,6 @@ The structure follows this organisation:
             +===================+====================================================================================================================+=========+======================================+==============================+==========+
             | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | Yes      |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | geometry_loader   | Geometry external library                                                                                          | string  | "OTBGeometry", "SharelocGeometry"    | "OTBGeometry"                | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | use_geoid_alt     | Use geoid grid as altimetric reference.                                                                            | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
@@ -853,8 +859,6 @@ The structure follows this organisation:
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-
-            For geometry loader/plugin configuration, please refer to :ref:`plugins` section for details.
 
             **Example**
 

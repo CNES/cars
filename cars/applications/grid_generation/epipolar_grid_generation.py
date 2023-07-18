@@ -126,8 +126,8 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :param image_right: right image. Dict Must contain keys :\
          "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
         :type image_right: dict
-        :param geometry_plugin: TODO
-        :type geometry_plugin: TODO
+        :param geometry_plugin: geometry plugin to use
+        :type geometry_plugin: AbstractGeometry
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param orchestrator: orchestrator used

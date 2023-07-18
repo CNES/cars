@@ -84,7 +84,7 @@ class OTBGeometry(AbstractGeometry):
         """
         Check if the image have RPC information readable by the OTB
         :param sensor: path to the image
-        :param geomodel: path to the geometric model
+        :param geomodel: path and attributes for geometric model
         :return: True if the RPC are readable, False otherwise
         """
         can_open_status = False
@@ -167,13 +167,13 @@ class OTBGeometry(AbstractGeometry):
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodel2: path and attributes for right geomodel
         :param mode: triangulation mode
                (cst.DISP_MODE or cst.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
-        :param grid1: path to epipolar grid of image 1
-        :param grid2: path to epipolar grid of image 2
+        :param grid1: path or dataset for epipolar grid of image 1
+        :param grid2: path or dataset for epipolar grid of image 2
         :param roi_key: dataset roi to use
                (can be cst.ROI or cst.ROI_WITH_MARGINS)
         :return: the long/lat/height numpy array in output of the triangulation
@@ -261,8 +261,8 @@ class OTBGeometry(AbstractGeometry):
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodel2: path and attributes for right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
 
@@ -368,7 +368,7 @@ class OTBGeometry(AbstractGeometry):
         Advice: to be sure, use x,y,z inputs only
 
         :param sensor: path to sensor image
-        :param geomodel: path to geometrical model
+        :param geomodel: path and attributes for geometrical model
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
