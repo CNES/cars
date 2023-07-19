@@ -39,6 +39,7 @@ from cars.applications.resampling import bicubic_resampling, resampling_tools
 from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import tiling
+from cars.orchestrator import orchestrator
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
@@ -344,19 +345,25 @@ def test_check_tiles_in_sensor():
         sensor_image_right = list_sensor_pairs[0][2]
 
         # Generate grids
-        epipolar_grid_generation_application = Application("grid_generation")
-        (
-            grid_left,
-            grid_right,
-        ) = epipolar_grid_generation_application.run(
-            sensor_image_left,
-            sensor_image_right,
-            pair_folder=directory,
-            pair_key="one_two",
-            srtm_dir=inputs[sens_cst.INITIAL_ELEVATION],
-            default_alt=inputs[sens_cst.DEFAULT_ALT],
-            geoid_path=inputs[sens_cst.GEOID],
-        )
+        with orchestrator.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        ) as cars_orchestrator:
+            epipolar_grid_generation_application = Application(
+                "grid_generation"
+            )
+            (
+                grid_left,
+                grid_right,
+            ) = epipolar_grid_generation_application.run(
+                sensor_image_left,
+                sensor_image_right,
+                orchestrator=cars_orchestrator,
+                pair_folder=directory,
+                pair_key="one_two",
+                srtm_dir=inputs[sens_cst.INITIAL_ELEVATION],
+                default_alt=inputs[sens_cst.DEFAULT_ALT],
+                geoid_path=inputs[sens_cst.GEOID],
+            )
 
         opt_epipolar_tile_size = 10
 
