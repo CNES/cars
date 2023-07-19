@@ -51,7 +51,7 @@ def test_generate_epipolar_grids():
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry", dem=dem, geoid=get_geoid_path()
         )
@@ -65,7 +65,7 @@ def test_generate_epipolar_grids():
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(
+    ) = geo_plugin.generate_epipolar_grids(
         sensor1, sensor2, geomodel1, geomodel2, epipolar_step=step
     )
 
@@ -98,7 +98,7 @@ def test_generate_epipolar_grids():
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
     # test without geoid
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry", dem=dem
         )
@@ -111,7 +111,7 @@ def test_generate_epipolar_grids():
         spacing,
         epipolar_size,
         disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(
+    ) = geo_plugin.generate_epipolar_grids(
         sensor1, sensor2, geomodel1, geomodel2, epipolar_step=step
     )
 
@@ -182,7 +182,7 @@ def test_generate_epipolar_grids_scaled_inputs():
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry", dem=dem, geoid=get_geoid_path()
         )
@@ -196,7 +196,7 @@ def test_generate_epipolar_grids_scaled_inputs():
         _,
         ref_epipolar_size,
         ref_disp_to_alt_ratio,
-    ) = geo_loader.generate_epipolar_grids(
+    ) = geo_plugin.generate_epipolar_grids(
         sensor1, sensor2, geomodel1, geomodel2, epipolar_step=step
     )
 
@@ -326,7 +326,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 assert pixel_size_x == 1 / scalex
                 assert pixel_size_y == 1 / scaley
 
-            geo_loader = (
+            geo_plugin = (
                 AbstractGeometry(  # pylint: disable=abstract-class-instantiated
                     "OTBGeometry", dem=dem, geoid=get_geoid_path()
                 )
@@ -340,7 +340,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_loader.generate_epipolar_grids(
+            ) = geo_plugin.generate_epipolar_grids(
                 img1_transform,
                 img2_transform,
                 img1_transform_geom,
@@ -359,7 +359,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_loader.generate_epipolar_grids(
+            ) = geo_plugin.generate_epipolar_grids(
                 img1_transform,
                 img2,
                 img1_transform_geom,
@@ -378,7 +378,7 @@ def test_generate_epipolar_grids_scaled_inputs():
                 _,
                 epipolar_size,
                 disp_to_alt_ratio,
-            ) = geo_loader.generate_epipolar_grids(
+            ) = geo_plugin.generate_epipolar_grids(
                 img1,
                 img2_transform,
                 img1_geom,
@@ -480,7 +480,7 @@ def test_image_envelope():
     geomodel = absolute_data_path("input/phr_ventoux/left_image.geom")
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry"
         )
@@ -489,7 +489,7 @@ def test_image_envelope():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
-        geo_loader.image_envelope(
+        geo_plugin.image_envelope(
             sensor,
             geomodel,
             shp,
@@ -507,7 +507,7 @@ def test_image_envelope():
         ]
 
     # test with dem + geoid
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry", dem=dem, geoid=get_geoid_path()
         )
@@ -516,7 +516,7 @@ def test_image_envelope():
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
 
-        geo_loader.image_envelope(sensor, geomodel, shp)
+        geo_plugin.image_envelope(sensor, geomodel, shp)
 
         assert os.path.isfile(shp)
         poly, epsg = read_vector(shp)
@@ -534,7 +534,7 @@ def test_image_envelope():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.shp")
-        super(type(geo_loader), geo_loader).image_envelope(
+        super(type(geo_plugin), geo_plugin).image_envelope(
             sensor,
             geomodel,
             shp,
@@ -559,7 +559,7 @@ def test_check_consistency():
     Test otb_can_open() with different geom configurations
     """
 
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "OTBGeometry"
         )
@@ -572,6 +572,6 @@ def test_check_consistency():
     # not existing
     not_existing = "/stuff/dummy_file.doe"
 
-    assert geo_loader.check_product_consistency(existing_with_geom, None)
-    assert not geo_loader.check_product_consistency(existing_no_geom, None)
-    assert not geo_loader.check_product_consistency(not_existing, None)
+    assert geo_plugin.check_product_consistency(existing_with_geom, None)
+    assert not geo_plugin.check_product_consistency(existing_no_geom, None)
+    assert not geo_plugin.check_product_consistency(not_existing, None)

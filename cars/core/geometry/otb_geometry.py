@@ -419,7 +419,7 @@ class OTBGeometry(AbstractGeometry):
         Export the image footprint to a shapefile
 
         :param sensor: path to sensor image
-        :param geomodel: path to geometrical model
+        :param geomodel: path and attributes for geometrical model
         :param shp: Path to the output shapefile
         """
         # save os env

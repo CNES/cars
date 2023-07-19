@@ -232,6 +232,20 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
 
     :return overloaded geometry plugin conf, TODO
     """
+    try:
+        from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
+            OTBGeometry,
+        )
+
+        otb_module_avail = True
+    except ModuleNotFoundError:
+        logging.info("OTBGeometry not available")
+        otb_module_avail = False
+
+    from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
+        SharelocGeometry,
+    )
+
     # Make OTB the default geometry plugin if available
     if conf_geom_plugin is None:
         # 1/ Check otbApplication python module
@@ -245,7 +259,7 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
             )
             missing_remote = otb_geometry.check_otb_remote_modules()
 
-        if otb_app is None or len(missing_remote) > 0:
+        if otb_app is None or len(missing_remote) > 0 or not otb_module_avail:
             conf_geom_plugin = "SharelocGeometry"
         else:
             conf_geom_plugin = "OTBGeometry"

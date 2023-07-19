@@ -125,8 +125,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attriutes for left geomodel
+        :param geomodel2: path and attriutes for right geomodel
         :param mode: triangulation mode
                (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
@@ -150,13 +150,7 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @abstractmethod
     def generate_epipolar_grids(
-        self,
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        epipolar_step: int = 30,
-        **kwargs
+        self, sensor1, sensor2, geomodel1, geomodel2, epipolar_step: int = 30
     ) -> Tuple[
         np.ndarray, np.ndarray, List[float], List[float], List[int], float
     ]:
@@ -165,8 +159,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image
-        :param geomodel1: path to left geomodel
-        :param geomodel2: path to right geomodel
+        :param geomodel1: path and attriutes for left geomodel
+        :param geomodel2: path and attriutes for right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
 
@@ -402,24 +396,17 @@ class AbstractGeometry(metaclass=ABCMeta):
         x_coord: float,
         y_coord: float,
         z_coord: float = None,
-        **kwargs
     ) -> np.ndarray:
         """
         For a given image point, compute the latitude, longitude, altitude
 
         Advice: to be sure, use x,y,z inputs only
 
-        :param cars_conf: cars input configuration dictionary
-        :param product_key: input_parameters.PRODUCT1_KEY or
-               input_parameters.PRODUCT2_KEY to identify which geometric model
-               shall be taken to perform the method
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geomodel
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
-        :param dem: if z not defined, take this DEM directory input
-        :param geoid: if z and dem not defined, take GEOID directory input
-        :param default_elevation: if z, dem, geoid not defined, take default
-               elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
 
@@ -427,10 +414,8 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Export the image footprint to a shapefile
 
-        :param conf: cars input configuration dictionary
-        :param product_key: input_parameters.PRODUCT1_KEY or
-               input_parameters.PRODUCT2_KEY to identify which geometric model
-               shall be taken to perform the method
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geometrical model
         :param shp: Path to the output shapefile
         """
         # retrieve image size

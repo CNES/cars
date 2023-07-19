@@ -23,7 +23,7 @@ This section presents one by one the CARS key concepts and their interaction.
     * :ref:`cars_dataset` Input and output object of an application. Contains a calculated and potentially tiled data.
     * :ref:`application`: Algorithmic methods that takes
     * :ref:`Orchestrator`: It instantiates and interfaces with the cluster to which it provides the tasks to be processed. It is responsible for writing the data calculated by the cluster on the fly.
-    * :ref:`loader`: library or external tools providing specific 3d functions. Under heavy reconstruction !
+    * :ref:`plugin`: library or external tools providing specific 3d functions. Under heavy reconstruction !
     * **Pipeline**: A chain of applications ( 3d reconstruction steps) from input to output with intermediate data (CarsDataset) controlled by orchestrator; 
 
 .. toctree::
@@ -33,7 +33,7 @@ This section presents one by one the CARS key concepts and their interaction.
     orchestrator
     application
     interaction
-    loader
+    plugin
 
 
 
