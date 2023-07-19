@@ -64,12 +64,15 @@ class Orchestrator:
         :param orchestrator_conf: configuration of distribution
 
         """
+        # init list of path to clean at the end
+        self.tmp_dir_list = []
 
         # out_dir
         if out_dir is not None:
             self.out_dir = out_dir
         else:
-            self.out_dir = os.path.join("/tmp/", "cars_tmp_dir")
+            self.out_dir = os.path.join(os.getcwd(), "cars_tmp_dir")
+            self.add_to_clean(self.out_dir)
             logging.debug("No out_dir defined")
 
         self.launch_worker = launch_worker
@@ -105,9 +108,6 @@ class Orchestrator:
 
         # init cars_ds_names_info for pbar printing
         self.cars_ds_names_info = []
-
-        # init list of path to clean at the end
-        self.tmp_dir_list = []
 
         # outjson
         self.out_json_path = out_json_path
