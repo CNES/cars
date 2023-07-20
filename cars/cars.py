@@ -74,21 +74,7 @@ class StreamCapture:
         self.stream.flush()
 
 
-class CarsArgumentParser(argparse.ArgumentParser):
-    """
-    ArgumentParser class adaptation for CARS
-    """
-
-    def convert_arg_line_to_args(self, arg_line):
-        """
-        Redefine herited function to accept one line argument parser in @file
-        from fromfile_prefix_chars file argument
-        https://docs.python.org/dev/library/argparse.html
-        """
-        return arg_line.split()
-
-
-def cars_parser() -> CarsArgumentParser:
+def cars_parser() -> argparse.ArgumentParser:
     """
     Main CLI argparse parser function
     It builds argparse objects and constructs CLI interfaces parameters.
@@ -97,10 +83,8 @@ def cars_parser() -> CarsArgumentParser:
     """
     # Create cars cli parser from argparse
     # use @file to use a file containing parameters
-    parser = CarsArgumentParser(
-        "cars",
-        description="CARS: CNES Algorithms to Reconstruct Surface",
-        fromfile_prefix_chars="@",
+    parser = argparse.ArgumentParser(
+        "cars", description="CARS: CNES Algorithms to Reconstruct Surface"
     )
 
     parser.add_argument("conf", type=str, help="Inputs Configuration File")
