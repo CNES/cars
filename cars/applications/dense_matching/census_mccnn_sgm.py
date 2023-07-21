@@ -75,6 +75,11 @@ class CensusMccnnSgm(
         ]
         self.min_elevation_offset = self.used_config["min_elevation_offset"]
         self.max_elevation_offset = self.used_config["max_elevation_offset"]
+
+        # Disparity threshold
+        self.disp_min_threshold = self.used_config["disp_min_threshold"]
+        self.disp_max_threshold = self.used_config["disp_max_threshold"]
+
         # Performance map
         self.generate_performance_map = self.used_config[
             "generate_performance_map"
@@ -129,6 +134,15 @@ class CensusMccnnSgm(
         overloaded_conf["max_elevation_offset"] = conf.get(
             "max_elevation_offset", None
         )
+
+        # Disparity threshold
+        overloaded_conf["disp_min_threshold"] = conf.get(
+            "disp_min_threshold", None
+        )
+        overloaded_conf["disp_max_threshold"] = conf.get(
+            "disp_max_threshold", None
+        )
+
         # Permormance map parameters
         overloaded_conf["generate_performance_map"] = conf.get(
             "generate_performance_map", False
@@ -174,6 +188,8 @@ class CensusMccnnSgm(
             "epipolar_tile_margin_in_percent": int,
             "min_elevation_offset": Or(None, int),
             "max_elevation_offset": Or(None, int),
+            "disp_min_threshold": Or(None, int),
+            "disp_max_threshold": Or(None, int),
             "save_disparity_map": bool,
             "generate_performance_map": bool,
             "perf_eta_max_ambiguity": float,
@@ -210,6 +226,18 @@ class CensusMccnnSgm(
                 "minimal elevation for dense matching"
             )
 
+        disp_min_threshold = overloaded_conf["disp_min_threshold"]
+        disp_max_threshold = overloaded_conf["disp_max_threshold"]
+        if (
+            disp_min_threshold is not None
+            and disp_max_threshold is not None
+            and disp_min_threshold > disp_max_threshold
+        ):
+            raise ValueError(
+                "Maximal disparity should be bigger than "
+                "minimal disparity for dense matching"
+            )
+
         return overloaded_conf
 
     def get_margins(self, grid_left, disp_min=None, disp_max=None):
@@ -222,6 +250,23 @@ class CensusMccnnSgm(
         :return: margins, updated disp_min, updated disp_max
 
         """
+
+        if self.disp_min_threshold is not None:
+            if disp_min < self.disp_min_threshold:
+                logging.warning(
+                    "Overide disp_min {} with disp_min_threshold {}".format(
+                        disp_min, self.disp_min_threshold
+                    )
+                )
+                disp_min = self.disp_min_threshold
+        if self.disp_max_threshold is not None:
+            if disp_max > self.disp_max_threshold:
+                logging.warning(
+                    "Overide disp_max {} with disp_max_threshold {}".format(
+                        disp_max, self.disp_max_threshold
+                    )
+                )
+                disp_max = self.disp_max_threshold
 
         # get disp_to_alt_ratio
         disp_to_alt_ratio = grid_left.attributes["disp_to_alt_ratio"]
