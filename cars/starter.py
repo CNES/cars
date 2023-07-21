@@ -22,18 +22,16 @@
 cars-starter: helper to create configuration file
 """
 
+# pylint: disable=import-outside-toplevel
 # standard imports
 import argparse
 import json
 import os
 
-# cars imports
-from cars.pipelines.pipeline import Pipeline
-
 
 def inputfilename_to_sensor(inputfilename):
     """
-    Fill sensor dictionary according an input filename
+    Fill sensor dictionary according to an input filename
     """
     sensor = {}
 
@@ -111,6 +109,9 @@ def main():
     config["output"]["out_dir"] = args.out
 
     if args.check or args.full:
+        # cars imports
+        from cars.pipelines.pipeline import Pipeline
+
         used_pipeline = Pipeline(pipeline_name, config, None)
         if args.full:
             config = used_pipeline.used_conf
