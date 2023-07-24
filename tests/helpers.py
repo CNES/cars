@@ -31,6 +31,7 @@ import logging
 
 # Standard imports
 import os
+import tempfile
 
 # Third party imports
 import numpy as np
@@ -160,9 +161,9 @@ def temporary_dir():
         # return default tmp dir
         logging.info(
             "CARS_TEST_TEMPORARY_DIR is not set, "
-            "cars will use current working directory instead"
+            "cars will use default temporary directory instead"
         )
-        return os.getcwd()
+        return tempfile.gettempdir()
     # return env defined tmp dir
     return os.environ["CARS_TEST_TEMPORARY_DIR"]
 
