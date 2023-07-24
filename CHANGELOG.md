@@ -10,6 +10,7 @@
 
 ### Changed
 - Write workers logs in one single file [#659]
+- Use tempfile to generate default orchestrator folder instead of /tmp [#663]
 
 ### Fixed
 - Cython upgrade bug [#674]
