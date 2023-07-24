@@ -155,7 +155,8 @@ def get_geometry_loader():
 def temporary_dir():
     """
     Returns path to temporary dir from CARS_TEST_TEMPORARY_DIR environment
-    variable. Defaults to default temporary directory (/tmp or TMPDIR environment variable)
+    variable. Defaults to default temporary directory
+    (/tmp or TMPDIR environment variable)
     """
     if "CARS_TEST_TEMPORARY_DIR" not in os.environ:
         # return default tmp dir

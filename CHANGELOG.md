@@ -1,5 +1,22 @@
 # Changelog
 
+
+## 0.7.1 Slurm Cluster (July 2023)
+
+### Added
+- Dask Slurm cluster [#624]
+- Crop disparity range with thresholds [#626]
+- Used source information map generated [#648]
+
+### Changed
+- Write workers logs in one single file [#659]
+- Use tempfile to generate default orchestrator folder instead of /tmp [#663]
+
+### Fixed
+- Cython upgrade bug [#674]
+- Too much used disk memory in MP mode [#632]
+
+
 ## 0.7.0 CARS installable without OTB (June 2023)
 
 ### Added
