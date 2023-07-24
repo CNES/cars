@@ -230,7 +230,7 @@ To launch tests:
 
 It launches only the ``unit_tests`` and ``pbs_cluster_tests`` test targets
 
-Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use current working directory).
+Before the tests execution, the ``CARS_TEST_TEMPORARY_DIR`` can be defined to indicate where to write the temporary data bound to the test procedure (if the variable is not set, cars will use default temporary directory).
 
 Several kinds of tests are identified by specific pytest markers:
 
