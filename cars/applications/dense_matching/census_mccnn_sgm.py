@@ -262,7 +262,7 @@ class CensusMccnnSgm(
         if self.disp_max_threshold is not None:
             if disp_max > self.disp_max_threshold:
                 logging.warning(
-                    "Overide disp_max {} with disp_max_threshold {}".format(
+                    "Override disp_max {} with disp_max_threshold {}".format(
                         disp_max, self.disp_max_threshold
                     )
                 )
