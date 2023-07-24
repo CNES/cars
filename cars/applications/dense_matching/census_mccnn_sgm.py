@@ -254,7 +254,7 @@ class CensusMccnnSgm(
         if self.disp_min_threshold is not None:
             if disp_min < self.disp_min_threshold:
                 logging.warning(
-                    "Overide disp_min {} with disp_min_threshold {}".format(
+                    "Override disp_min {} with disp_min_threshold {}".format(
                         disp_min, self.disp_min_threshold
                     )
                 )
