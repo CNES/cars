@@ -23,8 +23,6 @@ This module contains class pipeline template for
 templating the pipeline concept.
 """
 
-import os
-import tempfile
 from abc import ABCMeta, abstractmethod
 
 from json_checker import Checker, OptionalKey
@@ -51,12 +49,11 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         :rtype: dict
         """
 
-        with tempfile.TemporaryDirectory(dir=os.getcwd()) as directory:
-            with orchestrator.Orchestrator(
-                orchestrator_conf=conf, out_dir=directory, launch_worker=False
-            ) as orchestrator_obj:
-                conf = orchestrator_obj.get_conf()
-            return conf
+        with orchestrator.Orchestrator(
+            orchestrator_conf=conf, out_dir=None, launch_worker=False
+        ) as orchestrator_obj:
+            conf = orchestrator_obj.get_conf()
+        return conf
 
     def check_global_schema(self, conf):
         """

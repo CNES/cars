@@ -32,6 +32,7 @@ from shapely.geometry import mapping
 from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.core import constants as cst
 from cars.core import tiling
+from cars.orchestrator import orchestrator
 
 from ...helpers import absolute_data_path
 
@@ -129,12 +130,18 @@ def test_transform_input_pc_and_metrics():
     data_tif = generate_test_inputs()
     list_epi_pc = {"pc_0": data_tif, "pc_1": data_tif}
 
-    (
-        terrain_bbox,
-        list_epipolar_points_cloud_by_tiles,
-    ) = pc_tif_tools.transform_input_pc(
-        list_epi_pc, 32636, epipolar_tile_size=200
-    )
+    with orchestrator.Orchestrator(
+        orchestrator_conf={"mode": "sequential"}
+    ) as cars_orchestrator:
+        (
+            terrain_bbox,
+            list_epipolar_points_cloud_by_tiles,
+        ) = pc_tif_tools.transform_input_pc(
+            list_epi_pc,
+            32636,
+            epipolar_tile_size=200,
+            orchestrator=cars_orchestrator,
+        )
 
     assert terrain_bbox == [
         319796.7957302701,
@@ -175,12 +182,18 @@ def test_transform_input_pc_and_correspondance():
     data_tif = generate_test_inputs()
     list_epi_pc = {"pc_0": data_tif, "pc_1": data_tif}
 
-    (
-        terrain_bbox,
-        list_epipolar_points_cloud_by_tiles,
-    ) = pc_tif_tools.transform_input_pc(
-        list_epi_pc, 32636, epipolar_tile_size=200
-    )
+    with orchestrator.Orchestrator(
+        orchestrator_conf={"mode": "sequential"}
+    ) as cars_orchestrator:
+        (
+            terrain_bbox,
+            list_epipolar_points_cloud_by_tiles,
+        ) = pc_tif_tools.transform_input_pc(
+            list_epi_pc,
+            32636,
+            epipolar_tile_size=200,
+            orchestrator=cars_orchestrator,
+        )
 
     # Test correspondances
     # Compute bounds and terrain grid
@@ -199,9 +212,15 @@ def test_transform_input_pc_and_correspondance():
         optimal_terrain_tile_width,
     )
 
-    corresponding_tiles = pc_tif_tools.get_corresponding_tiles_tif(
-        terrain_tiling_grid, list_epipolar_points_cloud_by_tiles, margins=0
-    )
+    with orchestrator.Orchestrator(
+        orchestrator_conf={"mode": "sequential"}
+    ) as cars_orchestrator:
+        corresponding_tiles = pc_tif_tools.get_corresponding_tiles_tif(
+            terrain_tiling_grid,
+            list_epipolar_points_cloud_by_tiles,
+            margins=0,
+            orchestrator=cars_orchestrator,
+        )
 
     assert len(corresponding_tiles[0, 0]["required_point_clouds"]) == 8
     assert len(corresponding_tiles[1, 0]["required_point_clouds"]) == 14
