@@ -28,9 +28,11 @@ import logging
 import os
 import shutil
 import sys
-import traceback
 
 # Third party imports
+import tempfile
+import traceback
+
 from tqdm import tqdm
 
 # CARS imports
@@ -71,7 +73,7 @@ class Orchestrator:
         if out_dir is not None:
             self.out_dir = out_dir
         else:
-            self.out_dir = os.path.join(os.getcwd(), "cars_tmp_dir")
+            self.out_dir = tempfile.mkdtemp()
             self.add_to_clean(self.out_dir)
             logging.debug("No out_dir defined")
 
