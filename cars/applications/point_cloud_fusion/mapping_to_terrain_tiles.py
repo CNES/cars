@@ -349,7 +349,7 @@ class MappingToTerrainTiles(
                         len(
                             [
                                 value
-                                for value in required_point_clouds
+                                for value, _ in required_point_clouds
                                 if not isinstance(value, type(None))
                             ]
                         )
