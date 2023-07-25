@@ -45,8 +45,8 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libsvm-dev=3.24+ds-3build1 \
     swig=4.0.1-5build1 \
     libfftw3-dev=3.3.8-2ubuntu1 \
-    openssh-client=1:8.2p1-4ubuntu0.7 \
-    curl=7.68.0-1ubuntu2.18 \
+    openssh-client=1:8.2p1-4ubuntu0.8 \
+    curl=7.68.0-1ubuntu2.19 \
     vim=2:8.1.2269-1ubuntu5.15 \
     nano=4.8-1ubuntu1 \
     && rm -rf /var/lib/apt/lists/*
