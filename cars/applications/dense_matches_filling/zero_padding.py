@@ -150,7 +150,6 @@ class ZerosPadding(
         :rtype: CarsDataset
 
         """
-
         res = None
 
         if not self.classification:
@@ -264,7 +263,7 @@ def wrapper_fill_disparity(
     :return: disp map
     :rtype: xr.Dataset, xr.Dataset
     """
-    fd_tools.fill_disp_using_zero_padding(disp, classif_index)
+    disp = fd_tools.fill_disp_using_zero_padding(disp, classif_index)
 
     result = copy.copy(disp)
 

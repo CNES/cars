@@ -312,7 +312,7 @@ class MappingToTerrainTiles(
 
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
-                    # update saving infos  for potential replacement
+                    # update saving infos for potential replacement
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
                     )
@@ -362,7 +362,7 @@ class MappingToTerrainTiles(
                         )
 
                         # Delayed call to rasterization operations using all
-                        #  required point clouds
+                        # required point clouds
                         merged_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(

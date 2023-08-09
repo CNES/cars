@@ -29,6 +29,7 @@ CONFIDENCE = "confidence"
 
 # disparity mask
 VALID = "disp_msk"
+FILLING = "filling"
 INVALID_REF = "msk_invalid_ref"
 INVALID_SEC = "msk_invalid_sec"
 MASKED_REF = "msk_masked_ref"

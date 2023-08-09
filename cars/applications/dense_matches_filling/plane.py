@@ -41,6 +41,7 @@ from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFilling,
 )
+from cars.core import constants as cst
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
@@ -435,12 +436,6 @@ def wrapper_fill_disparity(
     :return: disp map
     :rtype: xr.Dataset
     """
-
-    # find xarray Dataset corresponding to current tile
-    input_disp = corresponding_tiles_tools.find_tile_dataset(
-        corresponding_tiles, window
-    )
-
     # Create combined xarray Dataset
 
     (
@@ -453,7 +448,7 @@ def wrapper_fill_disparity(
 
     # Fill disparity
 
-    fd_tools.fill_disp_using_plane(
+    combined_dataset = fd_tools.fill_disp_using_plane(
         combined_dataset,
         corresponding_poly,
         row_min,
@@ -466,8 +461,16 @@ def wrapper_fill_disparity(
         interp_options,
         classification,
     )
+
+    # Find xarray Dataset corresponding to current tile
+    input_disp = corresponding_tiles_tools.find_tile_dataset(
+        corresponding_tiles, window
+    )
+
+    # Add additional attribute "filling" to dataset template
+    input_disp[cst.EPI_FILLING] = combined_dataset[cst.EPI_FILLING]
+
     # Crop Dataset to get tile disparity
-    # crop
     croped_disp = corresponding_tiles_tools.crop_dataset(
         combined_dataset,
         input_disp,
