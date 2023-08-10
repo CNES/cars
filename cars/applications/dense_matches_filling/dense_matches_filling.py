@@ -195,7 +195,6 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
                 new_epipolar_disparity_map,
                 cars_ds_name="epi_disp_" + app_name + "_filled",
             )
-            print("Save epi disp")
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(

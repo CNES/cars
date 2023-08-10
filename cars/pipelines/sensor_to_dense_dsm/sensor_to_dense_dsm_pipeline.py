@@ -738,8 +738,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_key=pair_key,
                     )
 
-                print("End of plane filling")
-
                 if self.dense_matches_filling_2.used_method == "plane":
                     # Fill holes in disparity map
                     (
@@ -764,7 +762,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_folder=pair_folder,
                         pair_key=pair_key,
                     )
-                print(filled_with_2_epipolar_disparity_map[0, 0]["filling"])
 
                 if epsg is None:
                     # compute epsg

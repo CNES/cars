@@ -326,6 +326,13 @@ def compute_vector_raster_and_stats(  # noqa: C901
         cloud, cst.POINTS_CLOUD_SOURCE_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(source_pc_indexes)
+    split_indexes.append(len(source_pc_indexes))
+
+    # 6. filling
+    filling_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_FILLING_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(filling_indexes)
 
     values = (
         cloud.loc[:, values_bands].values.T
@@ -347,7 +354,7 @@ def compute_vector_raster_and_stats(  # noqa: C901
     )
 
     # pylint: disable=unbalanced-tuple-unpacking
-    out, confidences, msk, classif, source_pc = np.split(
+    out, confidences, msk, classif, source_pc, filling = np.split(
         out, np.cumsum(split_indexes), axis=-1
     )
 
@@ -363,10 +370,16 @@ def compute_vector_raster_and_stats(  # noqa: C901
 
     classif_out = None
     if len(classif_indexes) > 0:
+        # Change values to one if positive and 0 otherwise
         classif_out = classif
 
-    # Change values of source_pc to one if positive and 0 otherwise
-    source_pc_out = np.ceil(source_pc)
+    source_pc_out = None
+    if len(source_pc_indexes) > 0:
+        source_pc_out = np.ceil(source_pc)
+
+    filling_out = None
+    if len(filling_indexes) > 0:
+        filling_out = np.ceil(filling)
 
     return (
         out,
@@ -379,6 +392,8 @@ def compute_vector_raster_and_stats(  # noqa: C901
         classif_indexes,
         confidences_out,
         source_pc_out,
+        filling_out,
+        filling_indexes,
     )
 
 
@@ -403,6 +418,8 @@ def create_raster_dataset(
     confidences: np.ndarray = None,
     source_pc: np.ndarray = None,
     source_pc_names: List[str] = None,
+    filling: np.ndarray = None,
+    band_filling: List[str] = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -487,7 +504,9 @@ def create_raster_dataset(
         if classif.shape[-1] > 1:  # rasterizer produced classif output
             classif = np.nan_to_num(classif, nan=msk_no_data)
             for idx, band_name in enumerate(band_classif):
-                band_classif[idx] = band_name.replace("classif_", "")
+                band_classif[idx] = band_name.replace(
+                    cst.POINTS_CLOUD_CLASSIF_KEY_ROOT + "_", ""
+                )
             classif_out = xr.Dataset(
                 {
                     cst.RASTER_CLASSIF: (
@@ -505,7 +524,7 @@ def create_raster_dataset(
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
     if source_pc is not None and source_pc_names is not None:
-        source_pc = np.nan_to_num(np.rollaxis(source_pc, 2), nan=msk_no_data)
+        source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
         source_pc_out = xr.Dataset(
             {
                 cst.RASTER_SOURCE_PC: (
@@ -517,6 +536,25 @@ def create_raster_dataset(
         )
         # update raster output with classification data
         raster_out = xr.merge((raster_out, source_pc_out))
+
+    if filling is not None:
+        if filling.shape[-1] > 1:  # rasterizer produced filling output
+            filling = np.nan_to_num(filling, nan=msk_no_data)
+            for idx, band_name in enumerate(band_filling):
+                band_filling[idx] = band_name.replace(
+                    cst.POINTS_CLOUD_FILLING_KEY_ROOT + "_", ""
+                )
+            filling_out = xr.Dataset(
+                {
+                    cst.RASTER_FILLING: (
+                        [cst.BAND_FILLING, cst.Y, cst.X],
+                        filling,
+                    )
+                },
+                coords={**raster_coords, cst.BAND_FILLING: band_filling},
+            )
+            # update raster output with filling information
+            raster_out = xr.merge((raster_out, filling_out))
 
     return raster_out
 
@@ -584,9 +622,11 @@ def rasterize(
         n_in_cell,
         msk,
         classif,
-        band_list,
+        classif_indexes,
         confidences,
         source_pc,
+        filling,
+        filling_indexes,
     ) = compute_vector_raster_and_stats(
         cloud,
         data_valid,
@@ -621,6 +661,11 @@ def rasterize(
 
     if source_pc is not None:
         source_pc = source_pc.reshape(shape_out + (-1,))
+        source_pc = np.moveaxis(source_pc, 2, 0)
+
+    if filling is not None:
+        filling = filling.reshape(shape_out + (-1,))
+        filling = np.moveaxis(filling, 2, 0)
 
     # build output dataset
     raster_out = create_raster_dataset(
@@ -640,10 +685,12 @@ def rasterize(
         n_in_cell,
         msk,
         classif,
-        band_list,
+        classif_indexes,
         confidences,
         source_pc,
         source_pc_names,
+        filling,
+        filling_indexes,
     )
 
     return raster_out
