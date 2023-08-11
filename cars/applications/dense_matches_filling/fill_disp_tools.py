@@ -30,7 +30,6 @@ import copy
 # Standard imports
 import logging
 import math
-from typing import Dict, Tuple
 
 # Third party imports
 import matplotlib.pyplot as plt
@@ -100,9 +99,9 @@ def fill_central_area_using_plane(
     :param class_index: list of tag to use
     :type class_index: list(str)
 
-    :return: mask of invalid region that hasn't been filled yet (original
-        invalid region - central area)
-    :rtype: 2D np.array (row, col)
+    :return: filled disparity map, mask of invalid region that hasn't
+        been filled yet (original invalid region - central area)
+    :rtype: xr.Dataset, 2D np.array (row, col)
     """
 
     # Generate a structuring element that will consider features
@@ -395,6 +394,9 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
     :type masks_to_fill: list(2D np.array (row, col))
     :param options: parameters for interpolation methods
     :type options: dict
+
+    :return: filled disparity map
+    :rtype: xr.Dataset
     """
     # Copy input data - disparity values + mask with values to fill
     raster = np.copy(disp_map["disp"].values)
@@ -753,7 +755,7 @@ def fill_disp_using_plane(
     percent_to_erode: float,
     interp_options: dict,
     classification,
-) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+) -> xr.Dataset:
     """
     Fill disparity map holes
 
@@ -780,8 +782,8 @@ def fill_disp_using_plane(
     :param classification: list of tag to use
     :type classification: list(str)
 
-    :return: overloaded configuration
-    :rtype: dict
+    :return: filled disparity map
+    :rtype: xr.Dataset
 
     """
     disp_map, border_region = fill_central_area_using_plane(
@@ -809,7 +811,7 @@ def fill_disp_using_plane(
 def fill_disp_using_zero_padding(
     disp_map: xr.Dataset,
     class_index,
-) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
+) -> xr.Dataset:
     """
     Fill disparity map holes
 
@@ -818,9 +820,8 @@ def fill_disp_using_zero_padding(
     :param class_index: class index according to the classification tag
     :type class_index: int
 
-    :return: overloaded configuration
-    :rtype: dict
-
+    :return: filled disparity map
+    :rtype: xr.Dataset
     """
     # get index of the application class config
     # according the coords classif band
