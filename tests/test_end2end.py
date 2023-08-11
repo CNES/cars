@@ -2731,6 +2731,7 @@ def test_end2end_disparity_filling():
                 "color_no_data": 0,
                 "msk_no_data": 65534,
                 "save_msk": True,
+                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2753,6 +2754,8 @@ def test_end2end_disparity_filling():
         #       absolute_data_path("ref_output/clr_end2end_gizeh_fill.tif"))
         # copy2(os.path.join(out_dir, 'msk.tif'),
         #      absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"))
+        # copy2(os.path.join(out_dir, 'filling.tif'),
+        #      absolute_data_path("ref_output/filling_end2end_gizeh_fill.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -2769,6 +2772,12 @@ def test_end2end_disparity_filling():
         assert_same_images(
             os.path.join(out_dir, "msk.tif"),
             absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "filling.tif"),
+            absolute_data_path("ref_output/filling_end2end_gizeh_fill.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -2819,6 +2828,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "color_no_data": 0,
                 "msk_no_data": 65534,
                 "save_msk": True,
+                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2859,6 +2869,14 @@ def test_end2end_disparity_filling_with_zeros():
         #         )
         #     ),
         # )
+        # copy2(
+        #     os.path.join(out_dir, "filling.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output", "filling_end2end_gizeh_fill_with_zero.tif"
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -2880,6 +2898,14 @@ def test_end2end_disparity_filling_with_zeros():
             os.path.join(out_dir, "msk.tif"),
             absolute_data_path(
                 "ref_output/msk_end2end_gizeh_fill_with_zero.tif"
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "filling.tif"),
+            absolute_data_path(
+                "ref_output/filling_end2end_gizeh_fill_with_zero.tif"
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
