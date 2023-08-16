@@ -1050,6 +1050,8 @@ def save_dataset(
         bands_description = dataset.coords[cst.BAND_IM].values
     if tag == cst.RASTER_SOURCE_PC:
         bands_description = dataset.coords[cst.BAND_SOURCE_PC].values
+    if tag in (cst.EPI_FILLING, cst.RASTER_FILLING):
+        bands_description = dataset.coords[cst.BAND_FILLING].values
 
     outputs.rasterio_write_georaster(
         file_name,
