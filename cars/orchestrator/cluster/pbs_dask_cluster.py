@@ -135,6 +135,7 @@ def start_cluster(
         activate_dashboard,
         python,
         core_memory=5000,
+        cluster_name="PBS",
     )
 
     # Retrieve PBS queue

@@ -31,7 +31,13 @@ from datetime import timedelta
 
 
 def init_cluster_variables(
-    nb_workers, walltime, out_dir, activate_dashboard, python, core_memory
+    nb_workers,
+    walltime,
+    out_dir,
+    activate_dashboard,
+    python,
+    core_memory,
+    cluster_name,
 ):
     """
     Initialize global cluster variables
@@ -41,6 +47,7 @@ def init_cluster_variables(
     :param activate_dashboard: option to activate dashboard mode
     :param python: target python used by workers (retrun system python if None)
     :param core_memory: cluster node memory (Mo)
+    :param cluster_name: PBS or SLURM
     :return: all cluster parameters (python,
     nb_workers_per_job,
     memory,
@@ -88,25 +95,28 @@ def init_cluster_variables(
         min_walltime_minutes = min_walltime.total_seconds() / 60
         logging.warning(
             "Could not add worker lifetime margin because specified walltime "
-            "is too short. Workers might get killed by SLURM before they can "
+            "is too short. Workers might get killed by {} before they can "
             "cleanly exit, which might break adaptative scaling. Please "
             "specify a lifetime greater than {} minutes.".format(
-                min_walltime_minutes
+                cluster_name, min_walltime_minutes
             )
         )
         lifetime_with_margin = lifetime
 
     logging.info(
-        "Starting Dask SLURM cluster with {} workers "
-        "({} workers with {} cores each per SLURM job)".format(
-            nb_workers, nb_workers_per_job, nb_threads_per_worker
+        "Starting Dask {0} cluster with {1} workers "
+        "({2} workers with {3} cores each per {0} job)".format(
+            cluster_name,
+            nb_workers,
+            nb_workers_per_job,
+            nb_threads_per_worker,
         )
     )
 
     logging.info(
-        "Submitting {} SLURM jobs "
+        "Submitting {} {} jobs "
         "with configuration cpu={}, mem={}, walltime={}".format(
-            nb_jobs, nb_cpus, memory, walltime
+            nb_jobs, cluster_name, nb_cpus, memory, walltime
         )
     )
 

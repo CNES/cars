@@ -138,6 +138,7 @@ def start_cluster(
         activate_dashboard,
         python,
         core_memory=8000,
+        cluster_name="SLURM",
     )
 
     with warnings.catch_warnings():
