@@ -49,12 +49,7 @@ The structure follows this organisation:
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *initial_elevation*     | if directory for OTB:                                               | string                | None                 | No       |
-            |                         | Field contains the path to the **folder** in which are located      |                       |                      |          |
-            |                         | the srtm tiles covering the production                              |                       |                      |          |
-            |                         | if a file for Shareloc:                                             |                       |                      |          |
-            |                         | field contains the path to the file corresponding                   |                       |                      |          |
-            |                         | the srtm tiles covering the production                              |                       |                      |          |
+            | *initial_elevation*     | Path to SRTM tiles (see :ref:`plugins` section for details)         | string                | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
             |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
@@ -93,11 +88,11 @@ The structure follows this organisation:
             +===================+==========================================================================================+================+===============+==========+
             | *image*           | Path to the image                                                                        | string         |               | Yes      |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *color*           | image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
+            | *color*           | Image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *no_data*         | no data value of the image                                                               | int            | -9999         | No       |
+            | *no_data*         | No data value of the image                                                               | int            | -9999         | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel*        | path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | dict           |               | Yes      |
+            | *geomodel*        | Path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | dict           |               | Yes      |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
