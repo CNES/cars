@@ -77,6 +77,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_CONFIDENCE: Or(dict, None),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: Or(str, None),
+        cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_VALID_DATA: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),
     }
@@ -105,6 +106,9 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
             "classification", None
         )
+        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            cst.POINTS_CLOUD_FILLING_KEY_ROOT
+        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("filling", None)
         confidence_conf = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
             "confidence", None
         )
@@ -172,6 +176,9 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
                 cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
             ],
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                cst.POINTS_CLOUD_FILLING_KEY_ROOT
+            ],
+            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE
             ],
         )
@@ -179,7 +186,9 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
     return overloaded_conf
 
 
-def check_input_size(x_path, y_path, z_path, mask, color, classif, confidence):
+def check_input_size(
+    x_path, y_path, z_path, mask, color, classif, filling, confidence
+):
     """
     Check x, y, z, mask, color, classif and confidence given
 
@@ -197,6 +206,8 @@ def check_input_size(x_path, y_path, z_path, mask, color, classif, confidence):
     :type color: str
     :param classif: classif path
     :type classif: str
+    :param filling: filling path
+    :type filling: str
     :param confidence: confidence dict path
     :type confidence: dict[str]
     """
@@ -205,7 +216,7 @@ def check_input_size(x_path, y_path, z_path, mask, color, classif, confidence):
         if inputs.rasterio_get_nb_bands(path) != 1:
             raise RuntimeError("{} is not mono-band image".format(path))
 
-    for path in [mask, color, classif]:
+    for path in [mask, color, classif, filling]:
         if path is not None:
             if inputs.rasterio_get_size(x_path) != inputs.rasterio_get_size(
                 path
@@ -245,6 +256,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.POINTS_CLOUD_CLR_KEY_ROOT,
             cst.POINTS_CLOUD_VALID_DATA,
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT,
+            cst.POINTS_CLOUD_FILLING_KEY_ROOT,
             cst.POINTS_CLOUD_CONFIDENCE,
         ]:
             if tag != cst.POINTS_CLOUD_CONFIDENCE:

@@ -390,6 +390,14 @@ class LineOfSightIntersection(
                     )
 
                     self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_filling.tif"),
+                        cst.EPI_FILLING,
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_filling",
+                        optional_data=True,
+                    )
+
+                    self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_pc_color.tif"),
                         cst.EPI_COLOR,
                         epipolar_points_cloud,
