@@ -58,6 +58,28 @@ def inputfilename_to_sensor(inputfilename):
     return sensor
 
 
+def pairdirname_to_pc(pairdirname):
+    """
+    Fill sensor dictionary according to an pair directory
+    """
+    sensor = {}
+
+    abspairdirname = os.path.abspath(pairdirname)
+
+    for coord in ["X", "Y", "Z"]:
+        bandname = os.path.join(abspairdirname, "epi_pc_" + coord + ".tif")
+        if os.path.isfile(bandname) is False:
+            raise FileNotFoundError(bandname + " does not exist")
+        sensor[coord.lower()] = bandname
+
+    for extra in ["color"]:
+        bandname = os.path.join(abspairdirname, "epi_pc_" + extra + ".tif")
+        if os.path.isfile(bandname):
+            sensor[extra] = bandname
+
+    return sensor
+
+
 def main():
     """
     Main cars-starter entrypoint
@@ -69,8 +91,8 @@ def main():
         "-il",
         type=str,
         nargs="*",
-        metavar="input.tif",
-        help="Inputs list",
+        metavar="input.{tif,XML} or pair_dir",
+        help="Inputs list or Pairs directory list",
         required=True,
     )
 
@@ -90,22 +112,34 @@ def main():
 
     args = parser.parse_args()
 
-    config = {"inputs": {"sensors": {}}, "output": {}}
-    pipeline_name = "sensors_to_dense_dsm"
+    # check first input in list to determine pipeline
+    if os.path.isfile(args.il[0]):
+        config = {"inputs": {"sensors": {}}, "output": {}}
+        pipeline_name = "sensors_to_dense_dsm"
 
-    for idx, inputfilename in enumerate(args.il):
-        config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
-            inputfilename
+        for idx, inputfilename in enumerate(args.il):
+            config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
+                inputfilename
+            )
+
+        # pairing with first image as reference
+        pairing = list(
+            zip(  # noqa: B905
+                ["0"] * (len(args.il) - 1), map(str, range(1, len(args.il)))
+            )
         )
 
-    # pairing with first image as reference
-    pairing = list(
-        zip(  # noqa: B905
-            ["0"] * (len(args.il) - 1), map(str, range(1, len(args.il)))
-        )
-    )
+        config["inputs"]["pairing"] = pairing
 
-    config["inputs"]["pairing"] = pairing
+    else:
+        config = {"inputs": {"point_clouds": {}}, "output": {}}
+        pipeline_name = "dense_point_clouds_to_dense_dsm"
+
+        for idx, pairdirname in enumerate(args.il):
+            config["inputs"]["point_clouds"][str(idx)] = pairdirname_to_pc(
+                pairdirname
+            )
+
     config["output"]["out_dir"] = args.out
 
     if args.check or args.full:
