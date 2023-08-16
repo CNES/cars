@@ -4,13 +4,17 @@
         "sensors" : {
             "one": {
                 "image": "img1.tif",
-                "geomodel": "img1.geom",
+                "geomodel": {
+                    "path": "img1.geom"
+                },
                 "classification": "classif1.tif",
                 "no_data": 0
             },
             "two": {
                 "image": "img2.tif",
-                "geomodel": "img2.geom",
+                "geomodel": {
+                    "path": "img2.geom"
+                },
                 "classification": "classif2.tif",
                 "no_data": 0
 

@@ -102,8 +102,6 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
 
-        # check loader
-
         # Saving files
         self.save_matches = self.used_config["save_matches"]
 

@@ -70,7 +70,6 @@ def test_end2end_ventoux_unique_shareloc():
             "grid_generation": {
                 "method": "epipolar",
                 "epi_step": 30,
-                "geometry_loader": "SharelocGeometry",
             },
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
@@ -84,7 +83,6 @@ def test_end2end_ventoux_unique_shareloc():
             "triangulation": {
                 "method": "line_of_sight_intersection",
                 "save_points_cloud": True,
-                "geometry_loader": "SharelocGeometry",
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
@@ -171,6 +169,8 @@ def test_end2end_ventoux_unique_shareloc():
         input_config_dense_dsm["inputs"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+        # update geometry plugin
+        input_config_dense_dsm["geometry_plugin"] = "SharelocGeometry"
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm

@@ -23,7 +23,6 @@ this module contains the epipolar grid generation application class.
 """
 
 # Standard imports
-import importlib.util
 import logging
 import os
 
@@ -35,12 +34,14 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.grid_generation import grid_constants, grids
 from cars.applications.grid_generation.grid_generation import GridGeneration
-from cars.core import preprocessing, projection
+from cars.core import projection
 
 # CARS imports
-from cars.core.geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
+)
 
 
 class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
@@ -64,13 +65,6 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         # Saving files
         # TODO not implemented, future work
         self.save_grids = self.used_config["save_grids"]
-
-        # check loader
-        # TODO
-        self.geometry_loader = self.used_config["geometry_loader"]
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            self.geometry_loader
-        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -99,32 +93,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
         overloaded_conf["save_grids"] = conf.get("save_grids", False)
 
-        # check geometry tool availability
-        geometry = "OTBGeometry"
-
-        # 1/ check otbApplication python module
-        otb_app = importlib.util.find_spec("otbApplication")
-        # 2/ check remote modules
-        if otb_app is not None:
-            otb_geometry = (
-                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                    "OTBGeometry"
-                )
-            )
-            missing_remote = otb_geometry.check_otb_remote_modules()
-
-        if otb_app is None or len(missing_remote) > 0:
-            geometry = "SharelocGeometry"
-
-        # Overloader loader
-        overloaded_conf["geometry_loader"] = conf.get(
-            "geometry_loader", geometry
-        )
-
         grid_generation_schema = {
             "method": str,
             "epi_step": And(int, lambda x: x > 0),
-            "geometry_loader": str,
             "save_grids": bool,
         }
 
@@ -138,11 +109,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         self,
         image_left,
         image_right,
+        geometry_plugin,
         orchestrator=None,
         pair_folder=None,
-        srtm_dir=None,
-        default_alt=None,
-        geoid_path=None,
         pair_key="PAIR_0",
     ):
         """
@@ -157,15 +126,11 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         :param image_right: right image. Dict Must contain keys :\
          "image", "color", "geomodel","no_data", "mask". Paths must be absolutes
         :type image_right: dict
+        :param geometry_plugin: geometry plugin to use
+        :type geometry_plugin: AbstractGeometry
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param orchestrator: orchestrator used
-        :param srtm_dir: srtm directory
-        :type srtm_dir: str
-        :param default_alt: default altitude
-        :type default_alt: float
-        :param geoid_path: geoid path
-        :type geoid_path: str
         :param pair_key: pair configuration id
         :type pair_key: str
 
@@ -192,17 +157,10 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         else:
             self.orchestrator = orchestrator
 
-        if pair_folder is None:
-            pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
-
-        # TODO save grid
-
-        # Create config from left and right inputs
-        # TODO change it, modify geometry loader inputs
-        config = preprocessing.create_former_cars_conf(
-            image_left, image_right, srtm_dir=srtm_dir, default_alt=default_alt
-        )
+        sensor1 = image_left[sens_cst.INPUT_IMG]
+        sensor2 = image_right[sens_cst.INPUT_IMG]
+        geomodel1 = image_left[sens_cst.INPUT_GEO_MODEL]
+        geomodel2 = image_right[sens_cst.INPUT_GEO_MODEL]
 
         # Get satellites angles from ground: Azimuth to north, Elevation angle
         (
@@ -211,7 +169,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             right_az,
             right_elev_angle,
             convergence_angle,
-        ) = projection.get_ground_angles(config, self.geometry_loader)
+        ) = projection.get_ground_angles(
+            sensor1, sensor2, geomodel1, geomodel2, geometry_plugin
+        )
 
         logging.info(
             "Left satellite acquisition angles: Azimuth angle: {:.1f}°, "
@@ -238,12 +198,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             epipolar_size,
             disp_to_alt_ratio,
         ) = grids.generate_epipolar_grids(
-            config,
-            self.geometry_loader,
-            dem=srtm_dir,
-            default_alt=default_alt,
-            epipolar_step=self.epi_step,
-            geoid=geoid_path,
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            geometry_plugin,
+            self.epi_step,
         )
 
         # Create CarsDataset
@@ -273,11 +233,35 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             "epipolar_spacing": grid_spacing[1],
             "disp_to_alt_ratio": disp_to_alt_ratio,
             "epipolar_step": self.epi_step,
+            "path": None,
         }
-        grid_left.attributes = grid_attributes
-        grid_right.attributes = grid_attributes
+        grid_left.attributes = grid_attributes.copy()
+        grid_right.attributes = grid_attributes.copy()
 
-        # add logs
+        grid_origin = grid_left.attributes["grid_origin"]
+        grid_spacing = grid_left.attributes["grid_spacing"]
+
+        if self.save_grids:
+            left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
+            right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
+        else:
+            if pair_folder is None:
+                tmp_folder = os.path.join(self.orchestrator.out_dir, "tmp")
+            else:
+                tmp_folder = os.path.join(pair_folder, "tmp")
+            safe_makedirs(tmp_folder)
+            left_grid_path = os.path.join(tmp_folder, "left_epi_grid.tif")
+            right_grid_path = os.path.join(tmp_folder, "right_epi_grid.tif")
+
+        grids.write_grid(
+            grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
+        )
+        grids.write_grid(
+            grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
+        )
+
+        grid_left.attributes["path"] = left_grid_path
+        grid_right.attributes["path"] = right_grid_path
 
         # Add infos to orchestrator.out_json
         updating_dict = {

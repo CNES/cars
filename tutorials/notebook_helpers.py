@@ -376,7 +376,7 @@ def extract_a_priori_from_config(conf):
     return grid_coefficients, disparity_range
 
 
-def apply_grid_correction(grid, grid_coefficients):
+def apply_grid_correction(grid, grid_coefficients, save_folder):
     """
     Correct grid with grid correction
 
@@ -385,4 +385,6 @@ def apply_grid_correction(grid, grid_coefficients):
         raise RuntimeError("No grid correction provided")
 
     # Correct grid right with provided epipolar a priori
-    return grid_correction.correct_grid_from_1d(grid, list(grid_coefficients))
+    return grid_correction.correct_grid_from_1d(
+        grid, list(grid_coefficients), False, save_folder
+    )

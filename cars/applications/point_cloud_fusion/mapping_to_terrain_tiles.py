@@ -66,8 +66,6 @@ class MappingToTerrainTiles(
         # Cloud fusion
         self.used_method = self.used_config["method"]
 
-        # check loader
-
         # Saving files
         self.save_points_cloud_as_laz = self.used_config.get(
             "save_points_cloud_as_laz", False

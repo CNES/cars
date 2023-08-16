@@ -40,7 +40,6 @@ from shapely.geometry import Polygon
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.grid_generation import grids
 from cars.applications.resampling import resampling_constants, resampling_tools
 from cars.applications.resampling.resampling import Resampling
 from cars.core import constants as cst
@@ -76,9 +75,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Saving bools
         self.save_epipolar_image = self.used_config["save_epipolar_image"]
         self.save_epipolar_color = self.used_config["save_epipolar_color"]
-
-        # check loader
-        # TODO use loaders
 
         # Init orchestrator
         self.orchestrator = None
@@ -426,35 +422,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        # Save grids on disk
-        # TODO remove it
-        # Save grids
-        safe_makedirs(os.path.join(pair_folder, "tmp"))
-        grid_origin = grid_left.attributes["grid_origin"]
-        grid_spacing = grid_left.attributes["grid_spacing"]
-        left_grid_path = grids.get_new_path(
-            os.path.join(pair_folder, "tmp", "left_epi_grid.tif")
-        )
-        grids.write_grid(
-            grid_left[0, 0], left_grid_path, grid_origin, grid_spacing
-        )
-
-        right_grid_path = grids.get_new_path(
-            os.path.join(pair_folder, "tmp", "corrected_right_epi_grid.tif")
-        )
-        grids.write_grid(
-            grid_right[0, 0], right_grid_path, grid_origin, grid_spacing
-        )
-        # End TODO
-
         # retrieves some data
         epipolar_size_x = grid_left.attributes["epipolar_size_x"]
         epipolar_size_y = grid_left.attributes["epipolar_size_y"]
         img1 = sensor_image_left[sens_cst.INPUT_IMG]
         img2 = sensor_image_right[sens_cst.INPUT_IMG]
         color1 = sensor_image_left.get(sens_cst.INPUT_COLOR, None)
-        grid1 = left_grid_path
-        grid2 = right_grid_path
+        grid1 = grid_left
+        grid2 = grid_right
         nodata1 = sensor_image_left.get(sens_cst.INPUT_NODATA, None)
         nodata2 = sensor_image_right.get(sens_cst.INPUT_NODATA, None)
         mask1 = sensor_image_left.get(sens_cst.INPUT_MSK, None)

@@ -43,6 +43,7 @@ from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
+    GEOMETRY_PLUGIN,
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
@@ -117,6 +118,15 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
         self.used_conf[INPUTS] = self.inputs
+
+        # Check geometry plugin
+        (
+            self.used_conf[GEOMETRY_PLUGIN],
+            self.geom_plugin_without_dem_and_geoid,
+            self.geom_plugin_with_dem_and_geoid,
+        ) = sensors_inputs.check_geometry_plugin(
+            self.conf.get(GEOMETRY_PLUGIN, None), self.inputs
+        )
 
         # Get ROI
         (
@@ -298,7 +308,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             # initialise lists of points
             list_epipolar_points_cloud = []
 
-            list_sensor_pairs = sensors_inputs.generate_inputs(self.inputs)
+            list_sensor_pairs = sensors_inputs.generate_inputs(
+                self.inputs, self.geom_plugin_without_dem_and_geoid
+            )
             logging.info(
                 "Received {} stereo pairs configurations".format(
                     len(list_sensor_pairs)
@@ -324,12 +336,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 ) = self.epipolar_grid_generation_application.run(
                     sensor_image_left,
                     sensor_image_right,
+                    self.geom_plugin_with_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
-                    srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                    default_alt=self.inputs[sens_cst.DEFAULT_ALT],
-                    geoid_path=self.inputs[sens_cst.GEOID],
                 )
 
                 # Run epipolar resampling
@@ -393,17 +403,18 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Correct grid right
                 corrected_grid_right = grid_correction.correct_grid(
-                    grid_right, grid_correction_coef
+                    grid_right,
+                    grid_correction_coef,
+                    self.epipolar_grid_generation_application.save_grids,
+                    pair_folder,
                 )
 
                 # Compute disp_min and disp_max
-                geom = self.triangulation_application.get_geometry_loader()
                 (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(
                     sensor_image_left,
                     sensor_image_right,
                     grid_left,
                     corrected_grid_right,
-                    grid_right,
                     corrected_matches_array,
                     orchestrator=cars_orchestrator,
                     disp_margin=(
@@ -411,10 +422,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     ),
                     pair_key=pair_key,
                     disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
-                    geometry_loader=geom,
+                    geometry_plugin=self.geom_plugin_with_dem_and_geoid,
                     pair_folder=pair_folder,
-                    srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                    default_alt=self.inputs[sens_cst.DEFAULT_ALT],
                 )
 
                 # Clean variables
@@ -433,12 +442,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         sensor_image_left,
                         sensor_image_right,
                         grid_left,
-                        grid_right,
-                        self.triangulation_application.get_geometry_loader(),
+                        corrected_grid_right,
+                        self.geom_plugin_with_dem_and_geoid,
                         orchestrator=cars_orchestrator,
                         pair_folder=pair_folder,
-                        srtm_dir=self.inputs[sens_cst.INITIAL_ELEVATION],
-                        default_alt=self.inputs[sens_cst.DEFAULT_ALT],
                         disp_min=dmin,
                         disp_max=dmax,
                     )
@@ -472,6 +479,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     corrected_grid_right,
                     corrected_matches_cars_ds,
                     epsg,
+                    self.geom_plugin_without_dem_and_geoid,
                     orchestrator=cars_orchestrator,
                     pair_folder=pair_folder,
                     pair_key=pair_key,
@@ -483,16 +491,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Compute terrain bounding box /roi related to current images
                 current_terrain_roi_bbox = preprocessing.compute_terrain_bbox(
-                    self.inputs[sens_cst.INITIAL_ELEVATION],
-                    self.inputs[sens_cst.DEFAULT_ALT],
-                    self.inputs[sens_cst.GEOID],
                     sensor_image_left,
                     sensor_image_right,
                     epipolar_image_left,
                     grid_left,
                     corrected_grid_right,
                     epsg,
-                    self.triangulation_application.get_geometry_loader(),
+                    self.geom_plugin_with_dem_and_geoid,
                     resolution=self.rasterization_application.get_resolution(),
                     disp_min=dmin,
                     disp_max=dmax,

@@ -23,7 +23,6 @@ this module contains the dense_matching application class.
 """
 
 # Standard imports
-import importlib.util
 import logging
 import os
 from typing import Dict, Tuple
@@ -43,10 +42,10 @@ from cars.applications.triangulation import (
 )
 from cars.applications.triangulation.triangulation import Triangulation
 from cars.core import constants as cst
-from cars.core import inputs, preprocessing, projection, tiling
+from cars.core import inputs, projection, tiling
 
 # CARS imports
-from cars.core.geometry import AbstractGeometry, read_geoid_file
+from cars.core.geometry import read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.sensor_to_dense_dsm import (
@@ -77,13 +76,6 @@ class LineOfSightIntersection(
         self.add_msk_info = self.used_config["add_msk_info"]
         # Saving files
         self.save_points_cloud = self.used_config["save_points_cloud"]
-
-        # check loader
-        # TODO
-        self.geometry_loader = self.used_config["geometry_loader"]
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            self.geometry_loader
-        )
 
         # global value for left image to check if snap_to_img1 can
         # be applied : Need than same application object is run
@@ -120,28 +112,6 @@ class LineOfSightIntersection(
         overloaded_conf["snap_to_img1"] = conf.get("snap_to_img1", False)
         overloaded_conf["add_msk_info"] = conf.get("add_msk_info", True)
 
-        # check geometry tool availability
-        geometry = "OTBGeometry"
-
-        # 1/ check otbApplication python module
-        otb_app = importlib.util.find_spec("otbApplication")
-        # 2/ check remote modules
-        if otb_app is not None:
-            otb_geometry = (
-                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                    "OTBGeometry"
-                )
-            )
-            missing_remote = otb_geometry.check_otb_remote_modules()
-
-        if otb_app is None or len(missing_remote) > 0:
-            geometry = "SharelocGeometry"
-
-        # Overloader loader
-        overloaded_conf["geometry_loader"] = conf.get(
-            "geometry_loader", geometry
-        )
-
         # Saving files
         overloaded_conf["save_points_cloud"] = conf.get(
             "save_points_cloud", False
@@ -153,7 +123,6 @@ class LineOfSightIntersection(
             "snap_to_img1": bool,
             "add_msk_info": bool,
             "save_points_cloud": bool,
-            "geometry_loader": str,
         }
 
         # Check conf
@@ -161,9 +130,6 @@ class LineOfSightIntersection(
         checker.validate(overloaded_conf)
 
         return overloaded_conf
-
-    def get_geometry_loader(self):
-        return self.geometry_loader
 
     def run(  # noqa: C901
         self,
@@ -174,6 +140,7 @@ class LineOfSightIntersection(
         grid_right,
         epipolar_disparity_map,
         epsg,
+        geometry_plugin,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -294,7 +261,7 @@ class LineOfSightIntersection(
             if self.snap_to_img1 and self.ref_left_img != conf_left_img:
                 logging.warning(
                     "snap_to_left_image mode is used but inputs "
-                    " have different images as their "
+                    "have different images as their "
                     "left image in pair. This may result in "
                     "increasing registration discrepancies between pairs"
                 )
@@ -321,34 +288,34 @@ class LineOfSightIntersection(
         }
         self.orchestrator.update_out_info(updating_dict)
 
-        # Create fake configuration dict
-        # TODO remove it later
-        configuration = (
-            preprocessing.create_former_cars_post_prepare_configuration(
-                sensor_image_left,
-                sensor_image_right,
-                grid_left,
-                grid_right,
-                pair_folder,
-                uncorrected_grid_right=uncorrected_grid_right,
-                srtm_dir=None,
-                default_alt=0,
-                disp_min=None,
-                disp_max=None,
-            )
-        )
+        sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+        sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+        geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+        geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
+
+        if self.snap_to_img1:
+            grid_right = uncorrected_grid_right
+            if grid_right is None:
+                logging.error(
+                    "Uncorrected grid was not given in order to snap it to img1"
+                )
 
         # Compute disp_min and disp_max location for epipolar grid
         (
             epipolar_grid_min,
             epipolar_grid_max,
         ) = grids.compute_epipolar_grid_min_max(
-            self.geometry_loader,
+            geometry_plugin,
             tiling.transform_four_layers_to_two_layers_grid(
                 epipolar_image.tiling_grid
             ),
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            grid_left,
+            grid_right,
             epsg,
-            configuration,
             disp_min,
             disp_max,
         )
@@ -482,11 +449,15 @@ class LineOfSightIntersection(
                     )(
                         epipolar_image[row, col],
                         epipolar_disparity_map[row, col],
-                        configuration,
-                        self.geometry_loader,
+                        sensor1,
+                        sensor2,
+                        geomodel1,
+                        geomodel2,
+                        grid_left,
+                        grid_right,
+                        geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
-                        snap_to_img1=self.snap_to_img1,
                         add_msk_info=self.add_msk_info,
                         saving_info=full_saving_info,
                     )
@@ -497,11 +468,15 @@ class LineOfSightIntersection(
 def compute_points_cloud(
     image_object: xr.Dataset,
     disparity_object: xr.Dataset,
-    input_stereo_cfg: dict,
-    geometry_loader: str,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid1,
+    grid2,
+    geometry_plugin,
     epsg,
     geoid_data: xr.Dataset = None,
-    snap_to_img1: bool = False,
     add_msk_info: bool = False,
     saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
@@ -524,10 +499,20 @@ def compute_points_cloud(
             - cst_disp.VALID
             - cst.EPI_COLOR
     :type disparity_object: xr.Dataset
-    :param input_stereo_cfg: Configuration for stereo processing
-    :type input_stereo_cfg: dict
-    :param geometry_loader: name of geometry loader to use
-    :type geometry_loader: str
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
     :param geoid_data: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
     :type geoid_data: str
@@ -549,7 +534,6 @@ def compute_points_cloud(
             - cst.Z
             - cst.EPI_COLOR
     """
-
     # Get disparity maps
     disp_ref = disparity_object
 
@@ -570,17 +554,28 @@ def compute_points_cloud(
     if isinstance(disp_ref, xr.Dataset):
         # Triangulate epipolar dense disparities
         points = triangulation_tools.triangulate(
-            geometry_loader,
-            input_stereo_cfg,
+            geometry_plugin,
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            grid1,
+            grid2,
             disp_ref,
-            snap_to_img1=snap_to_img1,
             im_ref_msk_ds=im_ref_msk,
         )
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches
         points = {}
         points[cst.STEREO_REF] = triangulation_tools.triangulate_matches(
-            geometry_loader, input_stereo_cfg, disp_ref.to_numpy()
+            geometry_plugin,
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            grid1,
+            grid2,
+            disp_ref.to_numpy(),
         )
     else:
         logging.error(

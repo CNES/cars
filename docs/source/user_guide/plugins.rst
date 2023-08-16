@@ -12,66 +12,93 @@ This section describes optional plugins possibilities of CARS.
     
     Work in progress !
 
-.. _plugin_geometry_shareloc:
+.. tabs::
 
-Shareloc Geometry plugin
-========================
+    .. tab:: OTB Geometry plugin
 
-By default, the geometry functions in CARS are run through |otb|.
+        By default, the geometry functions in CARS are run through |otb|.
 
-Another geometry library called `Shareloc`_ is installed with CARS and can be configured to be used as another option.
+        To use OTB geometry library, CARS input configuration should be defined as :
 
-To use Shareloc library, CARS input configuration should be defined as :
+        .. code-block:: json
 
-.. code-block:: json
+            {
+              "inputs": {
+                "sensors": {
+                  "one": {
+                    "image": "img1.tif",
+                    "geomodel": {
+                      "path": "img1.geom"
+                    },
+                  },
+                  "two": {
+                    "image": "img2.tif",
+                    "geomodel": {
+                      "path": "img2.geom"
+                    },
+                  }
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": "path/to/srtm_file"
+              },
+              "geometry_plugin": "OTBGeometry",
+              "output": {
+                "out_dir": "outresults"
+              }
+            }
 
-    {
-      "inputs": {
-        "sensors": {
-          "one": {
-            "image": "img1.tif",
-            "geomodel": "img1.geom",
-            "geomodel_type": "RPC"
-          },
-          "two": {
-            "image": "img2.tif",
-            "geomodel": "img2.geom",
-            "geomodel_type": "RPC"
-          }
-        },
-        "pairing": [["one", "two"]],
-        "initial_elevation": "path/to/srtm_file"
-      },
-      "output": {
-        "out_dir": "outresults"
-      },
-      "applications": {
-        "grid_generation": {
-          "method": "epipolar",
-          "geometry_loader": "SharelocGeometry"
-        },
-        "triangulation": {
-          "method": "line_of_sight_intersection",
-          "geometry_loader": "SharelocGeometry"
-        }
-      }
-    }
+        The standards parts are described in CARS :ref:`configuration`.
 
-The standards parts are described in CARS :ref:`configuration`.
+        The particularities in the configuration file are:
 
-The particularities in the configuration file are:
+        * **geomodel.path**: Field contains the paths to the geometric model files related to `img1` and `img2` respectively.
+        * **initial_elevation**: Field contains the path to the **folder** in which are located the SRTM tiles covering the production.
+        * **geometry_plugin**: Parameter configured to "OTBGeometry" to use OTB library.
 
-* **geomodel**: field contain the paths to the geometric model files related to `img1` and `img2` respectively. These files have to be supported by the Shareloc library.
-* **geomodel_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC"
-* **initial_elevation**: Shareloc must have **a file**, typically a SRTM tile (and **not** a directory as |otb| default configuration !!)
-* **geometry_loader**: field in `grid_generation` and `triangulation` applications configured to "SharelocGeometry" to use Shareloc plugin.
+    .. tab:: Shareloc Geometry plugin
+
+        Another geometry library called `Shareloc`_ is installed with CARS and can be configured to be used as another option.
+
+        To use Shareloc library, CARS input configuration should be defined as :
+
+        .. code-block:: json
+
+            {
+              "inputs": {
+                "sensors": {
+                  "one": {
+                    "image": "img1.tif",
+                    "geomodel": {
+                      "path": "img1.geom",
+                      "model_type": "RPC"
+                    },
+                  },
+                  "two": {
+                    "image": "img2.tif",
+                    "geomodel": {
+                      "path": "img2.geom",
+                      "model_type": "RPC"
+                    },
+                  }
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": "path/to/srtm_file"
+              },
+              "geometry_plugin": "SharelocGeometry",
+              "output": {
+                "out_dir": "outresults"
+              }
+            }
+
+        The particularities in the configuration file are:
+
+        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC"
+        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory as OTB default configuration !!)
+        * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
 
 
 .. note::
 
   This library is foreseen to replace |otb| default in CARS for maintenance and installation ease.
-  Be aware that geometric models must therefore be opened by shareloc directly in this case, and supported sensors may evolve.
-
-
-
+  Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
 

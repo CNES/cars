@@ -4,14 +4,18 @@
             "left": {
                 "image": "left_image.tif",
                 "color": "left_image.tif",
-                "geomodel": "left_image.geom",
+                "geomodel": {
+                    "path": "left_image.geom"
+                },
                 "no_data": 0
                 
                 
             },
             "right": {
                 "image": "right_image.tif",
-                "geomodel": "right_image.geom",
+                "geomodel": {
+                    "path": "right_image.geom"
+                },
                 "no_data": 0
 
             }   

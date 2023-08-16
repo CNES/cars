@@ -46,6 +46,7 @@ from ..helpers import (
     assert_same_datasets,
     corr_conf_defaut,
     create_corr_conf,
+    get_geometry_plugin,
 )
 
 
@@ -109,6 +110,14 @@ def test_epipolar_pipeline(
     ]
     img1 = configuration["input"][in_params.IMG1_TAG]
     img2 = configuration["input"][in_params.IMG2_TAG]
+    geomodel1 = {
+        "path": configuration["input"][in_params.MODEL1_TAG],
+        "model_type": configuration["input"][in_params.MODEL1_TYPE_TAG],
+    }
+    geomodel2 = {
+        "path": configuration["input"][in_params.MODEL2_TAG],
+        "model_type": configuration["input"][in_params.MODEL2_TYPE_TAG],
+    }
     color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
     grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
     grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
@@ -145,8 +154,13 @@ def test_epipolar_pipeline(
     points_cloud = compute_points_cloud(
         left_image,
         disp_map,
-        configuration,
-        "OTBGeometry",
+        img1,
+        img2,
+        geomodel1,
+        geomodel2,
+        grid1,
+        grid2,
+        get_geometry_plugin("OTBGeometry"),
         32636,
         add_msk_info=True,
     )

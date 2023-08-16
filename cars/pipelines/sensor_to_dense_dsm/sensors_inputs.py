@@ -23,6 +23,7 @@ CARS containing inputs checking for sensor input data
 Used for full_res and low_res pipelines
 """
 
+import importlib.util
 import logging
 import os
 
@@ -31,6 +32,7 @@ from json_checker import Checker, Or
 
 # CARS imports
 from cars.core import inputs
+from cars.core.geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
@@ -120,9 +122,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_IMG: str,
         sens_cst.INPUT_COLOR: str,
         sens_cst.INPUT_NODATA: int,
-        sens_cst.INPUT_GEO_MODEL: str,
-        sens_cst.INPUT_GEO_MODEL_TYPE: str,
-        sens_cst.INPUT_GEO_MODEL_FILTER: Or([str], None),
+        sens_cst.INPUT_GEO_MODEL: dict,
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_CLASSIFICATION: Or(str, None),
     }
@@ -137,20 +137,6 @@ def sensors_check_inputs(  # noqa: C901
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_COLOR
         ] = color
-
-        geomodel_type = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_GEO_MODEL_TYPE, "RPC"
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_GEO_MODEL_TYPE
-        ] = geomodel_type
-
-        geomodel_filters = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_GEO_MODEL_FILTER, None
-        )
-        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
-            sens_cst.INPUT_GEO_MODEL_FILTER
-        ] = geomodel_filters
 
         no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_NODATA, -9999
@@ -236,6 +222,88 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
+def check_geometry_plugin(conf_geom_plugin, conf_inputs):
+    """
+    Check the geometry plugin with inputs
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
+    :param conf_inputs: checked configuration of inputs
+    :type conf_inputs: type
+
+    :return overloaded geometry plugin conf, TODO
+    """
+    try:
+        from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
+            OTBGeometry,
+        )
+
+        otb_module_avail = True
+    except ModuleNotFoundError:
+        logging.info("OTBGeometry not available")
+        otb_module_avail = False
+
+    from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
+        SharelocGeometry,
+    )
+
+    # Make OTB the default geometry plugin if available
+    if conf_geom_plugin is None:
+        # 1/ Check otbApplication python module
+        otb_app = importlib.util.find_spec("otbApplication")
+        # 2/ Check remote modules
+        if otb_app is not None:
+            otb_geometry = (
+                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+                    "OTBGeometry"
+                )
+            )
+            missing_remote = otb_geometry.check_otb_remote_modules()
+
+        if otb_app is None or len(missing_remote) > 0 or not otb_module_avail:
+            conf_geom_plugin = "SharelocGeometry"
+        else:
+            conf_geom_plugin = "OTBGeometry"
+
+    # Initialize the desired geometry plugin without elevation information
+    geom_plugin_without_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin
+        )
+    )
+
+    # Check products consistency with this plugin
+    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
+        sensor = sensor_image[sens_cst.INPUT_IMG]
+        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
+        geom_plugin_without_dem_and_geoid.check_product_consistency(
+            sensor, geomodel
+        )
+
+    # Get image pairs for DTM intersection with ROI
+    images_for_roi = []
+    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
+        sensor = sensor_image[sens_cst.INPUT_IMG]
+        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
+        images_for_roi.append((sensor, geomodel))
+
+    # Initialize a second geometry plugin with elevation information
+    geom_plugin_with_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin,
+            dem=conf_inputs[sens_cst.INITIAL_ELEVATION],
+            geoid=conf_inputs[sens_cst.GEOID],
+            default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
+            images_for_roi=images_for_roi,
+        )
+    )
+
+    return (
+        conf_geom_plugin,
+        geom_plugin_without_dem_and_geoid,
+        geom_plugin_with_dem_and_geoid,
+    )
+
+
 def modify_to_absolute_path(config_json_dir, overloaded_conf):
     """
     Modify input file path to absolute path
@@ -254,7 +322,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             sens_cst.INPUT_COLOR,
             sens_cst.INPUT_CLASSIFICATION,
         ]:
-            if sensor_image[tag] is not None:
+            if isinstance(sensor_image[tag], dict):
+                sensor_image[tag]["path"] = make_relative_path_absolute(
+                    sensor_image[tag]["path"], config_json_dir
+                )
+            elif sensor_image[tag] is not None:
                 sensor_image[tag] = make_relative_path_absolute(
                     sensor_image[tag], config_json_dir
                 )
@@ -423,7 +495,7 @@ def check_all_nbits_equal_one(nbits):
     return False
 
 
-def generate_inputs(conf):
+def generate_inputs(conf, geometry_plugin):
     """
     Generate sensors inputs form inputs conf :
 
@@ -436,6 +508,12 @@ def generate_inputs(conf):
     :rtype: list(tuple(dict, dict))
 
     """
+    # Load geomodels directly on conf object
+    sensors = conf[sens_cst.SENSORS]
+    for key in sensors:
+        geomodel = sensors[key][sens_cst.INPUT_GEO_MODEL]
+        loaded_geomodel = geometry_plugin.load_geomodel(geomodel)
+        sensors[key][sens_cst.INPUT_GEO_MODEL] = loaded_geomodel
 
     # Get needed pairs
     pairs = conf[sens_cst.PAIRING]

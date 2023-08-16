@@ -34,22 +34,29 @@ import numpy as np
 import pandas
 from scipy import interpolate
 
-import cars.applications.grid_generation.grid_constants as grid_cst
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
+from cars.applications.grid_generation import grid_constants, grids
+from cars.core.utils import safe_makedirs
 
 # CARS imports
 from cars.data_structures import cars_dataset
 
 
-def correct_grid_from_1d(grid, grid_correction_coef):
+def correct_grid_from_1d(
+    grid, grid_correction_coef, save_grid=False, pair_folder=None
+):
     """
     Correct grid from correction given in 1d
 
-    param grid: grid to correct
+    :param grid: grid to correct
     :type grid: CarsDataset
     :param grid_correction_coef: grid correction to apply
-    :param grid_correction_coef: list(float), size 6
+    :type grid_correction_coef: list(float), size 6
+    :param save_grid: if True grids are saved in root or pair_folder
+    :type save_grid: bool
+    :param pair_folder: directory where grids are saved
+    :type pair_folder: str
     """
 
     coefs_x = grid_correction_coef[:3]
@@ -62,21 +69,26 @@ def correct_grid_from_1d(grid, grid_correction_coef):
     )
 
     # Correct grid right with provided epipolar a priori
-    corrected_grid_right = correct_grid(grid, grid_correction_coef)
+    corrected_grid_right = correct_grid(
+        grid, grid_correction_coef, save_grid, pair_folder
+    )
 
     return corrected_grid_right
 
 
-def correct_grid(grid, grid_correction):
+def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     """
     Correct grid
 
     :param grid: grid to correct
     :type grid: CarsDataset
     :param grid_correction: grid correction to apply
-    :param grid_correction: Tuple(np.ndarray, np.ndarray)
+    :type grid_correction: Tuple(np.ndarray, np.ndarray)
             (coefsx_2d, coefsy_2d) , each of size (2,2)
-
+    :param save_grid: if True grids are saved in root or pair_folder
+    :type save_grid: bool
+    :param pair_folder: directory where grids are saved
+    :type pair_folder: str
     """
 
     coefsx_2d, coefsy_2d = grid_correction
@@ -119,9 +131,31 @@ def correct_grid(grid, grid_correction):
 
     # create new cars ds
     corrected_grid_right = cars_dataset.CarsDataset("arrays")
-    corrected_grid_right.attributes = grid.attributes
+    corrected_grid_right.attributes = grid.attributes.copy()
     corrected_grid_right.tiling_grid = grid.tiling_grid
     corrected_grid_right[0, 0] = corrected_right_grid
+
+    # Dump corrected grid
+    grid_origin = grid.attributes["grid_origin"]
+    grid_spacing = grid.attributes["grid_spacing"]
+
+    # Get save folder (permanent or temporay according to save_grids parameter)
+    if save_grid is not None:
+        if save_grid:
+            save_folder = os.path.join(
+                pair_folder, "corrected_right_epi_grid.tif"
+            )
+        else:
+            safe_makedirs(os.path.join(pair_folder, "tmp"))
+            save_folder = os.path.join(
+                pair_folder, "tmp", "corrected_right_epi_grid.tif"
+            )
+
+        grids.write_grid(
+            corrected_grid_right[0, 0], save_folder, grid_origin, grid_spacing
+        )
+
+        corrected_grid_right.attributes["path"] = save_folder
 
     return corrected_grid_right
 
@@ -435,8 +469,8 @@ def estimate_right_grid_correction(
     corrected_matches_infos = {
         application_constants.APPLICATION_TAG: {
             pair_key: {
-                grid_cst.GRID_CORRECTION_TAG: {
-                    grid_cst.CORRECTED_MATCHES_TAG: matches_array_path
+                grid_constants.GRID_CORRECTION_TAG: {
+                    grid_constants.CORRECTED_MATCHES_TAG: matches_array_path
                 }
             }
         }

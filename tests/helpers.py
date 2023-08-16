@@ -55,6 +55,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core.datasets import get_color_bands
+from cars.core.geometry import AbstractGeometry
 from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Specific values
@@ -148,8 +149,13 @@ def get_geoid_path():
     return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
 
 
-def get_geometry_loader():
-    return "OTBGeometry"
+def get_geometry_plugin(geometry_plugin, dem=None, default_alt=None):
+    return AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+        geometry_plugin,
+        dem=dem,
+        geoid=get_geoid_path(),
+        default_alt=default_alt,
+    )
 
 
 def temporary_dir():

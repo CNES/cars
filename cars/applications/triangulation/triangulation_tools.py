@@ -32,40 +32,41 @@ import numpy as np
 import pandas
 import xarray as xr
 
-from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.core import former_confs_utils
-
-# CARS imports
-from cars.core.geometry import AbstractGeometry
 
 
 def triangulate(
-    loader_to_use,
-    configuration,
+    geometry_plugin,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid1,
+    grid2,
     disp_ref: xr.Dataset,
-    disp_sec: xr.Dataset = None,
     im_ref_msk_ds: xr.Dataset = None,
-    im_sec_msk_ds: xr.Dataset = None,
-    snap_to_img1: bool = False,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
 
-    :param loader_to_use: geometry loader to use
-    :type loader_to_use: str
-    :param configuration: StereoConfiguration
-    :type configuration: StereoConfiguration
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param disp_ref: left to right disparity map dataset
-    :param disp_sec: if available, the right to left disparity map dataset
     :param im_ref_msk_ds: reference image dataset (image and
                           mask (if indicated by the user) in epipolar geometry)
-    :param im_sec_msk_ds: secondary image dataset (image and
-                          mask (if indicated by the user) in epipolar geometry)
-    :param snap_to_img1: If True, Lines of Sight of img2 are moved so as to
-                         cross those of img1
-    :param snap_to_img1: bool
     :returns: point_cloud as a dictionary of dataset containing:
 
         - Array with shape (roi_size_x,roi_size_y,3), with last dimension \
@@ -80,87 +81,52 @@ def triangulate(
         - 'sec' to retrieve the dataset built from the right to \
            left disparity map (if provided in input)
     """
-
-    # Retrieve information from configuration
-    input_configuration = configuration[input_parameters.INPUT_SECTION_TAG]
-
-    # Retrieve grids
-
-    (
-        grid1,
-        grid2,
-        uncorrected_grid_2,
-    ) = former_confs_utils.get_grid_from_cars_post_prepare_configurations(
-        configuration
-    )
-
-    if snap_to_img1:
-        grid2 = uncorrected_grid_2
-        if grid2 is None:
-            logging.error(
-                "Uncorrected grid was not given in order to snap it to img1"
-            )
-
     point_clouds = {}
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
-        loader_to_use,
-        disp_ref,
-        input_configuration,
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         grid1,
         grid2,
+        disp_ref,
         roi_key=cst.ROI,
         dataset_msk=im_ref_msk_ds,
     )
-
-    if disp_sec is not None:
-        # reverse geometric models input_parameters.PRODUCT1_KEY and
-        # input_parameters.PRODUCT2_KEY to use the secondary disparity map
-        reversed_input_configuration = {}
-        for key, value in input_configuration.items():
-            if input_parameters.PRODUCT1_KEY in key:
-                reversed_input_configuration[
-                    key.replace(
-                        input_parameters.PRODUCT1_KEY,
-                        input_parameters.PRODUCT2_KEY,
-                    )
-                ] = value
-            elif input_parameters.PRODUCT2_KEY in key:
-                reversed_input_configuration[
-                    key.replace(
-                        input_parameters.PRODUCT2_KEY,
-                        input_parameters.PRODUCT1_KEY,
-                    )
-                ] = value
-            else:
-                reversed_input_configuration[key] = value
-        point_clouds[cst.STEREO_SEC] = compute_points_cloud(
-            loader_to_use,
-            disp_sec,
-            reversed_input_configuration,
-            grid2,
-            grid1,
-            roi_key=cst.ROI,
-            dataset_msk=im_sec_msk_ds,
-        )
 
     return point_clouds
 
 
 def triangulate_matches(
-    loader_to_use, configuration, matches, snap_to_img1=False
+    geometry_plugin,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid1,
+    grid2,
+    matches,
 ):
     """
     This function will perform triangulation from sift matches
 
-    :param loader_to_use: geometry loader to use
-    :type loader_to_use: str
-    :param configuration: StereoConfiguration
-    :type configuration: StereoConfiguration
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
+    :param sensor1: path to left sensor image
+    :type sensor1: str
+    :param sensor2: path to right sensor image
+    :type sensor2: str
+    :param geomodel1: path and attributes for left geomodel
+    :type geomodel1: dict
+    :param geomodel2: path and attributes for right geomodel
+    :type geomodel2: dict
+    :param grid1: dataset of the reference image grid file
+    :type grid1: CarsDataset
+    :param grid2: dataset of the secondary image grid file
+    :type grid2: CarsDataset
     :param matches: numpy.array of matches of shape (nb_matches, 4)
     :type data: numpy.ndarray
-    :param snap_to_img1: If this is True, Lines of Sight of img2 are moved so
-                         as to cross those of img1
-    :param snap_to_img1: bool
     :returns: point_cloud as a panda DataFrame containing:
 
         - Array with shape (nb_matches,1,3), with last dimension \
@@ -176,28 +142,11 @@ def triangulate_matches(
 
     :rtype: pandas.DataFrame
     """
-
-    # Retrieve information from configuration
-    input_configuration = configuration[input_parameters.INPUT_SECTION_TAG]
-
-    # Retrieve grids
-    (
-        grid1,
-        grid2,
-        uncorrected_grid_2,
-    ) = former_confs_utils.get_grid_from_cars_post_prepare_configurations(
-        configuration
-    )
-    if snap_to_img1:
-        grid2 = uncorrected_grid_2
-
-    geometry_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            loader_to_use
-        )
-    )
-    llh = geometry_loader.triangulate(
-        input_configuration,
+    llh = geometry_plugin.triangulate(
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         cst.MATCHES_MODE,
         matches,
         grid1,
@@ -230,11 +179,14 @@ def triangulate_matches(
 
 
 def compute_points_cloud(
-    loader_to_use: str,
+    geometry_plugin,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    grid1,
+    grid2,
     data: xr.Dataset,
-    cars_conf,
-    grid1: str,
-    grid2: str,
     roi_key: str,
     dataset_msk: xr.Dataset = None,
 ) -> xr.Dataset:
@@ -242,26 +194,26 @@ def compute_points_cloud(
     """
     Compute points cloud
 
-    :param loader_to_use: geometru loader to use
-    :type loader_to_use: str:param loader_to_use: geometru loader to use
+    :param geometry_plugin: geometry plugin to use
     :param data: The reference to disparity map dataset
-    :param cars_conf: cars input configuration dictionary
-    :param grid1: path to the reference image grid file
-    :param grid2: path to the secondary image grid file
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
+    :param grid1: dataset of the reference image grid file
+    :param grid2: dataset of the secondary image grid file
     :param roi_key: roi of the disparity map key
           ('roi' if cropped while calling create_disp_dataset,
           otherwise 'roi_with_margins')
     :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
-    geometry_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            loader_to_use
-        )
-    )
-
-    llh = geometry_loader.triangulate(
-        cars_conf,
+    # Extract input paths from configuration
+    llh = geometry_plugin.triangulate(
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         cst.DISP_MODE,
         data,
         grid1,

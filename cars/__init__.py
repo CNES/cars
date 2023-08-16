@@ -25,6 +25,8 @@ Cars module init file
 # Standard imports
 from importlib.metadata import version
 
+from pkg_resources import iter_entry_points
+
 # VERSION through setuptools_scm when python3 > 3.8
 try:
     __version__ = version("cars")
@@ -33,3 +35,15 @@ except Exception:  # pylint: disable=broad-except
 
 __author__ = "CNES"
 __email__ = "cars@cnes.fr"
+
+
+def import_plugins() -> None:
+    """
+    Load all the registered entry points
+    :return: None
+    """
+    for entry_point in iter_entry_points(group="cars.plugins"):
+        entry_point.load()
+
+
+import_plugins()

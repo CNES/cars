@@ -68,6 +68,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             pipeline_constants.INPUTS: dict,
             pipeline_constants.OUTPUT: dict,
             OptionalKey(pipeline_constants.APPLICATIONS): dict,
+            OptionalKey(pipeline_constants.GEOMETRY_PLUGIN): str,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.PIPELINE): str,
         }

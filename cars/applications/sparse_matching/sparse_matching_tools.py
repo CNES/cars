@@ -42,6 +42,9 @@ from cars.applications.point_cloud_outliers_removing import (
 from cars.applications.triangulation import triangulation_tools
 from cars.core import constants as cst
 from cars.core import preprocessing, projection
+from cars.pipelines.sensor_to_dense_dsm import (
+    sensor_dense_dsm_constants as sens_cst,
+)
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -325,13 +328,10 @@ def compute_disp_min_disp_max(
     sensor_image_left,
     sensor_image_right,
     grid_left,
-    corrected_grid_right,
     grid_right,
     matches,
     orchestrator,
-    geometry_loader,
-    srtm_dir,
-    default_alt,
+    geometry_plugin,
     pair_folder="",
     disp_margin=0.1,
     pair_key=None,
@@ -346,16 +346,14 @@ def compute_disp_min_disp_max(
     :type sensor_image_left: CarsDataset
     :param grid_left: grid left
     :type grid_left: CarsDataset CarsDataset
-    :param corrected_grid_right: corrected grid right
-    :type corrected_grid_right: CarsDataset
-    :param grid_right: uncorrected grid right
+    :param grid_right: corrected grid right
     :type grid_right: CarsDataset
     :param matches: matches
     :type matches: np.ndarray
     :param orchestrator: orchestrator used
     :type orchestrator: Orchestrator
-    :param geometry_loader: geometry loader to use
-    :type geometry_loader: str
+    :param geometry_plugin: geometry plugin to use
+    :type geometry_plugin: AbstractGeometry
     :param srtm_dir: srtm directory
     :type srtm_dir: str
     :param default_alt: default altitude
@@ -370,21 +368,20 @@ def compute_disp_min_disp_max(
     :return: disp min and disp max
     :rtype: float, float
     """
-    input_stereo_cfg = (
-        preprocessing.create_former_cars_post_prepare_configuration(
-            sensor_image_left,
-            sensor_image_right,
-            grid_left,
-            corrected_grid_right,
-            pair_folder,
-            uncorrected_grid_right=grid_right,
-            srtm_dir=srtm_dir,
-            default_alt=default_alt,
-        )
-    )
+    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
+    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
+    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
+    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
 
     point_cloud = triangulation_tools.triangulate_matches(
-        geometry_loader, input_stereo_cfg, matches
+        geometry_plugin,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        matches,
     )
 
     # compute epsg
@@ -392,12 +389,10 @@ def compute_disp_min_disp_max(
         sensor_image_left,
         sensor_image_right,
         grid_left,
-        corrected_grid_right,
-        geometry_loader,
+        grid_right,
+        geometry_plugin,
         orchestrator=orchestrator,
         pair_folder=pair_folder,
-        srtm_dir=srtm_dir,
-        default_alt=default_alt,
         disp_min=0,
         disp_max=0,
     )

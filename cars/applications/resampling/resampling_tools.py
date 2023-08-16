@@ -39,6 +39,7 @@ from cars.conf import mask_cst as msk_cst
 # CARS imports
 from cars.core import constants as cst
 from cars.core import datasets, inputs, tiling
+from cars.data_structures import cars_dataset
 
 
 def epipolar_rectify_images(
@@ -247,6 +248,9 @@ def resample_image(
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]
 
+    # get path if grid is of type CarsDataset TODO remove
+    if isinstance(grid, cars_dataset.CarsDataset):
+        grid = grid.attributes["path"]
     # Build rectification pipelines for images
     with rio.open(grid) as grid_reader:
         res_x, res_y = grid_reader.res

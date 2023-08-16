@@ -33,7 +33,6 @@ import xarray as xr
 from scipy import interpolate
 from shapely.geometry import Polygon
 
-from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import inputs, outputs
 from cars.data_structures import cars_dataset
@@ -44,33 +43,50 @@ class AbstractGeometry(metaclass=ABCMeta):
     AbstractGeometry
     """
 
-    available_loaders: Dict = {}
+    available_plugins: Dict = {}
 
-    def __new__(cls, loader_to_use):
+    def __new__(cls, geometry_plugin=None, **kwargs):
         """
-        Return the required loader
+        Return the required plugin
         :raises:
-         - KeyError when the required loader is not registered
+         - KeyError when the required plugin is not registered
 
-        :param loader_to_use: loader name to instantiate
-        :return: a loader_to_use object
+        :param geometry_plugin: plugin name to instantiate
+        :return: a geometry_plugin object
         """
 
-        if loader_to_use not in cls.available_loaders:
-            logging.error(
-                "No geometry loader named {} registered".format(loader_to_use)
-            )
-            raise KeyError(
-                "No geometry loader named {} registered".format(loader_to_use)
+        if geometry_plugin is not None:
+            if geometry_plugin not in cls.available_plugins:
+                logging.error(
+                    "No geometry plugin named {} registered".format(
+                        geometry_plugin
+                    )
+                )
+                raise KeyError(
+                    "No geometry plugin named {} registered".format(
+                        geometry_plugin
+                    )
+                )
+
+            logging.info(
+                "The AbstractGeometry {} plugin will be used".format(
+                    geometry_plugin
+                )
             )
 
-        logging.info(
-            "The AbstractGeometry {} loader will be used".format(loader_to_use)
-        )
+            return super(AbstractGeometry, cls).__new__(
+                cls.available_plugins[geometry_plugin]
+            )
+        return super().__new__(cls)
 
-        return super(AbstractGeometry, cls).__new__(
-            cls.available_loaders[loader_to_use]
-        )
+    def __init__(
+        self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
+    ):
+        self.plugin_name = geometry_plugin
+        self.dem = dem
+        self.geoid = geoid
+        self.default_alt = default_alt
+        self.kwargs = kwargs
 
     @classmethod
     def register_subclass(cls, short_name: str):
@@ -86,26 +102,18 @@ class AbstractGeometry(metaclass=ABCMeta):
             :param subclass: the subclass to be registered
             :type subclass: object
             """
-            cls.available_loaders[short_name] = subclass
+            cls.available_plugins[short_name] = subclass
             return subclass
 
         return decorator
 
-    @property
-    @abstractmethod
-    def conf_schema(self):
-        """
-        Returns the input configuration fields required by the geometry loader
-        as a json checker schema. The available fields are defined in the
-        cars/conf/input_parameters.py file
-
-        :return: the geo configuration schema
-        """
-
     @staticmethod
     @abstractmethod
     def triangulate(
-        cars_conf,
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
         mode: str,
         matches: Union[xr.Dataset, np.ndarray],
         grid1: str,
@@ -115,7 +123,10 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Performs triangulation from cars disparity or matches dataset
 
-        :param cars_conf: cars input configuration dictionary
+        :param sensor1: path to left sensor image
+        :param sensor2: path to right sensor image
+        :param geomodel1: path and attriutes for left geomodel
+        :param geomodel2: path and attriutes for right geomodel
         :param mode: triangulation mode
                (constants.DISP_MODE or constants.MATCHES)
         :param matches: cars disparity dataset or matches as numpy array
@@ -128,32 +139,28 @@ class AbstractGeometry(metaclass=ABCMeta):
 
     @staticmethod
     @abstractmethod
-    def check_products_consistency(cars_conf) -> bool:
+    def check_product_consistency(sensor: str, geomodel: str, **kwargs) -> bool:
         """
-        Test if the product is readable by the geometry loader
+        Test if the product is readable by the geometry plugin
 
-        :param: cars_conf: cars input configuration dictionary
+        :param sensor: path to sensor image
+        :param geomodel: path to geomodel
         :return: True if the products are readable, False otherwise
         """
 
-    @staticmethod
     @abstractmethod
     def generate_epipolar_grids(
-        cars_conf,
-        dem: Union[None, str] = None,
-        geoid: Union[None, str] = None,
-        default_alt: Union[None, float] = None,
-        epipolar_step: int = 30,
+        self, sensor1, sensor2, geomodel1, geomodel2, epipolar_step: int = 30
     ) -> Tuple[
         np.ndarray, np.ndarray, List[float], List[float], List[int], float
     ]:
         """
         Computes the left and right epipolar grids
 
-        :param cars_conf: cars input configuration dictionary
-        :param dem: path to the dem folder
-        :param geoid: path to the geoid file
-        :param default_alt: default altitude to use in the missing dem regions
+        :param sensor1: path to left sensor image
+        :param sensor2: path to right sensor image
+        :param geomodel1: path and attriutes for left geomodel
+        :param geomodel2: path and attriutes for right geomodel
         :param epipolar_step: step to use to construct the epipolar grids
         :return: Tuple composed of :
 
@@ -165,6 +172,15 @@ class AbstractGeometry(metaclass=ABCMeta):
             (x-axis size is given with the index 0, y-axis size with index 1)
             - the disparity to altitude ratio as a float
         """
+
+    def load_geomodel(self, geomodel: dict) -> dict:
+        """
+        By default return the geomodel
+        This method can be overloaded by plugins to load geomodel in memory
+
+        :param geomodel
+        """
+        return geomodel
 
     @staticmethod
     def matches_to_sensor_coords(
@@ -178,7 +194,7 @@ class AbstractGeometry(metaclass=ABCMeta):
         """
         Convert matches (sparse or dense matches) given in epipolar
         coordinates to sensor coordinates. This function is available for
-        loaders if it requires matches in sensor coordinates to perform
+        plugins if it requires matches in sensor coordinates to perform
         the triangulation.
 
         This function returns a tuple composed of the matches left and right
@@ -372,116 +388,78 @@ class AbstractGeometry(metaclass=ABCMeta):
         sensor_positions = np.transpose(np.vstack([interp_col, interp_row]))
         return sensor_positions
 
-    @staticmethod
     @abstractmethod
     def direct_loc(
-        cars_conf,
-        product_key: str,
+        self,
+        sensor,
+        geomodel,
         x_coord: float,
         y_coord: float,
         z_coord: float = None,
-        dem: str = None,
-        geoid: str = None,
-        default_elevation: float = None,
     ) -> np.ndarray:
         """
         For a given image point, compute the latitude, longitude, altitude
 
         Advice: to be sure, use x,y,z inputs only
 
-        :param cars_conf: cars input configuration dictionary
-        :param product_key: input_parameters.PRODUCT1_KEY or
-               input_parameters.PRODUCT2_KEY to identify which geometric model
-               shall be taken to perform the method
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geomodel
         :param x_coord: X Coordinate in input image sensor
         :param y_coord: Y Coordinate in input image sensor
         :param z_coord: Z Altitude coordinate to take the image
-        :param dem: if z not defined, take this DEM directory input
-        :param geoid: if z and dem not defined, take GEOID directory input
-        :param default_elevation: if z, dem, geoid not defined, take default
-               elevation
         :return: Latitude, Longitude, Altitude coordinates as a numpy array
         """
 
-    def image_envelope(
-        self,
-        conf,
-        product_key: str,
-        shp: str,
-        dem: str = None,
-        default_alt: float = None,
-        geoid: str = None,
-    ):
+    def image_envelope(self, sensor, geomodel, shp=None):
         """
         Export the image footprint to a shapefile
 
-        :param conf: cars input configuration dictionary
-        :param product_key: input_parameters.PRODUCT1_KEY or
-               input_parameters.PRODUCT2_KEY to identify which geometric model
-               shall be taken to perform the method
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geometrical model
         :param shp: Path to the output shapefile
-        :param dem: Directory containing DEM tiles
-        :param default_alt: Default altitude above ellipsoid
-        :param geoid: path to geoid file
         """
         # retrieve image size
-        img = conf[
-            input_parameters.create_img_tag_from_product_key(product_key)
-        ]
-        img_size_x, img_size_y = inputs.rasterio_get_size(img)
+        img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
 
         # compute corners ground coordinates
         shift_x = -0.5
         shift_y = -0.5
         lat_upper_left, lon_upper_left, _ = self.direct_loc(
-            conf,
-            product_key,
+            sensor,
+            geomodel,
             shift_x,
             shift_y,
-            dem=dem,
-            default_elevation=default_alt,
-            geoid=geoid,
         )
         lat_upper_right, lon_upper_right, _ = self.direct_loc(
-            conf,
-            product_key,
+            sensor,
+            geomodel,
             img_size_x + shift_x,
             shift_y,
-            dem=dem,
-            default_elevation=default_alt,
-            geoid=geoid,
         )
         lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
-            conf,
-            product_key,
+            sensor,
+            geomodel,
             shift_x,
             img_size_y + shift_y,
-            dem=dem,
-            default_elevation=default_alt,
-            geoid=geoid,
         )
         lat_bottom_right, lon_bottom_right, _ = self.direct_loc(
-            conf,
-            product_key,
+            sensor,
+            geomodel,
             img_size_x + shift_x,
             img_size_y + shift_y,
-            dem=dem,
-            default_elevation=default_alt,
-            geoid=geoid,
         )
 
-        # create envelope polygon and save it as a shapefile
-        poly_bb = Polygon(
-            [
-                (lon_upper_left, lat_upper_left),
-                (lon_upper_right, lat_upper_right),
-                (lon_bottom_right, lat_bottom_right),
-                (lon_bottom_left, lat_bottom_left),
-                (lon_upper_left, lat_upper_left),
-            ]
-        )
+        u_l = (lon_upper_left, lat_upper_left)
+        u_r = (lon_upper_right, lat_upper_right)
+        l_l = (lon_bottom_left, lat_bottom_left)
+        l_r = (lon_bottom_right, lat_bottom_right)
 
-        outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
+        if shp is not None:
+            # create envelope polygon and save it as a shapefile
+            poly_bb = Polygon([u_l, u_r, l_r, l_l, u_l])
+            outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
+
+        return u_l, u_r, l_l, l_r
 
 
 def read_geoid_file(geoid_path: str) -> xr.Dataset:

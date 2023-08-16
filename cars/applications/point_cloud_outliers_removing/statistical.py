@@ -81,8 +81,6 @@ class Statistical(
         self.k = self.used_config["k"]
         self.std_dev_factor = self.used_config["std_dev_factor"]
 
-        # check loader
-
         # Saving files
         self.save_points_cloud_as_laz = self.used_config.get(
             "save_points_cloud_as_laz", False

@@ -26,8 +26,7 @@ Test module for cars/core/geometry/shareloc_geometry.py
 import pytest
 
 # CARS imports
-from cars.conf import input_parameters
-from cars.core.geometry.shareloc_geometry import RPC_TYPE, SharelocGeometry
+from cars.core.geometry.shareloc_geometry import RPC_TYPE, AbstractGeometry
 
 # CARS Tests imports
 from ...helpers import absolute_data_path, get_geoid_path
@@ -38,25 +37,24 @@ def test_dir_loc_rpc():
     """
     Test direct localization with RPC
     """
-    conf = {
-        input_parameters.IMG1_TAG: absolute_data_path(
-            "input/phr_ventoux/left_image.tif"
-        ),
-        input_parameters.MODEL1_TAG: absolute_data_path(
-            "input/phr_ventoux/left_image.geom"
-        ),
-        input_parameters.MODEL1_TYPE_TAG: RPC_TYPE,
-    }
+    sensor = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel = {"path": geomodel_path, "model_type": RPC_TYPE}
+
     dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
     geoid = get_geoid_path()
 
-    lat, lon, alt = SharelocGeometry.direct_loc(
-        conf,
-        input_parameters.PRODUCT1_KEY,
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry", dem=dem, geoid=geoid
+        )
+    )
+
+    lat, lon, alt = geo_loader.direct_loc(
+        sensor,
+        geomodel,
         0,
         0,
-        dem=dem,
-        geoid=geoid,
     )
 
     # test lat, lon, alt value

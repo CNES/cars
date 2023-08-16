@@ -44,9 +44,6 @@ from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
 
-# CARS imports
-from cars.core.geometry import AbstractGeometry
-
 
 def compute_dem_intersection_with_poly(
     srtm_dir: str, ref_poly: Polygon, ref_epsg: int
@@ -477,14 +474,14 @@ def ground_polygon_from_envelopes(
 
 
 def ground_intersection_envelopes(
-    conf,
-    geometry_loader_to_use: str,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    geometry_plugin: str,
     shp1_path: str,
     shp2_path: str,
     out_intersect_path: str,
-    geoid: str = None,
-    dem_dir: str = None,
-    default_alt: float = None,
 ) -> Tuple[Polygon, Tuple[int, int, int, int]]:
     """
     Compute ground intersection of two images with envelopes:
@@ -497,8 +494,11 @@ def ground_intersection_envelopes(
 
     :raise: Exception when the envelopes don't intersect one to each other
 
-    :param conf: cars input configuration dictionary
-    :param geometry_loader_to_use: name of geometry loader to use
+    :param sensor1: path to left sensor image
+    :param sensor2: path to right sensor image
+    :param geomodel1: path and attributes for left geomodel
+    :param geomodel2: path and attributes for right geomodel
+    :param geometry_plugin: name of geometry plugin to use
     :param shp1_path: Path to the output shapefile left
     :param shp2_path: Path to the output shapefile right
     :param dem_dir: Directory containing DEM tiles
@@ -508,28 +508,15 @@ def ground_intersection_envelopes(
              and the intersection's bounding box
              (described by a tuple (minx, miny, maxx, maxy))
     """
-    # Create left, right envelopes from images and dem, default_alt
-    geo_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            geometry_loader_to_use
-        )
-    )
-
-    geo_loader.image_envelope(
-        conf,
-        input_parameters.PRODUCT1_KEY,
+    geometry_plugin.image_envelope(
+        sensor1,
+        geomodel1,
         shp1_path,
-        dem=dem_dir,
-        default_alt=default_alt,
-        geoid=geoid,
     )
-    geo_loader.image_envelope(
-        conf,
-        input_parameters.PRODUCT2_KEY,
+    geometry_plugin.image_envelope(
+        sensor2,
+        geomodel2,
         shp2_path,
-        dem=dem_dir,
-        default_alt=default_alt,
-        geoid=geoid,
     )
 
     # Read vectors shapefiles
@@ -583,13 +570,11 @@ def project_coordinates_on_line(
 
 def get_time_ground_direction(
     conf,
-    geometry_loader_to_use: str,
+    geometry_plugin: str,
     product_key: str,
     x_loc: float = None,
     y_loc: float = None,
     y_offset: float = None,
-    dem: str = None,
-    geoid: str = None,
 ) -> np.ndarray:
     """
     For a given image, compute the direction of increasing acquisition
@@ -597,7 +582,7 @@ def get_time_ground_direction(
     Done by two localizations at "y" and "y+y_offset" values.
 
     :param conf: cars input configuration dictionary
-    :param geometry_loader_to_use: name of geometry loader to use
+    :param geometry_plugin: name of geometry plugin to use
     :param product_key: input_parameters.PRODUCT1_KEY or
            input_parameters.PRODUCT2_KEY to identify which geometric model shall
            be taken to perform the method
@@ -610,8 +595,11 @@ def get_time_ground_direction(
     """
     # Define x: image center, y: 1/4 of image,
     # y_offset: 3/4 of image if not defined
-    img = conf[input_parameters.create_img_tag_from_product_key(product_key)]
-    img_size_x, img_size_y = inputs.rasterio_get_size(img)
+    sensor = conf[input_parameters.create_img_tag_from_product_key(product_key)]
+    geomodel = conf[
+        input_parameters.create_model_tag_from_product_key(product_key)
+    ]
+    img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
     if x_loc is None:
         x_loc = img_size_x / 2
     if y_loc is None:
@@ -628,16 +616,9 @@ def get_time_ground_direction(
     assert y_loc + y_offset <= img_size_y
 
     # Get coordinates of time direction vectors
-    geometry_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            geometry_loader_to_use
-        )
-    )
-    lat1, lon1, __ = geometry_loader.direct_loc(
-        conf, product_key, x_loc, y_loc, dem=dem, geoid=geoid
-    )
-    lat2, lon2, __ = geometry_loader.direct_loc(
-        conf, product_key, x_loc, y_loc + y_offset, dem=dem, geoid=geoid
+    lat1, lon1, __ = geometry_plugin.direct_loc(sensor, geomodel, x_loc, y_loc)
+    lat2, lon2, __ = geometry_plugin.direct_loc(
+        sensor, geomodel, x_loc, y_loc + y_offset
     )
 
     # Create and normalize the time direction vector
@@ -656,14 +637,12 @@ def display_angle(vec):
     return 180 * math.atan2(vec[1], vec[0]) / math.pi
 
 
-def acquisition_direction(
-    conf, geometry_loader_to_use, dem: str
-) -> Tuple[np.ndarray]:
+def acquisition_direction(conf, geometry_plugin) -> Tuple[np.ndarray]:
     """
     Computes the mean acquisition of the input images pair
 
     :param conf: cars input configuration dictionary
-    :param geometry_loader_to_use: name of geometry loader to use
+    :param geometry_plugin: name of geometry plugin to use
     :param dem: path to the dem directory
     :return: a tuple composed of :
 
@@ -675,10 +654,10 @@ def acquisition_direction(
     """
     # TODO remove ? usused
     vec1 = get_time_ground_direction(
-        conf, geometry_loader_to_use, input_parameters.PRODUCT1_KEY, dem=dem
+        conf, geometry_plugin, input_parameters.PRODUCT1_KEY
     )
     vec2 = get_time_ground_direction(
-        conf, geometry_loader_to_use, input_parameters.PRODUCT2_KEY, dem=dem
+        conf, geometry_plugin, input_parameters.PRODUCT2_KEY
     )
     time_direction_vector = (vec1 + vec2) / 2
 
@@ -695,15 +674,13 @@ def acquisition_direction(
 
 
 def get_ground_direction(
-    conf,
-    geometry_loader_to_use: str,
-    product_key: str,
+    sensor,
+    geomodel,
+    geometry_plugin: str,
     x_coord: float = None,
     y_coord: float = None,
     z0_coord: float = None,
     z_coord: float = None,
-    dem: str = None,
-    geoid: str = None,
 ) -> np.ndarray:
     """
     For a given image (x,y) point, compute the direction vector to ground
@@ -712,11 +689,8 @@ def get_ground_direction(
     By default, (x,y) is put at image center and z0, z at RPC geometric
     model limits.
 
-    :param conf: cars input configuration dictionary
-    :param geometry_loader_to_use: name of geometry loader to use
-    :param product_key: input_parameters.PRODUCT1_KEY or
-           input_parameters.PRODUCT2_KEY to identify which geometric model shall
-           be taken to perform the method
+    :param TODO
+    :param geometry_plugin: name of geometry plugin to use
     :param x_coord: X Coordinate in input image sensor
     :param y_coord: Y Coordinate in input image sensor
     :param z0_coord: Z altitude reference coordinate
@@ -726,8 +700,7 @@ def get_ground_direction(
     :return: (lat0,lon0,alt0, lat,lon,alt) origin and end vector coordinates
     """
     # Define x, y in image center if not defined
-    img = conf[input_parameters.create_img_tag_from_product_key(product_key)]
-    img_size_x, img_size_y = inputs.rasterio_get_size(img)
+    img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
 
     if x_coord is None:
         x_coord = img_size_x / 2
@@ -741,7 +714,7 @@ def get_ground_direction(
     assert y_coord <= img_size_y
 
     # Define z and z0 from img RPC constraints if not defined
-    (min_alt, max_alt) = utils.get_elevation_range_from_metadata(img)
+    (min_alt, max_alt) = utils.get_elevation_range_from_metadata(sensor)
     if z0_coord is None:
         z0_coord = min_alt
     if z_coord is None:
@@ -754,38 +727,23 @@ def get_ground_direction(
     assert z_coord <= max_alt
 
     # Get origin vector coordinate with z0 altitude
-    geometry_loader = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            geometry_loader_to_use
-        )
-    )
-    lat0, lon0, alt0 = geometry_loader.direct_loc(
-        conf,
-        product_key,
-        x_coord,
-        y_coord,
-        z_coord=z0_coord,
-        dem=dem,
-        geoid=geoid,
+    lat0, lon0, alt0 = geometry_plugin.direct_loc(
+        sensor, geomodel, x_coord, y_coord, z0_coord
     )
     # Get end vector coordinate with z altitude
-    lat, lon, alt = geometry_loader.direct_loc(
-        conf,
-        product_key,
-        x_coord,
-        y_coord,
-        z_coord=z_coord,
-        dem=dem,
-        geoid=geoid,
+    lat, lon, alt = geometry_plugin.direct_loc(
+        sensor, geomodel, x_coord, y_coord, z_coord=z_coord
     )
 
     return np.array([lat0, lon0, alt0, lat, lon, alt])
 
 
 def get_ground_angles(
-    conf,
-    geometry_loader_to_use,
-    geoid: str = None,
+    sensor1,
+    sensor2,
+    geomodel1,
+    geomodel2,
+    geometry_plugin,
     x1_coord: float = None,
     y1_coord: float = None,
     z1_0_coord: float = None,
@@ -813,35 +771,34 @@ def get_ground_angles(
 
     Perspectives: get bisector  elevation (BIE), and asymmetry angle
 
-    :param conf: cars input configuration dictionary
-    :param geometry_loader_to_use: name of geometry loader to use
+    :param TODO
+    :param geometry_plugin: name of geometry plugin to use
     :param x1_coord: X Coordinate in input left image1  sensor
     :param y1_coord: Y Coordinate in input left image1 sensor
-    :param z1_0_coord: Left image1 Z altitude origin coordinate
-           for ground direction vector
-    :param z1_coord:  Left image1 Z altitude end coordinate
-           for ground direction vector
+    :param z1_0_coord: Left image1 Z altitude origin coordinate for ground
+    direction vector
+    :param z1_coord:  Left image1 Z altitude end coordinate for ground
+    direction vector
     :param x2_coord: X Coordinate in input right image2 sensor
     :param y2_coord: Y Coordinate in input right image2 sensor
-    :param z2_0_coord: Right image2 Z altitude origin coordinate
-           for ground direction vector
-    :param z2_coord: Right image2 Z altitude end coordinate
-           for ground direction vector
+    :param z2_0_coord: Right image2 Z altitude origin coordinate for ground
+    direction vector
+    :param z2_coord: Right image2 Z altitude end coordinate for ground
+    direction vector
     :return: Left Azimuth, Left Elevation Angle,
-             Right Azimuth, Right Elevation Angle, Convergence Angle
+    Right Azimuth, Right Elevation Angle, Convergence Angle
     """
     # TODO remove ? unused
 
-    # Get image1 <-> satellite vector from image2 metadata geometric model
+    # Get image1 <-> satellite vector from image1 metadata geometric model
     lat1_0, lon1_0, alt1_0, lat1, lon1, alt1 = get_ground_direction(
-        conf,
-        geometry_loader_to_use,
-        input_parameters.PRODUCT1_KEY,
+        sensor1,
+        geomodel1,
+        geometry_plugin,
         x1_coord,
         y1_coord,
         z1_0_coord,
         z1_coord,
-        geoid=geoid,
     )
     # Get East North Up vector for left image1
     x1_e, y1_n, y1_u = enu1 = geo_to_enu(
@@ -852,14 +809,13 @@ def get_ground_angles(
 
     # Get image2 <-> satellite vector from image2 metadata geometric model
     lat2_0, lon2_0, alt2_0, lat2, lon2, alt2 = get_ground_direction(
-        conf,
-        geometry_loader_to_use,
-        input_parameters.PRODUCT2_KEY,
+        sensor2,
+        geomodel2,
+        geometry_plugin,
         x2_coord,
         y2_coord,
         z2_0_coord,
         z2_coord,
-        geoid=geoid,
     )
     # Get East North Up vector for right image2
     x2_e, y2_n, y2_u = enu2 = geo_to_enu(
