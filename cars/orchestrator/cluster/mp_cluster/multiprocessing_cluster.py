@@ -300,7 +300,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         def transform_delayed_to_mp_job(args_or_kawargs):
             """
-            Replace MpDalayed in list or dict by a MpJob
+            Replace MpDelayed in list or dict by a MpJob
 
             :param args_or_kawargs: list or dict of data
             """
@@ -419,7 +419,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
             # check for ready results
             done_list = []
-            next_priority_task = []
+            next_priority_tasks = []
             for job_id, job_id_progress in in_progress_list.items():
                 if job_id_progress.ready():
                     try:
@@ -439,9 +439,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 for job_id2 in wait_list.keys():  # pylint: disable=C0201
                     depending_tasks = list(dependances_list[job_id2])
                     if job_id in depending_tasks:
-                        next_priority_task += depending_tasks
+                        next_priority_tasks += depending_tasks
             # remove duplicate dependance task
-            next_priority_task = list(dict.fromkeys(next_priority_task))
+            next_priority_tasks = list(dict.fromkeys(next_priority_tasks))
 
             # clean done jobs
             for job_id in done_list:
@@ -459,14 +459,14 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             )
 
             priority_list = []
+            # add ready task in next_priority_tasks
+            priority_list += list(
+                filter(lambda job_id: job_id in next_priority_tasks, ready_list)
+            )
             nb_ready_task = nb_workers - len(priority_list)
 
             priority_list += MultiprocessingCluster.get_tasks_without_deps(
                 dependances_list, ready_list, nb_ready_task
-            )
-            # add ready task in next_priority_task
-            priority_list += list(
-                filter(lambda job_id: job_id in next_priority_task, ready_list)
             )
             # if the priority task have finished
             # continue with the rest of task (initial task)
@@ -673,7 +673,7 @@ def compute_dependances(args, kw_args):
 
     def get_ids_rec(list_or_dict):
         """
-        Compute dependances from list or dict or simple data
+        Compute dependencies from list or dict or simple data
 
         :param list_or_dict: arguments
         :type list_or_dict: list or dict
@@ -749,7 +749,7 @@ class MpFutureTask:  # pylint: disable=R0903
 
 def log_error_hook(args):
     """
-    Exception hool for cluster thread
+    Exception hook for cluster thread
     """
     exc = "Cluster MP thread failed: {}".format(args.exc_value)
     logging.error(exc)
