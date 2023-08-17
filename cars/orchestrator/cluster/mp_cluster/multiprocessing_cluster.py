@@ -333,9 +333,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         filt_kw = transform_delayed_to_mp_job(current_delayed_task.kw_args)
 
         # Check if can be run
-        dependances = compute_dependances(filt_args, filt_kw)
+        dependencies = compute_dependencies(filt_args, filt_kw)
         can_run = True
-        if len(dependances) > 0:
+        if len(dependencies) > 0:
             can_run = False
 
         # start current task
@@ -390,7 +390,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         # initialize lists
         wait_list = {}
         in_progress_list = {}
-        dependances_list = {}
+        dependencies_list = {}
         done_task_results = {}
         while thread._state == RUN:  # pylint: disable=W0212
             # wait before next iteration
@@ -405,17 +405,17 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                         in_progress_list[job_id] = pool.apply_async(
                             func, args=args, kwds=kw_args
                         )
-                        # add to dependances (-1 to identify initial tasks)
-                        dependances_list[job_id] = [-1]
+                        # add to dependencies (-1 to identify initial tasks)
+                        dependencies_list[job_id] = [-1]
                     else:
                         # add to wait list
                         wait_list[job_id] = [func, args, kw_args]
-                        # get dependances
-                        dependances_list[job_id] = compute_dependances(
+                        # get dependencies
+                        dependencies_list[job_id] = compute_dependencies(
                             args, kw_args
                         )
-                        if len(dependances_list[job_id]) == 0:
-                            dependances_list[job_id] = [-1]
+                        if len(dependencies_list[job_id]) == 0:
+                            dependencies_list[job_id] = [-1]
 
             # check for ready results
             done_list = []
@@ -433,11 +433,11 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     done_task_results[job_id] = [success, res]
 
                     # remove from dependance list
-                    dependances_list.pop(job_id)
+                    dependencies_list.pop(job_id)
 
                 # search related priority task
                 for job_id2 in wait_list.keys():  # pylint: disable=C0201
-                    depending_tasks = list(dependances_list[job_id2])
+                    depending_tasks = list(dependencies_list[job_id2])
                     if job_id in depending_tasks:
                         next_priority_tasks += depending_tasks
             # remove duplicate dependance task
@@ -455,7 +455,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 ready_list,
                 failed_list,
             ) = MultiprocessingCluster.get_ready_failed_tasks(
-                wait_list, dependances_list, done_task_results
+                wait_list, dependencies_list, done_task_results
             )
 
             priority_list = []
@@ -466,7 +466,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             nb_ready_task = nb_workers - len(priority_list)
 
             priority_list += MultiprocessingCluster.get_tasks_without_deps(
-                dependances_list, ready_list, nb_ready_task
+                dependencies_list, ready_list, nb_ready_task
             )
             # if the priority task have finished
             # continue with the rest of task (initial task)
@@ -507,7 +507,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             for job_id in done_task_results.keys():  # pylint: disable=C0201
                 # check if needed
                 still_need = False
-                for dependance_task_list in dependances_list.values():
+                for dependance_task_list in dependencies_list.values():
                     if job_id in dependance_task_list:
                         still_need = True
                 if not still_need:
@@ -527,7 +527,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                     done_task_results.pop(job_id_to_clean)
 
     @staticmethod
-    def get_ready_failed_tasks(wait_list, dependances_list, done_task_results):
+    def get_ready_failed_tasks(wait_list, dependencies_list, done_task_results):
         """
         Return the new ready tasks without constraint
         and failed tasks
@@ -536,7 +536,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         failed_list = []
         done_task_result_keys = done_task_results.keys()
         for job_id in wait_list.keys():  # pylint: disable=C0201
-            depending_tasks = dependances_list[job_id]
+            depending_tasks = dependencies_list[job_id]
             # check if all tasks are finished
             can_run = True
             failed = False
@@ -556,17 +556,17 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         return ready_list, failed_list
 
     @staticmethod
-    def get_tasks_without_deps(dependances_list, ready_list, nb_ready_task):
+    def get_tasks_without_deps(dependencies_list, ready_list, nb_ready_task):
         """
-        Return the list of ready tasks without dependances
+        Return the list of ready tasks without dependencies
         and not considered like initial task (dependance = -1)
         """
         priority_list = []
         for _ in range(nb_ready_task):
             task_id = next(
                 filter(
-                    lambda job_id: len(dependances_list[job_id]) != 1
-                    and dependances_list[job_id][0] != -1,
+                    lambda job_id: len(dependencies_list[job_id]) != 1
+                    and dependencies_list[job_id][0] != -1,
                     ready_list,
                 ),
                 None,
@@ -642,16 +642,16 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
     return replace_data_rec(args_or_kawargs, get_data, done_task_results)
 
 
-def compute_dependances(args, kw_args):
+def compute_dependencies(args, kw_args):
     """
-    Compute dependances from args and kw_args
+    Compute dependencies from args and kw_args
 
     :param args: arguments
     :type args: list
     :param kw_args: key arguments
     :type kw_args: dict
 
-    :return: dependances
+    :return: dependencies
     :rtype: list
     """
 
@@ -678,7 +678,7 @@ def compute_dependances(args, kw_args):
         :param list_or_dict: arguments
         :type list_or_dict: list or dict
 
-        :return: dependances
+        :return: dependencies
         :rtype: list
         """
 
@@ -699,10 +699,10 @@ def compute_dependances(args, kw_args):
 
         return list_ids
 
-    # compute dependances
-    dependances = get_ids_rec(args) + get_ids_rec(kw_args)
+    # compute dependencies
+    dependencies = get_ids_rec(args) + get_ids_rec(kw_args)
 
-    return list(dict.fromkeys(dependances))
+    return list(dict.fromkeys(dependencies))
 
 
 class MpFutureTask:  # pylint: disable=R0903
