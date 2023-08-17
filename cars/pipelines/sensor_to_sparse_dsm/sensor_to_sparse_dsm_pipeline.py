@@ -125,7 +125,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
         ) = sensors_inputs.check_geometry_plugin(
-            self.conf.get(GEOMETRY_PLUGIN, None), self.inputs
+            self.inputs, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
 

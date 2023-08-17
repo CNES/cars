@@ -571,7 +571,11 @@ def test_check_consistency():
     existing_no_geom = absolute_data_path("input/utils_input/im1.tif")
     # not existing
     not_existing = "/stuff/dummy_file.doe"
+    # dummy geomodel
+    dummy_geomodel = {"path": "dummy"}
 
-    assert geo_plugin.check_product_consistency(existing_with_geom, None)
-    assert not geo_plugin.check_product_consistency(existing_no_geom, None)
-    assert not geo_plugin.check_product_consistency(not_existing, None)
+    geo_plugin.check_product_consistency(existing_with_geom, dummy_geomodel)
+    with pytest.raises(RuntimeError):
+        geo_plugin.check_product_consistency(existing_no_geom, dummy_geomodel)
+    with pytest.raises(RuntimeError):
+        geo_plugin.check_product_consistency(not_existing, dummy_geomodel)
