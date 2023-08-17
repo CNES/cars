@@ -99,9 +99,9 @@ def fill_central_area_using_plane(
     :param class_index: list of tag to use
     :type class_index: list(str)
 
-    :return: filled disparity map, mask of invalid region that hasn't
-        been filled yet (original invalid region - central area)
-    :rtype: xr.Dataset, 2D np.array (row, col)
+    :return: mask of invalid region that hasn't been filled yet
+        (original invalid region - central area)
+    :rtype: 2D np.array (row, col)
     """
 
     # Generate a structuring element that will consider features
@@ -121,9 +121,6 @@ def fill_central_area_using_plane(
     )
 
     list_roi_msk = []
-
-    # Add a band to disparity dataset to memorize which pixels are filled
-    disp_map = add_empty_filling_band(disp_map, "plane.hole_center")
 
     for segm in range(1, num_features + 1):
         roi_msk = classif_mask_arrays == segm
@@ -238,7 +235,7 @@ def fill_central_area_using_plane(
                 roi_msk[central_area] = 0
 
                 list_roi_msk.append(roi_msk)
-    return disp_map, list_roi_msk
+    return list_roi_msk
 
 
 def add_surrounding_nodata_to_roi(
@@ -394,15 +391,9 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
     :type masks_to_fill: list(2D np.array (row, col))
     :param options: parameters for interpolation methods
     :type options: dict
-
-    :return: filled disparity map
-    :rtype: xr.Dataset
     """
     # Copy input data - disparity values + mask with values to fill
     raster = np.copy(disp_map["disp"].values)
-
-    # Add a band to disparity dataset to memorize which pixels are filled
-    disp_map = add_empty_filling_band(disp_map, "plane.hole_border")
 
     # Interpolation step
     for mask_to_fill in masks_to_fill:
@@ -413,7 +404,6 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
         disp_map["disp"].values[mask_to_fill] = interpol_raster[mask_to_fill]
         disp_map["disp_msk"].values[mask_to_fill] = 255
         update_filling(disp_map, mask_to_fill, "plane.hole_border")
-    return disp_map
 
 
 # --------------------------------------------------------------------
@@ -781,12 +771,9 @@ def fill_disp_using_plane(
     :type interp_options: dict
     :param classification: list of tag to use
     :type classification: list(str)
-
-    :return: filled disparity map
-    :rtype: xr.Dataset
-
     """
-    disp_map, border_region = fill_central_area_using_plane(
+
+    border_region = fill_central_area_using_plane(
         disp_map,
         corresponding_poly,
         row_min,
@@ -799,13 +786,11 @@ def fill_disp_using_plane(
         classification,
     )
 
-    disp_map = fill_area_borders_using_interpolation(
+    fill_area_borders_using_interpolation(
         disp_map,
         border_region,
         interp_options,
     )
-
-    return disp_map
 
 
 def fill_disp_using_zero_padding(
@@ -819,9 +804,6 @@ def fill_disp_using_zero_padding(
     :type disp_map: xr.Dataset
     :param class_index: class index according to the classification tag
     :type class_index: int
-
-    :return: filled disparity map
-    :rtype: xr.Dataset
     """
     # get index of the application class config
     # according the coords classif band
@@ -835,15 +817,12 @@ def fill_disp_using_zero_padding(
         disp_map["disp"].values[stack_index] = 0
         disp_map["disp_msk"].values[stack_index] = 255
         # Add a band to disparity dataset to memorize which pixels are filled
-        disp_map = add_empty_filling_band(disp_map, "zeros_padding")
         update_filling(disp_map, stack_index, "zeros_padding")
-
-    return disp_map
 
 
 def add_empty_filling_band(
     output_dataset: xr.Dataset,
-    filling_type: str,
+    filling_types: list,
 ):
     """
     Add filling attribute to dataset or band to filling attribute
@@ -854,15 +833,16 @@ def add_empty_filling_band(
     :param band_filling: type of filling (zero padding or plane)
 
     """
+    nb_band = len(filling_types)
     nb_row = len(output_dataset.coords[cst.ROW])
     nb_col = len(output_dataset.coords[cst.COL])
-    filling = np.zeros((1, nb_row, nb_col))
+    filling = np.zeros((nb_band, nb_row, nb_col))
     filling = xr.Dataset(
         data_vars={
             cst.EPI_FILLING: ([cst.BAND_FILLING, cst.ROW, cst.COL], filling)
         },
         coords={
-            cst.BAND_FILLING: [filling_type],
+            cst.BAND_FILLING: filling_types,
             cst.ROW: output_dataset.coords[cst.ROW],
             cst.COL: output_dataset.coords[cst.COL],
         },

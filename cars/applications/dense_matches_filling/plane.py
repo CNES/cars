@@ -24,7 +24,6 @@ this module contains the fill_disp application class.
 
 
 # Standard imports
-import copy
 import logging
 
 # Third party imports
@@ -437,7 +436,6 @@ def wrapper_fill_disparity(
     :rtype: xr.Dataset
     """
     # Create combined xarray Dataset
-
     (
         combined_dataset,
         row_min,
@@ -446,9 +444,13 @@ def wrapper_fill_disparity(
         corresponding_tiles, window, overlap
     )
 
-    # Fill disparity
+    # Add a band to disparity dataset to memorize which pixels are filled
+    combined_dataset = fd_tools.add_empty_filling_band(
+        combined_dataset, ["plane.hole_center", "plane.hole_border"]
+    )
 
-    combined_dataset = fd_tools.fill_disp_using_plane(
+    # Fill disparity
+    fd_tools.fill_disp_using_plane(
         combined_dataset,
         corresponding_poly,
         row_min,
@@ -500,7 +502,7 @@ def wrapper_copy_disparity(
     saving_info=None,
 ):
     """
-    Wrapper to copy previous disparity
+    Wrapper to copy previous disparity with additional filling band with zeros
 
     :param disp: disparity map
     :type disp: xr.Dataset
@@ -514,8 +516,10 @@ def wrapper_copy_disparity(
     :return: disp map
     :rtype: xr.Dataset
     """
-
-    res = copy.copy(disp)
+    # Fill band named filling with zeros
+    res = fd_tools.add_empty_filling_band(
+        disp, ["plane.hole_center", "plane.hole_border"]
+    )
 
     # Fill with attributes
     cars_dataset.fill_dataset(

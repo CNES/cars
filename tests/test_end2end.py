@@ -914,6 +914,10 @@ def test_end2end_ventoux_unique_split():
                     },
                 },
             },
+            "dense_matches_filling.1": {
+                "method": "plane",
+                "classification": ["forest"],
+            },
             "triangulation": {
                 "method": "line_of_sight_intersection",
                 "save_points_cloud": True,
@@ -945,6 +949,9 @@ def test_end2end_ventoux_unique_split():
                             ),
                             "classification": os.path.join(
                                 epi_pc_path, "epi_classification.tif"
+                            ),
+                            "filling": os.path.join(
+                                epi_pc_path, "epi_filling.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
@@ -1000,8 +1007,10 @@ def test_end2end_ventoux_unique_split():
                         "dsm_no_data": -999,
                         "color_no_data": 0,
                         "save_classif": True,
+                        "save_filling": True,
                         "save_confidence": True,
                         "save_color": True,
+                        "save_source_pc": True,
                     },
                 },
             }
@@ -1029,6 +1038,12 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
+            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     absolute_data_path(
+            #         "ref_output/filling_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
             #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
             #     absolute_data_path(
             #         "ref_output/confidence_from"
@@ -1040,6 +1055,12 @@ def test_end2end_ventoux_unique_split():
             #     absolute_data_path(
             #         "ref_output/confidence_from"
             #         + "_ambiguity1_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     absolute_data_path(
+            #         "ref_output/source_pc_end2end_ventoux_split.tif"
             #     ),
             # )
 
