@@ -222,7 +222,7 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
-def check_geometry_plugin(conf_geom_plugin, conf_inputs):
+def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     """
     Check the geometry plugin with inputs
     :param conf_geom_plugin: name of geometry plugin
@@ -230,7 +230,10 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
     :param conf_inputs: checked configuration of inputs
     :type conf_inputs: type
 
-    :return overloaded geometry plugin conf, TODO
+    :return: overload inputs conf
+             overloaded geometry plugin conf
+             geometry plugin without dem
+             geometry plugin with dem
     """
     try:
         from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
@@ -272,12 +275,22 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
     )
 
     # Check products consistency with this plugin
-    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
+    overloaded_conf_inputs = conf_inputs.copy()
+    for sensor_key, sensor_image in conf_inputs[sens_cst.SENSORS].items():
         sensor = sensor_image[sens_cst.INPUT_IMG]
         geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
-        geom_plugin_without_dem_and_geoid.check_product_consistency(
+        (
+            sensor,
+            geomodel,
+        ) = geom_plugin_without_dem_and_geoid.check_product_consistency(
             sensor, geomodel
         )
+        overloaded_conf_inputs[sens_cst.SENSORS][sensor_key][
+            sens_cst.INPUT_IMG
+        ] = sensor
+        overloaded_conf_inputs[sens_cst.SENSORS][sensor_key][
+            sens_cst.INPUT_GEO_MODEL
+        ] = geomodel
 
     # Get image pairs for DTM intersection with ROI
     images_for_roi = []
@@ -298,6 +311,7 @@ def check_geometry_plugin(conf_geom_plugin, conf_inputs):
     )
 
     return (
+        overloaded_conf_inputs,
         conf_geom_plugin,
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,

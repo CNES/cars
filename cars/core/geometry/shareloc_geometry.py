@@ -29,6 +29,7 @@ import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
+from json_checker import Checker
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.dtm_intersection import DTMIntersection
 from shareloc.geofunctions.triangulation import epipolar_triangulation
@@ -137,17 +138,21 @@ class SharelocGeometry(AbstractGeometry):
 
         :param sensor: path to sensor image
         :param geomodel: path and attributes for geometrical model
-        :return: True if the products are readable, False otherwise
+        :return: sensor path and overloaded geomodel dict
         """
-        # Try to read them using shareloc
-        status = True
-        try:
-            SharelocGeometry.load_image(sensor)
-            SharelocGeometry.load_geom_model(geomodel)
-        except Exception:
-            status = False
+        # Check geomodel schema consistency
+        overloaded_geomodel = geomodel.copy()
+        overloaded_geomodel["path"] = geomodel.get("path")
+        overloaded_geomodel["model_type"] = geomodel.get("model_type", "RPC")
+        geomodel_schema = {"path": str, "model_type": str}
+        checker_geomodel = Checker(geomodel_schema)
+        checker_geomodel.validate(overloaded_geomodel)
 
-        return status
+        # Try to read them using shareloc
+        SharelocGeometry.load_image(sensor)
+        SharelocGeometry.load_geom_model(overloaded_geomodel)
+
+        return sensor, overloaded_geomodel
 
     @staticmethod
     def triangulate(

@@ -29,7 +29,7 @@ import numpy as np
 import otbApplication  # pylint: disable=import-error
 import rasterio as rio
 import xarray as xr
-from json_checker import And
+from json_checker import And, Checker
 
 from cars.conf import input_parameters
 from cars.core import constants as cst
@@ -80,75 +80,60 @@ class OTBGeometry(AbstractGeometry):
         return not_available
 
     @staticmethod
-    def check_product_consistency(sensor: str, geomodel: str = None) -> bool:
+    def check_product_consistency(sensor: str, geomodel: dict) -> bool:
         """
         Check if the image have RPC information readable by the OTB
         :param sensor: path to the image
         :param geomodel: path and attributes for geometric model
-        :return: True if the RPC are readable, False otherwise
+        :return: unchanged sensor path and geomodel dict
         """
-        can_open_status = False
-        try:
-            if geomodel is None:
-                geom_path = "./otb_can_open_test.geom"
+        # Check geomodel schema consistency
+        geomodel_schema = {"path": str}
+        checker_geomodel = Checker(geomodel_schema)
+        checker_geomodel.validate(geomodel)
 
-                # try to dump .geom with ReadImageInfo app
-                read_im_app = otbApplication.Registry.CreateApplication(
-                    "ReadImageInfo"
-                )
-                read_im_app.SetParameterString("in", sensor)
-                read_im_app.SetParameterString("outkwl", geom_path)
+        geom_path = "./otb_can_open_test.geom"
 
-                read_im_app.ExecuteAndWriteOutput()
-            else:
-                geom_path = geomodel["path"]
-            # check geom consistency
-            if os.path.exists(geom_path):
-                can_open_status = True
-                with open(geom_path, encoding="utf-8") as geom_file_desc:
-                    geom_dict = {}
-                    for line in geom_file_desc:
-                        key, val = line.split(": ")
-                        geom_dict[key] = val
-                    # pylint: disable=too-many-boolean-expressions
-                    if (
-                        "line_den_coeff_00" not in geom_dict
-                        or "samp_den_coeff_00" not in geom_dict
-                        or "line_num_coeff_00" not in geom_dict
-                        or "samp_num_coeff_00" not in geom_dict
-                        or "line_off" not in geom_dict
-                        or "line_scale" not in geom_dict
-                        or "samp_off" not in geom_dict
-                        or "samp_scale" not in geom_dict
-                        or "lat_off" not in geom_dict
-                        or "lat_scale" not in geom_dict
-                        or "long_off" not in geom_dict
-                        or "long_scale" not in geom_dict
-                        or "height_off" not in geom_dict
-                        or "height_scale" not in geom_dict
-                        or "polynomial_format" not in geom_dict
-                    ):
-                        logging.warning(
-                            "No RPC model set for image {}".format(
-                                geom_file_desc
-                            )
-                        )
-                        can_open_status = False
-                if geomodel is None:
-                    os.remove("./otb_can_open_test.geom")
-            else:
-                logging.warning(
-                    "{} does not have associated geom file".format(sensor)
-                )
-                can_open_status = False
-        except Exception as read_error:
-            logging.warning(
-                "Exception caught while trying to read file {}: {}".format(
-                    sensor, read_error
-                )
+        # try to dump .geom with ReadImageInfo app
+        read_im_app = otbApplication.Registry.CreateApplication("ReadImageInfo")
+        read_im_app.SetParameterString("in", sensor)
+        read_im_app.SetParameterString("outkwl", geom_path)
+
+        read_im_app.ExecuteAndWriteOutput()
+        # check geom consistency
+        if os.path.exists(geom_path):
+            with open(geom_path, encoding="utf-8") as geom_file_desc:
+                geom_dict = {}
+                for line in geom_file_desc:
+                    key, val = line.split(": ")
+                    geom_dict[key] = val
+                # pylint: disable=too-many-boolean-expressions
+                if (
+                    "line_den_coeff_00" not in geom_dict
+                    or "samp_den_coeff_00" not in geom_dict
+                    or "line_num_coeff_00" not in geom_dict
+                    or "samp_num_coeff_00" not in geom_dict
+                    or "line_off" not in geom_dict
+                    or "line_scale" not in geom_dict
+                    or "samp_off" not in geom_dict
+                    or "samp_scale" not in geom_dict
+                    or "lat_off" not in geom_dict
+                    or "lat_scale" not in geom_dict
+                    or "long_off" not in geom_dict
+                    or "long_scale" not in geom_dict
+                    or "height_off" not in geom_dict
+                    or "height_scale" not in geom_dict
+                    or "polynomial_format" not in geom_dict
+                ):
+                    raise RuntimeError(
+                        "No RPC model set for image {}".format(geom_file_desc)
+                    )
+            os.remove("./otb_can_open_test.geom")
+        else:
+            raise RuntimeError(
+                "{} does not have associated geom file".format(sensor)
             )
-            can_open_status = False
-        return can_open_status
+        return sensor, geomodel
 
     @staticmethod
     def triangulate(
