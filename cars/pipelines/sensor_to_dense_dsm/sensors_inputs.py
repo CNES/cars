@@ -122,7 +122,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INPUT_IMG: str,
         sens_cst.INPUT_COLOR: str,
         sens_cst.INPUT_NODATA: int,
-        sens_cst.INPUT_GEO_MODEL: dict,
+        sens_cst.INPUT_GEO_MODEL: Or(str, dict),
         sens_cst.INPUT_MSK: Or(str, None),
         sens_cst.INPUT_CLASSIFICATION: Or(str, None),
     }

@@ -121,7 +121,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
 
-        # Check geometry plugin
+        # Check geometry plugin and overwrite geomodel in conf inputs
         (
             self.inputs,
             self.used_conf[GEOMETRY_PLUGIN],

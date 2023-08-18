@@ -141,9 +141,15 @@ class SharelocGeometry(AbstractGeometry):
         :return: sensor path and overloaded geomodel dict
         """
         # Check geomodel schema consistency
+        if isinstance(geomodel, str):
+            geomodel = {
+                "path": geomodel,
+            }
         overloaded_geomodel = geomodel.copy()
-        overloaded_geomodel["path"] = geomodel.get("path")
+
+        # If model_type is not defined, default is "RPC"
         overloaded_geomodel["model_type"] = geomodel.get("model_type", "RPC")
+
         geomodel_schema = {"path": str, "model_type": str}
         checker_geomodel = Checker(geomodel_schema)
         checker_geomodel.validate(overloaded_geomodel)

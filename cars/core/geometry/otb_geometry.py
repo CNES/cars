@@ -88,10 +88,16 @@ class OTBGeometry(AbstractGeometry):
         :return: unchanged sensor path and geomodel dict
         """
         # Check geomodel schema consistency
+        if isinstance(geomodel, str):
+            geomodel = {
+                "path": geomodel,
+            }
+        overloaded_geomodel = geomodel.copy()
         geomodel_schema = {"path": str}
         checker_geomodel = Checker(geomodel_schema)
-        checker_geomodel.validate(geomodel)
+        checker_geomodel.validate(overloaded_geomodel)
 
+        # Check geomodel extracted from image and not geomodel given by user
         geom_path = "./otb_can_open_test.geom"
 
         # try to dump .geom with ReadImageInfo app
@@ -133,7 +139,7 @@ class OTBGeometry(AbstractGeometry):
             raise RuntimeError(
                 "{} does not have associated geom file".format(sensor)
             )
-        return sensor, geomodel
+        return sensor, overloaded_geomodel
 
     @staticmethod
     def triangulate(
