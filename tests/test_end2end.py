@@ -914,6 +914,10 @@ def test_end2end_ventoux_unique_split():
                     },
                 },
             },
+            "dense_matches_filling.1": {
+                "method": "plane",
+                "classification": ["forest"],
+            },
             "triangulation": {
                 "method": "line_of_sight_intersection",
                 "save_points_cloud": True,
@@ -945,6 +949,9 @@ def test_end2end_ventoux_unique_split():
                             ),
                             "classification": os.path.join(
                                 epi_pc_path, "epi_classification.tif"
+                            ),
+                            "filling": os.path.join(
+                                epi_pc_path, "epi_filling.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
@@ -1000,8 +1007,10 @@ def test_end2end_ventoux_unique_split():
                         "dsm_no_data": -999,
                         "color_no_data": 0,
                         "save_classif": True,
+                        "save_filling": True,
                         "save_confidence": True,
                         "save_color": True,
+                        "save_source_pc": True,
                     },
                 },
             }
@@ -1029,6 +1038,12 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
+            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     absolute_data_path(
+            #         "ref_output/filling_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
             #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
             #     absolute_data_path(
             #         "ref_output/confidence_from"
@@ -1040,6 +1055,12 @@ def test_end2end_ventoux_unique_split():
             #     absolute_data_path(
             #         "ref_output/confidence_from"
             #         + "_ambiguity1_end2end_ventoux_split.tif"
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     absolute_data_path(
+            #         "ref_output/source_pc_end2end_ventoux_split.tif"
             #     ),
             # )
 
@@ -2731,6 +2752,7 @@ def test_end2end_disparity_filling():
                 "color_no_data": 0,
                 "msk_no_data": 65534,
                 "save_msk": True,
+                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2753,6 +2775,8 @@ def test_end2end_disparity_filling():
         #       absolute_data_path("ref_output/clr_end2end_gizeh_fill.tif"))
         # copy2(os.path.join(out_dir, 'msk.tif'),
         #      absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"))
+        # copy2(os.path.join(out_dir, 'filling.tif'),
+        #      absolute_data_path("ref_output/filling_end2end_gizeh_fill.tif"))
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -2769,6 +2793,12 @@ def test_end2end_disparity_filling():
         assert_same_images(
             os.path.join(out_dir, "msk.tif"),
             absolute_data_path("ref_output/msk_end2end_gizeh_fill.tif"),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "filling.tif"),
+            absolute_data_path("ref_output/filling_end2end_gizeh_fill.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -2819,6 +2849,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "color_no_data": 0,
                 "msk_no_data": 65534,
                 "save_msk": True,
+                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2859,6 +2890,14 @@ def test_end2end_disparity_filling_with_zeros():
         #         )
         #     ),
         # )
+        # copy2(
+        #     os.path.join(out_dir, "filling.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             "ref_output", "filling_end2end_gizeh_fill_with_zero.tif"
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -2880,6 +2919,14 @@ def test_end2end_disparity_filling_with_zeros():
             os.path.join(out_dir, "msk.tif"),
             absolute_data_path(
                 "ref_output/msk_end2end_gizeh_fill_with_zero.tif"
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "filling.tif"),
+            absolute_data_path(
+                "ref_output/filling_end2end_gizeh_fill_with_zero.tif"
             ),
             rtol=1.0e-7,
             atol=1.0e-7,

@@ -496,6 +496,18 @@ def create_combined_dense_cloud(  # noqa: C901
                 ]
             )
 
+    # add filling information indexes
+    band_filling = None
+    if cst.EPI_FILLING in cloud_list[0]:
+        band_filling = list(cloud_list[0].coords[cst.BAND_FILLING].to_numpy())
+        for band in band_filling:
+            band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
+            nb_data.extend(
+                [
+                    band_index,
+                ]
+            )
+
     confidence_list = []
     for key in cloud_list[0].keys():
         if cst.POINTS_CLOUD_CONFIDENCE in key:
@@ -630,6 +642,17 @@ def create_combined_dense_cloud(  # noqa: C901
                 cloud_list,
                 nb_data,
                 band_classif,
+                cloud_list_id,
+                bbox,
+                c_cloud,
+            )
+
+        # add filling information to the current cloud
+        if cst.EPI_FILLING in cloud_list[cloud_list_id]:
+            add_filling_information(
+                cloud_list,
+                nb_data,
+                band_filling,
                 cloud_list_id,
                 bbox,
                 c_cloud,
@@ -783,7 +806,7 @@ def add_classification_information(
     c_cloud,
 ):
     """
-    Add color information for a current cloud_list item
+    Add classification bands for a current cloud_list item
 
     :param cloud_list: point cloud dataset
     :type cloud_list: List(Dataset)
@@ -806,6 +829,40 @@ def add_classification_information(
             nb_data.index(band_index),
             :,
         ] = np.ravel(c_classif[idx, :, :])
+
+
+def add_filling_information(
+    cloud_list,
+    nb_data,
+    band_filling,
+    cloud_list_id,
+    bbox,
+    c_cloud,
+):
+    """
+    Add filling information for a current cloud_list item
+
+    :param cloud_list: point cloud dataset
+    :type cloud_list: List(Dataset)
+    :param band_classif: list of band classif
+    :type band_classif: list[str]
+    :param nb_data: list of band data
+    :type nb_data: list[str]
+    :param cloud_list_id: index of the current point cloud
+    :type cloud_list_id: int
+    :param bbox: bbox of interest
+    :type bbox: list[int]
+    :param c_cloud: arranged point cloud
+    :type c_cloud: NDArray[float64]
+    """
+    filling_array = cloud_list[cloud_list_id][cst.EPI_FILLING].values
+    c_filling = filling_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+    for idx, band in enumerate(band_filling):
+        band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
+        c_cloud[
+            nb_data.index(band_index),
+            :,
+        ] = np.ravel(c_filling[idx, :, :])
 
 
 def add_msk_information(

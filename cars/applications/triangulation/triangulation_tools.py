@@ -297,6 +297,15 @@ def compute_points_cloud(
             point_cloud,
         )
 
+    # add filling in data:
+    if cst.EPI_FILLING in data:
+        add_layer(
+            data,
+            cst.EPI_FILLING,
+            cst.BAND_FILLING,
+            point_cloud,
+        )
+
     point_cloud.attrs[cst.ROI] = data.attrs[cst.ROI]
     if roi_key == cst.ROI_WITH_MARGINS:
         point_cloud.attrs[cst.ROI_WITH_MARGINS] = data.attrs[

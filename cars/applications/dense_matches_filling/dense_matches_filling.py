@@ -226,4 +226,14 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
                 cars_ds_name="epi_ambiguity_" + app_name + "_filled",
             )
 
+            self.orchestrator.add_to_save_lists(
+                os.path.join(
+                    pair_folder,
+                    "epi_filling_" + app_name + ".tif",
+                ),
+                cst_disp.FILLING,
+                new_epipolar_disparity_map,
+                cars_ds_name="epi_filling_" + app_name,
+            )
+
         return new_epipolar_disparity_map

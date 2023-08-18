@@ -24,7 +24,6 @@ this module contains the fill_disp application class.
 
 
 # Standard imports
-import copy
 import logging
 
 # Third party imports
@@ -41,6 +40,7 @@ from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
     DenseMatchingFilling,
 )
+from cars.core import constants as cst
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
@@ -435,14 +435,7 @@ def wrapper_fill_disparity(
     :return: disp map
     :rtype: xr.Dataset
     """
-
-    # find xarray Dataset corresponding to current tile
-    input_disp = corresponding_tiles_tools.find_tile_dataset(
-        corresponding_tiles, window
-    )
-
     # Create combined xarray Dataset
-
     (
         combined_dataset,
         row_min,
@@ -451,8 +444,12 @@ def wrapper_fill_disparity(
         corresponding_tiles, window, overlap
     )
 
-    # Fill disparity
+    # Add a band to disparity dataset to memorize which pixels are filled
+    combined_dataset = fd_tools.add_empty_filling_band(
+        combined_dataset, ["plane.hole_center", "plane.hole_border"]
+    )
 
+    # Fill disparity
     fd_tools.fill_disp_using_plane(
         combined_dataset,
         corresponding_poly,
@@ -466,8 +463,16 @@ def wrapper_fill_disparity(
         interp_options,
         classification,
     )
+
+    # Find xarray Dataset corresponding to current tile
+    input_disp = corresponding_tiles_tools.find_tile_dataset(
+        corresponding_tiles, window
+    )
+
+    # Add additional attribute "filling" to dataset template
+    input_disp[cst.EPI_FILLING] = combined_dataset[cst.EPI_FILLING]
+
     # Crop Dataset to get tile disparity
-    # crop
     croped_disp = corresponding_tiles_tools.crop_dataset(
         combined_dataset,
         input_disp,
@@ -497,7 +502,7 @@ def wrapper_copy_disparity(
     saving_info=None,
 ):
     """
-    Wrapper to copy previous disparity
+    Wrapper to copy previous disparity with additional filling band with zeros
 
     :param disp: disparity map
     :type disp: xr.Dataset
@@ -511,8 +516,10 @@ def wrapper_copy_disparity(
     :return: disp map
     :rtype: xr.Dataset
     """
-
-    res = copy.copy(disp)
+    # Fill band named filling with zeros
+    res = fd_tools.add_empty_filling_band(
+        disp, ["plane.hole_center", "plane.hole_border"]
+    )
 
     # Fill with attributes
     cars_dataset.fill_dataset(

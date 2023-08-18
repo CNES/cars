@@ -95,6 +95,7 @@ class SimpleGaussian(
         self.save_dsm = self.used_config["save_dsm"]
         self.save_confidence = self.used_config["save_confidence"]
         self.save_source_pc = self.used_config["save_source_pc"]
+        self.save_filling = self.used_config["save_filling"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -143,6 +144,7 @@ class SimpleGaussian(
         overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
         overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
         overloaded_conf["save_source_pc"] = conf.get("save_source_pc", False)
+        overloaded_conf["save_filling"] = conf.get("save_filling", False)
 
         overloaded_conf["compute_all"] = conf.get("compute_all", False)
         if overloaded_conf["compute_all"]:
@@ -172,6 +174,7 @@ class SimpleGaussian(
             "save_dsm": bool,
             "save_confidence": bool,
             "save_source_pc": bool,
+            "save_filling": bool,
             "compute_all": bool,
         }
 
@@ -458,6 +461,19 @@ class SimpleGaussian(
                     dtype=np.float32,
                     nodata=self.msk_no_data,
                     cars_ds_name="source_pc",
+                )
+
+            if self.save_filling:
+                out_filling = os.path.join(
+                    self.orchestrator.out_dir, "filling.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_filling,
+                    cst.RASTER_FILLING,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.msk_no_data,
+                    cars_ds_name="filling",
                 )
 
             # Get saving infos in order to save tiles when they are computed

@@ -266,7 +266,7 @@ def get_descriptions_bands(raster_file: str) -> Dict:
     Get the descriptions bands of an image file
 
     :param raster_file: Image file
-    :return: The descriptions liust of the given image
+    :return: The descriptions list of the given image
     """
     with rio.open(raster_file, "r") as descriptor:
         return descriptor.descriptions

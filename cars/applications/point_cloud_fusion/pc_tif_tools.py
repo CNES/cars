@@ -429,8 +429,9 @@ def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
             cloud_data_bands.append(type_band)
             cloud_data[type_band] = np.ravel(desc_band.read(1, window=window))
         else:
-            for id_band in range(desc_band.count):
-                band_name = "{}{}".format(type_band, id_band)
+            descriptions = inputs.get_descriptions_bands(band_path)
+            for id_band, band_name in enumerate(descriptions):
+                band_name = "{}_{}".format(type_band, band_name)
                 cloud_data_bands.append(band_name)
                 cloud_data[band_name] = np.ravel(
                     desc_band.read(1 + id_band, window=window)
@@ -718,6 +719,10 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
     if cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in items:
         data_dict[cst.POINTS_CLOUD_CLASSIF_KEY_ROOT] = items[
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+        ]
+    if cst.POINTS_CLOUD_FILLING_KEY_ROOT in items:
+        data_dict[cst.POINTS_CLOUD_FILLING_KEY_ROOT] = items[
+            cst.POINTS_CLOUD_FILLING_KEY_ROOT
         ]
     if cst.POINTS_CLOUD_CONFIDENCE in items:
         data_dict[cst.POINTS_CLOUD_CONFIDENCE] = items[

@@ -708,7 +708,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_key=pair_key,
                     disp_min=disp_min,
                     disp_max=disp_max,
-                    compute_disparity_masks=len(holes_classif) > 0,
+                    compute_disparity_masks=False,
                     disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
                 )
 
@@ -728,7 +728,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_key=pair_key,
                     )
                 else:
-                    # fill with zeros
+                    # Fill with zeros
                     (
                         filled_with_1_epipolar_disparity_map
                     ) = self.dense_matches_filling_1.run(
@@ -753,7 +753,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_key=pair_key,
                     )
                 else:
-                    # fill with zeros
+                    # Fill with zeros
                     (
                         filled_with_2_epipolar_disparity_map
                     ) = self.dense_matches_filling_2.run(
