@@ -30,7 +30,7 @@ import tempfile
 import pytest
 
 # CARS imports
-from cars.cars import CarsArgumentParser, cars_parser, main_cli
+from cars.cars import cars_parser, main_cli
 
 # CARS Tests imports
 from .helpers import absolute_data_path, generate_input_json, temporary_dir
@@ -47,7 +47,7 @@ def test_cars_parser():
     """
     parser = cars_parser()
 
-    assert isinstance(parser, CarsArgumentParser)
+    assert isinstance(parser, argparse.ArgumentParser)
     assert parser.prog == "cars"
 
 

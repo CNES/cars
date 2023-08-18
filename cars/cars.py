@@ -74,21 +74,7 @@ class StreamCapture:
         self.stream.flush()
 
 
-class CarsArgumentParser(argparse.ArgumentParser):
-    """
-    ArgumentParser class adaptation for CARS
-    """
-
-    def convert_arg_line_to_args(self, arg_line):
-        """
-        Redefine herited function to accept one line argument parser in @file
-        from fromfile_prefix_chars file argument
-        https://docs.python.org/dev/library/argparse.html
-        """
-        return arg_line.split()
-
-
-def cars_parser() -> CarsArgumentParser:
+def cars_parser() -> argparse.ArgumentParser:
     """
     Main CLI argparse parser function
     It builds argparse objects and constructs CLI interfaces parameters.
@@ -97,10 +83,8 @@ def cars_parser() -> CarsArgumentParser:
     """
     # Create cars cli parser from argparse
     # use @file to use a file containing parameters
-    parser = CarsArgumentParser(
-        "cars",
-        description="CARS: CNES Algorithms to Reconstruct Surface",
-        fromfile_prefix_chars="@",
+    parser = argparse.ArgumentParser(
+        "cars", description="CARS: CNES Algorithms to Reconstruct Surface"
     )
 
     parser.add_argument("conf", type=str, help="Inputs Configuration File")
@@ -157,27 +141,24 @@ def main_cli(args, dry_run=False):  # noqa: C901
     from cars.pipelines.pipeline import Pipeline
 
     try:
-        # main(s) for each command
-        if args.conf is not None:
-            # Transform conf file to dict
-            with open(args.conf, "r", encoding="utf8") as fstream:
-                config = json.load(fstream)
+        # Transform conf file to dict
+        with open(args.conf, "r", encoding="utf8") as fstream:
+            config = json.load(fstream)
 
-            config_json_dir = os.path.abspath(os.path.dirname(args.conf))
+        config_json_dir = os.path.abspath(os.path.dirname(args.conf))
 
-            pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
-            # Generate pipeline and check conf
-            cars_logging.add_progress_message("Check configuration...")
-            used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
-            cars_logging.add_progress_message("CARS pipeline is started.")
-            if not dry_run:
-                # run pipeline
-                used_pipeline.run()
-            cars_logging.add_progress_message(
-                "CARS has successfully completed the pipeline."
-            )
-        else:
-            raise SystemExit("CARS wrong subcommand. Use cars --help")
+        pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
+        # Generate pipeline and check conf
+        cars_logging.add_progress_message("Check configuration...")
+        used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
+        cars_logging.add_progress_message("CARS pipeline is started.")
+        if not dry_run:
+            # run pipeline
+            used_pipeline.run()
+        cars_logging.add_progress_message(
+            "CARS has successfully completed the pipeline."
+        )
+
     except BaseException:
         # Catch all exceptions, show debug traceback and exit
         logging.exception("CARS terminated with following error")
