@@ -55,6 +55,15 @@ This section describes optional plugins possibilities of CARS.
         * **initial_elevation**: Field contains the path to the **folder** in which are located the SRTM tiles covering the production.
         * **geometry_plugin**: Parameter configured to "OTBGeometry" to use OTB library.
 
+        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
+        be changed to a dictionary before launching the pipeline. The dictionary will be :
+
+        .. code-block:: json
+
+            {
+              "path": "img1.geom"
+            }
+
     .. tab:: Shareloc Geometry plugin
 
         Another geometry library called `Shareloc`_ is installed with CARS and can be configured to be used as another option.
@@ -92,9 +101,19 @@ This section describes optional plugins possibilities of CARS.
 
         The particularities in the configuration file are:
 
-        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC"
+        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
         * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory as OTB default configuration !!)
         * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
+
+        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
+        be changed to a dictionary before launching the pipeline. The dictionary will be :
+
+        .. code-block:: json
+
+            {
+              "path": "img1.geom",
+              "model_type": "RPC"
+            }
 
 
 .. note::

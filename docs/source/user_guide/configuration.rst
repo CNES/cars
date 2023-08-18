@@ -92,7 +92,7 @@ The structure follows this organisation:
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *no_data*         | No data value of the image                                                               | int            | -9999         | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel*        | Path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | dict           |               | Yes      |
+            | *geomodel*        | Path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | string, dict   |               | Yes      |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
             | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
             +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
