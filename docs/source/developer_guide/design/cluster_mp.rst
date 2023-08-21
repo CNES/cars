@@ -12,7 +12,7 @@ The multiprocessing (MP) cluster facilitates the distribution of computing for t
 Details
 -------
 The MP cluster is built upon `Python's multiprocessing`_ module using the forkserver mode. In this mode, a pool of worker processes handles the parallel execution of functions. Each worker process is single-threaded, and only essential resources are inherited.
-By design, CARS utilizes disk-based registry for data storage, distributing data across the processes.
+By design, CARS utilizes disk-based registry for data storage, distributing data across the processes. If specified in configuration, data distribution can be done in memory, with degraded performance.
 
 
 .. _`Python's multiprocessing`: https://docs.python.org/3/library/multiprocessing.html
