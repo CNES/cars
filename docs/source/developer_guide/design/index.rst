@@ -31,6 +31,7 @@ This section presents one by one the CARS key concepts and their interaction.
 
     carsdataset
     orchestrator
+    cluster_mp
     application
     interaction
     plugin
