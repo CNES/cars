@@ -47,7 +47,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libfftw3-dev=3.3.8-2ubuntu1 \
     openssh-client=1:8.2p1-4ubuntu0.9 \
     curl=7.68.0-1ubuntu2.19 \
-    vim=2:8.1.2269-1ubuntu5.16 \
+    vim=2:8.1.2269-1ubuntu5.17 \
     nano=4.8-1ubuntu1 \
     && rm -rf /var/lib/apt/lists/*
 
