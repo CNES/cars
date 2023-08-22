@@ -139,7 +139,7 @@ def sensors_check_inputs(  # noqa: C901
         ] = color
 
         no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
-            sens_cst.INPUT_NODATA, -9999
+            sens_cst.INPUT_NODATA, 0
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_NODATA

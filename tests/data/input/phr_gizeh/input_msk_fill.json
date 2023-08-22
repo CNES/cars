@@ -7,16 +7,14 @@
                 "geomodel": {
                     "path": "img1.geom"
                 },
-                "classification": "classif1.tif",
-                "no_data": 0
+                "classification": "classif1.tif"
             },
             "two": {
                 "image": "img2.tif",
                 "geomodel": {
                     "path": "img2.geom"
                 },
-                "classification": "classif2.tif",
-                "no_data": 0
+                "classification": "classif2.tif"
 
             }
         },
