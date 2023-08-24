@@ -80,23 +80,19 @@ Step by step
                     "one": {
                         "image": "img1.tif",
                         "geomodel": "img1.geom",
-                        "color": "color1.tif",
-                        "no_data": 0
+                        "color": "color1.tif"
                     },
                     "two": {
                         "image": "img2.tif",
-                        "geomodel": "img2.geom",
-                        "no_data": 0
-
+                        "geomodel": "img2.geom"
                     },
                     "three": {
                         "image": "img3.tif",
-                        "geomodel": "img3.geom",
-                        "no_data": 0
+                        "geomodel": "img3.geom"
                     }
                 },
                 "pairing": [["one", "two"],["one", "three"]],
-                 "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
+                "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
             },
 
             "output": {

@@ -58,19 +58,15 @@ with one configuration input file ("configfile.json") located in a "data" folder
             "sensors" : {
                 "one": {
                     "image": "img1.tif",
-                    "geomodel": "img1.geom",
-                    "no_data": 0
+                    "geomodel": "img1.geom"
                 },
                 "two": {
                     "image": "img2.tif",
-                    "geomodel": "img2.geom",
-                    "no_data": 0
-
+                    "geomodel": "img2.geom"
                 },
                 "three": {
                     "image": "img3.tif",
-                    "geomodel": "img3.geom",
-                    "no_data": 0
+                    "geomodel": "img3.geom"
                 }
             },
             "pairing": [["one", "two"],["one", "three"]],

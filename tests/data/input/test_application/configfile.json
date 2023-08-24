@@ -3,13 +3,11 @@
         "sensors" : {
             "one": {
                 "image": "img1.tif",
-                "no_data": 0
+                "geomodel": "img1.geom"
             },
             "two": {
                 "image": "img2.tif",
-                "geomodel": "img2.geom",
-                "no_data": 0
-
+                "geomodel": "img2.geom"
             }
         },
         "pairing": [["one", "two"]],

@@ -6,7 +6,6 @@
                 "geomodel": {
                     "path": "left_image.geom"
                 },
-                "no_data": 0,
                 "mask": "left_msk.tif",
                 "classification": "left_classif.tif"
             },
@@ -15,7 +14,6 @@
                 "geomodel": {
                     "path": "right_image.geom"
                 },
-                "no_data": 0,
                 "mask": "right_msk.tif",
                 "classification": "right_classif.tif"
             }   

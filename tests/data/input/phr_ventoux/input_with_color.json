@@ -6,18 +6,13 @@
                 "color" : "color_image.tif",
                 "geomodel": {
                     "path": "left_image.geom"
-                },
-                "no_data": 0
-                
-                
+                }
             },
             "right": {
                 "image": "right_image.tif",
                 "geomodel": {
                     "path": "right_image.geom"
-                },
-                "no_data": 0
-
+                }
             }   
         },
         "pairing": [["left", "right"]],
