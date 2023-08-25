@@ -53,7 +53,6 @@ def inputfilename_to_sensor(inputfilename):
 
     sensor["image"] = absfilename
     sensor["geomodel"] = geomodel
-    sensor["no_data"] = 0
 
     return sensor
 
