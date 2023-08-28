@@ -31,6 +31,7 @@ from collections import Counter
 # Third party imports
 import numpy as np
 from json_checker import Checker
+from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -128,6 +129,7 @@ class MappingToTerrainTiles(
         orchestrator=None,
         margins=0,
         optimal_terrain_tile_width=500,
+        roi=None,
     ):
         """
         Run EpipolarCloudFusion application.
@@ -343,15 +345,24 @@ class MappingToTerrainTiles(
                             row, col
                         ]["required_point_clouds"]
 
-                    if (
-                        len(
-                            [
-                                value
-                                for value, _ in required_point_clouds
-                                if not isinstance(value, type(None))
-                            ]
-                        )
-                        > 0
+                    terrain_region_poly = Polygon(
+                        [
+                            [terrain_region[0], terrain_region[1]],
+                            [terrain_region[0], terrain_region[3]],
+                            [terrain_region[2], terrain_region[3]],
+                            [terrain_region[2], terrain_region[1]],
+                            [terrain_region[0], terrain_region[1]],
+                        ]
+                    )
+
+                    if len(
+                        [
+                            value
+                            for value, _ in required_point_clouds
+                            if not isinstance(value, type(None))
+                        ]
+                    ) > 0 and (
+                        roi is None or terrain_region_poly.intersects(roi)
                     ):
                         logging.debug(
                             "Number of clouds to process for this terrain"
@@ -381,6 +392,13 @@ class MappingToTerrainTiles(
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?
+
+            # Raise an error if no tiles has been found
+            if len(number_of_epipolar_tiles_per_terrain_tiles) < 1:
+                raise RuntimeError(
+                    "No epipolar tiles has been found inside the ROI! "
+                    "Please try with an other ROI."
+                )
 
             # Add delayed_dsm_tiles to orchestrator
             logging.info(

@@ -341,7 +341,6 @@ def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
     :rtype: Polygon
 
     """
-
     roi_poly = input_roi_poly
 
     if input_roi_poly is not None:

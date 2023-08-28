@@ -62,6 +62,9 @@ def sensors_check_inputs(  # noqa: C901
     )
     overloaded_conf[sens_cst.DEFAULT_ALT] = conf.get(sens_cst.DEFAULT_ALT, 0)
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
+    overloaded_conf[sens_cst.DEBUG_WITH_ROI] = conf.get(
+        sens_cst.DEBUG_WITH_ROI, False
+    )
     overloaded_conf[sens_cst.CHECK_INPUTS] = conf.get(
         sens_cst.CHECK_INPUTS, False
     )
@@ -99,6 +102,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INITIAL_ELEVATION: Or(str, None),
         sens_cst.DEFAULT_ALT: int,
         sens_cst.ROI: Or(str, dict, None),
+        sens_cst.DEBUG_WITH_ROI: bool,
         sens_cst.CHECK_INPUTS: bool,
         sens_cst.GEOID: Or(None, str),
     }
