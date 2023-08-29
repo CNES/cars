@@ -55,7 +55,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
                 "default {} is used".format(fusion_method)
             )
         else:
-            fusion_method = conf["method"]
+            fusion_method = conf.get("method", cls.default_application)
 
         if fusion_method not in cls.available_applications:
             logging.error(
@@ -70,7 +70,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The PointCloudFusion {} application will be used".format(
+            "The PointCloudFusion({}) application will be used".format(
                 fusion_method
             )
         )

@@ -71,7 +71,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The Resampling {} application will be used".format(
+            "The Resampling({}) application will be used".format(
                 resampling_method
             )
         )

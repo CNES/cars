@@ -58,7 +58,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
                 "default {} is used".format(points_removing_method)
             )
         else:
-            points_removing_method = conf["method"]
+            points_removing_method = conf.get("method", cls.default_application)
 
         if points_removing_method not in cls.available_applications:
             logging.error(
@@ -73,7 +73,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The PointCloudOutliersRemoving {} application"
+            "The PointCloudOutliersRemoving({}) application"
             " will be used".format(points_removing_method)
         )
 

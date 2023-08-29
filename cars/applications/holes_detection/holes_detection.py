@@ -71,7 +71,7 @@ class HolesDetection(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The HolesDetection {} application will be used".format(
+            "The HolesDetection({}) application will be used".format(
                 holes_detection_method
             )
         )

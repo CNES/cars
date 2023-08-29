@@ -55,7 +55,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 "default {} is used".format(matching_method)
             )
         else:
-            matching_method = conf["method"]
+            matching_method = conf.get("method", cls.default_application)
 
         if matching_method not in cls.available_applications:
             logging.error(
@@ -70,7 +70,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The AbstractDenseMatching {} application will be used".format(
+            "The AbstractDenseMatching({}) application will be used".format(
                 matching_method
             )
         )
