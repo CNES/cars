@@ -863,7 +863,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         + self.rasterization_application.get_margins()
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
-                    roi=roi_poly,
+                    roi=(roi_poly if self.debug_with_roi else None),
                 )
 
                 # Add pair names to retrieve source pair of each point
