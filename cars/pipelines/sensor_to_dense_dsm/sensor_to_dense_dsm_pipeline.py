@@ -153,14 +153,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         # Check conf application vs inputs application
         self.check_inputs_with_applications(self.inputs, self.application_conf)
 
-        # Save used conf
-        out_dir = self.output["out_dir"]
-        cars_dataset.save_dict(
-            self.used_conf,
-            os.path.join(out_dir, "used_conf.json"),
-            safe_save=True,
-        )
-
     @staticmethod
     def check_inputs(conf, config_json_dir=None):
         """
@@ -412,6 +404,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         out_dir = self.output["out_dir"]
         cars_logging.add_log_file(out_dir, "sensor_to_dense_dsm")
+
+        # Save used conf
+        cars_dataset.save_dict(
+            self.used_conf,
+            os.path.join(out_dir, "used_conf.json"),
+            safe_save=True,
+        )
 
         # start cars orchestrator
         with orchestrator.Orchestrator(

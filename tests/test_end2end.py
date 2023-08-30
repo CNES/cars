@@ -1106,7 +1106,7 @@ def test_end2end_ventoux_unique_split():
 
 
 @pytest.mark.end2end_tests
-def test_end2end_use_epipolar_a_prior():
+def test_end2end_use_epipolar_a_priori():
     """
     End to end processing sparse dsm pipeline
     and use prepared refined dense dsm pipeline conf

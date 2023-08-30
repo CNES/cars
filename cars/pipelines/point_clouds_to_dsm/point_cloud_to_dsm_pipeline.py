@@ -125,14 +125,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         )
         self.used_conf[APPLICATIONS] = application_conf
 
-        # Save used conf
-        out_dir = self.output["out_dir"]
-        cars_dataset.save_dict(
-            self.used_conf,
-            os.path.join(out_dir, "used_conf.json"),
-            safe_save=True,
-        )
-
     def check_inputs(self, conf, config_json_dir=None):
         """
         Check the inputs given
@@ -241,8 +233,15 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         """
 
         out_dir = self.output["out_dir"]
-
         cars_logging.add_log_file(out_dir, "merging")
+
+        # Save used conf
+        out_dir = self.output["out_dir"]
+        cars_dataset.save_dict(
+            self.used_conf,
+            os.path.join(out_dir, "used_conf.json"),
+            safe_save=True,
+        )
 
         # start cars orchestrator
         with orchestrator.Orchestrator(

@@ -25,6 +25,7 @@ CARS sensors_to_sparse_dsm pipeline class file
 # Standard imports
 from __future__ import print_function
 
+import copy
 import json
 import logging
 import os
@@ -147,14 +148,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         )
         self.used_conf[APPLICATIONS] = application_conf
 
-        # Save used conf
-        out_dir = self.output["out_dir"]
-        cars_dataset.save_dict(
-            self.used_conf,
-            os.path.join(out_dir, "used_conf.json"),
-            safe_save=True,
-        )
-        self.config_full_res = self.used_conf.copy()
+        self.config_full_res = copy.deepcopy(self.used_conf)
         self.config_full_res[PIPELINE] = "sensors_to_dense_dsm"
         self.config_full_res.__delitem__("applications")
         self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
@@ -274,8 +268,14 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
         """
         out_dir = self.output["out_dir"]
-
         cars_logging.add_log_file(out_dir, "sensors_to_sparse_dsm")
+
+        # Save used conf
+        cars_dataset.save_dict(
+            self.used_conf,
+            os.path.join(out_dir, "used_conf.json"),
+            safe_save=True,
+        )
 
         # start cars orchestrator
         with orchestrator.Orchestrator(
