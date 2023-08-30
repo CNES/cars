@@ -28,6 +28,8 @@ import logging
 import os
 import traceback
 
+from cars.core import inputs
+
 # CARS imports
 from cars.orchestrator.registry.abstract_registry import (
     AbstractCarsDatasetRegistry,
@@ -377,8 +379,15 @@ class SingleCarsDatasetSaver:
         """
 
         # close raster files
-        for desc in self.descriptors:
+        for file_name, desc in zip(  # noqa B905
+            self.file_names, self.descriptors
+        ):
             if desc is not None:
                 desc.close()
+
+            if "dtm" in file_name:
+                # transform epsg of dtm files
+                # TODO remove when dtm issues dealt in otb and shareloc
+                inputs.rasterio_transform_epsg(file_name, 4326)
 
         # TODO merge point clouds ?

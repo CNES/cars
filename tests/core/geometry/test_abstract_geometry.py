@@ -25,13 +25,15 @@ import numpy as np
 import pytest
 
 import cars.core.constants as cst
+from cars.applications.application import Application
+from cars.core.geometry.shareloc_geometry import RPC_TYPE
 
 from ...helpers import absolute_data_path
 from .dummy_abstract_classes import (  # noqa; pylint: disable=unused-import
     NoMethodClass,
 )
 
-from cars.core.geometry import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
+from cars.core.geometry.abstract_geometry import (  # noqa;  isort:skip; pylint: disable=wrong-import-order
     AbstractGeometry,
 )
 
@@ -294,3 +296,51 @@ def test_matches_to_sensor_coords(
 
     assert np.allclose(sensor_pos_left, ref_sensor_coords["left"])
     assert np.allclose(sensor_pos_right, ref_sensor_coords["right"])
+
+
+@pytest.mark.unit_tests
+def test_epipolar_position_from_grid():
+    """
+    Test epipolar_position_from_grid
+    """
+
+    sensor_left = {
+        "image": absolute_data_path("input/phr_ventoux/left_image.tif"),
+        "geomodel": {
+            "path": absolute_data_path("input/phr_ventoux/left_image.geom"),
+            "model_type": RPC_TYPE,
+        },
+    }
+
+    sensor_right = {
+        "image": absolute_data_path("input/phr_ventoux/right_image.tif"),
+        "geomodel": {
+            "path": absolute_data_path("input/phr_ventoux/right_image.geom"),
+            "model_type": RPC_TYPE,
+        },
+    }
+
+    geo_loader = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry"
+        )
+    )
+
+    epipolar_grid_generation_application = Application("grid_generation")
+    (
+        grid_left,
+        _,
+    ) = epipolar_grid_generation_application.run(
+        sensor_left, sensor_right, geo_loader
+    )
+
+    epi_pos = np.array([[2, 2], [2, 300], [2, 580], [300, 300], [600, 300]])
+
+    sensor_pos = AbstractGeometry.sensor_position_from_grid(grid_left, epi_pos)
+
+    new_epi_pos = AbstractGeometry.epipolar_position_from_grid(
+        grid_left, sensor_pos, step=30
+    )
+
+    assert np.allclose(new_epi_pos, epi_pos)
+    np.testing.assert_allclose(new_epi_pos, epi_pos, rtol=0.01, atol=0.01)

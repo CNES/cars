@@ -35,7 +35,7 @@ from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import inputs
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.otb_adapters import encode_to_otb
 from cars.core.utils import get_elevation_range_from_metadata
 from cars.data_structures import cars_dataset

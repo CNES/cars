@@ -30,7 +30,6 @@ import logging
 
 # Third party imports
 import numpy as np
-import pandas
 from cyvlfeat.sift.sift import sift
 
 # CARS imports
@@ -38,12 +37,6 @@ import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications import application_constants
 from cars.applications.point_cloud_outliers_removing import (
     outlier_removing_tools,
-)
-from cars.applications.triangulation import triangulation_tools
-from cars.core import constants as cst
-from cars.core import preprocessing, projection
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
 )
 
 
@@ -325,14 +318,8 @@ def compute_disparity_range(matches, percent=0.1):
 
 
 def compute_disp_min_disp_max(
-    sensor_image_left,
-    sensor_image_right,
-    grid_left,
-    grid_right,
-    matches,
+    pd_cloud,
     orchestrator,
-    geometry_plugin,
-    pair_folder="",
     disp_margin=0.1,
     pair_key=None,
     disp_to_alt_ratio=None,
@@ -340,26 +327,10 @@ def compute_disp_min_disp_max(
     """
     Compute disp min and disp max from triangulated and filtered matches
 
-    :param sensor_image_right: sensor image right
-    :type sensor_image_right: CarsDataset
-    :param sensor_image_left: sensor image left
-    :type sensor_image_left: CarsDataset
-    :param grid_left: grid left
-    :type grid_left: CarsDataset CarsDataset
-    :param grid_right: corrected grid right
-    :type grid_right: CarsDataset
-    :param matches: matches
-    :type matches: np.ndarray
+    :param pd_cloud: triangulated_matches
+    :type pd_cloud: pandas Dataframe
     :param orchestrator: orchestrator used
     :type orchestrator: Orchestrator
-    :param geometry_plugin: geometry plugin to use
-    :type geometry_plugin: AbstractGeometry
-    :param srtm_dir: srtm directory
-    :type srtm_dir: str
-    :param default_alt: default altitude
-    :type default_alt: float
-    :param pair_folder: folder used for current pair
-    :type pair_folder: str
     :param disp_margin: disparity margin
     :type disp_margin: float
     :param disp_to_alt_ratio: used for logging info
@@ -368,48 +339,6 @@ def compute_disp_min_disp_max(
     :return: disp min and disp max
     :rtype: float, float
     """
-    sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
-    sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
-    geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
-    geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
-
-    point_cloud = triangulation_tools.triangulate_matches(
-        geometry_plugin,
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        matches,
-    )
-
-    # compute epsg
-    epsg = preprocessing.compute_epsg(
-        sensor_image_left,
-        sensor_image_right,
-        grid_left,
-        grid_right,
-        geometry_plugin,
-        orchestrator=orchestrator,
-        pair_folder=pair_folder,
-        disp_min=0,
-        disp_max=0,
-    )
-    # Project point cloud to UTM
-    projection.points_cloud_conversion_dataset(point_cloud, epsg)
-
-    # Convert point cloud to pandas format to allow statistical filtering
-    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINTS_CLOUD_CORR_MSK]
-    cloud_array = []
-    cloud_array.append(point_cloud[cst.X].values)
-    cloud_array.append(point_cloud[cst.Y].values)
-    cloud_array.append(point_cloud[cst.Z].values)
-    cloud_array.append(point_cloud[cst.DISPARITY].values)
-    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].values)
-    pd_cloud = pandas.DataFrame(
-        np.transpose(np.array(cloud_array)), columns=labels
-    )
 
     # Statistical filtering
     filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(

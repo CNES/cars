@@ -23,8 +23,10 @@ Inputs module:
 contains some CARS global shared general purpose inputs functions
 """
 
-# Standard imports
 import logging
+
+# Standard imports
+import os
 import warnings
 from typing import Dict, Tuple
 
@@ -34,6 +36,7 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
+from rasterio.warp import Resampling, calculate_default_transform, reproject
 from shapely.geometry import shape
 
 # Filter rasterio warning when image is not georeferenced
@@ -205,6 +208,61 @@ def rasterio_get_profile(raster_file: str) -> Dict:
     """
     with rio.open(raster_file, "r") as descriptor:
         return descriptor.profile
+
+
+def rasterio_get_epsg(raster_file: str) -> int:
+    """
+    Get the epsg of an image file
+
+    :param raster_file: Image file
+    :return: The epsg of the given image
+    """
+    epsg = None
+    with rio.open(raster_file, "r") as descriptor:
+        epsg = descriptor.crs.to_epsg()
+
+    return epsg
+
+
+def rasterio_transform_epsg(file_name, new_epsg):
+    """
+    Modify epsg of raster file
+
+    :param file_name: Image file
+    :param new_epsg: new epsg
+    """
+
+    reprojected_file_name = file_name + "_reprojected.tif"
+
+    # Create reprojected copy
+    with rio.open(file_name) as src:
+        transform, width, height = calculate_default_transform(
+            src.crs, new_epsg, src.width, src.height, *src.bounds
+        )
+        kwargs = src.meta.copy()
+        kwargs.update(
+            {
+                "crs": new_epsg,
+                "transform": transform,
+                "width": width,
+                "height": height,
+            }
+        )
+
+        with rio.open(reprojected_file_name, "w", **kwargs) as dst:
+            for i in range(1, src.count + 1):
+                reproject(
+                    source=rio.band(src, i),
+                    destination=rio.band(dst, i),
+                    src_transform=src.transform,
+                    src_crs=src.crs,
+                    dst_transform=transform,
+                    dst_crs=new_epsg,
+                    resampling=Resampling.nearest,
+                )
+
+    # Replace file with the reprojected one
+    os.rename(reprojected_file_name, file_name)
 
 
 def rasterio_can_open(raster_file: str) -> bool:

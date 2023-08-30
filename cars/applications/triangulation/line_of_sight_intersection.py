@@ -45,7 +45,7 @@ from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 
 # CARS imports
-from cars.core.geometry import read_geoid_file
+from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.sensor_to_dense_dsm import (

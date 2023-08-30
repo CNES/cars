@@ -131,10 +131,10 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["method"] = conf.get("method", "sift")
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
-            "elevation_delta_lower_bound", -1000
+            "elevation_delta_lower_bound", None
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
-            "elevation_delta_upper_bound", 1000
+            "elevation_delta_upper_bound", None
         )
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
@@ -184,8 +184,8 @@ class Sift(SparseMatching, short_name="sift"):
                 float, lambda x: x >= 0, lambda x: x <= 1
             ),
             "minimum_nb_matches": And(int, lambda x: x > 0),
-            "elevation_delta_lower_bound": Or(int, float),
-            "elevation_delta_upper_bound": Or(int, float),
+            "elevation_delta_lower_bound": Or(int, float, None),
+            "elevation_delta_upper_bound": Or(int, float, None),
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
             "sift_matching_threshold": And(float, lambda x: x > 0),
@@ -209,11 +209,15 @@ class Sift(SparseMatching, short_name="sift"):
         elevation_delta_upper_bound = overloaded_conf[
             "elevation_delta_upper_bound"
         ]
-        if elevation_delta_lower_bound > elevation_delta_upper_bound:
-            raise ValueError(
-                "Upper bound must be bigger than "
-                "lower bound for expected elevation delta"
-            )
+        if None not in (
+            elevation_delta_lower_bound,
+            elevation_delta_upper_bound,
+        ):
+            if elevation_delta_lower_bound > elevation_delta_upper_bound:
+                raise ValueError(
+                    "Upper bound must be bigger than "
+                    "lower bound for expected elevation delta"
+                )
 
         return overloaded_conf
 
@@ -394,22 +398,30 @@ class Sift(SparseMatching, short_name="sift"):
                     cars_ds_name="epi_matches_left",
                 )
 
-            # Compute disparity range
-            disp_lower_bound = (
-                self.elevation_delta_lower_bound / disp_to_alt_ratio
-            )
-            disp_upper_bound = (
-                self.elevation_delta_upper_bound / disp_to_alt_ratio
-            )
-
             # Get max window size
             image_tiling_grid = epipolar_images_left.tiling_grid
 
             max_window_col_size = np.max(
                 image_tiling_grid[:, :, 3] - image_tiling_grid[:, :, 2]
             )
-            min_offset = math.floor(disp_lower_bound / max_window_col_size)
-            max_offset = math.ceil(disp_upper_bound / max_window_col_size)
+
+            # Compute disparity range
+            if self.elevation_delta_lower_bound is None:
+                disp_lower_bound = -np.inf
+                min_offset = -image_tiling_grid.shape[0]
+            else:
+                disp_lower_bound = (
+                    self.elevation_delta_lower_bound / disp_to_alt_ratio
+                )
+                min_offset = math.floor(disp_lower_bound / max_window_col_size)
+            if self.elevation_delta_upper_bound is None:
+                disp_upper_bound = np.inf
+                max_offset = image_tiling_grid.shape[0]
+            else:
+                disp_upper_bound = (
+                    self.elevation_delta_upper_bound / disp_to_alt_ratio
+                )
+                max_offset = math.ceil(disp_upper_bound / max_window_col_size)
 
             offsets = range(min_offset, max_offset + 1)
 

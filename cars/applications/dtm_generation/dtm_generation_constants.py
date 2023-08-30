@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -21,9 +19,14 @@
 # limitations under the License.
 #
 """
-Init file of geometry module
+this module contains the dtm generation constants.
 """
-from cars.core.geometry.otb_geometry import OTBGeometry
-from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
-from . import abstract_geometry
+
+DTM_MEAN = "dtm_mean"
+DTM_MIN = "dtm_min"
+DTM_MAX = "dtm_max"
+
+DTM_MEAN_PATH = "dtm_mean_path"
+DTM_MIN_PATH = "dtm_min_path"
+DTM_MAX_PATH = "dtm_max_path"

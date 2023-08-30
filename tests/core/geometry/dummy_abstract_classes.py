@@ -21,7 +21,7 @@
 """
 dummy CARS abstract classes tests
 """
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 
 @AbstractGeometry.register_subclass("NoMethodClass")
