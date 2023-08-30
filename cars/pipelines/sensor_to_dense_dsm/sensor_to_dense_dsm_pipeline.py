@@ -193,7 +193,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
     def check_applications(self, conf, generate_terrain_products):
         """
-        Check the given configuration for applications
+        Check the given configuration for applications,
+        and generates needed applications for pipeline.
 
         :param conf: configuration of applications
         :type conf: dict
@@ -203,6 +204,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
 
         # Check if all specified applications are used
+        # Application in terrain_application are note used in
+        # the sensors_to_dense_point_clouds pipeline
         needed_applications = [
             "grid_generation",
             "resampling",
@@ -453,6 +456,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     self.input_roi_poly, self.input_roi_epsg, epsg
                 )
 
+            # List of terrain roi corresponding to each epipolar pair
+            # Used to generate final terrain roi
             list_terrain_roi = []
 
             # initialise lists of points
@@ -466,7 +471,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 )
             )
 
+            # pairs is a dict used to store the CarsDataset of
+            # all pairs, easily retrievable with pair keys
             pairs = {}
+
+            # triangulated_matches_list is used to store triangulated matche
+            # used in dtm generation
             triangulated_matches_list = []
 
             for (
@@ -481,6 +491,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 safe_makedirs(tmp_dir)
                 cars_orchestrator.add_to_clean(tmp_dir)
 
+                # initialize pairs for current pair
                 pairs[pair_key] = {}
                 pairs[pair_key]["pair_folder"] = pair_folder
                 pairs[pair_key]["sensor_image_left"] = sensor_image_left
@@ -489,11 +500,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Run applications
 
                 # Run grid generation
+                # We generate grids with dem if it is provided.
+                # If not provided, grid are generated without dem and a dem
+                # will be generated, to use later for a new grid generation
                 if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
                     geom_plugin = self.geom_plugin_without_dem_and_geoid
                 else:
                     geom_plugin = self.geom_plugin_with_dem_and_geoid
 
+                # Generate rectification grids
                 (
                     pairs[pair_key]["grid_left"],
                     pairs[pair_key]["grid_right"],
@@ -508,6 +523,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Run holes detection
                 # Get classif depending on which filling is used
+                # For now, 2 filling application can be used, and be configured
+                # with any order. the .1 will be performed before the .2
                 pairs[pair_key]["holes_classif"] = []
                 pairs[pair_key]["holes_poly_margin"] = 0
                 if self.dense_matches_filling_1.used_method == "plane":
@@ -551,6 +568,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         margins=self.sparse_mtch_app.get_margins(),
                         add_color=False,
                     )
+
+                    # Generate the holes polygons in epipolar images
+                    # They are only generated if dense_matches_filling
+                    # applications are used later
 
                     (
                         pairs[pair_key]["holes_bbox_left"],
@@ -644,6 +665,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["triangulated_matches"]
                     )
 
+            # For now only dtm_mean will be used and is mandatory for
+            # a priory
             dtm_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
             dtm_min = None
             dtm_max = None
@@ -668,6 +691,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dtm_min = dtm.attributes[dtm_gen_cst.DTM_MIN_PATH]
                 dtm_max = dtm.attributes[dtm_gen_cst.DTM_MAX_PATH]
 
+            # update used configuration with terrain a priori
             sensors_inputs.update_conf(
                 self.used_conf,
                 dtm_mean=dtm_mean,
@@ -676,6 +700,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             )
 
             for pair_key, _, _ in list_sensor_pairs:
+                # Geometr plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
@@ -791,6 +816,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pair_folder,
                         )
 
+                # Update used_conf configuration with epipolar a priori
                 sensors_inputs.update_conf(
                     self.used_conf,
                     grid_correction_coef=pairs[pair_key][
@@ -800,6 +826,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     dmax=dmax,
                     pair_key=pair_key,
                 )
+                # saved used configuration
                 cars_dataset.save_dict(
                     self.used_conf,
                     os.path.join(out_dir, "used_conf.json"),
@@ -825,6 +852,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     cars_orchestrator.cluster.checked_conf_cluster["mode"]
                     == "sequential"
                 ):
+                    # Generate roi
                     epipolar_roi = preprocessing.compute_epipolar_roi(
                         self.input_roi_poly,
                         self.input_roi_epsg,
@@ -838,6 +866,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         disp_max=disp_max,
                     )
 
+                # Generate new epipolar images
+                # Generated with corrected grids
                 (
                     new_epipolar_image_left,
                     new_epipolar_image_right,

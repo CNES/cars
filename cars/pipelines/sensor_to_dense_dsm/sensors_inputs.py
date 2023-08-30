@@ -333,6 +333,15 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
 
 
 def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
+    """
+    Generate geometry plugin with dem and geoid
+
+    :param conf_geom_plugin: plugin configuration
+    :param conf_inputs: inputs configuration
+    :param dem: dem to overide the one in inputs
+
+    :return: geometry plugin object, with a dem
+    """
     if dem is None:
         dem = conf_inputs[sens_cst.INITIAL_ELEVATION]
 
