@@ -38,14 +38,14 @@ from cars.applications.dense_matches_filling import (
 )
 from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
 from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchingFilling,
+    DenseMatchesFilling,
 )
 from cars.core import constants as cst
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
 class PlaneFill(
-    DenseMatchingFilling, short_name=["plane"]
+    DenseMatchesFilling, short_name=["plane"]
 ):  # pylint: disable=R0903
     """
     Fill invalid area in disparity map using plane method

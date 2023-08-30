@@ -55,7 +55,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 " {} is used".format(triangulation_method)
             )
         else:
-            triangulation_method = conf["method"]
+            triangulation_method = conf.get("method", cls.default_application)
 
         if triangulation_method not in cls.available_applications:
             logging.error(
@@ -70,7 +70,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The Triangulation {} application will be used".format(
+            "The Triangulation({}) application will be used".format(
                 triangulation_method
             )
         )

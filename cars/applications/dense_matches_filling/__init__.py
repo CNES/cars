@@ -24,7 +24,7 @@ CARS core fill disparity map module init file
 # flake8: noqa: F401
 
 from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchingFilling,
+    DenseMatchesFilling,
 )
 
 from . import plane, zero_padding

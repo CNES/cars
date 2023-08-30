@@ -55,7 +55,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
                 "default {} is used".format(rasterization_method)
             )
         else:
-            rasterization_method = conf["method"]
+            rasterization_method = conf.get("method", cls.default_application)
 
         if rasterization_method not in cls.available_applications:
             logging.error(
@@ -70,7 +70,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The PointCloudRasterization {} application will be used".format(
+            "The PointCloudRasterization({}) application will be used".format(
                 rasterization_method
             )
         )

@@ -49,13 +49,14 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         grid_method = cls.default_application
+
         if bool(conf) is False:
             logging.info(
                 "Grid generation method not specified, default "
                 " {} is used".format(grid_method)
             )
         else:
-            grid_method = conf["method"]
+            grid_method = conf.get("method", cls.default_application)
 
         if grid_method not in cls.available_applications:
             logging.error(
@@ -70,7 +71,9 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
             )
 
         logging.info(
-            "The GridGeneration {} application will be used".format(grid_method)
+            "The GridGeneration({}) application will be used".format(
+                grid_method
+            )
         )
 
         return super(GridGeneration, cls).__new__(

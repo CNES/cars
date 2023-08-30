@@ -34,13 +34,13 @@ from cars.data_structures import cars_dataset
 
 
 @Application.register("dense_matches_filling")
-class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
+class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
     """
-    DenseMatchingFilling
+    DenseMatchesFilling
     """
 
     available_applications: Dict = {}
-    default_application = "plane"
+    default_application = "zero_padding"
 
     def __new__(cls, conf=None):  # pylint: disable=W0613
         """
@@ -55,28 +55,28 @@ class DenseMatchingFilling(ApplicationTemplate, metaclass=ABCMeta):
         fill_method = cls.default_application
         if bool(conf) is False:
             logging.info(
-                "DenseMatchingFilling method not specified, "
+                "dense_matches_filling method not specified, "
                 "default {} is used".format(fill_method)
             )
         else:
-            fill_method = conf["method"]
+            fill_method = conf.get("method", cls.default_application)
 
         if fill_method not in cls.available_applications:
             logging.error(
-                "No DenseMatchingFilling application "
+                "No DenseMatchesFilling application "
                 "named {} registered".format(fill_method)
             )
             raise KeyError(
-                "No DenseMatchingFilling application"
+                "No DenseMatchesFilling application"
                 " named {} registered".format(fill_method)
             )
 
         logging.info(
-            "[The DenseMatchingFilling {} application "
+            "The DenseMatchesFilling({}) application "
             "will be used".format(fill_method)
         )
 
-        return super(DenseMatchingFilling, cls).__new__(
+        return super(DenseMatchesFilling, cls).__new__(
             cls.available_applications[fill_method]
         )
 

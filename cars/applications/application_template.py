@@ -59,7 +59,15 @@ class ApplicationTemplate(metaclass=ABCMeta):
 
         """
         # Check conf
-        self.used_config = self.check_conf(conf)
+        try:
+            self.used_config = self.check_conf(conf)
+        except Exception:
+            logging.error(
+                "The {} application checking has been failed!".format(
+                    self.__class__.__bases__[0].__name__
+                )
+            )
+            raise
 
     @abstractmethod
     def check_conf(self, conf):
