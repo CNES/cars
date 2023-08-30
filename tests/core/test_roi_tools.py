@@ -122,7 +122,7 @@ def test_geojson_to_shapely():
 @pytest.mark.unit_tests
 def test_resample_polygon():
     """
-    Test resample_polygon
+    Test resample polygon
 
     """
 
@@ -132,7 +132,58 @@ def test_resample_polygon():
     roi_poly, roi_epsg = roi_tools.parse_roi_file(path_roi_file)
 
     # Resample polygon
-
     new_roi_poly = roi_tools.resample_polygon(roi_poly, roi_epsg, resolution=20)
 
     assert len(mapping(new_roi_poly)["coordinates"][0]) == 42
+
+
+@pytest.mark.unit_tests
+def test_resample_multipolygon():
+    """
+    Test resample multipolygon from GeoJSON
+
+    """
+
+    geojson_dict = {
+        "type": "FeatureCollection",
+        "features": [
+            {
+                "type": "Feature",
+                "properties": {},
+                "geometry": {
+                    "coordinates": [
+                        [
+                            [
+                                [319700, 3317700],
+                                [319800, 3317700],
+                                [319800, 3317800],
+                                [319800, 3317800],
+                                [319700, 3317700],
+                            ]
+                        ],
+                        [
+                            [
+                                [319900, 3317900],
+                                [320000, 3317900],
+                                [320000, 3318000],
+                                [319900, 3318000],
+                                [319900, 3317900],
+                            ]
+                        ],
+                    ],
+                    "type": "MultiPolygon",
+                },
+            }
+        ],
+        "crs": {"type": "name", "properties": {"name": "EPSG:32636"}},
+    }
+
+    # Transform to shapely polygon
+    roi_poly, roi_epsg = roi_tools.geojson_to_shapely(geojson_dict)
+
+    # Resample polygon
+    new_roi_poly = roi_tools.resample_polygon(roi_poly, roi_epsg, resolution=20)
+
+    list_poly = list(new_roi_poly.geoms)
+    assert len(mapping(list_poly[0])["coordinates"][0]) == 16
+    assert len(mapping(list_poly[1])["coordinates"][0]) == 14
