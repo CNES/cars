@@ -35,6 +35,7 @@ CHECK_INPUTS = "check_inputs"
 DEFAULT_ALT = "default_alt"
 ROI = "roi"
 GEOID = "geoid"
+DEBUG_WITH_ROI = "debug_with_roi"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"

@@ -27,7 +27,7 @@ import os
 from typing import List, Tuple
 
 import numpy as np
-from shapely.geometry import LineString, Point, Polygon, shape
+from shapely.geometry import LineString, MultiPolygon, Point, Polygon, shape
 
 # CARS imports
 from cars.core import inputs, projection
@@ -67,45 +67,60 @@ def resample_polygon(roi_poly, roi_epsg, resolution=100):
     Resample input polygon to given resolution.
     No interpolation is applied.
 
-    :param roi_poly: input polygon
-    :type roi_poly: Shapely Polygone
+    :param roi_poly: input polygon or multipolygon
+    :type roi_poly: Shapely Polygon or MultiPolygon
     :param roi_epsg: roi epsg
     :type roi_epsg: int
     :param resolution: resolution in meter to resample to
     :type resolution: float
 
     :return: resampled polygon
-    :rtype: Shapely Polygon
+    :rtype: Shapely Polygon or MultiPolygon
 
     """
-
     epsg_meter = 4978
-    new_list_points = []
 
-    points = roi_poly.boundary.coords
-
-    linestrings = [
-        LineString(points[k : k + 2]) for k in range(len(points) - 1)
-    ]
-    for line in linestrings:
-        # Get distance in meter of line
-        first, last = line.coords[0], line.coords[1]
-        in_cloud = np.array([[first[0], first[1]], [last[0], last[1]]])
-        out_cloud = projection.points_cloud_conversion(
-            in_cloud, roi_epsg, epsg_meter
+    if roi_poly.geom_type == "Polygon":
+        list_poly = [roi_poly]
+    elif roi_poly.geom_type == "MultiPolygon":
+        list_poly = list(roi_poly.geoms)
+    else:
+        raise TypeError(
+            "{} type is not supported for ROI".format(roi_poly.geom_type)
         )
-        new_first = Point(out_cloud[0, 0], out_cloud[0, 1])
-        new_last = Point(out_cloud[1, 0], out_cloud[1, 1])
-        line_distance = new_first.distance(new_last)
 
-        # Compute number of point to generate
-        nb_points = int(line_distance / resolution) + 1
+    new_list_poly = []
+    for poly in list_poly:
+        new_list_points = []
 
-        # Generate new points
-        for ind in list(np.linspace(0, 1, nb_points, endpoint=True)):
-            new_list_points.append(line.interpolate(ind, normalized=True))
+        points = poly.boundary.coords
 
-    return Polygon(new_list_points)
+        linestrings = [
+            LineString(points[k : k + 2]) for k in range(len(points) - 1)
+        ]
+        for line in linestrings:
+            # Get distance in meter of line
+            first, last = line.coords[0], line.coords[1]
+            in_cloud = np.array([[first[0], first[1]], [last[0], last[1]]])
+            out_cloud = projection.points_cloud_conversion(
+                in_cloud, roi_epsg, epsg_meter
+            )
+            new_first = Point(out_cloud[0, 0], out_cloud[0, 1])
+            new_last = Point(out_cloud[1, 0], out_cloud[1, 1])
+            line_distance = new_first.distance(new_last)
+
+            # Compute number of point to generate
+            nb_points = int(line_distance / resolution) + 1
+
+            # Generate new points
+            for ind in list(np.linspace(0, 1, nb_points, endpoint=True)):
+                new_list_points.append(line.interpolate(ind, normalized=True))
+
+        new_list_poly.append(Polygon(new_list_points))
+
+    if roi_poly.geom_type == "Polygon":
+        return new_list_poly[0]
+    return MultiPolygon(new_list_poly)
 
 
 def geojson_to_shapely(geojson_dict: dict):

@@ -140,6 +140,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.used_conf[INPUTS][sens_cst.ROI]
         )
 
+        self.debug_with_roi = self.used_conf[INPUTS][sens_cst.DEBUG_WITH_ROI]
+
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
         self.used_conf[OUTPUT] = self.output
@@ -818,7 +820,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         ),
                         disp_min=disp_min,
                         disp_max=disp_max,
-                        roi_poly=roi_poly,
+                        roi_poly=(None if self.debug_with_roi else roi_poly),
                         orchestrator=cars_orchestrator,
                         pair_key=pair_key,
                         pair_folder=pair_folder,
@@ -836,7 +838,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     optimal_terrain_tile_width,
                 ) = preprocessing.compute_terrain_bounds(
                     list_terrain_roi,
-                    roi_poly=roi_poly,
+                    roi_poly=(None if self.debug_with_roi else roi_poly),
                     resolution=self.rasterization_application.get_resolution(),
                 )
 
@@ -860,6 +862,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         + self.rasterization_application.get_margins()
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
+                    roi=(roi_poly if self.debug_with_roi else None),
                 )
 
                 # Add pair names to retrieve source pair of each point

@@ -56,6 +56,8 @@ The structure follows this organisation:
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *roi*                   | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+            | *debug_with_roi*        | Use ROI with the tiling of the entire image                         | Boolean               | False                | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *check_inputs*          | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *geoid*                 | Geoid path                                                          | string                | Cars internal geoid  | No       |
@@ -228,7 +230,10 @@ The structure follows this organisation:
     **Region Of Interest (ROI)**
 
     A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
-    or a GeoJson dictionnary. These structures must contain a single Polygon.
+    or a GeoJson dictionnary. These structures must contain a single Polygon or MultiPolygon. Multi-features are 
+    not supported.
+
+    Example of the "roi" parameter with a GeoJson dictionnary containing a Polygon as feature :
 
     .. code-block:: json
 
@@ -245,7 +250,7 @@ The structure follows this organisation:
                             "coordinates": [
                             [
                                 [5.194, 44.2064],
-                                [5.194, 44.2059 ],
+                                [5.194, 44.2059],
                                 [5.195, 44.2059],
                                 [5.195, 44.2064],
                                 [5.194, 44.2064]
@@ -259,27 +264,65 @@ The structure follows this organisation:
             }
         }
 
-    .. note::
+    If the *debug_with_roi* parameter is enabled, the tiling of the entire image is kept but only the tiles intersecting 
+    the ROI are computed.
 
-        By default epsg 4326 is used. If the user has defined a polygon in another referential, the "crs" field must be specified.
+    MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
+    MultiPolygon will be used as ROI. 
 
-        .. code-block:: json
+    By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
 
+    Example of the *debug_with_roi* mode utilizing an "roi" parameter of type MultiPolygon as a feature and a specific EPSG.
+
+    .. code-block:: json
+
+        {
+            "inputs":
             {
-                "roi":
-                {
+                "roi" : {
+                    "type": "FeatureCollection",
+                    "features": [
+                        {
+                        "type": "Feature",
+                        "properties": {},
+                        "geometry": {
+                            "coordinates": [
+                            [
+                                [
+                                    [319700, 3317700],
+                                    [319800, 3317700],
+                                    [319800, 3317800],
+                                    [319800, 3317800],
+                                    [319700, 3317700]
+                                ]
+                            ],
+                            [
+                                [
+                                    [319900, 3317900],
+                                    [320000, 3317900],
+                                    [320000, 3318000],
+                                    [319900, 3318000],
+                                    [319900, 3317900]
+                                ]
+                            ]
+                            ],
+                            "type": "MultiPolygon"
+                        }
+                        }
+                    ],
                     "crs" :
                     {
                         "type": "name",
                         "properties": {
-                            "name": "EPSG:4326"
+                            "name": "EPSG:32636"
                         }
-
                     }
-                }
+                },
+                "debug_with_roi": true,
             }
+        }
 
-
+    Example of the "roi" parameter with a Shapefile
 
     .. code-block:: json
 
