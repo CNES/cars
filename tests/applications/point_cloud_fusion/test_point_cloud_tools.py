@@ -41,7 +41,6 @@ from tests.helpers import add_color, assert_same_datasets
 
 
 @pytest.mark.unit_tests
-@pytest.mark.test_create_combined_dense_cloud
 def test_create_combined_dense_cloud():
     """
     Tests several configurations of create_combined_cloud function :
@@ -387,7 +386,6 @@ def test_create_combined_dense_cloud():
 
 
 @pytest.mark.unit_tests
-@pytest.mark.test_create_combined_sparse_cloud
 def test_create_combined_sparse_cloud():
     """
     Tests several configurations of create_combined_cloud function :
