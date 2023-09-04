@@ -18,6 +18,6 @@
             }   
         },
         "pairing": [["left", "right"]],
-        "initial_elevation": "srtm"
+        "initial_elevation": "srtm/N44E005.hgt"
     }
 }

@@ -3,16 +3,20 @@
     "sensors": {
       "left": {
         "image": "left_image.tif",
-        "color": "left_image.tif",
         "geomodel": {
           "path": "left_image.geom"
-        }
+        },
+        "mask": "left_mask.tif",
+        "no_data": 0
       },
       "right": {
         "image": "right_image.tif",
         "geomodel": {
           "path": "right_image.geom"
-        }
+        },
+        "geomodel_type": "RPC",
+        "mask": "right_mask.tif",
+        "no_data": 0
       }
     },
     "pairing": [
@@ -21,6 +25,6 @@
         "right"
       ]
     ],
-    "initial_elevation": "srtm/N44E005.hgt"
+    "initial_elevation": "srtm/srtm_reunion.vrt"
   }
 }
