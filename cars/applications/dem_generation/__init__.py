@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,14 +19,10 @@
 # limitations under the License.
 #
 """
-this module contains the dtm generation constants.
+CARS dtm generation init file
 """
+# flake8: noqa: F401
 
+from cars.applications.dem_generation.dem_generation import DemGeneration
 
-DTM_MEAN = "dtm_mean"
-DTM_MIN = "dtm_min"
-DTM_MAX = "dtm_max"
-
-DTM_MEAN_PATH = "dtm_mean_path"
-DTM_MIN_PATH = "dtm_min_path"
-DTM_MAX_PATH = "dtm_max_path"
+from . import dichotimic_generation

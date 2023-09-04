@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the dichotimic dtm generation application class.
+this module contains the dichotimic dem generation application class.
 """
 
 
@@ -36,15 +36,15 @@ from json_checker import And, Checker, Or
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
-from cars.applications.dtm_generation import (
-    dtm_generation_constants as dtm_gen_cst,
+from cars.applications.dem_generation import (
+    dem_generation_constants as dem_gen_cst,
 )
-from cars.applications.dtm_generation.dtm_generation import DtmGeneration
+from cars.applications.dem_generation.dem_generation import DemGeneration
 from cars.core import projection
 from cars.data_structures import cars_dataset
 
 
-class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
+class DichotimicGeneration(DemGeneration, short_name="dichotimic"):
     """
     DichotimicGeneration
     """
@@ -117,17 +117,17 @@ class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
 
     def run(self, triangulated_matches_list, output_dir):
         """
-        Run dichotimic dtm generation using matches
+        Run dichotimic dem generation using matches
 
         :param triangulated_matches_list: list of triangulated matches
             positions must be in a metric system
         :type triangulated_matches_list: list(pandas.Dataframe)
-        :param output_dir: directory to save dtm
+        :param output_dir: directory to save dem
         :type output_dir: str
 
-        :return: dtm data computed with mean, min and max.
-            dtm is also saved in disk, and paths are available in attributes.
-            (DTM_MEAN_PATH, DTM_MIN_PATH, DTM_MAX_PATH)
+        :return: dem data computed with mean, min and max.
+            dem is also saved in disk, and paths are available in attributes.
+            (DEM_MEAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
         :rtype: CarsDataset
         """
 
@@ -209,43 +209,43 @@ class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
 
         # Generate CarsDataset
 
-        dtm = cars_dataset.CarsDataset("arrays")
+        dem = cars_dataset.CarsDataset("arrays")
 
         # Compute tiling grid
         # Only one tile
-        dtm.tiling_grid = np.array([[[0, row_max, 0, col_max]]])
+        dem.tiling_grid = np.array([[[0, row_max, 0, col_max]]])
 
         # saving infos
-        # dtm mean
-        dtm_mean_path = os.path.join(output_dir, "dtm_mean.tif")
+        # dem mean
+        dem_mean_path = os.path.join(output_dir, "dem_mean.tif")
         self.orchestrator.add_to_save_lists(
-            dtm_mean_path,
-            dtm_gen_cst.DTM_MEAN,
-            dtm,
+            dem_mean_path,
+            dem_gen_cst.DEM_MEAN,
+            dem,
             dtype=np.float32,
-            cars_ds_name="dtm_mean",
+            cars_ds_name="dem_mean",
         )
-        dtm.attributes[dtm_gen_cst.DTM_MEAN_PATH] = dtm_mean_path
-        # dtm min
-        dtm_min_path = os.path.join(output_dir, "dtm_min.tif")
+        dem.attributes[dem_gen_cst.DEM_MEAN_PATH] = dem_mean_path
+        # dem min
+        dem_min_path = os.path.join(output_dir, "dem_min.tif")
         self.orchestrator.add_to_save_lists(
-            dtm_min_path,
-            dtm_gen_cst.DTM_MIN,
-            dtm,
+            dem_min_path,
+            dem_gen_cst.DEM_MIN,
+            dem,
             dtype=np.float32,
-            cars_ds_name="dtm_min",
+            cars_ds_name="dem_min",
         )
-        dtm.attributes[dtm_gen_cst.DTM_MIN_PATH] = dtm_min_path
-        # dtm max
-        dtm_max_path = os.path.join(output_dir, "dtm_max.tif")
+        dem.attributes[dem_gen_cst.DEM_MIN_PATH] = dem_min_path
+        # dem max
+        dem_max_path = os.path.join(output_dir, "dem_max.tif")
         self.orchestrator.add_to_save_lists(
-            dtm_max_path,
-            dtm_gen_cst.DTM_MAX,
-            dtm,
+            dem_max_path,
+            dem_gen_cst.DEM_MAX,
+            dem,
             dtype=np.float32,
-            cars_ds_name="dtm_max",
+            cars_ds_name="dem_max",
         )
-        dtm.attributes[dtm_gen_cst.DTM_MAX_PATH] = dtm_max_path
+        dem.attributes[dem_gen_cst.DEM_MAX_PATH] = dem_max_path
 
         bounds = [xmin, ymin, xmax, ymax]
 
@@ -273,11 +273,11 @@ class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
         )
 
         # Generate dataset
-        dtm_tile = xr.Dataset(
+        dem_tile = xr.Dataset(
             data_vars={
-                "dtm_mean": (["row", "col"], mnt_mean),
-                "dtm_min": (["row", "col"], mnt_min),
-                "dtm_max": (["row", "col"], mnt_max),
+                "dem_mean": (["row", "col"], mnt_mean),
+                "dem_min": (["row", "col"], mnt_min),
+                "dem_max": (["row", "col"], mnt_max),
             },
             coords={
                 "row": np.arange(0, row_max),
@@ -287,11 +287,11 @@ class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
 
         [  # pylint: disable=unbalanced-tuple-unpacking
             saving_info
-        ] = self.orchestrator.get_saving_infos([dtm])
+        ] = self.orchestrator.get_saving_infos([dem])
         saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
-        window = cars_dataset.window_array_to_dict(dtm.tiling_grid[0, 0])
+        window = cars_dataset.window_array_to_dict(dem.tiling_grid[0, 0])
         cars_dataset.fill_dataset(
-            dtm_tile,
+            dem_tile,
             saving_info=saving_info,
             window=window,
             profile=raster_profile,
@@ -299,12 +299,12 @@ class DichotimicGeneration(DtmGeneration, short_name="dichotimic"):
             overlaps=None,
         )
 
-        dtm[0, 0] = dtm_tile
+        dem[0, 0] = dem_tile
 
         # Save
         self.orchestrator.breakpoint()
 
-        return dtm
+        return dem
 
 
 def generate_grid(

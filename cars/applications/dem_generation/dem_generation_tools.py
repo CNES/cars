@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains tools for the dtm generation
+this module contains tools for the dem generation
 """
 
 # Third party imports

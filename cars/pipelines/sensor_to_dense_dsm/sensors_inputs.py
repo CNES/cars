@@ -123,24 +123,24 @@ def sensors_check_inputs(  # noqa: C901
     # Check terrain a priori
     if check_epipolar_a_priori and overloaded_conf[sens_cst.TERRAIN_A_PRIORI]:
         overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DTM_MEAN
+            sens_cst.DEM_MEAN
         ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DTM_MEAN, None
+            sens_cst.DEM_MEAN, None
         )
         overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DTM_MIN
+            sens_cst.DEM_MIN
         ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DTM_MIN, None
+            sens_cst.DEM_MIN, None
         )
         overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DTM_MAX
+            sens_cst.DEM_MAX
         ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DTM_MAX, None
+            sens_cst.DEM_MAX, None
         )
         terrain_a_priori_schema = {
-            sens_cst.DTM_MEAN: str,
-            sens_cst.DTM_MIN: Or(str, None),  # TODO mandatory with local disp
-            sens_cst.DTM_MAX: Or(str, None),
+            sens_cst.DEM_MEAN: str,
+            sens_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
+            sens_cst.DEM_MAX: Or(str, None),
         }
         checker_terrain = Checker(terrain_a_priori_schema)
         checker_terrain.validate(overloaded_conf[sens_cst.TERRAIN_A_PRIORI])
@@ -345,7 +345,7 @@ def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
     if dem is None:
         dem = conf_inputs[sens_cst.INITIAL_ELEVATION]
 
-    # Get image pairs for DTM intersection with ROI
+    # Get image pairs for DEM intersection with ROI
     images_for_roi = []
     for sensor_image in conf_inputs[sens_cst.SENSORS].values():
         sensor = sensor_image[sens_cst.INPUT_IMG]
@@ -601,9 +601,9 @@ def update_conf(
     dmin=None,
     dmax=None,
     pair_key=None,
-    dtm_mean=None,
-    dtm_min=None,
-    dtm_max=None,
+    dem_mean=None,
+    dem_min=None,
+    dem_max=None,
 ):
     """
     Update the conf with grid correction and disparity range
@@ -644,9 +644,9 @@ def update_conf(
                 dmax,
             ]
 
-    if dtm_mean is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dtm_mean"] = dtm_mean
-    if dtm_min is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dtm_min"] = dtm_min
-    if dtm_max is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dtm_max"] = dtm_max
+    if dem_mean is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_mean"] = dem_mean
+    if dem_min is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
+    if dem_max is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_max"] = dem_max

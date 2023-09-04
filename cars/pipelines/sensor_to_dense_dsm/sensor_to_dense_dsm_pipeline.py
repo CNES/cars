@@ -32,10 +32,10 @@ import os
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
-from cars.applications.dtm_generation import (
-    dtm_generation_constants as dtm_gen_cst,
+from cars.applications.dem_generation import (
+    dem_generation_constants as dem_gen_cst,
 )
-from cars.applications.dtm_generation import dtm_generation_tools
+from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
@@ -215,7 +215,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "sparse_matching",
             "dense_matching",
             "triangulation",
-            "dtm_generation",
+            "dem_generation",
         ]
 
         terrain_applications = [
@@ -308,10 +308,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         used_conf["triangulation"] = self.triangulation_application.get_conf()
 
         # MNT generation
-        self.dtm_generation_application = Application(
-            "dtm_generation", cfg=conf.get("dtm_generation", {})
+        self.dem_generation_application = Application(
+            "dem_generation", cfg=conf.get("dem_generation", {})
         )
-        used_conf["dtm_generation"] = self.dtm_generation_application.get_conf()
+        used_conf["dem_generation"] = self.dem_generation_application.get_conf()
 
         if generate_terrain_products:
             # Points cloud fusion
@@ -476,7 +476,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             pairs = {}
 
             # triangulated_matches_list is used to store triangulated matche
-            # used in dtm generation
+            # used in dem generation
             triangulated_matches_list = []
 
             for (
@@ -653,7 +653,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Triangulate matches
                     pairs[pair_key][
                         "triangulated_matches"
-                    ] = dtm_generation_tools.triangulate_sparse_matches(
+                    ] = dem_generation_tools.triangulate_sparse_matches(
                         pairs[pair_key]["sensor_image_left"],
                         pairs[pair_key]["sensor_image_right"],
                         pairs[pair_key]["grid_left"],
@@ -665,17 +665,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["triangulated_matches"]
                     )
 
-            # For now only dtm_mean will be used and is mandatory for
+                    # Clean variables
+                    del matches_array
+
+            # For now only dem_mean will be used and is mandatory for
             # a priory
-            dtm_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
-            dtm_min = None
-            dtm_max = None
+            dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
+            dem_min = None
+            dem_max = None
 
             if self.inputs[sens_cst.INITIAL_ELEVATION] is None and (
                 self.used_conf[INPUTS]["use_epipolar_a_priori"] is False
             ):
                 # Generate MNT from matches
-                dtm = self.dtm_generation_application.run(
+                dem = self.dem_generation_application.run(
                     triangulated_matches_list, cars_orchestrator.out_dir
                 )
 
@@ -684,23 +687,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     sensors_inputs.generate_geometry_plugin_with_dem(
                         self.used_conf[GEOMETRY_PLUGIN],
                         self.inputs,
-                        dem=dtm.attributes[dtm_gen_cst.DTM_MEAN_PATH],
+                        dem=dem.attributes[dem_gen_cst.DEM_MEAN_PATH],
                     )
                 )
-                dtm_mean = dtm.attributes[dtm_gen_cst.DTM_MEAN_PATH]
-                dtm_min = dtm.attributes[dtm_gen_cst.DTM_MIN_PATH]
-                dtm_max = dtm.attributes[dtm_gen_cst.DTM_MAX_PATH]
+                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
+                dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
+                dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
             # update used configuration with terrain a priori
             sensors_inputs.update_conf(
                 self.used_conf,
-                dtm_mean=dtm_mean,
-                dtm_min=dtm_min,
-                dtm_max=dtm_max,
+                dem_mean=dem_mean,
+                dem_min=dem_min,
+                dem_max=dem_max,
             )
 
             for pair_key, _, _ in list_sensor_pairs:
-                # Geometr plugin with dem will be used for the grid generation
+                # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
@@ -761,7 +764,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         # Triangulate new matches
                         pairs[pair_key][
                             "triangulated_matches"
-                        ] = dtm_generation_tools.triangulate_sparse_matches(
+                        ] = dem_generation_tools.triangulate_sparse_matches(
                             pairs[pair_key]["sensor_image_left"],
                             pairs[pair_key]["sensor_image_right"],
                             pairs[pair_key]["corrected_grid_left"],
@@ -785,7 +788,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                     # Clean variables
                     del pairs[pair_key]["corrected_matches_array"]
-                    del matches_array
                     del pairs[pair_key]["epipolar_matches_left"]
                 else:
                     # Use epipolar a priori

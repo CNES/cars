@@ -29,10 +29,10 @@ from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 
 
-@Application.register("dtm_generation")
-class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
+@Application.register("dem_generation")
+class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     """
-    DtmGeneration
+    DemGeneration
     """
 
     available_applications: Dict = {}
@@ -49,35 +49,35 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
         :return: an application_to_use object
         """
 
-        dtm_generation_method = cls.default_application
+        dem_generation_method = cls.default_application
         if bool(conf) is False:
             logging.info(
                 "MntGeneration method not specified, default"
-                " {} is used".format(dtm_generation_method)
+                " {} is used".format(dem_generation_method)
             )
         else:
-            dtm_generation_method = conf["method"]
+            dem_generation_method = conf["method"]
 
-        if dtm_generation_method not in cls.available_applications:
+        if dem_generation_method not in cls.available_applications:
             logging.error(
-                "No dtm_generation application named {} registered".format(
-                    dtm_generation_method
+                "No dem_generation application named {} registered".format(
+                    dem_generation_method
                 )
             )
             raise KeyError(
-                "No dtm_generation application named {} registered".format(
-                    dtm_generation_method
+                "No dem_generation application named {} registered".format(
+                    dem_generation_method
                 )
             )
 
         logging.info(
-            "The DtmGeneration {} application will be used".format(
-                dtm_generation_method
+            "The DemGeneration {} application will be used".format(
+                dem_generation_method
             )
         )
 
-        return super(DtmGeneration, cls).__new__(
-            cls.available_applications[dtm_generation_method]
+        return super(DemGeneration, cls).__new__(
+            cls.available_applications[dem_generation_method]
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
@@ -97,16 +97,16 @@ class DtmGeneration(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(self, triangulated_matches_list, output_dir):
         """
-        Run dichotimic dtm generation using matches
+        Run dichotimic dem generation using matches
 
         :param triangulated_matches_list: list of triangulated matches
             positions must be in a metric system
         :type triangulated_matches_list: list(pandas.Dataframe)
-        :param output_dir: directory to save dtm
+        :param output_dir: directory to save dem
         :type output_dir: str
 
-        :return: dtm data computed with mean, min and max.
-            dtm is also saved in disk, and paths are available in attributes.
-            (DTM_MEAN_PATH, DTM_MIN_PATH, DTM_MAX_PATH)
+        :return: dem data computed with mean, min and max.
+            dem is also saved in disk, and paths are available in attributes.
+            (DEM_MEAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
         :rtype: CarsDataset
         """

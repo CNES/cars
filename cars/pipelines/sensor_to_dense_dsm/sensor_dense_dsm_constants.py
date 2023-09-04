@@ -52,9 +52,9 @@ TERRAIN_A_PRIORI = "terrain_a_priori"
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
-DTM_MEAN = "dtm_mean"
-DTM_MIN = "dtm_min"
-DTM_MAX = "dtm_max"
+DEM_MEAN = "dem_mean"
+DEM_MIN = "dem_min"
+DEM_MAX = "dem_max"
 
 # Pipeline output
 OUT_DIR = "out_dir"
