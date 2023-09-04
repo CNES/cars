@@ -36,7 +36,7 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     """
 
     available_applications: Dict = {}
-    default_application = "dichotimic"
+    default_application = "dichotomic"
 
     def __new__(cls, orchestrator=None, conf=None):  # pylint: disable=W0613
         """
@@ -97,7 +97,7 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(self, triangulated_matches_list, output_dir):
         """
-        Run dichotimic dem generation using matches
+        Run dem generation using matches
 
         :param triangulated_matches_list: list of triangulated matches
             positions must be in a metric system

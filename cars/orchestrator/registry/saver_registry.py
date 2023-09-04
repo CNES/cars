@@ -379,15 +379,15 @@ class SingleCarsDatasetSaver:
         """
 
         # close raster files
-        for file_name, desc in zip(  # noqa B905
-            self.file_names, self.descriptors
+        for file_name, tag, desc in zip(  # noqa B905
+            self.file_names, self.tags, self.descriptors
         ):
             if desc is not None:
                 desc.close()
 
-            if "dtm" in file_name:
+            if "dem" in tag:
                 # transform epsg of dtm files
-                # TODO remove when dtm issues dealt in otb and shareloc
+                # TODO remove when dem issues dealt in otb and shareloc
                 inputs.rasterio_transform_epsg(file_name, 4326)
 
         # TODO merge point clouds ?

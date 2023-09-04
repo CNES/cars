@@ -1190,28 +1190,28 @@ def test_end2end_use_epipolar_a_priori():
             )
 
             # Uncomment the 2 following instructions to update reference data
-            # copy2(os.path.join(out_dir, 'dtm_mean.tif'),
-            #     absolute_data_path("ref_output/dtm_mean_end2end_ventoux.tif"))
-            # copy2(os.path.join(out_dir, 'dtm_min.tif'),
-            #     absolute_data_path("ref_output/dtm_min_end2end_ventoux.tif"))
-            # copy2(os.path.join(out_dir, 'dtm_max.tif'),
-            #     absolute_data_path("ref_output/dtm_max_end2end_ventoux.tif"))
+            # copy2(os.path.join(out_dir, 'dem_mean.tif'),
+            #     absolute_data_path("ref_output/dem_mean_end2end_ventoux.tif"))
+            # copy2(os.path.join(out_dir, 'dem_min.tif'),
+            #     absolute_data_path("ref_output/dem_min_end2end_ventoux.tif"))
+            # copy2(os.path.join(out_dir, 'dem_max.tif'),
+            #     absolute_data_path("ref_output/dem_max_end2end_ventoux.tif"))
 
             assert_same_images(
-                os.path.join(out_dir, "dtm_mean.tif"),
-                absolute_data_path("ref_output/dtm_mean_end2end_ventoux.tif"),
+                os.path.join(out_dir, "dem_mean.tif"),
+                absolute_data_path("ref_output/dem_mean_end2end_ventoux.tif"),
                 atol=0.0001,
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dtm_min.tif"),
-                absolute_data_path("ref_output/dtm_min_end2end_ventoux.tif"),
+                os.path.join(out_dir, "dem_min.tif"),
+                absolute_data_path("ref_output/dem_min_end2end_ventoux.tif"),
                 atol=0.0001,
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dtm_max.tif"),
-                absolute_data_path("ref_output/dtm_max_end2end_ventoux.tif"),
+                os.path.join(out_dir, "dem_max.tif"),
+                absolute_data_path("ref_output/dem_max_end2end_ventoux.tif"),
                 atol=0.0001,
                 rtol=1e-6,
             )
@@ -1296,15 +1296,15 @@ def test_end2end_use_epipolar_a_priori():
                 ]
             )
             assert (
-                "dtm_mean"
+                "dem_mean"
                 in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
             )
             assert (
-                "dtm_min"
+                "dem_min"
                 in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
             )
             assert (
-                "dtm_max"
+                "dem_max"
                 in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
             )
 
@@ -2291,15 +2291,15 @@ def test_end2end_quality_stats():
             )
 
         # Uncomment the 2 following instructions to update reference data
-        # copy2(os.path.join(out_dir, 'dtm_mean.tif'),
+        # copy2(os.path.join(out_dir, 'dem_mean.tif'),
         #       absolute_data_path("ref_output/"
-        #     "dtm_mean_end2end_ventoux_quality_stats.tif"))
-        # copy2(os.path.join(out_dir, 'dtm_min.tif'),
+        #     "dem_mean_end2end_ventoux_quality_stats.tif"))
+        # copy2(os.path.join(out_dir, 'dem_min.tif'),
         #       absolute_data_path("ref_output/"
-        #     "dtm_min_end2end_ventoux_quality_stats.tif"))
-        # copy2(os.path.join(out_dir, 'dtm_max.tif'),
+        #     "dem_min_end2end_ventoux_quality_stats.tif"))
+        # copy2(os.path.join(out_dir, 'dem_max.tif'),
         #       absolute_data_path("ref_output/"
-        #     "dtm_max_end2end_ventoux_quality_stats.tif"))
+        #     "dem_max_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm.tif'),
         #       absolute_data_path("ref_output/"
         #     "dsm_end2end_ventoux_quality_stats.tif"))
@@ -2320,25 +2320,25 @@ def test_end2end_quality_stats():
         #     "dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"))
 
         assert_same_images(
-            os.path.join(out_dir, "dtm_mean.tif"),
+            os.path.join(out_dir, "dem_mean.tif"),
             absolute_data_path(
-                "ref_output/dtm_mean_end2end_ventoux_quality_stats.tif"
+                "ref_output/dem_mean_end2end_ventoux_quality_stats.tif"
             ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dtm_min.tif"),
+            os.path.join(out_dir, "dem_min.tif"),
             absolute_data_path(
-                "ref_output/dtm_min_end2end_ventoux_quality_stats.tif"
+                "ref_output/dem_min_end2end_ventoux_quality_stats.tif"
             ),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dtm_max.tif"),
+            os.path.join(out_dir, "dem_max.tif"),
             absolute_data_path(
-                "ref_output/dtm_max_end2end_ventoux_quality_stats.tif"
+                "ref_output/dem_max_end2end_ventoux_quality_stats.tif"
             ),
             atol=0.0001,
             rtol=1e-6,

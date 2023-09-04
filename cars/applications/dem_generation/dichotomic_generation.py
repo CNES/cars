@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the dichotimic dem generation application class.
+this module contains the dichotomic dem generation application class.
 """
 
 
@@ -44,18 +44,18 @@ from cars.core import projection
 from cars.data_structures import cars_dataset
 
 
-class DichotimicGeneration(DemGeneration, short_name="dichotimic"):
+class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
     """
-    DichotimicGeneration
+    DichotomicGeneration
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf=None):
         """
-        Init function of DichotimicGeneration
+        Init function of DichotomicGeneration
 
-        :param conf: configuration for DichotimicGeneration
+        :param conf: configuration for DichotomicGeneration
         :return: an application_to_use object
         """
         super().__init__(conf=conf)
@@ -91,7 +91,7 @@ class DichotimicGeneration(DemGeneration, short_name="dichotimic"):
             overloaded_conf = {}
 
         # Overload conf
-        overloaded_conf["method"] = conf.get("method", "dichotimic")
+        overloaded_conf["method"] = conf.get("method", "dichotomic")
         overloaded_conf["resolution"] = conf.get("resolution", 90)
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
@@ -117,7 +117,7 @@ class DichotimicGeneration(DemGeneration, short_name="dichotimic"):
 
     def run(self, triangulated_matches_list, output_dir):
         """
-        Run dichotimic dem generation using matches
+        Run dichotomic dem generation using matches
 
         :param triangulated_matches_list: list of triangulated matches
             positions must be in a metric system

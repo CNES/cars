@@ -25,4 +25,4 @@ CARS dtm generation init file
 
 from cars.applications.dem_generation.dem_generation import DemGeneration
 
-from . import dichotimic_generation
+from . import dichotomic_generation
