@@ -206,7 +206,7 @@ def test_ground_intersection_envelopes():
             sensor2,
             geomodel1,
             geomodel2,
-            get_geometry_plugin(geometry_plugin="OTBGeometry", dem=srtm_dir),
+            get_geometry_plugin(dem=srtm_dir),
             out_shp1,
             out_shp2,
             out_intersect,
@@ -238,9 +238,7 @@ def test_ground_intersection_envelopes():
                 sensor2,
                 geomodel1,
                 geomodel2,
-                get_geometry_plugin(
-                    geometry_plugin="OTBGeometry", dem=srtm_dir
-                ),
+                get_geometry_plugin(dem=srtm_dir),
                 out_shp1,
                 out_shp2,
                 out_intersect,
@@ -276,7 +274,7 @@ def test_get_time_ground_direction():
 
     vec = projection.get_time_ground_direction(
         conf,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
         input_parameters.PRODUCT1_KEY,
     )
     assert vec[0] == -0.02356248001209794
@@ -284,7 +282,7 @@ def test_get_time_ground_direction():
 
     vec = projection.get_time_ground_direction(
         conf,
-        get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem),
+        get_geometry_plugin(dem=dem),
         input_parameters.PRODUCT1_KEY,
     )
     assert vec[0] == -0.03760314420222626
@@ -309,7 +307,7 @@ def test_get_ground_angles():
         sensor2,
         geomodel1,
         geomodel2,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
     )
     angles = np.asarray(angles)  # transform tuple to array
 

@@ -242,7 +242,7 @@ def test_tiles_pairing(
 
     # compute epipolar grid min max
     epipolar_grid_min, epipolar_grid_max = grids.compute_epipolar_grid_min_max(
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
         tiling.transform_four_layers_to_two_layers_grid(epipolar_tiling_grid),
         sensor1,
         sensor2,

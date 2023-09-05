@@ -436,7 +436,6 @@ def test_grid_generation(save_reference, input_file, ref_file):
                 adapt_path_for_test_dir(data, input_path, input_relative_path)
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
-                    "OTBGeometry",
                     dem=os.path.join(input_path, "srtm_dir"),
                     default_alt=0,
                 )
@@ -550,7 +549,7 @@ def test_terrain_region_to_epipolar(
         geomodel2,
         grid_left,
         grid_right,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
         epsg=epsg,
         disp_min=disp_min,
         disp_max=disp_max,
