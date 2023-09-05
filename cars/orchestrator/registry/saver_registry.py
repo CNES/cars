@@ -386,7 +386,7 @@ class SingleCarsDatasetSaver:
                 desc.close()
 
             if "dem" in tag:
-                # transform epsg of dtm files
+                # transform epsg of dem files
                 # TODO remove when dem issues dealt in otb and shareloc
                 inputs.rasterio_transform_epsg(file_name, 4326)
 

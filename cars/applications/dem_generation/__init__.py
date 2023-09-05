@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS dtm generation init file
+CARS dem generation init file
 """
 # flake8: noqa: F401
 
