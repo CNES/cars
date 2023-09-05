@@ -41,8 +41,6 @@ import pytest
 import rasterio
 from shapely.ops import transform
 
-from cars.conf.input_parameters import read_input_parameters
-
 # CARS imports
 from cars.core import roi_tools
 from cars.pipelines.point_clouds_to_dsm import (
@@ -1491,10 +1489,6 @@ def test_end2end_ventoux_with_color():
     End to end processing with color
     """
 
-    input_json = read_input_parameters(
-        absolute_data_path("input/phr_ventoux/preproc_input_with_color.json")
-    )
-
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_color.json"
@@ -1735,10 +1729,6 @@ def test_end2end_ventoux_with_classif():
     """
     End to end processing with p+xs fusion
     """
-
-    input_json = read_input_parameters(
-        absolute_data_path("input/phr_ventoux/preproc_input_with_classif.json")
-    )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
