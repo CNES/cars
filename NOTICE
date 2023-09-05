@@ -27,9 +27,19 @@ Copyright (c) 1997-2018 OpenMP ARB Corporation
 Website: https://www.openmp.org/
 License: "GNU GPL v3.0 + GNU GCC Runtime Library Exception" (GCC) and "NCSA Open Source License" (Clang)
 
+TBB: flexible C++ library for parallelism applications
+Copyright (c) 2016-2021 Intel Corporation
+Website: https://github.com/oneapi-src/oneTBB
+Licence: Apache v2.0.
+
 PANDORA: Stereo pipeline which produces disparity map from a pair of images. 
 Copyright (c) 2020, Centre National d'Etudes Spatiales (CNES).
 Website: https://github.com/CNES/Pandora
+Licence: Apache v2.0.
+
+SHARELOC: open source remote sensing geolocation library.
+Copyright (c) 2020, Centre National d'Etudes Spatiales (CNES).
+Website: https://github.com/CNES/Shareloc
 Licence: Apache v2.0.
 
 Orfeo Toolbox (OTB): Open Source processing of remote sensing images
@@ -123,7 +133,7 @@ Website: http://distributed.dask.org/
 License: BSD 3 Clause.
 
 Shapely: Manipulation and analysis of geometric objects
-Copyright (c) 2007, Sean C. Gillies
+Copyright (c) 2007-2022, Sean C. Gillies, Casper van der Wel and contributors.
 Website: https://github.com/Toblerity/Shapely
 Version : non définie
 License: BSD 3 Clause.
@@ -164,3 +174,28 @@ pytest: helps to write better programs
 Copyright (c) 2004-2020 Holger Krekel and others.
 Website: https://pytest.org
 License: MIT
+
+Laspy: Reads and writes popular format for lidar pointcloud
+Copyright (c) 2012-2020 Grant Brown,  Howard Butler, Thomas Montaigu.
+Website: https://github.com/laspy/laspy
+License: BSD
+
+UTM: Bidirectional UTM-WGS84 converter for python
+Copyright (c) 2012-2017 Tobias Bieniek
+Website: https://github.com/Turbo87/utm
+License: MIT
+
+Urllib3: powerful, user-friendly HTTP client for Python
+Copyright (c) 2008-2020 Andrey Petrov and contributors.
+Website: https://urllib3.readthedocs.io/
+License: MIT
+
+NetCDF4: read and write large variety format
+Copyright (c) 2008 Jeffrey Whitaker
+Website: https://github.com/Unidata/netcdf4-python
+Licence: MIT
+
+Json-checker: library for validating Python json data structures
+Copyright (c) 2018 Denis Korytkin
+Website: https://github.com/DKorytkin/json_checker
+Licence: MIT
