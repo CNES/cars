@@ -27,13 +27,15 @@ import importlib.util
 import logging
 import os
 
+import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
 
 # CARS imports
 from cars.core import inputs
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.pipeline_constants import INPUTS
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
@@ -75,12 +77,9 @@ def sensors_check_inputs(  # noqa: C901
             "use_epipolar_a_priori", False
         )
         # Retrieve epipolar_a_priori if it is provided
-        if "epipolar_a_priori" in conf:
-            overloaded_conf["epipolar_a_priori"] = conf.get(
-                "epipolar_a_priori", {}
-            )
-        else:
-            overloaded_conf["epipolar_a_priori"] = {}
+        overloaded_conf["epipolar_a_priori"] = conf.get("epipolar_a_priori", {})
+        # Retrieve terrain_a_priori if it is provided
+        overloaded_conf["terrain_a_priori"] = conf.get("terrain_a_priori", {})
 
     if "geoid" not in overloaded_conf:
         # use cars geoid
@@ -109,6 +108,7 @@ def sensors_check_inputs(  # noqa: C901
     if check_epipolar_a_priori:
         inputs_schema[sens_cst.USE_EPIPOLAR_A_PRIORI] = bool
         inputs_schema[sens_cst.EPIPOLAR_A_PRIORI] = dict
+        inputs_schema[sens_cst.TERRAIN_A_PRIORI] = dict
 
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
@@ -118,8 +118,32 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.GRID_CORRECTION: Or(list, None),
         sens_cst.DISPARITY_RANGE: list,
     }
-
     checker_epipolar = Checker(epipolar_schema)
+
+    # Check terrain a priori
+    if check_epipolar_a_priori and overloaded_conf[sens_cst.TERRAIN_A_PRIORI]:
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
+            sens_cst.DEM_MEAN
+        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+            sens_cst.DEM_MEAN, None
+        )
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
+            sens_cst.DEM_MIN
+        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+            sens_cst.DEM_MIN, None
+        )
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
+            sens_cst.DEM_MAX
+        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+            sens_cst.DEM_MAX, None
+        )
+        terrain_a_priori_schema = {
+            sens_cst.DEM_MEAN: str,
+            sens_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
+            sens_cst.DEM_MAX: Or(str, None),
+        }
+        checker_terrain = Checker(terrain_a_priori_schema)
+        checker_terrain.validate(overloaded_conf[sens_cst.TERRAIN_A_PRIORI])
 
     # Validate each sensor image
     sensor_schema = {
@@ -296,7 +320,32 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
             sens_cst.INPUT_GEO_MODEL
         ] = geomodel
 
-    # Get image pairs for DTM intersection with ROI
+    geom_plugin_with_dem_and_geoid = generate_geometry_plugin_with_dem(
+        conf_geom_plugin, conf_inputs
+    )
+
+    return (
+        overloaded_conf_inputs,
+        conf_geom_plugin,
+        geom_plugin_without_dem_and_geoid,
+        geom_plugin_with_dem_and_geoid,
+    )
+
+
+def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
+    """
+    Generate geometry plugin with dem and geoid
+
+    :param conf_geom_plugin: plugin configuration
+    :param conf_inputs: inputs configuration
+    :param dem: dem to overide the one in inputs
+
+    :return: geometry plugin object, with a dem
+    """
+    if dem is None:
+        dem = conf_inputs[sens_cst.INITIAL_ELEVATION]
+
+    # Get image pairs for DEM intersection with ROI
     images_for_roi = []
     for sensor_image in conf_inputs[sens_cst.SENSORS].values():
         sensor = sensor_image[sens_cst.INPUT_IMG]
@@ -307,19 +356,14 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     geom_plugin_with_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin,
-            dem=conf_inputs[sens_cst.INITIAL_ELEVATION],
+            dem=dem,
             geoid=conf_inputs[sens_cst.GEOID],
             default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
             images_for_roi=images_for_roi,
         )
     )
 
-    return (
-        overloaded_conf_inputs,
-        conf_geom_plugin,
-        geom_plugin_without_dem_and_geoid,
-        geom_plugin_with_dem_and_geoid,
-    )
+    return geom_plugin_with_dem_and_geoid
 
 
 def modify_to_absolute_path(config_json_dir, overloaded_conf):
@@ -357,7 +401,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                 )
 
 
-def validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar):
+def validate_epipolar_a_priori(
+    conf,
+    overloaded_conf,
+    checker_epipolar,
+):
     """
     Validate inner epipolar configuration
 
@@ -545,3 +593,60 @@ def generate_inputs(conf, geometry_plugin):
         list_sensor_pairs.append((merged_key, sensor1, sensor2))
 
     return list_sensor_pairs
+
+
+def update_conf(
+    conf,
+    grid_correction_coef=None,
+    dmin=None,
+    dmax=None,
+    pair_key=None,
+    dem_mean=None,
+    dem_min=None,
+    dem_max=None,
+):
+    """
+    Update the conf with grid correction and disparity range
+    :param grid_correction_coef: grid correction coefficient
+    :type grid_correction_coef: list
+    :param dmin: disparity range minimum
+    :type dmin: float
+    :param dmax: disparity range maximum
+    :type dmax: float
+    :param pair_key: name of the inputs key pair
+    :type pair_key: str
+    """
+
+    if pair_key is not None:
+        if pair_key not in conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI]:
+            conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key] = {}
+        if grid_correction_coef is not None:
+            if len(grid_correction_coef) == 2:
+                conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
+                    "grid_correction"
+                ] = (
+                    np.concatenate(grid_correction_coef[0], axis=0).tolist()[
+                        :-1
+                    ]
+                    + np.concatenate(grid_correction_coef[1], axis=0).tolist()[
+                        :-1
+                    ]
+                )
+            else:
+                conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
+                    "grid_correction"
+                ] = list(grid_correction_coef)
+        if None not in (dmin, dmax):
+            conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
+                "disparity_range"
+            ] = [
+                dmin,
+                dmax,
+            ]
+
+    if dem_mean is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_mean"] = dem_mean
+    if dem_min is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
+    if dem_max is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_max"] = dem_max

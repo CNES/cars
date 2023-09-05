@@ -1,5 +1,3 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
 #!/usr/bin/env python
 # coding: utf8
 #
@@ -21,9 +19,14 @@
 # limitations under the License.
 #
 """
-Init file of geometry module
+this module contains the dem generation constants.
 """
-from cars.core.geometry.otb_geometry import OTBGeometry
-from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
-from . import abstract_geometry
+
+DEM_MEAN = "dem_mean"
+DEM_MIN = "dem_min"
+DEM_MAX = "dem_max"
+
+DEM_MEAN_PATH = "dem_mean_path"
+DEM_MIN_PATH = "dem_min_path"
+DEM_MAX_PATH = "dem_max_path"

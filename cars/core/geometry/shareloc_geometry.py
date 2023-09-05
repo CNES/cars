@@ -38,7 +38,8 @@ from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
 
 from cars.core import constants as cst
-from cars.core.geometry import AbstractGeometry
+from cars.core import inputs, projection
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.data_structures import cars_dataset
 
 GRID_TYPE = "GRID"
@@ -66,19 +67,48 @@ class SharelocGeometry(AbstractGeometry):
 
         roi = None
         self.elevation = None
-        if images_for_roi is not None:
-            coords_list = []
-            for sensor in images_for_roi:
-                coords_list.extend(self.image_envelope(*sensor))
-            lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
-            roi = [
-                min(lat_list) - margin,
-                min(lon_list) - margin,
-                max(lat_list) + margin,
-                max(lon_list) + margin,
-            ]
 
         if dem is not None:
+            # Get dem epsg
+            dem_espg = inputs.rasterio_get_epsg(dem)
+
+            # Transform roi
+            alti = 0
+            if default_alt is not None:
+                alti = default_alt
+
+            if images_for_roi is not None:
+                coords_list = []
+                for sensor in images_for_roi:
+                    coords_list.extend(self.image_envelope(*sensor))
+                lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+                roi = [
+                    min(lat_list) - margin,
+                    min(lon_list) - margin,
+                    max(lat_list) + margin,
+                    max(lon_list) + margin,
+                ]
+
+                points = np.array(
+                    [
+                        (roi[1], roi[0], alti),
+                        (roi[3], roi[2], alti),
+                        (roi[1], roi[0], alti),
+                        (roi[3], roi[2], alti),
+                    ]
+                )
+
+                new_points = projection.points_cloud_conversion(
+                    points, 4326, dem_espg
+                )
+
+                roi = [
+                    min(new_points[:, 1]),
+                    min(new_points[:, 0]),
+                    max(new_points[:, 1]),
+                    max(new_points[:, 0]),
+                ]
+
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
             self.elevation = DTMIntersection(
@@ -259,8 +289,6 @@ class SharelocGeometry(AbstractGeometry):
     ]:
         """
         Computes the left and right epipolar grids
-
-        TODO: evolve with CARS new API with CARS conf clean
 
         :param sensor1: path to left sensor image
         :param sensor2: path to right sensor image

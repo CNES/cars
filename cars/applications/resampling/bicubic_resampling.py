@@ -45,7 +45,7 @@ from cars.applications.resampling.resampling import Resampling
 from cars.core import constants as cst
 from cars.core import inputs, tiling
 from cars.core.datasets import get_color_bands
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 from cars.pipelines.sensor_to_dense_dsm import (

@@ -25,8 +25,10 @@ Test module for cars/core/geometry/shareloc_geometry.py
 # Third party imports
 import pytest
 
+from cars.core.geometry.abstract_geometry import AbstractGeometry
+
 # CARS imports
-from cars.core.geometry.shareloc_geometry import RPC_TYPE, AbstractGeometry
+from cars.core.geometry.shareloc_geometry import RPC_TYPE
 
 # CARS Tests imports
 from ...helpers import absolute_data_path, get_geoid_path

@@ -50,6 +50,7 @@ The structure follows this organisation:
             | *epsg*                  | EPSG code                                                           | int, should be > 0    | None                 | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *initial_elevation*     | Path to SRTM tiles (see :ref:`plugins` section for details)         | string                | None                 | No       |
+            |                         | If not provided, internal dem is generated with sparse matches      |                       |                      |          |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *default_alt*           | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
             |                         | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
@@ -66,7 +67,8 @@ The structure follows this organisation:
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *epipolar_a_priori*     | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
             +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
+            | *terrain_a_priori*      | Provide terrain a priori information (see section below)            | dict                  |                      | No       |
+            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
             **Sensor**
 
@@ -163,7 +165,25 @@ The structure follows this organisation:
                 The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
                 The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
 
-        
+
+            **Terrain a priori**
+
+            The terrain a priori is used at the same time that epipolar a priori.
+            If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
+            The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
+
+            The terrain a priori is initially populated with DEM information.
+
+            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | Name           | Description                                                 | Type   | Default value  | Required                         |
+            +================+=============================================================+========+================+==================================+
+            | *dem_mean*     | DEM generated with mean function                            | str    |                | if use_epipolar_a_priori is True |
+            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
+            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
+            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+            
 
         .. tab:: Point Clouds inputs
 
@@ -472,7 +492,7 @@ The structure follows this organisation:
                 2. Resample the both images into epipolar geometry.
                 3. Compute sift matches between left and right views in epipolar geometry.
                 4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
+                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`dem` (such as SRTM) in order to reduce the disparity intervals to explore.
                 6. Compute disparity for each image pair in epipolar geometry.
                 7. Fill holes in disparity maps for each image pair in epipolar geometry.
                 8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
@@ -526,7 +546,7 @@ The structure follows this organisation:
                 2. Resample the both images into epipolar geometry.
                 3. Compute sift matches between left and right views in epipolar geometry.
                 4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
+                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`dem` (such as SRTM) in order to reduce the disparity intervals to explore.
                 6. Compute disparity for each image pair in epipolar geometry.
                 7. Fill holes in disparity maps for each image pair in epipolar geometry.
                 8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
@@ -671,9 +691,9 @@ The structure follows this organisation:
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
             | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                    | float      |                 | 0.02          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution DTM in meters | int, float |                 | -1000         | No       |
+            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters | int, float |                 | None          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution DTM in meters | int, float |                 | 1000          | No       |
+            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters | int, float |                 | None          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
             | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                           | float      | should be > 0   | 10.0          | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -700,7 +720,7 @@ The structure follows this organisation:
             | save_matches                         | Save matches                                                                                | boolean    |                 | false         | No       |
             +--------------------------------------+---------------------------------------------------------------------------------------------+------------+-----------------+---------------+----------+
 
-	    For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
+	        For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
 
             **Example**
 
@@ -712,6 +732,45 @@ The structure follows this organisation:
                         "disparity_margin": 0.01
                     }
                 },
+
+        .. tab:: dem Generation
+
+            **Name**: "dem_generation"
+
+            **Description**
+
+            Generates dem from sparse matches. 
+
+            3 dems are generated, with different methods:
+            * mean
+            * min
+            * max
+
+            **Configuration**
+
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+            | Name                     | Description                                                | Type       | Available value | Default value | Required |
+            +==========================+============================================================+============+=================+===============+==========+
+            | method                   | Method for dem_generation                                  | string     | "dichotimic"    | "dichotimic"  | Yes      |
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+            | resolution               | Resolution of dem, in meter                                | int, float |  should be > 0  | 90            | No       |
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+            | margin                   | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+            | percentile               | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 10            | No       |
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+            | min_number_matches       | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
+            +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+
+            **Example**
+
+            .. code-block:: json
+
+                "applications": {
+                    "dem_generation": {
+                        "method": "dichotimic",
+                        "min_number_matches": 20
+                    }
 
         .. tab:: Dense matching
 

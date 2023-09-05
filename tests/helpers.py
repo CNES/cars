@@ -55,7 +55,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core.datasets import get_color_bands
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Specific values

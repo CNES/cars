@@ -30,14 +30,17 @@ import json
 import logging
 import os
 
-import numpy as np
-
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
+from cars.applications.dem_generation import (
+    dem_generation_constants as dem_gen_cst,
+)
+from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.core import cars_logging, preprocessing, roi_tools
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -151,7 +154,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         self.config_full_res = copy.deepcopy(self.used_conf)
         self.config_full_res[PIPELINE] = "sensors_to_dense_dsm"
         self.config_full_res.__delitem__("applications")
-        self.config_full_res[INPUTS]["epipolar_a_priori"] = {}
+        self.config_full_res[INPUTS][sens_cst.EPIPOLAR_A_PRIORI] = {}
+        self.config_full_res[INPUTS][sens_cst.TERRAIN_A_PRIORI] = {}
+        self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -197,6 +202,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "resampling",
             "dense_matching",
             "triangulation",
+            "dem_generation",
             "point_cloud_fusion",
             "point_cloud_rasterization",
         ]
@@ -244,6 +250,12 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "triangulation", cfg=conf.get("triangulation", {})
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
+
+        # MNT generation
+        self.dem_generation_application = Application(
+            "dem_generation", cfg=conf.get("dem_generation", {})
+        )
+        used_conf["dem_generation"] = self.dem_generation_application.get_conf()
 
         # Points cloud fusion
         self.pc_fusion_application = Application(
@@ -318,6 +330,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
             )
 
+            pairs = {}
+            triangulated_matches_list = []
+
             for (
                 pair_key,
                 sensor_image_left,
@@ -328,32 +343,42 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 safe_makedirs(pair_folder)
                 safe_makedirs(os.path.join(pair_folder, "tmp"))
 
+                pairs[pair_key] = {}
+                pairs[pair_key]["pair_folder"] = pair_folder
+                pairs[pair_key]["sensor_image_left"] = sensor_image_left
+                pairs[pair_key]["sensor_image_right"] = sensor_image_right
+
                 # Run applications
 
                 # Run grid generation
+                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                    geom_plugin = self.geom_plugin_without_dem_and_geoid
+                else:
+                    geom_plugin = self.geom_plugin_with_dem_and_geoid
+
                 (
-                    grid_left,
-                    grid_right,
+                    pairs[pair_key]["grid_left"],
+                    pairs[pair_key]["grid_right"],
                 ) = self.epipolar_grid_generation_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
-                    self.geom_plugin_with_dem_and_geoid,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    geom_plugin,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                 )
 
                 # Run epipolar resampling
                 (
-                    epipolar_image_left,
-                    epipolar_image_right,
+                    pairs[pair_key]["epipolar_image_left"],
+                    pairs[pair_key]["epipolar_image_right"],
                 ) = self.resampling_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
-                    grid_left,
-                    grid_right,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    pairs[pair_key]["grid_left"],
+                    pairs[pair_key]["grid_right"],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins=self.sparse_matching_app.get_margins(),
                     add_color=False,
@@ -361,14 +386,16 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Run epipolar sparse_matching application
                 (
-                    epipolar_matches_left,
+                    pairs[pair_key]["epipolar_matches_left"],
                     _,
                 ) = self.sparse_matching_app.run(
-                    epipolar_image_left,
-                    epipolar_image_right,
-                    grid_left.attributes["disp_to_alt_ratio"],
+                    pairs[pair_key]["epipolar_image_left"],
+                    pairs[pair_key]["epipolar_image_right"],
+                    pairs[pair_key]["grid_left"].attributes[
+                        "disp_to_alt_ratio"
+                    ],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                 )
 
@@ -379,7 +406,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Filter matches
                 matches_array = self.sparse_matching_app.filter_matches(
-                    epipolar_matches_left,
+                    pairs[pair_key]["epipolar_matches_left"],
                     orchestrator=cars_orchestrator,
                     pair_key=pair_key,
                     pair_folder=pair_folder,
@@ -387,66 +414,191 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
                 # Estimate grid correction
                 (
-                    grid_correction_coef,
+                    pairs[pair_key]["grid_correction_coef"],
                     corrected_matches_array,
-                    corrected_matches_cars_ds,
+                    pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
                 ) = grid_correction.estimate_right_grid_correction(
                     matches_array,
-                    grid_right,
-                    initial_cars_ds=epipolar_matches_left,
+                    pairs[pair_key]["grid_right"],
+                    initial_cars_ds=pairs[pair_key]["epipolar_matches_left"],
                     save_matches=self.sparse_matching_app.get_save_matches(),
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     orchestrator=cars_orchestrator,
                 )
 
                 # Correct grid right
-                corrected_grid_right = grid_correction.correct_grid(
-                    grid_right,
-                    grid_correction_coef,
+                pairs[pair_key][
+                    "corrected_grid_right"
+                ] = grid_correction.correct_grid(
+                    pairs[pair_key]["grid_right"],
+                    pairs[pair_key]["grid_correction_coef"],
                     self.epipolar_grid_generation_application.save_grids,
-                    pair_folder,
+                    pairs[pair_key]["pair_folder"],
                 )
+
+                pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
+                    "grid_left"
+                ]
+
+                # Triangulate matches
+                pairs[pair_key][
+                    "triangulated_matches"
+                ] = dem_generation_tools.triangulate_sparse_matches(
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    pairs[pair_key]["grid_left"],
+                    pairs[pair_key]["corrected_grid_right"],
+                    corrected_matches_array,
+                    self.geom_plugin_with_dem_and_geoid,
+                )
+                triangulated_matches_list.append(
+                    pairs[pair_key]["triangulated_matches"]
+                )
+
+            dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
+            dem_min = None
+            dem_max = None
+
+            if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                # Generate MNT from matches
+                dem = self.dem_generation_application.run(
+                    triangulated_matches_list, cars_orchestrator.out_dir
+                )
+
+                # Generate geometry loader with dem and geoid
+                self.geom_plugin_with_dem_and_geoid = (
+                    sensors_inputs.generate_geometry_plugin_with_dem(
+                        self.used_conf[GEOMETRY_PLUGIN],
+                        self.inputs,
+                        dem=dem.attributes[dem_gen_cst.DEM_MEAN_PATH],
+                    )
+                )
+                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
+                dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
+                dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
+
+            sensors_inputs.update_conf(
+                self.config_full_res,
+                dem_mean=dem_mean,
+                dem_min=dem_min,
+                dem_max=dem_max,
+            )
+
+            for pair_key, _, _ in list_sensor_pairs:
+                geom_plugin = self.geom_plugin_with_dem_and_geoid
+                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                    # Generate grids with new MNT
+                    (
+                        pairs[pair_key]["new_grid_left"],
+                        pairs[pair_key]["new_grid_right"],
+                    ) = self.epipolar_grid_generation_application.run(
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        geom_plugin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                    )
+
+                    # Correct grids with former matches
+                    # Transform matches to new grids
+
+                    new_grid_matches_array = (
+                        AbstractGeometry.transform_matches_from_grids(
+                            matches_array,
+                            pairs[pair_key]["corrected_grid_left"],
+                            pairs[pair_key]["corrected_grid_right"],
+                            pairs[pair_key]["new_grid_left"],
+                            pairs[pair_key]["new_grid_right"],
+                        )
+                    )
+
+                    # Estimate grid_correction
+                    (
+                        pairs[pair_key]["grid_correction_coef"],
+                        corrected_matches_array,
+                        pairs[pair_key]["corrected_matches_cars_ds"],
+                        _,
+                        _,
+                    ) = grid_correction.estimate_right_grid_correction(
+                        new_grid_matches_array,
+                        pairs[pair_key]["new_grid_right"],
+                        initial_cars_ds=pairs[pair_key][
+                            "epipolar_matches_left"
+                        ],
+                        save_matches=(
+                            self.sparse_matching_app.get_save_matches()
+                        ),
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                        orchestrator=cars_orchestrator,
+                    )
+
+                    # Correct grid right
+                    pairs[pair_key][
+                        "corrected_grid_right"
+                    ] = grid_correction.correct_grid(
+                        pairs[pair_key]["new_grid_right"],
+                        pairs[pair_key]["grid_correction_coef"],
+                    )
+                    pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
+                        "new_grid_left"
+                    ]
+
+                    # Triangulate new matches
+                    pairs[pair_key][
+                        "triangulated_matches"
+                    ] = dem_generation_tools.triangulate_sparse_matches(
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        pairs[pair_key]["corrected_grid_left"],
+                        pairs[pair_key]["corrected_grid_right"],
+                        corrected_matches_array,
+                        geometry_plugin=geom_plugin,
+                    )
 
                 # Compute disp_min and disp_max
                 (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(
-                    sensor_image_left,
-                    sensor_image_right,
-                    grid_left,
-                    corrected_grid_right,
-                    corrected_matches_array,
-                    orchestrator=cars_orchestrator,
+                    pairs[pair_key]["triangulated_matches"],
+                    cars_orchestrator,
                     disp_margin=(
                         self.sparse_matching_app.get_disparity_margin()
                     ),
                     pair_key=pair_key,
-                    disp_to_alt_ratio=grid_left.attributes["disp_to_alt_ratio"],
-                    geometry_plugin=self.geom_plugin_with_dem_and_geoid,
-                    pair_folder=pair_folder,
+                    disp_to_alt_ratio=pairs[pair_key][
+                        "corrected_grid_left"
+                    ].attributes["disp_to_alt_ratio"],
                 )
 
                 # Clean variables
                 del corrected_matches_array
                 del matches_array
-                del epipolar_matches_left
+                del pairs[pair_key]["epipolar_matches_left"]
 
                 # Update full res pipeline configuration
                 # with grid correction and disparity range
-                self.update_full_res_conf(
-                    grid_correction_coef, dmin, dmax, pair_key
+                sensors_inputs.update_conf(
+                    self.config_full_res,
+                    grid_correction_coef=pairs[pair_key][
+                        "grid_correction_coef"
+                    ],
+                    dmin=dmin,
+                    dmax=dmax,
+                    pair_key=pair_key,
                 )
                 if epsg is None:
                     # compute epsg
                     epsg = preprocessing.compute_epsg(
-                        sensor_image_left,
-                        sensor_image_right,
-                        grid_left,
-                        corrected_grid_right,
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        pairs[pair_key]["corrected_grid_left"],
+                        pairs[pair_key]["corrected_grid_right"],
                         self.geom_plugin_with_dem_and_geoid,
                         orchestrator=cars_orchestrator,
-                        pair_folder=pair_folder,
+                        pair_folder=pairs[pair_key]["pair_folder"],
                         disp_min=dmin,
                         disp_max=dmax,
                     )
@@ -460,12 +612,12 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     new_epipolar_image_left,
                     _,
                 ) = self.resampling_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
-                    grid_left,
-                    corrected_grid_right,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    pairs[pair_key]["corrected_grid_left"],
+                    pairs[pair_key]["corrected_grid_right"],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins=self.sparse_matching_app.get_margins(),
                     add_color=False,
@@ -473,18 +625,18 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Run epipolar triangulation application
                 (epipolar_points_cloud) = self.triangulation_application.run(
-                    sensor_image_left,
-                    sensor_image_right,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
                     new_epipolar_image_left,
-                    grid_left,
-                    corrected_grid_right,
-                    corrected_matches_cars_ds,
+                    pairs[pair_key]["corrected_grid_left"],
+                    pairs[pair_key]["corrected_grid_right"],
+                    pairs[pair_key]["corrected_matches_cars_ds"],
                     epsg,
                     self.geom_plugin_without_dem_and_geoid,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
-                    uncorrected_grid_right=grid_right,
+                    uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
                     disp_min=dmin,
                     disp_max=dmax,
@@ -492,11 +644,11 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Compute terrain bounding box /roi related to current images
                 current_terrain_roi_bbox = preprocessing.compute_terrain_bbox(
-                    sensor_image_left,
-                    sensor_image_right,
-                    epipolar_image_left,
-                    grid_left,
-                    corrected_grid_right,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    new_epipolar_image_left,
+                    pairs[pair_key]["corrected_grid_left"],
+                    pairs[pair_key]["corrected_grid_right"],
                     epsg,
                     self.geom_plugin_with_dem_and_geoid,
                     resolution=self.rasterization_application.get_resolution(),
@@ -505,7 +657,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     roi_poly=roi_poly,
                     orchestrator=cars_orchestrator,
                     pair_key=pair_key,
-                    pair_folder=pair_folder,
+                    pair_folder=pairs[pair_key]["pair_folder"],
                     check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
                 )
                 list_terrain_roi.append(current_terrain_roi_bbox)
@@ -552,30 +704,3 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     self.output[sens_cst.DSM_BASENAME],
                 ),
             )
-
-    def update_full_res_conf(self, grid_correction_coef, dmin, dmax, pair_key):
-        """
-        Update the ful res conf with grid correction and disparity range
-        :param grid_correction_coef: grid correction coefficient
-        :type grid_correction_coef: list
-        :param dmin: disparity range minimum
-        :type dmin: float
-        :param dmax: disparity range maximum
-        :type dmax: float
-        :param pair_key: name of the inputs key pair
-        :type pair_key: str
-        """
-        self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
-        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key] = {}
-        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
-            "grid_correction"
-        ] = (
-            np.concatenate(grid_correction_coef[0], axis=0).tolist()[:-1]
-            + np.concatenate(grid_correction_coef[1], axis=0).tolist()[:-1]
-        )
-        self.config_full_res[INPUTS]["epipolar_a_priori"][pair_key][
-            "disparity_range"
-        ] = [
-            dmin,
-            dmax,
-        ]

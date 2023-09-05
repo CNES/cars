@@ -1,6 +1,4 @@
-# pylint: disable=missing-module-docstring
-# flake8: noqa
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -21,9 +19,10 @@
 # limitations under the License.
 #
 """
-Init file of geometry module
+CARS dem generation init file
 """
-from cars.core.geometry.otb_geometry import OTBGeometry
-from cars.core.geometry.shareloc_geometry import SharelocGeometry
+# flake8: noqa: F401
 
-from . import abstract_geometry
+from cars.applications.dem_generation.dem_generation import DemGeneration
+
+from . import dichotomic_generation

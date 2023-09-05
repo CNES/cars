@@ -1110,7 +1110,7 @@ def test_end2end_use_epipolar_a_priori():
     """
     End to end processing sparse dsm pipeline
     and use prepared refined dense dsm pipeline conf
-    to compute the dense dsm pipeline
+    to compute the dense dsm pipeline, without strm
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -1127,14 +1127,15 @@ def test_end2end_use_epipolar_a_priori():
                 "max_ram_per_worker": 1000,
             },
         )
+        # no srtm
+        input_config_sparse_res["inputs"]["initial_elevation"] = None
+
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
             "sparse_matching": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
@@ -1167,18 +1168,18 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -20
+                15
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -18
+                < 16
             )
             assert (
-                14
+                60
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 15
+                < 61
             )
 
             # check matches file exists
@@ -1186,6 +1187,33 @@ def test_end2end_use_epipolar_a_priori():
                 out_json["applications"]["left_right"]["grid_correction"][
                     "corrected_filtered_matches"
                 ]
+            )
+
+            # Uncomment the 2 following instructions to update reference data
+            # copy2(os.path.join(out_dir, 'dem_mean.tif'),
+            #     absolute_data_path("ref_output/dem_mean_end2end_ventoux.tif"))
+            # copy2(os.path.join(out_dir, 'dem_min.tif'),
+            #     absolute_data_path("ref_output/dem_min_end2end_ventoux.tif"))
+            # copy2(os.path.join(out_dir, 'dem_max.tif'),
+            #     absolute_data_path("ref_output/dem_max_end2end_ventoux.tif"))
+
+            assert_same_images(
+                os.path.join(out_dir, "dem_mean.tif"),
+                absolute_data_path("ref_output/dem_mean_end2end_ventoux.tif"),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir, "dem_min.tif"),
+                absolute_data_path("ref_output/dem_min_end2end_ventoux.tif"),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir, "dem_max.tif"),
+                absolute_data_path("ref_output/dem_max_end2end_ventoux.tif"),
+                atol=0.0001,
+                rtol=1e-6,
             )
 
         # Check used_conf for low res
@@ -1267,6 +1295,19 @@ def test_end2end_use_epipolar_a_priori():
                     "left_right"
                 ]
             )
+            assert (
+                "dem_mean"
+                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+            )
+            assert (
+                "dem_min"
+                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+            )
+            assert (
+                "dem_max"
+                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+            )
+
             # check if orchestrator conf is the same as gt
             assert (
                 refined_config_dense_dsm_json["orchestrator"]
@@ -1338,35 +1379,36 @@ def test_end2end_use_epipolar_a_priori():
             _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
         # Uncomment the 2 following instructions to update reference data
         # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #     absolute_data_path("ref_output/dsm_end2end_ventoux.tif"))
+        #     absolute_data_path("ref_output/dsm_end2end_ventoux_no_srtm.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #     absolute_data_path("ref_output/clr_end2end_ventoux.tif"))
+        #     absolute_data_path("ref_output/clr_end2end_ventoux_no_srtm.tif"))
         # copy2(
         #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             "ref_output",
-        #             "confidence_from_ambiguity_end2end_ventoux.tif",
+        #             "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif",
         #         )
         #     ),
         # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path("ref_output/dsm_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/dsm_end2end_ventoux_no_srtm.tif"),
             atol=0.0001,
             rtol=1e-6,
         )
         assert_same_images(
             os.path.join(out_dir, "confidence_from_ambiguity.tif"),
             absolute_data_path(
-                "ref_output/confidence_from_ambiguity_end2end_ventoux.tif"
+                "ref_output/"
+                "confidence_from_ambiguity_end2end_ventoux_no_srtm.tif"
             ),
             atol=1.0e-7,
             rtol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "clr.tif"),
-            absolute_data_path("ref_output/clr_end2end_ventoux.tif"),
+            absolute_data_path("ref_output/clr_end2end_ventoux_no_srtm.tif"),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
@@ -1446,7 +1488,7 @@ def test_prepare_ventoux_bias():
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
     """
-    End to end processing with p+xs fusion
+    End to end processing with color
     """
 
     input_json = read_input_parameters(
@@ -2161,7 +2203,7 @@ def test_compute_dsm_with_snap_to_img1():
 @pytest.mark.end2end_tests
 def test_end2end_quality_stats():
     """
-    End to end processing
+    End to end processing, with no srtm
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -2179,6 +2221,9 @@ def test_end2end_quality_stats():
                 "max_ram_per_worker": 1000,
             },
         )
+
+        # no srtm
+        input_config_dense_dsm["inputs"]["initial_elevation"] = None
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
@@ -2186,8 +2231,6 @@ def test_end2end_quality_stats():
             "sparse_matching": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
@@ -2236,10 +2279,10 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
-            assert out_disp_compute["maximum_disparity"] > 14
-            assert out_disp_compute["maximum_disparity"] < 15
+            assert out_disp_compute["minimum_disparity"] > 15
+            assert out_disp_compute["minimum_disparity"] < 16
+            assert out_disp_compute["maximum_disparity"] > 60
+            assert out_disp_compute["maximum_disparity"] < 62
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2248,25 +2291,58 @@ def test_end2end_quality_stats():
             )
 
         # Uncomment the 2 following instructions to update reference data
+        # copy2(os.path.join(out_dir, 'dem_mean.tif'),
+        #       absolute_data_path("ref_output/"
+        #     "dem_mean_end2end_ventoux_quality_stats.tif"))
+        # copy2(os.path.join(out_dir, 'dem_min.tif'),
+        #       absolute_data_path("ref_output/"
+        #     "dem_min_end2end_ventoux_quality_stats.tif"))
+        # copy2(os.path.join(out_dir, 'dem_max.tif'),
+        #       absolute_data_path("ref_output/"
+        #     "dem_max_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #       absolute_data_path("ref_output/
-        # dsm_end2end_ventoux_quality_stats.tif"))
+        #       absolute_data_path("ref_output/"
+        #     "dsm_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'clr.tif'),
-        #      absolute_data_path("ref_output/
-        # clr_end2end_ventoux_quality_stats.tif"))
+        #      absolute_data_path("ref_output/"
+        #     "clr_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_mean.tif'),
-        #      absolute_data_path("ref_output/
-        # dsm_mean_end2end_ventoux_quality_stats.tif"))
+        #      absolute_data_path("ref_output/"
+        #     "dsm_mean_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_std.tif'),
-        #      absolute_data_path("ref_output/
-        # dsm_std_end2end_ventoux_quality_stats.tif"))
+        #      absolute_data_path("ref_output/"
+        #     "dsm_std_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_n_pts.tif'),
-        #      absolute_data_path("ref_output/
-        # dsm_n_pts_end2end_ventoux_quality_stats.tif"))
+        #      absolute_data_path("ref_output/"
+        #     "dsm_n_pts_end2end_ventoux_quality_stats.tif"))
         # copy2(os.path.join(out_dir, 'dsm_pts_in_cell.tif'),
-        #      absolute_data_path("ref_output/
-        # dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"))
+        #      absolute_data_path("ref_output/"
+        #     "dsm_pts_in_cell_end2end_ventoux_quality_stats.tif"))
 
+        assert_same_images(
+            os.path.join(out_dir, "dem_mean.tif"),
+            absolute_data_path(
+                "ref_output/dem_mean_end2end_ventoux_quality_stats.tif"
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_min.tif"),
+            absolute_data_path(
+                "ref_output/dem_min_end2end_ventoux_quality_stats.tif"
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_max.tif"),
+            absolute_data_path(
+                "ref_output/dem_max_end2end_ventoux_quality_stats.tif"
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path(

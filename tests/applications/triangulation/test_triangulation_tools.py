@@ -33,7 +33,7 @@ from cars.applications.triangulation import triangulation_tools
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core.geometry import read_geoid_file
+from cars.core.geometry.abstract_geometry import read_geoid_file
 
 # CARS Tests imports
 from tests.helpers import (

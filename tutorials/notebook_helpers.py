@@ -353,9 +353,12 @@ def overide_input_conf_with_a_priori(inputs_conf, content_json_with_a_priori):
     """
     # Get a priori in file
     a_priori_dict_full = load_dict(content_json_with_a_priori)
-    a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
+    print(a_priori_dict_full)
+    epipolar_a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
+    terrain_a_priori = a_priori_dict_full["inputs"]["terrain_a_priori"]
     # set in conf
-    inputs_conf["epipolar_a_priori"] = a_priori
+    inputs_conf["epipolar_a_priori"] = epipolar_a_priori
+    inputs_conf["terrain_a_priori"] = terrain_a_priori
     inputs_conf["use_epipolar_a_priori"] = True
 
 

@@ -32,7 +32,7 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars.core.geometry import AbstractGeometry
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import read_vector
 
 # CARS Tests imports

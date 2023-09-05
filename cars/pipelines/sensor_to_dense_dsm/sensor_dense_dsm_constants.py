@@ -47,10 +47,14 @@ INPUT_NODATA = "no_data"
 INPUT_COLOR = "color"
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
+TERRAIN_A_PRIORI = "terrain_a_priori"
 
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
+DEM_MEAN = "dem_mean"
+DEM_MIN = "dem_min"
+DEM_MAX = "dem_max"
 
 # Pipeline output
 OUT_DIR = "out_dir"
