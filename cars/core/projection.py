@@ -40,7 +40,6 @@ from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
 
-from cars.conf import input_parameters
 from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
 
@@ -566,111 +565,6 @@ def project_coordinates_on_line(
     )
 
     return dist_to_origin * np.cos(proj_angle)
-
-
-def get_time_ground_direction(
-    conf,
-    geometry_plugin: str,
-    product_key: str,
-    x_loc: float = None,
-    y_loc: float = None,
-    y_offset: float = None,
-) -> np.ndarray:
-    """
-    For a given image, compute the direction of increasing acquisition
-    time on ground.
-    Done by two localizations at "y" and "y+y_offset" values.
-
-    :param conf: cars input configuration dictionary
-    :param geometry_plugin: name of geometry plugin to use
-    :param product_key: input_parameters.PRODUCT1_KEY or
-           input_parameters.PRODUCT2_KEY to identify which geometric model shall
-           be taken to perform the method
-    :param x_loc: x location in image for estimation (default=center)
-    :param y_loc: y location in image for estimation (default=1/4)
-    :param y_offset: y location in image for estimation (default=1/2)
-    :param dem: DEM for direct localisation function
-    :param geoid: path to geoid file
-    :return: normalized direction vector as a numpy array
-    """
-    # Define x: image center, y: 1/4 of image,
-    # y_offset: 3/4 of image if not defined
-    sensor = conf[input_parameters.create_img_tag_from_product_key(product_key)]
-    geomodel = conf[
-        input_parameters.create_model_tag_from_product_key(product_key)
-    ]
-    img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
-    if x_loc is None:
-        x_loc = img_size_x / 2
-    if y_loc is None:
-        y_loc = img_size_y / 4
-    if y_offset is None:
-        y_offset = img_size_y / 2
-
-    # Check x, y, y_offset to be in image
-    assert x_loc >= 0
-    assert x_loc <= img_size_x
-    assert y_loc >= 0
-    assert y_loc <= img_size_y
-    assert y_offset > 0
-    assert y_loc + y_offset <= img_size_y
-
-    # Get coordinates of time direction vectors
-    lat1, lon1, __ = geometry_plugin.direct_loc(sensor, geomodel, x_loc, y_loc)
-    lat2, lon2, __ = geometry_plugin.direct_loc(
-        sensor, geomodel, x_loc, y_loc + y_offset
-    )
-
-    # Create and normalize the time direction vector
-    vec = np.array([lon1 - lon2, lat1 - lat2])
-    vec = vec / np.linalg.norm(vec)
-
-    return vec
-
-
-def display_angle(vec):
-    """
-    Display angle in degree from a vector x
-    :param vec: vector to display
-    :return: angle in degree
-    """
-    return 180 * math.atan2(vec[1], vec[0]) / math.pi
-
-
-def acquisition_direction(conf, geometry_plugin) -> Tuple[np.ndarray]:
-    """
-    Computes the mean acquisition of the input images pair
-
-    :param conf: cars input configuration dictionary
-    :param geometry_plugin: name of geometry plugin to use
-    :param dem: path to the dem directory
-    :return: a tuple composed of :
-
-        - the mean acquisition direction as a numpy array
-        - the acquisition direction of the first product in the configuration
-          as a numpy array
-        - the acquisition direction of the second product in the configuration
-          as a numpy array
-    """
-    # TODO remove ? usused
-    vec1 = get_time_ground_direction(
-        conf, geometry_plugin, input_parameters.PRODUCT1_KEY
-    )
-    vec2 = get_time_ground_direction(
-        conf, geometry_plugin, input_parameters.PRODUCT2_KEY
-    )
-    time_direction_vector = (vec1 + vec2) / 2
-
-    logging.info(
-        "Time direction average azimuth: "
-        "{}° (img1: {}°, img2: {}°)".format(
-            display_angle(time_direction_vector),
-            display_angle(vec1),
-            display_angle(vec2),
-        )
-    )
-
-    return time_direction_vector, vec1, vec2
 
 
 def get_ground_direction(
