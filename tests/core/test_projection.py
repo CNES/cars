@@ -179,7 +179,7 @@ def test_ground_intersection_envelopes():
     sensor2 = absolute_data_path("input/phr_paca/right_image.tif")
     geomodel1 = {"path": absolute_data_path("input/phr_paca/left_image.geom")}
     geomodel2 = {"path": absolute_data_path("input/phr_paca/right_image.geom")}
-    srtm_dir = absolute_data_path("input/phr_paca/srtm")
+    srtm_dir = absolute_data_path("input/phr_paca/srtm/N43E007.hgt")
     # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
     intersect_xymin_xymax_ref_1 = (
         7.293045338193613,
