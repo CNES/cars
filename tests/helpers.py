@@ -256,6 +256,10 @@ def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
             np.testing.assert_allclose(
                 actual.attributes[key], expected.attributes[key]
             )
+        elif key == "path":
+            # quick fix for path (only shareloc) in cars_dataset, do nothing
+            # tmp dir differ in each run, so test break.
+            pass
         else:
             assert actual.attributes[key] == expected.attributes[key]
 

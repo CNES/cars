@@ -127,7 +127,11 @@ class SharelocGeometry(AbstractGeometry):
         :return: geometric model as a shareloc object (Grid or RPC)
         """
         geomodel = model[GEO_MODEL_PATH_TAG]
-        geomodel_type = model[GEO_MODEL_TYPE_TAG]
+        # Use RPC Type if none are used
+        if model.get(GEO_MODEL_TYPE_TAG):
+            geomodel_type = model[GEO_MODEL_TYPE_TAG]
+        else:
+            geomodel_type = RPC_TYPE
 
         if geomodel_type == GRID_TYPE:
             shareloc_model = Grid(geomodel)

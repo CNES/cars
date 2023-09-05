@@ -1,0 +1,18 @@
+{
+  "sensor_image_left": {
+    "image": "/cars/tests/data/input/test_application/img1.tif",
+    "color": "/cars/tests/data/input/test_application/img1.tif",
+    "geomodel": {
+      "path": "/cars/tests/data/input/test_application/img1.geom"
+    },
+    "no_data": 0
+  },
+  "sensor_image_right": {
+    "image": "/cars/tests/data/input/test_application/img2.tif",
+    "color": "/cars/tests/data/input/test_application/img2.tif",
+    "geomodel": {
+      "path": "/cars/tests/data/input/test_application/img2.geom"
+    },
+    "no_data": 0
+  }
+}
