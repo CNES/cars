@@ -43,15 +43,16 @@ from cars.core import cars_logging
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
-from cars.orchestrator.cluster.mp_cluster import mp_wrapper
+from cars.orchestrator.cluster.mp_cluster import mp_factorizer, mp_wrapper
 from cars.orchestrator.cluster.mp_cluster.mp_objects import (
+    FactorizedObject,
     MpDelayed,
     MpDelayedTask,
     MpFuture,
     MpFutureIterator,
     MpJob,
 )
-from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 
 RUN = 0
 TERMINATE = 1
@@ -273,6 +274,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param task_list: task list
         """
         memorize = {}
+        mp_factorizer.factorize_delayed(task_list)
         future_list = [self.rec_start(task, memorize) for task in task_list]
         # signal that we reached the end of this batch
         self.queue.put("END_BATCH")
@@ -296,7 +298,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         current_delayed_task = delayed_object.delayed_task
 
         # Modify delayed with wrapper here
-        delayed_object.delayed_task.modify_delayed_task(self.wrapper)
+        current_delayed_task.modify_delayed_task(self.wrapper)
 
         def transform_delayed_to_mp_job(args_or_kawargs):
             """
@@ -322,9 +324,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 return new_data
 
             # replace data
-            return replace_data_rec(
-                args_or_kawargs, transform_mp_delayed_to_jobs
-            )
+            return replace_data(args_or_kawargs, transform_mp_delayed_to_jobs)
 
         # Transform MpDelayed to MpJob
 
@@ -639,7 +639,7 @@ def replace_job_by_data(args_or_kawargs, done_task_results):
         return new_data
 
     # replace data
-    return replace_data_rec(args_or_kawargs, get_data, done_task_results)
+    return replace_data(args_or_kawargs, get_data, done_task_results)
 
 
 def compute_dependencies(args, kw_args):
@@ -691,6 +691,14 @@ def compute_dependencies(args, kw_args):
         elif isinstance(list_or_dict, dict):
             for key in list_or_dict:
                 list_ids += get_ids_rec(list_or_dict[key])
+
+        elif isinstance(list_or_dict, FactorizedObject):
+            facto_args = list_or_dict.get_args()
+            for arg in facto_args:
+                list_ids += get_ids_rec(arg)
+            facto_kwargs = list_or_dict.get_kwargs()
+            for key in facto_kwargs:
+                list_ids += get_ids_rec(facto_kwargs[key])
 
         else:
             current_id = get_job_id(list_or_dict)

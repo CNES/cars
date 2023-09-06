@@ -21,13 +21,12 @@
 """
 Contains functions needed to factorize delayed
 """
-# No longer supported
-# TODO remove
-
-import copy
 
 # CARS imports
-from cars.orchestrator.cluster.mp_cluster.mp_objects import MpDelayed
+from cars.orchestrator.cluster.mp_cluster.mp_objects import (
+    FactorizedObject,
+    MpDelayedTask,
+)
 
 
 def factorize_delayed(task_list):
@@ -78,45 +77,13 @@ def factorize_delayed_rec(delayed, graph_usages, already_seen_delayed_tasks):
 
     if current_task not in already_seen_delayed_tasks:
         if number_depending_task == 1 and max_nb_of_usages == 1:
-            # We can factorize current delayed with next ones
-
-            #  modify delayed task
-
-            # Get current params
-            # Here we only have one depending task, we can fuse them
-
-            # Modify delayed to "POS"
-            current_fun = current_task.func
-            current_args = current_task.args
-            current_kwargs = current_task.kw_args
-            for index, arg in enumerate(current_args):
-                if isinstance(arg, MpDelayed):
-                    current_args[index] = "POS_" + repr(arg.return_index)
-            for index, kw_arg in enumerate(current_kwargs):
-                if isinstance(kw_arg, MpDelayed):
-                    current_kwargs[index] = "POS_" + repr(kw_arg.return_index)
-
-            # previous_params
             previous_task = depending_delayed[0].delayed_task
-            previous_fun = previous_task.func
-            previous_args = previous_task.args
-            previous_kwargs = previous_task.kw_args
+            factorized_object = FactorizedObject(current_task, previous_task)
 
-            # compute new params
-            new_fun, new_args, new_kwargs = generate_args_kwargs_factorize(
-                previous_fun,
-                previous_args,
-                previous_kwargs,
-                current_fun,
-                current_args,
-                current_kwargs,
-            )
-
-            # Modify current task
-            # Task is only used here, nothing else is modified in graph
-            current_task.func = new_fun
-            current_task.args = new_args
-            current_task.kw_args = new_kwargs
+            # Create new task and assign it to current delay
+            new_task = MpDelayedTask(factorized_fun, [factorized_object], {})
+            new_task.associated_objects = current_task.associated_objects
+            delayed.delayed_task = new_task
 
             # Factorize again with current
             factorize_delayed_rec(
@@ -237,7 +204,7 @@ def compute_nb_depending_task(depending_delayed_list):
 # Factorized function and its generator
 
 
-def factorized_fun(*args, **kwargs):
+def factorized_fun(factorized_object):
     """
     This function unpack multiple functions with their arguments,
     and run them sequentialy
@@ -245,49 +212,7 @@ def factorized_fun(*args, **kwargs):
 
     """
 
-    # get keys
-    # Get fun, args, and clean kwargs
-    next_fun = {}
-    next_funs_keys = []
-
-    current_kwargs = copy.copy(kwargs)
-
-    for key, key_item in kwargs.items():
-        if key.startswith("NEXT_FUN_"):
-            next_funs_keys.append(key)
-            next_fun[key] = key_item
-            current_kwargs.pop(key)
-
-    fun_0 = next_fun["NEXT_FUN_0"]["fun"]
-
-    # run first function
-    res = fun_0(*args, **current_kwargs)
-
-    # run other functions
-    for i in range(1, len(next_funs_keys)):  # pylint: disable=C0200
-        current_key = "NEXT_FUN_" + repr(i)
-
-        current_fun = next_fun[current_key]["fun"]
-        current_args = next_fun[current_key]["args"]
-        current_kwargs = next_fun[current_key]["kwarg"]
-
-        # replace args computed by previous run
-        for iter_args in range(len(current_args)):  # pylint: disable=C0200
-            if isinstance(current_args[iter_args], str):
-                if "POS_" in current_args[iter_args]:
-                    pos = int(current_args[iter_args].split("_")[1])
-
-                    if isinstance(res, tuple):
-                        current_args[iter_args] = res[pos]
-                    else:
-                        if pos != 0:
-                            raise RuntimeError(
-                                "waiting multiple output but res is not tuple"
-                            )
-                        current_args[iter_args] = res
-
-        # run function
-        res = current_fun(*current_args, **current_kwargs)
+    res = factorized_object.run()
 
     return res
 
@@ -339,7 +264,7 @@ def generate_args_kwargs_factorize(fun1, args1, kwargs1, fun2, args2, kwargs2):
 
     new_fun = factorized_fun
 
-    # Generate fist
+    # Generate first
     first_addon = {"fun": fun1, "args": args1, "kwarg": kwargs1}
 
     # Generate second

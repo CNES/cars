@@ -22,8 +22,9 @@
 Contains class objects used by multiprocessing cluster
 """
 
-# Standard imports
 import threading
+
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 
 
 class MpJob:  # pylint: disable=R0903
@@ -135,13 +136,13 @@ class MpDelayed:  # pylint: disable=R0903
         Return string of self
         :return : printable delayed
         """
+        try:
+            name = str(self.delayed_task.kw_args["log_fun"])
+        except KeyError:
+            name = str(self.delayed_task.args[0])
 
         res = (
-            ("MpDELAYED : \n " + str(self.delayed_task.func) + "\n")
-            + "return index: "
-            + str(self.return_index)
-            + "\n Associated objects:  \n"
-            + str(self.delayed_task.associated_objects)
+            ("MpDELAYED : " + name) + " return index: " + str(self.return_index)
         )
 
         return res
@@ -154,17 +155,47 @@ class MpDelayed:  # pylint: disable=R0903
         :rtype: list(MpDelayed)
         """
 
-        depending_delayed = []
+        def get_depending_delayed_rec(list_or_dict):
+            """
+            Get all the delayed that current delayed depends on
 
-        for arg in self.delayed_task.args:
-            if isinstance(arg, MpDelayed):
-                depending_delayed.append(arg)
+            :return list of depending delayed
+            :rtype: list(MpDelayed)
+            """
 
-        for kw_arg in self.delayed_task.kw_args:
-            if isinstance(kw_arg, MpDelayed):
-                depending_delayed.append(kw_arg)
+            depending_delayed = []
 
-        return depending_delayed
+            if isinstance(list_or_dict, (list, tuple)):
+                for arg in list_or_dict:
+                    depending_delayed += get_depending_delayed_rec(arg)
+
+            elif isinstance(list_or_dict, dict):
+                for key in list_or_dict:
+                    depending_delayed += get_depending_delayed_rec(
+                        list_or_dict[key]
+                    )
+
+            elif isinstance(list_or_dict, FactorizedObject):
+                depending_delayed += get_depending_delayed_rec(
+                    list_or_dict.get_args()
+                )
+                depending_delayed += get_depending_delayed_rec(
+                    list_or_dict.get_kwargs()
+                )
+
+            elif isinstance(list_or_dict, MpDelayed):
+                depending_delayed.append(list_or_dict)
+
+            return depending_delayed
+
+        depending_delayed_in_args = get_depending_delayed_rec(
+            self.delayed_task.args
+        )
+        depending_delayed_in_kwargs = get_depending_delayed_rec(
+            self.delayed_task.kw_args
+        )
+
+        return depending_delayed_in_args + depending_delayed_in_kwargs
 
 
 class MpFuture:
@@ -309,3 +340,178 @@ class MpFutureIterator:
         self.cluster.cl_future_list.remove(res)
 
         return transformed_res
+
+
+class PreviousData:  # pylint: disable=R0903
+    """
+    Object used in FactorisedObject for args already computed
+    in factorized function
+
+    """
+
+    def __init__(self, delayed):
+        """
+        Init function of PreviousData
+
+        :param return_index: position of data in output of task
+        """
+        self.return_index = delayed.return_index
+
+
+def transform_mp_delayed_to_previous_data(obj):
+    """
+    Replace MpDelayed by PreviousData object
+
+    :param data: data to replace if necessary
+
+    """
+
+    new_data = obj
+    if isinstance(obj, MpDelayed):
+        new_data = PreviousData(obj)
+    return new_data
+
+
+def transform_previous_data_to_results(obj, res):
+    """
+    Replace PreviousData object by real data
+
+    :param data: data to replace if necessary
+
+    """
+
+    new_data = obj
+    if isinstance(obj, PreviousData):
+        pos = obj.return_index
+        if isinstance(res, tuple):
+            new_data = res[pos]
+        else:
+            if pos != 0:
+                raise RuntimeError(
+                    "Waiting multiple output but res is not tuple"
+                )
+            new_data = res
+    return new_data
+
+
+class FactorizedObject:
+    """
+    Object used as args of function factorised_func
+    It contains several tasks that can be run within a single function
+    """
+
+    def __init__(self, current_task, previous_task):
+        """
+        Init function of FactorizedObject
+
+        :param current_task: last task to execute in factorized_func
+                             (arg of task can be a factorized object)
+        :param previous_task: task to add and run before current task
+                              (arg of task can NOT be a factorized object)
+        """
+        current_task_is_factorized = False
+        current_factorized_object = None
+
+        current_fun = current_task.func
+        current_args = current_task.args
+        current_kwargs = current_task.kw_args
+
+        if isinstance(current_args[0], FactorizedObject):
+            current_task_is_factorized = True
+            current_factorized_object = current_args[0]
+            current_args = current_factorized_object.get_args()
+            current_kwargs = current_factorized_object.get_kwargs()
+
+        new_args = replace_data_rec(
+            current_args, transform_mp_delayed_to_previous_data
+        )
+        new_kwargs = replace_data_rec(
+            current_kwargs, transform_mp_delayed_to_previous_data
+        )
+
+        if current_task_is_factorized:
+            current_factorized_object.set_args(new_args)
+            current_factorized_object.set_kwargs(new_kwargs)
+            self.tasks = current_factorized_object.tasks
+        else:
+            self.tasks = [
+                {
+                    "func": current_fun,
+                    "args": new_args,
+                    "kwargs": new_kwargs,
+                }
+            ]
+
+        previous_fun = previous_task.func
+        previous_args = previous_task.args
+        previous_kwargs = previous_task.kw_args
+
+        self.tasks.append(
+            {
+                "func": previous_fun,
+                "args": previous_args,
+                "kwargs": previous_kwargs,
+            }
+        )
+
+    def __str__(self):
+        res = "Factorized Object : "
+        for task in reversed(self.tasks):
+            res += str(task["kwargs"]["log_fun"]) + ", "
+        return res
+
+    def get_args(self):
+        """
+        Get args of first task to execute
+        """
+        return self.tasks[-1]["args"]
+
+    def set_args(self, args):
+        """
+        Set args of first task to execute
+
+        :param args: arguments to set
+        """
+        self.tasks[-1]["args"] = args
+
+    def get_kwargs(self):
+        """
+        Get kwargs of first task to execute
+        """
+        return self.tasks[-1]["kwargs"]
+
+    def set_kwargs(self, kwargs):
+        """
+        Set kwargs of first task to execute
+
+        :param args: keyword arguments to set
+        """
+        self.tasks[-1]["kwargs"] = kwargs
+
+    def run(self):
+        """
+        Run all tasks sequentially, in reverse order of list self.tasks
+        """
+        # Run first task
+        task = self.tasks[-1]
+        func = task["func"]
+        args = task["args"]
+        kwargs = task["kwargs"]
+        res = func(*args, **kwargs)
+
+        # Iterate over next tasks
+        for task in reversed(self.tasks[:-1]):
+            func = task["func"]
+            current_args = task["args"]
+            current_kwargs = task["kwargs"]
+
+            new_args = replace_data_rec(
+                current_args, transform_previous_data_to_results, res
+            )
+            new_kwargs = replace_data_rec(
+                current_kwargs, transform_previous_data_to_results, res
+            )
+
+            res = func(*new_args, **new_kwargs)
+
+        return res

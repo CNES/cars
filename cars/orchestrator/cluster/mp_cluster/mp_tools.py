@@ -23,6 +23,37 @@ Contains tools for multiprocessing
 """
 
 
+def replace_data(list_or_dict, func_to_apply, *func_args):
+    """
+    Replace MpJob in list or dict by their real data
+    (can deal with FactorizedObject)
+
+    :param list_or_dict: list or dict of data or mp_objects.FactorizedObject
+    :param func_to_apply: function to apply
+    :param func_args: function arguments
+
+    :return: list or dict with real data
+    :rtype: list, tuple, dict, mp_objects.FactorizedObject
+    """
+    # Check if list_or_dict is a single FactorizedObject:
+    if (
+        isinstance(list_or_dict, (list, tuple))
+        and len(list_or_dict) == 1
+        and type(list_or_dict[0]).__name__ == "FactorizedObject"
+    ):
+        factorized_object = list_or_dict[0]
+        args = factorized_object.get_args()
+        args = replace_data_rec(args, func_to_apply, *func_args)
+        kwargs = factorized_object.get_kwargs()
+        kwargs = replace_data_rec(kwargs, func_to_apply, *func_args)
+
+        factorized_object.set_args(args)
+        factorized_object.set_kwargs(kwargs)
+        return [factorized_object]
+
+    return replace_data_rec(list_or_dict, func_to_apply, *func_args)
+
+
 def replace_data_rec(list_or_dict, func_to_apply, *func_args):
     """
     Replace MpJob in list or dict by their real data recursively
@@ -52,7 +83,11 @@ def replace_data_rec(list_or_dict, func_to_apply, *func_args):
                 res[key] = replace_data_rec(value, func_to_apply, *func_args)
             else:
                 res[key] = func_to_apply(value, *func_args)
+
     else:
-        raise TypeError("Function only support list or dict or tuple")
+        raise TypeError(
+            "Function only support list or dict or tuple, "
+            "but type is {}".format(list_or_dict)
+        )
 
     return res
