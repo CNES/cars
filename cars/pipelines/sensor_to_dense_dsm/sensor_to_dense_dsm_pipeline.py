@@ -572,7 +572,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Generate the holes polygons in epipolar images
                     # They are only generated if dense_matches_filling
                     # applications are used later
-
                     (
                         pairs[pair_key]["holes_bbox_left"],
                         pairs[pair_key]["holes_bbox_right"],

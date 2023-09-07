@@ -90,26 +90,26 @@ def rasterio_get_nb_bands(raster_file: str) -> int:
         return descriptor.count
 
 
-def rasterio_get_color_type(raster_file: str) -> list:
+def rasterio_get_image_type(raster_file: str) -> list:
     """
-    Get the color image type
+    Get the image type
 
     :param raster_file: Image file
-    :return: The color type
+    :return: The image type
     """
 
-    color_types = None
+    image_types = None
     with rio.open(raster_file, "r") as descriptor:
-        color_types = descriptor.dtypes
+        image_types = descriptor.dtypes
 
     # Check if each color bands have the same type
-    color_type_set = set(color_types)
-    if len(color_type_set) > 1:
-        logging.warning("The colors bands don't the same types.")
+    image_type_set = set(image_types)
+    if len(image_type_set) > 1:
+        logging.warning("The image bands don't the same types.")
 
-    color_type = color_types[0]
+    image_type = image_types[0]
 
-    return color_type
+    return image_type
 
 
 def rasterio_get_nbits(raster_file):

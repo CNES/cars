@@ -320,7 +320,7 @@ def create_combined_cloud_from_tif(
                 if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
                     # Get color type
                     color_types.append(
-                        inputs.rasterio_get_color_type(band_path)
+                        inputs.rasterio_get_image_type(band_path)
                     )
 
                 if isinstance(band_path, dict):

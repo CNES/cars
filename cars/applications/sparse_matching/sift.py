@@ -161,7 +161,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_n_scale_per_octave", 3
         )
         overloaded_conf["sift_peak_threshold"] = conf.get(
-            "sift_peak_threshold", 20.0
+            "sift_peak_threshold", None
         )
         overloaded_conf["sift_edge_threshold"] = conf.get(
             "sift_edge_threshold", 5.0
@@ -191,7 +191,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_matching_threshold": And(float, lambda x: x > 0),
             "sift_n_octave": And(int, lambda x: x > 0),
             "sift_n_scale_per_octave": And(int, lambda x: x > 0),
-            "sift_peak_threshold": And(float, lambda x: x > 0),
+            "sift_peak_threshold": Or(float, None),
             "sift_edge_threshold": float,
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_back_matching": bool,
@@ -388,6 +388,26 @@ class Sift(SparseMatching, short_name="sift"):
             epipolar_disparity_map_left.attributes.update(
                 epipolar_images_left.attributes
             )
+            # check sift_peak_threshold with image type
+            # only if sift_peak_threshold is None
+            tmp_sift_peak_threshold = self.sift_peak_threshold
+            if not self.sift_peak_threshold:
+                logging.info("The sift_peak_threshold is set to auto-mode.")
+                # sift_peak_threshold is None or not specified
+                # check input type
+                if np.issubdtype(
+                    epipolar_disparity_map_left.attributes["image_type"],
+                    np.uint8,
+                ):
+                    tmp_sift_peak_threshold = 1
+                else:
+                    tmp_sift_peak_threshold = 20
+                logging.info(
+                    "The sift_peak_threshold will be set to {}.".format(
+                        tmp_sift_peak_threshold
+                    )
+                )
+                self.sift_peak_threshold = tmp_sift_peak_threshold
 
             # Save disparity maps
             if self.save_matches:
@@ -495,7 +515,7 @@ class Sift(SparseMatching, short_name="sift"):
                                         n_scale_per_octave=(
                                             self.sift_n_scale_per_octave
                                         ),
-                                        peak_threshold=self.sift_peak_threshold,
+                                        peak_threshold=tmp_sift_peak_threshold,
                                         edge_threshold=self.sift_edge_threshold,
                                         magnification=self.sift_magnification,
                                         backmatching=self.sift_back_matching,

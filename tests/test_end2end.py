@@ -172,6 +172,102 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_ventoux_sparse_dsm_8bits():
+    """
+    End to end processing
+
+    Check sensors_to_sparse_dsm pipeline with 8 bits images input
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input_8bits.json")
+        # Run sparse dsm pipeline
+        _, input_config_sparse_dsm = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_sparse_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "sparse_matching": {
+                "method": "sift",
+                # Uncomment the following line to update dsm reference data
+                # "sift_peak_threshold":1,
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": False,
+            },
+        }
+
+        input_config_sparse_dsm["applications"].update(application_config)
+
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_dsm
+        )
+        sparse_res_pipeline.run()
+
+        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+
+        # Check preproc properties
+        out_json = os.path.join(out_dir, "content.json")
+        assert os.path.isfile(out_json)
+
+        with open(out_json, "r", encoding="utf-8") as json_file:
+            out_json = json.load(json_file)
+            assert (
+                out_json["applications"]["left_right"]["grid_generation_run"][
+                    "epipolar_size_x"
+                ]
+                == 612
+            )
+            assert (
+                out_json["applications"]["left_right"]["grid_generation_run"][
+                    "epipolar_size_y"
+                ]
+                == 612
+            )
+            assert (
+                -20
+                < out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["minimum_disparity"]
+                < -18
+            )
+            assert (
+                14
+                < out_json["applications"]["left_right"][
+                    "disparity_range_computation_run"
+                ]["maximum_disparity"]
+                < 15
+            )
+
+        used_conf_path = os.path.join(out_dir, "used_conf.json")
+
+        # check used_conf file exists
+        assert os.path.isfile(used_conf_path)
+
+        # Uncomment the 2 following instructions to update reference data
+        # and the "sift_peak_threshold":1 in the configuration
+        # copy2(os.path.join(out_dir, 'dsm.tif'),
+        #     absolute_data_path("ref_output/dsm_end2end_ventoux_8bits.tif"))
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path("ref_output/dsm_end2end_ventoux_8bits.tif"),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
 def test_end2end_ventoux_unique():
     """
     End to end processing

@@ -1,0 +1,21 @@
+{
+    "inputs": { 
+        "sensors" : {
+            "left": {
+                "image": "left_image_8bits.tif",
+                "color": "left_image.tif",
+                "geomodel": {
+                    "path": "left_image_8bits.geom"
+                }
+            },
+            "right": {
+                "image": "right_image_8bits.tif",
+                "geomodel": {
+                    "path": "right_image_8bits.geom"
+                }
+            }   
+        },
+        "pairing": [["left", "right"]],
+        "initial_elevation": "srtm"
+    }
+}
