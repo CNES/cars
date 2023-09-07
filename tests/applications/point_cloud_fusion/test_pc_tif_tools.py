@@ -34,7 +34,7 @@ from cars.core import constants as cst
 from cars.core import tiling
 from cars.orchestrator import orchestrator
 
-from ...helpers import absolute_data_path
+from ...helpers import absolute_data_path, get_geometry_plugin
 
 
 def generate_test_inputs():
@@ -109,12 +109,21 @@ def test_get_min_max_band():
         window=rio.windows.Window.from_slices((200, 300), (200, 300)),
     )
 
-    assert x_y_min_max == [
-        319922.73987110204,
-        320000.461985868,
-        3317814.1553263,
-        3317873.37849824,
-    ]
+    geometry_plugin_name = get_geometry_plugin().plugin_name
+    if geometry_plugin_name == "OTBGeometry":
+        assert x_y_min_max == [
+            319922.73987110204,
+            320000.461985868,
+            3317814.1553263,
+            3317873.37849824,
+        ]
+    else:
+        assert x_y_min_max == [
+            319922.73987110204,
+            320000.46198586805,
+            3317814.1553263,
+            3317873.37849824,
+        ]
 
 
 @pytest.mark.end2end_tests

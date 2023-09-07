@@ -79,6 +79,7 @@ def generate_input_json(
     pipeline,
     orchestrator_mode,
     orchestrator_parameters=None,
+    geometry_plugin_name=None,
 ):
     """
     Load a partially filled input.json, fill it with out_dir
@@ -109,6 +110,12 @@ def generate_input_json(
         config["orchestrator"].update(orchestrator_parameters)
     # Overload out_dir
     config["output"] = {"out_dir": os.path.join(out_dir, "output")}
+
+    # set installed (OTB or Shareloc) geometry plugin if not specified
+    if geometry_plugin_name is None:
+        geometry_plugin_name = get_geometry_plugin().plugin_name
+
+    config["geometry_plugin"] = geometry_plugin_name
 
     # overload pipeline
     config["pipeline"] = pipeline
