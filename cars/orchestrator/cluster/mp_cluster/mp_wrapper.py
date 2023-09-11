@@ -379,7 +379,6 @@ def dump_single_object(obj, path):
     :param path: path
     :type path: str
     """
-
     if isinstance(obj, xr.Dataset):
         # is from array
         cars_dataset.CarsDataset("arrays").save_single_tile(obj, path)

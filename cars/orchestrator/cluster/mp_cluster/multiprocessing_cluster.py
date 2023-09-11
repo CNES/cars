@@ -86,6 +86,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.dump_to_disk = self.checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = self.checked_conf_cluster["per_job_timeout"]
         self.profiling = self.checked_conf_cluster["profiling"]
+        self.factorize_tasks = self.checked_conf_cluster["factorize_tasks"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
         mp_mode = "forkserver"
@@ -178,6 +179,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         )
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
+        overloaded_conf["factorize_tasks"] = conf.get("factorize_tasks", True)
 
         cluster_schema = {
             "mode": str,
@@ -190,6 +192,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 "mode": str,
                 "loop_testing": bool,
             },
+            "factorize_tasks": bool,
         }
 
         # Check conf
@@ -274,7 +277,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param task_list: task list
         """
         memorize = {}
-        mp_factorizer.factorize_delayed(task_list)
+        if self.factorize_tasks:
+            mp_factorizer.factorize_delayed(task_list)
         future_list = [self.rec_start(task, memorize) for task in task_list]
         # signal that we reached the end of this batch
         self.queue.put("END_BATCH")

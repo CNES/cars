@@ -111,6 +111,7 @@ def get_masks_from_pandora(
 def add_color(
     output_dataset: xr.Dataset,
     color: np.ndarray = None,
+    color_type=None,
     color_mask: np.ndarray = None,
     band_im: list = None,
 ):
@@ -130,6 +131,10 @@ def add_color(
             color,
             dims=[cst.BAND_IM, cst.ROW, cst.COL],
         )
+
+        if color_type is not None:
+            # Add input color type
+            output_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
 
     # Add color mask
     if color_mask is not None:
@@ -191,14 +196,24 @@ def create_disp_dataset(
     # Retrieve disparity values
     disp_map = disp.disparity_map.values
 
-    # retrieve masks
-    masks = get_masks_from_pandora(disp, compute_disparity_masks)
+    # Retrive left panchromatic image
+    epi_image = ref_dataset[cst.EPI_IMAGE].values
 
-    # retrieve colors
+    # Retrieve original mask of panchromatic image
+    epi_msk = None
+    if cst.EPI_COLOR in ref_dataset:
+        epi_msk = ref_dataset[cst.EPI_MSK].values
+
+    # Retrieve masks from pandora
+    pandora_masks = get_masks_from_pandora(disp, compute_disparity_masks)
+
+    # Retrieve colors
     color = None
+    color_type = None
     band_im = None
     if cst.EPI_COLOR in ref_dataset:
         color = ref_dataset[cst.EPI_COLOR].values
+        color_type = ref_dataset[cst.EPI_COLOR].attrs["color_type"]
         if ref_dataset[cst.EPI_COLOR].values.shape[0] > 1:
             band_im = ref_dataset.coords[cst.BAND_IM]
         else:
@@ -226,6 +241,13 @@ def create_disp_dataset(
     # Crop disparity map
     disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
+    # Crop left panchromatic image
+    epi_image = epi_image[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+
+    # Crop original mask
+    if epi_msk is not None:
+        epi_msk = epi_msk[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
+
     # Crop color
     if color is not None:
         color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
@@ -237,8 +259,8 @@ def create_disp_dataset(
         ]
 
     # Crop masks
-    for key in masks.copy():
-        masks[key] = masks[key][
+    for key in pandora_masks.copy():
+        pandora_masks[key] = pandora_masks[key][
             ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
         ]
 
@@ -247,7 +269,7 @@ def create_disp_dataset(
         classif = classif[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
     # Fill disparity array with 0 value for invalid points
-    disp_map[masks[cst_disp.VALID] == 0] = 0
+    disp_map[pandora_masks[cst_disp.VALID] == 0] = 0
 
     # Build output dataset
     row = np.array(
@@ -262,14 +284,27 @@ def create_disp_dataset(
             cst_disp.MAP: ([cst.ROW, cst.COL], np.copy(disp_map)),
             cst_disp.VALID: (
                 [cst.ROW, cst.COL],
-                np.copy(masks[cst_disp.VALID]),
+                np.copy(pandora_masks[cst_disp.VALID]),
             ),
         },
         coords={cst.ROW: row, cst.COL: col},
     )
 
+    # add left panchromatic image
+    disp_ds[cst.EPI_IMAGE] = xr.DataArray(epi_image, dims=[cst.ROW, cst.COL])
+
+    # add original mask
+    if epi_msk is not None:
+        disp_ds[cst.EPI_MSK] = xr.DataArray(epi_msk, dims=[cst.ROW, cst.COL])
+
     # add color
-    add_color(disp_ds, color=color, color_mask=color_mask, band_im=band_im)
+    add_color(
+        disp_ds,
+        color=color,
+        color_type=color_type,
+        color_mask=color_mask,
+        band_im=band_im,
+    )
 
     # add confidence
     add_confidence(disp_ds, disp, ref_roi)
@@ -279,11 +314,12 @@ def create_disp_dataset(
         add_performance_map(
             disp_ds, disp, ref_roi, perf_ambiguity_threshold, disp_to_alt_ratio
         )
+
     # add classif
     add_classification(disp_ds, classif=classif, band_classif=band_classif)
 
     if compute_disparity_masks:
-        for key, val in masks.items():
+        for key, val in pandora_masks.items():
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
 
     disp_ds.attrs = disp.attrs.copy()

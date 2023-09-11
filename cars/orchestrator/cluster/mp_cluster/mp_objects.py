@@ -139,6 +139,7 @@ class MpDelayed:  # pylint: disable=R0903
         try:
             name = str(self.delayed_task.kw_args["log_fun"])
         except KeyError:
+            # Task is factorized
             name = str(self.delayed_task.args[0])
 
         res = (
