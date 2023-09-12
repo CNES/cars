@@ -347,11 +347,16 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 epipolar_images_right.tiling_grid, margins["right_margin"]
             )
         )
+        # add image type in attributes for future checking
+        im_type = inputs.rasterio_get_image_type(
+            sensor_image_left[sens_cst.INPUT_IMG]
+        )
 
         # update attributes
         epipolar_images_attributes = {
             "largest_epipolar_region": largest_epipolar_region,
             "opt_epipolar_tile_size": opt_epipolar_tile_size,
+            "image_type": im_type,
         }
 
         epipolar_images_left.attributes.update(epipolar_images_attributes)
@@ -635,10 +640,10 @@ def generate_epipolar_images_wrapper(
         )
 
         # Add input color type
-        color_type = inputs.rasterio_get_color_type(color1)
+        color_type = inputs.rasterio_get_image_type(color1)
         left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
     else:
-        color_types = inputs.rasterio_get_color_type(img1)
+        color_types = inputs.rasterio_get_image_type(img1)
         left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types
 
     # Add classification layers to dataset

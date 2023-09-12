@@ -222,6 +222,11 @@ def sensors_check_inputs(  # noqa: C901
             "To enable the inputs checking, add check_inputs: True "
             "to your input configuration"
         )
+    # check datat type of pairs images
+    for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
+        compare_image_type(
+            overloaded_conf[sens_cst.SENSORS], sens_cst.INPUT_IMG, key1, key2
+        )
 
     # Check image, msk and color size compatibility
     for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
@@ -548,6 +553,29 @@ def check_nbits(mask, classif):
                 )
                 + "Only the classification with nbits=1 is supported! "
             )
+
+
+def compare_image_type(imgs, image_type, key1, key2):
+    """
+    Compare the data type between a pair of images
+
+    :param imgs: list of image paths
+    :type imgs: str
+    :param key1: key of the images pair
+    :type key1: str
+    :param image_type: type of cardataset image (IMG, MASK, CLASSIF...)
+    :type image_type: int
+    :param key1: other key of the images pair
+    :type key1: str
+    """
+    dtype1 = inputs.rasterio_get_image_type(imgs[key1][image_type])
+    dtype2 = inputs.rasterio_get_image_type(imgs[key2][image_type])
+    if dtype1 != dtype2:
+        raise RuntimeError(
+            "The pair images haven't the same data type."
+            + "\nSensor[{}]: {}".format(key1, dtype1)
+            + "; Sensor[{}]: {}".format(key2, dtype2)
+        )
 
 
 def check_all_nbits_equal_one(nbits):
