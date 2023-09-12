@@ -65,8 +65,7 @@ def generate_test_inputs():
 
     return data
 
-
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_create_polygon_from_list_points():
     """
     test create_polygon_from_list_points
@@ -78,7 +77,7 @@ def test_create_polygon_from_list_points():
     assert len(mapping(poly)["coordinates"][0]) == 5
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_compute_epsg_from_point_cloud():
     """
     test compute_epsg_from_point_cloud
@@ -93,7 +92,7 @@ def test_compute_epsg_from_point_cloud():
     assert epsg == 32636
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_get_min_max_band():
     """
     test get_min_max_band
@@ -120,7 +119,7 @@ def test_get_min_max_band():
     )
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_transform_input_pc_and_metrics():
     """
     test transform_input_pc
@@ -173,7 +172,7 @@ def test_transform_input_pc_and_metrics():
     assert int(100 * average_dist) / 100 == 0.46
 
 
-@pytest.mark.end2end_tests
+@pytest.mark.unit_tests
 def test_transform_input_pc_and_correspondance():
     """
     test transform_input_pc
