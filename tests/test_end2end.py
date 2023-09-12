@@ -911,7 +911,7 @@ def test_end2end_ventoux_unique_split():
     """
     Splitted sensor to dsm pipeline with ROI on ventoux data
     1 run sensor to dense point clouds(PC) pipeline -> PC outputs
-    2 run PC outputs with cloud to dsm pipeline + Baseline checking    
+    2 run PC outputs with cloud to dsm pipeline + Baseline checking
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:

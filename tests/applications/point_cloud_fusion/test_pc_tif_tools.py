@@ -65,6 +65,7 @@ def generate_test_inputs():
 
     return data
 
+
 @pytest.mark.unit_tests
 def test_create_polygon_from_list_points():
     """
