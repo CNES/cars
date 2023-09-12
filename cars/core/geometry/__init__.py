@@ -23,7 +23,5 @@
 """
 Init file of geometry module
 """
-from cars.core.geometry.otb_geometry import OTBGeometry
-from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
 from . import abstract_geometry

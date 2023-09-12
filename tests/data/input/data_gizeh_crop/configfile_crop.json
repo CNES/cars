@@ -1,21 +1,25 @@
 {
-
-        "inputs": {
-            "sensors" : {
-                "one": {
-                    "image": "img1_crop.tif",
-                    "geomodel": {
-                        "path": "img1_crop.geom"
-                    }
-                },
-                "two": {
-                    "image": "img2_crop.tif",
-                    "geomodel": {
-                        "path": "img2_crop.geom"
-                    }
-                }
-            },
-            "pairing": [["one", "two"]],
-            "initial_elevation": "srtm_dir"
+  "inputs": {
+    "sensors": {
+      "one": {
+        "image": "img1_crop.tif",
+        "geomodel": {
+          "path": "img1_crop.geom"
         }
+      },
+      "two": {
+        "image": "img2_crop.tif",
+        "geomodel": {
+          "path": "img2_crop.geom"
+        }
+      }
+    },
+    "pairing": [
+      [
+        "one",
+        "two"
+      ]
+    ],
+    "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
+  }
 }

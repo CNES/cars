@@ -391,11 +391,11 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     "input_file,ref_file",
     [
         (
-            "grid_generation_gizeh_ROI_no_color",
+            "grid_generation_gizeh_ROI_no_color.pickle",
             "grid_generation_gizeh_ROI_ref_no_color",
         ),
         (
-            "grid_generation_gizeh_ROI_color",
+            "grid_generation_gizeh_ROI_color.pickle",
             "grid_generation_gizeh_ROI_ref_color",
         ),
     ],
@@ -403,6 +403,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
 def test_grid_generation(save_reference, input_file, ref_file):
     """
     Grid generation application test
+    works with with OTB and Shareloc
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {}
@@ -436,8 +437,9 @@ def test_grid_generation(save_reference, input_file, ref_file):
                 adapt_path_for_test_dir(data, input_path, input_relative_path)
                 # Run grid generation
                 geometry_plugin = get_geometry_plugin(
-                    "OTBGeometry",
-                    dem=os.path.join(input_path, "srtm_dir"),
+                    dem=os.path.join(
+                        input_path, "srtm_dir", "N29E031_KHEOPS.tif"
+                    ),
                     default_alt=0,
                 )
                 (
@@ -450,6 +452,13 @@ def test_grid_generation(save_reference, input_file, ref_file):
                     orchestrator=cars_orchestrator,
                     pair_folder=os.path.join(directory, "pair_0"),
                 )
+
+                # set ground truth according to geometry loaders
+                if geometry_plugin.plugin_name == "OTBGeometry":
+                    ref_file = ref_file + "_otb"
+                elif geometry_plugin.plugin_name == "SharelocGeometry":
+                    ref_file = ref_file + "_shareloc"
+
                 ref_data_path = absolute_data_path(
                     os.path.join(
                         "ref_output_application",
@@ -457,6 +466,7 @@ def test_grid_generation(save_reference, input_file, ref_file):
                         ref_file,
                     )
                 )
+
                 # serialize reference data if needed
                 if save_reference:
                     serialize_grid_ref_data(
@@ -484,11 +494,22 @@ def adapt_path_for_test_dir(data, input_path, input_relative_path):
     Adapt path of source for the test dir
     """
     for primary_key in data:
-        for key in data[primary_key]:
-            if isinstance(data[primary_key][key], str):
-                if input_relative_path in data[primary_key][key]:
-                    basename = os.path.basename(data[primary_key][key])
-                    data[primary_key][key] = os.path.join(input_path, basename)
+        for key2 in data[primary_key]:
+            if isinstance(data[primary_key][key2], str):
+                if input_relative_path in data[primary_key][key2]:
+                    basename = os.path.basename(data[primary_key][key2])
+                    data[primary_key][key2] = os.path.join(input_path, basename)
+            # adapt for third level for geomodel path (quick dirty fix)
+            if (
+                key2 == "geomodel"
+                and input_relative_path in data[primary_key][key2]["path"]
+            ):
+                basename = os.path.basename(
+                    data[primary_key]["geomodel"]["path"]
+                )
+                data[primary_key]["geomodel"]["path"] = os.path.join(
+                    input_path, basename
+                )
 
 
 def serialize_grid_ref_data(grid_left, grid_right, ref_data_path):
@@ -550,7 +571,7 @@ def test_terrain_region_to_epipolar(
         geomodel2,
         grid_left,
         grid_right,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
         epsg=epsg,
         disp_min=disp_min,
         disp_max=disp_max,

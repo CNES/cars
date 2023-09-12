@@ -20,6 +20,7 @@
 #
 """
 Test module for cars/core/geometry/otb_geometry.py
+Work only with CARS and OTB install. CI without OTB fails also.
 """
 
 import os
@@ -40,9 +41,10 @@ from ...helpers import absolute_data_path, get_geoid_path, temporary_dir
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids():
+def test_generate_epipolar_grids_otb():
     """
     Test if the pipeline is correctly built and produces consistent grids
+    OTB only
     """
     sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
     sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
@@ -145,7 +147,7 @@ def test_generate_epipolar_grids():
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids_scaled_inputs():
+def test_generate_epipolar_grids_scaled_inputs_otb():
     """
     test different pixel sizes in input images
     """
@@ -472,7 +474,7 @@ def test_generate_epipolar_grids_scaled_inputs():
 
 
 @pytest.mark.unit_tests
-def test_image_envelope():
+def test_image_envelope_otb():
     """
     Test image_envelope function
     """
@@ -554,7 +556,7 @@ def test_image_envelope():
 
 
 @pytest.mark.unit_tests
-def test_check_consistency():
+def test_check_consistency_otb():
     """
     Test otb_can_open() with different geom configurations
     """

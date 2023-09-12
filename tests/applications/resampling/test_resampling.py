@@ -340,7 +340,7 @@ def test_check_tiles_in_sensor():
 
         inputs = input_data["inputs"]
         list_sensor_pairs = sensors_inputs.generate_inputs(
-            inputs, get_geometry_plugin("OTBGeometry")
+            inputs, get_geometry_plugin()
         )
 
         sensor_image_left = list_sensor_pairs[0][1]
@@ -349,7 +349,6 @@ def test_check_tiles_in_sensor():
 
         # Generate grids
         geometry_plugin = get_geometry_plugin(
-            "OTBGeometry",
             dem=inputs[sens_cst.INITIAL_ELEVATION],
             default_alt=inputs[sens_cst.DEFAULT_ALT],
         )

@@ -160,7 +160,7 @@ def test_epipolar_pipeline(
         geomodel2,
         grid1,
         grid2,
-        get_geometry_plugin("OTBGeometry"),
+        get_geometry_plugin(),
         32636,
         add_msk_info=True,
     )

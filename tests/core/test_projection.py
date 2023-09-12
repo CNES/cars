@@ -36,7 +36,6 @@ from shapely.affinity import translate
 from shapely.geometry import Polygon
 
 # CARS imports
-from cars.conf import input_parameters
 from cars.core import inputs, projection
 
 # CARS Tests imports
@@ -180,7 +179,7 @@ def test_ground_intersection_envelopes():
     sensor2 = absolute_data_path("input/phr_paca/right_image.tif")
     geomodel1 = {"path": absolute_data_path("input/phr_paca/left_image.geom")}
     geomodel2 = {"path": absolute_data_path("input/phr_paca/right_image.geom")}
-    srtm_dir = absolute_data_path("input/phr_paca/srtm")
+    srtm_dir = absolute_data_path("input/phr_paca/srtm/N43E007.hgt")
     # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
     intersect_xymin_xymax_ref_1 = (
         7.293045338193613,
@@ -206,7 +205,7 @@ def test_ground_intersection_envelopes():
             sensor2,
             geomodel1,
             geomodel2,
-            get_geometry_plugin(geometry_plugin="OTBGeometry", dem=srtm_dir),
+            get_geometry_plugin(dem=srtm_dir),
             out_shp1,
             out_shp2,
             out_intersect,
@@ -238,9 +237,7 @@ def test_ground_intersection_envelopes():
                 sensor2,
                 geomodel1,
                 geomodel2,
-                get_geometry_plugin(
-                    geometry_plugin="OTBGeometry", dem=srtm_dir
-                ),
+                get_geometry_plugin(dem=srtm_dir),
                 out_shp1,
                 out_shp2,
                 out_intersect,
@@ -255,40 +252,6 @@ def test_ground_intersection_envelopes():
             str(intersect_error.value) == "The two envelopes do not intersect "
             "one another"
         )
-
-
-@pytest.mark.unit_tests
-def test_get_time_ground_direction():
-    """
-    Test the get_time_ground_direction
-    """
-    # Force use of DEM if test is ran standalone
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    conf = {
-        input_parameters.create_img_tag_from_product_key(
-            input_parameters.PRODUCT1_KEY
-        ): absolute_data_path("input/phr_ventoux/left_image.tif"),
-        input_parameters.create_model_tag_from_product_key(
-            input_parameters.PRODUCT1_KEY
-        ): absolute_data_path("input/phr_ventoux/right_image.geom"),
-    }
-
-    vec = projection.get_time_ground_direction(
-        conf,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
-        input_parameters.PRODUCT1_KEY,
-    )
-    assert vec[0] == -0.02356248001209794
-    assert vec[1] == 0.999722366227584
-
-    vec = projection.get_time_ground_direction(
-        conf,
-        get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem),
-        input_parameters.PRODUCT1_KEY,
-    )
-    assert vec[0] == -0.03760314420222626
-    assert vec[1] == 0.9992927516729553
 
 
 @pytest.mark.unit_tests
@@ -309,7 +272,7 @@ def test_get_ground_angles():
         sensor2,
         geomodel1,
         geomodel2,
-        get_geometry_plugin(geometry_plugin="OTBGeometry"),
+        get_geometry_plugin(),
     )
     angles = np.asarray(angles)  # transform tuple to array
 

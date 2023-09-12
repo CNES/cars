@@ -136,38 +136,35 @@ install-dev-otb-free: install-deps ## install cars in dev editable mode (pip ins
 ## Test section
 
 .PHONY: test
-test: ## run all tests + coverage html
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
-	@${CARS_VENV}/bin/pytest -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
+test: ## run unit tests without PBS cluster and without OTB tests + coverage html
+	@${CARS_VENV}/bin/pytest -m "unit_tests and not pbs_cluster_tests" -k "not otb" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 .PHONY: test-ci
 test-ci: ## run unit and pbs tests + coverage for cars-ci
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
+
+.PHONY: test-ci-otb-free
+test-ci-otb-free: ## run unit and pbs tests + coverage for cars-ci
+	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -k "not otb" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-end2end
 test-end2end: ## run end2end tests only
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "end2end_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-unit
 test-unit: ## run unit tests only
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "unit_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-pbs-cluster
 test-pbs-cluster: ## run pbs cluster tests only
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-slurm-cluster
 test-slurm-cluster: ## run slurm cluster tests only
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "slurm_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 .PHONY: test-notebook
 test-notebook: ## run notebook tests only
-	@echo "Please source ${CARS_VENV}/bin/env_cars.sh before launching tests\n"
 	@${CARS_VENV}/bin/pytest -m "notebook_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL}
 
 ## Code quality, linting section
