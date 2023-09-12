@@ -111,11 +111,9 @@ def compute_graph_delayed_usages(task_list):
     :return: number of usages of delayed
     :rtype: dict
         example: {delayed1: 3}
-
     """
 
     graph_usages = {}
-
     already_seen_tasks = []
 
     for delayed in task_list:
@@ -135,12 +133,10 @@ def get_delayed_usage_rec(delayed, graph_usages, already_seen_tasks):
         example: {delayed1: 3}
     :param already_seen_tasks: list of seen delayed task
     :type already_seen_tasks: list[MpDelayedTask]
-
     """
 
     # update graph_usages
     if delayed in graph_usages:
-        # + 1
         graph_usages[delayed] += 1
     else:
         graph_usages[delayed] = 1
@@ -172,11 +168,9 @@ def number_of_usage(delayed, graph_usages):
 
     :return: number of usages of delayed
     :rtype: int
-
     """
 
     nb_usage = graph_usages[delayed]
-
     return nb_usage
 
 
@@ -202,119 +196,17 @@ def compute_nb_depending_task(depending_delayed_list):
 
 
 # Factorized function and its generator
-
-
 def factorized_fun(factorized_object):
     """
     This function unpack multiple functions with their arguments,
-    and run them sequentialy
+    and run them sequentialy until task list is empty
 
-
+    :param factorized_object: Object that contains a list of tasks
+    :type factorized_object: mp_objects.FactorizedObject
     """
 
-    res = factorized_object.run()
-
+    res = None
+    while factorized_object.tasks:
+        # Run next task with output of previous task
+        res = factorized_object.pop_next_task(previous_result=res)
     return res
-
-
-def get_number_of_steps(kwargs):
-    """
-    Get number of following function stored in kwargs
-
-    :param kwargs: key arguments of function
-    :type kwargs: dict
-
-    :return: number of steps
-    :rtype: int
-    """
-
-    count = 0
-    for key in kwargs:
-        if key.startswith("NEXT_FUN_"):
-            count += 1
-
-    return count
-
-
-def generate_args_kwargs_factorize(fun1, args1, kwargs1, fun2, args2, kwargs2):
-    """
-    Generate args for new delayed
-
-    WARNING : modify inplace args and kwargs
-    if you compute inbetween the function errors will occure
-
-    :param fun1: first function to be called
-    :type fun1: callable
-    :param args1: list of arguments of function 1
-    :type args1: list
-    :param kwargs1: dict of keyword arguments of function 1
-    :type kwargs1: dict
-    :pram fun2: second function to be called
-    :type fun2: callable
-    :param args2: list of arguments of function 2
-    :type args2: list
-    :param kwargs2: dict of keyword arguments of function 2
-    :type kwargs2: dict
-
-    :return: new function, new arguments, new keyword arguments
-    :rtype: function, list, dict
-    """
-
-    # fun2 can already be a factorized fun
-
-    new_fun = factorized_fun
-
-    # Generate first
-    first_addon = {"fun": fun1, "args": args1, "kwarg": kwargs1}
-
-    # Generate second
-    second_addon = {"fun": fun2, "args": args2, "kwarg": kwargs2}
-
-    # Check if one of the delayed is already factorized
-    if factorized_fun not in (fun1, fun2):  # pylint: disable=W0143
-        # Addon will only contain f1, the rest is in args and kwargs
-        # for input transformation purposes
-        new_args = args1
-        new_kwargs = kwargs1
-        first_addon.pop("args")
-        first_addon.pop("kwarg")
-
-        # Add addon in kwargs
-        new_kwargs["NEXT_FUN_0"] = first_addon
-        new_kwargs["NEXT_FUN_1"] = second_addon
-
-    else:
-        if fun1 == factorized_fun:  # pylint: disable=W0143
-            # f2 will be added to the end
-            new_args = args1
-            new_kwargs = kwargs1
-            nb_factorized = get_number_of_steps(kwargs1)
-            # remove "NEXT_FUN" in second_addon
-            # for step in range(0, nb_factorized):
-            #    second_addon["kwarg"].pop("NEXT_FUN_" + repr(step))
-            new_kwargs["NEXT_FUN_" + repr(nb_factorized)] = second_addon
-
-        else:
-            # f2 is factorized
-            # f1 will be position 0, the rest will translate to 1
-            new_args = args1
-            new_kwargs = kwargs1
-            first_addon.pop("args")
-            first_addon.pop("kwarg")
-
-            nb_factorized = get_number_of_steps(kwargs2)
-            # translate functions
-            for step in range(nb_factorized, 0, -1):
-                kwargs1["NEXT_FUN_" + repr(step)] = kwargs2[
-                    "NEXT_FUN_" + repr(step - 1)
-                ]
-                kwargs2.pop("NEXT_FUN_" + repr(step - 1))
-
-            # 1 was 0 in factorized 2
-            kwargs1["NEXT_FUN_" + repr(1)]["args"] = args2
-            kwargs1["NEXT_FUN_" + repr(1)]["kwarg"] = kwargs2
-
-            # add addon 1 as first
-            new_kwargs["NEXT_FUN_0"] = first_addon
-
-    return new_fun, new_args, new_kwargs

@@ -120,6 +120,7 @@ def add_color(
 
     :param output_dataset: output dataset
     :param color: color array
+    :param color_type: data type of pixels
     :param color_mask: color mask array
     :param band_im: list of band names
 

@@ -423,6 +423,8 @@ class FactorizedObject:
             current_args = current_factorized_object.get_args()
             current_kwargs = current_factorized_object.get_kwargs()
 
+        # Replace MpDelayed with PreviousData that will be computed
+        # in run method of FactorizedObject before the call of current_task
         new_args = replace_data_rec(
             current_args, transform_mp_delayed_to_previous_data
         )
@@ -431,10 +433,13 @@ class FactorizedObject:
         )
 
         if current_task_is_factorized:
+            # List of tasks is initialized with all tasks in current
+            # factorized task
             current_factorized_object.set_args(new_args)
             current_factorized_object.set_kwargs(new_kwargs)
             self.tasks = current_factorized_object.tasks
         else:
+            # List of tasks is initialized with current task
             self.tasks = [
                 {
                     "func": current_fun,
@@ -443,6 +448,8 @@ class FactorizedObject:
                 }
             ]
 
+        # Add at the end of the list the first task to be executed
+        # (self.tasks is a LIFO queue)
         previous_fun = previous_task.func
         previous_args = previous_task.args
         previous_kwargs = previous_task.kw_args
@@ -489,30 +496,23 @@ class FactorizedObject:
         """
         self.tasks[-1]["kwargs"] = kwargs
 
-    def run(self):
+    def pop_next_task(self, previous_result=None):
         """
-        Run all tasks sequentially, in reverse order of list self.tasks
+        Run the next task to execute, remove it from the list and
+        return the result
+
+        :param previous_result: output of previous task
         """
-        # Run first task
-        task = self.tasks[-1]
+        task = self.tasks.pop()
         func = task["func"]
         args = task["args"]
         kwargs = task["kwargs"]
-        res = func(*args, **kwargs)
-
-        # Iterate over next tasks
-        for task in reversed(self.tasks[:-1]):
-            func = task["func"]
-            current_args = task["args"]
-            current_kwargs = task["kwargs"]
-
-            new_args = replace_data_rec(
-                current_args, transform_previous_data_to_results, res
+        if previous_result is not None:
+            # Replace PreviousData objects with output of previous task
+            args = replace_data_rec(
+                args, transform_previous_data_to_results, previous_result
             )
-            new_kwargs = replace_data_rec(
-                current_kwargs, transform_previous_data_to_results, res
+            kwargs = replace_data_rec(
+                kwargs, transform_previous_data_to_results, previous_result
             )
-
-            res = func(*new_args, **new_kwargs)
-
-        return res
+        return func(*args, **kwargs)

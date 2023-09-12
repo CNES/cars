@@ -35,12 +35,12 @@ def replace_data(list_or_dict, func_to_apply, *func_args):
     :return: list or dict with real data
     :rtype: list, tuple, dict, mp_objects.FactorizedObject
     """
-    # Check if list_or_dict is a single FactorizedObject:
     if (
         isinstance(list_or_dict, (list, tuple))
         and len(list_or_dict) == 1
         and type(list_or_dict[0]).__name__ == "FactorizedObject"
     ):
+        # list_or_dict is a single FactorizedObject
         factorized_object = list_or_dict[0]
         args = factorized_object.get_args()
         args = replace_data_rec(args, func_to_apply, *func_args)
