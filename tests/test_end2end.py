@@ -283,13 +283,26 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # check used_conf file exists
         assert os.path.isfile(used_conf_path)
 
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = (
+            "ref_output"
+            if input_config_sparse_dsm["geometry_plugin"] == "OTBGeometry"
+            else os.path.join("ref_output", "shareloc")
+        )
+
         # Uncomment the 2 following instructions to update reference data
         # and the "sift_peak_threshold":1 in the configuration
-        # copy2(os.path.join(out_dir, 'dsm.tif'),
-        #     absolute_data_path("ref_output/dsm_end2end_ventoux_8bits.tif"))
+        # copy2(
+        #     os.path.join(out_dir, 'dsm.tif'),
+        #     absolute_data_path(
+        #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+        #     ),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path("ref_output/dsm_end2end_ventoux_8bits.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+            ),
             atol=0.0001,
             rtol=1e-6,
         )
