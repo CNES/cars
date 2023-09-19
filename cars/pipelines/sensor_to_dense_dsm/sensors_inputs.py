@@ -303,7 +303,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            conf_geom_plugin
+            conf_geom_plugin, default_alt=conf_inputs[sens_cst.DEFAULT_ALT]
         )
     )
 
