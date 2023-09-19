@@ -622,14 +622,14 @@ def get_ground_direction(
 
     # Get origin vector coordinate with z0 altitude
     lat0, lon0, alt0 = geometry_plugin.direct_loc(
-        sensor, geomodel, x_coord, y_coord, z0_coord
+        sensor, geomodel, [x_coord], [y_coord], [z0_coord]
     )
     # Get end vector coordinate with z altitude
     lat, lon, alt = geometry_plugin.direct_loc(
-        sensor, geomodel, x_coord, y_coord, z_coord=z_coord
+        sensor, geomodel, [x_coord], [y_coord], z_coord=[z_coord]
     )
 
-    return np.array([lat0, lon0, alt0, lat, lon, alt])
+    return np.array([lat0[0], lon0[0], alt0[0], lat[0], lon[0], alt[0]])
 
 
 def get_ground_angles(

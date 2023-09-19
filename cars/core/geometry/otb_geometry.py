@@ -74,7 +74,10 @@ class OTBGeometry(AbstractGeometry):
         :return list of not available modules
         """
         not_available = []
-        for module in ["ConvertSensorToGeoPointFast", "EpipolarTriangulation"]:
+        for module in [
+            "ConvertSensorToGeoMultiPointFast",
+            "EpipolarTriangulation",
+        ]:
             if otbApplication.Registry.CreateApplication(module) is None:
                 not_available.append(module)
         return not_available
@@ -295,12 +298,13 @@ class OTBGeometry(AbstractGeometry):
         # OTB doesn't do a new line, force it for next logger seen by user
         print("\n")
         # Export grids to numpy
-        left_grid_as_array = np.copy(
-            stereo_app.GetVectorImageAsNumpyArray("io.outleft")
-        )
-        right_grid_as_array = np.copy(
-            stereo_app.GetVectorImageAsNumpyArray("io.outright")
-        )
+        left_grid_as_array = stereo_app.GetVectorImageAsNumpyArray(
+            "io.outleft"
+        ).copy()
+
+        right_grid_as_array = stereo_app.GetVectorImageAsNumpyArray(
+            "io.outright"
+        ).copy()
 
         epipolar_size_x, epipolar_size_y, baseline = (
             stereo_app.GetParameterInt("epi.rectsizex"),
@@ -345,25 +349,27 @@ class OTBGeometry(AbstractGeometry):
         self,
         sensor,
         geomodel,
-        x_coord: float,
-        y_coord: float,
-        z_coord: float = None,
+        x_coord: list,
+        y_coord: list,
+        z_coord: list = None,
     ) -> np.ndarray:
         """
-        For a given image point, compute the latitude, longitude, altitude
+        For a given image point list , compute the latitudes,
+        longitudes, altitudes
 
         Be careful: When SRTM is used, the default elevation (altitude)
-        doesn't work anymore (OTB function) when ConvertSensorToGeoPointFast
-        is called again. Check the values.
+        doesn't work anymore (OTB function)
+        when ConvertSensorToGeoMultiPointFast is called again.
+        Check the values.
 
         Advice: to be sure, use x,y,z inputs only
 
         :param sensor: path to sensor image
         :param geomodel: path and attributes for geometrical model
-        :param x_coord: X Coordinate in input image sensor
-        :param y_coord: Y Coordinate in input image sensor
-        :param z_coord: Z Altitude coordinate to take the image
-        :return: Latitude, Longitude, Altitude coordinates as a numpy array
+        :param x_coord: X Coordinates list in input image sensor
+        :param y_coord: Y Coordinates list in input image sensor
+        :param z_coord: Z Altitude coordinates list to take the image
+        :return: Latitude, Longitude, Altitude coordinates list as a numpy array
         """
         # save os env
         env_save = os.environ.copy()
@@ -376,33 +382,36 @@ class OTBGeometry(AbstractGeometry):
             del os.environ["OTB_GEOID_FILE"]
 
         s2c_app = otbApplication.Registry.CreateApplication(
-            "ConvertSensorToGeoPointFast"
+            "ConvertSensorToGeoMultiPointFast"
         )
-
         s2c_app.SetParameterString("in", sensor)
-        s2c_app.SetParameterFloat("input.idx", x_coord)
-        s2c_app.SetParameterFloat("input.idy", y_coord)
+
+        x_coord = list(map(str, x_coord))
+        y_coord = list(map(str, y_coord))
+        s2c_app.SetParameterStringList("input.idx", x_coord)
+        s2c_app.SetParameterStringList("input.idy", y_coord)
 
         if z_coord is not None:
-            s2c_app.SetParameterFloat("input.idz", z_coord)
+            z_coord = list(map(str, z_coord))
+            s2c_app.SetParameterStringList("input.idz", z_coord)
+
         if self.dem is not None:
             s2c_app.SetParameterString("elevation.dem", self.dem)
         if self.geoid is not None:
             s2c_app.SetParameterString("elevation.geoid", self.geoid)
         if self.default_alt is not None:
             s2c_app.SetParameterFloat("elevation.default", self.default_alt)
-        # else ConvertSensorToGeoPointFast have only X, Y and OTB
+        # else ConvertSensorToGeoMultiPointFast have only X, Y and OTB
 
         s2c_app.Execute()
 
-        lon = s2c_app.GetParameterFloat("output.idx")
-        lat = s2c_app.GetParameterFloat("output.idy")
-        alt = s2c_app.GetParameterFloat("output.idz")
-
+        output = s2c_app.GetImageAsNumpyArray("output.all", "float").copy()
+        lat = output[:, 0]
+        lon = output[:, 1]
+        alt = output[:, 2]
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
-
         return np.array([lat, lon, alt])
 
     def image_envelope(self, sensor, geomodel, shp=None):
@@ -425,13 +434,14 @@ class OTBGeometry(AbstractGeometry):
 
         # create OTB application
         loc_app = otbApplication.Registry.CreateApplication(
-            "ConvertSensorToGeoPointFast"
+            "ConvertSensorToGeoMultiPointFast"
         )
         loc_app.SetParameterString("in", sensor)
-        loc_app.SetParameterFloat("input.idx", 0.0)
-        loc_app.SetParameterFloat("input.idy", 0.0)
-        loc_app.SetParameterFloat("input.idz", 0.0)
+        loc_app.SetParameterStringList("input.idx", [str(0)])
+        loc_app.SetParameterStringList("input.idy", [str(0)])
+        loc_app.SetParameterStringList("input.idz", [str(0)])
         loc_app.Execute()
+        # output = loc_app.GetImageAsNumpyArray("output.all", "float").copy()
 
         app = otbApplication.Registry.CreateApplication("ImageEnvelope")
 

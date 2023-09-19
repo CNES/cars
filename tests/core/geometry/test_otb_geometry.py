@@ -33,11 +33,15 @@ import pytest
 import rasterio as rio
 
 # CARS imports
-from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import read_vector
 
 # CARS Tests imports
-from ...helpers import absolute_data_path, get_geoid_path, temporary_dir
+from ...helpers import (
+    absolute_data_path,
+    get_geoid_path,
+    get_geometry_plugin,
+    temporary_dir,
+)
 
 
 @pytest.mark.unit_tests
@@ -53,10 +57,8 @@ def test_generate_epipolar_grids_otb():
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry", dem=dem, geoid=get_geoid_path()
-        )
+    geo_plugin = get_geometry_plugin(
+        geometry_plugin="OTBGeometry", dem=dem, geoid=get_geoid_path()
     )
 
     # test with geoid
@@ -100,11 +102,7 @@ def test_generate_epipolar_grids_otb():
     np.testing.assert_allclose(right_grid_as_array, right_grid_np_reference)
 
     # test without geoid
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry", dem=dem
-        )
-    )
+    geo_plugin = get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem)
 
     (
         left_grid_as_array,
@@ -184,10 +182,8 @@ def test_generate_epipolar_grids_scaled_inputs_otb():
     dem = absolute_data_path("input/phr_ventoux/srtm")
     step = 45
 
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry", dem=dem, geoid=get_geoid_path()
-        )
+    geo_plugin = get_geometry_plugin(
+        geometry_plugin="OTBGeometry", dem=dem, geoid=get_geoid_path()
     )
 
     # reference
@@ -328,10 +324,10 @@ def test_generate_epipolar_grids_scaled_inputs_otb():
                 assert pixel_size_x == 1 / scalex
                 assert pixel_size_y == 1 / scaley
 
-            geo_plugin = (
-                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                    "OTBGeometry", dem=dem, geoid=get_geoid_path()
-                )
+            geo_plugin = get_geometry_plugin(
+                geometry_plugin="OTBGeometry",
+                dem=dem,
+                geoid=get_geoid_path(),
             )
 
             # img1_transform / img2_transform
@@ -482,11 +478,7 @@ def test_image_envelope_otb():
     geomodel = absolute_data_path("input/phr_ventoux/left_image.geom")
     dem = absolute_data_path("input/phr_ventoux/srtm")
 
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry"
-        )
-    )
+    geo_plugin = get_geometry_plugin(geometry_plugin="OTBGeometry")
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         shp = os.path.join(directory, "envelope.gpkg")
@@ -509,10 +501,8 @@ def test_image_envelope_otb():
         ]
 
     # test with dem + geoid
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry", dem=dem, geoid=get_geoid_path()
-        )
+    geo_plugin = get_geometry_plugin(
+        geometry_plugin="OTBGeometry", dem=dem, geoid=get_geoid_path()
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -561,11 +551,7 @@ def test_check_consistency_otb():
     Test otb_can_open() with different geom configurations
     """
 
-    geo_plugin = (
-        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            "OTBGeometry"
-        )
-    )
+    geo_plugin = get_geometry_plugin(geometry_plugin="OTBGeometry")
 
     # existing
     existing_with_geom = absolute_data_path("input/phr_ventoux/left_image.tif")
@@ -581,3 +567,34 @@ def test_check_consistency_otb():
         geo_plugin.check_product_consistency(existing_no_geom, dummy_geomodel)
     with pytest.raises(RuntimeError):
         geo_plugin.check_product_consistency(not_existing, dummy_geomodel)
+
+
+@pytest.mark.unit_tests
+def test_dir_loc_multipoint():
+    """
+    Test direct localization multipoint
+    """
+    sensor = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel = absolute_data_path("input/phr_ventoux/left_image.geom")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    geo_plugin = get_geometry_plugin(
+        geometry_plugin="OTBGeometry", dem=dem, geoid=get_geoid_path()
+    )
+
+    lat, lon, alt = geo_plugin.direct_loc(
+        sensor,
+        geomodel,
+        ["0", "5", "10"],
+        ["0", "6", "12"],
+    )
+    current = np.array([lat, lon, alt])
+    reference = np.array(
+        [
+            [44.208057, 44.20803, 44.208004],
+            [5.1934094, 5.193442, 5.193475],
+            [503.5502, 504.0121, 504.43604],
+        ],
+        dtype=np.float32,
+    )
+    assert np.array_equal(current, reference)

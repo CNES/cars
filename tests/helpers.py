@@ -46,6 +46,7 @@ from pandora.check_json import (
     get_config_pipeline,
 )
 from pandora.state_machine import PandoraMachine
+from pyproj import geodesic_version_str
 
 from cars.applications.dense_matching.loaders.pandora_loader import (
     check_input_section_custom_cars,
@@ -153,12 +154,15 @@ def absolute_data_path(data_path):
     return os.path.join(data_folder, data_path)
 
 
-def get_geoid_path():
-    return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
+def get_geoid_path(geoid=None):
+    if geoid:
+        return geoid
+    else:
+        return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
 
 
 def get_geometry_plugin(
-    geometry_plugin=None, dem=None, default_alt=None
+    geometry_plugin=None, dem=None, default_alt=None, geoid=None
 ) -> AbstractGeometry:
     """
     If no geometry_plugin is defined,
@@ -172,7 +176,7 @@ def get_geometry_plugin(
     """
 
     # Make OTB the default geometry plugin if available, otherwise Shareloc
-    if geometry_plugin is None:
+    if geometry_plugin is None or geometry_plugin == "OTBGeometry":
         # Try to get OTBGeometry plugin
         try:
             from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
@@ -210,7 +214,7 @@ def get_geometry_plugin(
     return AbstractGeometry(  # pylint: disable=abstract-class-instantiated
         geometry_plugin,
         dem=dem,
-        geoid=get_geoid_path(),
+        geoid=get_geoid_path(geoid),
         default_alt=default_alt,
     )
 
