@@ -232,10 +232,15 @@ def detect_statistical_outliers(
     mean_neighbors_distances = np.sum(neighbors_distances, axis=1)
     mean_neighbors_distances /= k
 
-    # compute mean and standard deviation of those mean distances
-    #           for the whole point cloud
-    mean_distances = np.mean(mean_neighbors_distances)
-    stddev_distances = np.std(mean_neighbors_distances)
+    # Remove obvious outliers from distances
+    inconsistency_threshold = 10 * np.median(mean_neighbors_distances)
+    valid_points = mean_neighbors_distances < inconsistency_threshold
+    mean_neighbors_distances_valid = mean_neighbors_distances[valid_points]
+
+    # Compute mean and standard deviation without outliers which
+    # would disturb the values
+    mean_distances = np.mean(mean_neighbors_distances_valid)
+    stddev_distances = np.std(mean_neighbors_distances_valid)
 
     # compute distance threshold and
     # apply it to determine which points will be removed
