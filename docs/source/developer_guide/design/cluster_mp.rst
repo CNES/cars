@@ -22,7 +22,9 @@ How it works
 
 The main class is the MP Cluster, which inherits from the AbstractCluster class. It is instantiated within the orchestrator.
 
-Inspired by the Dask cluster approach, the MP cluster initiates a list of delayed tasks. For each task that has available data (intermediate results input from the linked previous task), the MP cluster transforms the delayed task into an MpFutureTask.
+Inspired by the Dask cluster approach, the MP cluster initiates a list of delayed tasks and factorize the tasks that can be run sequentially.
+Factorisation of tasks allows to reduce the number of tasks without losing any time. Reducing the number of tasks permits to reduce the number of dumps on disk and to save time.
+For each task that has available data (intermediate results input from the linked previous task), the MP cluster transforms the delayed task into an MpFutureTask.
 
 Upon completion of these jobs, the results are saved on disk, and the reference is passed to the next job. The :ref:`refresh_task_cache` function serves as the primary control function of the MP cluster.
 
@@ -50,8 +52,32 @@ Furthermore, the wrapper provides parameters for the job logger.
 
 **start_tasks**
 +++++++++++++++
-Add future tasks in the cluster queue. The cluster processes tasks from the queue.
+Factorize tasks with **mp_factorizer.factorize_tasks** and add future tasks in the cluster queue. The cluster processes tasks from the queue.
 Transform **MpDelayed** with rec_start to **MpJob**, and calculate task dependencies for each job.
+
+
+**mp_factorizer.factorize_tasks**
++++++++++++++++++++++++++++++++++
+Take as input a list of final **MpDelayed** and factorize all the dependent tasks that are *factorizable*.
+
+A task **t** of the class **MpDelayedTask** is *factorizable* if :
+
+1. Only one task depends on the task **t**
+
+2. The task **t** depends on only one task
+
+If a task **t2** is *factorizable* and depends on a task **t1**, then a new **MpDelayedTask** **t_new** is created with :
+
+ - **t_new**.func = *factorized_func*
+ - **t_new**.args = [**factorized_object**]
+
+The task **t2** is replaced by the task **t_new**.
+
+The object **factorized_object** is of the class **FactorizedObject** and contains a list of tasks with all the information needed by *factorized_func* 
+to run the tasks **t1** and **t2** sequentially (functions of tasks **t1** and **t2** and arguments of task **t1**) :
+
+Arguments of **t2** that are **MpDelayed** are replaced by objects **PreviousData** during factorization. Then, during the run of *factorized_func*, **PreviousData** objects 
+will be replaced by output of **t1** and then **t2** will be computed. Thus, the computing of **t_new** = **t1** + **t2** will be treated as a single task by the cluster.
 
 
 **rec_start**
@@ -95,7 +121,7 @@ At each refresh:
 
 7. Filter tasks from the **next_priority_tasks** based on their presence in the **ready_list**, and place them into the **priority_list**.
 
-8. Calculate **nb_ready_task**=**nb_workers** - size(**priority_list**) to add only **nb_ready_task** tasks without dependency.
+8. Calculate **nb_ready_task** = **nb_workers** - size(**priority_list**) to add only **nb_ready_task** tasks without dependency.
 
 9. If the priority tasks have completed, proceed with the remaining tasks of the **ready_list** in their initial order.
 

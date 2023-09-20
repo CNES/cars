@@ -136,11 +136,13 @@ class MpDelayed:  # pylint: disable=R0903
         Return string of self
         :return : printable delayed
         """
-        try:
+        if "log_fun" in self.delayed_task.kw_args:
             name = str(self.delayed_task.kw_args["log_fun"])
-        except KeyError:
+        elif isinstance(self.delayed_task.args[0], FactorizedObject):
             # Task is factorized
             name = str(self.delayed_task.args[0])
+        else:
+            name = str(self.delayed_task.func)
 
         res = (
             ("MpDELAYED : " + name) + " return index: " + str(self.return_index)

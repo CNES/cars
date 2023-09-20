@@ -407,11 +407,22 @@ The structure follows this organisation:
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
         | *dump_to_disk*      | Dump temporary files to disk                              | bool                                     | True          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *per_job_timeout*   | Timeout used for a job                                    | int or floar                             | 600           | No       |
+        | *per_job_timeout*   | Timeout used for a job                                    | int or float                             | 600           | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *factorize_tasks*   | Tasks sequentially dependant are run in one task          | bool                                     | True          | No       |
+        | *factorize_tasks*   | Tasks sequentially dependent are run in one task          | bool                                     | True          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
     
+        .. note::
+
+            **Factorisation**
+
+            Two or more tasks are sequentially dependant if they can be run sequentially, independantly from any other task. 
+            If it is the case, those tasks can be factorized, which means they can be run in a single task.
+            
+            Running several tasks in one task avoids doing useless dumps on disk between sequential tasks. It does not lose time 
+            because tasks that are factorized could not be run in parallel, and it permits to save some time from the 
+            creation of tasks and data transfer that are avoided.
+
 
         **Profiling configuration:**
 
