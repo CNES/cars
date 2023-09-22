@@ -414,7 +414,7 @@ class OTBGeometry(AbstractGeometry):
 
         s2c_app.Execute()
 
-        output = s2c_app.GetImageAsNumpyArray("output.all", "float").copy()
+        output = s2c_app.GetImageAsNumpyArray("output.all").copy()
 
         # adapt behaviour of output format for shareloc like
         if len(output[:, 0]) == 1:

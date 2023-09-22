@@ -41,7 +41,7 @@ namespace otb
       typedef itk::SmartPointer<Self> Pointer;
       typedef itk::SmartPointer<const Self> ConstPointer;
 
-      typedef otb::Image<float, 2> ImageType;
+      typedef otb::Image<double, 2> ImageType;
       typedef itk::ImageRegionIterator<ImageType> IteratorType;
 
       /** Standard macro */
