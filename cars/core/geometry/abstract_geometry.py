@@ -494,9 +494,9 @@ class AbstractGeometry(metaclass=ABCMeta):
         self,
         sensor,
         geomodel,
-        x_coord: list,
-        y_coord: list,
-        z_coord: list = None,
+        x_coord: np.array,
+        y_coord: np.array,
+        z_coord: np.array = None,
     ) -> np.ndarray:
         """
         For a given image points list, compute the latitudes,
@@ -530,32 +530,32 @@ class AbstractGeometry(metaclass=ABCMeta):
         lat_upper_left, lon_upper_left, _ = self.direct_loc(
             sensor,
             geomodel,
-            [shift_x],
-            [shift_y],
+            np.array(shift_x),
+            np.array(shift_y),
         )
         lat_upper_right, lon_upper_right, _ = self.direct_loc(
             sensor,
             geomodel,
-            [img_size_x + shift_x],
-            [shift_y],
+            np.array(img_size_x + shift_x),
+            np.array(shift_y),
         )
         lat_bottom_left, lon_bottom_left, _ = self.direct_loc(
             sensor,
             geomodel,
-            [shift_x],
-            [img_size_y + shift_y],
+            np.array(shift_x),
+            np.array(img_size_y + shift_y),
         )
         lat_bottom_right, lon_bottom_right, _ = self.direct_loc(
             sensor,
             geomodel,
-            [img_size_x + shift_x],
-            [img_size_y + shift_y],
+            np.array(img_size_x + shift_x),
+            np.array(img_size_y + shift_y),
         )
 
-        u_l = (lon_upper_left[0], lat_upper_left[0])
-        u_r = (lon_upper_right[0], lat_upper_right[0])
-        l_l = (lon_bottom_left[0], lat_bottom_left[0])
-        l_r = (lon_bottom_right[0], lat_bottom_right[0])
+        u_l = (lon_upper_left, lat_upper_left)
+        u_r = (lon_upper_right, lat_upper_right)
+        l_l = (lon_bottom_left, lat_bottom_left)
+        l_r = (lon_bottom_right, lat_bottom_right)
 
         if shp is not None:
             # create envelope polygon and save it as a shapefile

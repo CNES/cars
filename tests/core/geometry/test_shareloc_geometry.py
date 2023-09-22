@@ -22,6 +22,8 @@
 Test module for cars/core/geometry/shareloc_geometry.py
 """
 
+import numpy as np
+
 # Third party imports
 import pytest
 
@@ -53,10 +55,7 @@ def test_dir_loc_rpc():
     )
 
     lat, lon, alt = geo_loader.direct_loc(
-        sensor,
-        geomodel,
-        0,
-        0,
+        sensor, geomodel, np.array([0]), np.array([0])
     )
 
     # test lat, lon, alt value

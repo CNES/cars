@@ -349,9 +349,9 @@ class OTBGeometry(AbstractGeometry):
         self,
         sensor,
         geomodel,
-        x_coord: list,
-        y_coord: list,
-        z_coord: list = None,
+        x_coord: np.array,
+        y_coord: np.array,
+        z_coord: np.array = None,
     ) -> np.ndarray:
         """
         For a given image point list , compute the latitudes,
@@ -385,14 +385,23 @@ class OTBGeometry(AbstractGeometry):
             "ConvertSensorToGeoMultiPointFast"
         )
         s2c_app.SetParameterString("in", sensor)
-
-        x_coord = list(map(str, x_coord))
-        y_coord = list(map(str, y_coord))
+        x_coord = x_coord.tolist()
+        y_coord = y_coord.tolist()
+        if isinstance(x_coord, list):
+            x_coord = list(map(str, x_coord))
+            y_coord = list(map(str, y_coord))
+        else:
+            x_coord = [str(x_coord)]
+            y_coord = [str(y_coord)]
         s2c_app.SetParameterStringList("input.idx", x_coord)
         s2c_app.SetParameterStringList("input.idy", y_coord)
 
         if z_coord is not None:
-            z_coord = list(map(str, z_coord))
+            z_coord = z_coord.tolist()
+            if isinstance(z_coord, list):
+                z_coord = list(map(str, z_coord))
+            else:
+                z_coord = [str(z_coord)]
             s2c_app.SetParameterStringList("input.idz", z_coord)
 
         if self.dem is not None:
@@ -406,9 +415,16 @@ class OTBGeometry(AbstractGeometry):
         s2c_app.Execute()
 
         output = s2c_app.GetImageAsNumpyArray("output.all", "float").copy()
-        lat = output[:, 0]
-        lon = output[:, 1]
-        alt = output[:, 2]
+
+        # adapt behaviour of output format for shareloc like
+        if len(output[:, 0]) == 1:
+            lat = output[:, 0][0]
+            lon = output[:, 1][0]
+            alt = output[:, 2][0]
+        else:
+            lat = np.array(output[:, 0])
+            lon = np.array(output[:, 1])
+            alt = np.array(output[:, 2])
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
@@ -441,7 +457,6 @@ class OTBGeometry(AbstractGeometry):
         loc_app.SetParameterStringList("input.idy", [str(0)])
         loc_app.SetParameterStringList("input.idz", [str(0)])
         loc_app.Execute()
-        # output = loc_app.GetImageAsNumpyArray("output.all", "float").copy()
 
         app = otbApplication.Registry.CreateApplication("ImageEnvelope")
 
