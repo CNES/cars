@@ -32,8 +32,9 @@ import numpy as np
 import pytest
 import rasterio as rio
 
-# CARS imports
 from cars.core.geometry.abstract_geometry import AbstractGeometry
+
+# CARS imports
 from cars.core.inputs import read_vector
 
 # CARS Tests imports
@@ -547,11 +548,11 @@ def test_image_envelope_otb():
         poly, epsg = read_vector(shp)
         assert epsg == 4326
         assert list(poly.exterior.coords) == [
-            (5.193406105041504, 44.20805740356445),
-            (5.1965651512146, 44.20809555053711),
-            (5.196654319763184, 44.205902099609375),
-            (5.193485260009766, 44.205841064453125),
-            (5.193406105041504, 44.20805740356445),
+            (5.193406138843349, 44.20805805252155),
+            (5.1965650939582435, 44.20809526197842),
+            (5.196654349708835, 44.205901416036546),
+            (5.193485218293437, 44.205842790578764),
+            (5.193406138843349, 44.20805805252155),
         ]
 
 
@@ -581,3 +582,36 @@ def test_check_consistency_otb():
         geo_plugin.check_product_consistency(existing_no_geom, dummy_geomodel)
     with pytest.raises(RuntimeError):
         geo_plugin.check_product_consistency(not_existing, dummy_geomodel)
+
+
+@pytest.mark.unit_tests
+def test_dir_loc_multipoint_otb():
+    """
+    Test direct localization multipoint
+    """
+    sensor = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel = absolute_data_path("input/phr_ventoux/left_image.geom")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry", dem=dem
+        )
+    )
+
+    lat, lon, alt = geo_plugin.direct_loc(
+        sensor,
+        geomodel,
+        np.array([0, 5, 10]),
+        np.array([0, 6, 12]),
+    )
+    current = np.array([lat, lon, alt])
+    reference = np.array(
+        [
+            [44.20805589, 44.2080298, 44.20800366],
+            [5.19340938, 5.19344198, 5.19347456],
+            [503.5501949, 504.01208942, 504.43602082],
+        ],
+        np.dtype(np.float64),
+    )
+    np.testing.assert_allclose(current, reference)

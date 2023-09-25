@@ -146,21 +146,21 @@ Currently, the `AbstractGeometry` class requires the implementation of the follo
         self,
         sensor,
         geomodel,
-        x_coord: float,
-        y_coord: float,
-        z_coord: float = None
+        x_coord: list,
+        y_coord: list,
+        z_coord: list = None
     ) -> np.ndarray:
         """
-        For a given image point, compute the latitude, longitude, altitude
+        For a given image points list, compute the latitudes, longitudes, altitudes
 
-        Advice: to be sure, use x,y,z inputs only
+        Advice: to be sure, use x,y,z list inputs only
 
         :param sensor: path to sensor image
         :param geomodel: path and attributes for geomodel
-        :param x_coord: X Coordinate in input image sensor
-        :param y_coord: Y Coordinate in input image sensor
-        :param z_coord: Z Altitude coordinate to take the image
-        :return: Latitude, Longitude, Altitude coordinates as a numpy array
+        :param x_coord: X Coordinates list in input image sensor
+        :param y_coord: Y Coordinates list in input image sensor
+        :param z_coord: Z Altitude coordinates list to take the image
+        :return: Latitude, Longitude, Altitude coordinates list as a numpy array
         """
 
 Where `constants` corresponds to the `cars/core/constants.py` module.

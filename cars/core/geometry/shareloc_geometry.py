@@ -365,9 +365,9 @@ class SharelocGeometry(AbstractGeometry):
         self,
         sensor,
         geomodel,
-        x_coord: float,
-        y_coord: float,
-        z_coord: float = None,
+        x_coord: np.array,
+        y_coord: np.array,
+        z_coord: np.array = None,
     ) -> np.ndarray:
         """
         For a given image point, compute the latitude, longitude, altitude
