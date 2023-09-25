@@ -36,6 +36,7 @@ import xarray as xr
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
+from cars.orchestrator.cluster.mp_cluster.mp_factorizer import factorize_delayed
 
 # CARS Tests imports
 from ...helpers import temporary_dir
@@ -236,7 +237,7 @@ def step2_array(dataset1, dataset2):
     return dataset3
 
 
-conf_mp_dump = {"mode": "mp", "dump_to_disk": True}
+conf_mp_dump = {"mode": "mp", "dump_to_disk": True, "factorize_tasks": False}
 
 
 @pytest.mark.unit_tests
@@ -293,3 +294,51 @@ def test_tasks_pipeline_dump_xarray(conf):
 
         # Close cluster
         cluster.cleanup()
+
+
+@pytest.mark.parametrize("conf", [conf_mp])
+def test_factorize_tasks_mp(conf):
+    """
+    Test task creation and factorization
+
+    :param conf: mp cluster conf
+    """
+
+    current_conf = conf
+    # create temporary dir
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # Create cluster
+        cluster = abstract_cluster.AbstractCluster(  # pylint: disable=E0110
+            current_conf, directory
+        )
+
+        # Create tasks
+        data_list = [101]
+
+        final_delayed = []
+        for data in data_list:
+            delayed_1a, delayed_1b = cluster.create_task(step1_array, nout=2)(
+                data
+            )
+            delayed_2 = cluster.create_task(step2_array, nout=1)(
+                delayed_1a, delayed_1b
+            )
+            final_delayed.append(delayed_2)
+
+        # factorize tasks
+        factorize_delayed(final_delayed)
+        factorized_object = final_delayed[0].delayed_task.args[0]
+
+        # run tasks sequentially
+        res_1a, res_1b = factorized_object.pop_next_task()
+        np.testing.assert_array_equal(
+            res_1a["im"].values, 202 * np.ones((3, 4))
+        )
+        np.testing.assert_array_equal(
+            res_1b["im"].values, -101 * np.ones((3, 4))
+        )
+
+        res_2 = factorized_object.pop_next_task((res_1a, res_1b))
+        np.testing.assert_array_equal(res_2["im"].values, 101 * np.ones((3, 4)))
+
+        assert not factorized_object.tasks  # attribute tasks is empty

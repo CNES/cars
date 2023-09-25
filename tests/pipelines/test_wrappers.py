@@ -152,7 +152,6 @@ def test_epipolar_pipeline(
     )
 
     points_cloud = compute_points_cloud(
-        left_image,
         disp_map,
         img1,
         img2,
@@ -162,7 +161,6 @@ def test_epipolar_pipeline(
         grid2,
         get_geometry_plugin(),
         32636,
-        add_msk_info=True,
     )
 
     # Uncomment to update reference

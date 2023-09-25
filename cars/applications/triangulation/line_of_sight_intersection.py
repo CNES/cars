@@ -73,7 +73,6 @@ class LineOfSightIntersection(
         self.used_method = self.used_config["method"]
         self.use_geoid_alt = self.used_config["use_geoid_alt"]
         self.snap_to_img1 = self.used_config["snap_to_img1"]
-        self.add_msk_info = self.used_config["add_msk_info"]
         # Saving files
         self.save_points_cloud = self.used_config["save_points_cloud"]
 
@@ -110,7 +109,6 @@ class LineOfSightIntersection(
         )
         overloaded_conf["use_geoid_alt"] = conf.get("use_geoid_alt", False)
         overloaded_conf["snap_to_img1"] = conf.get("snap_to_img1", False)
-        overloaded_conf["add_msk_info"] = conf.get("add_msk_info", True)
 
         # Saving files
         overloaded_conf["save_points_cloud"] = conf.get(
@@ -121,7 +119,6 @@ class LineOfSightIntersection(
             "method": str,
             "use_geoid_alt": bool,
             "snap_to_img1": bool,
-            "add_msk_info": bool,
             "save_points_cloud": bool,
         }
 
@@ -439,12 +436,9 @@ class LineOfSightIntersection(
                 geoid_data, broadcast=True
             )
 
-        for col in range(epipolar_image.shape[1]):
-            for row in range(epipolar_image.shape[0]):
-                if type(None) not in (
-                    type(epipolar_disparity_map[row, col]),
-                    type(epipolar_image[row, col]),
-                ):
+        for col in range(epipolar_disparity_map.shape[1]):
+            for row in range(epipolar_disparity_map.shape[0]):
+                if epipolar_disparity_map[row, col] is not None:
                     # update saving infos  for potential replacement
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
@@ -455,7 +449,6 @@ class LineOfSightIntersection(
                     ) = self.orchestrator.cluster.create_task(
                         compute_points_cloud
                     )(
-                        epipolar_image[row, col],
                         epipolar_disparity_map[row, col],
                         sensor1,
                         sensor2,
@@ -466,7 +459,6 @@ class LineOfSightIntersection(
                         geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
-                        add_msk_info=self.add_msk_info,
                         saving_info=full_saving_info,
                     )
 
@@ -474,7 +466,6 @@ class LineOfSightIntersection(
 
 
 def compute_points_cloud(
-    image_object: xr.Dataset,
     disparity_object: xr.Dataset,
     sensor1,
     sensor2,
@@ -485,24 +476,12 @@ def compute_points_cloud(
     geometry_plugin,
     epsg,
     geoid_data: xr.Dataset = None,
-    add_msk_info: bool = False,
     saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute points clouds from image objects and disparity objects.
 
-    :param image_object: Left image dataset with :
-
-            - cst.EPI_IMAGE
-            - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
-    :type image_object: xr.Dataset with :
-
-            - cst.EPI_IMAGE
-            - cst.EPI_MSK (if given)
-            - cst.EPI_COLOR (for left, if given)
     :param disparity_object: Left disparity map dataset with :
-
             - cst_disp.MAP
             - cst_disp.VALID
             - cst.EPI_COLOR
@@ -527,16 +506,11 @@ def compute_points_cloud(
     :param snap_to_img1: If True, Lines of Sight of img2 are moved so as to
                          cross those of img1
     :type snap_to_img1: bool
-    :param add_msk_info:  boolean enabling the addition of the masks'
-                         information in the point clouds final dataset
-    :type add_msk_info: bool
 
     :return: Left disparity object
 
     Returned object is composed of :
-
         - dataset with :
-
             - cst.X
             - cst.Y
             - cst.Z
@@ -544,19 +518,6 @@ def compute_points_cloud(
     """
     # Get disparity maps
     disp_ref = disparity_object
-
-    # Get masks
-    left = image_object
-    im_ref_msk = None
-    if add_msk_info:
-        ref_values_list = [key for key, _ in left.items()]
-        if cst.EPI_MSK in ref_values_list:
-            im_ref_msk = left
-        else:
-            worker_logger = logging.getLogger("distributed.worker")
-            worker_logger.warning(
-                "Left image does not have a mask to rasterize"
-            )
 
     # Triangulate
     if isinstance(disp_ref, xr.Dataset):
@@ -570,8 +531,8 @@ def compute_points_cloud(
             grid1,
             grid2,
             disp_ref,
-            im_ref_msk_ds=im_ref_msk,
         )
+
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches
         points = {}
@@ -597,18 +558,9 @@ def compute_points_cloud(
         for key, point in points.items():
             points[key] = triangulation_tools.geoid_offset(point, geoid_data)
 
-    # propagate the color type
-    color_type = None
-    if cst.EPI_COLOR in image_object.data_vars.keys():
-        color_type = image_object[cst.EPI_COLOR].attrs["color_type"]
-    else:
-        color_type = image_object[cst.EPI_IMAGE].attrs["color_type"]
-
     # Fill datasets
     pc_dataset = points[cst.STEREO_REF]
 
-    if color_type:
-        pc_dataset.attrs["color_type"] = color_type
     attributes = None
     if isinstance(disp_ref, pandas.DataFrame):
         # Conversion to UTM

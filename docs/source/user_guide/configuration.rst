@@ -384,7 +384,7 @@ The structure follows this organisation:
         +=====================+==================================================================+=========================================+===============+==========+
         | *nb_workers*        | Number of workers                                                | int, should be > 0                      | 2             | No       |
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *max_ram_per_worker*| Maximum ram per worker                                           | int, or float should be > 0             | 2000          | No       |
+        | *max_ram_per_worker*| Maximum ram per worker                                           | int or float, should be > 0             | 2000          | No       |
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
         | *walltime*          | Walltime for one worker                                          | string, Should be formatted as HH:MM:SS | 00:59:00      | No       |
         +---------------------+------------------------------------------------------------------+-----------------------------------------+---------------+----------+
@@ -403,13 +403,26 @@ The structure follows this organisation:
         +=====================+===========================================================+==========================================+===============+==========+
         | *nb_workers*        | Number of workers                                         | int, should be > 0                       | 2             | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *max_ram_per_worker*| Maximum ram per worker                                    | int, or float should be > 0              | 2000          | No       |
+        | *max_ram_per_worker*| Maximum ram per worker                                    | int or float, should be > 0              | 2000          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *dump_to_disk*      | Dump temporary files to disk                              | bool, True if objects are dumped on disk | True          | No       |
+        | *dump_to_disk*      | Dump temporary files to disk                              | bool                                     | True          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
-        | *per_job_timeout*   | Timeout used for a job                                    | float, int                               | 600           | No       |
+        | *per_job_timeout*   | Timeout used for a job                                    | int or float                             | 600           | No       |
+        +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
+        | *factorize_tasks*   | Tasks sequentially dependent are run in one task          | bool                                     | True          | No       |
         +---------------------+-----------------------------------------------------------+------------------------------------------+---------------+----------+
     
+        .. note::
+
+            **Factorisation**
+
+            Two or more tasks are sequentially dependant if they can be run sequentially, independantly from any other task. 
+            If it is the case, those tasks can be factorized, which means they can be run in a single task.
+            
+            Running several tasks in one task avoids doing useless dumps on disk between sequential tasks. It does not lose time 
+            because tasks that are factorized could not be run in parallel, and it permits to save some time from the 
+            creation of tasks and data transfer that are avoided.
+
 
         **Profiling configuration:**
 
@@ -958,7 +971,6 @@ The structure follows this organisation:
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | add_msk_info      |                                                                                                                    | boolean |                                      | true                         | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+

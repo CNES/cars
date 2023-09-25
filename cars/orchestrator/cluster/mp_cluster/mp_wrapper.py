@@ -36,7 +36,7 @@ import xarray as xr
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
-from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
+from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 
 # Third party imports
 
@@ -323,7 +323,7 @@ def load_args_or_kwargs(args_or_kwargs):
         return res
 
     # replace data
-    return replace_data_rec(args_or_kwargs, transform_path_to_obj)
+    return replace_data(args_or_kwargs, transform_path_to_obj)
 
 
 def is_dumped_object(obj):
@@ -379,7 +379,6 @@ def dump_single_object(obj, path):
     :param path: path
     :type path: str
     """
-
     if isinstance(obj, xr.Dataset):
         # is from array
         cars_dataset.CarsDataset("arrays").save_single_tile(obj, path)

@@ -24,7 +24,6 @@ contains functions used for triangulation
 """
 
 # Standard imports
-import logging
 from typing import Dict
 
 # Third party imports
@@ -45,7 +44,6 @@ def triangulate(
     grid1,
     grid2,
     disp_ref: xr.Dataset,
-    im_ref_msk_ds: xr.Dataset = None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
@@ -92,7 +90,6 @@ def triangulate(
         grid2,
         disp_ref,
         roi_key=cst.ROI,
-        dataset_msk=im_ref_msk_ds,
     )
 
     return point_clouds
@@ -188,7 +185,6 @@ def compute_points_cloud(
     grid2,
     data: xr.Dataset,
     roi_key: str,
-    dataset_msk: xr.Dataset = None,
 ) -> xr.Dataset:
     # TODO detail a bit more what this method do
     """
@@ -239,54 +235,23 @@ def compute_points_cloud(
             data[cst_disp.VALID].values,
         ),
     }
-    if dataset_msk is not None:
-        ds_values_list = [key for key, _ in dataset_msk.items()]
 
-        if cst.EPI_MSK in ds_values_list:
-            if roi_key == cst.ROI_WITH_MARGINS:
-                ref_roi = [
-                    0,
-                    0,
-                    int(dataset_msk.dims[cst.COL]),
-                    int(dataset_msk.dims[cst.ROW]),
-                ]
-            else:
-                ref_roi = [
-                    int(-dataset_msk.attrs[cst.EPI_MARGINS][0]),
-                    int(-dataset_msk.attrs[cst.EPI_MARGINS][1]),
-                    int(
-                        dataset_msk.dims[cst.COL]
-                        - dataset_msk.attrs[cst.EPI_MARGINS][2]
-                    ),
-                    int(
-                        dataset_msk.dims[cst.ROW]
-                        - dataset_msk.attrs[cst.EPI_MARGINS][3]
-                    ),
-                ]
-
-            # propagate all the data in the point cloud (except color)
-            for key, val in dataset_msk.items():
-                if len(val.values.shape) == 2:
-                    values[key] = (
-                        [cst.ROW, cst.COL],
-                        val.values[
-                            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-                        ],
-                    )
-
-            for key, val in data.items():
-                if len(val.values.shape) == 2:
-                    if "msk_" not in key and "color" not in key:
-                        values[key] = ([cst.ROW, cst.COL], val.values)
-
-        else:
-            logging.warning("No mask is present in the image dataset")
+    for key, val in data.items():
+        if len(val.values.shape) == 2:
+            if key != cst.EPI_COLOR:
+                values[key] = ([cst.ROW, cst.COL], val.values)
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
 
-    # add color
+    # add color and data type of image
+    color_type = None
     if cst.EPI_COLOR in data:
         add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud, nodata_index)
+        color_type = data[cst.EPI_COLOR].attrs["color_type"]
+    elif cst.EPI_IMAGE in data:
+        color_type = data[cst.EPI_IMAGE].attrs["color_type"]
+    if color_type:
+        point_cloud.attrs["color_type"] = color_type
 
     # add classif
     if cst.EPI_CLASSIFICATION in data:
