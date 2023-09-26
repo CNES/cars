@@ -786,8 +786,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         matches_filter_knn=(
                             self.sparse_mtch_app.get_matches_filter_knn()
                         ),
-                        matches_filter_std_factor=(
-                            self.sparse_mtch_app.get_matches_filter_std_factor()
+                        matches_filter_dev_factor=(
+                            self.sparse_mtch_app.get_matches_filter_dev_factor()
                         ),
                     )
 

@@ -104,8 +104,8 @@ class Sift(SparseMatching, short_name="sift"):
 
         # sifts filter
         self.matches_filter_knn = self.used_config["matches_filter_knn"]
-        self.matches_filter_std_factor = self.used_config[
-            "matches_filter_std_factor"
+        self.matches_filter_dev_factor = self.used_config[
+            "matches_filter_dev_factor"
         ]
 
         # Saving files
@@ -183,8 +183,8 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["matches_filter_knn"] = conf.get(
             "matches_filter_knn", 25
         )
-        overloaded_conf["matches_filter_std_factor"] = conf.get(
-            "matches_filter_std_factor", 3
+        overloaded_conf["matches_filter_dev_factor"] = conf.get(
+            "matches_filter_dev_factor", 3.0
         )
 
         # Saving files
@@ -210,7 +210,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_back_matching": bool,
             "matches_filter_knn": int,
-            "matches_filter_std_factor": int,
+            "matches_filter_dev_factor": Or(int, float),
             "save_matches": bool,
         }
 
@@ -266,16 +266,16 @@ class Sift(SparseMatching, short_name="sift"):
         """
         return self.matches_filter_knn
 
-    def get_matches_filter_std_factor(self):
+    def get_matches_filter_dev_factor(self):
         """
-        Get matches_filter_std_factor :
-        factor of standard deviation in the formula
+        Get matches_filter_dev_factor :
+        factor of deviation in the formula
         to compute threshold of outliers
 
-        :return: matches_filter_std_factor
+        :return: matches_filter_dev_factor
 
         """
-        return self.matches_filter_std_factor
+        return self.matches_filter_dev_factor
 
     def get_margins(self):
         """

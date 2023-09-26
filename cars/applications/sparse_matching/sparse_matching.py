@@ -113,13 +113,13 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_matches_filter_std_factor(self):
+    def get_matches_filter_dev_factor(self):
         """
-        Get matches_filter_std_factor :
-        factor of standard deviation in the formula
+        Get matches_filter_dev_factor :
+        factor ofdeviation in the formula
         to compute threshold of outliers
 
-        :return: matches_filter_std_factor
+        :return: matches_filter_dev_factor
 
         """
 

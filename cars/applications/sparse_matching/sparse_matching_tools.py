@@ -324,7 +324,7 @@ def compute_disp_min_disp_max(
     pair_key=None,
     disp_to_alt_ratio=None,
     matches_filter_knn=25,
-    matches_filter_std_factor=3,
+    matches_filter_dev_factor=3,
 ):
     """
     Compute disp min and disp max from triangulated and filtered matches
@@ -340,9 +340,9 @@ def compute_disp_min_disp_max(
     :param matches_filter_knn: number of neighboors used to measure
                                isolation of matches
     :type matches_filter_knn: int
-    :param matches_filter_std_factor: factor of standard deviation in the
+    :param matches_filter_dev_factor: factor of deviation in the
                                       formula to compute threshold of outliers
-    :type matches_filter_std_factor: int
+    :type matches_filter_dev_factor: float
 
     :return: disp min and disp max
     :rtype: float, float
@@ -352,7 +352,7 @@ def compute_disp_min_disp_max(
     filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(
         pd_cloud,
         k=matches_filter_knn,
-        std_factor=matches_filter_std_factor,
+        std_factor=matches_filter_dev_factor,
     )
 
     # Obtain dmin dmax
