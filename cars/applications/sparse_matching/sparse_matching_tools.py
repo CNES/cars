@@ -352,7 +352,7 @@ def compute_disp_min_disp_max(
     filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(
         pd_cloud,
         k=matches_filter_knn,
-        std_factor=matches_filter_dev_factor,
+        dev_factor=matches_filter_dev_factor,
     )
 
     # Obtain dmin dmax

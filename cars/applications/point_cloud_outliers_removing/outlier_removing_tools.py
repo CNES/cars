@@ -178,7 +178,8 @@ def detect_small_components(
 def statistical_outliers_filtering(
     cloud: pandas.DataFrame,
     k: int,
-    std_factor: float,
+    dev_factor: float,
+    use_median: bool = False,
     filtered_elt_pos: bool = False,
 ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
@@ -188,8 +189,9 @@ def statistical_outliers_filtering(
     :param cloud: combined cloud
         as returned by the create_combined_cloud function
     :param k: number of neighbors
-    :param std_factor: multiplication factor to use
+    :param dev_factor: multiplication factor of deviation used
         to compute the distance threshold
+    :param use_median: choice of statistical measure used to filter
     :param filtered_elt_pos: if filtered_elt_pos is set to True,
         the removed points positions in their original
         epipolar images are returned, otherwise it is set to None
@@ -197,29 +199,35 @@ def statistical_outliers_filtering(
         the removed elements positions in their epipolar images
     """
     cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = detect_statistical_outliers(cloud_xyz, k, std_factor)
+    index_elt_to_remove = detect_statistical_outliers(
+        cloud_xyz, k, dev_factor, use_median
+    )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
 
 
 def detect_statistical_outliers(
-    cloud_xyz: np.ndarray, k: int, std_factor: float = 3.0
+    cloud_xyz: np.ndarray, k: int, dev_factor: float, use_median: bool
 ) -> List[int]:
     """
     Determine the indexes of the points of cloud_xyz to filter.
     The removed points have mean distances with their k nearest neighbors
     that are greater than a distance threshold (dist_thresh).
 
-    This threshold is computed from the mean (mean_distances) and
-    standard deviation (stddev_distances) of all the points mean distances
-    with their k nearest neighbors:
+    This threshold is computed from the mean (or median) and
+    standard deviation (or interquartile range) of all the points mean
+    distances with their k nearest neighbors:
 
-        dist_thresh = mean_distances + std_factor * stddev_distances
+        (1) dist_thresh = mean_distances + dev_factor * std_distances
+        or
+        (2) dist_thresh = median_distances + dev_factor * iqr_distances
 
     :param cloud_xyz: points kdTree
     :param k: number of neighbors
-    :param std_factor: multiplication factor to use
+    :param dev_factor: multiplication factor of deviation used
         to compute the distance threshold
+    :param use_median: if True formula (2) is used for threshold, else
+        formula (1)
     :return: list of the points to filter indexes
     """
     # compute for each points, all the distances to their k neighbors
@@ -232,19 +240,25 @@ def detect_statistical_outliers(
     mean_neighbors_distances = np.sum(neighbors_distances, axis=1)
     mean_neighbors_distances /= k
 
-    # Remove obvious outliers from distances
-    inconsistency_threshold = 10 * np.median(mean_neighbors_distances)
-    valid_points = mean_neighbors_distances < inconsistency_threshold
-    mean_neighbors_distances_valid = mean_neighbors_distances[valid_points]
+    if use_median:
+        # compute median and interquartile range of those mean distances
+        # for the whole point cloud
+        median_distances = np.median(mean_neighbors_distances)
+        iqr_distances = np.percentile(
+            mean_neighbors_distances, 75
+        ) - np.percentile(mean_neighbors_distances, 25)
+        # compute distance threshold and
+        # apply it to determine which points will be removed
+        dist_thresh = median_distances + dev_factor * iqr_distances
+    else:
+        # compute median and interquartile range of those mean distances
+        # for the whole point cloud
+        mean_distances = np.mean(mean_neighbors_distances)
+        std_distances = np.std(mean_neighbors_distances)
+        # compute distance threshold and
+        # apply it to determine which points will be removed
+        dist_thresh = mean_distances + dev_factor * std_distances
 
-    # Compute mean and standard deviation without outliers which
-    # would disturb the values
-    mean_distances = np.mean(mean_neighbors_distances_valid)
-    stddev_distances = np.std(mean_neighbors_distances_valid)
-
-    # compute distance threshold and
-    # apply it to determine which points will be removed
-    dist_thresh = mean_distances + std_factor * stddev_distances
     points_to_remove = np.argwhere(mean_neighbors_distances > dist_thresh)
 
     # flatten points_to_remove
