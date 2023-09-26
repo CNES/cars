@@ -103,12 +103,23 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_disp_out_reject_percent(self):
+    def get_matches_filter_knn(self):
         """
-        Get disparity_outliers_rejection_percent
-        corresponding to outliers to reject
+        Get matches_filter_knn :
+        number of neighboors used to measure isolation of matches
 
-        :return: margin disparity_outliers_rejection_percent percent
+        :return: matches_filter_knn
+
+        """
+
+    @abstractmethod
+    def get_matches_filter_std_factor(self):
+        """
+        Get matches_filter_std_factor :
+        factor of standard deviation in the formula
+        to compute threshold of outliers
+
+        :return: matches_filter_std_factor
 
         """
 

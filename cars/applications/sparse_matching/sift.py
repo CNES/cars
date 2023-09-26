@@ -102,6 +102,12 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
 
+        # sifts filter
+        self.matches_filter_knn = self.used_config["matches_filter_knn"]
+        self.matches_filter_std_factor = self.used_config[
+            "matches_filter_std_factor"
+        ]
+
         # Saving files
         self.save_matches = self.used_config["save_matches"]
 
@@ -173,6 +179,14 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_back_matching", True
         )
 
+        # sifts filter params
+        overloaded_conf["matches_filter_knn"] = conf.get(
+            "matches_filter_knn", 25
+        )
+        overloaded_conf["matches_filter_std_factor"] = conf.get(
+            "matches_filter_std_factor", 3
+        )
+
         # Saving files
         overloaded_conf["save_matches"] = conf.get("save_matches", False)
         self.save_matches = overloaded_conf["save_matches"]
@@ -195,6 +209,8 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_edge_threshold": float,
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_back_matching": bool,
+            "matches_filter_knn": int,
+            "matches_filter_std_factor": int,
             "save_matches": bool,
         }
 
@@ -240,15 +256,26 @@ class Sift(SparseMatching, short_name="sift"):
         """
         return self.disparity_margin
 
-    def get_disp_out_reject_percent(self):
+    def get_matches_filter_knn(self):
         """
-        Get disparity_outliers_rejection_percent
-        corresponding to outliers to reject
+        Get matches_filter_knn :
+        number of neighboors used to measure isolation of matches
 
-        :return: margin disparity_outliers_rejection_percent percent
+        :return: matches_filter_knn
 
         """
-        return self.disparity_outliers_rejection_percent
+        return self.matches_filter_knn
+
+    def get_matches_filter_std_factor(self):
+        """
+        Get matches_filter_std_factor :
+        factor of standard deviation in the formula
+        to compute threshold of outliers
+
+        :return: matches_filter_std_factor
+
+        """
+        return self.matches_filter_std_factor
 
     def get_margins(self):
         """
