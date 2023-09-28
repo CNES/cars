@@ -101,16 +101,31 @@ def test_detect_statistical_outliers():
     )
 
     removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
-        ref_cloud, 4, 0.0
+        ref_cloud, 4, 0.0, use_median=False
     )
     assert sorted(removed_elt_pos) == [5, 11, 17, 23, 29]
 
     removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
-        ref_cloud, 4, 1.0
+        ref_cloud, 4, 1.0, use_median=False
     )
     assert sorted(removed_elt_pos) == [11, 17, 23, 29]
 
     removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
-        ref_cloud, 4, 2.0
+        ref_cloud, 4, 2.0, use_median=False
+    )
+    assert sorted(removed_elt_pos) == [23, 29]
+
+    removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
+        ref_cloud, 4, 1.0, use_median=True
+    )
+    assert sorted(removed_elt_pos) == [5, 11, 17, 23, 29]
+
+    removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
+        ref_cloud, 4, 7.0, use_median=True
+    )
+    assert sorted(removed_elt_pos) == [11, 17, 23, 29]
+
+    removed_elt_pos = outlier_removing_tools.detect_statistical_outliers(
+        ref_cloud, 4, 15.0, use_median=True
     )
     assert sorted(removed_elt_pos) == [23, 29]
