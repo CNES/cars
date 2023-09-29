@@ -783,6 +783,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         disp_to_alt_ratio=pairs[pair_key][
                             "corrected_grid_left"
                         ].attributes["disp_to_alt_ratio"],
+                        matches_filter_knn=(
+                            self.sparse_mtch_app.get_matches_filter_knn()
+                        ),
+                        matches_filter_dev_factor=(
+                            self.sparse_mtch_app.get_matches_filter_dev_factor()
+                        ),
                     )
 
                     # Clean variables
