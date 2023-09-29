@@ -137,10 +137,10 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["method"] = conf.get("method", "sift")
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
-            "elevation_delta_lower_bound", None
+            "elevation_delta_lower_bound", -9000
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
-            "elevation_delta_upper_bound", None
+            "elevation_delta_upper_bound", 9000
         )
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
