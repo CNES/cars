@@ -75,7 +75,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.Y: str,
         cst.Z: str,
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
-        cst.POINTS_CLOUD_CONFIDENCE: Or(dict, None),
+        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_MSK: Or(str, None),
@@ -114,7 +114,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         )
         if confidence_conf:
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-                cst.POINTS_CLOUD_CONFIDENCE
+                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ] = {}
             if (
                 confidence_conf_ref
@@ -130,18 +130,21 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             confidence_conf_ref = confidence_conf.keys()
             for confidence_name in confidence_conf:
                 output_confidence_name = confidence_name
-                if cst.POINTS_CLOUD_CONFIDENCE not in output_confidence_name:
+                if (
+                    cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                    not in output_confidence_name
+                ):
                     output_confidence_name = (
-                        cst.POINTS_CLOUD_CONFIDENCE
+                        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
                         + "_"
                         + output_confidence_name
                     )
                 overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-                    cst.POINTS_CLOUD_CONFIDENCE
+                    cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
                 ][output_confidence_name] = confidence_conf[confidence_name]
         else:
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-                cst.POINTS_CLOUD_CONFIDENCE
+                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ] = None
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
             cst.PC_EPSG
@@ -179,7 +182,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
                 cst.POINTS_CLOUD_FILLING_KEY_ROOT
             ],
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-                cst.POINTS_CLOUD_CONFIDENCE
+                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ],
         )
 
@@ -257,9 +260,9 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.POINTS_CLOUD_MSK,
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT,
             cst.POINTS_CLOUD_FILLING_KEY_ROOT,
-            cst.POINTS_CLOUD_CONFIDENCE,
+            cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT,
         ]:
-            if tag != cst.POINTS_CLOUD_CONFIDENCE:
+            if tag != cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT:
                 if point_cloud[tag] is not None:
                     point_cloud[tag] = make_relative_path_absolute(
                         point_cloud[tag], config_json_dir

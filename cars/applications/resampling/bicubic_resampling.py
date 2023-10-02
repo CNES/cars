@@ -622,15 +622,9 @@ def generate_epipolar_images_wrapper(
     if add_color:
         # merge color in left dataset
         if len(left_color_dataset[cst.EPI_IMAGE].values.shape) > 2:
-            band_im = get_color_bands(left_color_dataset, cst.EPI_IMAGE)
+            band_im = get_color_bands(left_color_dataset)
         else:
             band_im = ["Gray"]
-
-        # Add epi color mask if exists
-        if cst.EPI_MSK in left_color_dataset:
-            left_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
-                left_color_dataset[cst.EPI_MSK].values, dims=[cst.ROW, cst.COL]
-            )
 
         # if cst.BAND_IM not in left_dataset.dims:
         left_dataset.coords[cst.BAND_IM] = band_im

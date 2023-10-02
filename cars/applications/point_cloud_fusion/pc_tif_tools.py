@@ -725,9 +725,9 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         data_dict[cst.POINTS_CLOUD_FILLING_KEY_ROOT] = items[
             cst.POINTS_CLOUD_FILLING_KEY_ROOT
         ]
-    if cst.POINTS_CLOUD_CONFIDENCE in items:
-        data_dict[cst.POINTS_CLOUD_CONFIDENCE] = items[
-            cst.POINTS_CLOUD_CONFIDENCE
+    if cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT in items:
+        data_dict[cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT] = items[
+            cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
         ]
 
     # create dict

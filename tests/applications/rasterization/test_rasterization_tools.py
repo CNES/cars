@@ -649,6 +649,7 @@ def test_mask_interp_case1(
         __,
         __,
         __,
+        __,
     ) = rasterization_tools.compute_vector_raster_and_stats(
         cloud_pd,
         data_valid,

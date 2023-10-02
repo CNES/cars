@@ -199,7 +199,7 @@ def substring_in_list(src_list, substring):
 
 
 def find_indexes_in_point_cloud(
-    cloud: pandas.DataFrame, tag: str, list_computed_layers: List[str]
+    cloud: pandas.DataFrame, tag: str, list_computed_layers: List[str] = None
 ) -> List[str]:
     """
     Find all indexes in point cloud that contains the key tag
@@ -209,9 +209,8 @@ def find_indexes_in_point_cloud(
     :param list_computed_layers: list of computed output data
     """
     indexes = []
-    if substring_in_list(cloud.columns, tag) and (
-        (list_computed_layers is None)
-        or substring_in_list(list_computed_layers, tag)
+    if list_computed_layers is None or substring_in_list(
+        list_computed_layers, tag
     ):
         for key in cloud.columns:
             if tag in key:
@@ -272,17 +271,16 @@ def compute_vector_raster_and_stats(  # noqa: C901
 
     # 1. altitudes and colors
     values_bands = [cst.Z] if cst.Z in cloud else []
-    clr_bands = [
-        band
-        for band in cloud
-        if str.find(band, cst.POINTS_CLOUD_CLR_KEY_ROOT) >= 0
-    ]
-    values_bands.extend(clr_bands)
+
+    clr_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_CLR_KEY_ROOT
+    )
+    values_bands.extend(clr_indexes)
     split_indexes.append(len(values_bands))
 
     # 2. confidences
     confidences_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_CONFIDENCE, list_computed_layers
+        cloud, cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
@@ -302,7 +300,7 @@ def compute_vector_raster_and_stats(  # noqa: C901
     split_indexes.append(len(classif_indexes))
 
     # 5. source point cloud
-    # Fill the dataframe with additional column :
+    # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
     if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
@@ -387,6 +385,7 @@ def compute_vector_raster_and_stats(  # noqa: C901
         nb_pts_in_disc,
         nb_pts_in_cell,
         msk_out,
+        clr_indexes,
         classif_out,
         classif_indexes,
         confidences_out,
@@ -412,6 +411,7 @@ def create_raster_dataset(
     n_pts: np.ndarray,
     n_in_cell: np.ndarray,
     msk: np.ndarray = None,
+    band_im: List[str] = None,
     classif: np.ndarray = None,
     band_classif: List[str] = None,
     confidences: np.ndarray = None,
@@ -447,26 +447,35 @@ def create_raster_dataset(
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
-    n_layers = raster.shape[-1]
+    n_layers = raster.shape[0]
     x_values_1d, y_values_1d = compute_values_1d(
         x_start, y_start, x_size, y_size, resolution
     )
     raster_coords = {cst.X: x_values_1d, cst.Y: y_values_1d}
-    hgt = np.nan_to_num(raster[..., 0], nan=hgt_no_data)
+    hgt = np.nan_to_num(raster[0], nan=hgt_no_data)
     raster_out = xr.Dataset(
         {cst.RASTER_HGT: ([cst.Y, cst.X], hgt)}, coords=raster_coords
     )
 
-    if raster.shape[-1] > 1:  # rasterizer produced color output
-        band = range(1, raster.shape[-1])
-        # CAUTION: band/channel is set as the first dimension.
-        clr = np.nan_to_num(np.rollaxis(raster[:, :, 1:], 2), nan=color_no_data)
+    if raster.shape[0] > 1:  # rasterizer produced color output
+        color = np.nan_to_num(raster[1:], nan=color_no_data)
+        for idx, band_name in enumerate(band_im):
+            band_im[idx] = band_name.replace(
+                cst.POINTS_CLOUD_CLR_KEY_ROOT + "_", ""
+            )
         color_out = xr.Dataset(
-            {cst.RASTER_COLOR_IMG: ([cst.BAND, cst.Y, cst.X], clr)},
-            coords={**raster_coords, cst.BAND: band},
+            {
+                cst.RASTER_COLOR_IMG: (
+                    [cst.BAND_IM, cst.Y, cst.X],
+                    color,
+                )
+            },
+            coords={**raster_coords, cst.BAND_IM: band_im},
         )
-        # update raster output with color data
+        # update raster output with classification data
         raster_out = xr.merge((raster_out, color_out))
+
+    # print(color_out)
 
     raster_out.attrs[cst.EPSG] = epsg
     raster_out.attrs[cst.RESOLUTION] = resolution
@@ -495,30 +504,29 @@ def create_raster_dataset(
         n_in_cell, dims=raster_dims
     )
 
-    if msk is not None:
+    if msk is not None:  # rasterizer produced mask output
         msk = np.nan_to_num(msk, nan=msk_no_data)
         raster_out[cst.RASTER_MSK] = xr.DataArray(msk, dims=raster_dims)
 
-    if classif is not None:
-        if classif.shape[-1] > 1:  # rasterizer produced classif output
-            classif = np.nan_to_num(classif, nan=msk_no_data)
-            for idx, band_name in enumerate(band_classif):
-                band_classif[idx] = band_name.replace(
-                    cst.POINTS_CLOUD_CLASSIF_KEY_ROOT + "_", ""
-                )
-            classif_out = xr.Dataset(
-                {
-                    cst.RASTER_CLASSIF: (
-                        [cst.BAND_CLASSIF, cst.Y, cst.X],
-                        classif,
-                    )
-                },
-                coords={**raster_coords, cst.BAND_CLASSIF: band_classif},
+    if classif is not None:  # rasterizer produced classif output
+        classif = np.nan_to_num(classif, nan=msk_no_data)
+        for idx, band_name in enumerate(band_classif):
+            band_classif[idx] = band_name.replace(
+                cst.POINTS_CLOUD_CLASSIF_KEY_ROOT + "_", ""
             )
-            # update raster output with classification data
-            raster_out = xr.merge((raster_out, classif_out))
+        classif_out = xr.Dataset(
+            {
+                cst.RASTER_CLASSIF: (
+                    [cst.BAND_CLASSIF, cst.Y, cst.X],
+                    classif,
+                )
+            },
+            coords={**raster_coords, cst.BAND_CLASSIF: band_classif},
+        )
+        # update raster output with classification data
+        raster_out = xr.merge((raster_out, classif_out))
 
-    if confidences is not None:
+    if confidences is not None:  # rasterizer produced color output
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
@@ -536,24 +544,23 @@ def create_raster_dataset(
         # update raster output with classification data
         raster_out = xr.merge((raster_out, source_pc_out))
 
-    if filling is not None:
-        if filling.shape[-1] > 1:  # rasterizer produced filling output
-            filling = np.nan_to_num(filling, nan=msk_no_data)
-            for idx, band_name in enumerate(band_filling):
-                band_filling[idx] = band_name.replace(
-                    cst.POINTS_CLOUD_FILLING_KEY_ROOT + "_", ""
-                )
-            filling_out = xr.Dataset(
-                {
-                    cst.RASTER_FILLING: (
-                        [cst.BAND_FILLING, cst.Y, cst.X],
-                        filling,
-                    )
-                },
-                coords={**raster_coords, cst.BAND_FILLING: band_filling},
+    if filling is not None:  # rasterizer produced filling info output
+        filling = np.nan_to_num(filling, nan=msk_no_data)
+        for idx, band_name in enumerate(band_filling):
+            band_filling[idx] = band_name.replace(
+                cst.POINTS_CLOUD_FILLING_KEY_ROOT + "_", ""
             )
-            # update raster output with filling information
-            raster_out = xr.merge((raster_out, filling_out))
+        filling_out = xr.Dataset(
+            {
+                cst.RASTER_FILLING: (
+                    [cst.BAND_FILLING, cst.Y, cst.X],
+                    filling,
+                )
+            },
+            coords={**raster_coords, cst.BAND_FILLING: band_filling},
+        )
+        # update raster output with filling information
+        raster_out = xr.merge((raster_out, filling_out))
 
     return raster_out
 
@@ -620,6 +627,7 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
+        clr_indexes,
         classif,
         classif_indexes,
         confidences,
@@ -646,6 +654,9 @@ def rasterize(
     stdev = stdev.reshape(shape_out + (-1,))
     n_pts = n_pts.reshape(shape_out)
     n_in_cell = n_in_cell.reshape(shape_out)
+
+    out = out.reshape(shape_out + (-1,))
+    out = np.moveaxis(out, 2, 0)
 
     if classif is not None:
         classif = classif.reshape(shape_out + (-1,))
@@ -683,6 +694,7 @@ def rasterize(
         n_pts,
         n_in_cell,
         msk,
+        clr_indexes,
         classif,
         classif_indexes,
         confidences,

@@ -122,7 +122,7 @@ def create_im_dataset(
     return dataset
 
 
-def get_color_bands(dataset, key):
+def get_color_bands(dataset):
     """
     Get band names list from the cardataset color
 
@@ -133,15 +133,8 @@ def get_color_bands(dataset, key):
 
     :return: list of color band names
     """
-    nb_bands = dataset[key].values.shape[0]
     band_im = None
     if cst.BAND_NAMES in dataset.attrs.keys():
         band_im = dataset.attrs[cst.BAND_NAMES]
-    # if description is None, fill with default value
-    # according with the number of channels
-
-    if band_im is None:  # and np.any(band_im) is None
-        default_band = ["Red", "Green", "Blue", "NIR"]
-        band_im = default_band[:nb_bands]
 
     return band_im

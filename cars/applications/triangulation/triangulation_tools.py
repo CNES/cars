@@ -201,7 +201,6 @@ def compute_points_cloud(
     :param roi_key: roi of the disparity map key
           ('roi' if cropped while calling create_disp_dataset,
           otherwise 'roi_with_margins')
-    :param dataset_msk: dataset with mask information to use
     :return: the points cloud dataset
     """
     # Extract input paths from configuration

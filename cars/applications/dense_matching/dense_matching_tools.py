@@ -112,7 +112,6 @@ def add_color(
     output_dataset: xr.Dataset,
     color: np.ndarray = None,
     color_type=None,
-    color_mask: np.ndarray = None,
     band_im: list = None,
 ):
     """
@@ -121,7 +120,6 @@ def add_color(
     :param output_dataset: output dataset
     :param color: color array
     :param color_type: data type of pixels
-    :param color_mask: color mask array
     :param band_im: list of band names
 
     """
@@ -136,13 +134,6 @@ def add_color(
         if color_type is not None:
             # Add input color type
             output_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
-
-    # Add color mask
-    if color_mask is not None:
-        output_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
-            color_mask,
-            dims=[cst.ROW, cst.COL],
-        )
 
 
 def add_classification(
@@ -220,10 +211,6 @@ def create_disp_dataset(
         else:
             band_im = ["Gray"]
 
-    color_mask = None
-    if cst.EPI_COLOR_MSK in ref_dataset:
-        color_mask = ref_dataset[cst.EPI_COLOR_MSK].values
-
     # retrieve classif
     classif = None
     band_classif = None
@@ -252,12 +239,6 @@ def create_disp_dataset(
     # Crop color
     if color is not None:
         color = color[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
-
-    # Crop color mask
-    if color_mask is not None:
-        color_mask = color_mask[
-            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
-        ]
 
     # Crop masks
     for key in pandora_masks.copy():
@@ -303,7 +284,6 @@ def create_disp_dataset(
         disp_ds,
         color=color,
         color_type=color_type,
-        color_mask=color_mask,
         band_im=band_im,
     )
 
