@@ -8,7 +8,7 @@
 - Multiprocessing cluster: add factorization of Delayed [#673]
 - 8 bits images are managed with particular sift parameters [#668]
 - Self calculated initial elevation with sift matches [#664]
-- Add debug mode with roi using initial tilling [#475]
+- Add debug mode with roi using initial tiling [#475]
 - Information map about dense matches filling [#679]
 - Script to generate CARS configuration [#678]
 
