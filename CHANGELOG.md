@@ -20,7 +20,8 @@
 - Nodata parameter now optional [#296]
 
 ### Fixed
-
+- Orchestrator used does not match the one reported in the logs [#681]
+- used_conf is no longer created when the application is initialized [#693]
 
 ## 0.7.1 Slurm Cluster (July 2023)
 
