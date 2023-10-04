@@ -8,20 +8,15 @@ Install with Orfeo Toolbox
 Dependencies
 =============
 
-Besides third-parties python packages, this CARS installation depends therefore on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_ and also `VLFeat <https://www.vlfeat.org/compiling-unix.html>`_
+Besides third-parties python packages, this CARS installation depends therefore on `OTB <https://www.orfeo-toolbox.org/CookBook/Installation.html>`_.
 
-* Check OTB install:
+Check OTB install:
 
-  * OTB environment has to be setup:
+* OTB environment has to be setup:
 
-    * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
-    * ``OTB_APPLICATION_PATH`` is set.
-    * GDAL must work (gdal-config --version must be available)
-
-* Check Vlfeat install with following global environment variables:
-
-  * ``VLFEAT_INCLUDE_DIR``: should be set with the path of the ``vl`` folder of the VLFeat library.
-  * ``VLFEAT_LIBRARY_DIR``: should be set with the parent path of the ``libvl.so`` file obtained after the VLFeat library compilation.
+  * OTB applications are working. Example: ``otbcli_ReadImageInfo -in some_image.tif``
+  * ``OTB_APPLICATION_PATH`` is set.
+  * GDAL must work (gdal-config --version must be available)
 
 See `CARS Dockerfile <https://raw.githubusercontent.com/CNES/cars/master/Dockerfile>`_ example for detailed steps.
 
@@ -94,7 +89,7 @@ CARS internal OTB remote modules must be built:
 
     $ mkdir -p cars/build
     $ cd cars/build
-    $ cmake -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release -DVLFEAT_INCLUDE_DIR=$VLFEAT_INCLUDE_DIR ../otb_remote_module
+    $ cmake -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release ../otb_remote_module
     $ make
 
 

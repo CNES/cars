@@ -84,23 +84,5 @@ ENV OTB_APPLICATION_PATH=/usr/local/otb/lib/otb/applications \
 # Use only when OTB installs gdal: gdal-config is already installed with gdal ubuntu package here.
 #COPY gdal-config /usr/local/otb/bin/
 
-# install vlfeat
-WORKDIR /opt
-RUN wget -q https://github.com/vlfeat/vlfeat/archive/refs/heads/master.zip \
-    && unzip master.zip && rm master.zip
-
-WORKDIR /opt/vlfeat-master
-# https://github.com/vlfeat/vlfeat/issues/214
-RUN sed -i 's/default(none)//g' vl/kmeans.c \
-    && make \
-    && cp bin/glnxa64/libvl.so /usr/local/lib \
-    && mkdir -p /usr/local/include/vl \
-    && cp -r vl/*.h /usr/local/include/vl
-WORKDIR /opt
-RUN rm -rf vlfeat-master
-ENV VLFEAT_INCLUDE_DIR=/usr/local/include \
-    VLFEAT_LIBRARY_DIR=/usr/local/lib \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/usr/local/lib
-
 ENV CPLUS_INCLUDE_PATH=/usr/include/gdal \
     C_INCLUDE_PATH=/usr/include/gdal

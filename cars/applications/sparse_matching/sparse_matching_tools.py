@@ -30,7 +30,7 @@ import logging
 
 # Third party imports
 import numpy as np
-from cyvlfeat.sift.sift import sift
+from vlsift.sift.sift import sift
 
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst

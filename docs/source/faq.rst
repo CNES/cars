@@ -9,22 +9,6 @@ Installation
 ============
 
 
-ImportError: libvl.so
----------------------
-
-CARS is correctly installed but I get the following error at runtime:
-
-.. code-block:: console
-
-    ImportError: libvl.so: cannot open shared object file: No such file or directory
-
-
-**libvl.so** is a dynamic library from VLFeat (see the section :ref:`install`) and it must be placed somewhere in the filesystem.
-
-The GNU standards recommend installing (or copying) by default all libraries in /usr/local/lib (see https://tldp.org/HOWTO/Program-Library-HOWTO/shared-libraries.html).
-
-If your don't have sudo rights, you should add the parent directory of this library to `LD_LIBRARY_PATH` and export it.
-
 
 CRSError: Not a valid EPSG codes: None
 --------------------------------------
