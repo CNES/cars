@@ -59,7 +59,7 @@ help: ## this help
 .PHONY: venv
 venv: ## create virtualenv in CARS_VENV directory if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
 .PHONY: otb-remote-module
@@ -72,7 +72,7 @@ otb-remote-module: ## install remote module otb
 
 .PHONY: install-deps
 install-deps: venv ## install python libs
-	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade "cython<3.0.0" numpy
+	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 
