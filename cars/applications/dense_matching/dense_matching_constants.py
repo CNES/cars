@@ -30,6 +30,10 @@ from cars.core import constants_disparity as disp_cst
 
 DENSE_MATCHING_RUN_TAG = "dense_matching_run"
 
+# grids disp
+DISP_MIN_GRID = "disp_min_grid"
+DISP_MAX_GRID = "disp_max_grid"
+
 
 # PARAMS
 METHOD = "method"

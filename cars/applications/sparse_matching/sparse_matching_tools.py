@@ -317,26 +317,16 @@ def compute_disparity_range(matches, percent=0.1):
     return mindisp, maxdisp
 
 
-def compute_disp_min_disp_max(
+def filter_point_cloud_matches(
     pd_cloud,
-    orchestrator,
-    disp_margin=0.1,
-    pair_key=None,
-    disp_to_alt_ratio=None,
     matches_filter_knn=25,
     matches_filter_dev_factor=3,
 ):
     """
-    Compute disp min and disp max from triangulated and filtered matches
+    Filter triangulated  matches
 
     :param pd_cloud: triangulated_matches
     :type pd_cloud: pandas Dataframe
-    :param orchestrator: orchestrator used
-    :type orchestrator: Orchestrator
-    :param disp_margin: disparity margin
-    :type disp_margin: float
-    :param disp_to_alt_ratio: used for logging info
-    :type disp_to_alt_ratio: float
     :param matches_filter_knn: number of neighboors used to measure
                                isolation of matches
     :type matches_filter_knn: int
@@ -355,8 +345,34 @@ def compute_disp_min_disp_max(
         dev_factor=matches_filter_dev_factor,
     )
 
+    return filter_cloud
+
+
+def compute_disp_min_disp_max(
+    pd_cloud,
+    orchestrator,
+    disp_margin=0.1,
+    pair_key=None,
+    disp_to_alt_ratio=None,
+):
+    """
+    Compute disp min and disp max from triangulated and filtered matches
+
+    :param pd_cloud: triangulated_matches
+    :type pd_cloud: pandas Dataframe
+    :param orchestrator: orchestrator used
+    :type orchestrator: Orchestrator
+    :param disp_margin: disparity margin
+    :type disp_margin: float
+    :param disp_to_alt_ratio: used for logging info
+    :type disp_to_alt_ratio: float
+
+    :return: disp min and disp max
+    :rtype: float, float
+    """
+
     # Obtain dmin dmax
-    filt_disparity = np.array(filter_cloud.iloc[:, 3])
+    filt_disparity = np.array(pd_cloud.iloc[:, 3])
     dmax = np.max(filt_disparity)
     dmin = np.min(filt_disparity)
 

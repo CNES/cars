@@ -25,6 +25,7 @@ this module contains the dichotomic dem generation application class.
 
 # Standard imports
 import collections
+import logging
 import os
 
 # Third party imports
@@ -40,7 +41,9 @@ from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
 from cars.applications.dem_generation.dem_generation import DemGeneration
+from cars.applications.triangulation import triangulation_tools
 from cars.core import projection
+from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
 
 
@@ -92,11 +95,11 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "dichotomic")
-        overloaded_conf["resolution"] = conf.get("resolution", 90)
+        overloaded_conf["resolution"] = conf.get("resolution", 200)
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
-        overloaded_conf["percentile"] = conf.get("percentile", 10)
+        overloaded_conf["percentile"] = conf.get("percentile", 5)
         overloaded_conf["min_number_matches"] = conf.get(
             "min_number_matches", 30
         )
@@ -105,7 +108,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
             "margin": And(Or(float, int), lambda x: x > 0),
-            "percentile": And(int, lambda x: x > 0),
+            "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
         }
 
@@ -115,7 +118,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         return overloaded_conf
 
-    def run(self, triangulated_matches_list, output_dir):
+    def run(self, triangulated_matches_list, output_dir, geoid_path):
         """
         Run dichotomic dem generation using matches
 
@@ -124,6 +127,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         :type triangulated_matches_list: list(pandas.Dataframe)
         :param output_dir: directory to save dem
         :type output_dir: str
+        :param geoid_path: geoid path
 
         :return: dem data computed with mean, min and max.
             dem is also saved in disk, and paths are available in attributes.
@@ -144,14 +148,26 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
                 # epsg must be a metric system
                 epsg = pair_pc.attrs["epsg"]
 
-            if pair_pc.attrs["epsg"] != epsg:
-                projection.points_cloud_conversion_dataset(pair_pc, epsg)
+            # convert to degrees for geoid offset
+            if pair_pc.attrs["epsg"] != 4326:
+                projection.points_cloud_conversion_dataset(pair_pc, 4326)
 
         merged_point_cloud = pandas.concat(
             triangulated_matches_list,
             ignore_index=True,
             sort=False,
         )
+        merged_point_cloud.attrs["epsg"] = 4326
+
+        # Remove geoid
+        # add offset
+        geoid_data = read_geoid_file(geoid_path)
+        merged_point_cloud = triangulation_tools.geoid_offset(
+            merged_point_cloud, geoid_data
+        )
+
+        # Convert back to epsg
+        projection.points_cloud_conversion_dataset(merged_point_cloud, epsg)
 
         # Get borders
 
@@ -175,7 +191,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # define functions to use
         funcs = [
-            np.mean,
+            np.median,
             (np.percentile, self.percentile),
             (np.percentile, 100 - self.percentile),
         ]
@@ -189,6 +205,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         row_max = list_z_grid[0].shape[0]
         col_max = list_z_grid[0].shape[1]
 
+        # use 100% overlap for dem
+        overlap = 1 * self.resolution
+
         # Modify output grids
         multi_res_rec(
             merged_point_cloud,
@@ -201,11 +220,16 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             col_min,
             col_max,
             self.min_number_matches,
+            overlap,
         )
 
         mnt_mean = list_z_grid[0]
         mnt_min = list_z_grid[1]
         mnt_max = list_z_grid[2]
+
+        if np.any((mnt_max - mnt_min) < 0):
+            logging.error("dem min > dem max")
+            raise RuntimeError("dem min > dem max")
 
         # Generate CarsDataset
 
@@ -275,9 +299,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # Generate dataset
         dem_tile = xr.Dataset(
             data_vars={
-                "dem_mean": (["row", "col"], mnt_mean),
-                "dem_min": (["row", "col"], mnt_min),
-                "dem_max": (["row", "col"], mnt_max),
+                "dem_mean": (["row", "col"], np.flip(mnt_mean, axis=0)),
+                "dem_min": (["row", "col"], np.flip(mnt_min, axis=0)),
+                "dem_max": (["row", "col"], np.flip(mnt_max, axis=0)),
             },
             coords={
                 "row": np.arange(0, row_max),
@@ -360,6 +384,7 @@ def multi_res_rec(
     col_min,
     col_max,
     min_number_matches,
+    overlap,
 ):
     """
     Recursive function to fill grid with results of given functions
@@ -384,6 +409,8 @@ def multi_res_rec(
     :type col_max: int
     :param min_number_matches: minimum of matches: stop condition
     :type min_number_matches: int
+    :param overlap: overlap to use for include condition
+    :type overlap: float
 
     """
 
@@ -404,10 +431,10 @@ def multi_res_rec(
 
     # find points
     tile_pc = pd_pc.loc[
-        (pd_pc["x"] >= xmin)
-        & (pd_pc["x"] < xmax)
-        & (pd_pc["y"] >= ymin)
-        & (pd_pc["y"] < ymax)
+        (pd_pc["x"] >= xmin - overlap)
+        & (pd_pc["x"] < xmax + overlap)
+        & (pd_pc["y"] >= ymin - overlap)
+        & (pd_pc["y"] < ymax + overlap)
     ]
 
     nb_matches = tile_pc.shape[0]
@@ -458,4 +485,5 @@ def multi_res_rec(
                         col_min_tile,
                         col_max_tile,
                         min_number_matches,
+                        overlap,
                     )

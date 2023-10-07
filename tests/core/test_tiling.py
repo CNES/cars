@@ -372,3 +372,41 @@ def test_filter_simplices_on_the_edges():
     (diff_indexes,) = np.where(original_simplices != simplices)
     assert diff_indexes.tolist() == [4]
     assert simplices[4] == -1
+
+
+@pytest.mark.unit_tests
+def test_transform_disp_range_grid_to_two_layers():
+    """
+    Test transform_disp_range_grid_to_two_layers
+    """
+
+    # test with shape (1, 1)
+    tiling_min = np.array([[3]])
+    tiling_max = np.array([[5]])
+
+    (
+        new_tiling_min,
+        new_tiling_max,
+    ) = tiling.transform_disp_range_grid_to_two_layers(tiling_min, tiling_max)
+
+    ref_min = np.array([[3, 3], [3, 3]])
+    ref_max = np.array([[5, 5], [5, 5]])
+
+    assert np.all(new_tiling_min == ref_min)
+    assert np.all(new_tiling_max == ref_max)
+
+    # test with shape (2, 2)
+
+    tiling_min = np.array([[1, 5, 3], [4, 2, 6]])
+    tiling_max = np.array([[1, 5, 3], [4, 2, 6]])
+
+    (
+        new_tiling_min,
+        new_tiling_max,
+    ) = tiling.transform_disp_range_grid_to_two_layers(tiling_min, tiling_max)
+
+    ref_min = np.array([[1, 1, 3, 3], [1, 1, 2, 3], [4, 2, 2, 6]])
+    ref_max = np.array([[1, 5, 5, 3], [4, 5, 6, 6], [4, 4, 6, 6]])
+
+    assert np.all(new_tiling_min == ref_min)
+    assert np.all(new_tiling_max == ref_max)

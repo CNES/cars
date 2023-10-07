@@ -232,7 +232,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "grid_generation",
             "sparse_matching",
             "resampling",
-            "dense_matching",
             "triangulation",
             "dem_generation",
             "point_cloud_fusion",
@@ -270,12 +269,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "resampling", cfg=conf.get("resampling", {})
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
-
-        # Matching
-        self.dense_matching_application = Application(
-            "dense_matching", cfg=conf.get("dense_matching", {})
-        )
-        used_conf["dense_matching"] = self.dense_matching_application.get_conf()
 
         # Triangulation
         self.triangulation_application = Application(
@@ -412,7 +405,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
-                    margins=self.sparse_matching_app.get_margins(),
+                    margins_fun=self.sparse_matching_app.get_margins_fun(),
                     add_color=False,
                 )
 
@@ -447,7 +440,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 # Estimate grid correction
                 (
                     pairs[pair_key]["grid_correction_coef"],
-                    corrected_matches_array,
+                    pairs[pair_key]["corrected_matches_array"],
                     pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
@@ -483,40 +476,64 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     pairs[pair_key]["grid_left"],
                     pairs[pair_key]["corrected_grid_right"],
-                    corrected_matches_array,
-                    self.geom_plugin_with_dem_and_geoid,
+                    pairs[pair_key]["corrected_matches_array"],
+                    geom_plugin,
+                )
+                # filter triangulated_matches
+                pairs[pair_key][
+                    "filtered_triangulated_matches"
+                ] = sparse_matching_tools.filter_point_cloud_matches(
+                    pairs[pair_key]["triangulated_matches"],
+                    matches_filter_knn=(
+                        self.sparse_matching_app.get_matches_filter_knn()
+                    ),
+                    matches_filter_dev_factor=(
+                        self.sparse_matching_app.get_matches_filter_dev_factor()
+                    ),
                 )
                 triangulated_matches_list.append(
-                    pairs[pair_key]["triangulated_matches"]
+                    pairs[pair_key]["filtered_triangulated_matches"]
                 )
 
+            # Generate MNT from matches
+            dem = self.dem_generation_application.run(
+                triangulated_matches_list,
+                cars_orchestrator.out_dir,
+                self.inputs[sens_cst.GEOID],
+            )
             dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
-            dem_min = None
-            dem_max = None
-
-            if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
-                # Generate MNT from matches
-                dem = self.dem_generation_application.run(
-                    triangulated_matches_list, cars_orchestrator.out_dir
-                )
-
+            if dem_mean is None:
+                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
                 # Generate geometry loader with dem and geoid
                 self.geom_plugin_with_dem_and_geoid = (
                     sensors_inputs.generate_geometry_plugin_with_dem(
                         self.used_conf[GEOMETRY_PLUGIN],
                         self.inputs,
-                        dem=dem.attributes[dem_gen_cst.DEM_MEAN_PATH],
+                        dem=dem_mean,
                     )
                 )
-                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
-                dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
-                dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
+            dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
+            dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
+
+            # Generate geometry loader with dem and geoid
+            self.geom_plugin_with_dem_and_geoid = (
+                sensors_inputs.generate_geometry_plugin_with_dem(
+                    self.used_conf[GEOMETRY_PLUGIN],
+                    self.inputs,
+                    dem=dem_mean,
+                )
+            )
 
             sensors_inputs.update_conf(
                 self.config_full_res,
                 dem_mean=dem_mean,
                 dem_min=dem_min,
                 dem_max=dem_max,
+            )
+
+            # get parameter
+            matches_filter_dev_factor = (
+                self.sparse_matching_app.get_matches_filter_dev_factor()
             )
 
             for pair_key, _, _ in list_sensor_pairs:
@@ -540,7 +557,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                     new_grid_matches_array = (
                         AbstractGeometry.transform_matches_from_grids(
-                            matches_array,
+                            pairs[pair_key]["corrected_matches_array"],
                             pairs[pair_key]["corrected_grid_left"],
                             pairs[pair_key]["corrected_grid_right"],
                             pairs[pair_key]["new_grid_left"],
@@ -575,6 +592,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     ] = grid_correction.correct_grid(
                         pairs[pair_key]["new_grid_right"],
                         pairs[pair_key]["grid_correction_coef"],
+                        self.epipolar_grid_generation_application.save_grids,
+                        pairs[pair_key]["pair_folder"],
                     )
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "new_grid_left"
@@ -592,9 +611,20 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         geometry_plugin=geom_plugin,
                     )
 
+                    # filter triangulated_matches
+                    pairs[pair_key][
+                        "filtered_triangulated_matches"
+                    ] = sparse_matching_tools.filter_point_cloud_matches(
+                        pairs[pair_key]["triangulated_matches"],
+                        matches_filter_knn=(
+                            self.sparse_matching_app.get_matches_filter_knn()
+                        ),
+                        matches_filter_dev_factor=matches_filter_dev_factor,
+                    )
+
                 # Compute disp_min and disp_max
                 (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(
-                    pairs[pair_key]["triangulated_matches"],
+                    pairs[pair_key]["filtered_triangulated_matches"],
                     cars_orchestrator,
                     disp_margin=(
                         self.sparse_matching_app.get_disparity_margin()
@@ -604,11 +634,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         "corrected_grid_left"
                     ].attributes["disp_to_alt_ratio"],
                 )
-
-                # Clean variables
-                del corrected_matches_array
-                del matches_array
-                del pairs[pair_key]["epipolar_matches_left"]
 
                 # Update full res pipeline configuration
                 # with grid correction and disparity range
@@ -651,7 +676,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
-                    margins=self.sparse_matching_app.get_margins(),
+                    margins_fun=self.sparse_matching_app.get_margins_fun(
+                        disp_min=dmin, disp_max=dmax
+                    ),
                     add_color=False,
                 )
 
@@ -670,8 +697,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
-                    disp_min=dmin,
-                    disp_max=dmax,
                 )
 
                 # Compute terrain bounding box /roi related to current images

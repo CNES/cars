@@ -95,28 +95,75 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def get_optimal_tile_size(self, disp_min, disp_max):
+    def get_optimal_tile_size(self, disp_range_grid, max_ram_per_worker):
         """
         Get the optimal tile size to use during dense matching.
 
-        :param disp_min: minimum disparity
-        :param disp_max: maximum disparity
-
+        :param disp_range_grid: minimum and maximum disparity grid
+        :param max_ram_per_worker: maximum ram per worker
         :return: optimal tile size
 
         """
 
     @abstractmethod
-    def get_margins(self, grid_left, disp_min=None, disp_max=None):
+    def get_margins_fun(self, grid_left, disp_min_grid, disp_max_grid):
         """
-        Get Margins needed by matching method, to use during resampling
+        Get Margins function  that generates margins needed by
+        matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min: minimum disparity
-        :param disp_max: maximum disparity
+        :param disp_min_grid: minimum disparity grid
+        :param disp_max_grid: maximum disparity grid
+        :return: function that generates margin for given roi
 
-        :return: margins, updated disp_min, updated disp_max
+        """
 
+    @abstractmethod
+    def generate_disparity_grids(
+        self,
+        sensor_image_right,
+        grid_right,
+        geometry_plugin_with_dem_min,
+        geometry_plugin_with_dem_max,
+        geom_plugin_with_dem_and_geoid,
+        dmin=None,
+        dmax=None,
+        dem_min=None,
+        dem_max=None,
+        pair_folder=None,
+    ):
+        """
+        Generate disparity grids min and max, with given step
+
+        global mode: uses dmin and dmax
+        local mode: uses dems
+
+
+        :param sensor_image_right: sensor image
+        :type sensor_image_right: dict
+        :param grid_right: right epipolar grid
+        :type grid_right: CarsDataset
+        :param geometry_plugin_with_dem_min: geometry plugin with dem min
+        :type geometry_plugin_with_dem_min: GeometryPlugin
+        :param geometry_plugin_with_dem_max: geometry plugin with dem max
+        :type geometry_plugin_with_dem_max: GeometryPlugin
+        :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
+            used to generate epipolar grids
+        :type geom_plugin_with_dem_and_geoid: GeometryPlugin
+        :param dmin: minimum disparity
+        :type dmin: float
+        :param dmax: maximum disparity
+        :type dmax: float
+        :param dem_min: path to minimum dem
+        :type dem_min: str
+        :param dem_max: path to maximum dem
+        :type dem_max: str
+        :param pair_folder: folder used for current pair
+        :type pair_folder: str
+
+
+        :return disparity grid range, containing grid min and max
+        :rtype: CarsDataset
         """
 
     @abstractmethod
@@ -127,17 +174,17 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        disp_min=None,
-        disp_max=None,
+        disp_min_grid=None,
+        disp_max_grid=None,
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
     ):
         """
         Run Matching application.
 
-        Create left and right CarsDataset filled with xarray.Dataset ,
-        corresponding to epipolar disparities, on the same geometry
-        that epipolar_images_left and epipolar_images_right.
+        Create CarsDataset filled with xarray.Dataset, corresponding
+        to epipolar disparities, on the same geometry than
+        epipolar_images_left.
 
         :param epipolar_images_left: tiled left epipolar CarsDataset contains:
 
@@ -168,10 +215,10 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
+        :param disp_min_grid: minimum disparity grid
+        :type disp_min_grid: CarsDataset
+        :param disp_max_grid: maximum disparity grid
+        :type disp_max_grid: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
 

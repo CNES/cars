@@ -27,9 +27,8 @@ import logging
 import os
 from typing import Dict, Tuple
 
-import pandas
-
 # Third party imports
+import pandas
 import xarray as xr
 from json_checker import Checker
 
@@ -143,8 +142,6 @@ class LineOfSightIntersection(
         pair_key="PAIR_0",
         uncorrected_grid_right=None,
         geoid_path=None,
-        disp_min=0,  # used for corresponding tiles in fusion pre processing
-        disp_max=0,  # TODO remove
     ):
         """
         Run Triangulation application.
@@ -213,10 +210,6 @@ class LineOfSightIntersection(
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
 
         :return: points cloud \
                 The CarsDataset contains:
@@ -298,6 +291,18 @@ class LineOfSightIntersection(
                 )
 
         # Compute disp_min and disp_max location for epipolar grid
+
+        # Transform
+        disp_min_tiling = epipolar_disparity_map.attributes["disp_min_tiling"]
+        disp_max_tiling = epipolar_disparity_map.attributes["disp_max_tiling"]
+
+        # change to N+1 M+1 dimension, fitting to tiling
+        (
+            disp_min_tiling,
+            disp_max_tiling,
+        ) = tiling.transform_disp_range_grid_to_two_layers(
+            disp_min_tiling, disp_max_tiling
+        )
         (
             epipolar_grid_min,
             epipolar_grid_max,
@@ -313,8 +318,8 @@ class LineOfSightIntersection(
             grid_left,
             grid_right,
             epsg,
-            disp_min,
-            disp_max,
+            disp_min_tiling,
+            disp_max_tiling,
         )
         # update attributes for corresponding tiles in cloud fusion
         # TODO remove with refactoring
@@ -533,6 +538,7 @@ def compute_points_cloud(
             - cst.Z
             - cst.EPI_COLOR
     """
+
     # Get disparity maps
     disp_ref = disparity_object
 

@@ -140,7 +140,10 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     grid_spacing = grid.attributes["grid_spacing"]
 
     # Get save folder (permanent or temporay according to save_grids parameter)
-    if save_grid is not None:
+    if None in (pair_folder, save_grid):
+        # Set path to None
+        corrected_grid_right.attributes["path"] = None
+    else:
         if save_grid:
             save_folder = os.path.join(
                 pair_folder, "corrected_right_epi_grid.tif"
@@ -505,6 +508,7 @@ def create_matches_cars_ds(corrected_matches, initial_cars_ds):
     # initialize CarsDataset
     new_matches_cars_ds = cars_dataset.CarsDataset("points")
     new_matches_cars_ds.create_empty_copy(initial_cars_ds)
+    new_matches_cars_ds.attributes = initial_cars_ds.attributes
 
     for row in range(new_matches_cars_ds.shape[0]):
         for col in range(new_matches_cars_ds.shape[1]):

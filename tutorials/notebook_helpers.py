@@ -45,9 +45,11 @@ def set_dask_config():
         "from  cars.orchestrator import cluster; "
         "import os; print(os.path.dirname(cluster.__file__))",
     ]
-
-    cmd_output = subprocess.run(cmd, capture_output=True, check=True).stdout
-    cluster_path = str(cmd_output)[2:-3]
+    try:
+        cmd_output = subprocess.run(cmd, capture_output=True, check=True).stdout
+        cluster_path = str(cmd_output)[2:-3]
+    except subprocess.CalledProcessError as err:
+        raise RuntimeError(f"{err} {err.stderr.decode('utf8')}") from err
     # Force the use of CARS dask configuration
     dask_config_path = os.path.join(
         cluster_path,
@@ -341,7 +343,9 @@ def show_epilolar_images(
     fig.tight_layout()
 
 
-def overide_input_conf_with_a_priori(inputs_conf, content_json_with_a_priori):
+def overide_input_conf_with_a_priori(
+    inputs_conf, content_json_with_a_priori, input_dir_path
+):
     """
     Overide given input dict with a priori in .json file
 
@@ -356,6 +360,15 @@ def overide_input_conf_with_a_priori(inputs_conf, content_json_with_a_priori):
     print(a_priori_dict_full)
     epipolar_a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
     terrain_a_priori = a_priori_dict_full["inputs"]["terrain_a_priori"]
+
+    # Overide paths
+    for key in ["dem_mean", "dem_min", "dem_max"]:
+        if not os.path.isfile(terrain_a_priori[key]):
+            terrain_a_priori[key] = os.path.join(
+                input_dir_path,
+                terrain_a_priori[key],
+            )
+
     # set in conf
     inputs_conf["epipolar_a_priori"] = epipolar_a_priori
     inputs_conf["terrain_a_priori"] = terrain_a_priori
@@ -376,7 +389,12 @@ def extract_a_priori_from_config(conf):
     grid_coefficients = epipolar_a_priori[key]["grid_correction"]
     disparity_range = epipolar_a_priori[key]["disparity_range"]
 
-    return grid_coefficients, disparity_range
+    terrain_a_priori = conf["terrain_a_priori"]
+    dem_mean = terrain_a_priori["dem_mean"]
+    dem_min = terrain_a_priori["dem_min"]
+    dem_max = terrain_a_priori["dem_max"]
+
+    return grid_coefficients, disparity_range, dem_mean, dem_min, dem_max
 
 
 def apply_grid_correction(grid, grid_coefficients, save_folder):

@@ -255,19 +255,15 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
-def check_geometry_plugin(conf_inputs, conf_geom_plugin):
+def get_usable_geometry_plugin(conf_geom_plugin=None):
     """
-    Check the geometry plugin with inputs
-    :param conf_geom_plugin: name of geometry plugin
-    :type conf_geom_plugin: str
-    :param conf_inputs: checked configuration of inputs
-    :type conf_inputs: type
+    Find a usable geometry plugin.
+    Default is OTB if installed
 
-    :return: overload inputs conf
-             overloaded geometry plugin conf
-             geometry plugin without dem
-             geometry plugin with dem
+    :return: plugin to use
+    :rtype: str
     """
+
     try:
         from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
             OTBGeometry,
@@ -282,8 +278,8 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         SharelocGeometry,
     )
 
-    # Make OTB the default geometry plugin if available
     if conf_geom_plugin is None:
+        # Make OTB the default geometry plugin if available
         # 1/ Check otbApplication python module
         otb_app = importlib.util.find_spec("otbApplication")
         # 2/ Check remote modules
@@ -300,12 +296,39 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         else:
             conf_geom_plugin = "OTBGeometry"
 
+    return conf_geom_plugin
+
+
+def check_geometry_plugin(conf_inputs, conf_geom_plugin):
+    """
+    Check the geometry plugin with inputs
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
+    :param conf_inputs: checked configuration of inputs
+    :type conf_inputs: type
+
+    :return: overload inputs conf
+             overloaded geometry plugin conf
+             geometry plugin without dem
+             geometry plugin with dem
+    """
+
+    conf_geom_plugin = get_usable_geometry_plugin(conf_geom_plugin)
+
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin, default_alt=conf_inputs[sens_cst.DEFAULT_ALT]
         )
     )
+
+    # If use a priori, overide initial elevation with dem_mean
+    if "use_epipolar_a_priori" in conf_inputs:
+        if conf_inputs["use_epipolar_a_priori"]:
+            if "dem_mean" in conf_inputs["terrain_a_priori"]:
+                conf_inputs[sens_cst.INITIAL_ELEVATION] = conf_inputs[
+                    "terrain_a_priori"
+                ]["dem_mean"]
 
     # Check products consistency with this plugin
     overloaded_conf_inputs = conf_inputs.copy()
@@ -347,8 +370,10 @@ def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
 
     :return: geometry plugin object, with a dem
     """
-    if dem is None:
-        dem = conf_inputs[sens_cst.INITIAL_ELEVATION]
+
+    dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION]
+    if dem is not None:
+        dem_path = dem
 
     # Get image pairs for DEM intersection with ROI
     pairs_for_roi = []
@@ -365,7 +390,7 @@ def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
     geom_plugin_with_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin,
-            dem=dem,
+            dem=dem_path,
             geoid=conf_inputs[sens_cst.GEOID],
             default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
             pairs_for_roi=pairs_for_roi,

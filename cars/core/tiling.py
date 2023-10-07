@@ -33,6 +33,7 @@ from typing import Dict, List, Tuple
 # Third party imports
 import numpy as np
 from pyproj import CRS
+from scipy.ndimage import generic_filter
 from scipy.spatial import Delaunay  # pylint: disable=no-name-in-module
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
@@ -75,15 +76,18 @@ def grid(
 
 def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
     """
-    Transform a 4 layer grid: (N, M, 4) containing [xmin, xmax, ymin, ymax]
-    into a 2 layer grid: (N+1, M+1, 2) containing x and y
-    defined like : grid[j, i, 0] = min(xmax, xmin + i * xsplit)
-    and grid[j, i, 1] = min(ymax, ymin + j * ysplit)
+    Transform a 4 layer grid: (N, M, 4) containing
+        [rowmin, rowmax, colmin, colmax] when epipolar
+        and [xmin, xmax, ymin, ymax]
+        with x = col and y = row
+        into a 2 layer grid: (N+1, M+1, 2) containing x and y
+        defined like : grid[j, i, 0] = min(xmax, xmin + i * xsplit)
+        and grid[j, i, 1] = min(ymax, ymin + j * ysplit)
 
     :param tiling_grid: tiling grid
     :type tiling_grid: np.ndarray
 
-    :return 2D grid
+    :return: 2D grid
     :rtype: np.ndarray
     """
 
@@ -101,14 +105,59 @@ def transform_four_layers_to_two_layers_grid(tiling_grid, terrain=False):
     # Fill x
     arr[0:-1, 0:-1, 0] = tiling_grid_[:, :, 0]
     arr[0:-1, -1, 0] = tiling_grid_[:, -1, 1]
-    arr[-1, :, 0] = arr[0, :, 0]
+    arr[-1, :, 0] = arr[0, :, 0]  # All rows are identical
 
     # Fill y
     arr[0:-1, 0:-1, 1] = tiling_grid_[:, :, 2]
     arr[-1, 0:-1, 1] = tiling_grid_[-1, :, 3]
-    arr[:, -1, 1] = arr[:, 0, 1]
+    arr[:, -1, 1] = arr[:, 0, 1]  # All cols are identical
 
     return arr
+
+
+def transform_disp_range_grid_to_two_layers(disp_min_grid, disp_max_grid):
+    """
+    Transform tiling disp min and max to N+1 M+1 array corresponding
+        to N+1, M+1 , 2  tiling grid
+
+    :param disp_min_grid: disp min tiling
+    :type disp_min_grid: np ndarray
+    :param disp_max_grid: disp max tiling
+    :type disp_max_grid: np ndarray
+
+    :return: disp_min_grid, disp_max_grid
+    :rtype: np ndarray , np ndarray
+    """
+
+    # Create a 2xN+1, 2xM+1 matrix to apply filter on it
+    if disp_min_grid.shape[0] == 1:
+        nb_row = 2
+    else:
+        nb_row = 2 * disp_min_grid.shape[0] + 1
+    if disp_min_grid.shape[1] == 1:
+        nb_col = 2
+    else:
+        nb_col = 2 * disp_min_grid.shape[1] + 1
+
+    disp_min = np.full((nb_row, nb_col), np.nan)
+    disp_max = np.full((nb_row, nb_col), np.nan)
+
+    disp_min[1::2, 1::2] = disp_min_grid
+    disp_max[1::2, 1::2] = disp_max_grid
+
+    # Apply filter min and max:
+    # as each cell represent a node of 4 tiles from a regular grid
+    # we want for each node to
+    # represent the min and max of 4 cells
+
+    disp_min = generic_filter(disp_min, np.nanmin, [3, 3])
+    disp_max = generic_filter(disp_max, np.nanmax, [3, 3])
+
+    # eliminate odd indexes
+    disp_min = disp_min[::2, ::2]
+    disp_max = disp_max[::2, ::2]
+
+    return disp_min, disp_max
 
 
 def generate_tiling_grid(

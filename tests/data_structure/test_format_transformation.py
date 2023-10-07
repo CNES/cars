@@ -56,9 +56,24 @@ def test_grid_margins_2_overlaps():
     )
 
     # margins  pandora convention : ['left','up', 'right', 'down']
-    margins = [3.2, 5, 2, 6.2]
+    def margins_fun(  # pylint: disable=unused-argument
+        row_min, row_max, col_min, col_max
+    ):
+        """
+        Margin functions constant for all tiles
+        """
+        data = [3.2, 5, 2, 6.2]
+        corner = ["left", "up", "right", "down"]
+        col = np.arange(len(corner))
+        margins = xr.Dataset(
+            {"left_margin": (["col"], data)}, coords={"col": col}
+        )
+        margins["right_margin"] = xr.DataArray(data, dims=["col"])
+        return margins
 
-    out_overlaps = format_transformation.grid_margins_2_overlaps(grid, margins)
+    (out_overlaps, _, _, _) = format_transformation.grid_margins_2_overlaps(
+        grid, margins_fun
+    )
 
     # expected
     expected_overlap_col_min = np.expand_dims(
@@ -102,20 +117,12 @@ def test_region_margins_from_window():
     right_overlap = {"left": -7, "right": 8, "up": 9, "down": 10}
 
     # Create initial margin
-    corner = ["left", "up", "right", "down"]
-    data = np.zeros(len(corner))
-    col = np.arange(len(corner))
-    initial_margin = xr.Dataset(
-        {"left_margin": (["col"], data)}, coords={"col": col}
-    )
-    initial_margin["right_margin"] = xr.DataArray(data, dims=["col"])
-
     expected_region = [10, 30, 120, 80]
     expected_left_margin = np.array([2, 4, 3, 5])
     expected_right_margin = np.array([7, 9, 8, 10])
 
     out_region, out_margin = format_transformation.region_margins_from_window(
-        initial_margin, window, left_overlap, right_overlap
+        window, left_overlap, right_overlap
     )
 
     assert out_region == expected_region

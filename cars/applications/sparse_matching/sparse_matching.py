@@ -124,12 +124,12 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_margins(self):
+    def get_margins_fun(self):
         """
-        Get margins to use in resampling
+        Get margins function to use in resampling
 
-        :return margins
-        :rtype: xr.Dataset
+        :return: margins function
+        :rtype: function generating  xr.Dataset
 
         """
 

@@ -777,9 +777,9 @@ The structure follows this organisation:
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
+            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
+            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -850,13 +850,13 @@ The structure follows this organisation:
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | Name                     | Description                                                | Type       | Available value | Default value | Required |
             +==========================+============================================================+============+=================+===============+==========+
-            | method                   | Method for dem_generation                                  | string     | "dichotimic"    | "dichotimic"  | Yes      |
+            | method                   | Method for dem_generation                                  | string     | "dichotomic"    | "dichotomic"  | Yes      |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | resolution               | Resolution of dem, in meter                                | int, float |  should be > 0  | 90            | No       |
+            | resolution               | Resolution of dem, in meter                                | int, float |  should be > 0  | 2000          | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | margin                   | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | percentile               | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 10            | No       |
+            | percentile               | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 5             | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | min_number_matches       | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -867,7 +867,7 @@ The structure follows this organisation:
 
                 "applications": {
                     "dem_generation": {
-                        "method": "dichotimic",
+                        "method": "dichotomic",
                         "min_number_matches": 20
                     }
 
@@ -916,6 +916,12 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | use_global_disp_range           | If true, use global disparity range, otherwise local range estimation   | boolean |                                 | true          | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | disparity_margin                | Disparity margin to apply to each range                                 | float   |                                 | 0.2           | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | local_disp_grid_step            | Step of disparity min/ max grid used to resample dense disparity range  | int     |                                 | 30            | No       |
+            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 
             See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
@@ -933,6 +939,7 @@ The structure follows this organisation:
 
             .. note::
 
+                * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                 * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                 * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
 

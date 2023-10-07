@@ -414,5 +414,10 @@ class SharelocGeometry(AbstractGeometry):
             y_coord, x_coord, z_coord, using_geotransform=True
         )
         lonlatalt = np.squeeze(lonlatalt)
-        latlonalt = np.array([lonlatalt[1], lonlatalt[0], lonlatalt[2]])
+        if len(lonlatalt.shape) == 1:
+            latlonalt = np.array([lonlatalt[1], lonlatalt[0], lonlatalt[2]])
+        else:
+            latlonalt = np.array(
+                [lonlatalt[:, 1], lonlatalt[:, 0], lonlatalt[:, 2]]
+            )
         return latlonalt

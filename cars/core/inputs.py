@@ -210,6 +210,17 @@ def rasterio_get_profile(raster_file: str) -> Dict:
         return descriptor.profile
 
 
+def rasterio_get_transform(raster_file: str) -> Dict:
+    """
+    Get the transform of an image file
+
+    :param raster_file: Image file
+    :return: The transform of the given image
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.transform
+
+
 def rasterio_get_epsg(raster_file: str) -> int:
     """
     Get the epsg of an image file

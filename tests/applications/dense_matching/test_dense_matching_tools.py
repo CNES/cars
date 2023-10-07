@@ -100,15 +100,15 @@ def test_compute_disparity_1():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min = -13
-    disp_max = 14
+    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min,
-        disp_max,
+        disp_min_right=disp_min_right,
+        disp_max_right=disp_max_right,
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -125,7 +125,7 @@ def test_compute_disparity_1():
 
     # Uncomment to update baseline
     # output.to_netcdf(absolute_data_path(
-    # "ref_output/disp1_ref_pandora.nc"))
+    #     "ref_output/disp1_ref_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
     assert_same_datasets(output, ref, atol=5.0e-6)
@@ -147,14 +147,18 @@ def test_compute_disparity_3():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min = -43
-    disp_max = 41
-
-    # TODO add validity mask input
+    disp_min_right = -43 * np.ones(left_input["im"].values.shape)
+    disp_max_right = 41 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
-        left_input, right_input, corr_cfg, disp_min, disp_max
+        left_input,
+        right_input,
+        corr_cfg,
+        disp_min_right=disp_min_right,
+        disp_max_right=disp_max_right,
     )
+
+    # TODO add validity mask input
 
     assert output[cst_disp.MAP].shape == (90, 90)
     assert output[cst_disp.VALID].shape == (90, 90)
@@ -172,7 +176,7 @@ def test_compute_disparity_3():
 
     # Uncomment to update baseline
     # output.to_netcdf(absolute_data_path(
-    # "ref_output/disp3_ref_pandora.nc"))
+    #     "ref_output/disp3_ref_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
     assert_same_datasets(output, ref, atol=5.0e-6)
@@ -194,11 +198,15 @@ def test_compute_disparity_with_all_confidences():
     corr_cfg = corr_conf_with_confidence()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min = -13
-    disp_max = 14
+    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
-        left_input, right_input, corr_cfg, disp_min, disp_max
+        left_input,
+        right_input,
+        corr_cfg,
+        disp_min_right=disp_min_right,
+        disp_max_right=disp_max_right,
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -241,15 +249,15 @@ def test_compute_disparity_1_msk_ref():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min = -13
-    disp_max = 14
+    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min,
-        disp_max,
+        disp_min_right=disp_min_right,
+        disp_max_right=disp_max_right,
         compute_disparity_masks=True,
     )
 
@@ -261,7 +269,7 @@ def test_compute_disparity_1_msk_ref():
     )
 
     # Uncomment to update baseline
-    # output[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # output.to_netcdf(absolute_data_path(
     # "ref_output/disp1_ref_pandora_msk_ref.nc"))
 
     ref = xr.open_dataset(
@@ -288,15 +296,15 @@ def test_compute_disparity_1_msk_sec():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min = -13
-    disp_max = 14
+    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min,
-        disp_max,
+        disp_min_right=disp_min_right,
+        disp_max_right=disp_max_right,
         compute_disparity_masks=True,
     )
 

@@ -599,6 +599,9 @@ def estimate_poly_with_disp(poly, dmin=0, dmax=0):
 
     """
 
+    dmin = int(math.floor(dmin))
+    dmax = int(math.ceil(dmax))
+
     new_poly = copy.copy(poly)
     for disp in range(dmin, dmax + 1):
         translated_poly = affinity.translate(poly, xoff=0.0, yoff=disp)
