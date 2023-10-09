@@ -1025,7 +1025,7 @@ def test_end2end_ventoux_unique_split():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path(
-            "input/phr_ventoux/input_with_classif.json"
+            "input/phr_ventoux/input_with_classif_and_mask.json"
         )
         # Run sensors_to_dense_point_clouds pipeline
         _, input_config_pc = generate_input_json(
@@ -1107,6 +1107,7 @@ def test_end2end_ventoux_unique_split():
         }
 
         input_config_pc["applications"].update(application_config)
+
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
@@ -1127,6 +1128,7 @@ def test_end2end_ventoux_unique_split():
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
                             "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
+                            "mask": os.path.join(epi_pc_path, "epi_pc_msk.tif"),
                             "color": os.path.join(
                                 epi_pc_path, "epi_pc_color.tif"
                             ),
@@ -1194,6 +1196,7 @@ def test_end2end_ventoux_unique_split():
                         "save_filling": True,
                         "save_confidence": True,
                         "save_color": True,
+                        "save_msk": True,
                         "save_source_pc": True,
                     },
                 },
@@ -1227,6 +1230,14 @@ def test_end2end_ventoux_unique_split():
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "clr_end2end_ventoux_split.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "msk.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir, "msk_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
@@ -1290,6 +1301,16 @@ def test_end2end_ventoux_unique_split():
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "clr_end2end_ventoux_split.tif"
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "msk.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "msk_end2end_ventoux_split.tif"
                     )
                 ),
                 rtol=1.0e-7,
