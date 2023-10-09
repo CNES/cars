@@ -78,7 +78,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.POINTS_CLOUD_CONFIDENCE: Or(dict, None),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
-        cst.POINTS_CLOUD_VALID_DATA: Or(str, None),
+        cst.POINTS_CLOUD_MSK: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
@@ -99,7 +99,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             cst.POINTS_CLOUD_CLR_KEY_ROOT
         ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("color", None)
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-            cst.POINTS_CLOUD_VALID_DATA
+            cst.POINTS_CLOUD_MSK
         ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("mask", None)
         overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
@@ -167,7 +167,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Y],
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Z],
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-                cst.POINTS_CLOUD_VALID_DATA
+                cst.POINTS_CLOUD_MSK
             ],
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CLR_KEY_ROOT
@@ -254,7 +254,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.Y,
             cst.Z,
             cst.POINTS_CLOUD_CLR_KEY_ROOT,
-            cst.POINTS_CLOUD_VALID_DATA,
+            cst.POINTS_CLOUD_MSK,
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT,
             cst.POINTS_CLOUD_FILLING_KEY_ROOT,
             cst.POINTS_CLOUD_CONFIDENCE,

@@ -370,7 +370,6 @@ def compute_vector_raster_and_stats(  # noqa: C901
 
     classif_out = None
     if len(classif_indexes) > 0:
-        # Change values to one if positive and 0 otherwise
         classif_out = classif
 
     source_pc_out = None

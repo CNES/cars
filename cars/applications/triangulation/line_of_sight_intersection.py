@@ -379,6 +379,23 @@ class LineOfSightIntersection(
                     )
 
                     self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_corr_msk.tif"),
+                        cst.POINTS_CLOUD_CORR_MSK,
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_corr_msk",
+                        optional_data=True,
+                    )
+
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_msk.tif"),
+                        cst.POINTS_CLOUD_MSK,
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_msk",
+                        nodata=255,
+                        optional_data=True,
+                    )
+
+                    self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_classification.tif"),
                         cst.EPI_CLASSIFICATION,
                         epipolar_points_cloud,
