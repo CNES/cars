@@ -79,6 +79,8 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
             self.out_dir,
             activate_dashboard=self.activate_dashboard,
             python=self.python,
+            account=self.account,
+            qos=self.qos,
         )
 
     def cleanup(self):
@@ -97,6 +99,8 @@ def start_cluster(
     timeout=600,
     activate_dashboard=False,
     python=None,
+    account=None,
+    qos=None,
 ):
     """Create a Dask cluster.
 
@@ -113,6 +117,16 @@ def start_cluster(
     :type walltime: string
     :param out_dir: Output directory
     :type out_dir: string
+    :param timeout: timeout of the cluster client
+    :type timeout: int
+    :param activate_dashboard: option to activate the dashborad server mode
+    :type activate_dashboard: bool
+    :param python: specfic python path
+    :type python: string
+    :param account: SLURM account
+    :type account: string
+    :param qos: Quality of Service parameter for TREX cluster
+    :type qos: string
     :return: Dask cluster and dask client
     :rtype: (dask_jobqueue.SLURMCluster, dask.distributed.Client) tuple
     """
@@ -159,12 +173,15 @@ def start_cluster(
             category=FutureWarning,
             message=".*env_extra has been renamed to job_script_prologue*",
         )
+        if qos:
+            qos = ["--qos=" + qos]
+            logging.info("Quality of Service option: {}".format(qos[0]))
         cluster = SLURMCluster(
             processes=nb_workers_per_job,
             cores=nb_workers_per_job,
             memory="{}MiB".format(memory),
             local_directory=local_directory,
-            account="cnes_level2",
+            account=account,
             walltime=walltime,
             interface="ib0",
             queue=slurm_queue,
@@ -178,6 +195,7 @@ def start_cluster(
                 f"{int(stagger.total_seconds())}s",
             ],
             scheduler_options=scheduler_options,
+            job_extra_directives=qos,
         )
         logging.info("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)

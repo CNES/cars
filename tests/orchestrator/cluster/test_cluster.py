@@ -157,6 +157,7 @@ conf_pbs_dask = {
 
 conf_slurm_dask = {
     "mode": "slurm_dask",
+    "account": "cars",
     "nb_workers": 2,
     "walltime": "00:01:00",
     "use_memory_logger": False,

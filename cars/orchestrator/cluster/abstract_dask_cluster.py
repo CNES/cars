@@ -76,6 +76,9 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             "activate_dashboard"
         ]
         self.python = self.checked_conf_cluster["python"]
+        if self.checked_conf_cluster["mode"] == "slurm_dask":
+            self.account = self.checked_conf_cluster["account"]
+            self.qos = self.checked_conf_cluster["qos"]
 
         if self.launch_worker:
             # Set DASK CARS specific config
@@ -127,6 +130,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             "activate_dashboard", False
         )
         overloaded_conf["python"] = conf.get("python", None)
+
         cluster_schema = {
             "mode": str,
             "use_memory_logger": bool,
@@ -142,6 +146,11 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             },
             "python": Or(None, str),
         }
+        if overloaded_conf["mode"] == "slurm_dask":
+            overloaded_conf["account"] = conf.get("account", None)
+            overloaded_conf["qos"] = conf.get("qos", None)
+            cluster_schema["account"] = str
+            cluster_schema["qos"] = Or(None, str)
 
         # Check conf
         checker = Checker(cluster_schema)
