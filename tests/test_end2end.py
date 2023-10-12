@@ -111,7 +111,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "save_msk": True,
+                "save_mask": True,
                 "save_confidence": True,
             },
         }
@@ -1196,7 +1196,7 @@ def test_end2end_ventoux_unique_split():
                         "save_filling": True,
                         "save_confidence": True,
                         "save_color": True,
-                        "save_msk": True,
+                        "save_mask": True,
                         "save_source_pc": True,
                     },
                 },
@@ -3158,7 +3158,7 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "save_msk": True,
+                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3273,7 +3273,7 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "save_msk": True,
+                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3363,7 +3363,7 @@ def test_end2end_disparity_filling():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "save_msk": True,
+                "save_mask": True,
                 "save_filling": True,
             },
         }
@@ -3491,7 +3491,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 65534,
-                "save_msk": True,
+                "save_mask": True,
                 "save_filling": True,
             },
         }

@@ -300,7 +300,6 @@ def create_combined_cloud_from_tif(
     :return: combined cloud, point cloud epsg
     :rtype: pandas Dataframe, int
     """
-
     clouds_pd_list = []
     color_types = []
     for cloud in clouds:
