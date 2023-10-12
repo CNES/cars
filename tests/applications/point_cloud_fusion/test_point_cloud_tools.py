@@ -76,7 +76,7 @@ def test_create_combined_dense_cloud():
         }
 
         if with_msk:
-            ds_values[cst.EPI_MSK] = ([cst.ROW, cst.COL], msk)
+            ds_values[cst.POINTS_CLOUD_MSK] = ([cst.ROW, cst.COL], msk)
 
         cloud0 = xr.Dataset(
             ds_values,

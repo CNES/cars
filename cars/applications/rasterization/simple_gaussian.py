@@ -90,7 +90,7 @@ class SimpleGaussian(
         # Get if color, mask and stats are saved
         self.save_color = self.used_config["save_color"]
         self.save_stats = self.used_config["save_stats"]
-        self.save_mask = self.used_config["save_msk"]
+        self.save_mask = self.used_config["save_mask"]
         self.save_classif = self.used_config["save_classif"]
         self.save_dsm = self.used_config["save_dsm"]
         self.save_confidence = self.used_config["save_confidence"]
@@ -139,7 +139,7 @@ class SimpleGaussian(
         # Get if color, mask and stats are saved
         overloaded_conf["save_color"] = conf.get("save_color", True)
         overloaded_conf["save_stats"] = conf.get("save_stats", False)
-        overloaded_conf["save_msk"] = conf.get("save_msk", False)
+        overloaded_conf["save_mask"] = conf.get("save_mask", False)
         overloaded_conf["save_classif"] = conf.get("save_classif", False)
         overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
         overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
@@ -168,7 +168,7 @@ class SimpleGaussian(
             "color_no_data": int,
             "color_dtype": str,
             "save_color": bool,
-            "save_msk": bool,
+            "save_mask": bool,
             "save_classif": bool,
             "save_stats": bool,
             "save_dsm": bool,
@@ -258,8 +258,8 @@ class SimpleGaussian(
                 Each tile will be a future pandas DataFrame containing:
 
                 - data with keys  "x", "y", "z", "corr_msk" \
-                    optional: "clr", "msk", "data_valid", "coord_epi_geom_i",\
-                     "coord_epi_geom_j","idx_im_epi"
+                    optional: "color", "mask", "data_valid",\
+                      "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys "epsg", "ysize", "xsize", "xstart", "ystart"
 
              - attributes containing "bounds", "ysize", "xsize", "epsg"
