@@ -285,7 +285,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 epipolar_tile_size=1000,  # TODO change it
                 orchestrator=cars_orchestrator,
             )
-
             # Compute number of superposing point cloud for density
             max_number_superposing_point_clouds = (
                 pc_tif_tools.compute_max_nb_point_clouds(
@@ -299,7 +298,40 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     list_epipolar_points_cloud_by_tiles
                 )
             )
-
+            optimal_terrain_tile_width = min(
+                self.pc_outliers_removing_1_app.get_optimal_tile_size(
+                    cars_orchestrator.cluster.checked_conf_cluster[
+                        "max_ram_per_worker"
+                    ],
+                    superposing_point_clouds=(
+                        max_number_superposing_point_clouds
+                    ),
+                    point_cloud_resolution=average_distance_point_cloud,
+                ),
+                self.pc_outliers_removing_2_app.get_optimal_tile_size(
+                    cars_orchestrator.cluster.checked_conf_cluster[
+                        "max_ram_per_worker"
+                    ],
+                    superposing_point_clouds=(
+                        max_number_superposing_point_clouds
+                    ),
+                    point_cloud_resolution=average_distance_point_cloud,
+                ),
+                self.rasterization_application.get_optimal_tile_size(
+                    cars_orchestrator.cluster.checked_conf_cluster[
+                        "max_ram_per_worker"
+                    ],
+                    superposing_point_clouds=(
+                        max_number_superposing_point_clouds
+                    ),
+                    point_cloud_resolution=average_distance_point_cloud,
+                ),
+            )
+            optimal_terrain_tile_width = (
+                preprocessing.convert_optimal_tile_size_with_epsg(
+                    terrain_bounds, optimal_terrain_tile_width, epsg
+                )
+            )
             # Merge point clouds
             merged_points_clouds = self.pc_fusion_application.run(
                 list_epipolar_points_cloud_by_tiles,
@@ -313,35 +345,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     resolution=(self.rasterization_application.get_resolution())
                 )
                 + self.rasterization_application.get_margins(),
-                optimal_terrain_tile_width=min(
-                    self.pc_outliers_removing_1_app.get_optimal_tile_size(
-                        cars_orchestrator.cluster.checked_conf_cluster[
-                            "max_ram_per_worker"
-                        ],
-                        superposing_point_clouds=(
-                            max_number_superposing_point_clouds
-                        ),
-                        point_cloud_resolution=average_distance_point_cloud,
-                    ),
-                    self.pc_outliers_removing_2_app.get_optimal_tile_size(
-                        cars_orchestrator.cluster.checked_conf_cluster[
-                            "max_ram_per_worker"
-                        ],
-                        superposing_point_clouds=(
-                            max_number_superposing_point_clouds
-                        ),
-                        point_cloud_resolution=average_distance_point_cloud,
-                    ),
-                    self.rasterization_application.get_optimal_tile_size(
-                        cars_orchestrator.cluster.checked_conf_cluster[
-                            "max_ram_per_worker"
-                        ],
-                        superposing_point_clouds=(
-                            max_number_superposing_point_clouds
-                        ),
-                        point_cloud_resolution=average_distance_point_cloud,
-                    ),
-                ),
+                optimal_terrain_tile_width=optimal_terrain_tile_width,
             )
 
             # Add file names to retrieve source file of each point

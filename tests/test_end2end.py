@@ -1016,6 +1016,162 @@ def test_end2end_ventoux_unique():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_ventoux_unique_split_epsg_4326():
+    """
+    Splitted sensor to dsm pipeline with ROI on ventoux data
+    1 run sensor to dense point clouds(PC) pipeline -> PC outputs
+    2 run PC outputs with cloud to dsm pipeline + Baseline checking
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input_4326.json")
+        # Run sensors_to_dense_point_clouds pipeline
+        _, input_config_pc = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_point_clouds",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_pc
+        )
+        pc_pipeline.run()
+
+        out_dir = input_config_pc["output"]["out_dir"]
+        geometry_plugin_name = input_config_pc["geometry_plugin"]
+
+        # Create input json for pc to dsm pipeline
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
+            epi_pc_path = os.path.join(out_dir, "left_right")
+            output_path = os.path.join(directory2, "outresults_dsm_from_pc")
+
+            input_dsm_config = {
+                "inputs": {
+                    "point_clouds": {
+                        "one": {
+                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
+                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
+                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
+                            "color": os.path.join(
+                                epi_pc_path, "epi_pc_color.tif"
+                            ),
+                        }
+                    },
+                    "epsg": 4326,
+                    "roi": {
+                        "type": "FeatureCollection",
+                        "features": [
+                            {
+                                "type": "Feature",
+                                "properties": {},
+                                "geometry": {
+                                    "coordinates": [
+                                        [
+                                            [5.194, 44.2064],
+                                            [5.194, 44.2059],
+                                            [5.195, 44.2059],
+                                            [5.195, 44.2064],
+                                            [5.194, 44.2064],
+                                        ]
+                                    ],
+                                    "type": "Polygon",
+                                },
+                            }
+                        ],
+                    },
+                },
+                "geometry_plugin": geometry_plugin_name,
+                "output": {"out_dir": output_path},
+                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "applications": {
+                    "point_cloud_rasterization": {
+                        "method": "simple_gaussian",
+                        "resolution": 0.000005,
+                        "save_source_pc": True,
+                    }
+                },
+            }
+
+            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
+                input_dsm_config
+            )
+            dsm_pipeline.run()
+
+            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+
+            # Ref output dir dependent from geometry plugin chosen
+            ref_output_dir = (
+                "ref_output"
+                if input_dsm_config["geometry_plugin"] == "OTBGeometry"
+                else os.path.join("ref_output", "shareloc")
+            )
+
+            # Uncomment the following instructions to update reference data
+            # copy2(
+            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir, "source_pc_end2end"
+            #               +"_ventoux_split_4326.tif"
+            #         )
+            #     ),
+            # )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "dsm.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
+                    )
+                ),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "clr.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "source_pc.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "source_pc_end2end_ventoux_split_4326.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+
+
+@pytest.mark.end2end_tests
 def test_end2end_ventoux_unique_split():
     """
     Splitted sensor to dsm pipeline with ROI on ventoux data

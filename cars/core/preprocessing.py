@@ -32,6 +32,7 @@ import os
 
 import numpy as np
 import utm
+from pyproj import CRS
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -580,6 +581,50 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     )
 
     return bounds, optimal_terrain_tile_width
+
+
+def convert_optimal_tile_size_with_epsg(
+    bounds, optimal_terrain_tile_width, epsg
+):
+    """
+    Convert optimal_tile_size according to epsg
+
+    :param bounds: terrain bounds
+    :type bounds: list
+    :param optimal_terrain_tile_width: initial optimal_terrain_tile_width
+    :type optimal_terrain_tile_width: float
+    :param epsg: target epsg
+    :type epsg: int
+    :return: converted optimal tile size
+    :rtype: float
+    """
+
+    # Convert optimal terrain tile width in degres
+    # only epsg=4326
+    spatial_ref = CRS.from_epsg(epsg)
+    if spatial_ref.is_geographic:
+        # Compute bounds and terrain grid
+        [xmin, ymin, xmax, ymax] = bounds
+        bounds_points = [
+            [xmin, ymin],
+            [xmin, ymax],
+            [xmax, ymin],
+            [xmax, ymax],
+        ]
+        bounds_points_32630 = projection.points_cloud_conversion(
+            bounds_points, 4326, 32630
+        )
+        bounds_points_plus_32630 = list(
+            np.array(bounds_points_32630) + optimal_terrain_tile_width
+        )
+        # compute projected values around the bounds
+        bounds_points_plus = projection.points_cloud_conversion(
+            bounds_points_plus_32630, 32630, 4326
+        )
+        optimal_terrain_tile_width = np.mean(
+            np.array(bounds_points_plus - bounds_points).reshape(1, -1)
+        )
+    return optimal_terrain_tile_width
 
 
 def compute_epipolar_roi(
