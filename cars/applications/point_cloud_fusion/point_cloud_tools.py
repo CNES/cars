@@ -586,8 +586,8 @@ def create_combined_dense_cloud(  # noqa: C901
                     c_confidence
                 )
 
-        if cst.POINTS_CLOUD_MSK in ds_values_list:
-            c_msk = cloud_list_item[cst.POINTS_CLOUD_MSK].values[
+        if cst.EPI_MSK in ds_values_list:
+            c_msk = cloud_list_item[cst.EPI_MSK].values[
                 bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
             ]
             c_cloud[nb_data.index(cst.POINTS_CLOUD_MSK), :] = np.ravel(c_msk)
@@ -731,7 +731,7 @@ def create_point_cloud_index(cloud_list):
     # check if the input mask values are present in the dataset
     for cloud_list_item in cloud_list:
         ds_values_list = [key for key, _ in cloud_list_item.items()]
-        if cst.POINTS_CLOUD_MSK in ds_values_list:
+        if cst.EPI_MSK in ds_values_list:
             nb_data.append(cst.POINTS_CLOUD_MSK)
             break
 
