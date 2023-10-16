@@ -300,7 +300,6 @@ def create_combined_cloud_from_tif(
     :return: combined cloud, point cloud epsg
     :rtype: pandas Dataframe, int
     """
-
     clouds_pd_list = []
     color_types = []
     for cloud in clouds:
@@ -366,6 +365,7 @@ def create_combined_cloud_from_tif(
                 | (cloud_pd[cst.Y] == 0.0)  # pylint: disable=E1136
             ]
         )
+
         cloud_pd = cloud_pd.drop(
             cloud_pd.index[
                 (np.isnan(cloud_pd[cst.X]))  # pylint: disable=E1136
@@ -714,8 +714,9 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         cst.Y: items[cst.Y],
         cst.Z: items[cst.Z],
         cst.POINTS_CLOUD_CLR_KEY_ROOT: items[cst.POINTS_CLOUD_CLR_KEY_ROOT],
-        cst.POINTS_CLOUD_VALID_DATA: items[cst.POINTS_CLOUD_VALID_DATA],
     }
+    if cst.POINTS_CLOUD_MSK in items:
+        data_dict[cst.POINTS_CLOUD_MSK] = items[cst.POINTS_CLOUD_MSK]
     if cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in items:
         data_dict[cst.POINTS_CLOUD_CLASSIF_KEY_ROOT] = items[
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT

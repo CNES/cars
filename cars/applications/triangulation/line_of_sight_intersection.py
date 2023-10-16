@@ -33,6 +33,7 @@ import pandas
 import xarray as xr
 from json_checker import Checker
 
+# CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.grid_generation import grids
@@ -41,10 +42,9 @@ from cars.applications.triangulation import (
     triangulation_tools,
 )
 from cars.applications.triangulation.triangulation import Triangulation
+from cars.conf import mask_cst
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
-
-# CARS imports
 from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -376,6 +376,23 @@ class LineOfSightIntersection(
                         cst.Z,
                         epipolar_points_cloud,
                         cars_ds_name="epi_pc_z",
+                    )
+
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_corr_msk.tif"),
+                        cst.POINTS_CLOUD_CORR_MSK,
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_corr_msk",
+                        optional_data=True,
+                    )
+
+                    self.orchestrator.add_to_save_lists(
+                        os.path.join(pair_folder, "epi_pc_msk.tif"),
+                        cst.EPI_MSK,
+                        epipolar_points_cloud,
+                        cars_ds_name="epi_pc_msk",
+                        nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+                        optional_data=True,
                     )
 
                     self.orchestrator.add_to_save_lists(

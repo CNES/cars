@@ -4,7 +4,6 @@
 ## 0.7.2 Self calculated initial elevation (October 2023)
 
 ### Added
-
 - Multiprocessing cluster: add factorization of Delayed [#673]
 - 8 bits images are managed with particular sift parameters [#668]
 - Self calculated initial elevation with sift matches [#664]
@@ -13,7 +12,6 @@
 - Script to generate CARS configuration [#678]
 
 ### Changed
-
 - Multi points direct location [#708]
 - Application parameter "method" now optional [#692]
 - Geometry plugin interface [#623]
@@ -22,6 +20,7 @@
 ### Fixed
 - Orchestrator used does not match the one reported in the logs [#681]
 - used_conf is no longer created when the application is initialized [#693]
+- Parameter "mask" can be used in "dense_point_clouds_to_dense_dsm" [#722]
 
 ## 0.7.1 Slurm Cluster (July 2023)
 

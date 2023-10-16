@@ -236,9 +236,11 @@ def compute_points_cloud(
         ),
     }
 
+    # Copy all 2D attributes from disparity dataset to point cloud
+    # except color and pandora validity mask (already copied in corr_msk)
     for key, val in data.items():
         if len(val.values.shape) == 2:
-            if key != cst.EPI_COLOR:
+            if key not in (cst.EPI_COLOR, cst_disp.VALID):
                 values[key] = ([cst.ROW, cst.COL], val.values)
 
     point_cloud = xr.Dataset(values, coords={cst.ROW: row, cst.COL: col})
