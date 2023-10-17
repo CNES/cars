@@ -17,7 +17,7 @@ Please go to `Docker`_ documentation for more details on Docker technology.
 Usage
 =====
 
-CARS can  be used more easily through a docker to avoid the complete installation (with OTB and VLFeat).
+CARS can be used more easily through a docker to avoid the complete installation (with OTB).
 
 * Install `Docker`_
 

@@ -37,7 +37,6 @@ CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
-CHECK_CYVLFEAT = $(shell ${CARS_VENV}/bin/python -m pip list|grep cyvlfeat)
 TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' ' -f 1)
 
 # Check Docker
@@ -52,30 +51,16 @@ CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 .PHONY: help
 help: ## this help
 	@echo "      CARS MAKE HELP  LOGLEVEL=${LOGLEVEL}"
-	@echo "  Dependencies: Install OTB and VLFEAT before !"
+	@echo "  Dependencies: Install OTB before  !"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'| sort
 
 ## Install section
 
-.PHONY: check
-check: ## check if VLFEAT is installed
-	@[ "${VLFEAT_INCLUDE_DIR}" ] || ( echo ">> VLFEAT_INCLUDE_DIR is not set (see make vlfeat)"; exit 1 )
-	@[ "${VLFEAT_LIBRARY_DIR}" ] || ( echo ">> VLFEAT_LIBRARY_DIR is not set (see make vlfeat)"; exit 1 )
-
 .PHONY: venv
-venv: check ## create virtualenv in CARS_VENV directory if not exists
+venv: ## create virtualenv in CARS_VENV directory if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade "pip<=23.0.1" setuptools # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
-
-.PHONY: vlfeat
-vlfeat: ## install vlfeat cnes fork library locally
-	@test -d vlfeat || git clone https://github.com/CNES/vlfeat.git
-	@cd vlfeat && make MEX=$MATLABROOT/bin/
-	@echo "vlfeat is installed. Please set the following environment variables:"
-	@echo "export VLFEAT_INCLUDE_DIR=${PWD}/vlfeat"
-	@echo "export VLFEAT_LIBRARY_DIR=${PWD}/vlfeat/bin/glnxa64"
-	@echo "export LD_LIBRARY_PATH=${PWD}/vlfeat/bin/glnxa64:$$""LD_LIBRARY_PATH"
 
 .PHONY: otb-remote-module
 otb-remote-module: ## install remote module otb
@@ -87,10 +72,9 @@ otb-remote-module: ## install remote module otb
 
 .PHONY: install-deps
 install-deps: venv ## install python libs
-	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade "cython<3.0.0" numpy
+	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
 	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
-	@[ "${CHECK_CYVLFEAT}" ] ||CFLAGS="-I${VLFEAT_INCLUDE_DIR}" LDFLAGS="-L${VLFEAT_LIBRARY_DIR}" ${CARS_VENV}/bin/python -m pip install --no-binary cyvlfeat cyvlfeat
 
 .PHONY: install-deps-gdal
 install-deps-gdal: install-deps ## create an healthy python environment for OTB / GDAL
@@ -278,7 +262,7 @@ endif
 ## Clean section
 
 .PHONY: clean
-clean: clean-venv clean-build clean-vlfeat clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
+clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs clean-notebook clean-dask ## remove all build, test, coverage and Python artifacts
 
 .PHONY: clean-venv
 clean-venv:
@@ -347,10 +331,6 @@ clean-docker: ## clean docker image
 	@docker image rm -f cnes/cars-jupyter:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars-jupyter:latest
 
-.PHONY: clean-vlfeat
-clean-vlfeat:
-	@echo "+ $@"
-	@rm -rf vlfeat
 
 .PHONY: profile-memory-report
 profile-memory-report: ## build report after execution of cars with profiling memray mode (report biggest  memory occupation for each application), indicate the output_result directory file
