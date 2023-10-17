@@ -35,13 +35,15 @@ import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
 
-# CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
 from cars.applications.dem_generation.dem_generation import DemGeneration
 from cars.applications.triangulation import triangulation_tools
+
+# CARS imports
+from cars.core import constants as cst
 from cars.core import projection
 from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
@@ -149,25 +151,15 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
                 epsg = pair_pc.attrs["epsg"]
 
             # convert to degrees for geoid offset
-            if pair_pc.attrs["epsg"] != 4326:
-                projection.points_cloud_conversion_dataset(pair_pc, 4326)
+            if pair_pc.attrs["epsg"] != epsg:
+                projection.points_cloud_conversion_dataset(pair_pc, epsg)
 
         merged_point_cloud = pandas.concat(
             triangulated_matches_list,
             ignore_index=True,
             sort=False,
         )
-        merged_point_cloud.attrs["epsg"] = 4326
-
-        # Remove geoid
-        # add offset
-        geoid_data = read_geoid_file(geoid_path)
-        merged_point_cloud = triangulation_tools.geoid_offset(
-            merged_point_cloud, geoid_data
-        )
-
-        # Convert back to epsg
-        projection.points_cloud_conversion_dataset(merged_point_cloud, epsg)
+        merged_point_cloud.attrs["epsg"] = epsg
 
         # Get borders
 
@@ -223,9 +215,33 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             overlap,
         )
 
-        mnt_mean = list_z_grid[0]
-        mnt_min = list_z_grid[1]
-        mnt_max = list_z_grid[2]
+        # Remove geoid
+        # add offset
+        geoid_data = read_geoid_file(geoid_path)
+
+        # Generate dense dataset with z = 0
+        alti_zeros_dataset = xr.Dataset(
+            {
+                cst.X: (["row", "col"], xnew),
+                cst.Y: (["row", "col"], ynew),
+                cst.Z: (["row", "col"], np.zeros(xnew.shape)),
+            },
+            coords={
+                "row": np.arange(xnew.shape[0]),
+                "col": np.arange(xnew.shape[1]),
+            },
+        )
+        alti_zeros_dataset.attrs[cst.EPSG] = epsg
+        # Transform to lon lat
+        projection.points_cloud_conversion_dataset(alti_zeros_dataset, 4326)
+
+        geoid_offset = triangulation_tools.geoid_offset(
+            alti_zeros_dataset, geoid_data
+        )
+
+        mnt_mean = list_z_grid[0] + geoid_offset[cst.Z].values
+        mnt_min = list_z_grid[1] + geoid_offset[cst.Z].values
+        mnt_max = list_z_grid[2] + geoid_offset[cst.Z].values
 
         if np.any((mnt_max - mnt_min) < 0):
             logging.error("dem min > dem max")
