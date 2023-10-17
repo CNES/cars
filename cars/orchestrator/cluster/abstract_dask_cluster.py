@@ -40,7 +40,6 @@ from dask.config import set as dask_config_set
 from dask.distributed import as_completed
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
-from json_checker import And, Checker, Or
 
 from cars.core import cars_logging
 
@@ -63,7 +62,6 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
 
         # call parent init
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
-
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
         self.walltime = self.checked_conf_cluster["walltime"]
@@ -96,6 +94,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
                 plugin = ComputeDSMMemoryLogger(self.out_dir)
                 self.client.register_worker_plugin(plugin)
 
+    @abstractmethod
     def check_conf(self, conf):
         """
         Check configuration
@@ -107,65 +106,6 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         :rtype: dict
 
         """
-
-        # init conf
-        if conf is not None:
-            overloaded_conf = conf.copy()
-        else:
-            conf = {}
-            overloaded_conf = {}
-
-        # Overload conf
-        overloaded_conf["mode"] = conf.get("mode", "unknowed_dask")
-        overloaded_conf["use_memory_logger"] = conf.get(
-            "use_memory_logger", False
-        )
-        overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
-        overloaded_conf["max_ram_per_worker"] = conf.get(
-            "max_ram_per_worker", 2000
-        )
-        overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
-        overloaded_conf["config_name"] = conf.get("config_name", "unknown")
-        overloaded_conf["activate_dashboard"] = conf.get(
-            "activate_dashboard", False
-        )
-        overloaded_conf["python"] = conf.get("python", None)
-
-        cluster_schema = {
-            "mode": str,
-            "use_memory_logger": bool,
-            "nb_workers": And(int, lambda x: x > 0),
-            "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
-            "walltime": str,
-            "config_name": str,
-            "activate_dashboard": bool,
-            "profiling": {
-                "activated": bool,
-                "mode": str,
-                "loop_testing": bool,
-            },
-            "python": Or(None, str),
-        }
-        if overloaded_conf["mode"] == "slurm_dask":
-            overloaded_conf["account"] = conf.get("account", None)
-            overloaded_conf["qos"] = conf.get("qos", None)
-            cluster_schema["account"] = str
-            cluster_schema["qos"] = Or(None, str)
-
-        # Check conf
-        checker = Checker(cluster_schema)
-        checker.validate(overloaded_conf)
-
-        # Check walltime format
-        walltime = overloaded_conf["walltime"]
-        try:
-            time.strptime(walltime, "%H:%M:%S")
-        except ValueError as err:
-            raise ValueError(
-                "Walltime should be formatted as HH:MM:SS"
-            ) from err
-
-        return overloaded_conf
 
     @abstractmethod
     def start_dask_cluster(self):

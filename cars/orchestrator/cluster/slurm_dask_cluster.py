@@ -22,14 +22,20 @@
 Contains abstract function for SLURM dask Cluster
 """
 
-# Standard imports
 import logging
 import os
 import warnings
 
+# Standard imports
+from ast import Or
+
 # Third party imports
 from dask.distributed import Client
 
+from cars.orchestrator.cluster.dask_cluster_tools import (
+    check_configuration,
+    create_checker_schema,
+)
 from cars.orchestrator.cluster.dask_jobqueue_utils import (
     get_dashboard_link,
     init_cluster_variables,
@@ -67,6 +73,26 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
     """
     SlurmDaskCluster
     """
+
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+        # overload cluster schema
+        overloaded_conf, cluster_schema = create_checker_schema(conf)
+        if overloaded_conf["mode"] == "slurm_dask":
+            overloaded_conf["account"] = conf.get("account", None)
+            overloaded_conf["qos"] = conf.get("qos", None)
+            cluster_schema["account"] = str
+            cluster_schema["qos"] = Or(None, str)
+        return check_configuration(*overloaded_conf, cluster_schema)
 
     def start_dask_cluster(self):
         """
