@@ -22,14 +22,14 @@
 Cars module init file
 """
 
-# Standard imports
-from importlib.metadata import version
+import logging
 
-from pkg_resources import iter_entry_points
+# Standard imports
+from importlib import metadata
 
 # VERSION through setuptools_scm when python3 > 3.8
 try:
-    __version__ = version("cars")
+    __version__ = metadata.version("cars")
 except Exception:  # pylint: disable=broad-except
     __version__ = "unknown"
 
@@ -42,8 +42,12 @@ def import_plugins() -> None:
     Load all the registered entry points
     :return: None
     """
-    for entry_point in iter_entry_points(group="cars.plugins"):
-        entry_point.load()
+    eps = metadata.entry_points()
+    if "cars.plugins" in eps:
+        for entry_point in metadata.entry_points()["cars.plugins"]:
+            entry_point.load()
+    else:
+        logging.info("No Cars plugins detected!")
 
 
 import_plugins()

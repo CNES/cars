@@ -27,11 +27,10 @@ copyright = "2022, CNES"
 author = "CARS Team"
 
 # The full version, including alpha/beta/rc tags
-from pkg_resources import get_distribution
+from importlib import metadata
 
 try:
-    version = get_distribution("cars").version
-    release = version
+    release = metadata.version("cars")
 except Exception as error:
     print("WARNING: cannot find cars version")
     version = "Unknown"

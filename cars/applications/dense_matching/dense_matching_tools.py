@@ -25,6 +25,7 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
+from importlib import metadata
 from typing import Dict, List
 
 # Third party imports
@@ -35,7 +36,6 @@ import xarray as xr
 from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
-from pkg_resources import iter_entry_points
 
 # CARS imports
 from cars.applications.dense_matching import (
@@ -494,8 +494,13 @@ def compute_disparity(
             )
 
     # Load pandora plugin
-    for entry_point in iter_entry_points(group="pandora.plugin"):
-        entry_point.load()
+    if "pandora.plugin" in metadata.entry_points():
+        for entry_point in metadata.entry_points()["pandora.plugin"]:
+            entry_point.load()
+    else:
+        raise ImportError(
+            "Pandora plugin is not correctly installed or missing."
+        )
 
     # Update nodata values
     left_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_left"]
