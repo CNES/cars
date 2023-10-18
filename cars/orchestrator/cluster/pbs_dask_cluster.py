@@ -30,6 +30,10 @@ import warnings
 # Third party imports
 from dask.distributed import Client
 
+from cars.orchestrator.cluster.dask_cluster_tools import (
+    check_configuration,
+    create_checker_schema,
+)
 from cars.orchestrator.cluster.dask_jobqueue_utils import (
     get_dashboard_link,
     init_cluster_variables,
@@ -67,6 +71,20 @@ class PbsDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
     """
     PbsDaskCluster
     """
+
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+        return check_configuration(*create_checker_schema(conf))
 
     def start_dask_cluster(self):
         """

@@ -30,6 +30,10 @@ from dask.distributed import Client, LocalCluster
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster, abstract_dask_cluster
+from cars.orchestrator.cluster.dask_cluster_tools import (
+    check_configuration,
+    create_checker_schema,
+)
 
 
 @abstract_cluster.AbstractCluster.register_subclass("local_dask")
@@ -37,6 +41,20 @@ class LocalDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
     """
     LocalDaskCluster
     """
+
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+        return check_configuration(*create_checker_schema(conf))
 
     def start_dask_cluster(self):
         """

@@ -28,6 +28,7 @@ from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 
 from . import (
     abstract_dask_cluster,
+    dask_cluster_tools,
     local_dask_cluster,
     mp_cluster,
     pbs_dask_cluster,

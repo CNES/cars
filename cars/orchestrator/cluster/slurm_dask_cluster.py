@@ -22,14 +22,20 @@
 Contains abstract function for SLURM dask Cluster
 """
 
-# Standard imports
 import logging
 import os
 import warnings
 
+# Standard imports
+from ast import Or
+
 # Third party imports
 from dask.distributed import Client
 
+from cars.orchestrator.cluster.dask_cluster_tools import (
+    check_configuration,
+    create_checker_schema,
+)
 from cars.orchestrator.cluster.dask_jobqueue_utils import (
     get_dashboard_link,
     init_cluster_variables,
@@ -68,6 +74,26 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
     SlurmDaskCluster
     """
 
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+        # overload cluster schema
+        overloaded_conf, cluster_schema = create_checker_schema(conf)
+        if overloaded_conf["mode"] == "slurm_dask":
+            overloaded_conf["account"] = conf.get("account", None)
+            overloaded_conf["qos"] = conf.get("qos", None)
+            cluster_schema["account"] = str
+            cluster_schema["qos"] = Or(None, str)
+        return check_configuration(*overloaded_conf, cluster_schema)
+
     def start_dask_cluster(self):
         """
         Start dask cluster
@@ -79,6 +105,8 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
             self.out_dir,
             activate_dashboard=self.activate_dashboard,
             python=self.python,
+            account=self.account,
+            qos=self.qos,
         )
 
     def cleanup(self):
@@ -97,6 +125,8 @@ def start_cluster(
     timeout=600,
     activate_dashboard=False,
     python=None,
+    account=None,
+    qos=None,
 ):
     """Create a Dask cluster.
 
@@ -113,6 +143,16 @@ def start_cluster(
     :type walltime: string
     :param out_dir: Output directory
     :type out_dir: string
+    :param timeout: timeout of the cluster client
+    :type timeout: int
+    :param activate_dashboard: option to activate the dashborad server mode
+    :type activate_dashboard: bool
+    :param python: specfic python path
+    :type python: string
+    :param account: SLURM account
+    :type account: string
+    :param qos: Quality of Service parameter for TREX cluster
+    :type qos: string
     :return: Dask cluster and dask client
     :rtype: (dask_jobqueue.SLURMCluster, dask.distributed.Client) tuple
     """
@@ -159,12 +199,15 @@ def start_cluster(
             category=FutureWarning,
             message=".*env_extra has been renamed to job_script_prologue*",
         )
+        if qos:
+            qos = ["--qos=" + qos]
+            logging.info("Quality of Service option: {}".format(qos[0]))
         cluster = SLURMCluster(
             processes=nb_workers_per_job,
             cores=nb_workers_per_job,
             memory="{}MiB".format(memory),
             local_directory=local_directory,
-            account="cnes_level2",
+            account=account,
             walltime=walltime,
             interface="ib0",
             queue=slurm_queue,
@@ -178,6 +221,7 @@ def start_cluster(
                 f"{int(stagger.total_seconds())}s",
             ],
             scheduler_options=scheduler_options,
+            job_extra_directives=qos,
         )
         logging.info("Dask cluster started")
         cluster.adapt(minimum=nb_workers, maximum=nb_workers)
