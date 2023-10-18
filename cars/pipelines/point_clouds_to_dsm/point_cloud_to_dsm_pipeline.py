@@ -29,6 +29,8 @@ import json
 import logging
 import os
 
+from pyproj import CRS
+
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -124,6 +126,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             self.conf.get(APPLICATIONS, {})
         )
         self.used_conf[APPLICATIONS] = application_conf
+
+        self.check_inputs_with_applications(self.inputs, application_conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -226,6 +230,33 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
         return used_conf
 
+    @staticmethod
+    def check_inputs_with_applications(inputs_conf, application_conf):
+        """
+        Check for each application the input configuration consistency
+
+        :param inputs_conf: inputs checked configuration
+        :type inputs_conf: dict
+        :param application_conf: application checked configuration
+        :type application_conf: dict
+        """
+
+        if "epsg" in inputs_conf and inputs_conf["epsg"]:
+            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
+            if spatial_ref.is_geographic:
+                if (
+                    "point_cloud_rasterization" in application_conf
+                    and application_conf["point_cloud_rasterization"][
+                        "resolution"
+                    ]
+                    > 10e-3
+                ) or "point_cloud_rasterization" not in application_conf:
+                    logging.warning(
+                        "The resolution of the "
+                        + "point_cloud_rasterization should be "
+                        + "fixed according to the epsg"
+                    )
+
     def run(self):
         """
         Run pipeline
@@ -264,11 +295,13 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
             # get epsg
             epsg = self.inputs[sens_cst.EPSG]
+            # compute epsg
+            epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
+                self.inputs["point_clouds"]
+            )
             if epsg is None:
-                # compute epsg
-                epsg = pc_tif_tools.compute_epsg_from_point_cloud(
-                    self.inputs["point_clouds"]
-                )
+                epsg = epsg_cloud
+
             # Compute roi polygon, in input EPSG
             roi_poly = preprocessing.compute_roi_poly(
                 self.input_roi_poly, self.input_roi_epsg, epsg
@@ -327,9 +360,10 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     point_cloud_resolution=average_distance_point_cloud,
                 ),
             )
+            # epsg_cloud and optimal_terrain_tile_width have the same epsg
             optimal_terrain_tile_width = (
                 preprocessing.convert_optimal_tile_size_with_epsg(
-                    terrain_bounds, optimal_terrain_tile_width, epsg
+                    terrain_bounds, optimal_terrain_tile_width, epsg, epsg_cloud
                 )
             )
             # Merge point clouds
