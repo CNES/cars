@@ -60,8 +60,7 @@ class SharelocGeometry(AbstractGeometry):
         dem=None,
         geoid=None,
         default_alt=None,
-        images_for_roi=None,
-        margin=0.006,
+        pairs_for_roi=None,
     ):
         super().__init__(geometry_plugin)
 
@@ -70,44 +69,10 @@ class SharelocGeometry(AbstractGeometry):
 
         if dem is not None:
             # Get dem epsg
-            dem_espg = inputs.rasterio_get_epsg(dem)
+            dem_epsg = inputs.rasterio_get_epsg(dem)
 
-            # Transform roi
-            alti = 0
-            if default_alt is not None:
-                alti = default_alt
-
-            if images_for_roi is not None:
-                coords_list = []
-                for sensor in images_for_roi:
-                    coords_list.extend(self.image_envelope(*sensor))
-                lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
-                roi = [
-                    min(lat_list) - margin,
-                    min(lon_list) - margin,
-                    max(lat_list) + margin,
-                    max(lon_list) + margin,
-                ]
-
-                points = np.array(
-                    [
-                        (roi[1], roi[0], alti),
-                        (roi[3], roi[2], alti),
-                        (roi[1], roi[0], alti),
-                        (roi[3], roi[2], alti),
-                    ]
-                )
-
-                new_points = projection.points_cloud_conversion(
-                    points, 4326, dem_espg
-                )
-
-                roi = [
-                    min(new_points[:, 1]),
-                    min(new_points[:, 0]),
-                    max(new_points[:, 1]),
-                    max(new_points[:, 0]),
-                ]
+            if pairs_for_roi is not None:
+                roi = self.get_roi(pairs_for_roi, dem_epsg)
 
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
@@ -116,6 +81,57 @@ class SharelocGeometry(AbstractGeometry):
             )
         else:
             self.elevation = default_alt
+
+    def get_roi(self, pairs_for_roi, epsg, margin=0.006):
+        """
+        Compute region of interest for intersection of DEM
+
+        :param pairs_for_roi: list of pairs of images and geomodels
+        :type pairs_for_roi: List[(str, dict, str, dict)]
+        :param dem_epsg: output EPSG code for ROI
+        :type dem_epsg: int
+        :param margin: margin for ROI in degrees
+        :type margin: float
+        """
+        coords_list = []
+        for image1, geomodel1, image2, geomodel2 in pairs_for_roi:
+            # Footprint of left image
+            coords_list.extend(self.image_envelope(image1, geomodel1))
+            # Footprint of right image
+            coords_list.extend(self.image_envelope(image2, geomodel2))
+            # Epipolar extent
+            image1 = Image(image1)
+            geomodel1 = self.load_geom_model(geomodel1)
+            geomodel2 = self.load_geom_model(geomodel2)
+            epipolar_extent = rectif.get_epipolar_extent(
+                image1, geomodel1, geomodel2
+            )
+            lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
+            coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
+
+        lon_list, lat_list = list(zip(*coords_list))  # noqa: B905
+        roi = [
+            min(lat_list) - margin,
+            min(lon_list) - margin,
+            max(lat_list) + margin,
+            max(lon_list) + margin,
+        ]
+        points = np.array(
+            [
+                (roi[1], roi[0], 0),
+                (roi[3], roi[2], 0),
+                (roi[1], roi[0], 0),
+                (roi[3], roi[2], 0),
+            ]
+        )
+        new_points = projection.points_cloud_conversion(points, 4326, epsg)
+        roi = [
+            min(new_points[:, 1]),
+            min(new_points[:, 0]),
+            max(new_points[:, 1]),
+            max(new_points[:, 0]),
+        ]
+        return roi
 
     @staticmethod
     def load_geom_model(model: dict) -> Union[Grid, RPC]:
