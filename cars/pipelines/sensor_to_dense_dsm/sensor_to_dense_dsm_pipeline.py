@@ -909,6 +909,22 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Run epipolar resampling
 
+                # Update used_conf configuration with epipolar a priori
+                # Add global min and max computed with grids
+                sensors_inputs.update_conf(
+                    self.used_conf,
+                    grid_correction_coef=pairs[pair_key][
+                        "grid_correction_coef"
+                    ],
+                    pair_key=pair_key,
+                )
+                # saved used configuration
+                cars_dataset.save_dict(
+                    self.used_conf,
+                    os.path.join(out_dir, "used_conf.json"),
+                    safe_save=True,
+                )
+
                 # Generate min and max disp grids
                 # Global disparity min and max will be computed from
                 # these grids
@@ -953,14 +969,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 )
 
                 # TODO add in content.json max diff max - min
-
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
                 sensors_inputs.update_conf(
                     self.used_conf,
-                    grid_correction_coef=pairs[pair_key][
-                        "grid_correction_coef"
-                    ],
                     dmin=np.min(
                         disp_range_grid[0, 0]["disp_min_grid"].values
                     ),  # TODO compute dmin dans dmax

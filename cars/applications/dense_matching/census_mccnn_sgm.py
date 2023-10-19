@@ -33,6 +33,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
+from affine import Affine
 from json_checker import And, Checker, Or
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -359,8 +360,7 @@ class CensusMccnnSgm(
                 len(col_range), int(np.ceil((col_max + 1) / step_col))
             )
 
-            # Compute disp min and max in roi
-
+            # Compute disp min and max in row
             disp_min = np.min(
                 disp_min_grid_arr[
                     grid_row_min:grid_row_max, grid_col_min:grid_col_max
@@ -487,18 +487,18 @@ class CensusMccnnSgm(
             orchestrator_conf={"mode": "sequential"}
         )
 
-        epi_size_x = grid_right.attributes["epipolar_size_x"]
-        epi_size_y = grid_right.attributes["epipolar_size_y"]
+        epi_size_row = grid_right.attributes["epipolar_size_y"]
+        epi_size_col = grid_right.attributes["epipolar_size_x"]
         disp_to_alt_ratio = grid_right.attributes["disp_to_alt_ratio"]
 
         # Generate grid array
-        nb_rows = int(epi_size_y / self.local_disp_grid_step) + 1
-        nb_cols = int(epi_size_x / self.local_disp_grid_step) + 1
+        nb_rows = int(epi_size_row / self.local_disp_grid_step) + 1
+        nb_cols = int(epi_size_col / self.local_disp_grid_step) + 1
         row_range, step_row = np.linspace(
-            0, epi_size_y, self.local_disp_grid_step, nb_rows, retstep=True
+            0, epi_size_row, nb_rows, retstep=True
         )
         col_range, step_col = np.linspace(
-            0, epi_size_x, self.local_disp_grid_step, nb_cols, retstep=True
+            0, epi_size_col, nb_cols, retstep=True
         )
 
         grid_min = np.empty((len(row_range), len(col_range)))
@@ -508,7 +508,7 @@ class CensusMccnnSgm(
         grid_disp_range = cars_dataset.CarsDataset("arrays")
         # Only one tile
         grid_disp_range.tiling_grid = np.array(
-            [[[0, epi_size_x, 0, epi_size_y]]]
+            [[[0, epi_size_row, 0, epi_size_col]]]
         )
 
         grid_attributes = {
@@ -554,7 +554,7 @@ class CensusMccnnSgm(
 
             # Get epipolar positions
             (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
-                row_range, col_range
+                col_range, row_range
             )
             epipolar_positions = np.stack(
                 [epipolar_positions_row, epipolar_positions_col], axis=2
@@ -642,9 +642,6 @@ class CensusMccnnSgm(
 
         # Add margin
         diff = grid_max - grid_min
-        if np.any(diff < 0):
-            logging.error("grid min > grid max in {}".format(pair_folder))
-            raise RuntimeError("grid min > grid max in {}".format(pair_folder))
 
         margin_array = diff * self.disparity_margin
         grid_min -= margin_array
@@ -689,14 +686,34 @@ class CensusMccnnSgm(
             saving_info
         ] = grid_orchestrator.get_saving_infos([grid_disp_range])
         saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
-        window = cars_dataset.window_array_to_dict(
-            grid_disp_range.tiling_grid[0, 0]
+        # Generate profile
+        # Generate profile
+        geotransform = (
+            epi_size_row,
+            step_row,
+            0.0,
+            epi_size_col,
+            0.0,
+            step_col,
+        )
+
+        transform = Affine.from_gdal(*geotransform)
+        raster_profile = collections.OrderedDict(
+            {
+                "height": nb_rows,
+                "width": nb_cols,
+                "driver": "GTiff",
+                "dtype": "float32",
+                "transform": transform,
+                # "crs": "EPSG:{}".format(4326),
+                "tiled": True,
+            }
         )
         cars_dataset.fill_dataset(
             disp_range_tile,
             saving_info=saving_info,
-            window=window,
-            profile=None,
+            window=None,
+            profile=raster_profile,
             attributes=None,
             overlaps=None,
         )
@@ -704,6 +721,10 @@ class CensusMccnnSgm(
 
         if self.save_disparity_map:
             grid_orchestrator.breakpoint()
+
+        if np.any(diff < 0):
+            logging.error("grid min > grid max in {}".format(pair_folder))
+            raise RuntimeError("grid min > grid max in {}".format(pair_folder))
 
         return grid_disp_range
 
