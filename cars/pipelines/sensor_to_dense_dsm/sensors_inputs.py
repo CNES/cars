@@ -351,11 +351,15 @@ def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
         dem = conf_inputs[sens_cst.INITIAL_ELEVATION]
 
     # Get image pairs for DEM intersection with ROI
-    images_for_roi = []
-    for sensor_image in conf_inputs[sens_cst.SENSORS].values():
-        sensor = sensor_image[sens_cst.INPUT_IMG]
-        geomodel = sensor_image[sens_cst.INPUT_GEO_MODEL]
-        images_for_roi.append((sensor, geomodel))
+    pairs_for_roi = []
+    for key1, key2 in conf_inputs[sens_cst.PAIRING]:
+        sensor1 = conf_inputs[sens_cst.SENSORS][key1]
+        sensor2 = conf_inputs[sens_cst.SENSORS][key2]
+        image1 = sensor1[sens_cst.INPUT_IMG]
+        image2 = sensor2[sens_cst.INPUT_IMG]
+        geomodel1 = sensor1[sens_cst.INPUT_GEO_MODEL]
+        geomodel2 = sensor2[sens_cst.INPUT_GEO_MODEL]
+        pairs_for_roi.append((image1, geomodel1, image2, geomodel2))
 
     # Initialize a second geometry plugin with elevation information
     geom_plugin_with_dem_and_geoid = (
@@ -364,7 +368,7 @@ def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs, dem=None):
             dem=dem,
             geoid=conf_inputs[sens_cst.GEOID],
             default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
-            images_for_roi=images_for_roi,
+            pairs_for_roi=pairs_for_roi,
         )
     )
 

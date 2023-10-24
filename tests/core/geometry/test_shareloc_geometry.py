@@ -48,13 +48,13 @@ def test_dir_loc_rpc():
     dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
     geoid = get_geoid_path()
 
-    geo_loader = (
+    geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "SharelocGeometry", dem=dem, geoid=geoid
         )
     )
 
-    lat, lon, alt = geo_loader.direct_loc(
+    lat, lon, alt = geo_plugin.direct_loc(
         sensor, geomodel, np.array([0, 5, 10]), np.array([0, 6, 12])
     )
     current = np.array([lat, lon, alt])
@@ -67,3 +67,35 @@ def test_dir_loc_rpc():
         np.dtype(np.float64),
     )
     np.testing.assert_allclose(current, reference)
+
+
+@pytest.mark.unit_tests
+def test_get_roi():
+    """
+    Test direct localization with RPC
+    """
+    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
+
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
+    geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
+
+    dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
+    geoid = get_geoid_path()
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry", dem=dem, geoid=geoid
+        )
+    )
+    pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
+    roi = geo_plugin.get_roi(pairs_for_roi, 4326, margin=0.005)
+    ref_roi = [
+        44.19920812310502,
+        5.187107532543532,
+        44.21309529125914,
+        5.202048185183154,
+    ]
+    np.testing.assert_allclose(roi, ref_roi)
