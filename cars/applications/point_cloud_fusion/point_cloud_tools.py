@@ -163,20 +163,20 @@ def create_combined_sparse_cloud(  # noqa: C901
         and ymax is not None
     )
 
-    nb_data = create_point_cloud_index(cloud_list)
+    cloud_indexes = create_points_cloud_index(cloud_list[0])
 
     if with_coords:
-        nb_data.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I])
+        cloud_indexes.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I])
 
     # iterate through input clouds
-    cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
+    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float64)
     nb_points = 0
-    for cloud_global_id, cloud_list_item in zip(  # noqa: B905
+    for cloud_global_id, points_cloud in zip(  # noqa: B905
         cloud_ids, cloud_list
     ):
-        full_x = cloud_list_item[cst.X]
-        full_y = cloud_list_item[cst.Y]
-        full_z = cloud_list_item[cst.Z]
+        full_x = points_cloud[cst.X]
+        full_y = points_cloud[cst.Y]
+        full_z = points_cloud[cst.Z]
 
         # get mask of points inside the roi (plus margins)
         if roi:
@@ -194,7 +194,7 @@ def create_combined_sparse_cloud(  # noqa: C901
                 ymax,
                 margin,
                 epsg,
-                cloud_list_item,
+                points_cloud,
                 full_x,
                 full_y,
             )
@@ -202,8 +202,8 @@ def create_combined_sparse_cloud(  # noqa: C901
             # if the points clouds are not in the same referential as the roi,
             # retrieve the initial values
             if epsg != dsm_epsg:
-                full_x = cloud_list_item[cst.X]
-                full_y = cloud_list_item[cst.Y]
+                full_x = points_cloud[cst.X]
+                full_y = points_cloud[cst.Y]
 
             # if no point is found, continue
             if terrain_tile_data_msk_pos[0].shape[0] == 0:
@@ -218,72 +218,74 @@ def create_combined_sparse_cloud(  # noqa: C901
             bbox = [0, full_y.shape[0] - 1]
 
         # add (x, y, z) information to the current cloud
-        c_x = full_x[bbox[0] : bbox[1] + 1]
-        c_y = full_y[bbox[0] : bbox[1] + 1]
-        c_z = full_z[bbox[0] : bbox[1] + 1]
+        crop_x = full_x[bbox[0] : bbox[1] + 1]
+        crop_y = full_y[bbox[0] : bbox[1] + 1]
+        crop_z = full_z[bbox[0] : bbox[1] + 1]
 
-        c_cloud = np.zeros((len(nb_data), (bbox[1] - bbox[0] + 1)))
-        c_cloud[nb_data.index(cst.X), :] = c_x
-        c_cloud[nb_data.index(cst.Y), :] = c_y
-        c_cloud[nb_data.index(cst.Z), :] = c_z
+        crop_cloud = np.zeros((len(cloud_indexes), (bbox[1] - bbox[0] + 1)))
+        crop_cloud[cloud_indexes.index(cst.X), :] = crop_x
+        crop_cloud[cloud_indexes.index(cst.Y), :] = crop_y
+        crop_cloud[cloud_indexes.index(cst.Z), :] = crop_z
 
         # add data valid mask
         # (points that are not in the border of the epipolar image)
         if epipolar_border_margin == 0:
             epipolar_margin_mask = np.full(
-                cloud_list_item[cst.X].size,
+                points_cloud[cst.X].size,
                 True,
             )
         else:
             epipolar_margin_mask = np.full(
-                cloud_list_item[cst.X].size,
+                points_cloud[cst.X].size,
                 False,
             )
             epipolar_margin_mask[
                 epipolar_border_margin:-epipolar_border_margin,
             ] = True
 
-        c_epipolar_margin_mask = epipolar_margin_mask[bbox[0] : bbox[1] + 1]
-        c_cloud[nb_data.index(cst.POINTS_CLOUD_VALID_DATA), :] = np.ravel(
-            c_epipolar_margin_mask
-        )
+        crop_epipolar_margin_mask = epipolar_margin_mask[bbox[0] : bbox[1] + 1]
+        crop_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_VALID_DATA), :
+        ] = np.ravel(crop_epipolar_margin_mask)
 
         # add index of original point cloud
-        c_cloud[nb_data.index(cst.POINTS_CLOUD_GLOBAL_ID), :] = cloud_global_id
+        crop_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :
+        ] = cloud_global_id
 
         # add the original image coordinates information to the current cloud
         if with_coords:
             coords_line = np.linspace(
                 bbox[0], bbox[1], num=bbox[1] - bbox[0] + 1
             )
-            c_cloud[
-                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
+            crop_cloud[
+                cloud_indexes.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
             ] = coords_line
 
         # remove masked data (pandora + out of the terrain tile points)
-        c_terrain_tile_data_msk = (
-            cloud_list_item[cst.POINTS_CLOUD_CORR_MSK][bbox[0] : bbox[1]] == 255
+        crop_terrain_tile_data_msk = (
+            points_cloud[cst.POINTS_CLOUD_CORR_MSK][bbox[0] : bbox[1]] == 255
         )
         if roi:
-            c_terrain_tile_data_msk = np.logical_and(
-                c_terrain_tile_data_msk,
+            crop_terrain_tile_data_msk = np.logical_and(
+                crop_terrain_tile_data_msk,
                 terrain_tile_data_msk[bbox[0] : bbox[1]],
             )
 
-        c_cloud = filter_cloud_with_mask(
-            nb_points, c_cloud, c_terrain_tile_data_msk
+        crop_cloud = filter_cloud_with_mask(
+            nb_points, crop_cloud, crop_terrain_tile_data_msk
         )
 
         # add current cloud to the combined one
-        cloud = np.concatenate([cloud, c_cloud], axis=0)
+        combined_cloud = np.concatenate([combined_cloud, crop_cloud], axis=0)
 
     logging.debug("Received {} points to rasterize".format(nb_points))
     logging.debug(
         "Keeping {}/{} points "
-        "inside rasterization grid".format(cloud.shape[0], nb_points)
+        "inside rasterization grid".format(combined_cloud.shape[0], nb_points)
     )
 
-    pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
+    pd_cloud = pandas.DataFrame(combined_cloud, columns=cloud_indexes)
 
     return pd_cloud, epsg
 
@@ -295,34 +297,36 @@ def get_epsg(cloud_list):
     :param cloud_list: list of the point clouds
     """
     epsg = None
-    for cloud_list_item in cloud_list:
+    for points_cloud in cloud_list:
         if epsg is None:
-            epsg = int(cloud_list_item.attrs[cst.EPSG])
-        elif int(cloud_list_item.attrs[cst.EPSG]) != epsg:
+            epsg = int(points_cloud.attrs[cst.EPSG])
+        elif int(points_cloud.attrs[cst.EPSG]) != epsg:
             logging.error("All points clouds do not have the same epsg code")
 
     return epsg
 
 
-def filter_cloud_with_mask(nb_points, c_cloud, c_terrain_tile_data_msk):
+def filter_cloud_with_mask(nb_points, crop_cloud, crop_terrain_tile_data_msk):
     """
     Delete masked points with terrain tile mask
 
     :param nb_points: total number of point cloud
         (increase at each point cloud)
-    :param c_cloud: the point cloud
-    :param c_terrain_tile_data_msk: terrain tile mask
+    :param crop_cloud: the point cloud
+    :param crop_terrain_tile_data_msk: terrain tile mask
     """
-    c_terrain_tile_data_msk = np.ravel(c_terrain_tile_data_msk)
+    crop_terrain_tile_data_msk = np.ravel(crop_terrain_tile_data_msk)
 
-    c_terrain_tile_data_msk_pos = np.nonzero(~c_terrain_tile_data_msk)
+    crop_terrain_tile_data_msk_pos = np.nonzero(~crop_terrain_tile_data_msk)
 
     # compute nb points before apply the mask
-    nb_points += c_cloud.shape[1]
+    nb_points += crop_cloud.shape[1]
 
-    c_cloud = np.delete(c_cloud.transpose(), c_terrain_tile_data_msk_pos[0], 0)
+    crop_cloud = np.delete(
+        crop_cloud.transpose(), crop_terrain_tile_data_msk_pos[0], 0
+    )
 
-    return c_cloud
+    return crop_cloud
 
 
 def compute_terrain_msk(
@@ -333,7 +337,7 @@ def compute_terrain_msk(
     ymax,
     margin,
     epsg,
-    cloud_list_item,
+    points_cloud,
     full_x,
     full_y,
 ):
@@ -355,16 +359,16 @@ def compute_terrain_msk(
     :param margin: Margin added for each tile, in meter or degree.
         (default value: 0)
     :param epsg: epsg code of the input cloud
-    :param cloud_list_item: the point cloud
-    :param full_x: cloud_list_item[X]
-    :param full_y: cloud_list_item[Y]
+    :param points_cloud: the point cloud
+    :param full_x: points_cloud[X]
+    :param full_y: points_cloud[Y]
     """
     if epsg != dsm_epsg:
         (
             full_x,
             full_y,
         ) = projection.get_converted_xy_np_arrays_from_dataset(
-            cloud_list_item, dsm_epsg
+            points_cloud, dsm_epsg
         )
     msk_xmin = np.where(full_x > xmin - margin, True, False)
     msk_xmax = np.where(full_x < xmax + margin, True, False)
@@ -421,8 +425,8 @@ def create_combined_dense_cloud(  # noqa: C901
              labels=[cst.POINTS_CLOUD_VALID_DATA,\
                      cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"0",\
-                    cst.POINTS_CLOUD_CLR_KEY_ROOT+"1",\
-                    cst.POINTS_CLOUD_CLR_KEY_ROOT+"2"\
+                     cst.POINTS_CLOUD_CLR_KEY_ROOT+"1",\
+                     cst.POINTS_CLOUD_CLR_KEY_ROOT+"2"\
                      cst.POINTS_CLOUD_COORD_EPI_GEOM_I,\
                      cst.POINTS_CLOUD_COORD_EPI_GEOM_J,\
                      cst.POINTS_CLOUD_ID_IM_EPI]\
@@ -453,7 +457,7 @@ def create_combined_dense_cloud(  # noqa: C901
     """
     epsg = get_epsg(cloud_list)
 
-    # compute margin/roi and final number of data to add to the combined cloud
+    # Compute margin/roi and final number of data to add to the combined cloud
     roi = (
         xmin is not None
         and xmax is not None
@@ -461,22 +465,12 @@ def create_combined_dense_cloud(  # noqa: C901
         and ymax is not None
     )
 
-    # create point cloud index
-    nb_data = create_point_cloud_index(cloud_list)
+    # Create point cloud index
+    cloud_indexes = create_points_cloud_index(cloud_list[0])
 
-    # Find number of bands
-    # get max of bands
-    nb_band_clr = get_number_bands(cloud_list)
-
-    # Extend list of data
-    list_clr = [
-        "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, i)
-        for i in range(nb_band_clr)
-    ]
-    nb_data.extend(list_clr)
-
+    # Add coords
     if with_coords:
-        nb_data.extend(
+        cloud_indexes.extend(
             [
                 cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
                 cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
@@ -484,45 +478,15 @@ def create_combined_dense_cloud(  # noqa: C901
             ]
         )
 
-    # add classif indexes
-    band_classif = None
-    if cst.EPI_CLASSIFICATION in cloud_list[0]:
-        band_classif = list(cloud_list[0].coords[cst.BAND_CLASSIF].to_numpy())
-        for band in band_classif:
-            band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
-            nb_data.extend(
-                [
-                    band_index,
-                ]
-            )
-
-    # add filling information indexes
-    band_filling = None
-    if cst.EPI_FILLING in cloud_list[0]:
-        band_filling = list(cloud_list[0].coords[cst.BAND_FILLING].to_numpy())
-        for band in band_filling:
-            band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
-            nb_data.extend(
-                [
-                    band_index,
-                ]
-            )
-
-    confidence_list = []
-    for key in cloud_list[0].keys():
-        if cst.POINTS_CLOUD_CONFIDENCE in key:
-            nb_data.append(key)
-            confidence_list.append(key)
-
-    # iterate through input clouds
-    cloud = np.zeros((0, len(nb_data)), dtype=np.float64)
+    # Iterate through input clouds
+    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float64)
     nb_points = 0
-    for cloud_global_id, (cloud_list_id, cloud_list_item) in zip(  # noqa: B905
+    for cloud_global_id, (cloud_list_id, points_cloud) in zip(  # noqa: B905
         cloud_id, enumerate(cloud_list)
     ):
-        full_x = cloud_list_item[cst.X].values
-        full_y = cloud_list_item[cst.Y].values
-        full_z = cloud_list_item[cst.Z].values
+        full_x = points_cloud[cst.X].values
+        full_y = points_cloud[cst.Y].values
+        full_z = points_cloud[cst.Z].values
 
         # get mask of points inside the roi (plus margins)
         if roi:
@@ -540,7 +504,7 @@ def create_combined_dense_cloud(  # noqa: C901
                 ymax,
                 margin,
                 epsg,
-                cloud_list_item,
+                points_cloud,
                 full_x,
                 full_y,
             )
@@ -548,8 +512,8 @@ def create_combined_dense_cloud(  # noqa: C901
             # if the points clouds are not in the same referential as the roi,
             # retrieve the initial values
             if epsg != dsm_epsg:
-                full_x = cloud_list_item[cst.X].values
-                full_y = cloud_list_item[cst.Y].values
+                full_x = points_cloud[cst.X].values
+                full_y = points_cloud[cst.Y].values
 
             # if no point is found, continue
             if terrain_tile_data_msk_pos[0].shape[0] == 0:
@@ -566,47 +530,35 @@ def create_combined_dense_cloud(  # noqa: C901
             bbox = [0, 0, full_y.shape[0] - 1, full_y.shape[1] - 1]
 
         # add (x, y, z) information to the current cloud
-        c_x = full_x[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-        c_y = full_y[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-        c_z = full_z[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        crop_x = full_x[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        crop_y = full_y[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+        crop_z = full_z[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
 
-        c_cloud = np.zeros(
-            (len(nb_data), (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1))
+        flatten_cloud = np.zeros(
+            (
+                len(cloud_indexes),
+                (bbox[2] - bbox[0] + 1) * (bbox[3] - bbox[1] + 1),
+            )
         )
-        c_cloud[nb_data.index(cst.X), :] = np.ravel(c_x)
-        c_cloud[nb_data.index(cst.Y), :] = np.ravel(c_y)
-        c_cloud[nb_data.index(cst.Z), :] = np.ravel(c_z)
-        ds_values_list = [key for key, _ in cloud_list_item.items()]
-        for confidence_name in confidence_list:
-            if cst.POINTS_CLOUD_CONFIDENCE in " ".join(ds_values_list):
-                c_confidence = cloud_list_item[confidence_name].values[
-                    bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-                ]
-                c_cloud[nb_data.index(confidence_name), :] = np.ravel(
-                    c_confidence
-                )
-
-        if cst.EPI_MSK in ds_values_list:
-            c_msk = cloud_list_item[cst.EPI_MSK].values[
-                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-            ]
-            c_cloud[nb_data.index(cst.POINTS_CLOUD_MSK), :] = np.ravel(c_msk)
+        flatten_cloud[cloud_indexes.index(cst.X), :] = np.ravel(crop_x)
+        flatten_cloud[cloud_indexes.index(cst.Y), :] = np.ravel(crop_y)
+        flatten_cloud[cloud_indexes.index(cst.Z), :] = np.ravel(crop_z)
 
         # add data valid mask
         # (points that are not in the border of the epipolar image)
         if epipolar_border_margin == 0:
             epipolar_margin_mask = np.full(
                 (
-                    cloud_list_item[cst.X].values.shape[0],
-                    cloud_list_item[cst.X].values.shape[1],
+                    points_cloud[cst.X].values.shape[0],
+                    points_cloud[cst.X].values.shape[1],
                 ),
                 True,
             )
         else:
             epipolar_margin_mask = np.full(
                 (
-                    cloud_list_item[cst.X].values.shape[0],
-                    cloud_list_item[cst.X].values.shape[1],
+                    points_cloud[cst.X].values.shape[0],
+                    points_cloud[cst.X].values.shape[1],
                 ),
                 False,
             )
@@ -615,112 +567,95 @@ def create_combined_dense_cloud(  # noqa: C901
                 epipolar_border_margin:-epipolar_border_margin,
             ] = True
 
-        c_epipolar_margin_mask = epipolar_margin_mask[
+        crop_epipolar_margin_mask = epipolar_margin_mask[
             bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
         ]
-        c_cloud[nb_data.index(cst.POINTS_CLOUD_VALID_DATA), :] = np.ravel(
-            c_epipolar_margin_mask
-        )
+        flatten_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_VALID_DATA), :
+        ] = np.ravel(crop_epipolar_margin_mask)
 
         # add index of original point cloud
-        c_cloud[nb_data.index(cst.POINTS_CLOUD_GLOBAL_ID), :] = cloud_global_id
+        flatten_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :
+        ] = cloud_global_id
 
-        # add the color information to the current cloud
-        if cst.EPI_COLOR in cloud_list[cloud_list_id]:
-            add_color_information(
-                cloud_list,
-                nb_data,
-                nb_band_clr,
-                cloud_list_id,
+        # add additional information to point cloud
+        arrays_to_add_to_points_cloud = [
+            (cst.EPI_COLOR, cst.POINTS_CLOUD_CLR_KEY_ROOT),
+            (cst.EPI_MSK, cst.POINTS_CLOUD_MSK),
+            (cst.EPI_CLASSIFICATION, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT),
+            (cst.EPI_FILLING, cst.POINTS_CLOUD_FILLING_KEY_ROOT),
+        ]
+
+        for array_name in points_cloud:
+            if cst.EPI_CONFIDENCE_KEY_ROOT in array_name:
+                arrays_to_add_to_points_cloud.append((array_name, array_name))
+
+        for input_band, output_column in arrays_to_add_to_points_cloud:
+            add_information_to_cloud(
+                points_cloud,
+                cloud_indexes,
                 bbox,
-                c_cloud,
+                flatten_cloud,
+                input_band,
+                output_column,
             )
 
-        # add classification to the current cloud
-        if cst.EPI_CLASSIFICATION in cloud_list[cloud_list_id]:
-            add_classification_information(
-                cloud_list,
-                nb_data,
-                band_classif,
-                cloud_list_id,
-                bbox,
-                c_cloud,
-            )
-
-        # add filling information to the current cloud
-        if cst.EPI_FILLING in cloud_list[cloud_list_id]:
-            add_filling_information(
-                cloud_list,
-                nb_data,
-                band_filling,
-                cloud_list_id,
-                bbox,
-                c_cloud,
-            )
-        # add mask to the current cloud
-        if cst.EPI_COLOR_MSK in cloud_list[cloud_list_id]:
-            add_msk_information(
-                cloud_list,
-                nb_data,
-                cloud_list_id,
-                bbox,
-                c_cloud,
-            )
         # add the original image coordinates information to the current cloud
         if with_coords:
             coords_line = np.linspace(bbox[0], bbox[2], bbox[2] - bbox[0] + 1)
             coords_col = np.linspace(bbox[1], bbox[3], bbox[3] - bbox[1] + 1)
             coords_col, coords_line = np.meshgrid(coords_col, coords_line)
 
-            c_cloud[
-                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
+            flatten_cloud[
+                cloud_indexes.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_I), :
             ] = np.ravel(coords_line)
-            c_cloud[
-                nb_data.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_J), :
+            flatten_cloud[
+                cloud_indexes.index(cst.POINTS_CLOUD_COORD_EPI_GEOM_J), :
             ] = np.ravel(coords_col)
-            c_cloud[
-                nb_data.index(cst.POINTS_CLOUD_ID_IM_EPI), :
+            flatten_cloud[
+                cloud_indexes.index(cst.POINTS_CLOUD_ID_IM_EPI), :
             ] = cloud_list_id
 
         # remove masked data (pandora + out of the terrain tile points)
-        c_terrain_tile_data_msk = (
-            cloud_list_item[cst.POINTS_CLOUD_CORR_MSK].values[
+        crop_terrain_tile_data_msk = (
+            points_cloud[cst.POINTS_CLOUD_CORR_MSK].values[
                 bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
             ]
             == 255
         )
 
         if roi:
-            c_terrain_tile_data_msk = np.logical_and(
-                c_terrain_tile_data_msk,
+            crop_terrain_tile_data_msk = np.logical_and(
+                crop_terrain_tile_data_msk,
                 terrain_tile_data_msk[
                     bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
                 ],
             )
 
-        c_cloud = filter_cloud_with_mask(
-            nb_points, c_cloud, c_terrain_tile_data_msk
+        flatten_cloud = filter_cloud_with_mask(
+            nb_points, flatten_cloud, crop_terrain_tile_data_msk
         )
 
         # add current cloud to the combined one
-        cloud = np.concatenate([cloud, c_cloud], axis=0)
+        combined_cloud = np.concatenate([combined_cloud, flatten_cloud], axis=0)
 
     logging.debug("Received {} points to rasterize".format(nb_points))
     logging.debug(
         "Keeping {}/{} points "
-        "inside rasterization grid".format(cloud.shape[0], nb_points)
+        "inside rasterization grid".format(combined_cloud.shape[0], nb_points)
     )
 
-    pd_cloud = pandas.DataFrame(cloud, columns=nb_data)
+    pd_cloud = pandas.DataFrame(combined_cloud, columns=cloud_indexes)
 
     return pd_cloud, epsg
 
 
-def create_point_cloud_index(cloud_list):
+def create_points_cloud_index(cloud_sample):
     """
     Create point cloud index from cloud list keys and color inputs
     """
-    nb_data = [
+    cloud_indexes = [
         cst.POINTS_CLOUD_GLOBAL_ID,
         cst.POINTS_CLOUD_VALID_DATA,
         cst.X,
@@ -728,170 +663,74 @@ def create_point_cloud_index(cloud_list):
         cst.Z,
     ]
 
-    # check if the input mask values are present in the dataset
-    for cloud_list_item in cloud_list:
-        ds_values_list = [key for key, _ in cloud_list_item.items()]
-        if cst.EPI_MSK in ds_values_list:
-            nb_data.append(cst.POINTS_CLOUD_MSK)
-            break
+    # Add mask index
+    if cst.EPI_MSK in cloud_sample:
+        cloud_indexes.append(cst.POINTS_CLOUD_MSK)
 
-    return nb_data
+    # Add color indexes
+    if cst.EPI_COLOR in cloud_sample:
+        band_color = list(cloud_sample.coords[cst.BAND_IM].to_numpy())
+        for band in band_color:
+            band_index = "{}_{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
+            cloud_indexes.append(band_index)
+
+    # Add classif indexes
+    if cst.EPI_CLASSIFICATION in cloud_sample:
+        band_classif = list(cloud_sample.coords[cst.BAND_CLASSIF].to_numpy())
+        for band in band_classif:
+            band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
+            cloud_indexes.append(band_index)
+
+    # Add filling information indexes
+    if cst.EPI_FILLING in cloud_sample:
+        band_filling = list(cloud_sample.coords[cst.BAND_FILLING].to_numpy())
+        for band in band_filling:
+            band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
+            cloud_indexes.append(band_index)
+
+    # Add confidence indexes
+    for key in cloud_sample:
+        if cst.EPI_CONFIDENCE_KEY_ROOT in key:
+            cloud_indexes.append(key)
+
+    return cloud_indexes
 
 
-def add_color_information(
-    cloud_list,
-    nb_data,
-    nb_band_clr,
-    cloud_list_id,
-    bbox,
-    c_cloud,
+def add_information_to_cloud(
+    input_cloud, cloud_indexes, bbox, target_cloud, input_array, output_column
 ):
     """
     Add color information for a current cloud_list item
 
-    :param cloud_list: point cloud dataset
-    :type cloud_list: List(Dataset)
-    :param nb_data: list of band data
-    :type nb_data: list[str]
-    :param nb_band_clr: number of color band
-    :type nb_band_clr: int
-    :param cloud_list_id: index of the current point cloud
-    :type cloud_list_id: int
+    :param cloud: source point cloud dataset
+    :type cloud: xr.Dataset
+    :param cloud_indexes: list of band data to extract
+    :type cloud_indexes: list[str]
     :param bbox: bbox of interest
     :type bbox: list[int]
-    :param c_cloud: arranged point cloud
-    :type c_cloud: NDArray[float64]
+    :param crop_cloud: target flatten point cloud
+    :type crop_cloud: np.array[columns, points]
+    :param input_array: index of input to extract from cloud
+    :type input_array: str
+    :param output_column: index of crop_cloud to fill
+    :type input_array: str
     """
-    if nb_band_clr == 1:
-        if len(cloud_list[cloud_list_id][cst.EPI_COLOR].values.shape) == 3:
-            c_color = np.squeeze(
-                cloud_list[cloud_list_id][cst.EPI_COLOR].values
-            )[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-        else:
-            c_color = cloud_list[cloud_list_id][cst.EPI_COLOR].values[
-                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-            ]
-
-        c_cloud[
-            nb_data.index("{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, 0)),
-            :,
-        ] = np.ravel(c_color[:, :])
-    else:
-        color_array = cloud_list[cloud_list_id][cst.EPI_COLOR].values
-        if len(color_array.shape) == 2:
-            # point cloud created with pancro, needs to duplicate
-            logging.debug(
-                "Not the same number of color bands for all point clouds"
-            )
-            color_array = np.stack(
-                [color_array for _ in range(nb_band_clr)], axis=0
-            )
-
-        c_color = color_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-        for band in range(nb_band_clr):
-            c_cloud[
-                nb_data.index(
-                    "{}{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
-                ),
-                :,
-            ] = np.ravel(c_color[band, :, :])
-
-
-def add_classification_information(
-    cloud_list,
-    nb_data,
-    band_classif,
-    cloud_list_id,
-    bbox,
-    c_cloud,
-):
-    """
-    Add classification bands for a current cloud_list item
-
-    :param cloud_list: point cloud dataset
-    :type cloud_list: List(Dataset)
-    :param band_classif: list of band classif
-    :type band_classif: list[str]
-    :param nb_data: list of band data
-    :type nb_data: list[str]
-    :param cloud_list_id: index of the current point cloud
-    :type cloud_list_id: int
-    :param bbox: bbox of interest
-    :type bbox: list[int]
-    :param c_cloud: arranged point cloud
-    :type c_cloud: NDArray[float64]
-    """
-    classif_array = cloud_list[cloud_list_id][cst.EPI_CLASSIFICATION].values
-    c_classif = classif_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-    for idx, band in enumerate(band_classif):
-        band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
-        c_cloud[
-            nb_data.index(band_index),
-            :,
-        ] = np.ravel(c_classif[idx, :, :])
-
-
-def add_filling_information(
-    cloud_list,
-    nb_data,
-    band_filling,
-    cloud_list_id,
-    bbox,
-    c_cloud,
-):
-    """
-    Add filling information for a current cloud_list item
-
-    :param cloud_list: point cloud dataset
-    :type cloud_list: List(Dataset)
-    :param band_classif: list of band classif
-    :type band_classif: list[str]
-    :param nb_data: list of band data
-    :type nb_data: list[str]
-    :param cloud_list_id: index of the current point cloud
-    :type cloud_list_id: int
-    :param bbox: bbox of interest
-    :type bbox: list[int]
-    :param c_cloud: arranged point cloud
-    :type c_cloud: NDArray[float64]
-    """
-    filling_array = cloud_list[cloud_list_id][cst.EPI_FILLING].values
-    c_filling = filling_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-    for idx, band in enumerate(band_filling):
-        band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
-        c_cloud[
-            nb_data.index(band_index),
-            :,
-        ] = np.ravel(c_filling[idx, :, :])
-
-
-def add_msk_information(
-    cloud_list,
-    nb_data,
-    cloud_list_id,
-    bbox,
-    c_cloud,
-):
-    """
-    Add mask information for a current cloud_list item
-
-    :param cloud_list: point cloud dataset
-    :type cloud_list: List(Dataset)
-    :param nb_data: list of band data
-    :type nb_data: list[str]
-    :param cloud_list_id: index of the current point cloud
-    :type cloud_list_id: int
-    :param bbox: bbox of interest
-    :type bbox: list[int]
-    :param c_cloud: arranged point cloud
-    :type c_cloud: NDArray[float64]
-    """
-    msk_array = cloud_list[cloud_list_id][cst.EPI_COLOR_MSK].values
-    c_msk = msk_array[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
-    c_cloud[
-        nb_data.index(cst.POINTS_CLOUD_MSK),
-        :,
-    ] = np.ravel(c_msk[:, :])
+    if input_array in input_cloud:
+        full_array = input_cloud[input_array]
+        if len(full_array.shape) == 3:
+            # Array with multiple bands
+            array = full_array[:, bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+            for column_name in cloud_indexes:
+                if output_column in column_name:
+                    band_name = column_name.replace(output_column + "_", "")
+                    band = array.loc[band_name]
+                    index = cloud_indexes.index(column_name)
+                    target_cloud[index, :] = np.ravel(band.values)
+        elif len(full_array.shape) == 2:
+            # Array with single band
+            array = full_array[bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1]
+            index = cloud_indexes.index(output_column)
+            target_cloud[index, :] = np.ravel(array.values)
 
 
 def get_color_type(clouds):
@@ -944,10 +783,6 @@ def get_number_bands(cloud_list):
         nb_band_clr = max(nb_band_clr, current_cloud_nb_bands)
 
     return nb_band_clr
-
-
-# ONLY USED IN TEST
-# TODO remove
 
 
 def filter_cloud(

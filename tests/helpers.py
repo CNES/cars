@@ -397,7 +397,7 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
             if cst.EPI_COLOR in new_dataset:
                 band_im = get_color_bands(new_dataset, cst.EPI_COLOR)
             else:
-                default_band = ["Red", "Green", "Blue", "NIR"]
+                default_band = ["R", "G", "B", "N"]
                 band_im = default_band[:nb_band]
             new_dataset.coords[cst.BAND_IM] = band_im
 

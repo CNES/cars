@@ -21,10 +21,14 @@
 """
 Contains function to convert the point cloud dataframe to laz format:
 """
+import logging
+
 import laspy
 import laspy.file
 import laspy.header
 import numpy as np
+
+import cars.core.constants as cst
 
 
 def utm_epsg_to_proj(epsg: int):
@@ -54,16 +58,27 @@ def convert_pcl_to_laz(point_clouds, output_filename: str):
     laz = laspy.LasData(header)
 
     # get all layer : X, Y, Z and color
-    band_index = {"X": 0, "Y": 1, "Z": 2}
-    input_color_index = {"clr0": 0, "clr1": 1, "clr2": 2}
-    las_color_index = {"red": 0, "green": 1, "blue": 2}
+    coordinates = ["X", "Y", "Z"]
+    input_color = ["color_R", "color_G", "color_B"]
+    las_color = ["red", "green", "blue"]
     arrays_pcl = None
     arrays_color = None
     color_type = point_clouds.attrs["attributes"]["color_type"]
-    nb_color = 0
-    for name in point_clouds.columns:
-        if name in ["clr0", "clr1", "clr2"]:
-            nb_color += 1
+    color_names = [
+        name
+        for name in point_clouds.columns
+        if cst.POINTS_CLOUD_CLR_KEY_ROOT in name
+    ]
+    nb_color = len(color_names)
+    if nb_color == 1:
+        logging.warning("No color available for point cloud")
+        input_color = color_names
+    elif sorted(color_names[:3]) != sorted(input_color):
+        logging.warning(
+            "Descriptions of color bands {} does not conform to names "
+            "'R', 'G', 'B'".format(color_names[:3])
+        )
+        input_color = color_names[:3]
 
     for name in point_clouds.columns:
         # get coordinates bands
@@ -76,8 +91,8 @@ def convert_pcl_to_laz(point_clouds, output_filename: str):
             array = array.reshape(-1).T
 
             # get layer into np.ndarray (laspy accept only XYZ in upper case)
-            arrays_pcl[band_index[name.upper()]] = array
-        elif name in ["clr0", "clr1", "clr2"]:
+            arrays_pcl[coordinates.index(name.upper())] = array
+        elif name in input_color:
             array = point_clouds[name].to_numpy()
             if arrays_color is None:
                 arrays_color = np.ndarray((3, array.reshape(-1).T.shape[0]))
@@ -89,7 +104,7 @@ def convert_pcl_to_laz(point_clouds, output_filename: str):
             array[array >= maxi] = maxi
             array[array <= 0] = 0
 
-            arrays_color[input_color_index[name]] = array
+            arrays_color[input_color.index(name)] = array
             if nb_color == 1:
                 arrays_color[1] = array
                 arrays_color[2] = array
@@ -99,14 +114,14 @@ def convert_pcl_to_laz(point_clouds, output_filename: str):
     for layer_index in range(arrays_pcl.shape[0]):
         setattr(
             laz,
-            [k for k, v in band_index.items() if v == layer_index][0],
+            [k for i, k in enumerate(coordinates) if i == layer_index][0],
             scale_multiplicator * arrays_pcl[layer_index],
         )
     if arrays_color is not None:
         for color_index in range(arrays_color.shape[0]):
             setattr(
                 laz,
-                [k for k, v in las_color_index.items() if v == color_index][0],
+                [k for i, k in enumerate(las_color) if i == color_index][0],
                 arrays_color[color_index],
             )
     laz.write(output_filename)

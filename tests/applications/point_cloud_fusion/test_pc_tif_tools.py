@@ -55,7 +55,7 @@ def generate_test_inputs():
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
             path_pc, "epi_classification.tif"
         ),
-        cst.POINTS_CLOUD_CONFIDENCE: {
+        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: {
             "confidence1": os.path.join(path_pc, "epi_confidence1.tif"),
             "confidence2": os.path.join(path_pc, "epi_confidence2.tif"),
         },
