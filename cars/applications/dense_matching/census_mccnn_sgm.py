@@ -31,6 +31,7 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
+import fiona
 import numpy as np
 import xarray as xr
 from affine import Affine
@@ -594,13 +595,13 @@ class CensusMccnnSgm(
             ind_rows = index_positions[:, 1] - 0.5
             ind_cols = index_positions[:, 0] - 0.5
 
-            _, _, altis_min = geometry_plugin_with_dem_min.direct_loc(
+            x_min, y_min, altis_min = geometry_plugin_with_dem_min.direct_loc(
                 sensor_image_right["image"],
                 sensor_image_right["geomodel"],
                 ind_cols,
                 ind_rows,
             )
-            _, _, altis_max = geometry_plugin_with_dem_max.direct_loc(
+            x_max, y_max, altis_max = geometry_plugin_with_dem_max.direct_loc(
                 sensor_image_right["image"],
                 sensor_image_right["geomodel"],
                 ind_cols,
@@ -616,6 +617,58 @@ class CensusMccnnSgm(
                 ind_cols,
                 ind_rows,
             )
+
+            # Check errors
+            error_mask = altis_max < altis_min
+
+            # iterate over each row in the dataframe and save record
+            indexes = np.where(error_mask)[0]
+            if indexes.shape[0] > 0:
+                # write context
+                error_path = os.path.join(pair_folder, "error_points_shp")
+                schema = {
+                    "geometry": "Point",
+                    "properties": [
+                        ("Name", "str"),
+                        ("index", "int"),
+                        ("alti", "int"),
+                    ],
+                }
+                error_shapefile = fiona.open(
+                    error_path,
+                    mode="w",
+                    driver="ESRI Shapefile",
+                    schema=schema,
+                    crs="EPSG:4326",
+                )
+                for ind in list(indexes):
+                    min_dict = {
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": (y_min[ind], x_min[ind]),
+                        },
+                        "properties": {
+                            "Name": "min",
+                            "index": int(ind),
+                            "alti": int(altis_min[ind]),
+                        },
+                    }
+                    error_shapefile.write(min_dict)
+
+                    max_dict = {
+                        "geometry": {
+                            "type": "Point",
+                            "coordinates": (y_max[ind], x_max[ind]),
+                        },
+                        "properties": {
+                            "Name": "max",
+                            "index": int(ind),
+                            "alti": int(altis_max[ind]),
+                        },
+                    }
+                    error_shapefile.write(max_dict)
+                # close fiona object
+                error_shapefile.close()
 
             # reshape to grid
             # disp to alt ratio correspond to right sensor.
