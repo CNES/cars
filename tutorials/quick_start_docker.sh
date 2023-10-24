@@ -1,11 +1,16 @@
 #!/bin/bash
 echo " "
-echo "===== Demo CARS installed (advanced) ====="
+echo "===== Demo CARS (with Docker) ====="
 echo " "
 
-echo "- Cars must be installed:"
-echo "  # cars -v"
-cars -v
+echo "- Docker must be installed:"
+echo "  # docker -v"
+docker -v
+echo " "
+
+echo "- Get CARS dockerfile image:"
+echo "  # docker pull cnes/cars"
+docker pull cnes/cars
 echo " "
 
 echo "- Get and extract data samples from CARS repository:"
@@ -35,12 +40,14 @@ echo " "
 
 # CARS Docker Run
 
-echo "- Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:"
-echo "  # cars configfile.json"
-cars data_gizeh/configfile.json
+echo " Launch CARS with sensor_to_full_resolution_dsm pipeline for img1+img2 and img1+img3 pairs:"
+echo "  # docker run -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.json"
+docker run -w /data -v "$(pwd)"/data_gizeh:/data cnes/cars /data/configfile.json
 echo " "
 
+# Clean rights on generated data. Otherwise, data cannot be deleted without root access.
+docker run -it -v "$(pwd)"/data_gizeh:/data --entrypoint /bin/bash cnes/cars -c "chown -R '$(id -u):$(id -g)' /data/"
 
 echo "- Show resulting DSM:"
-echo "  # ls -al outresults/"
-ls -l outresults/
+echo "  # ls -l data_gizeh/outresults/"
+ls -l data_gizeh/outresults/

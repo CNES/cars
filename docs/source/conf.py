@@ -55,6 +55,7 @@ extensions = [
     "autoapi.extension",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
     "sphinx_tabs.tabs",
+    "sphinx_copybutton"
 ]
 
 # Autoapi apidoc configuration

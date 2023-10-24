@@ -1,6 +1,6 @@
-=================
-How to contribute
-=================
+========================
+Contributing the project
+========================
 
 CARS is an open source software : don't hesitate to hack it and contribute !
 
@@ -12,32 +12,29 @@ Read also `CARS Contribution guide`_ with `LICENCE <https://raw.githubuserconten
 
 Developer Install
 =================
-:ref:`Install` procedure is globally followed but adapted to get CARS development environment.
-Obviously, we recommend to use a `virtualenv`_ environment, so that :term:`CARS` do not interfere with other packages installed on your
-system.
 
-* Install `OTB`_ : see :ref:`dependencies`.
+We recommend to use a `virtualenv`_ environment, so that :term:`CARS` do not interfere with other packages installed on your system.
 
 * Clone CARS repository from GitHub :
 
 .. code-block:: console
 
-    $ git clone https://github.com/CNES/cars.git
-    $ cd cars
+    git clone https://github.com/CNES/cars.git
+    cd cars
 
 * Install CARS in a `virtualenv`_ in developer mode
 
 .. code-block:: console
 
-    $ make install-dev # CARS installed in ``venv`` virtualenv
+    make install-dev # CARS installed in ``venv`` virtualenv
 
 * Run CARS in `virtualenv`_
 
 .. code-block:: console
 
-    $ source venv/bin/activate
-    $ source venv/bin/env_cars.sh
-    $ cars -h
+    source venv/bin/activate
+    source venv/bin/env_cars.sh
+    cars -h
 
 The detailed development install method is described in `Makefile <https://raw.githubusercontent.com/CNES/cars/master/Makefile>`_
 
@@ -76,8 +73,8 @@ Here is the way to install it manually:
 
 .. code-block:: console
 
-  $ pre-commit install -t pre-commit # for commit rules
-  $ pre-commit install -t pre-push   # for push rules
+  pre-commit install -t pre-commit # for commit rules
+  pre-commit install -t pre-push   # for push rules
 
 This installs the pre-commit hook in `.git/hooks/pre-commit` and `.git/hooks/pre-push`  from `.pre-commit-config.yaml <https://raw.githubusercontent.com/CNES/cars/master/.pre-commit-config.yaml>`_ file configuration.
 
@@ -85,9 +82,9 @@ It is possible to test pre-commit before committing:
 
 .. code-block:: console
 
-  $ pre-commit run --all-files                # Run all hooks on all files
-  $ pre-commit run --files cars/__init__.py   # Run all hooks on one file
-  $ pre-commit run pylint                     # Run only pylint hook
+  pre-commit run --all-files                # Run all hooks on all files
+  pre-commit run --files cars/__init__.py   # Run all hooks on one file
+  pre-commit run pylint                     # Run only pylint hook
 
 
 Documentation
@@ -99,7 +96,7 @@ To generate documentation, use:
 
 .. code-block:: console
 
-  $ make docs
+  make docs
   
 The documentation is then build in docs/build directory and can be consulted with a web browser.
 
@@ -108,13 +105,13 @@ Documentation can be edited in docs/source/ RST files.
 Jupyter notebooks tutorials
 ============================
 
-CARS contains notebooks and quick start scripts in tutorials directory.
+CARS contains notebooks in tutorials directory.
 
 To generate a Jupyter kernel with CARS installation, use:
 
 .. code-block:: console
 
-  $ make notebook
+  make notebook
   
 Follow indications to run a jupyter notebook.
 
@@ -122,13 +119,13 @@ Kernel is created with following command (with cars-version updated):
 
 .. code-block:: console
 
-  $ python -m ipykernel install --sys-prefix --name=cars-version --display-name=cars-version
+  python -m ipykernel install --sys-prefix --name=cars-version --display-name=cars-version
 
 To run the jupyter notebook, use:
 
 .. code-block:: console
 
-  $ jupyter notebook
+  jupyter notebook
 
 
 Code quality
@@ -139,13 +136,13 @@ Use the following command in CARS `virtualenv`_ to check the code with these too
 
 .. code-block:: console
 
-    $ make lint
+    make lint
 
 Use the following command to format the code with isort and black:
 
 .. code-block:: console
 
-    $ make format
+    make format
 
 Isort
 -----
@@ -157,10 +154,10 @@ CARS ``isort`` configuration is done in `pyproject.toml`_
 
 .. code-block:: console
 
-    $ cd CARS_HOME
-    $ isort --check cars tests  # Check code with isort, does nothing
-    $ isort --diff cars tests   # Show isort diff modifications
-    $ isort cars tests          # Apply modifications
+    cd CARS_HOME
+    isort --check cars tests  # Check code with isort, does nothing
+    isort --diff cars tests   # Show isort diff modifications
+    isort cars tests          # Apply modifications
 
 `Isort`_ messages can be avoided when really needed with **"# isort:skip"** on the incriminated line.
 
@@ -176,10 +173,10 @@ If necessary, Black doesn’t reformat blocks that start with "# fmt: off" and e
 
 .. code-block:: console
 
-    $ cd CARS_HOME
-    $ black --check cars tests  # Check code with black with no modifications
-    $ black --diff cars tests   # Show black diff modifications
-    $ black cars tests          # Apply modifications
+    cd CARS_HOME
+    black --check cars tests  # Check code with black with no modifications
+    black --diff cars tests   # Show black diff modifications
+    black cars tests          # Apply modifications
 
 Flake8
 ------
@@ -195,8 +192,8 @@ Flake8 manual usage examples:
 
 .. code-block:: console
 
-  $ cd CARS_HOME
-  $ flake8 cars tests           # Run all flake8 tests
+  cd CARS_HOME
+  flake8 cars tests           # Run all flake8 tests
 
 
 Pylint
@@ -212,9 +209,9 @@ Pylint manual usage examples:
 
 .. code-block:: console
 
-  $ cd CARS_HOME
-  $ pylint tests cars       # Run all pylint tests
-  $ pylint --list-msgs          # Get pylint detailed errors information
+  cd CARS_HOME
+  pylint tests cars       # Run all pylint tests
+  pylint --list-msgs          # Get pylint detailed errors information
 
 
 Tests
@@ -246,59 +243,58 @@ To execute the tests manually, use ``pytest`` at the CARS projects's root (after
 
 .. code-block:: console
 
-    $ python -m pytest
+    python -m pytest
 
 To run only the unit tests:
 
 .. code-block:: console
 
-    $ cd cars/
-    $ pytest -m unit_tests
+    cd cars/
+    pytest -m unit_tests
 
 To run only the PBS cluster tests:
 
 .. code-block:: console
 
-    $ cd cars/
-    $ pytest -m pbs_cluster_tests
+    cd cars/
+    pytest -m pbs_cluster_tests
 
 To run only the Jupyter notebooks tests:
 
 .. code-block:: console
 
-    $ cd cars/
-    $ pytest -m notebook_tests
+    cd cars/
+    pytest -m notebook_tests
 
 It is possible to obtain the code coverage level of the tests by installing the ``pytest-cov`` module and use the ``--cov`` option.
 
 .. code-block:: console
 
-    $ cd cars/
-    $ python -m pytest --cov=cars
+    cd cars/
+    python -m pytest --cov=cars
 
 It is also possible to execute only a specific part of the test, either by indicating the test file to run:
 
 .. code-block:: console
 
-    $ cd cars/
-    $ python -m pytest tests/test_tiling.py
+    cd cars/
+    python -m pytest tests/test_tiling.py
 
 Or by using the ``-k`` option which will execute the tests which names contain the option's value:
 
 .. code-block:: console
 
-    $ cd cars/
-    $ python -m pytest -k end2end
+    cd cars/
+    python -m pytest -k end2end
 
 By default, ``pytest`` does not display the traces generated by the tests but only the tests' status (passed or failed). To get all traces, the following options have to be added to the command line (which can be combined with the previous options):
 
 .. code-block:: console
 
-    $ cd cars/
-    $ python -m pytest -s -o log_cli=true -o log_cli_level=INFO
+    cd cars/
+    python -m pytest -s -o log_cli=true -o log_cli_level=INFO
 
 
-.. _`OTB`: https://www.orfeo-toolbox.org/CookBook/Installation.html
 .. _`the GitHub repository`: https://github.com/CNES/cars
 .. _`CARS Contribution guide`: https://github.com/CNES/cars/blob/master/CONTRIBUTING.md
 .. _`virtualenv`: https://virtualenv.pypa.io/

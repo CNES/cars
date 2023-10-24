@@ -19,7 +19,7 @@ The data used within CARS imposes some restrictions that the structure must mana
 Details
 -------
 
-.. figure:: ../../images/Carsdataset.png
+.. figure:: ../images/Carsdataset.png
     :align: center
     :alt: CarsDataset concept
 

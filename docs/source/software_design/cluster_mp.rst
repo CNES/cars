@@ -32,7 +32,7 @@ The next sections illustrates the architecture of the MP cluster, while the API 
 
 Class diagram
 ^^^^^^^^^^^^^
-.. image:: ../../images/mp_cluster.svg
+.. image:: ../images/mp_cluster.svg
     :align: center
 
 API detailed functions

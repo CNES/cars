@@ -1,8 +1,8 @@
 .. _ref:
 
-**********
-References
-**********
+************
+Bibliography
+************
 
 .. glossary::
 

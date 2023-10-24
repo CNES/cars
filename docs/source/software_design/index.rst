@@ -1,7 +1,7 @@
-.. _cars_design:
+.. _software_design:
 
 ===============
-CARS Design
+Software design
 ===============
 
 CARS design aims a modular and customizable framework for multiview 3d reconstruction.
@@ -14,7 +14,7 @@ This design is organized around key concepts described in this section.
 
 The CARS framework can be introduced by the following diagram:
 
-.. figure:: ../../images/design_overview.png
+.. figure:: ../images/design_overview.png
     :align: center
     :alt: Cars Framework
 
@@ -35,11 +35,3 @@ This section presents one by one the CARS key concepts and their interaction.
     application
     interaction
     plugin
-
-
-
-
-
-
-
-
