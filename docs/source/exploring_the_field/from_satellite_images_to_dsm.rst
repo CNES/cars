@@ -1,8 +1,8 @@
 From Satellite Images to Digital Surface Model
 ==============================================
 
-Generate a DSM step by step (dense pipeline)
---------------------------------------------
+Generate a DSM step by step
+---------------------------
 
 .. |images_models| image:: ../images/dense.images.drawio.png
 
@@ -46,8 +46,10 @@ Generate a DSM step by step (dense pipeline)
 
      <br>
 
-| Images are first resampled in epipolar geometry: by changing viewpoints, objects move in a line.
-| This enables a one-dimensional search (computer performance + error limitation) (see :ref:`below<resampling>`). 
+| Images are first resampled in epipolar geometry: by changing viewpoints, objects pixels move along a line.
+| This enables a one-dimensional search (computer performance + error limitation).
+| The pixels shifting along others directions doesn't taking account and it corresponds to fast moving objets (for instance like vehicle moving from bottom to top, see :ref:`below<resampling>`)
+
 
 .. _resampling:
 
@@ -61,7 +63,9 @@ Generate a DSM step by step (dense pipeline)
 | |rasterization|     |br| |                                             |
 +--------------------------+---------------------------------------------+
 
-For each point in one image, we find the corresponding point in the other image (see :ref:`below<matching>`).
+| For each point in one image, the software searches the corresponding point in the other image.
+| The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match (matching error due to moving objects, shadows etc.).
+
 
 .. _matching:
 
@@ -76,7 +80,7 @@ For each point in one image, we find the corresponding point in the other image 
 +--------------------------+---------------------------------------------+
 
 | The displacements obtained are transformed into positions in both images.
-| This allows us to deduce lines of sight. The intersection of these lines gives a point in space: longitude, latitude, altitude (see :ref:`below<triangulation>`).
+| This allows to deduce lines of sight. The intersection of these lines gives a point in space: longitude, latitude, altitude (see :ref:`below<triangulation>`).
 
 .. _triangulation:
 
@@ -115,8 +119,8 @@ For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to
 The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 
 
-Altimetric exploration and geometric inaccuracies (sparse pipeline)
--------------------------------------------------------------------
+Altimetric exploration and geometric inaccuracies
+-------------------------------------------------
 
 To reduce the search interval (i.e. altimetric exploration) in the matching step and thus save computing time, a faster sparse matching step is typically used. This matching step also enables geometric errors to be corrected, thus ensuring that the epipolar geometry (based on these models) is correct.
 

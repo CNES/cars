@@ -12,7 +12,7 @@ As its name suggests, satellite photogrammetry works using optical satellite acq
    On the left, an example of an array of pixels, and on the right, a volume representation of altitude values.
 
 	   
-Like our eyes, altitude (or depth relative to the satellite, to continue the analogy) is determined by the proportional displacement of the pixels observed. We therefore need at least two images, acquired from two different viewpoints. This difference in viewpoint between two satellites is quantified by the B over H ratio where B is the distance between the two satellites and H is their altitude.
+Like our eyes, altitude (or depth relative to the satellite, to continue the analogy) is determined from the observed pixels displacement. We therefore need at least two images, acquired from two different viewpoints. This difference in viewpoint between two satellites is quantified by the B over H ratio where B is the distance between the two satellites and H is their altitude.
  
 .. |nutimages| image:: ../images/nutshell_images.gif
    :width: 60%
@@ -30,14 +30,6 @@ Every raster `GDAL`_ knows how to read can be given as CARS input. In addition t
     - Image coordinates + altitude and ground coordinates (direct model: image to ground)
     - Ground coordinates + altitude and image coordinates (inverse model: ground to image)
 
-So, the photogrammetric processing can be performed without requiring a physical camera model. These coefficients are classically contained in the RPC*XML files.
-  
-.. note::
-
-  As far as the CNES is directly concerned, CARS has mainly be tested on the following official sensors' products. Feel free to try different products and let us know of potential errors.
-
-    - Pléiades (PHR)
-    - Sport 6/7
-    - WorldView 2/3
+These coefficients are classically contained in the RPC*XML files.
 
 .. _`GDAL`: https://gdal.org/

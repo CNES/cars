@@ -62,7 +62,7 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
 
 
 .. toctree::
-   :caption: Third parties
+   :caption: Related software
    :maxdepth: 1
    	      
    PANDORA, stereo matching <https://github.com/cnes/pandora>

@@ -102,8 +102,8 @@ The documentation is then build in docs/build directory and can be consulted wit
 
 Documentation can be edited in docs/source/ RST files.
 
-Jupyter notebooks tutorials
-============================
+Jupyter notebooks
+=================
 
 CARS contains notebooks in tutorials directory.
 
