@@ -39,6 +39,9 @@ from json_checker import Checker
 from rasterio.warp import Resampling, calculate_default_transform, reproject
 from shapely.geometry import shape
 
+# CARS imports
+from cars.core import projection
+
 # Filter rasterio warning when image is not georeferenced
 warnings.filterwarnings("ignore", category=rio.errors.NotGeoreferencedWarning)
 
@@ -77,6 +80,40 @@ def read_vector(path_to_file):
 
     logging.info("No feature is present in the {} file".format(path_to_file))
     return None
+
+
+def rasterio_get_values(raster_file: str, x_list, y_list):
+    """
+    Get the z position of corresponding x and y as lon lat
+
+    :param raster_file: Image file
+    :param x_list: list of x position
+    :type x_list: np array
+    :param y_list: list of y position
+    :type y_list: np array
+
+    :return: The corresponding z position
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        file_espg = descriptor.crs.to_epsg()
+
+        # convert point to epsg
+        cloud_in = np.stack([x_list, y_list], axis=1)
+        cloud_out = projection.points_cloud_conversion(
+            cloud_in, 4326, file_espg
+        )
+
+        new_x = cloud_out[:, 0]
+        new_y = cloud_out[:, 1]
+
+        # get z list
+        z_list = list(
+            descriptor.sample(
+                [(new_y[row], new_x[row]) for row in range(new_x.shape[0])]
+            )
+        )
+        z_list = np.array(z_list)
+        return z_list[:, 0]
 
 
 def rasterio_get_nb_bands(raster_file: str) -> int:

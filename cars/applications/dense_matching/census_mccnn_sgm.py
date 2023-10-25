@@ -31,7 +31,6 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
-import fiona
 import numpy as np
 import xarray as xr
 from affine import Affine
@@ -440,8 +439,6 @@ class CensusMccnnSgm(
         self,
         sensor_image_right,
         grid_right,
-        geometry_plugin_with_dem_min,
-        geometry_plugin_with_dem_max,
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
@@ -460,10 +457,6 @@ class CensusMccnnSgm(
         :type sensor_image_right: dict
         :param grid_right: right epipolar grid
         :type grid_right: CarsDataset
-        :param geometry_plugin_with_dem_min: geometry plugin with dem min
-        :type geometry_plugin_with_dem_min: GeometryPlugin
-        :param geometry_plugin_with_dem_max: geometry plugin with dem max
-        :type geometry_plugin_with_dem_max: GeometryPlugin
         :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
             used to generate epipolar grids
         :type geom_plugin_with_dem_and_geoid: GeometryPlugin
@@ -563,7 +556,7 @@ class CensusMccnnSgm(
 
             # Get sensor position
             sensors_positions = (
-                geometry_plugin_with_dem_min.sensor_position_from_grid(
+                geom_plugin_with_dem_and_geoid.sensor_position_from_grid(
                     grid_right,
                     np.reshape(
                         epipolar_positions,
@@ -577,9 +570,6 @@ class CensusMccnnSgm(
             )
 
             # Get terrain positions and altitude for each position
-            altis_min = np.empty((sensors_positions.shape[0],))
-            altis_max = np.empty((sensors_positions.shape[0],))
-            altis_mean = np.empty((sensors_positions.shape[0],))
 
             # retrieve image size
             transform = inputs.rasterio_get_transform(
@@ -595,21 +585,9 @@ class CensusMccnnSgm(
             ind_rows = index_positions[:, 1] - 0.5
             ind_cols = index_positions[:, 0] - 0.5
 
-            x_min, y_min, altis_min = geometry_plugin_with_dem_min.direct_loc(
-                sensor_image_right["image"],
-                sensor_image_right["geomodel"],
-                ind_cols,
-                ind_rows,
-            )
-            x_max, y_max, altis_max = geometry_plugin_with_dem_max.direct_loc(
-                sensor_image_right["image"],
-                sensor_image_right["geomodel"],
-                ind_cols,
-                ind_rows,
-            )
             (
-                _,
-                _,
+                x_mean,
+                y_mean,
                 altis_mean,
             ) = geom_plugin_with_dem_and_geoid.direct_loc(
                 sensor_image_right["image"],
@@ -617,58 +595,9 @@ class CensusMccnnSgm(
                 ind_cols,
                 ind_rows,
             )
-
-            # Check errors
-            error_mask = altis_max < altis_min
-
-            # iterate over each row in the dataframe and save record
-            indexes = np.where(error_mask)[0]
-            if indexes.shape[0] > 0:
-                # write context
-                error_path = os.path.join(pair_folder, "error_points_shp")
-                schema = {
-                    "geometry": "Point",
-                    "properties": [
-                        ("Name", "str"),
-                        ("index", "int"),
-                        ("alti", "int"),
-                    ],
-                }
-                error_shapefile = fiona.open(
-                    error_path,
-                    mode="w",
-                    driver="ESRI Shapefile",
-                    schema=schema,
-                    crs="EPSG:4326",
-                )
-                for ind in list(indexes):
-                    min_dict = {
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": (y_min[ind], x_min[ind]),
-                        },
-                        "properties": {
-                            "Name": "min",
-                            "index": int(ind),
-                            "alti": int(altis_min[ind]),
-                        },
-                    }
-                    error_shapefile.write(min_dict)
-
-                    max_dict = {
-                        "geometry": {
-                            "type": "Point",
-                            "coordinates": (y_max[ind], x_max[ind]),
-                        },
-                        "properties": {
-                            "Name": "max",
-                            "index": int(ind),
-                            "alti": int(altis_max[ind]),
-                        },
-                    }
-                    error_shapefile.write(max_dict)
-                # close fiona object
-                error_shapefile.close()
+            # Get values of alti min and max on coordinates (lon lat)
+            altis_min = inputs.rasterio_get_values(dem_min, x_mean, y_mean)
+            altis_max = inputs.rasterio_get_values(dem_max, x_mean, y_mean)
 
             # reshape to grid
             # disp to alt ratio correspond to right sensor.
@@ -695,6 +624,8 @@ class CensusMccnnSgm(
 
         # Add margin
         diff = grid_max - grid_min
+
+        logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
 
         margin_array = diff * self.disparity_margin
         grid_min -= margin_array

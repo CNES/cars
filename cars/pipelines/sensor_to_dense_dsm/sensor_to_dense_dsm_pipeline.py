@@ -747,22 +747,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem_max=dem_max,
             )
 
-            # Generate geometry loader with dem min and max and geoid
-            geom_plugin_with_dem_min_and_geoid = (
-                sensors_inputs.generate_geometry_plugin_with_dem(
-                    self.used_conf[GEOMETRY_PLUGIN],
-                    self.inputs,
-                    dem=dem_min,
-                )
-            )
-            geom_plugin_with_dem_max_and_geoid = (
-                sensors_inputs.generate_geometry_plugin_with_dem(
-                    self.used_conf[GEOMETRY_PLUGIN],
-                    self.inputs,
-                    dem=dem_max,
-                )
-            )
-
             # Define param
             use_global_disp_range = (
                 self.dense_matching_app.use_global_disp_range
@@ -937,8 +921,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matching_app.generate_disparity_grids(
                             pairs[pair_key]["sensor_image_right"],
                             pairs[pair_key]["corrected_grid_right"],
-                            geom_plugin_with_dem_min_and_geoid,
-                            geom_plugin_with_dem_max_and_geoid,
                             self.geom_plugin_with_dem_and_geoid,
                             dmin=dmin,
                             dmax=dmax,
@@ -951,8 +933,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matching_app.generate_disparity_grids(
                             pairs[pair_key]["sensor_image_right"],
                             pairs[pair_key]["corrected_grid_right"],
-                            geom_plugin_with_dem_min_and_geoid,
-                            geom_plugin_with_dem_max_and_geoid,
                             self.geom_plugin_with_dem_and_geoid,
                             dem_min=dem_min,
                             dem_max=dem_max,
