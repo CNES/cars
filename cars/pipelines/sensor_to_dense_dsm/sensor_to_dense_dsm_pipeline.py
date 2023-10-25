@@ -29,6 +29,8 @@ import json
 import logging
 import os
 
+from pyproj import CRS
+
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -376,6 +378,22 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :param application_conf: application checked configuration
         :type application_conf: dict
         """
+
+        if "epsg" in inputs_conf and inputs_conf["epsg"]:
+            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
+            if spatial_ref.is_geographic:
+                if (
+                    "point_cloud_rasterization" in application_conf
+                    and application_conf["point_cloud_rasterization"][
+                        "resolution"
+                    ]
+                    > 10e-3
+                ) or "point_cloud_rasterization" not in application_conf:
+                    logging.warning(
+                        "The resolution of the "
+                        + "point_cloud_rasterization should be "
+                        + "fixed according to the epsg"
+                    )
 
         # check classification application parameter compare
         # to each sensors inputs classification list

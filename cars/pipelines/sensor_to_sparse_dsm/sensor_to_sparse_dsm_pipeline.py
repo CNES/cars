@@ -30,6 +30,8 @@ import json
 import logging
 import os
 
+from pyproj import CRS
+
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -158,6 +160,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         self.config_full_res[INPUTS][sens_cst.TERRAIN_A_PRIORI] = {}
         self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
 
+        # Check conf application vs inputs application
+        self.check_inputs_with_applications(self.inputs, application_conf)
+
     def check_inputs(self, conf, config_json_dir=None):
         """
         Check the inputs given
@@ -186,6 +191,33 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
         return dsm_output.dense_dsm_check_output(conf)
+
+    @staticmethod
+    def check_inputs_with_applications(inputs_conf, application_conf):
+        """
+        Check for each application the input configuration consistency
+
+        :param inputs_conf: inputs checked configuration
+        :type inputs_conf: dict
+        :param application_conf: application checked configuration
+        :type application_conf: dict
+        """
+
+        if "epsg" in inputs_conf and inputs_conf["epsg"]:
+            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
+            if spatial_ref.is_geographic:
+                if (
+                    "point_cloud_rasterization" in application_conf
+                    and application_conf["point_cloud_rasterization"][
+                        "resolution"
+                    ]
+                    > 10e-3
+                ):
+                    logging.warning(
+                        "The resolution of the "
+                        + "point_cloud_rasterization should be "
+                        + "fixed according to the epsg"
+                    )
 
     def check_applications(self, conf):
         """

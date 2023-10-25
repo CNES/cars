@@ -32,6 +32,7 @@ import os
 
 import numpy as np
 import utm
+from pyproj import CRS
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -580,6 +581,51 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     )
 
     return bounds, optimal_terrain_tile_width
+
+
+def convert_optimal_tile_size_with_epsg(
+    bounds, optimal_terrain_tile_width, epsg, epsg_cloud
+):
+    """
+    Convert optimal_tile_size according to epsg.
+    Only if epsg_cloud is different of the output epsg.
+
+    :param bounds: terrain bounds
+    :type bounds: list
+    :param optimal_terrain_tile_width: initial optimal_terrain_tile_width
+    :type optimal_terrain_tile_width: float
+    :param epsg: target epsg
+    :type epsg: int
+    :param epsg_cloud: epsg of the input cloud
+    :type epsg_cloud: int
+    :return: converted optimal tile size
+    :rtype: float
+    """
+
+    # Convert optimal terrain tile width
+    # only if epsg and epsg_cloud are different
+    spatial_ref = CRS.from_epsg(epsg)
+    if spatial_ref.is_geographic and epsg != epsg_cloud:
+        # Compute bounds and terrain grid
+        [xmin, ymin, xmax, ymax] = bounds
+        bounds_points = [
+            [xmin, ymin],
+            [xmax, ymax],
+        ]
+        bounds_points_epsg_cloud = projection.points_cloud_conversion(
+            bounds_points, epsg, epsg_cloud
+        )
+        # Compute area in both epsg
+        terrain_area_epsg = (xmax - xmin) * (ymax - ymin)
+        terrain_area_epsg_cloud = (
+            bounds_points_epsg_cloud[1][0] - bounds_points_epsg_cloud[0][0]
+        ) * (bounds_points_epsg_cloud[1][1] - bounds_points_epsg_cloud[0][1])
+        # Compute conversion factor
+        conversion_factor = math.sqrt(
+            terrain_area_epsg / terrain_area_epsg_cloud
+        )
+        optimal_terrain_tile_width *= conversion_factor
+    return optimal_terrain_tile_width
 
 
 def compute_epipolar_roi(

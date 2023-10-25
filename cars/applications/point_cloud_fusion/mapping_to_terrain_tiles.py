@@ -354,7 +354,6 @@ class MappingToTerrainTiles(
                             [terrain_region[0], terrain_region[1]],
                         ]
                     )
-
                     if len(
                         [
                             value
