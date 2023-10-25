@@ -1,7 +1,59 @@
+.. _usage:
+
+=====
+Usage
+=====
+
+Command line
+============
+
+``cars`` command line is the entry point for CARS to run 3D pipelines.
+
+.. code-block:: console
+
+    cars -h
+
+    usage: cars [-h] [--loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}] [--version] conf
+
+    CARS: CNES Algorithms to Reconstruct Surface
+
+    positional arguments:
+      conf                  Inputs Configuration File
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      --loglevel {DEBUG,INFO,PROGRESS,WARNING,ERROR,CRITICAL}
+                            Logger level (default: PROGRESS. Should be one of (DEBUG, INFO, PROGRESS, WARNING, ERROR, CRITICAL)
+      --version, -v         show program's version number and exit
+
+CARS cli takes only one ``.json`` file as command line argument:
+
+.. code-block:: console
+
+    cars configfile.json
+    
+Note that ``cars-starter`` script can be used to instantiate this configuration file.
+
+.. code-block:: console
+
+    cars-starter  -h
+    usage: cars-starter [-h] -il [input.{tif,XML} or pair_dir [input.{tif,XML} or pair_dir ...]] -out out_dir [--full] [--check]
+
+    Helper to create configuration file
+
+    optional arguments:
+    -h, --help            show this help message and exit
+    -il [input.{tif,XML} or pair_dir [input.{tif,XML} or pair_dir ...]]
+                            Inputs list or Pairs directory list
+    -out out_dir          Output directory
+    --full                Fill all default values
+    --check               Check inputs
+
+Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the execution used
+parameters and can be used as an input configuration file to re-run cars.
 
 .. _configuration:
 
-=============
 Configuration
 =============
 
@@ -353,9 +405,7 @@ The structure follows this organisation:
             }
         }
 
-
-
-
+		
    .. tab:: Orchestrator
 
         CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
@@ -624,7 +674,7 @@ The structure follows this organisation:
 
    .. tab:: Applications
 
-    This key is optional and allows to redefine parameters for each application used in pipeline as described in :ref:`overview`
+    This key is optional and allows to redefine parameters for each application used in pipeline.
 
     This section describes all possible configuration of CARS applications.
 
@@ -951,7 +1001,7 @@ The structure follows this organisation:
             .. warning::
 
                 There is a particular case with the *dense_matches_filling* application because it is called twice.
-                As described on :ref:`overview`, the eighth step consists of fill dense matches via two consecutive methods.
+                The eighth step consists of fill dense matches via two consecutive methods.
                 So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
                 Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
                 those two applications with :
@@ -1103,7 +1153,7 @@ The structure follows this organisation:
             .. warning::
 
                 There is a particular case with the *Point Cloud outliers removing* application because it is called twice.
-                As described on :ref:`overview`, the ninth step consists of Filter the 3D points cloud via two consecutive filters.
+                The ninth step consists of Filter the 3D points cloud via two consecutive filters.
                 So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
                 Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
                 those two applications with :
@@ -1221,54 +1271,156 @@ The structure follows this organisation:
         * subfolder for each defined pair which can contains intermediate data
 
 
-Full example
-============
+.. _plugins:
 
-Here is a full detailed example with **orchestrator** and **applications** capabilities. See correspondent sections for details.
+Plugins
+=======
 
-.. code-block:: json
+This section describes optional plugins possibilities of CARS. 
 
-    {
-      "inputs": {
-          "sensors" : {
-              "one": {
-                  "image": "img1.tif",
-                  "geomodel": "img1.geom"
+.. note::
+    
+    Work in progress !
+
+.. tabs::
+
+    .. tab:: OTB Geometry plugin
+
+        By default, the geometry functions in CARS are run through otb.
+
+        To use OTB geometry library, CARS input configuration should be defined as :
+
+        .. code-block:: json
+
+            {
+              "inputs": {
+                "sensors": {
+                  "one": {
+                    "image": "img1.tif",
+                    "geomodel": {
+                      "path": "img1.geom"
+                    },
+                  },
+                  "two": {
+                    "image": "img2.tif",
+                    "geomodel": {
+                      "path": "img2.geom"
+                    },
+                  }
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": "path/to/srtm_file"
               },
-              "two": {
-                  "image": "img2.tif",
-                  "geomodel": "img2.geom"
-              },
-              "three": {
-                  "image": "img3.tif",
-                  "geomodel": "img3.geom"
+              "geometry_plugin": "OTBGeometry",
+              "output": {
+                "out_dir": "outresults"
               }
-          },
-          "pairing": [["one", "two"],["one", "three"]],
-          "initial_elevation": "srtm_dir"
-        },
-
-        "orchestrator": {
-            "mode":"local_dask",
-            "nb_workers": 4
-        },
-
-        "pipeline": "sensors_to_dense_dsm",
-
-        "applications":{
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3
             }
-        },
 
-        "output": {
-          "out_dir": "outresults"
-        }
-      }
+        The standards parts are described in CARS :ref:`configuration`.
+
+        The particularities in the configuration file are:
+
+        * **geomodel.path**: Field contains the paths to the geometric model files related to `img1` and `img2` respectively.
+        * **initial_elevation**: Field contains the path to the **folder** in which are located the SRTM tiles covering the production.
+        * **geometry_plugin**: Parameter configured to "OTBGeometry" to use OTB library.
+
+        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
+        be changed to a dictionary before launching the pipeline. The dictionary will be :
+
+        .. code-block:: json
+
+            {
+              "path": "img1.geom"
+            }
+
+    .. tab:: Shareloc Geometry plugin
+
+        Another geometry library called shareloc is installed with CARS and can be configured to be used as another option.
+
+        To use Shareloc library, CARS input configuration should be defined as :
+
+        .. code-block:: json
+
+            {
+              "inputs": {
+                "sensors": {
+                  "one": {
+                    "image": "img1.tif",
+                    "geomodel": {
+                      "path": "img1.geom",
+                      "model_type": "RPC"
+                    },
+                  },
+                  "two": {
+                    "image": "img2.tif",
+                    "geomodel": {
+                      "path": "img2.geom",
+                      "model_type": "RPC"
+                    },
+                  }
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": "path/to/srtm_file"
+              },
+              "geometry_plugin": "SharelocGeometry",
+              "output": {
+                "out_dir": "outresults"
+              }
+            }
+
+        The particularities in the configuration file are:
+
+        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
+        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory as OTB default configuration !!)
+        * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
+
+        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
+        be changed to a dictionary before launching the pipeline. The dictionary will be :
+
+        .. code-block:: json
+
+            {
+              "path": "img1.geom",
+              "model_type": "RPC"
+            }
 
 
+.. note::
+
+  This library is foreseen to replace otb default in CARS for maintenance and installation ease.
+  Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
 
 
+.. include:: ../links_substitution.rst
+  
+Overview
+========
 
+To summarize, CARS pipeline is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
+
+
+.. figure:: ../images/cars_pipeline_multi_pair.png
+    :width: 1000px
+    :align: center
+
+
+The pipeline will perform the following steps |cars_isprs| |cars_igarss|:
+
+- For each stereo pair:
+    
+    1. Create stereo-rectification grids for left and right views.
+    2. Resample the both images into epipolar geometry.
+    3. Compute sift matches between left and right views in epipolar geometry.
+    4. Predict an optimal disparity range from the filtered point cloud resulting from the sift matches triangulation.
+    5. Create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
+    6. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`DTM` (such as SRTM) in order to reduce the disparity intervals to explore.
+    7. Compute disparity for each image pair in epipolar geometry.
+    8. Fill holes in disparity maps for each image pair in epipolar geometry.
+    9. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
+
+- Then
+
+    10. Merge points clouds coming from each stereo pairs.
+    11. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
+    12. Rasterize: Project these altitudes on a regular grid as well as the associated color.

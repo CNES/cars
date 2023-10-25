@@ -3,8 +3,8 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-.. include:: common.rst
-
+.. include:: links_substitution.rst
+	     
 :Version: |version|
 
 CARS, a satellite multi view stereo pipeline
@@ -36,19 +36,39 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    :maxdepth: 2
 
    getting_started
-   install
-   install_with_otb
-   user_guide/index.rst
-   developer_guide/index.rst
-   docker_guide
-   api_reference/index.rst
-   faq
-
+   exploring_the_field/index.rst
+   usage/index.rst
+   recipes
+   software_design/index.rst
+   troubleshooting_and_faqs
+   contributing_the_project
 
 
 .. toctree::
+   :caption: Tutorials
+   :maxdepth: 1
+	     
+   A high scalability satellite 3D stereo reconstruction framework with AI enhancement <https://github.com/cars-cnes/3d-stereo-with-ai>
+   Discover CNES 3D open-source tools through a realistic scenario <https://github.com/cars-cnes/discover-cnes-3d-tools#discover-cnes-3d-open-source-tools-through-a-realistic-scenario>
+
+   
+.. toctree::
    :caption: References
-   :maxdepth: 2
+   :maxdepth: 1
 
    glossary
-   references
+   bibliography
+   api_reference/index.rst
+
+
+.. toctree::
+   :caption: Related software
+   :maxdepth: 1
+   	      
+   PANDORA, stereo matching <https://github.com/cnes/pandora>
+   SHARELOC, geometric library <https://github.com/cnes/shareloc>
+   DEMCOMPARE, dem analysis <https://github.com/cnes/demcompare>
+   BULLDOZER, dsm to dtm <https://github.com/cnes/bulldozer>
+   CARS-RESAMPLE, grid resampling <https://github.com/cnes/cars-resample>
+   CARS-RASTERIZE, point cloud to dsm <https://github.com/cnes/cars-rasterize>
+   CARS-MESH, surface reconstruction <https://github.com/cnes/cars-mesh>

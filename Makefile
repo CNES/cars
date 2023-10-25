@@ -99,7 +99,7 @@ install-pandora-mccnn: install-deps-gdal otb-remote-module  ## install cars (not
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
-.PHONY: install-dev
+.PHONY: install-dev-with-otb
 install-dev: install-deps-gdal otb-remote-module ## install cars in dev editable mode (pip install -e .)
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
@@ -108,7 +108,7 @@ install-dev: install-deps-gdal otb-remote-module ## install cars in dev editable
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
-.PHONY: install-dev-otb-free
+.PHONY: install-dev
 install-dev-otb-free: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling otb remote modules, rasterio, fiona
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"

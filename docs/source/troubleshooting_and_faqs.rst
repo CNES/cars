@@ -68,7 +68,7 @@ Considering bulky files, it can be recommended to generate an overview file with
 
 .. code-block:: console
 
-    $ gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
+    gdaladdo -ro -r average dsm.tif 2 4 8 16 32 64
 
 
 .. _`GDAL`: https://gdal.org/

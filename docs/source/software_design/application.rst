@@ -17,7 +17,7 @@ It is composed of:
 * Some abstract applications (each one defined a main 3d step)
 * Some subclass associated to each abstract application, containing specific algorithm
 
-.. figure:: ../../images/application_concept.png
+.. figure:: ../images/application_concept.png
     :align: center
     :alt: Applications
 
