@@ -1,6 +1,23 @@
 # Changelog
 
 
+## 0.7.3  CARS fully pip installable (November 2023)
+
+### Added
+
+- CARS can now be pip installed [#639]
+- Name of color bands proppagated in point cloud [#696]
+
+### Changed
+
+- Slurm account now as a parameter of Orchestrator [#712]
+- pkg_ressources not used anymore [#700]
+
+### Fixed
+
+- Rasterisation in epsg:4326 supported [#724]
+- Estimation of DSM roi in Shareloc plugin [#701]
+
 ## 0.7.2 Self calculated initial elevation (October 2023)
 
 ### Added
