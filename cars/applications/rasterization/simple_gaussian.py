@@ -133,7 +133,7 @@ class SimpleGaussian(
         # get nodata values
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
         overloaded_conf["color_no_data"] = conf.get("color_no_data", 0)
-        overloaded_conf["color_dtype"] = conf.get("color_dtype", "uint16")
+        overloaded_conf["color_dtype"] = conf.get("color_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 65535)
 
         # Get if color, mask and stats are saved
@@ -166,7 +166,7 @@ class SimpleGaussian(
             "dsm_no_data": int,
             "msk_no_data": int,
             "color_no_data": int,
-            "color_dtype": str,
+            "color_dtype": Or(None, str),
             "save_color": bool,
             "save_mask": bool,
             "save_classif": bool,
@@ -246,6 +246,7 @@ class SimpleGaussian(
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
+        color_dtype=None,
     ):
         """
         Run PointsCloudRasterisation application.
@@ -272,6 +273,8 @@ class SimpleGaussian(
         :type dsm_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
+        :param color_dtype: output color image type
+        :type color_dtype: str (numpy type)
 
         :return: raster DSM. CarsDataset contains:
 
@@ -359,6 +362,8 @@ class SimpleGaussian(
                     out_clr_file_name = os.path.join(
                         self.orchestrator.out_dir, "clr.tif"
                     )
+                if not self.color_dtype:
+                    self.color_dtype = color_dtype
                 self.orchestrator.add_to_save_lists(
                     out_clr_file_name,
                     cst.RASTER_COLOR_IMG,
