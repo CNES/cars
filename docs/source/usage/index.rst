@@ -1075,15 +1075,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                     | Description                      | Type    | Available value            | Default value              | Required |
-            +==========================+==================================+=========+============================+============================+==========+
-            | method                   | Method for fusion                | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_laz | Save points clouds as laz format | boolean |                            | false                      | No       |
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_csv | Save points clouds as csv format | boolean |                            | false                      | No       |
-            +--------------------------+----------------------------------+---------+----------------------------+----------------------------+----------+
+            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            | Name                         | Description                             | Type    | Available value            | Default value              | Required |
+            +==============================+=========================================+=========+============================+============================+==========+
+            | method                       | Method for fusion                       | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
+            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_points_cloud_as_laz     | Save points clouds as laz format        | boolean |                            | false                      | No       |
+            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_points_cloud_as_csv     | Save points clouds as csv format        | boolean |                            | false                      | No       |
+            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_points_cloud_by_pair    | Enable points cloud saving by pair      | boolean |                            | false                      | No       |
+            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
 
             **Example**
 
@@ -1095,12 +1097,14 @@ The structure follows this organisation:
                             "method": "mapping_to_terrain_tiles",
                             "save_points_cloud_as_laz": true,
                             "save_points_cloud_as_csv": true,
+                            "save_points_cloud_by_pair": true,
                         }
                     },
 
             .. note::
                 When `save_points_cloud_as_laz` is activated, multiple Laz files are saved, corresponding to each processed terrain tiles.
                 Please, see the section :ref:`merge_laz_files` to merge them into one single file.
+                `save_points_cloud_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
 
         .. tab:: Point Cloud outliers removing
 
@@ -1112,15 +1116,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name                     | Description                              | Type    | Available value                   | Default value | Required |
-            +==========================+==========================================+=========+===================================+===============+==========+
-            | method                   | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
-            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_laz | Save points clouds as laz format         | boolean |                                   | false         | No       |
-            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_csv | Save points clouds as csv format         | boolean |                                   | false         | No       |
-            +--------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | Name                         | Description                              | Type    | Available value                   | Default value | Required |
+            +==============================+==========================================+=========+===================================+===============+==========+
+            | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
+            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_points_cloud_as_laz     | Save points clouds as laz format         | boolean |                                   | false         | No       |
+            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_points_cloud_as_csv     | Save points clouds as csv format         | boolean |                                   | false         | No       |
+            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_points_cloud_by_pair    | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
+            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             If method is *statistical*:
 
@@ -1178,6 +1184,7 @@ The structure follows this organisation:
                             "method": "statistical",
                             "k": 10,
                             "save_points_cloud_as_laz": true,
+                            "save_points_cloud_by_pair": true,
                         }
                     },
 

@@ -88,6 +88,9 @@ class SmallComponents(
         self.save_points_cloud_as_csv = self.used_config.get(
             "save_points_cloud_as_csv", False
         )
+        self.save_points_cloud_by_pair = self.used_config.get(
+            "save_points_cloud_by_pair", False
+        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -118,6 +121,9 @@ class SmallComponents(
         )
         overloaded_conf["save_points_cloud_as_csv"] = conf.get(
             "save_points_cloud_as_csv", False
+        )
+        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
+            "save_points_cloud_by_pair", False
         )
 
         # small components
@@ -155,6 +161,7 @@ class SmallComponents(
             "method": str,
             "save_points_cloud_as_laz": bool,
             "save_points_cloud_as_csv": bool,
+            "save_points_cloud_by_pair": bool,
             "activated": bool,
             "on_ground_margin": int,
             "connection_distance": And(float, lambda x: x > 0),

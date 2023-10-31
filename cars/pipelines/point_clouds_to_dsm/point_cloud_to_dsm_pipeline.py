@@ -366,6 +366,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     terrain_bounds, optimal_terrain_tile_width, epsg, epsg_cloud
                 )
             )
+
             # Merge point clouds
             merged_points_clouds = self.pc_fusion_application.run(
                 list_epipolar_points_cloud_by_tiles,
