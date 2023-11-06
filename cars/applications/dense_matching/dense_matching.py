@@ -171,11 +171,11 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         self,
         epipolar_images_left,
         epipolar_images_right,
+        local_tile_optimal_size_fun,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        disp_min_grid=None,
-        disp_max_grid=None,
+        disp_range_grid=None,
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
     ):
@@ -210,15 +210,16 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - attributes containing:
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
+        :param local_tile_optimal_size_fun: function to compute local
+             optimal tile size
+        :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param disp_min_grid: minimum disparity grid
-        :type disp_min_grid: CarsDataset
-        :param disp_max_grid: maximum disparity grid
-        :type disp_max_grid: CarsDataset
+        :param disp_range_grid: minimum and maximum disparity grid
+        :type disp_range_grid: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
 
@@ -230,7 +231,8 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
                 - data with keys : "disp", "disp_msk"
                 - attrs with keys: profile, window, overlaps
             - attributes containing:
-                "largest_epipolar_region","opt_epipolar_tile_size"
+                "largest_epipolar_region","opt_epipolar_tile_size",
+                 "disp_min_tiling", "disp_max_tiling"
 
         :rtype: CarsDataset
         """

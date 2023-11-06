@@ -39,7 +39,7 @@ from json_checker import And, Checker, Or
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dense_matching import dense_matching_tools
+from cars.applications.dense_matching import dense_matching_tools as dm_tools
 from cars.applications.dense_matching.dense_matching import DenseMatching
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
@@ -169,7 +169,7 @@ class CensusMccnnSgm(
         )
         # Margins computation parameters
         overloaded_conf["use_global_disp_range"] = conf.get(
-            "use_global_disp_range", True
+            "use_global_disp_range", False
         )
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.2)
         overloaded_conf["local_disp_grid_step"] = conf.get(
@@ -377,9 +377,7 @@ class CensusMccnnSgm(
 
             # Compute margins for the correlator
             # TODO use loader correlators
-            margins = dense_matching_tools.get_margins(
-                disp_min, disp_max, self.corr_config
-            )
+            margins = dm_tools.get_margins(disp_min, disp_max, self.corr_config)
             return margins
 
         return margins_wrapper
@@ -408,7 +406,7 @@ class CensusMccnnSgm(
 
         # Get tiling param
         opt_epipolar_tile_size_1 = (
-            dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+            dm_tools.optimal_tile_size_pandora_plugin_libsgm(
                 global_min,
                 global_min + max_diff,
                 self.min_epi_tile_size,
@@ -418,7 +416,7 @@ class CensusMccnnSgm(
             )
         )
         opt_epipolar_tile_size_2 = (
-            dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
+            dm_tools.optimal_tile_size_pandora_plugin_libsgm(
                 global_max - max_diff,
                 global_max,
                 self.min_epi_tile_size,
@@ -433,7 +431,28 @@ class CensusMccnnSgm(
             opt_epipolar_tile_size_1, opt_epipolar_tile_size_2
         )
 
-        return opt_epipolar_tile_size
+        # Define function to compute local optimal size for each tile
+        def local_tile_optimal_size_fun(local_disp_min, local_disp_max):
+            """
+            Compute optimal tile size for tile
+
+            :return: local tile size, global optimal tile sizes
+
+            """
+            local_opt_tile_size = (
+                dm_tools.optimal_tile_size_pandora_plugin_libsgm(
+                    local_disp_min,
+                    local_disp_max,
+                    0,
+                    2000,  # arbitrary
+                    max_ram_per_worker,
+                    margin=self.epipolar_tile_margin_in_percent,
+                )
+            )
+
+            return local_opt_tile_size, opt_epipolar_tile_size
+
+        return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
     def generate_disparity_grids(
         self,
@@ -716,6 +735,7 @@ class CensusMccnnSgm(
         self,
         epipolar_images_left,
         epipolar_images_right,
+        local_tile_optimal_size_fun,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -754,6 +774,9 @@ class CensusMccnnSgm(
                 - attributes containing:
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
+        :param local_tile_optimal_size_fun: function to compute local
+             optimal tile size
+        :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
@@ -903,10 +926,41 @@ class CensusMccnnSgm(
                 )
             )
 
+            nb_invalid_tile = 0
+            nb_total_tiles_roi = 0
+
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
+                    use_tile = False
                     if epipolar_images_left[row, col] is not None:
+                        nb_total_tiles_roi += 1
+
+                        # Compute optimal tile size for tile
+                        (
+                            opt_tile_size,
+                            global_opt_tile_size,
+                        ) = local_tile_optimal_size_fun(
+                            np.array(
+                                epipolar_images_left.attributes[
+                                    "disp_min_tiling"
+                                ]
+                            )[row, col],
+                            np.array(
+                                epipolar_images_left.attributes[
+                                    "disp_max_tiling"
+                                ]
+                            )[row, col],
+                        )
+                        if opt_tile_size >= global_opt_tile_size:
+                            # Tile is likely to crash in worker
+                            # due to memory consumtion
+                            use_tile = True
+                        else:
+                            nb_invalid_tile += 1
+                            logging.error("tile not computed")
+
+                    if use_tile:
                         # update saving infos  for potential replacement
                         full_saving_info = ocht.update_saving_infos(
                             saving_info, row=row, col=col
@@ -931,6 +985,19 @@ class CensusMccnnSgm(
                             ),
                             disp_to_alt_ratio=disp_to_alt_ratio,
                         )
+
+            # Message info about not computed tiles
+            tile_missing_message = (
+                "Dense matching: {} tiles not computed over {} tiles, "
+                "these tile were likely to crash due to memory "
+                "consumption, in pair {}".format(
+                    nb_invalid_tile, nb_total_tiles_roi, pair_key
+                )
+            )
+            if nb_invalid_tile == 0:
+                logging.info(tile_missing_message)
+            else:
+                logging.error(tile_missing_message)
         else:
             logging.error(
                 "DenseMatching application doesn't "
@@ -997,13 +1064,11 @@ def compute_disparity(
     (
         disp_min_right,
         disp_max_right,
-    ) = dense_matching_tools.compute_disparity_grid(
-        disp_range_grid, left_image_object
-    )
+    ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
 
     # Compute disparity
     # TODO : remove overwriting of EPI_MSK
-    disp_dataset = dense_matching_tools.compute_disparity(
+    disp_dataset = dm_tools.compute_disparity(
         left_image_object,
         right_image_object,
         corr_cfg,

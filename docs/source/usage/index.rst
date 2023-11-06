@@ -916,7 +916,7 @@ The structure follows this organisation:
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | use_global_disp_range           | If true, use global disparity range, otherwise local range estimation   | boolean |                                 | true          | No       |
+            | use_global_disp_range           | If true, use global disparity range, otherwise local range estimation   | boolean |                                 | false         | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
             | disparity_margin                | Disparity margin to apply to each range                                 | float   |                                 | 0.2           | No       |
             +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+

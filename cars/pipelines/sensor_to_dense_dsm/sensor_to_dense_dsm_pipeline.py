@@ -994,6 +994,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Generated with corrected grids
                 # Optimal size is computed for the worst case scenario
                 # found with epipolar disparity range grids
+
+                (
+                    optimum_tile_size,
+                    local_tile_optimal_size_fun,
+                ) = self.dense_matching_app.get_optimal_tile_size(
+                    disp_range_grid,
+                    cars_orchestrator.cluster.checked_conf_cluster[
+                        "max_ram_per_worker"
+                    ],
+                )
                 (
                     new_epipolar_image_left,
                     new_epipolar_image_right,
@@ -1006,14 +1016,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins_fun=dense_matching_margins_fun,
-                    optimum_tile_size=(
-                        self.dense_matching_app.get_optimal_tile_size(
-                            disp_range_grid,
-                            cars_orchestrator.cluster.checked_conf_cluster[
-                                "max_ram_per_worker"
-                            ],
-                        )
-                    ),
+                    optimum_tile_size=optimum_tile_size,
                     add_color=True,
                     epipolar_roi=epipolar_roi,
                 )
@@ -1022,6 +1025,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 epipolar_disparity_map = self.dense_matching_app.run(
                     new_epipolar_image_left,
                     new_epipolar_image_right,
+                    local_tile_optimal_size_fun,
                     orchestrator=cars_orchestrator,
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
