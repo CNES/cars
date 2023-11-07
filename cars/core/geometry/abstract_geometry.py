@@ -415,7 +415,6 @@ class AbstractGeometry(metaclass=ABCMeta):
         sensor_interp_pos = AbstractGeometry.sensor_position_from_grid(
             grid, full_epi_pos
         )
-
         interp_row = LinearNDInterpolator(
             list(
                 zip(  # noqa: B905
@@ -510,6 +509,29 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param y_coord: Y Coordinate list in input image sensor
         :param z_coord: Z Altitude list coordinate to take the image
         :return: Latitude, Longitude, Altitude coordinates list as a numpy array
+        """
+
+    @abstractmethod
+    def inverse_loc(
+        self,
+        sensor,
+        geomodel,
+        lat_coord: np.array,
+        lon_coord: np.array,
+        z_coord: np.array = None,
+    ) -> np.ndarray:
+        """
+        For a given image points list, compute the latitudes,
+        longitudes, altitudes
+
+        Advice: to be sure, use x,y,z list inputs only
+
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geomodel
+        :param lat_coord: latitute Coordinate list
+        :param lon_coord: longitude Coordinates list
+        :param z_coord: Z Altitude list
+        :return: X  / Y / Z Coordinates list in input image as a numpy array
         """
 
     def image_envelope(self, sensor, geomodel, shp=None):

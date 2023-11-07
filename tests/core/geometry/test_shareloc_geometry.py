@@ -70,6 +70,41 @@ def test_dir_loc_rpc():
 
 
 @pytest.mark.unit_tests
+def test_inverse_loc_rpc():
+    """
+    Test inverse localization with RPC
+    """
+    sensor = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel = {"path": geomodel_path, "model_type": RPC_TYPE}
+
+    dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
+    geoid = get_geoid_path()
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry", dem=dem, geoid=geoid
+        )
+    )
+
+    inputs_lat = np.array(
+        [44.20805591, 44.20802983, 44.20800369],
+    )
+    inputs_lon = np.array([5.1934094, 5.193442, 5.19347457])
+    inputs_z = np.array([503.55024397, 504.01215811, 504.43611393])
+
+    col, row, alti = geo_plugin.inverse_loc(
+        sensor, geomodel, inputs_lat, inputs_lon, z_coord=inputs_z
+    )
+
+    reference_col = np.array([0, 5, 10])
+    reference_row = np.array([0, 6, 12])
+    np.testing.assert_allclose(row, reference_row, rtol=0.01, atol=0.01)
+    np.testing.assert_allclose(col, reference_col, rtol=0.01, atol=0.01)
+    np.testing.assert_allclose(alti, inputs_z, rtol=0.01, atol=0.01)
+
+
+@pytest.mark.unit_tests
 def test_get_roi():
     """
     Test direct localization with RPC

@@ -615,3 +615,35 @@ def test_dir_loc_multipoint_otb():
         np.dtype(np.float64),
     )
     np.testing.assert_allclose(current, reference)
+
+
+@pytest.mark.unit_tests
+def test_inverse_loc_multipoint_otb():
+    """
+    Test inverse localization multipoint
+    """
+    sensor = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel = absolute_data_path("input/phr_ventoux/left_image.geom")
+    dem = absolute_data_path("input/phr_ventoux/srtm")
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "OTBGeometry", dem=dem
+        )
+    )
+
+    inputs_lat = np.array(
+        [44.20805589, 44.2080298, 44.20800366],
+    )
+    inputs_lon = np.array([5.19340938, 5.19344198, 5.19347456])
+    inputs_z = np.array([503.5501949, 504.01208942, 504.43602082])
+
+    col, row, alti = geo_plugin.inverse_loc(
+        sensor, geomodel, inputs_lat, inputs_lon, z_coord=inputs_z
+    )
+
+    reference_col = np.array([0, 5, 10])
+    reference_row = np.array([0, 6, 12])
+    np.testing.assert_allclose(row, reference_row, rtol=0.01, atol=0.01)
+    np.testing.assert_allclose(col, reference_col, rtol=0.01, atol=0.01)
+    np.testing.assert_allclose(alti, inputs_z, rtol=0.01, atol=0.01)

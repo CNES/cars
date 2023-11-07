@@ -421,3 +421,43 @@ class SharelocGeometry(AbstractGeometry):
                 [lonlatalt[:, 1], lonlatalt[:, 0], lonlatalt[:, 2]]
             )
         return latlonalt
+
+    def inverse_loc(
+        self,
+        sensor,
+        geomodel,
+        lat_coord: np.array,
+        lon_coord: np.array,
+        z_coord: np.array = None,
+    ) -> np.ndarray:
+        """
+        For a given image points list, compute the latitudes,
+        longitudes, altitudes
+
+        Advice: to be sure, use x,y,z list inputs only
+
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geomodel
+        :param lat_coord: latitute Coordinate list
+        :param lon_coord: longitude Coordinates list
+        :param z_coord: Z Altitude list
+        :return: X  / Y / Z Coordinates list in input image as a numpy array
+        """
+
+        # load model and image with shareloc
+        shareloc_model = SharelocGeometry.load_geom_model(geomodel)
+        shareloc_image = Image(sensor)
+
+        # perform direct localization operation
+        loc = localization.Localization(
+            shareloc_model,
+            image=shareloc_image,
+            elevation=self.elevation,
+            epsg=4326,
+        )
+
+        row, col, alti = loc.inverse(
+            lon_coord, lat_coord, h=z_coord, using_geotransform=True
+        )
+
+        return row, col, alti

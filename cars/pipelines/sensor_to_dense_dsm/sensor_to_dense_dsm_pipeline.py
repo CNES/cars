@@ -936,6 +936,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             self.geom_plugin_with_dem_and_geoid,
                             dem_min=dem_min,
                             dem_max=dem_max,
+                            dem_mean=dem_mean,
                             pair_folder=pairs[pair_key]["pair_folder"],
                         )
                     )

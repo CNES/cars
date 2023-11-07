@@ -35,6 +35,7 @@ import numpy as np
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
+from scipy.interpolate import LinearNDInterpolator
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -48,7 +49,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
-from cars.core import inputs
+from cars.core import inputs, projection
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -461,6 +462,7 @@ class CensusMccnnSgm(
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
+        dem_mean=None,
         dem_min=None,
         dem_max=None,
         pair_folder=None,
@@ -483,6 +485,8 @@ class CensusMccnnSgm(
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
+        :param dem_mean: path to mean dem
+        :type dem_mean: str
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
@@ -560,11 +564,84 @@ class CensusMccnnSgm(
             grid_min[:, :] = dmin
             grid_max[:, :] = dmax
 
-        elif None not in (dem_min, dem_max):
+        elif None not in (dem_min, dem_max, dem_mean):
             # use local disparity
             if None not in (dmin, dmax):
                 raise RuntimeError("Mix between local and global mode")
 
+            # dem mean, min max are the same shape
+
+            # Get associated alti mean / min / max values
+            dem_mean_values, _ = inputs.rasterio_read_as_array(dem_mean)
+            dem_min_values, _ = inputs.rasterio_read_as_array(dem_min)
+            dem_max_values, _ = inputs.rasterio_read_as_array(dem_max)
+
+            assert dem_mean_values.shape == dem_min_values.shape
+            assert dem_mean_values.shape == dem_max_values.shape
+
+            # get epsg
+            terrain_epsg = inputs.rasterio_get_epsg(dem_mean)
+
+            # Get epipolar position of all dem mean
+            transform = inputs.rasterio_get_transform(dem_min)
+            # index position to terrain position
+            terrain_positions = np.empty(
+                (dem_min_values.shape[0] * dem_min_values.shape[1], 2)
+            )
+            dem_mean_list = np.empty(
+                dem_min_values.shape[0] * dem_min_values.shape[1]
+            )
+            dem_min_list = np.empty(
+                dem_min_values.shape[0] * dem_min_values.shape[1]
+            )
+            dem_max_list = np.empty(
+                dem_min_values.shape[0] * dem_min_values.shape[1]
+            )
+            row_shape = dem_min_values.shape[0]
+            col_shape = dem_min_values.shape[1]
+            for row in range(row_shape):
+                for col in range(col_shape):
+                    col_geo, row_geo = transform * (col + 0.5, row + 0.5)
+                    terrain_positions[row + row_shape * col, :] = (
+                        row_geo,
+                        col_geo,
+                    )
+                    dem_mean_list[row + row_shape * col] = dem_mean_values[
+                        row, col
+                    ]
+                    dem_min_list[row + row_shape * col] = dem_min_values[
+                        row, col
+                    ]
+                    dem_max_list[row + row_shape * col] = dem_max_values[
+                        row, col
+                    ]
+
+            # transform to lon lat
+            terrain_position_lon_lat = projection.points_cloud_conversion(
+                terrain_positions, terrain_epsg, 4326
+            )
+            new_x = terrain_position_lon_lat[:, 0]
+            new_y = terrain_position_lon_lat[:, 1]
+
+            # sensors positions as index
+            (
+                ind_rows_sensor,
+                ind_cols_sensor,
+                _,
+            ) = geom_plugin_with_dem_and_geoid.inverse_loc(
+                sensor_image_right["image"],
+                sensor_image_right["geomodel"],
+                new_x,
+                new_y,
+                z_coord=dem_mean_list,
+            )
+
+            # Transform sensors index to sensor physical point
+            transform_sensor = inputs.rasterio_get_transform(
+                sensor_image_right["image"]
+            )
+
+            # Generate epipolar disp grids
             # Get epipolar positions
             (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
                 col_range, row_range
@@ -588,15 +665,11 @@ class CensusMccnnSgm(
                 )
             )
 
-            # Get terrain positions and altitude for each position
-
-            # retrieve image size
-            transform = inputs.rasterio_get_transform(
+            # compute reverse matrix
+            transform_sensor = inputs.rasterio_get_transform(
                 sensor_image_right["image"]
             )
-            # Transform physical point to index
-            # compute reverse matrix
-            trans_inv = ~transform
+            trans_inv = ~transform_sensor
             index_positions = np.empty(sensors_positions.shape)
             for row in range(index_positions.shape[0]):
                 index_positions[row, :] = trans_inv * sensors_positions[row, :]
@@ -604,32 +677,33 @@ class CensusMccnnSgm(
             ind_rows = index_positions[:, 1] - 0.5
             ind_cols = index_positions[:, 0] - 0.5
 
-            (
-                x_mean,
-                y_mean,
-                altis_mean,
-            ) = geom_plugin_with_dem_and_geoid.direct_loc(
-                sensor_image_right["image"],
-                sensor_image_right["geomodel"],
-                ind_cols,
-                ind_rows,
+            # Interpolate disparity
+            disp_min_points = (
+                -(dem_max_list - dem_mean_list) / disp_to_alt_ratio
             )
-            # Get values of alti min and max on coordinates (lon lat)
-            altis_min = inputs.rasterio_get_values(dem_min, x_mean, y_mean)
-            altis_max = inputs.rasterio_get_values(dem_max, x_mean, y_mean)
+            disp_max_points = (
+                -(dem_min_list - dem_mean_list) / disp_to_alt_ratio
+            )
 
-            # reshape to grid
-            # disp to alt ratio correspond to right sensor.
-            # The computed range would be for right image on left
-            # We approximate left disparity on right :
-            # min, max equals to -max, -min
+            interp_min_linear = LinearNDInterpolator(
+                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
+                disp_min_points,
+            )
+            interp_max_linear = LinearNDInterpolator(
+                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
+                disp_max_points,
+            )
 
             grid_min = np.reshape(
-                -(altis_max - altis_mean) / disp_to_alt_ratio,
-                (epipolar_positions.shape[0], epipolar_positions.shape[1]),
+                interp_min_linear(ind_rows, ind_cols),
+                (
+                    epipolar_positions.shape[0],
+                    epipolar_positions.shape[1],
+                ),
             )
+
             grid_max = np.reshape(
-                -(altis_min - altis_mean) / disp_to_alt_ratio,
+                interp_max_linear(ind_rows, ind_cols),
                 (
                     epipolar_positions.shape[0],
                     epipolar_positions.shape[1],
