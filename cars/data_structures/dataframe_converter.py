@@ -27,21 +27,9 @@ import laspy
 import laspy.file
 import laspy.header
 import numpy as np
+from pyproj import CRS
 
 import cars.core.constants as cst
-
-
-def utm_epsg_to_proj(epsg: int):
-    """
-    Convert a UTM EPSG code to a PROJ string
-    :param epsg: Integer EPSG code
-    :return: PROJ string
-    """
-    assert epsg > 32600
-    assert epsg < 32800
-    south = " +south" if ((epsg - 32600) // 100) else ""
-    zone = epsg % 100
-    return f"+proj=utm +zone={zone}{south} +datum=WGS84 +units=m +no_defs"
 
 
 def convert_pcl_to_laz(point_clouds, output_filename: str):
@@ -143,9 +131,17 @@ def extract_point_cloud(point_clouds, coordinates, input_color, color_type):
 
 def generate_prj_file(output_filename, epsg):
     """
-    Generate prj file associated to the laz file
+    Generate prj file associated to the laz file if projection is UTM or WGS84
+    :param output_filename: name of laz file
+    :param epsg: code of output epsg
     """
-    proj = utm_epsg_to_proj(epsg)
+    crs = CRS.from_epsg(epsg)
+    proj = crs.to_proj4()
+    if crs.is_geographic:
+        logging.warning(
+            "Coordinate system of points cloud is geographic: "
+            "Display of LAZ file may not work"
+        )
     with open(output_filename + ".prj", "w", encoding="utf8") as file_prj:
         file_prj.write(proj)
 
