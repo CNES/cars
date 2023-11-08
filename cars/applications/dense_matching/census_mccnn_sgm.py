@@ -606,15 +606,12 @@ class CensusMccnnSgm(
                         row_geo,
                         col_geo,
                     )
-                    dem_mean_list[row + row_shape * col] = dem_mean_values[
-                        row, col
-                    ]
-                    dem_min_list[row + row_shape * col] = dem_min_values[
-                        row, col
-                    ]
-                    dem_max_list[row + row_shape * col] = dem_max_values[
-                        row, col
-                    ]
+
+            x_mean = terrain_positions[:, 0]
+            y_mean = terrain_positions[:, 1]
+            dem_mean_list = inputs.rasterio_get_values(dem_mean, x_mean, y_mean)
+            dem_min_list = inputs.rasterio_get_values(dem_min, x_mean, y_mean)
+            dem_max_list = inputs.rasterio_get_values(dem_max, x_mean, y_mean)
 
             # transform to lon lat
             terrain_position_lon_lat = projection.points_cloud_conversion(
@@ -625,8 +622,8 @@ class CensusMccnnSgm(
 
             # sensors positions as index
             (
-                ind_rows_sensor,
                 ind_cols_sensor,
+                ind_rows_sensor,
                 _,
             ) = geom_plugin_with_dem_and_geoid.inverse_loc(
                 sensor_image_right["image"],
@@ -1136,8 +1133,8 @@ def compute_disparity(
     """
     # Generate disparity grids
     (
-        disp_min_right,
-        disp_max_right,
+        disp_min_grid,
+        disp_max_grid,
     ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
 
     # Compute disparity
@@ -1146,8 +1143,8 @@ def compute_disparity(
         left_image_object,
         right_image_object,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
         compute_disparity_masks=compute_disparity_masks,
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,

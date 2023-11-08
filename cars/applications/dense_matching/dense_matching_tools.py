@@ -108,6 +108,33 @@ def get_masks_from_pandora(
     return masks
 
 
+def add_disparity_grids(
+    output_dataset: xr.Dataset,
+    disp_min_grid: np.ndarray = None,
+    disp_max_grid: np.ndarray = None,
+):
+    """
+    Add  disparity min and max grids to dataset
+
+    :param output_dataset: output dataset
+    :param disp_min_grid: dense disparity map grid min
+    :param disp_max_grid: dense disparity map grid max
+
+    """
+    if disp_min_grid is not None:
+        output_dataset[cst_disp.EPI_DISP_MIN_GRID] = xr.DataArray(
+            disp_min_grid,
+            dims=[cst.ROW, cst.COL],
+        )
+
+    # Add color mask
+    if disp_max_grid is not None:
+        output_dataset[cst_disp.EPI_DISP_MAX_GRID] = xr.DataArray(
+            disp_max_grid,
+            dims=[cst.ROW, cst.COL],
+        )
+
+
 def add_color(
     output_dataset: xr.Dataset,
     color: np.ndarray = None,
@@ -168,6 +195,8 @@ def create_disp_dataset(
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
     disp_to_alt_ratio=None,
+    disp_min_grid=None,
+    disp_max_grid=None,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -182,6 +211,8 @@ def create_disp_dataset(
     :type perf_ambiguity_threshold: float
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
+    :param disp_min_grid: disparity min grid
+    :param disp_max_grid: disparity max grid
 
     :return: disparity dataset as used in cars
     """
@@ -250,6 +281,16 @@ def create_disp_dataset(
     if classif is not None:
         classif = classif[:, ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
 
+    # Crop disparity min max grids
+    if disp_min_grid is not None:
+        disp_min_grid = disp_min_grid[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
+    if disp_max_grid is not None:
+        disp_max_grid = disp_max_grid[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
+
     # Fill disparity array with 0 value for invalid points
     disp_map[pandora_masks[cst_disp.VALID] == 0] = 0
 
@@ -298,6 +339,11 @@ def create_disp_dataset(
 
     # add classif
     add_classification(disp_ds, classif=classif, band_classif=band_classif)
+
+    # Add disparity grids
+    add_disparity_grids(
+        disp_ds, disp_min_grid=disp_min_grid, disp_max_grid=disp_max_grid
+    )
 
     if compute_disparity_masks:
         for key, val in pandora_masks.items():
@@ -410,12 +456,55 @@ def add_performance_map(
     )
 
 
+def compute_disparity_grid(disp_range_grid, left_image_object):
+    """
+    Compute dense disparity grids min and max for pandora
+    superposable to left image
+
+    :param disp_range_grid: disp range grid with min and max grids
+    :type disp_range_grid: CarsDataset
+    :param left_image_object: left image
+    :type left_image_object: xr.Dataset
+
+    :return disp min map, disp_max_map
+    :rtype np.ndarray, np.ndarray
+    """
+    # Create interpolators
+    interp_min = RegularGridInterpolator(
+        (
+            disp_range_grid.attributes["row_range"],
+            disp_range_grid.attributes["col_range"],
+        ),
+        disp_range_grid[0, 0][dense_match_cst.DISP_MIN_GRID].values,
+    )
+    interp_max = RegularGridInterpolator(
+        (
+            disp_range_grid.attributes["row_range"],
+            disp_range_grid.attributes["col_range"],
+        ),
+        disp_range_grid[0, 0][dense_match_cst.DISP_MAX_GRID].values,
+    )
+
+    # Interpolate disp on grid
+    roi_with_margins = left_image_object.attrs["roi_with_margins"]
+
+    row_range = np.arange(roi_with_margins[1], roi_with_margins[3])
+    col_range = np.arange(roi_with_margins[0], roi_with_margins[2])
+
+    row_grid, col_grid = np.meshgrid(row_range, col_range, indexing="ij")
+
+    disp_min_grid = interp_min((row_grid, col_grid))
+    disp_max_grid = interp_max((row_grid, col_grid))
+
+    return disp_min_grid, disp_max_grid
+
+
 def compute_disparity(
     left_dataset,
     right_dataset,
     corr_cfg,
-    disp_min=None,
-    disp_max=None,
+    disp_min_grid=None,
+    disp_max_grid=None,
     compute_disparity_masks=False,
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
@@ -430,12 +519,12 @@ def compute_disparity(
     :type right_dataset: xarray.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
-    :param disp_min: Minimum disparity
+    :param disp_min_grid: Minimum disparity grid
                      (if None, value is taken from left dataset)
-    :type disp_min: int
-    :param disp_max: Maximum disparity
+    :type disp_min_grid: np ndarray
+    :param disp_max_grid: Maximum disparity grid
                      (if None, value is taken from left dataset)
-    :type disp_max: int
+    :type disp_max_grid: np ndarray
     :param compute_disparity_masks: Activation of compute_disparity_masks mode
     :type compute_disparity_masks: Boolean
     :param generate_performance_map: True if generate performance map
@@ -451,27 +540,25 @@ def compute_disparity(
     # Check disp min and max bounds with respect to margin used for
     # rectification
 
-    if disp_min is None:
-        disp_min = left_dataset.attrs[cst.EPI_DISP_MIN]
-    else:
-        if disp_min < left_dataset.attrs[cst.EPI_DISP_MIN]:
-            raise ValueError(
-                "disp_min ({}) is lower than disp_min used to determine "
-                "margin during rectification ({})".format(
-                    disp_min, left_dataset["disp_min"]
-                )
-            )
+    # Get tile global disp
+    disp_min = np.floor(np.min(disp_min_grid))
+    disp_max = np.ceil(np.max(disp_max_grid))
 
-    if disp_max is None:
-        disp_max = left_dataset.attrs[cst.EPI_DISP_MAX]
-    else:
-        if disp_max > left_dataset.attrs[cst.EPI_DISP_MAX]:
-            raise ValueError(
-                "disp_max ({}) is greater than disp_max used to determine "
-                "margin during rectification ({})".format(
-                    disp_max, left_dataset["disp_max"]
-                )
+    if disp_min < left_dataset.attrs[cst.EPI_DISP_MIN]:
+        logging.error(
+            "disp_min ({}) is lower than disp_min used to determine "
+            "margin during rectification ({})".format(
+                disp_min, left_dataset.attrs["disp_min"]
             )
+        )
+
+    if disp_max > left_dataset.attrs[cst.EPI_DISP_MAX]:
+        logging.error(
+            "disp_max ({}) is greater than disp_max used to determine "
+            "margin during rectification ({})".format(
+                disp_max, left_dataset.attrs["disp_max"]
+            )
+        )
 
     # Load pandora plugin
     if "pandora.plugin" in metadata.entry_points():
@@ -492,15 +579,20 @@ def compute_disparity(
     # check datasets
     check_dataset(left_dataset)
     check_dataset(right_dataset)
+    # TODO correct estimation right
+    disp_min_right_grid = np.ones(disp_min_grid.shape) * (-disp_max)
+    disp_max_right_grid = np.ones(disp_min_grid.shape) * (-disp_min)
 
     # Run the Pandora pipeline
     ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
         right_dataset,
-        int(disp_min),
-        int(disp_max),
+        disp_min_grid,
+        disp_max_grid,
         corr_cfg["pipeline"],
+        disp_min_right=disp_min_right_grid,
+        disp_max_right=disp_max_right_grid,
     )
 
     disp_dataset = create_disp_dataset(
@@ -510,6 +602,8 @@ def compute_disparity(
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,
         disp_to_alt_ratio=disp_to_alt_ratio,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
     )
 
     return disp_dataset
