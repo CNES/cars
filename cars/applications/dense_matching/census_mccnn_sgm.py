@@ -354,11 +354,11 @@ class CensusMccnnSgm(
 
             grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
             grid_row_max = min(
-                len(row_range), int(np.ceil((row_max + 1) / step_row))
+                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
             )
-            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)))
+            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
             grid_col_max = min(
-                len(col_range), int(np.ceil((col_max + 1) / step_col))
+                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
             )
 
             # Compute disp min and max in row
