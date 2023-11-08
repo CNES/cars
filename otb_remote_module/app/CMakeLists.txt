@@ -7,3 +7,8 @@ OTB_CREATE_APPLICATION(NAME ConvertSensorToGeoMultiPointFast
                        LINK_LIBRARIES ${${otb-module}_LIBRARIES})
 
 
+OTB_CREATE_APPLICATION(NAME LocalizeInverse
+                       SOURCES otbLocalizeInverse.cxx
+                       LINK_LIBRARIES ${${otb-module}_LIBRARIES})
+
+

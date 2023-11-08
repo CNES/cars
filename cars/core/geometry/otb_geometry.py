@@ -77,6 +77,7 @@ class OTBGeometry(AbstractGeometry):
         for module in [
             "ConvertSensorToGeoMultiPointFast",
             "EpipolarTriangulation",
+            "LocalizeInverse",
         ]:
             if otbApplication.Registry.CreateApplication(module) is None:
                 not_available.append(module)
@@ -480,3 +481,83 @@ class OTBGeometry(AbstractGeometry):
         # restore environment variables
         if "OTB_GEOID_FILE" in env_save.keys():
             os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+
+    def inverse_loc(
+        self,
+        sensor,
+        geomodel,
+        lat_coord: np.array,
+        lon_coord: np.array,
+        z_coord: np.array = None,
+    ) -> np.ndarray:
+        """
+        For a given image points list, compute the latitudes,
+        longitudes, altitudes
+
+        Advice: to be sure, use x,y,z list inputs only
+
+        :param sensor: path to sensor image
+        :param geomodel: path and attributes for geomodel
+        :param lat_coord: latitute Coordinate list
+        :param lon_coord: longitude Coordinates list
+        :param z_coord: Z Altitude list
+        :return: X  / Y / Z Coordinates list in input image as a numpy array
+        """
+
+        # save os env
+        env_save = os.environ.copy()
+
+        if "OTB_GEOID_FILE" in os.environ:
+            logging.warning(
+                "The OTB_GEOID_FILE environment variable is set by the user,"
+                " it might disturbed the OTBGeometry geoid management"
+            )
+            del os.environ["OTB_GEOID_FILE"]
+
+        s2c_app = otbApplication.Registry.CreateApplication("LocalizeInverse")
+        s2c_app.SetParameterString("in", sensor)
+        lon_coord = lon_coord.tolist()
+        lat_coord = lat_coord.tolist()
+        if isinstance(lon_coord, list):
+            lon_coord = list(map(str, lon_coord))
+            lat_coord = list(map(str, lat_coord))
+        else:
+            lon_coord = [str(lon_coord)]
+            lat_coord = [str(lat_coord)]
+        s2c_app.SetParameterStringList("input.idx", lon_coord)
+        s2c_app.SetParameterStringList("input.idy", lat_coord)
+        s2c_app.SetParameterString("coordtype", "index")
+
+        if z_coord is not None:
+            z_coord = z_coord.tolist()
+            if isinstance(z_coord, list):
+                z_coord = list(map(str, z_coord))
+            else:
+                z_coord = [str(z_coord)]
+            s2c_app.SetParameterStringList("input.idz", z_coord)
+
+        if self.dem is not None:
+            s2c_app.SetParameterString("elevation.dem", self.dem)
+        if self.geoid is not None:
+            s2c_app.SetParameterString("elevation.geoid", self.geoid)
+        if self.default_alt is not None:
+            s2c_app.SetParameterFloat("elevation.default", self.default_alt)
+        # else ConvertSensorToGeoMultiPointFast have only X, Y and OTB
+
+        s2c_app.Execute()
+
+        output = s2c_app.GetImageAsNumpyArray("output.all").copy()
+
+        # adapt behaviour of output format for shareloc like
+        if len(output[:, 0]) == 1:
+            row = output[:, 0][0]
+            col = output[:, 1][0]
+            alt = output[:, 2][0]
+        else:
+            row = np.array(output[:, 0])
+            col = np.array(output[:, 1])
+            alt = np.array(output[:, 2])
+        # restore environment variables
+        if "OTB_GEOID_FILE" in env_save.keys():
+            os.environ["OTB_GEOID_FILE"] = env_save["OTB_GEOID_FILE"]
+        return np.array([row, col, alt])
