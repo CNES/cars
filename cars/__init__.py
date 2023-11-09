@@ -22,8 +22,6 @@
 Cars module init file
 """
 
-import logging
-
 # Standard imports
 from importlib import metadata
 
@@ -46,8 +44,6 @@ def import_plugins() -> None:
     if "cars.plugins" in eps:
         for entry_point in metadata.entry_points()["cars.plugins"]:
             entry_point.load()
-    else:
-        logging.info("No Cars plugins detected!")
 
 
 import_plugins()
