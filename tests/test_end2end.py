@@ -223,6 +223,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "max_ram_per_worker": 1000,
             },
         )
+
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "epi_tile_size": 250},
@@ -1296,9 +1297,7 @@ def test_end2end_ventoux_unique_split():
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
                             "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "mask": os.path.join(
-                                epi_pc_path, "epi_pc_msk.tif"
-                            ),
+                            "mask": os.path.join(epi_pc_path, "epi_pc_msk.tif"),
                             "color": os.path.join(
                                 epi_pc_path, "epi_pc_color.tif"
                             ),

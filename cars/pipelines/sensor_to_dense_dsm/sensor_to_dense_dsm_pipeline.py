@@ -29,8 +29,8 @@ import json
 import logging
 import os
 
-from pyproj import CRS
 import numpy as np
+from pyproj import CRS
 
 # CARS imports
 from cars import __version__
