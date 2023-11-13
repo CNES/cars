@@ -141,10 +141,11 @@ def test_missing_abstract_methods():
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             "NoMethodClass"
         )
+    print(str(error.value))
     assert (
-        str(error.value) == "Can't instantiate abstract class"
-        " NoMethodClass with abstract methods check_product_consistency, "
-        "direct_loc, generate_epipolar_grids, triangulate"
+        str(error.value) == "Can't instantiate abstract class "
+        "NoMethodClass with abstract methods check_product_consistency,"
+        " direct_loc, generate_epipolar_grids, inverse_loc, triangulate"
     )
 
 

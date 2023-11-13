@@ -93,7 +93,7 @@ def test_inverse_loc_rpc():
     inputs_lon = np.array([5.1934094, 5.193442, 5.19347457])
     inputs_z = np.array([503.55024397, 504.01215811, 504.43611393])
 
-    col, row, alti = geo_plugin.inverse_loc(
+    row, col, alti = geo_plugin.inverse_loc(
         sensor, geomodel, inputs_lat, inputs_lon, z_coord=inputs_z
     )
 

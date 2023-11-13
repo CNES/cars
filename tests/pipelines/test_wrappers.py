@@ -163,13 +163,10 @@ def test_epipolar_pipeline(
         None,
         right_grid,
         None,
-        None,
-        None,
         dmin=-13,
         dmax=14,
         pair_folder=None,
     )
-    print(disp_range_grid)
 
     disp_map = compute_disparity(
         left_image, right_image, corr_cfg, disp_range_grid

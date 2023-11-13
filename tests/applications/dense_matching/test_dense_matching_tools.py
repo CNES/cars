@@ -100,15 +100,15 @@ def test_compute_disparity_1():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -147,15 +147,15 @@ def test_compute_disparity_3():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min_right = -43 * np.ones(left_input["im"].values.shape)
-    disp_max_right = 41 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -43 * np.ones(left_input["im"].values.shape)
+    disp_max_grid = 41 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
     )
 
     # TODO add validity mask input
@@ -198,15 +198,15 @@ def test_compute_disparity_with_all_confidences():
     corr_cfg = corr_conf_with_confidence()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
     )
 
     assert output[cst_disp.MAP].shape == (120, 110)
@@ -249,15 +249,15 @@ def test_compute_disparity_1_msk_ref():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
     )
 
@@ -296,15 +296,15 @@ def test_compute_disparity_1_msk_sec():
     corr_cfg = corr_conf_defaut()
     corr_cfg = create_corr_conf(corr_cfg)
 
-    disp_min_right = -13 * np.ones(left_input["im"].values.shape)
-    disp_max_right = 14 * np.ones(left_input["im"].values.shape)
+    disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
+    disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
 
     output = dense_matching_tools.compute_disparity(
         left_input,
         right_input,
         corr_cfg,
-        disp_min_right=disp_min_right,
-        disp_max_right=disp_max_right,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
         compute_disparity_masks=True,
     )
 

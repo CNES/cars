@@ -36,6 +36,7 @@ import xarray as xr
 from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
+from scipy.interpolate import RegularGridInterpolator
 
 # CARS imports
 from cars.applications.dense_matching import (
