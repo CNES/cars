@@ -36,6 +36,7 @@ import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
 from scipy.interpolate import LinearNDInterpolator
+from scipy.ndimage import generic_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
@@ -50,6 +51,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, projection
+from cars.core.projection import points_cloud_conversion
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -98,6 +100,9 @@ class CensusMccnnSgm(
         self.use_global_disp_range = self.used_config["use_global_disp_range"]
         self.disparity_margin = self.used_config["disparity_margin"]
         self.local_disp_grid_step = self.used_config["local_disp_grid_step"]
+        self.disp_range_propagation_filter_size = self.used_config[
+            "disp_range_propagation_filter_size"
+        ]
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
 
@@ -172,10 +177,14 @@ class CensusMccnnSgm(
         overloaded_conf["use_global_disp_range"] = conf.get(
             "use_global_disp_range", False
         )
-        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.2)
+        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.3)
         overloaded_conf["local_disp_grid_step"] = conf.get(
             "local_disp_grid_step", 30
         )
+        overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
+            "disp_range_propagation_filter_size", 300
+        )
+
         # Saving files
         overloaded_conf["save_disparity_map"] = conf.get(
             "save_disparity_map", False
@@ -218,6 +227,9 @@ class CensusMccnnSgm(
             "use_global_disp_range": bool,
             "disparity_margin": And(Or(int, float), lambda x: x >= 0),
             "local_disp_grid_step": int,
+            "disp_range_propagation_filter_size": And(
+                Or(int, float), lambda x: x >= 0
+            ),
             "loader_conf": dict,
             "loader": str,
         }
@@ -393,17 +405,28 @@ class CensusMccnnSgm(
 
         """
 
-        # TODO: modify function to get worst case scenario with grids
-        disp_min = np.min(disp_range_grid[0, 0][dm_cst.DISP_MIN_GRID].values)
-        disp_max = np.max(disp_range_grid[0, 0][dm_cst.DISP_MAX_GRID].values)
+        disp_min_grids = disp_range_grid[0, 0][dm_cst.DISP_MIN_GRID].values
+        disp_max_grids = disp_range_grid[0, 0][dm_cst.DISP_MAX_GRID].values
+
+        # use max tile size as overlap for min and max:
+        # max Point to point diff is less than diff of tile
+
+        # use filter of size max_epi_tile_size
+        overlap = 3 * int(self.max_epi_tile_size / self.local_disp_grid_step)
+        disp_min_grids = generic_filter(
+            disp_min_grids, np.min, [overlap, overlap]
+        )
+        disp_max_grids = generic_filter(
+            disp_max_grids, np.max, [overlap, overlap]
+        )
 
         # Worst cases scenario:
         # 1: [global max - max diff, global max]
         # 2: [global min, global min  max diff]
 
-        max_diff = np.max(disp_max - disp_min)
-        global_min = np.min(disp_min)
-        global_max = np.max(disp_max)
+        max_diff = np.round(np.max(disp_max_grids - disp_min_grids)) + 1
+        global_min = np.ceil(np.min(disp_min_grids)) - 1
+        global_max = np.round(np.max(disp_max_grids)) + 1
 
         # Get tiling param
         opt_epipolar_tile_size_1 = (
@@ -445,7 +468,7 @@ class CensusMccnnSgm(
                     local_disp_min,
                     local_disp_max,
                     0,
-                    2000,  # arbitrary
+                    20000,  # arbitrary
                     max_ram_per_worker,
                     margin=self.epipolar_tile_margin_in_percent,
                 )
@@ -609,9 +632,15 @@ class CensusMccnnSgm(
 
             x_mean = terrain_positions[:, 0]
             y_mean = terrain_positions[:, 1]
-            dem_mean_list = inputs.rasterio_get_values(dem_mean, x_mean, y_mean)
-            dem_min_list = inputs.rasterio_get_values(dem_min, x_mean, y_mean)
-            dem_max_list = inputs.rasterio_get_values(dem_max, x_mean, y_mean)
+            dem_mean_list = inputs.rasterio_get_values(
+                dem_mean, x_mean, y_mean, points_cloud_conversion
+            )
+            dem_min_list = inputs.rasterio_get_values(
+                dem_min, x_mean, y_mean, points_cloud_conversion
+            )
+            dem_max_list = inputs.rasterio_get_values(
+                dem_max, x_mean, y_mean, points_cloud_conversion
+            )
 
             # transform to lon lat
             terrain_position_lon_lat = projection.points_cloud_conversion(
@@ -741,6 +770,18 @@ class CensusMccnnSgm(
                 grid_max[
                     grid_max > self.disp_max_threshold
                 ] = self.disp_max_threshold
+
+        # use filter to propagate min and max
+        overlap = (
+            2
+            * int(
+                self.disp_range_propagation_filter_size
+                / self.local_disp_grid_step
+            )
+            + 1
+        )
+        grid_min = generic_filter(grid_min, np.min, [overlap, overlap])
+        grid_max = generic_filter(grid_max, np.max, [overlap, overlap])
 
         # Generate dataset
         # min and max are reversed
@@ -999,6 +1040,7 @@ class CensusMccnnSgm(
 
             nb_invalid_tile = 0
             nb_total_tiles_roi = 0
+            disp_ranges = []
 
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
@@ -1023,13 +1065,27 @@ class CensusMccnnSgm(
                                 ]
                             )[row, col],
                         )
+
                         if opt_tile_size >= global_opt_tile_size:
                             # Tile is likely to crash in worker
                             # due to memory consumtion
                             use_tile = True
                         else:
                             nb_invalid_tile += 1
-                            logging.error("tile not computed")
+                            disp_ranges.append(
+                                [
+                                    np.array(
+                                        epipolar_images_left.attributes[
+                                            "disp_min_tiling"
+                                        ]
+                                    )[row, col],
+                                    np.array(
+                                        epipolar_images_left.attributes[
+                                            "disp_max_tiling"
+                                        ]
+                                    )[row, col],
+                                ]
+                            )
 
                     if use_tile:
                         # update saving infos  for potential replacement
@@ -1061,8 +1117,8 @@ class CensusMccnnSgm(
             tile_missing_message = (
                 "Dense matching: {} tiles not computed over {} tiles, "
                 "these tile were likely to crash due to memory "
-                "consumption, in pair {}".format(
-                    nb_invalid_tile, nb_total_tiles_roi, pair_key
+                "consumption, in pair {}. Disparity ranges: {}".format(
+                    nb_invalid_tile, nb_total_tiles_roi, pair_key, disp_ranges
                 )
             )
             if nb_invalid_tile == 0:

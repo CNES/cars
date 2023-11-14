@@ -101,7 +101,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
-        overloaded_conf["percentile"] = conf.get("percentile", 5)
+        overloaded_conf["percentile"] = conf.get("percentile", 3)
         overloaded_conf["min_number_matches"] = conf.get(
             "min_number_matches", 30
         )
@@ -293,9 +293,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         geotransform = (
             bounds[0],
             self.resolution,
-            0.0,
+            0.5,
             bounds[3],
-            0.0,
+            0.5,
             -self.resolution,
         )
 
@@ -380,10 +380,10 @@ def generate_grid(
         ymax = maxs["y"]
 
     nb_x = int((xmax - xmin) / resolution)
-    x_range = np.linspace(xmin + 0.5, xmax, nb_x)
+    x_range = np.linspace(xmin, xmax, nb_x)
     nb_y = int((ymax - ymin) / resolution)
 
-    y_range = np.linspace(ymin + 0.5, ymax, nb_y)
+    y_range = np.linspace(ymin, ymax, nb_y)
     x_grid, y_grid = np.meshgrid(x_range, y_range)  # 2D grid for interpolation
 
     return x_grid, y_grid

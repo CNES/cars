@@ -329,3 +329,29 @@ def test_compute_disparity_1_msk_sec():
         absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
+
+
+@pytest.mark.unit_tests
+def test_estimate_right_grid_disp():
+    """
+    Test estimate_right_grid_disp
+    """
+
+    left_grid_min = np.array([[-2, -1, 0, 1, 2, 3], [3, 2, 1, 0, -1, -2]])
+
+    left_grid_max = left_grid_min + 2
+
+    # compute
+    (
+        disp_min_right_grid,
+        disp_max_right_grid,
+    ) = dense_matching_tools.estimate_right_grid_disp(
+        left_grid_min, left_grid_max
+    )
+
+    # assert
+    ref_right_min = np.array([[0, 0, -1, -1, -2, -2], [-5, -5, -5, -3, -4, -5]])
+    ref_right_max = np.array([[1, 0, 0, 0, 0, 0], [2, 2, 2, 2, 1, 0]])
+
+    assert (disp_min_right_grid == ref_right_min).all()
+    assert (disp_max_right_grid == ref_right_max).all()

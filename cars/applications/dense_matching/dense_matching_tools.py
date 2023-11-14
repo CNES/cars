@@ -33,6 +33,7 @@ import numpy as np
 import pandora
 import pandora.marge
 import xarray as xr
+from numba import njit, prange
 from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
@@ -580,9 +581,9 @@ def compute_disparity(
     # check datasets
     check_dataset(left_dataset)
     check_dataset(right_dataset)
-    # TODO correct estimation right
-    disp_min_right_grid = np.ones(disp_min_grid.shape) * (-disp_max)
-    disp_max_right_grid = np.ones(disp_min_grid.shape) * (-disp_min)
+    (disp_min_right_grid, disp_max_right_grid) = estimate_right_grid_disp(
+        disp_min_grid, disp_max_grid
+    )
 
     # Run the Pandora pipeline
     ref, _ = pandora.run(
@@ -608,6 +609,57 @@ def compute_disparity(
     )
 
     return disp_dataset
+
+
+@njit()
+def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
+    """
+    Estimate right grid min and max.
+    Correspond to the range of pixels that can be correlated
+    from left -> right.
+    If no left pixels can be associated to right, use global values
+
+    :param disp_min_grid: left disp min grid
+    :type disp_min_grid: numpy ndarray
+    :param disp_max_grid: left disp max grid
+    :type disp_max_grid: numpy ndarray
+
+    :return: disp_min_right_grid, disp_max_right_grid
+    :rtype: numpy ndarray, numpy ndarray
+    """
+
+    global_left_min = np.min(disp_min_grid)
+    global_left_max = np.max(disp_max_grid)
+
+    d_shp = disp_min_grid.shape
+
+    disp_min_right_grid = np.empty(d_shp)
+    disp_max_right_grid = np.empty(d_shp)
+
+    for row in prange(d_shp[0]):  # pylint: disable=not-an-iterable
+        for col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
+            min_right = d_shp[1]
+            max_right = 0
+            is_correlated_left = False
+            for left_col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
+                left_min = disp_min_grid[row, left_col] + left_col
+                left_max = disp_max_grid[row, left_col] + left_col
+                if left_min <= col <= left_max:
+                    is_correlated_left = True
+                    # can be found, is candidate to min and max
+                    min_right = min(min_right, left_col - col)
+                    max_right = max(max_right, left_col - col)
+
+            if is_correlated_left:
+                # disp_min_right_grid[row, col] = min_right
+                # disp_max_right_grid[row, col] = max_right
+                disp_min_right_grid[row, col] = -global_left_max
+                disp_max_right_grid[row, col] = -global_left_min
+            else:
+                disp_min_right_grid[row, col] = -global_left_max
+                disp_max_right_grid[row, col] = -global_left_min
+
+    return disp_min_right_grid, disp_max_right_grid
 
 
 def optimal_tile_size_pandora_plugin_libsgm(
