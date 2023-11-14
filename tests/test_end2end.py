@@ -3666,7 +3666,7 @@ def test_end2end_disparity_filling_with_zeros():
             "dense_matching": {
                 "method": "census_sgm",
                 "save_disparity_map": True,
-                "use_global_disp_range": False,
+                "use_global_disp_range": True,
             },
             "dense_matches_filling.2": {
                 "method": "zero_padding",

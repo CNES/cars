@@ -175,7 +175,7 @@ class CensusMccnnSgm(
         )
         # Margins computation parameters
         overloaded_conf["use_global_disp_range"] = conf.get(
-            "use_global_disp_range", False
+            "use_global_disp_range", True
         )
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.3)
         overloaded_conf["local_disp_grid_step"] = conf.get(
