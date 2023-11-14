@@ -918,23 +918,20 @@ def save_all_dataframe(
 
     """
     # generate filename if attributes have xstart and ystart settings
-    if not save_points_cloud_by_pair:
-        if (
-            "attributes" in dataframe.attrs
-            and "xmin" in dataframe.attrs["attributes"]
-        ):
-            file_name = os.path.dirname(file_name)
-            file_name = os.path.join(
-                file_name,
-                (
-                    str(dataframe.attrs["attributes"]["xmin"])
-                    + "_"
-                    + str(dataframe.attrs["attributes"]["ymax"])
-                ),
-            )
-        save_dataframe(dataframe, file_name, overwrite)
+    file_name = os.path.dirname(file_name)
+    if (
+        "attributes" in dataframe.attrs
+        and "xmin" in dataframe.attrs["attributes"]
+    ):
+        file_name = os.path.join(
+            file_name,
+            (
+                str(dataframe.attrs["attributes"]["xmin"])
+                + "_"
+                + str(dataframe.attrs["attributes"]["ymax"])
+            ),
+        )
     else:
-        file_name = os.path.dirname(file_name)
         file_name = os.path.join(
             file_name,
             (
@@ -943,6 +940,10 @@ def save_all_dataframe(
                 + str(dataframe.attrs["saving_info"]["cars_ds_row"])
             ),
         )
+
+    if not save_points_cloud_by_pair:
+        save_dataframe(dataframe, file_name, overwrite)
+    else:
         pairing_indexes = set(np.array(dataframe["global_id"]).flat)
         source_pc_names = dataframe.attrs["attributes"]["source_pc_names"]
 
