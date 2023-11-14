@@ -1336,10 +1336,14 @@ def test_end2end_ventoux_unique_split():
                     "point_cloud_outliers_removing.1": {
                         "method": "small_components",
                         "activated": True,
+                        "save_points_cloud_as_laz": True,
+                        "save_points_cloud_by_pair": True,
                     },
                     "point_cloud_outliers_removing.2": {
                         "method": "statistical",
                         "activated": True,
+                        "save_points_cloud_as_laz": True,
+                        "save_points_cloud_by_pair": True,
                     },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -1372,6 +1376,16 @@ def test_end2end_ventoux_unique_split():
                 else os.path.join("ref_output", "shareloc")
             )
 
+            assert (
+                os.path.exists(
+                    os.path.join(
+                        out_dir_dsm,
+                        "points_cloud_post_small_components_removing",
+                        "0_0_one.laz",
+                    )
+                )
+                is True
+            )
             # Uncomment the following instructions to update reference data
             # copy2(
             #     os.path.join(out_dir_dsm, "dsm.tif"),
@@ -2011,6 +2025,7 @@ def test_end2end_ventoux_with_color():
                 "method": "mapping_to_terrain_tiles",
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
+                "save_points_cloud_by_pair": True,
             },
         }
 
@@ -2050,26 +2065,18 @@ def test_end2end_ventoux_with_color():
 
             assert (
                 os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
-                    )
+                    os.path.join(out_dir, "points_cloud", "0_0_left_right.laz")
                 )
                 and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675375.0_4897185.0.csv"
-                    )
+                    os.path.join(out_dir, "points_cloud", "0_0_left_right.csv")
                 )
             ) is True
             assert (
                 os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675375.0_4897185.0.laz"
-                    )
+                    os.path.join(out_dir, "points_cloud", "0_1_left_right.laz")
                 )
                 and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.csv"
-                    )
+                    os.path.join(out_dir, "points_cloud", "0_1_left_right.csv")
                 )
             ) is True
 
@@ -2099,12 +2106,14 @@ def test_end2end_ventoux_with_color():
                 "method": "mapping_to_terrain_tiles",
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
+                "save_points_cloud_by_pair": True,
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
                 "save_points_cloud_as_laz": True,
                 "save_points_cloud_as_csv": True,
+                "save_points_cloud_by_pair": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
@@ -2135,13 +2144,13 @@ def test_end2end_ventoux_with_color():
         )
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
+                os.path.join(out_dir, "points_cloud", "0_1_left_right.laz")
             )
             is True
         )
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.csv")
+                os.path.join(out_dir, "points_cloud", "0_1_left_right.csv")
             )
             is True
         )
@@ -2150,7 +2159,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675248.0_4897173.0.laz",
+                    "0_1_left_right.laz",
                 )
             )
             is True
@@ -2160,7 +2169,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675248.0_4897173.0.csv",
+                    "0_1_left_right.csv",
                 )
             )
             is True

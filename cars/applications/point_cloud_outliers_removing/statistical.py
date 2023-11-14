@@ -88,7 +88,9 @@ class Statistical(
         self.save_points_cloud_as_csv = self.used_config.get(
             "save_points_cloud_as_csv", False
         )
-
+        self.save_points_cloud_by_pair = self.used_config.get(
+            "save_points_cloud_by_pair", False
+        )
         # Init orchestrator
         self.orchestrator = None
 
@@ -119,6 +121,9 @@ class Statistical(
         overloaded_conf["save_points_cloud_as_csv"] = conf.get(
             "save_points_cloud_as_csv", False
         )
+        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
+            "save_points_cloud_by_pair", False
+        )
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(
@@ -134,6 +139,7 @@ class Statistical(
             "method": str,
             "save_points_cloud_as_laz": bool,
             "save_points_cloud_as_csv": bool,
+            "save_points_cloud_by_pair": bool,
             "activated": bool,
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),

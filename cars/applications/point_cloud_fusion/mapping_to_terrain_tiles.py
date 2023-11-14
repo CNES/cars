@@ -74,6 +74,9 @@ class MappingToTerrainTiles(
         self.save_points_cloud_as_csv = self.used_config.get(
             "save_points_cloud_as_csv", False
         )
+        self.save_points_cloud_by_pair = self.used_config.get(
+            "save_points_cloud_by_pair", False
+        )
 
         # Init orchestrator
         self.orchestrator = None
@@ -108,11 +111,15 @@ class MappingToTerrainTiles(
         overloaded_conf["save_points_cloud_as_csv"] = conf.get(
             "save_points_cloud_as_csv", False
         )
+        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
+            "save_points_cloud_by_pair", False
+        )
 
         points_cloud_fusion_schema = {
             "method": str,
             "save_points_cloud_as_laz": bool,
             "save_points_cloud_as_csv": bool,
+            "save_points_cloud_by_pair": bool,
         }
 
         # Check conf
@@ -201,7 +208,12 @@ class MappingToTerrainTiles(
             optimal_terrain_tile_width,
             optimal_terrain_tile_width,
         )
-
+        source_pc_names = []
+        for points_cloud in list_epipolar_points_cloud:
+            if "source_pc_name" in points_cloud.attributes:
+                source_pc_names.append(
+                    points_cloud.attributes["source_pc_name"]
+                )
         # Get dataset type of first item in list_epipolar_points_cloud
         pc_dataset_type = list_epipolar_points_cloud[0].dataset_type
 
@@ -305,6 +317,7 @@ class MappingToTerrainTiles(
                     None,
                     merged_point_cloud,
                     cars_ds_name="merged_points_cloud",
+                    save_points_cloud_by_pair=self.save_points_cloud_by_pair,
                 )
 
             # Get saving infos in order to save tiles when they are computed
@@ -388,6 +401,7 @@ class MappingToTerrainTiles(
                             save_pc_as_laz=self.save_points_cloud_as_laz,
                             save_pc_as_csv=self.save_points_cloud_as_csv,
                             saving_info=full_saving_info,
+                            source_pc_names=source_pc_names,
                         )
 
             # Sort tiles according to rank TODO remove or implement it ?
@@ -453,6 +467,7 @@ def compute_point_cloud_wrapper(
     save_pc_as_laz: bool = False,
     save_pc_as_csv: bool = False,
     saving_info=None,
+    source_pc_names=None,
 ):
     """
     Wrapper for points clouds fusion step :
@@ -484,6 +499,8 @@ def compute_point_cloud_wrapper(
     :type save_pc_as_csv: bool
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
+    :param source_pc_names: source point cloud name (correspond to pair_key)
+    :type source_pc_names: list str
 
     :return: merged points cloud dataframe with:
             - cst.X
@@ -553,6 +570,7 @@ def compute_point_cloud_wrapper(
         "color_type": color_type,
         "save_points_cloud_as_laz": save_pc_as_laz,
         "save_points_cloud_as_csv": save_pc_as_csv,
+        "source_pc_names": source_pc_names,
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes

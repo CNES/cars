@@ -571,7 +571,9 @@ def run_save_arrays(future_result, file_name, tag=None, descriptor=None):
     )
 
 
-def run_save_points(future_result, file_name, overwrite=False):
+def run_save_points(
+    future_result, file_name, overwrite=False, save_points_cloud_by_pair=False
+):
     """
     Save future result when arrived
 
@@ -589,7 +591,12 @@ def run_save_points(future_result, file_name, overwrite=False):
         if os.path.exists(file_name):
             os.remove(file_name)
     # Save
-    save_dataframe(future_result, file_name, overwrite=False)
+    save_all_dataframe(
+        future_result,
+        file_name,
+        save_points_cloud_by_pair=save_points_cloud_by_pair,
+        overwrite=False,
+    )
 
 
 def load_single_tile_array(tile_path_name: str) -> xr.Dataset:
@@ -896,11 +903,14 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
             data_dict.attrs[SAVING_INFO] = saving_info
 
 
-def save_dataframe(dataframe, file_name, overwrite=True):
+def save_all_dataframe(
+    dataframe, file_name, save_points_cloud_by_pair=False, overwrite=True
+):
     """
-    Save DataFrame to csv format. The content of dataframe is merged to
+    Save DataFrame to csv and laz format. The content of dataframe is merged to
     the content of existing saved Dataframe, if overwrite==False
-
+    The option save_points_cloud_by_pair separate the dataframe
+    by pair
     :param file_name: file name to save data to
     :type file_name: str
     :param overwrite: overwrite file if exists
@@ -908,20 +918,50 @@ def save_dataframe(dataframe, file_name, overwrite=True):
 
     """
     # generate filename if attributes have xstart and ystart settings
-    if (
-        "attributes" in dataframe.attrs
-        and "xmin" in dataframe.attrs["attributes"]
-    ):
+    if not save_points_cloud_by_pair:
+        if (
+            "attributes" in dataframe.attrs
+            and "xmin" in dataframe.attrs["attributes"]
+        ):
+            file_name = os.path.dirname(file_name)
+            file_name = os.path.join(
+                file_name,
+                (
+                    str(dataframe.attrs["attributes"]["xmin"])
+                    + "_"
+                    + str(dataframe.attrs["attributes"]["ymax"])
+                ),
+            )
+        save_dataframe(dataframe, file_name, overwrite)
+    else:
         file_name = os.path.dirname(file_name)
         file_name = os.path.join(
             file_name,
             (
-                str(dataframe.attrs["attributes"]["xmin"])
+                str(dataframe.attrs["saving_info"]["cars_ds_col"])
                 + "_"
-                + str(dataframe.attrs["attributes"]["ymax"])
+                + str(dataframe.attrs["saving_info"]["cars_ds_row"])
             ),
         )
+        pairing_indexes = set(np.array(dataframe["global_id"]).flat)
+        source_pc_names = dataframe.attrs["attributes"]["source_pc_names"]
 
+        for pair_index in pairing_indexes:
+            points_indexes = dataframe["global_id"] == pair_index
+            file_name_by_pair = (
+                file_name + "_" + source_pc_names[int(pair_index)]
+            )
+            save_dataframe(
+                dataframe.loc[points_indexes],
+                file_name_by_pair,
+                overwrite,
+            )
+
+
+def save_dataframe(dataframe, file_name, overwrite=True):
+    """
+    Save dataframe (csv, laz, attr file)
+    """
     # Save attributes
     attributes_file_name = file_name + "_attrs.json"
     save_dict(dataframe.attrs, attributes_file_name)
@@ -960,7 +1000,6 @@ def save_dataframe(dataframe, file_name, overwrite=True):
                     sort=False,
                 )
                 merged_dataframe.to_csv(file_name, index=False)
-
             else:
                 dataframe.to_csv(file_name, index=False)
 

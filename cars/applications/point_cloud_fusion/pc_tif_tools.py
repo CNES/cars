@@ -481,7 +481,7 @@ def transform_input_pc(
     xmax_list = []
     ymin_list = []
     ymax_list = []
-    for _, items in list_epipolar_points_cloud.items():
+    for pair_key, items in list_epipolar_points_cloud.items():
         # Generate CarsDataset
         epi_pc = cars_dataset.CarsDataset("dict")
         tif_size = inputs.rasterio_get_size(items[cst.X])
@@ -529,7 +529,7 @@ def transform_input_pc(
                     window,
                     saving_info=full_saving_info_pc,
                 )
-
+        epi_pc.attributes["source_pc_name"] = pair_key
         list_epipolar_points_cloud_by_tiles.append(epi_pc)
 
     # Breakpoint : compute

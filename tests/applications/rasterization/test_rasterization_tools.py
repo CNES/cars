@@ -205,7 +205,7 @@ def test_simple_rasterization_dataset_1():
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-
+    print(cloud)
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,

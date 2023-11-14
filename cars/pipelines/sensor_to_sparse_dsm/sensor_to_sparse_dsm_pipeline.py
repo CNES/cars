@@ -693,7 +693,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
                 )
                 list_terrain_roi.append(current_terrain_roi_bbox)
-
+                # add pair key
+                epipolar_points_cloud.attributes["source_pc_name"] = pair_key
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)
             # Save the refined full res pipeline configuration

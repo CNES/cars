@@ -186,6 +186,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
                 None,
                 filtered_point_cloud,
                 cars_ds_name="filtered_merged_pc_" + app_name,
+                # pylint: disable=E1101
+                save_points_cloud_by_pair=self.save_points_cloud_by_pair,
             )
 
         return filtered_point_cloud
