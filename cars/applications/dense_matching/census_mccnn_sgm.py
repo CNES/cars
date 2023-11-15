@@ -595,12 +595,11 @@ class CensusMccnnSgm(
             # dem mean, min max are the same shape
 
             # Get associated alti mean / min / max values
-            dem_mean_values, _ = inputs.rasterio_read_as_array(dem_mean)
-            dem_min_values, _ = inputs.rasterio_read_as_array(dem_min)
-            dem_max_values, _ = inputs.rasterio_read_as_array(dem_max)
+            dem_min_shape = inputs.rasterio_get_size(dem_min)
+            dem_max_shape = inputs.rasterio_get_size(dem_max)
 
-            assert dem_mean_values.shape == dem_min_values.shape
-            assert dem_mean_values.shape == dem_max_values.shape
+            assert dem_min_shape == dem_max_shape
+            # dem mean can be different. Computation is based on dem min shape
 
             # get epsg
             terrain_epsg = inputs.rasterio_get_epsg(dem_mean)
@@ -609,19 +608,13 @@ class CensusMccnnSgm(
             transform = inputs.rasterio_get_transform(dem_min)
             # index position to terrain position
             terrain_positions = np.empty(
-                (dem_min_values.shape[0] * dem_min_values.shape[1], 2)
+                (dem_min_shape[0] * dem_min_shape[1], 2)
             )
-            dem_mean_list = np.empty(
-                dem_min_values.shape[0] * dem_min_values.shape[1]
-            )
-            dem_min_list = np.empty(
-                dem_min_values.shape[0] * dem_min_values.shape[1]
-            )
-            dem_max_list = np.empty(
-                dem_min_values.shape[0] * dem_min_values.shape[1]
-            )
-            row_shape = dem_min_values.shape[0]
-            col_shape = dem_min_values.shape[1]
+            dem_mean_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
+            dem_min_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
+            dem_max_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
+            row_shape = dem_min_shape[0]
+            col_shape = dem_min_shape[1]
             for row in range(row_shape):
                 for col in range(col_shape):
                     col_geo, row_geo = transform * (col + 0.5, row + 0.5)
@@ -630,6 +623,7 @@ class CensusMccnnSgm(
                         col_geo,
                     )
 
+            # dem min and max are in 4326
             x_mean = terrain_positions[:, 0]
             y_mean = terrain_positions[:, 1]
             dem_mean_list = inputs.rasterio_get_values(
@@ -1066,11 +1060,16 @@ class CensusMccnnSgm(
                             )[row, col],
                         )
 
-                        if opt_tile_size >= global_opt_tile_size:
+                        if opt_tile_size >= min(
+                            global_opt_tile_size, self.min_epi_tile_size
+                        ):
                             # Tile is likely to crash in worker
                             # due to memory consumtion
                             use_tile = True
                         else:
+                            print(opt_tile_size)
+                            print(global_opt_tile_size)
+                            print(self.min_epi_tile_size)
                             nb_invalid_tile += 1
                             disp_ranges.append(
                                 [

@@ -448,14 +448,13 @@ class SharelocGeometry(AbstractGeometry):
         shareloc_model = SharelocGeometry.load_geom_model(geomodel)
         shareloc_image = Image(sensor)
 
-        # perform direct localization operation
+        # perform inverse localization operation
         loc = localization.Localization(
             shareloc_model,
             image=shareloc_image,
             elevation=self.elevation,
             epsg=4326,
         )
-
         row, col, alti = loc.inverse(
             lon_coord, lat_coord, h=z_coord, using_geotransform=True
         )

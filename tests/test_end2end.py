@@ -85,7 +85,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             orchestrator_parameters={
                 "walltime": "00:10:00",
                 "nb_workers": 4,
-                "max_ram_per_worker": 300,
+                "max_ram_per_worker": 500,
             },
         )
         resolution = 0.5
@@ -455,48 +455,49 @@ def test_end2end_ventoux_unique():
                 )
             ) is True
 
-            for k in range(0, 8):
-                nb_str = str(k)
-                assert (
-                    os.path.exists(
-                        os.path.join(
-                            out_dir,
-                            "left_right",
-                            "epi_pc",
-                            nb_str + ".csv",
+            for k in range(0, 3):
+                for j in range(0, 3):
+                    nb_str = str(k) + "_" + str(j)
+                    assert (
+                        os.path.exists(
+                            os.path.join(
+                                out_dir,
+                                "left_right",
+                                "epi_pc",
+                                nb_str + ".csv",
+                            )
                         )
-                    )
-                ) is True
-                assert (
-                    os.path.exists(
-                        os.path.join(
-                            out_dir,
-                            "left_right",
-                            "epi_pc",
-                            nb_str + "_attrs.json",
+                    ) is True
+                    assert (
+                        os.path.exists(
+                            os.path.join(
+                                out_dir,
+                                "left_right",
+                                "epi_pc",
+                                nb_str + "_attrs.json",
+                            )
                         )
-                    )
-                ) is True
-                assert (
-                    os.path.exists(
-                        os.path.join(
-                            out_dir,
-                            "left_right",
-                            "epi_pc",
-                            nb_str + ".laz",
+                    ) is True
+                    assert (
+                        os.path.exists(
+                            os.path.join(
+                                out_dir,
+                                "left_right",
+                                "epi_pc",
+                                nb_str + ".laz",
+                            )
                         )
-                    )
-                ) is True
-                assert (
-                    os.path.exists(
-                        os.path.join(
-                            out_dir,
-                            "left_right",
-                            "epi_pc",
-                            nb_str + ".laz.prj",
+                    ) is True
+                    assert (
+                        os.path.exists(
+                            os.path.join(
+                                out_dir,
+                                "left_right",
+                                "epi_pc",
+                                nb_str + ".laz.prj",
+                            )
                         )
-                    )
-                ) is True
+                    ) is True
 
             # check used_conf reentry
             _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
@@ -1367,7 +1368,7 @@ def test_end2end_ventoux_unique_split():
                         "color_no_data": 0,
                         "save_classif": True,
                         "save_filling": True,
-                        "save_msk": True,
+                        "save_mask": True,
                         "save_confidence": True,
                         "save_color": True,
                         "save_source_pc": True,
@@ -1394,7 +1395,7 @@ def test_end2end_ventoux_unique_split():
                     os.path.join(
                         out_dir_dsm,
                         "points_cloud_post_small_components_removing",
-                        "0_0_one.laz",
+                        "675292.3110543193_4897140.457149682_one.laz",
                     )
                 )
                 is True
@@ -1620,18 +1621,18 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                15
+                -29
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < 16
+                < -27
             )
             assert (
-                60
+                24
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 61
+                < 27
             )
 
             # check matches file exists
@@ -2072,20 +2073,31 @@ def test_end2end_ventoux_with_color():
                 ]
             )
 
+            pc1 = "675375.0_4897185.0"
+            pc2 = "675240.0_4897185.0"
+
             assert (
                 os.path.exists(
-                    os.path.join(out_dir, "points_cloud", "0_0_left_right.laz")
+                    os.path.join(
+                        out_dir, "points_cloud", pc1 + "_left_right.laz"
+                    )
                 )
                 and os.path.exists(
-                    os.path.join(out_dir, "points_cloud", "0_0_left_right.csv")
+                    os.path.join(
+                        out_dir, "points_cloud", pc1 + "_left_right.csv"
+                    )
                 )
             ) is True
             assert (
                 os.path.exists(
-                    os.path.join(out_dir, "points_cloud", "0_1_left_right.laz")
+                    os.path.join(
+                        out_dir, "points_cloud", pc2 + "_left_right.laz"
+                    )
                 )
                 and os.path.exists(
-                    os.path.join(out_dir, "points_cloud", "0_1_left_right.csv")
+                    os.path.join(
+                        out_dir, "points_cloud", pc2 + "_left_right.csv"
+                    )
                 )
             ) is True
 
@@ -2152,24 +2164,28 @@ def test_end2end_ventoux_with_color():
             )
             is True
         )
+
+        pc1 = "675248.0_4897173.0"
+        pc2 = "675436.0_4897173.0"
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "0_1_left_right.laz")
+                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
             )
             is True
         )
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", "0_1_left_right.csv")
+                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.csv")
             )
             is True
         )
+
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "0_1_left_right.laz",
+                    pc1 + "_left_right.laz",
                 )
             )
             is True
@@ -2179,7 +2195,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "0_1_left_right.csv",
+                    pc1 + "_left_right.csv",
                 )
             )
             is True
@@ -2415,18 +2431,17 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
+        pc1 = "675248.0_4897173.0"
+
         assert (
-            os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.laz")
-            )
+            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
             is True
         )
         assert (
-            os.path.exists(
-                os.path.join(out_dir, "points_cloud", "675431.5_4897173.0.csv")
-            )
+            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".csv"))
             is True
         )
+
         assert (
             os.path.exists(
                 os.path.join(
@@ -2873,10 +2888,10 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
-            assert out_disp_compute["global_disp_min"] > -21
-            assert out_disp_compute["global_disp_min"] < -20
-            assert out_disp_compute["global_disp_max"] > 20
-            assert out_disp_compute["global_disp_max"] < 21
+            assert out_disp_compute["global_disp_min"] > -27
+            assert out_disp_compute["global_disp_min"] < -24
+            assert out_disp_compute["global_disp_max"] > 24
+            assert out_disp_compute["global_disp_max"] < 27
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3154,10 +3169,10 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
-            assert out_disp_compute["global_disp_min"] > -53
-            assert out_disp_compute["global_disp_min"] < -52
-            assert out_disp_compute["global_disp_max"] > 44
-            assert out_disp_compute["global_disp_max"] < 48
+            assert out_disp_compute["global_disp_min"] > -57
+            assert out_disp_compute["global_disp_min"] < -55
+            assert out_disp_compute["global_disp_max"] > 41
+            assert out_disp_compute["global_disp_max"] < 44
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3529,13 +3544,14 @@ def test_end2end_disparity_filling():
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
-                "max_ram_per_worker": 200,
+                "max_ram_per_worker": 300,
             },
         )
         resolution = 0.5
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
+                "min_epi_tile_size": 100,
                 "save_disparity_map": True,
                 "use_global_disp_range": False,
             },
