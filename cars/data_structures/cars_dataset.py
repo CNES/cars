@@ -918,11 +918,11 @@ def save_all_dataframe(
 
     """
     # generate filename if attributes have xstart and ystart settings
-    file_name = os.path.dirname(file_name)
     if (
         "attributes" in dataframe.attrs
         and "xmin" in dataframe.attrs["attributes"]
     ):
+        file_name = os.path.dirname(file_name)
         file_name = os.path.join(
             file_name,
             (
@@ -931,7 +931,8 @@ def save_all_dataframe(
                 + str(dataframe.attrs["attributes"]["ymax"])
             ),
         )
-    else:
+    elif "saving_info" in dataframe.attrs:
+        file_name = os.path.dirname(file_name)
         file_name = os.path.join(
             file_name,
             (

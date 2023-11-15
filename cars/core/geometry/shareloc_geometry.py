@@ -456,7 +456,10 @@ class SharelocGeometry(AbstractGeometry):
             epsg=4326,
         )
         row, col, alti = loc.inverse(
-            lon_coord, lat_coord, h=z_coord, using_geotransform=True
+            lon_coord.astype(np.float64),
+            lat_coord.astype(np.float64),
+            h=z_coord.astype(np.float64),
+            using_geotransform=True,
         )
 
         return row, col, alti

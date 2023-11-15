@@ -3169,10 +3169,12 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
+            # global_disp_min : -56 otb, -21 shareloc
             assert out_disp_compute["global_disp_min"] > -57
-            assert out_disp_compute["global_disp_min"] < -55
+            assert out_disp_compute["global_disp_min"] < -21
+            # global max: 43  otb, 86 shareloc
             assert out_disp_compute["global_disp_max"] > 41
-            assert out_disp_compute["global_disp_max"] < 44
+            assert out_disp_compute["global_disp_max"] < 87
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][

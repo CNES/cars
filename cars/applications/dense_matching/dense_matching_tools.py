@@ -651,10 +651,8 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
                     max_right = max(max_right, left_col - col)
 
             if is_correlated_left:
-                # disp_min_right_grid[row, col] = min_right
-                # disp_max_right_grid[row, col] = max_right
-                disp_min_right_grid[row, col] = -global_left_max
-                disp_max_right_grid[row, col] = -global_left_min
+                disp_min_right_grid[row, col] = min_right
+                disp_max_right_grid[row, col] = max_right
             else:
                 disp_min_right_grid[row, col] = -global_left_max
                 disp_max_right_grid[row, col] = -global_left_min
