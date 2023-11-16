@@ -85,8 +85,15 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         if overloaded_conf["mode"] == "slurm_dask":
             overloaded_conf["account"] = conf.get("account", None)
             overloaded_conf["qos"] = conf.get("qos", None)
-            cluster_schema["account"] = str
+            cluster_schema["account"] = Or(None, str)
             cluster_schema["qos"] = Or(None, str)
+
+            if overloaded_conf["account"] is None:
+                error_msg = (
+                    "'account' parameter must be set xfor slurm dask cluster"
+                )
+                logging.error(error_msg)
+                raise RuntimeError(error_msg)
         return check_configuration(overloaded_conf, cluster_schema)
 
     def start_dask_cluster(self):
