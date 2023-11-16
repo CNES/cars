@@ -26,21 +26,8 @@ import logging
 import os
 import warnings
 
-# Standard imports
-from ast import Or
-
-# Third party imports
 from dask.distributed import Client
-
-from cars.orchestrator.cluster.dask_cluster_tools import (
-    check_configuration,
-    create_checker_schema,
-)
-from cars.orchestrator.cluster.dask_jobqueue_utils import (
-    get_dashboard_link,
-    init_cluster_variables,
-    stop_cluster,
-)
+from json_checker import Or
 
 with warnings.catch_warnings():
     # Ignore some internal dask_jobqueue warnings
@@ -61,10 +48,18 @@ with warnings.catch_warnings():
     )
     from dask_jobqueue import SLURMCluster
 
-# CARS imports
 from cars.orchestrator.cluster import (  # pylint: disable=C0412
     abstract_cluster,
     abstract_dask_cluster,
+)
+from cars.orchestrator.cluster.dask_cluster_tools import (
+    check_configuration,
+    create_checker_schema,
+)
+from cars.orchestrator.cluster.dask_jobqueue_utils import (
+    get_dashboard_link,
+    init_cluster_variables,
+    stop_cluster,
 )
 
 
@@ -90,9 +85,16 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
         if overloaded_conf["mode"] == "slurm_dask":
             overloaded_conf["account"] = conf.get("account", None)
             overloaded_conf["qos"] = conf.get("qos", None)
-            cluster_schema["account"] = str
+            cluster_schema["account"] = Or(None, str)
             cluster_schema["qos"] = Or(None, str)
-        return check_configuration(*overloaded_conf, cluster_schema)
+
+            if overloaded_conf["account"] is None:
+                error_msg = (
+                    "'account' parameter must be set for slurm dask cluster"
+                )
+                logging.error(error_msg)
+                raise RuntimeError(error_msg)
+        return check_configuration(overloaded_conf, cluster_schema)
 
     def start_dask_cluster(self):
         """
