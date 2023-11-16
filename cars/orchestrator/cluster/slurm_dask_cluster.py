@@ -90,7 +90,7 @@ class SlurmDaskCluster(abstract_dask_cluster.AbstractDaskCluster):
 
             if overloaded_conf["account"] is None:
                 error_msg = (
-                    "'account' parameter must be set xfor slurm dask cluster"
+                    "'account' parameter must be set for slurm dask cluster"
                 )
                 logging.error(error_msg)
                 raise RuntimeError(error_msg)
