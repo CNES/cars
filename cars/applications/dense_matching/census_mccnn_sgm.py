@@ -35,7 +35,6 @@ import numpy as np
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
-from scipy.interpolate import LinearNDInterpolator
 from scipy.ndimage import generic_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -43,6 +42,9 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.dense_matching import dense_matching_tools as dm_tools
 from cars.applications.dense_matching.dense_matching import DenseMatching
+from cars.applications.dense_matching.dense_matching_tools import (
+    LinearInterpNearestExtrap,
+)
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
 )
@@ -705,11 +707,11 @@ class CensusMccnnSgm(
                 -(dem_min_list - dem_mean_list) / disp_to_alt_ratio
             )
 
-            interp_min_linear = LinearNDInterpolator(
+            interp_min_linear = LinearInterpNearestExtrap(
                 list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
                 disp_min_points,
             )
-            interp_max_linear = LinearNDInterpolator(
+            interp_max_linear = LinearInterpNearestExtrap(
                 list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
                 disp_max_points,
             )
@@ -1067,9 +1069,6 @@ class CensusMccnnSgm(
                             # due to memory consumtion
                             use_tile = True
                         else:
-                            print(opt_tile_size)
-                            print(global_opt_tile_size)
-                            print(self.min_epi_tile_size)
                             nb_invalid_tile += 1
                             disp_ranges.append(
                                 [

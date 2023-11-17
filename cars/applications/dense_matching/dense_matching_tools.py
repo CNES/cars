@@ -37,7 +37,11 @@ from numba import njit, prange
 from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
 from pandora.state_machine import PandoraMachine
-from scipy.interpolate import RegularGridInterpolator
+from scipy.interpolate import (
+    LinearNDInterpolator,
+    NearestNDInterpolator,
+    RegularGridInterpolator,
+)
 
 # CARS imports
 from cars.applications.dense_matching import (
@@ -721,3 +725,20 @@ def optimal_tile_size_pandora_plugin_libsgm(
         tile_size = min_tile_size
 
     return tile_size
+
+
+class LinearInterpNearestExtrap:  # pylint: disable=too-few-public-methods
+    """
+    Linear interpolation and nearest neighbour extrapolation
+    """
+
+    def __init__(self, points, values):
+        self.interp = LinearNDInterpolator(points, values)
+        self.extrap = NearestNDInterpolator(points, values)
+
+    def __call__(self, *args):
+        z_values = self.interp(*args)
+        nan_mask = np.isnan(z_values)
+        if nan_mask.any():
+            return np.where(nan_mask, self.extrap(*args), z_values)
+        return z_values
