@@ -1042,7 +1042,10 @@ class CensusMccnnSgm(
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
                     use_tile = False
-                    if epipolar_images_left[row, col] is not None:
+                    if type(None) not in (
+                        type(epipolar_images_left[row, col]),
+                        type(epipolar_images_right[row, col]),
+                    ):
                         nb_total_tiles_roi += 1
 
                         # Compute optimal tile size for tile

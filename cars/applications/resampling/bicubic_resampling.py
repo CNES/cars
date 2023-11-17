@@ -555,6 +555,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         saving_info_left=full_saving_info_left,
                         saving_info_right=full_saving_info_right,
                     )
+
+                    # Remove tile with all nan
+                    if not in_sensor_left_array[row, col]:
+                        epipolar_images_left[row, col] = None
+                    if not in_sensor_right_array[row, col]:
+                        epipolar_images_right[row, col] = None
         return epipolar_images_left, epipolar_images_right
 
 
