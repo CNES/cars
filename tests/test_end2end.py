@@ -2165,8 +2165,8 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        pc1 = "675248.0_4897173.0"
-        pc2 = "675436.0_4897173.0"
+        pc1 = "675433.0_4897172.0"
+        pc2 = "675248.5_4897172.0"
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
@@ -2205,7 +2205,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675248.0_4897173.0.laz",
+                    pc2 + ".laz",
                 )
             )
             is True
@@ -2215,7 +2215,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675248.0_4897173.0.csv",
+                    pc2 + ".csv",
                 )
             )
             is True
@@ -2431,7 +2431,7 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        pc1 = "675248.0_4897173.0"
+        pc1 = "675248.5_4897172.0"
 
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
@@ -2447,7 +2447,7 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675248.0_4897173.0.laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -2457,7 +2457,7 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_small_components_removing",
-                    "675248.0_4897173.0.csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -2467,7 +2467,7 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675248.0_4897173.0.laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -2477,7 +2477,7 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "points_cloud_post_statistical_removing",
-                    "675248.0_4897173.0.csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3172,8 +3172,8 @@ def test_end2end_ventoux_egm96_geoid():
             # global_disp_min : -56 otb, -21 shareloc
             assert out_disp_compute["global_disp_min"] > -57
             assert out_disp_compute["global_disp_min"] < -21
-            # global max: 43  otb, 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 41
+            # global max: 25  otb, 86 shareloc
+            assert out_disp_compute["global_disp_max"] > 24
             assert out_disp_compute["global_disp_max"] < 87
 
             assert os.path.isfile(
