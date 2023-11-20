@@ -184,6 +184,7 @@ def compute_epipolar_grid_min_max(
     :return: a tuple of location grid at disp_min and disp_max
     :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param
     """
+
     if isinstance(disp_min_tiling, np.ndarray):
         disp_min_tiling = np.floor(disp_min_tiling).flatten()
     else:

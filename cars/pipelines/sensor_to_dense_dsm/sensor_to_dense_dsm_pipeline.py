@@ -700,12 +700,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["filtered_triangulated_matches"]
                     )
 
-            # For now only dem_mean will be used and is mandatory for
-            # a priory
-            dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
-            dem_min = None
-            dem_max = None
-
             if self.used_conf[INPUTS]["use_epipolar_a_priori"]:
                 # Use a priori
                 dem_mean = self.used_conf[INPUTS]["terrain_a_priori"][
@@ -716,7 +710,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             else:
                 # Use initial elevation if provided, and generate dems
-                dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
+                dem_mean = None
                 dem_min = None
                 dem_max = None
 
@@ -726,16 +720,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     cars_orchestrator.out_dir,
                     self.inputs[sens_cst.GEOID],
                 )
-                if dem_mean is None:
-                    dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
-                    # Generate geometry loader with dem and geoid
-                    self.geom_plugin_with_dem_and_geoid = (
-                        sensors_inputs.generate_geometry_plugin_with_dem(
-                            self.used_conf[GEOMETRY_PLUGIN],
-                            self.inputs,
-                            dem=dem_mean,
-                        )
+                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
+                # Generate geometry loader with dem and geoid
+                self.geom_plugin_with_dem_and_geoid = (
+                    sensors_inputs.generate_geometry_plugin_with_dem(
+                        self.used_conf[GEOMETRY_PLUGIN],
+                        self.inputs,
+                        dem=dem_mean,
                     )
+                )
                 dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
                 dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 

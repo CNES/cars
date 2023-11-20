@@ -604,7 +604,7 @@ class CensusMccnnSgm(
             # dem mean can be different. Computation is based on dem min shape
 
             # get epsg
-            terrain_epsg = inputs.rasterio_get_epsg(dem_mean)
+            terrain_epsg = inputs.rasterio_get_epsg(dem_min)
 
             # Get epipolar position of all dem mean
             transform = inputs.rasterio_get_transform(dem_min)

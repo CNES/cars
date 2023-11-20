@@ -392,8 +392,8 @@ def test_transform_disp_range_grid_to_two_layers():
     ref_min = np.array([[3, 3], [3, 3]])
     ref_max = np.array([[5, 5], [5, 5]])
 
-    assert np.all(new_tiling_min == ref_min)
-    assert np.all(new_tiling_max == ref_max)
+    np.testing.assert_allclose(new_tiling_min, ref_min)
+    np.testing.assert_allclose(new_tiling_max, ref_max)
 
     # test with shape (2, 2)
 
@@ -408,5 +408,38 @@ def test_transform_disp_range_grid_to_two_layers():
     ref_min = np.array([[1, 1, 3, 3], [1, 1, 2, 3], [4, 2, 2, 6]])
     ref_max = np.array([[1, 5, 5, 3], [4, 5, 6, 6], [4, 4, 6, 6]])
 
-    assert np.all(new_tiling_min == ref_min)
-    assert np.all(new_tiling_max == ref_max)
+    np.testing.assert_allclose(new_tiling_min, ref_min)
+    np.testing.assert_allclose(new_tiling_max, ref_max)
+
+    # Test with shape (1, 2)
+    tiling_min = np.ones((1, 2))
+    tiling_max = 2 * np.ones((1, 2))
+
+    (
+        new_tiling_min,
+        new_tiling_max,
+    ) = tiling.transform_disp_range_grid_to_two_layers(tiling_min, tiling_max)
+
+    assert new_tiling_min.shape == (2, 3)
+
+    # Test with shape (1, 3)
+    tiling_min = np.ones((1, 3))
+    tiling_max = 2 * np.ones((1, 3))
+
+    (
+        new_tiling_min,
+        new_tiling_max,
+    ) = tiling.transform_disp_range_grid_to_two_layers(tiling_min, tiling_max)
+
+    assert new_tiling_min.shape == (2, 4)
+
+    # Test with shape (2, 1)
+    tiling_min = np.ones((2, 1))
+    tiling_max = 2 * np.ones((2, 1))
+
+    (
+        new_tiling_min,
+        new_tiling_max,
+    ) = tiling.transform_disp_range_grid_to_two_layers(tiling_min, tiling_max)
+
+    assert new_tiling_min.shape == (3, 2)

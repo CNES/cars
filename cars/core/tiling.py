@@ -130,14 +130,8 @@ def transform_disp_range_grid_to_two_layers(disp_min_grid, disp_max_grid):
     """
 
     # Create a 2xN+1, 2xM+1 matrix to apply filter on it
-    if disp_min_grid.shape[0] == 1:
-        nb_row = 2
-    else:
-        nb_row = 2 * disp_min_grid.shape[0] + 1
-    if disp_min_grid.shape[1] == 1:
-        nb_col = 2
-    else:
-        nb_col = 2 * disp_min_grid.shape[1] + 1
+    nb_row = 2 * disp_min_grid.shape[0] + 1
+    nb_col = 2 * disp_min_grid.shape[1] + 1
 
     disp_min = np.full((nb_row, nb_col), np.nan)
     disp_max = np.full((nb_row, nb_col), np.nan)
