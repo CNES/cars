@@ -1049,6 +1049,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # add pair key
                 epipolar_points_cloud.attributes["source_pc_name"] = pair_key
+                # add color type
+                epipolar_points_cloud.attributes[
+                    "color_type"
+                ] = new_epipolar_image_left.attributes["color_type"]
+
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)
 
@@ -1119,4 +1124,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     color_file_name=os.path.join(
                         out_dir, self.output[sens_cst.CLR_BASENAME]
                     ),
+                    color_dtype=list_epipolar_points_cloud[0].attributes[
+                        "color_type"
+                    ],
                 )

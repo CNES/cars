@@ -414,4 +414,5 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 color_file_name=os.path.join(
                     out_dir, self.output[sens_cst.CLR_BASENAME]
                 ),
+                color_dtype=merged_points_clouds.attributes["color_type"],
             )

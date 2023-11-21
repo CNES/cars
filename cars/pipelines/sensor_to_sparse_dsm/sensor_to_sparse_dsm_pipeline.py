@@ -695,6 +695,11 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 list_terrain_roi.append(current_terrain_roi_bbox)
                 # add pair key
                 epipolar_points_cloud.attributes["source_pc_name"] = pair_key
+                # add color type
+                epipolar_points_cloud.attributes[
+                    "color_type"
+                ] = new_epipolar_image_left.attributes["color_type"]
+
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)
             # Save the refined full res pipeline configuration
@@ -736,4 +741,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     self.used_conf[OUTPUT]["out_dir"],
                     self.output[sens_cst.DSM_BASENAME],
                 ),
+                color_dtype=list_epipolar_points_cloud[0].attributes[
+                    "color_type"
+                ],
             )

@@ -351,12 +351,19 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         im_type = inputs.rasterio_get_image_type(
             sensor_image_left[sens_cst.INPUT_IMG]
         )
+        if sens_cst.INPUT_COLOR in sensor_image_left:
+            color_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_COLOR]
+            )
+        else:
+            color_type = im_type
 
         # update attributes
         epipolar_images_attributes = {
             "largest_epipolar_region": largest_epipolar_region,
             "opt_epipolar_tile_size": opt_epipolar_tile_size,
             "image_type": im_type,
+            "color_type": color_type,
         }
 
         epipolar_images_left.attributes.update(epipolar_images_attributes)

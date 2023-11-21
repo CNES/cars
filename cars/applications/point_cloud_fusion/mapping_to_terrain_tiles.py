@@ -43,7 +43,7 @@ from cars.applications.point_cloud_fusion import (
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,
 )
-from cars.core import projection, tiling
+from cars.core import inputs, projection, tiling
 from cars.data_structures import cars_dataset
 
 
@@ -294,6 +294,7 @@ class MappingToTerrainTiles(
             )
 
             # Compute corresponing tiles in parallel if from tif files
+            color_type = None
             if pc_dataset_type == "dict":
                 corresponding_tiles_cars_ds = (
                     pc_tif_tools.get_corresponding_tiles_tif(
@@ -303,9 +304,13 @@ class MappingToTerrainTiles(
                         orchestrator=self.orchestrator,
                     )
                 )
+                color_file = list_epipolar_points_cloud[0].tiles[0][0]["data"][
+                    "color"
+                ]
+                color_type = inputs.rasterio_get_image_type(color_file)
+                merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
-
             if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
                 # Points cloud file name
                 # TODO in input conf file
@@ -324,7 +329,6 @@ class MappingToTerrainTiles(
             [saving_info] = self.orchestrator.get_saving_infos(
                 [merged_point_cloud]
             )
-
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
                     # update saving infos for potential replacement
