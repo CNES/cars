@@ -34,7 +34,8 @@ import signal
 import threading
 import time
 import traceback
-from multiprocessing import Queue, freeze_support
+from multiprocessing import freeze_support
+from queue import Queue
 
 # Third party imports
 from json_checker import And, Checker, Or
