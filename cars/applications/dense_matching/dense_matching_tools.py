@@ -25,6 +25,7 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
+import math
 from importlib import metadata
 from typing import Dict, List
 
@@ -197,6 +198,7 @@ def add_classification(
 def create_disp_dataset(
     disp: xr.Dataset,
     ref_dataset: xr.Dataset,
+    secondary_dataset: xr.Dataset,
     compute_disparity_masks: bool = False,
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
@@ -209,6 +211,8 @@ def create_disp_dataset(
 
     :param disp: disparity map (result of pandora)
     :param ref_dataset: reference dataset for the considered disparity map
+    :param secondary_dataset: secondary dataset for the considered
+        disparity map
     :param compute_disparity_masks: compute_disparity_masks activation status
     :param generate_performance_map: True if generate performance map
     :type generate_performance_map: bool
@@ -249,11 +253,33 @@ def create_disp_dataset(
             band_im = ["Gray"]
 
     # retrieve classif
-    classif = None
-    band_classif = None
+    left_classif = None
+    left_band_classif = None
     if cst.EPI_CLASSIFICATION in ref_dataset:
-        classif = ref_dataset[cst.EPI_CLASSIFICATION].values
-        band_classif = ref_dataset.coords[cst.BAND_CLASSIF]
+        left_classif = ref_dataset[cst.EPI_CLASSIFICATION].values
+        left_band_classif = ref_dataset.coords[cst.BAND_CLASSIF].values
+
+    left_from_right_classif = None
+    right_band_classif = None
+    if cst.EPI_CLASSIFICATION in secondary_dataset:
+        right_classif = secondary_dataset[cst.EPI_CLASSIFICATION].values
+        right_band_classif = secondary_dataset.coords[cst.BAND_CLASSIF].values
+
+        left_from_right_classif = estimate_right_clasif_on_left(
+            right_classif,
+            disp_map,
+            pandora_masks[cst_disp.VALID],
+            disp_min,
+            disp_max,
+        )
+
+    # Merge right classif
+    classif, band_classif = merge_classif_left_right(
+        left_classif,
+        left_band_classif,
+        left_from_right_classif,
+        right_band_classif,
+    )
 
     # Crop disparity to ROI
     ref_roi = [
@@ -361,6 +387,124 @@ def create_disp_dataset(
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
     return disp_ds
+
+
+def estimate_right_clasif_on_left(
+    right_classif, disp_map, disp_mask, disp_min, disp_max
+):
+    """
+    Estimate right classif on left image
+
+    :param right_classif: right classification
+    :type right_classif: np ndarray
+    :param disp_map: disparity map
+    :type disp_map: np ndarray
+    :param disp_mask: disparity mask
+    :type disp_mask: np ndarray
+    :param disp_min: disparity min
+    :type disp_min: int
+    :param disp_max: disparity max
+    :type disp_max: int
+
+    :return: right classif on left image
+    :rtype: np nadarray
+    """
+
+    left_from_right_classif = np.empty(right_classif.shape)
+
+    data_shape = left_from_right_classif.shape
+    for row in range(data_shape[1]):
+        for col in range(data_shape[2]):
+            # find classif
+            disp = disp_map[row, col]
+            valid = True
+            if disp_mask is not None:
+                valid = disp_mask[row, col]
+            if valid:
+                # direct value
+                disp = int(math.floor(disp))
+                left_from_right_classif[:, row, col] = right_classif[
+                    :, row, col + disp
+                ]
+            else:
+                # estimate with global range
+                classif_in_range = np.any(
+                    right_classif[
+                        :,
+                        row,
+                        max(0, col + disp_min) : min(
+                            data_shape[1], col + disp_max
+                        ),
+                    ],
+                    axis=1,
+                ).astype(bool)
+                left_from_right_classif[:, row, col] = classif_in_range
+
+    return left_from_right_classif
+
+
+def merge_classif_left_right(
+    left_classif, left_band_classif, right_classif, right_band_classif
+):
+    """
+    Merge left and right classif
+
+    :param left_classif: left classif
+    :type left_classif: np nadarray
+    :param left_band_classif: list of tag
+    :type left_band_classif: list
+    :param right_classif: left classif
+    :type right_classif: np nadarray
+    :param right_band_classif: list of tag
+    :type right_band_classif: list
+
+    :return: merged classif, merged tag list
+    :rtype: np ndarray, list
+
+    """
+
+    classif = None
+    band_classif = None
+
+    if left_classif is None and right_classif is not None:
+        classif = right_classif
+        band_classif = right_band_classif
+
+    elif left_classif is not None and right_classif is None:
+        classif = left_classif
+        band_classif = left_band_classif
+
+    elif left_classif is not None and right_classif is not None:
+        list_classif = []
+        band_classif = []
+        seen_tag = []
+
+        # search in left
+        for ind_left, tag_left in enumerate(left_band_classif):
+            seen_tag.append(tag_left)
+            band_classif.append(tag_left)
+            if tag_left in right_band_classif:
+                # merge left and right
+                ind_right = list(right_band_classif).index(tag_left)
+                list_classif.append(
+                    np.logical_or(
+                        left_classif[ind_left, :, :],
+                        right_classif[ind_right, :, :],
+                    )
+                )
+            else:
+                list_classif.append(left_classif[ind_left, :, :])
+
+        # search in right not already seen
+        for ind_right, tag_right in enumerate(right_band_classif):
+            if tag_right not in seen_tag:
+                band_classif.append(tag_right)
+                list_classif.append(right_classif[ind_right, :, :])
+
+        # Stack classif
+        classif = np.stack(list_classif, axis=0)
+
+    return classif, band_classif
 
 
 def add_confidence(
@@ -604,6 +748,7 @@ def compute_disparity(
     disp_dataset = create_disp_dataset(
         ref,
         left_dataset,
+        right_dataset,
         compute_disparity_masks=compute_disparity_masks,
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,

@@ -401,10 +401,24 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             )
 
             self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_left_classif.tif"),
+                cst.EPI_CLASSIFICATION,
+                epipolar_images_left,
+                cars_ds_name="epi_img_left_classif",
+            )
+
+            self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_img_right_mask.tif"),
                 cst.EPI_MSK,
                 epipolar_images_right,
                 cars_ds_name="epi_img_right_mask",
+            )
+
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_right_classif.tif"),
+                cst.EPI_CLASSIFICATION,
+                epipolar_images_right,
+                cars_ds_name="epi_img_right_classif",
             )
 
         if self.save_epipolar_color:

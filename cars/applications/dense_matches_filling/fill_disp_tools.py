@@ -55,7 +55,7 @@ from cars.applications.holes_detection import holes_detection_tools
 from cars.core import constants as cst
 
 
-def fill_central_area_using_plane(
+def fill_central_area_using_plane(  # noqa: C901
     disp_map: xr.Dataset,
     corresponding_poly,
     row_min,
@@ -139,7 +139,16 @@ def fill_central_area_using_plane(
                 cleaned_mask_poly.append(msk_pol)
 
         if len(cleaned_mask_poly) > 1:
-            raise RuntimeError("Not single polygon for current mask")
+            # polygons due to surrounding no data
+            # use biggest poly
+            main_poly = None
+            biggest_area = 0
+            for curent_poly in cleaned_mask_poly:
+                current_area = curent_poly.area
+                if current_area > biggest_area:
+                    main_poly = curent_poly
+            cleaned_mask_poly = [main_poly]
+            logging.debug("Not single polygon for current mask")
 
         intersect_holes = False
         # Check if main poly intersect found classif polygons
@@ -207,9 +216,7 @@ def fill_central_area_using_plane(
 
             if len(band_disp_values) != 0:
                 disp_moy = np.mean(band_disp_values)
-                logging.info(
-                    "Valeur disparité moyenne calculée : {}".format(disp_moy)
-                )
+                logging.info("Disparity mean comptuted : {}".format(disp_moy))
 
             # roi_msk can be filled with 0 if neighbours have filled mask
             if np.sum(~roi_msk) > 0:

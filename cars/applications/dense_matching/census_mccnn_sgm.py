@@ -977,6 +977,14 @@ class CensusMccnnSgm(
                 )
 
                 self.orchestrator.add_to_save_lists(
+                    os.path.join(pair_folder, "epi_disp_classif.tif"),
+                    cst.EPI_CLASSIFICATION,
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_disp_classif",
+                    optional_data=True,
+                )
+
+                self.orchestrator.add_to_save_lists(
                     os.path.join(
                         pair_folder,
                         "epi_confidence.tif",
