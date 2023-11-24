@@ -31,6 +31,7 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
+import affine
 import numpy as np
 import xarray as xr
 from affine import Affine
@@ -480,7 +481,7 @@ class CensusMccnnSgm(
 
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
-    def generate_disparity_grids(
+    def generate_disparity_grids(  # noqa: C901
         self,
         sensor_image_right,
         grid_right,
@@ -680,8 +681,30 @@ class CensusMccnnSgm(
                 )
             )
 
-            ind_rows_sensor_grid = sensors_positions[:, 1]
-            ind_cols_sensor_grid = sensors_positions[:, 0]
+            # compute reverse matrix
+            transform_sensor = inputs.rasterio_get_transform(
+                sensor_image_right["image"]
+            )
+
+            trans_inv = ~transform_sensor
+            # Transform to positive values
+            trans_inv = np.array(trans_inv)
+            trans_inv = np.reshape(trans_inv, (3, 3))
+            if trans_inv[0, 0] < 0:
+                trans_inv[0, :] *= -1
+            if trans_inv[1, 1] < 0:
+                trans_inv[1, :] *= -1
+            trans_inv = affine.Affine(*list(trans_inv.flatten()))
+
+            # Transform physical position to index
+            index_positions = np.empty(sensors_positions.shape)
+            for row_point in range(index_positions.shape[0]):
+                row_geo, col_geo = sensors_positions[row_point, :]
+                col, row = trans_inv * (row_geo, col_geo)
+                index_positions[row_point, :] = (row, col)
+
+            ind_rows_sensor_grid = index_positions[:, 0] - 0.5
+            ind_cols_sensor_grid = index_positions[:, 1] - 0.5
 
             # Interpolate disparity
             disp_min_points = (
@@ -729,6 +752,9 @@ class CensusMccnnSgm(
         margin_array = diff * self.disparity_margin
         grid_min -= margin_array
         grid_max += margin_array
+
+        np.save("grid_disp_min.npy", grid_min)
+        np.save("grid_disp_max.npy", grid_max)
 
         if self.disp_min_threshold is not None:
             if np.any(grid_min < self.disp_min_threshold):
