@@ -612,14 +612,11 @@ class CensusMccnnSgm(
             terrain_positions = np.empty(
                 (dem_min_shape[0] * dem_min_shape[1], 2)
             )
-            dem_mean_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
-            dem_min_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
-            dem_max_list = np.empty(dem_min_shape[0] * dem_min_shape[1])
             row_shape = dem_min_shape[0]
             col_shape = dem_min_shape[1]
             for row in range(row_shape):
                 for col in range(col_shape):
-                    col_geo, row_geo = transform * (col + 0.5, row + 0.5)
+                    col_geo, row_geo = transform * (row + 0.5, col + 0.5)
                     terrain_positions[row + row_shape * col, :] = (
                         row_geo,
                         col_geo,
@@ -628,6 +625,7 @@ class CensusMccnnSgm(
             # dem min and max are in 4326
             x_mean = terrain_positions[:, 0]
             y_mean = terrain_positions[:, 1]
+
             dem_mean_list = inputs.rasterio_get_values(
                 dem_mean, x_mean, y_mean, points_cloud_conversion
             )
@@ -658,11 +656,6 @@ class CensusMccnnSgm(
                 z_coord=dem_mean_list,
             )
 
-            # Transform sensors index to sensor physical point
-            transform_sensor = inputs.rasterio_get_transform(
-                sensor_image_right["image"]
-            )
-
             # Generate epipolar disp grids
             # Get epipolar positions
             (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
@@ -687,17 +680,8 @@ class CensusMccnnSgm(
                 )
             )
 
-            # compute reverse matrix
-            transform_sensor = inputs.rasterio_get_transform(
-                sensor_image_right["image"]
-            )
-            trans_inv = ~transform_sensor
-            index_positions = np.empty(sensors_positions.shape)
-            for row in range(index_positions.shape[0]):
-                index_positions[row, :] = trans_inv * sensors_positions[row, :]
-
-            ind_rows = index_positions[:, 1] - 0.5
-            ind_cols = index_positions[:, 0] - 0.5
+            ind_rows_sensor_grid = sensors_positions[:, 1]
+            ind_cols_sensor_grid = sensors_positions[:, 0]
 
             # Interpolate disparity
             disp_min_points = (
@@ -717,7 +701,7 @@ class CensusMccnnSgm(
             )
 
             grid_min = np.reshape(
-                interp_min_linear(ind_rows, ind_cols),
+                interp_min_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
                 (
                     epipolar_positions.shape[0],
                     epipolar_positions.shape[1],
@@ -725,7 +709,7 @@ class CensusMccnnSgm(
             )
 
             grid_max = np.reshape(
-                interp_max_linear(ind_rows, ind_cols),
+                interp_max_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
                 (
                     epipolar_positions.shape[0],
                     epipolar_positions.shape[1],
@@ -816,7 +800,6 @@ class CensusMccnnSgm(
                 "driver": "GTiff",
                 "dtype": "float32",
                 "transform": transform,
-                # "crs": "EPSG:{}".format(4326),
                 "tiled": True,
             }
         )
