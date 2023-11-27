@@ -380,7 +380,7 @@ def test_estimate_right_clasif_on_left():
 
     left_from_right_classif = (
         dense_matching_tools.estimate_right_clasif_on_left(
-            np.expand_dims(right_classif, axis=0), None, disp_map, -10, 10
+            np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10
         )
     )
 

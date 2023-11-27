@@ -417,7 +417,7 @@ def estimate_right_clasif_on_left(
         for col in range(data_shape[2]):
             # find classif
             disp = disp_map[row, col]
-            valid = True
+            valid = not np.isnan(disp)
             if disp_mask is not None:
                 valid = disp_mask[row, col]
             if valid:
