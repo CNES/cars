@@ -172,13 +172,28 @@ def fill_central_area_using_plane(  # noqa: C901
             # dilated mask - initial mask = band of 'nb_pix' pix around roi
             roi_msk_tmp = np.logical_xor(dilatation, roi_msk)
 
+            # do not use nan
+            roi_msk_tmp = np.logical_and(
+                roi_msk_tmp,
+                ~np.isnan(disp_values),
+            )
+            roi_msk_tmp = np.logical_and(
+                roi_msk_tmp,
+                ~np.isnan(disp_mask),
+            )
+            # do not use zeros
+            roi_msk_tmp = np.logical_and(
+                roi_msk_tmp,
+                disp_values != 0,
+            )
+
             # Band disp values retrieval
             # Optional filter processing n°1 : ignore invalid values in band
             if ignore_zero_fill:
                 initial_len = np.sum(roi_msk_tmp)
                 roi_msk_tmp = np.logical_and(
                     roi_msk_tmp,
-                    disp_map["disp_msk"].values.astype(bool),
+                    disp_map["disp"].values.astype(bool),
                 )
                 logging.info(
                     "Zero_fill_disp_mask - Filtering {} \
@@ -379,13 +394,13 @@ def calculate_disp_plane(
     # Détermination des valeurs optimales pour les coords centrales
     x_to_fill = data_to_fill[0]
     y_to_fill = data_to_fill[1]
-    val = np.zeros(x_to_fill.shape)
     val = list(
         map(lambda x, y: fit[0] * x + fit[1] * y + fit[2], x_to_fill, y_to_fill)
     )
     # Option d'affichage de la fonction plan
     if display:
         plot_function(data, fit)
+
     return val
 
 
@@ -584,7 +599,7 @@ def find_valid_neighbors(
                 valid_neighbors[direction] = np.nan
                 break
                 # First valid pixel
-            if not valid[tmp_col, tmp_row]:
+            if not valid[tmp_col, tmp_row] and disp[tmp_col, tmp_row] != 0:
                 valid_neighbors[direction] = disp[tmp_col, tmp_row]
                 break
     return valid_neighbors

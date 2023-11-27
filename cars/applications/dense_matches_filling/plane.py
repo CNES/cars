@@ -116,7 +116,7 @@ class PlaneFill(
         overloaded_conf[fd_cst.MAX_DIST] = conf.get(fd_cst.MAX_DIST, 100)
         overloaded_conf[fd_cst.SMOOTH_IT] = conf.get(fd_cst.SMOOTH_IT, 1)
         overloaded_conf[fd_cst.IGNORE_NODATA] = conf.get(
-            fd_cst.IGNORE_NODATA, True
+            fd_cst.IGNORE_NODATA, False
         )
         overloaded_conf[fd_cst.IGNORE_ZERO] = conf.get(fd_cst.IGNORE_ZERO, True)
         overloaded_conf[fd_cst.IGNORE_EXTREMA] = conf.get(
