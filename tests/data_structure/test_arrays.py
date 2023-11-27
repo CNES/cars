@@ -224,3 +224,53 @@ def test_save_to_disk_and_load():
             sensor_image.tiles[0][0],
             new_sensor_image_object.tiles[0][0],
         )
+
+
+@pytest.mark.unit_tests
+def test_save_to_disk_and_load_with_nones():
+    """
+    Test save_to_disk and load from path functions with none tiles.
+    """
+
+    # read input
+    in_file = absolute_data_path("../data/input/phr_paca/left_image.tif")
+
+    # create object
+    sensor_image = create_cars_dataset_from_path(
+        in_file, "im", tile_size=(40, 40), overlap=(0, 0)
+    )
+
+    sensor_image[3, 3] = None
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # save tiled object
+
+        left_image_folder = os.path.join(directory, "left_image_object")
+        sensor_image.save_cars_dataset(left_image_folder)
+
+        # Create new object and load previous object
+
+        new_sensor_image_object = cars_dataset.CarsDataset(
+            "arrays", load_from_disk=left_image_folder
+        )
+
+        # Assert they are the same
+        previous_tif = os.path.join(directory, "left_image_recreated.tif")
+        new_tif = os.path.join(directory, "left_image_recreated.tif")
+        artificial_manager_save(sensor_image, previous_tif, "im")
+        artificial_manager_save(new_sensor_image_object, new_tif, "im")
+        assert_same_images(previous_tif, new_tif)
+
+        # Assert grids and overlaps  are the same
+        np.testing.assert_allclose(
+            sensor_image.tiling_grid, new_sensor_image_object.tiling_grid
+        )
+        np.testing.assert_allclose(
+            sensor_image.overlaps, new_sensor_image_object.overlaps
+        )
+
+        # Assert datasets are the same
+        assert_same_datasets(
+            sensor_image.tiles[0][0],
+            new_sensor_image_object.tiles[0][0],
+        )

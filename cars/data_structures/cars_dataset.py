@@ -613,6 +613,9 @@ def load_single_tile_array(tile_path_name: str) -> xr.Dataset:
 
     # get dataset
     dataset_file_name = os.path.join(tile_path_name, DATASET_FILE)
+    if not os.path.exists(dataset_file_name):
+        logging.error("Tile {} does not exists".format(dataset_file_name))
+        return None
     with open(dataset_file_name, "rb") as handle:
         dataset = pickle.load(handle)
 
@@ -644,6 +647,11 @@ def load_single_tile_points(tile_path_name: str):
 
     # get dataframe
     dataframe_file_name = os.path.join(tile_path_name, DATAFRAME_FILE)
+
+    if not os.path.exists(dataframe_file_name):
+        logging.error("Tile {} does not exists".format(dataframe_file_name))
+        return None
+
     with open(dataframe_file_name, "rb") as handle:
         dataframe = pickle.load(handle)
 
@@ -698,6 +706,11 @@ def save_single_tile_array(dataset: xr.Dataset, tile_path_name: str):
     :param tile_path_name: Path of file to save in
     :type tile_path_name: str
     """
+
+    if dataset is None:
+        logging.debug("Tile is None: not saved")
+        return
+
     # Create tile folder
     safe_makedirs(tile_path_name)
 
@@ -738,6 +751,9 @@ def save_single_tile_points(dataframe, tile_path_name: str):
     :param tile_path_name: Path of file to save in
     :type tile_path_name: str
     """
+    if dataframe is None:
+        logging.debug("Tile is None: not saved")
+        return
     # Create tile folder
     safe_makedirs(tile_path_name)
 
@@ -1026,6 +1042,10 @@ def save_dataset(
     :type descriptor: rasterio dataset
 
     """
+    if dataset is None:
+        logging.error("Tile is None: not saved ")
+        return
+
     overlaps = get_overlaps_dataset(dataset)
     window = get_window_dataset(dataset)
 
