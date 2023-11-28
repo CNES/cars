@@ -535,7 +535,6 @@ def compute_point_cloud_wrapper(
             ymin=ymin,
             ymax=ymax,
             margin=margins,
-            epipolar_border_margin=0,
             with_coords=True,
         )
         # get color type list

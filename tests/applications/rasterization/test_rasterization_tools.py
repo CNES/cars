@@ -51,18 +51,16 @@ def test_simple_rasterization_synthetic_case():
     """
     cloud = np.array(
         [
-            [1.0, 0.5, 10.5, 0],
-            [1.0, 1.5, 10.5, 1],
-            [1.0, 2.5, 10.5, 2],
-            [1.0, 0.5, 11.5, 3],
-            [1.0, 1.5, 11.5, 4],
-            [1.0, 2.5, 11.5, 5],
+            [0.5, 10.5, 0],
+            [1.5, 10.5, 1],
+            [2.5, 10.5, 2],
+            [0.5, 11.5, 3],
+            [1.5, 11.5, 4],
+            [2.5, 11.5, 5],
         ]
     )
 
-    pd_cloud = pandas.DataFrame(
-        cloud, columns=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
-    )
+    pd_cloud = pandas.DataFrame(cloud, columns=[cst.X, cst.Y, cst.Z])
     raster = rasterization_tools.rasterize(
         pd_cloud, 1, None, 0, 12, 3, 2, 0.3, 0
     )
@@ -133,6 +131,10 @@ def test_simple_rasterization_single():
         )
     )
     cloud_df = cloud_xr.to_dataframe()
+
+    # Remove data where data in invalid
+    cloud_df = cloud_df[cloud_df["data_valid"] == 1]
+    cloud_df = cloud_df.drop(columns=["data_valid"])
 
     (
         xstart,
@@ -598,15 +600,12 @@ def mask_interp_inputs():  # pylint: disable=redefined-outer-name
     cloud[:, 1] = y_coord.reshape((row * col))
     cloud[:, 2] = msk.reshape((row * col))
 
-    data_valid = np.ones((row * col), dtype=bool)
-
     mask_interp_cloud = {
         cst.ROW: row,
         cst.COL: col,
         cst.RESOLUTION: resolution,
         "cloud": cloud,
         "msk": msk,
-        cst.POINTS_CLOUD_VALID_DATA: data_valid,
     }
 
     return mask_interp_cloud
@@ -626,7 +625,6 @@ def test_mask_interp_case1(
     resolution = mask_interp_inputs[cst.RESOLUTION]
     cloud = mask_interp_inputs["cloud"]
     msk = mask_interp_inputs["msk"]
-    data_valid = mask_interp_inputs[cst.POINTS_CLOUD_VALID_DATA]
     radius = 0
     sigma = 1
 
@@ -651,15 +649,7 @@ def test_mask_interp_case1(
         __,
         __,
     ) = rasterization_tools.compute_vector_raster_and_stats(
-        cloud_pd,
-        data_valid,
-        -0.5,
-        row - 0.5,
-        col,
-        row,
-        resolution,
-        sigma,
-        radius,
+        cloud_pd, -0.5, row - 0.5, col, row, resolution, sigma, radius
     )
 
     res = res.reshape((row, col))

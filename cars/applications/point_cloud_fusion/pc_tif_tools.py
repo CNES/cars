@@ -342,13 +342,6 @@ def create_combined_cloud_from_tif(
                         cloud_data,
                     )
 
-        # add mask if not given
-        if cst.POINTS_CLOUD_VALID_DATA not in cloud_data_bands:
-            cloud_data[cst.POINTS_CLOUD_VALID_DATA] = np.ones(
-                cloud_data[cst.X].shape
-            )
-            cloud_data_bands.append(cst.POINTS_CLOUD_VALID_DATA)
-
         # add source file id
         cloud_data[cst.POINTS_CLOUD_GLOBAL_ID] = (
             np.ones(cloud_data[cst.X].shape) * cloud_file_id

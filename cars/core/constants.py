@@ -67,7 +67,6 @@ EPI_CRS = "crs"
 # points cloud fields (xarray Dataset and pandas Dataframe)
 POINTS_CLOUD_CORR_MSK = "corr_msk"
 POINTS_CLOUD_MSK = "mask"
-POINTS_CLOUD_VALID_DATA = "data_valid"
 POINTS_CLOUD_CLR_KEY_ROOT = "color"
 POINTS_CLOUD_CONFIDENCE_KEY_ROOT = "confidence"
 POINTS_CLOUD_CLASSIF_KEY_ROOT = "classif"
