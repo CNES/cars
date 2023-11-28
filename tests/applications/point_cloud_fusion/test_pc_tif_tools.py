@@ -59,7 +59,7 @@ def generate_test_inputs():
             "confidence1": os.path.join(path_pc, "epi_confidence1.tif"),
             "confidence2": os.path.join(path_pc, "epi_confidence2.tif"),
         },
-        cst.POINTS_CLOUD_VALID_DATA: None,
+        cst.POINTS_CLOUD_MSK: None,
         cst.PC_EPSG: 4326,
     }
 

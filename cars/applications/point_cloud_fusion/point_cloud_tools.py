@@ -46,7 +46,6 @@ def create_combined_cloud(  # noqa: C901
     xmax: float = None,
     ymin: int = None,
     ymax: int = None,
-    epipolar_border_margin: int = 0,
     margin: float = 0,
     with_coords: bool = False,
 ) -> Tuple[pandas.DataFrame, int]:
@@ -69,8 +68,6 @@ def create_combined_cloud(  # noqa: C901
         (if None, the whole clouds are combined)
     :param margin: Margin added for each tile, in meter or degree.
         (default value: 0)
-    :param epipolar_border_margin: Margin used
-        to invalidate cells too close to epipolar border. (default value: 0)
     :param with_coords: Option enabling the adding to the combined cloud
         of information of each point to retrieve their positions
         in the original epipolar images
@@ -86,7 +83,6 @@ def create_combined_cloud(  # noqa: C901
             xmax,
             ymin,
             ymax,
-            epipolar_border_margin,
             margin,
             with_coords,
         )
@@ -99,7 +95,6 @@ def create_combined_cloud(  # noqa: C901
         xmax,
         ymin,
         ymax,
-        epipolar_border_margin,
         margin,
         with_coords,
     )
@@ -113,7 +108,6 @@ def create_combined_sparse_cloud(  # noqa: C901
     xmax: float = None,
     ymin: int = None,
     ymax: int = None,
-    epipolar_border_margin: int = 0,
     margin: float = 0,
     with_coords: bool = False,
 ) -> Tuple[pandas.DataFrame, int]:
@@ -122,15 +116,11 @@ def create_combined_sparse_cloud(  # noqa: C901
     structured with the following labels:
 
         - if no mask data present in cloud_list datasets:
-            labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z] \
-            The combined cloud has x, y, z columns along with 'valid data' one.\
-            The valid data is a mask set to True if the data \
-            are not on the epipolar image margin (epipolar_border_margin), \
-             otherwise it is set to False.
+            labels=[ cst.X, cst.Y, cst.Z] \
+            The combined cloud has x, y, z columns
 
         - if mask data present in cloud_list datasets:
-            labels=[cst.POINTS_CLOUD_VALID_DATA,\
-                    cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]\
+            labels=[cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]\
             The mask values are added to the dataframe.
 
     :param dsm_epsg: epsg code for the CRS of the final output raster
@@ -144,8 +134,6 @@ def create_combined_sparse_cloud(  # noqa: C901
         (if None, the whole clouds are combined)
     :param margin: Margin added for each tile, in meter or degree.
         (default value: 0)
-    :param epipolar_border_margin: Margin used
-        to invalidate cells too close to epipolar border. (default value: 0)
     :param with_coords: Option enabling the adding to the combined cloud
         of information of each point to retrieve their positions
         in the original epipolar images
@@ -226,27 +214,6 @@ def create_combined_sparse_cloud(  # noqa: C901
         crop_cloud[cloud_indexes.index(cst.X), :] = crop_x
         crop_cloud[cloud_indexes.index(cst.Y), :] = crop_y
         crop_cloud[cloud_indexes.index(cst.Z), :] = crop_z
-
-        # add data valid mask
-        # (points that are not in the border of the epipolar image)
-        if epipolar_border_margin == 0:
-            epipolar_margin_mask = np.full(
-                points_cloud[cst.X].size,
-                True,
-            )
-        else:
-            epipolar_margin_mask = np.full(
-                points_cloud[cst.X].size,
-                False,
-            )
-            epipolar_margin_mask[
-                epipolar_border_margin:-epipolar_border_margin,
-            ] = True
-
-        crop_epipolar_margin_mask = epipolar_margin_mask[bbox[0] : bbox[1] + 1]
-        crop_cloud[
-            cloud_indexes.index(cst.POINTS_CLOUD_VALID_DATA), :
-        ] = np.ravel(crop_epipolar_margin_mask)
 
         # add index of original point cloud
         crop_cloud[
@@ -391,7 +358,6 @@ def create_combined_dense_cloud(  # noqa: C901
     xmax: float = None,
     ymin: int = None,
     ymax: int = None,
-    epipolar_border_margin: int = 0,
     margin: float = 0,
     with_coords: bool = False,
 ) -> Tuple[pandas.DataFrame, int]:
@@ -400,21 +366,16 @@ def create_combined_dense_cloud(  # noqa: C901
     structured with the following labels:
 
         - if no colors in input and no mask data present in cloud_list datasets:
-            labels=[cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z] \
-            The combined cloud has x, y, z columns along with 'valid data' one.\
-            The valid data is a mask set to True if the data \
-            are not on the epipolar image margin (epipolar_border_margin), \
-             otherwise it is set to False.
+            labels=[cst.X, cst.Y, cst.Z] \
+            The combined cloud has x, y, z columns
 
         - if no colors in input and mask data present in cloud_list datasets:
-            labels=[cst.POINTS_CLOUD_VALID_DATA,\
-                    cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]\
+            labels=[cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK]\
             The mask values are added to the dataframe.
 
         - if colors are set in input and mask data are present \
             in the cloud_list datasets:
-           labels=[cst.POINTS_CLOUD_VALID_DATA,\
-                     cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,\
+           labels=[cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"0",\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"1",\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"2"]\
@@ -422,8 +383,7 @@ def create_combined_dense_cloud(  # noqa: C901
 
         - if colors in input, mask data present in the cloud_list datasets and\
             the with_coords option is activated:
-             labels=[cst.POINTS_CLOUD_VALID_DATA,\
-                     cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,\
+             labels=[cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_MSK,\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"0",\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"1",\
                      cst.POINTS_CLOUD_CLR_KEY_ROOT+"2"\
@@ -447,8 +407,6 @@ def create_combined_dense_cloud(  # noqa: C901
         (if None, the whole clouds are combined)
     :param margin: Margin added for each tile, in meter or degree.
         (default value: 0)
-    :param epipolar_border_margin: Margin used
-        to invalidate cells too close to epipolar border. (default value: 0)
     :param with_coords: Option enabling the adding to the combined cloud
         of information of each point to retrieve their positions
         in the original epipolar images
@@ -544,36 +502,6 @@ def create_combined_dense_cloud(  # noqa: C901
         flatten_cloud[cloud_indexes.index(cst.Y), :] = np.ravel(crop_y)
         flatten_cloud[cloud_indexes.index(cst.Z), :] = np.ravel(crop_z)
 
-        # add data valid mask
-        # (points that are not in the border of the epipolar image)
-        if epipolar_border_margin == 0:
-            epipolar_margin_mask = np.full(
-                (
-                    points_cloud[cst.X].values.shape[0],
-                    points_cloud[cst.X].values.shape[1],
-                ),
-                True,
-            )
-        else:
-            epipolar_margin_mask = np.full(
-                (
-                    points_cloud[cst.X].values.shape[0],
-                    points_cloud[cst.X].values.shape[1],
-                ),
-                False,
-            )
-            epipolar_margin_mask[
-                epipolar_border_margin:-epipolar_border_margin,
-                epipolar_border_margin:-epipolar_border_margin,
-            ] = True
-
-        crop_epipolar_margin_mask = epipolar_margin_mask[
-            bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
-        ]
-        flatten_cloud[
-            cloud_indexes.index(cst.POINTS_CLOUD_VALID_DATA), :
-        ] = np.ravel(crop_epipolar_margin_mask)
-
         # add index of original point cloud
         flatten_cloud[
             cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :
@@ -657,7 +585,6 @@ def create_points_cloud_index(cloud_sample):
     """
     cloud_indexes = [
         cst.POINTS_CLOUD_GLOBAL_ID,
-        cst.POINTS_CLOUD_VALID_DATA,
         cst.X,
         cst.Y,
         cst.Z,

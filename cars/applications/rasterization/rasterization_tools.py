@@ -218,9 +218,8 @@ def find_indexes_in_point_cloud(
     return indexes
 
 
-def compute_vector_raster_and_stats(  # noqa: C901
+def compute_vector_raster_and_stats(
     cloud: pandas.DataFrame,
-    data_valid: np.ndarray,
     x_start: float,
     y_start: float,
     x_size: int,
@@ -244,11 +243,6 @@ def compute_vector_raster_and_stats(  # noqa: C901
 
     :param cloud: Combined cloud
         as returned by the create_combined_cloud function
-    :param data_valid: mask of points
-        which are not on the border of its original epipolar image.
-        To compute a cell it has to have at least one data valid,
-        for which case it is considered that no contributing
-        points from other neighbor tiles are missing.
     :param x_start: x start of the rasterization grid
     :param y_start: y start of the rasterization grid
     :param x_size: x size of the rasterization grid
@@ -262,9 +256,8 @@ def compute_vector_raster_and_stats(  # noqa: C901
     """
     # get points corresponding to (X, Y positions) + data_valid
     points = cloud.loc[:, [cst.X, cst.Y]].values.T
-    valid = data_valid[np.newaxis, :]
     nb_points = points.shape[1]
-
+    valid = np.ones((1, nb_points))
     # create values: 1. altitudes and colors, 2. confidences, 3. masks
     # split_indexes allows to keep indexes separating values
     split_indexes = []
@@ -606,11 +599,8 @@ def rasterize(
     if sigma is None:
         sigma = resolution
 
-    # generate validity mask from margins and all masks of cloud data.
-    data_valid = cloud[cst.POINTS_CLOUD_VALID_DATA].values
-
     # If no valid points are found in cloud, return default values
-    if np.size(data_valid) == 0:
+    if cloud.size == 0:
         logging.debug("No points to rasterize, returning None")
         return None
 
@@ -636,7 +626,6 @@ def rasterize(
         filling_indexes,
     ) = compute_vector_raster_and_stats(
         cloud,
-        data_valid,
         x_start,
         y_start,
         x_size,

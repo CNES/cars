@@ -147,38 +147,37 @@ def test_create_combined_dense_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=False,
     )
 
     ref_cloud0 = np.array(
         [
-            [0.0, 0.0, 39.0, 40.0, 41.0],
-            [0.0, 0.0, 40.0, 41.0, 42.0],
-            [0.0, 1.0, 41.0, 42.0, 43.0],
-            [0.0, 1.0, 42.0, 43.0, 44.0],
-            [0.0, 1.0, 43.0, 44.0, 45.0],
-            [0.0, 1.0, 45.0, 46.0, 47.0],
-            [0.0, 1.0, 46.0, 47.0, 48.0],
-            [0.0, 1.0, 47.0, 48.0, 49.0],
-            [0.0, 1.0, 48.0, 49.0, 50.0],
-            [0.0, 0.0, 49.0, 50.0, 51.0],
-            [0.0, 0.0, 50.0, 51.0, 52.0],
+            [0.0, 39.0, 40.0, 41.0],
+            [0.0, 40.0, 41.0, 42.0],
+            [0.0, 41.0, 42.0, 43.0],
+            [0.0, 42.0, 43.0, 44.0],
+            [0.0, 43.0, 44.0, 45.0],
+            [0.0, 45.0, 46.0, 47.0],
+            [0.0, 46.0, 47.0, 48.0],
+            [0.0, 47.0, 48.0, 49.0],
+            [0.0, 48.0, 49.0, 50.0],
+            [0.0, 49.0, 50.0, 51.0],
+            [0.0, 50.0, 51.0, 52.0],
         ]
     )
 
-    ref_cloud2 = np.zeros((row * col, 5))
+    ref_cloud2 = np.zeros((row * col, 4))
     ref_cloud2[:, 0] = 2
+    ref_cloud2[:, 1] = 45
     ref_cloud2[:, 2] = 45
-    ref_cloud2[:, 3] = 45
-    ref_cloud2[:, 4] = 50
+    ref_cloud2[:, 3] = 50
 
-    for i in range(1, col - 1):
-        ref_cloud2[i * row + 1 : i * row + 4, 1] = 1
     ref_cloud2 = np.delete(ref_cloud2, 2 * col + 2, 0)
 
     ref_cloud = np.concatenate([ref_cloud0, ref_cloud2])
 
+    print(cloud.values)
+    print(ref_cloud)
     assert np.allclose(cloud.values, ref_cloud)
 
     # test with mask
@@ -202,23 +201,22 @@ def test_create_combined_dense_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=False,
     )
 
     ref_cloud0_with_msk = np.array(
         [
-            [0.0, 0.0, 39.0, 40.0, 41.0, 0.0],
-            [0.0, 0.0, 40.0, 41.0, 42.0, 0.0],
-            [0.0, 1.0, 41.0, 42.0, 43.0, 0.0],
-            [0.0, 1.0, 42.0, 43.0, 44.0, 0.0],
-            [0.0, 1.0, 43.0, 44.0, 45.0, 0.0],
-            [0.0, 1.0, 45.0, 46.0, 47.0, 0.0],
-            [0.0, 1.0, 46.0, 47.0, 48.0, 255.0],
-            [0.0, 1.0, 47.0, 48.0, 49.0, 0.0],
-            [0.0, 1.0, 48.0, 49.0, 50.0, 0.0],
-            [0.0, 0.0, 49.0, 50.0, 51.0, 0.0],
-            [0.0, 0.0, 50.0, 51.0, 52.0, 0.0],
+            [0.0, 39.0, 40.0, 41.0, 0.0],
+            [0.0, 40.0, 41.0, 42.0, 0.0],
+            [0.0, 41.0, 42.0, 43.0, 0.0],
+            [0.0, 42.0, 43.0, 44.0, 0.0],
+            [0.0, 43.0, 44.0, 45.0, 0.0],
+            [0.0, 45.0, 46.0, 47.0, 0.0],
+            [0.0, 46.0, 47.0, 48.0, 255.0],
+            [0.0, 47.0, 48.0, 49.0, 0.0],
+            [0.0, 48.0, 49.0, 50.0, 0.0],
+            [0.0, 49.0, 50.0, 51.0, 0.0],
+            [0.0, 50.0, 51.0, 52.0, 0.0],
         ]
     )
 
@@ -275,7 +273,6 @@ def test_create_combined_dense_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=False,
     )
 
@@ -314,7 +311,6 @@ def test_create_combined_dense_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=True,
     )
 
@@ -374,7 +370,6 @@ def test_create_combined_dense_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=True,
     )
 
@@ -459,22 +454,19 @@ def test_create_combined_sparse_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=False,
     )
     # check against the reference value
-    ref_point_cloud_index = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
+    ref_point_cloud_index = [cst.X, cst.Y, cst.Z]
     number = 9
-    ref_array2 = np.zeros((number, 4), dtype=np.float64)
+    ref_array2 = np.zeros((number, 3), dtype=np.float64)
 
-    ref_valid = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
     ref_x = [40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
     ref_y = [41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
     ref_z = [42.0, 43.0, 44.0, 45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
-    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
-    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
-    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
-    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
+    ref_array2[:, 0] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_z, dtype=np.float64)
 
     ref_cloud = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
 
@@ -492,30 +484,26 @@ def test_create_combined_sparse_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=True,
     )
 
     ref_point_cloud_index = [
-        cst.POINTS_CLOUD_VALID_DATA,
         cst.X,
         cst.Y,
         cst.Z,
         cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
     ]
     number = 9
-    ref_array2 = np.zeros((number, 5), dtype=np.float64)
+    ref_array2 = np.zeros((number, 4), dtype=np.float64)
 
-    ref_valid = [0.0, 1.0, 1.0, 1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
     ref_x = [40.0, 41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
     ref_y = [41.0, 42.0, 43.0, 44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
     ref_z = [42.0, 43.0, 44.0, 45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
     ref_coord = [0.0, 1.0, 2.0, 3.0, 4.0, 0.0, 1.0, 3.0, 4.0]
-    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
-    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
-    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
-    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
-    ref_array2[:, 4] = np.asarray(ref_coord, dtype=np.float64)
+    ref_array2[:, 0] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_z, dtype=np.float64)
+    ref_array2[:, 3] = np.asarray(ref_coord, dtype=np.float64)
     ref_cloud2 = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
 
     for key in ref_point_cloud_index:
@@ -532,22 +520,19 @@ def test_create_combined_sparse_cloud():
         xmax=50.5,
         ymax=50,
         margin=used_margin,
-        epipolar_border_margin=1,
         with_coords=False,
     )
 
     number = 6
-    ref_array2 = np.zeros((number, 4), dtype=np.float64)
-    ref_point_cloud_index = [cst.POINTS_CLOUD_VALID_DATA, cst.X, cst.Y, cst.Z]
+    ref_array2 = np.zeros((number, 3), dtype=np.float64)
+    ref_point_cloud_index = [cst.X, cst.Y, cst.Z]
 
-    ref_valid = [1.0, 0.0, 0.0, 1.0, 1.0, 0.0]
     ref_x = [43.0, 44.0, 45.0, 45.0, 45.0, 45.0]
     ref_y = [44.0, 45.0, 45.0, 45.0, 45.0, 45.0]
     ref_z = [45.0, 46.0, 50.0, 50.0, 50.0, 50.0]
-    ref_array2[:, 0] = np.asarray(ref_valid, dtype=np.float64)
-    ref_array2[:, 1] = np.asarray(ref_x, dtype=np.float64)
-    ref_array2[:, 2] = np.asarray(ref_y, dtype=np.float64)
-    ref_array2[:, 3] = np.asarray(ref_z, dtype=np.float64)
+    ref_array2[:, 0] = np.asarray(ref_x, dtype=np.float64)
+    ref_array2[:, 1] = np.asarray(ref_y, dtype=np.float64)
+    ref_array2[:, 2] = np.asarray(ref_z, dtype=np.float64)
 
     ref_cloud = pandas.DataFrame(ref_array2, columns=ref_point_cloud_index)
 
