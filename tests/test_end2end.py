@@ -651,7 +651,6 @@ def test_end2end_ventoux_unique():
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
-                        "right_disp_map": {"method": "accurate"},
                         "matching_cost": {
                             "matching_cost_method": "census",
                             "window_size": 5,
@@ -697,7 +696,7 @@ def test_end2end_ventoux_unique():
                         "refinement": {"refinement_method": "vfit"},
                         "filter": {"filter_method": "median", "filter_size": 3},
                         "validation": {
-                            "validation_method": "cross_checking",
+                            "validation_method": "cross_checking_accurate",
                             "cross_checking_threshold": 1.0,
                         },
                     },
@@ -1386,7 +1385,6 @@ def test_end2end_ventoux_unique_split():
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
-                        "right_disp_map": {"method": "accurate"},
                         "matching_cost": {
                             "matching_cost_method": "census",
                             "window_size": 5,
@@ -1420,7 +1418,7 @@ def test_end2end_ventoux_unique_split():
                         "refinement": {"refinement_method": "vfit"},
                         "filter": {"filter_method": "median", "filter_size": 3},
                         "validation": {
-                            "validation_method": "cross_checking",
+                            "validation_method": "cross_checking_accurate",
                             "cross_checking_threshold": 1.0,
                         },
                     },

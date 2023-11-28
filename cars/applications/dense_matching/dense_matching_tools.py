@@ -37,7 +37,7 @@ import xarray as xr
 # Third party imports
 from numba import njit, prange
 from pandora import constants as p_cst
-from pandora.img_tools import check_dataset
+from pandora.check_configuration import check_datasets
 from pandora.state_machine import PandoraMachine
 from scipy.interpolate import (
     LinearNDInterpolator,
@@ -731,26 +731,42 @@ def compute_disparity(
     left_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_left"]
     right_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_right"]
 
+    # Put disparity in datasets
+    left_disparity = xr.DataArray(
+        data=np.array(
+            [disp_min_grid, disp_max_grid],
+        ),
+        dims=["band_disp", "row", "col"],
+        coords={"band_disp": ["min", "max"]},
+    )
+
+    (disp_min_right_grid, disp_max_right_grid) = estimate_right_grid_disp(
+        disp_min_grid, disp_max_grid
+    )
+
+    right_disparity = xr.DataArray(
+        data=np.array(
+            [disp_min_right_grid, disp_max_right_grid],
+        ),
+        dims=["band_disp", "row", "col"],
+        coords={"band_disp": ["min", "max"]},
+    )
+
+    left_dataset["disparity"] = left_disparity
+    right_dataset["disparity"] = right_disparity
+
     # Instantiate pandora state machine
     pandora_machine = PandoraMachine()
 
     # check datasets
-    check_dataset(left_dataset)
-    check_dataset(right_dataset)
-    (disp_min_right_grid, disp_max_right_grid) = estimate_right_grid_disp(
-        disp_min_grid, disp_max_grid
-    )
+    check_datasets(left_dataset, right_dataset)
 
     # Run the Pandora pipeline
     ref, _ = pandora.run(
         pandora_machine,
         left_dataset,
         right_dataset,
-        disp_min_grid,
-        disp_max_grid,
-        corr_cfg["pipeline"],
-        disp_min_right=disp_min_right_grid,
-        disp_max_right=disp_max_right_grid,
+        corr_cfg,
     )
 
     disp_dataset = create_disp_dataset(

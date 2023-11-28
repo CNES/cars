@@ -40,7 +40,7 @@ import pandas
 import pandora
 import rasterio as rio
 import xarray as xr
-from pandora.check_json import (
+from pandora.check_configuration import (
     check_pipeline_section,
     concat_conf,
     get_config_pipeline,

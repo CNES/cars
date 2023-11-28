@@ -109,9 +109,6 @@ class CensusMccnnSgm(
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
 
-        # Get params from loader
-        self.loader = self.used_config["loader"]
-        self.corr_config = self.used_config["loader_conf"]
         # init orchestrator
         self.orchestrator = None
 
@@ -210,6 +207,10 @@ class CensusMccnnSgm(
         overloaded_conf["loader_conf"] = collections.OrderedDict(
             pandora_loader.get_conf()
         )
+
+        # Get params from loader
+        self.loader = pandora_loader
+        self.corr_config = overloaded_conf["loader_conf"]
 
         application_schema = {
             "method": str,
