@@ -175,3 +175,47 @@ def test_save_to_disk_and_load():
                     points_object.tiles[row][col],
                     new_pc_object.tiles[row][col],
                 )
+
+
+@pytest.mark.unit_tests
+def test_save_to_disk_and_load_with_nones():
+    """
+    Test save_to_disk and load from path functions.
+    """
+
+    # create object
+    grid_shape = (4, 3)
+    points_object = create_points_object(grid=grid_shape, nb_elements=5)
+
+    points_object[2, 2] = None
+    # reconstruct dataframe and save it
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # save tiled object
+
+        left_pc_folder = os.path.join(directory, "left_pc_object")
+        points_object.save_cars_dataset(left_pc_folder)
+
+        # Create new object and load previous object
+
+        new_pc_object = cars_dataset.CarsDataset(
+            "points", load_from_disk=left_pc_folder
+        )
+
+        # Assert grids and overlaps  are the same
+        np.testing.assert_allclose(
+            points_object.tiling_grid, new_pc_object.tiling_grid
+        )
+        np.testing.assert_allclose(
+            points_object.overlaps, new_pc_object.overlaps
+        )
+
+        # Assert dataframes are the same
+        for col in range(grid_shape[1]):
+            for row in range(grid_shape[0]):
+                if (points_object.tiles[row][col] is not None) and (
+                    new_pc_object.tiles[row][col] is not None
+                ):
+                    assert_same_dataframes(
+                        points_object.tiles[row][col],
+                        new_pc_object.tiles[row][col],
+                    )
