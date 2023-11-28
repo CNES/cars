@@ -200,7 +200,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        margins=None,
+        margins_fun=None,
         optimum_tile_size=None,
         add_color=True,
         epipolar_roi=None,
@@ -243,8 +243,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type pair_folder: directory to save files to
         :param pair_key: pair id
         :type pair_key: str
-        :param margins: margins to use
-        :type margins: xr.Dataset
+        :param margins_fun: margins function to use
+        :type margins_fun: fun
         :param optimum_tile_size: optimum tile size to use
         :type optimum_tile_size: int
         :param add_color: add color image to dataset
@@ -264,7 +264,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                     "transform", "crs", "valid_pixels", "no_data_mask",
                     "no_data_img"
             - attributes containing: \
-                "largest_epipolar_region","opt_epipolar_tile_size"
+                "largest_epipolar_region","opt_epipolar_tile_size",
+                "disp_min_tiling", "disp_max_tiling"
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """
@@ -285,14 +286,22 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             safe_makedirs(pair_folder)
 
         # Create zeros margins if not provided
-        if margins is None:
-            corner = ["left", "up", "right", "down"]
-            data = np.zeros(len(corner))
-            col = np.arange(len(corner))
-            margins = xr.Dataset(
-                {"left_margin": (["col"], data)}, coords={"col": col}
-            )
-            margins["right_margin"] = xr.DataArray(data, dims=["col"])
+        if margins_fun is None:
+
+            def margins_fun(  # pylint: disable=unused-argument
+                row_min, row_max, col_min, col_max
+            ):
+                """
+                Default margin function, returning zeros
+                """
+                corner = ["left", "up", "right", "down"]
+                data = np.zeros(len(corner))
+                col = np.arange(len(corner))
+                margins = xr.Dataset(
+                    {"left_margin": (["col"], data)}, coords={"col": col}
+                )
+                margins["right_margin"] = xr.DataArray(data, dims=["col"])
+                return margins
 
         # Get grids and regions for current pair
         (
@@ -337,15 +346,13 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_right.tiling_grid = epipolar_regions_grid
 
         # Compute overlaps
-        epipolar_images_left.overlaps = (
-            format_transformation.grid_margins_2_overlaps(
-                epipolar_images_left.tiling_grid, margins["left_margin"]
-            )
-        )
-        epipolar_images_right.overlaps = (
-            format_transformation.grid_margins_2_overlaps(
-                epipolar_images_right.tiling_grid, margins["right_margin"]
-            )
+        (
+            epipolar_images_left.overlaps,
+            epipolar_images_right.overlaps,
+            used_disp_min,
+            used_disp_max,
+        ) = format_transformation.grid_margins_2_overlaps(
+            epipolar_images_left.tiling_grid, margins_fun
         )
         # add image type in attributes for future checking
         im_type = inputs.rasterio_get_image_type(
@@ -362,6 +369,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_attributes = {
             "largest_epipolar_region": largest_epipolar_region,
             "opt_epipolar_tile_size": opt_epipolar_tile_size,
+            "disp_min_tiling": used_disp_min,
+            "disp_max_tiling": used_disp_max,
             "image_type": im_type,
             "color_type": color_type,
         }
@@ -527,13 +536,14 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         left_overlap,
                         right_overlap,
                         left_window,
-                        margins,
                         epipolar_size_x,
                         epipolar_size_y,
                         img1,
                         img2,
                         grid1,
                         grid2,
+                        used_disp_min=used_disp_min[row, col],
+                        used_disp_max=used_disp_max[row, col],
                         add_color=add_color,
                         color1=color1,
                         mask1=mask1,
@@ -545,6 +555,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         saving_info_left=full_saving_info_left,
                         saving_info_right=full_saving_info_right,
                     )
+
+                    # Remove tile with all nan
+                    if not in_sensor_left_array[row, col]:
+                        epipolar_images_left[row, col] = None
+                    if not in_sensor_right_array[row, col]:
+                        epipolar_images_right[row, col] = None
         return epipolar_images_left, epipolar_images_right
 
 
@@ -552,13 +568,14 @@ def generate_epipolar_images_wrapper(
     left_overlaps,
     right_overlaps,
     window,
-    initial_margins,
     epipolar_size_x,
     epipolar_size_y,
     img1,
     img2,
     grid1,
     grid2,
+    used_disp_min=None,
+    used_disp_max=None,
     add_color=True,
     color1=None,
     mask1=None,
@@ -585,8 +602,6 @@ def generate_epipolar_images_wrapper(
     :param window: Window considered in generation, with row_min, row_max,
             col_min and col_max keys.
     :type window: dict
-    :param initial_margins: Initial margins without crops (used as template)
-    :type initial_margins: dict
 
     :return: Left image object, Right image object (if exists)
 
@@ -596,8 +611,13 @@ def generate_epipolar_images_wrapper(
             - cst.EPI_MSK (if given)
             - cst.EPI_COLOR (for left, if given)
     """
+
     region, margins = format_transformation.region_margins_from_window(
-        initial_margins, window, left_overlaps, right_overlaps
+        window,
+        left_overlaps,
+        right_overlaps,
+        used_disp_min=used_disp_min,
+        used_disp_max=used_disp_max,
     )
 
     # Rectify images

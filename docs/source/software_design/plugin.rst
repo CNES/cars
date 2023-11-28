@@ -25,7 +25,7 @@ Considering the geometry operations, CARS have its own internal implementation o
 
 .. code-block:: python
 
-    from cars.core.geometry import AbstractGeometry
+    from cars.core.geometry.abstract_geometry import AbstractGeometry
 
     @AbstractGeometry.register_subclass("GeometryPluginName")
     class GeometryPluginName(AbstractGeometry):

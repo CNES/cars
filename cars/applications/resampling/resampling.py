@@ -104,10 +104,11 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        margins=None,
+        margins_fun=None,
         optimum_tile_size=None,
         add_color=True,
-    ):
+        epipolar_roi=None,
+    ):  # noqa: C901
         """
         Run resampling application.
 
@@ -115,17 +116,36 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to sensor images resampled in epipolar geometry.
 
         :param sensor_images_left: tiled sensor left image
+            Dict Must contain keys : "image", "color", "geomodel",
+            "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_left: CarsDataset
         :param sensor_images_right: tiled sensor right image
+            Dict Must contain keys : "image", "color", "geomodel",
+            "no_data", "mask", "classification". Paths must be absolutes
         :type sensor_images_right: CarsDataset
         :param grid_left: left epipolar grid
+            Grid CarsDataset contains :
+
+            - A single tile stored in [0,0], containing a (N, M, 2) shape
+                array in xarray Dataset
+            - Attributes containing: "grid_spacing", "grid_origin", \
+                "epipolar_size_x", "epipolar_size_y", "epipolar_origin_x",\
+                 "epipolar_origin_y", epipolar_spacing_x",\
+                 "epipolar_spacing", "disp_to_alt_ratio",\
         :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid
+        :param grid_right: right epipolar grid. Grid CarsDataset contains :
+
+            - A single tile stored in [0,0], containing a (N, M, 2) shape \
+                array in xarray Dataset
+            - Attributes containing: "grid_spacing", "grid_origin",\
+                "epipolar_size_x", "epipolar_size_y", "epipolar_origin_x",\
+                 "epipolar_origin_y", epipolar_spacing_x",\
+                 "epipolar_spacing", "disp_to_alt_ratio",
         :type grid_right: CarsDataset
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: directory to save files to
-        :param pair_key: pair  id
+        :param pair_key: pair id
         :type pair_key: str
         :param margins: margins to use
         :type margins: xr.Dataset
@@ -133,7 +153,22 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         :type optimum_tile_size: int
         :param add_color: add color image to dataset
         :type add_color: bool
+        :param epipolar_roi: Epipolar roi to use if set.
+            Set None tiles outsize roi
+        :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
 
-        :return: left epipolar image, right epipolar image
+        :return: left epipolar image, right epipolar image. \
+            Each CarsDataset contains:
+
+            - N x M Delayed tiles. \
+                Each tile will be a future xarray Dataset containing:
+
+                - data with keys : "im", "msk", "color", "classif"
+                - attrs with keys: "margins" with "disp_min" and "disp_max"\
+                    "transform", "crs", "valid_pixels", "no_data_mask",
+                    "no_data_img"
+            - attributes containing: \
+                "largest_epipolar_region","opt_epipolar_tile_size"
+
         :rtype: Tuple(CarsDataset, CarsDataset)
         """

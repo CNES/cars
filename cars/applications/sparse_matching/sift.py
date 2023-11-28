@@ -277,12 +277,15 @@ class Sift(SparseMatching, short_name="sift"):
         """
         return self.matches_filter_dev_factor
 
-    def get_margins(self):
+    def get_margins_fun(self, disp_min=None, disp_max=None):
         """
-        Get margins to use in resampling
+        Get margins function to use in resampling
 
-        :return: margins
-        :rtype: xr.Dataset
+        :param disp_min: disp min for info
+        :param disp_max: disp max for info
+
+        :return: margins function
+        :rtype: function generating  xr.Dataset
 
         """
 
@@ -323,13 +326,35 @@ class Sift(SparseMatching, short_name="sift"):
             ),
         ]
 
+        # add disp range info
+        margins.attrs["disp_min"] = disp_min
+        margins.attrs["disp_max"] = disp_max
+
         logging.info(
             "Margins added to right region for matching: {}".format(
                 margins["right_margin"].data
             )
         )
 
-        return margins
+        def margins_wrapper(  # pylint: disable=unused-argument
+            row_min, row_max, col_min, col_max
+        ):
+            """
+            Generates margins Dataset used in resampling
+
+            :param row_min: row min
+            :param row_max: row max
+            :param col_min: col min
+            :param col_max: col max
+
+            :return: margins
+            :rtype: xr.Dataset
+            """
+
+            # Constant margins for all tiles
+            return margins
+
+        return margins_wrapper
 
     def run(
         self,

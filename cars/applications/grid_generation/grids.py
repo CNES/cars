@@ -153,8 +153,8 @@ def compute_epipolar_grid_min_max(
     grid1,
     grid2,
     epsg,
-    disp_min=None,
-    disp_max=None,
+    disp_min_tiling,
+    disp_max_tiling,
 ):
     """
     Compute ground terrain location of epipolar grids at disp_min and disp_max
@@ -177,24 +177,29 @@ def compute_epipolar_grid_min_max(
     :type grid2: CarsDataset
     :param epsg: EPSG code of the terrain projection
     :type epsg: Int
-    :param disp_min: Minimum disparity
-                     (if None, read from configuration dictionary)
-    :type disp_min: Float or None
-    :param disp_max: Maximum disparity
-                     (if None, read from configuration dictionary)
-    :type disp_max: Float or None
+    :param disp_min_tiling: Minimum disparity tiling
+    :type disp_min_tiling: np ndarray or int
+    :param disp_max_tiling: Maximum disparity tiling
+    :type disp_max_tiling: np ndarray or int
     :return: a tuple of location grid at disp_min and disp_max
     :rtype: Tuple(np.ndarray, np.ndarray) same shape as grid param
     """
-    disp_min = int(math.floor(disp_min))
-    disp_max = int(math.ceil(disp_max))
+
+    if isinstance(disp_min_tiling, np.ndarray):
+        disp_min_tiling = np.floor(disp_min_tiling).flatten()
+    else:
+        disp_min_tiling = math.floor(disp_min_tiling)
+    if isinstance(disp_max_tiling, np.ndarray):
+        disp_max_tiling = np.ceil(disp_max_tiling).flatten()
+    else:
+        disp_max_tiling = math.ceil(disp_max_tiling)
 
     # Generate disp_min and disp_max matches
     matches_min = np.stack(
         (
             grid[:, :, 0].flatten(),
             grid[:, :, 1].flatten(),
-            grid[:, :, 0].flatten() + disp_min,
+            grid[:, :, 0].flatten() + disp_min_tiling,
             grid[:, :, 1].flatten(),
         ),
         axis=1,
@@ -203,7 +208,7 @@ def compute_epipolar_grid_min_max(
         (
             grid[:, :, 0].flatten(),
             grid[:, :, 1].flatten(),
-            grid[:, :, 0].flatten() + disp_max,
+            grid[:, :, 0].flatten() + disp_max_tiling,
             grid[:, :, 1].flatten(),
         ),
         axis=1,

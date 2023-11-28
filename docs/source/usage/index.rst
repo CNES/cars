@@ -777,9 +777,9 @@ The structure follows this organisation:
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
+            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | None          | No       |
+            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -850,13 +850,13 @@ The structure follows this organisation:
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | Name                     | Description                                                | Type       | Available value | Default value | Required |
             +==========================+============================================================+============+=================+===============+==========+
-            | method                   | Method for dem_generation                                  | string     | "dichotimic"    | "dichotimic"  | Yes      |
+            | method                   | Method for dem_generation                                  | string     | "dichotomic"    | "dichotomic"  | Yes      |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | resolution               | Resolution of dem, in meter                                | int, float |  should be > 0  | 90            | No       |
+            | resolution               | Resolution of dem, in meter                                | int, float |  should be > 0  | 200           | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | margin                   | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | percentile               | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 10            | No       |
+            | percentile               | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 3             | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
             | min_number_matches       | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
             +--------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
@@ -867,7 +867,7 @@ The structure follows this organisation:
 
                 "applications": {
                     "dem_generation": {
-                        "method": "dichotimic",
+                        "method": "dichotomic",
                         "min_number_matches": 20
                     }
 
@@ -881,41 +881,49 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | Name                            | Description                                                             | Type    | Available value                 | Default value | Required |
-            +=================================+=========================================================================+=========+=================================+===============+==========+
-            | method                          | Method for dense matching                                               | string  | "census_sgm", "mccnn_sgm"       | "census_sgm"  | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | loader                          | external library use to compute dense matching                          | string  | "pandora"                       | "pandora"     | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | loader_conf                     | Configuration associated with loader                                    | dict    |                                 |               | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | min_elevation_offset            | Override minimum disparity from prepare step with this offset in meters | int     |                                 | None          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | max_elevation_offset            | Override maximum disparity from prepare step with this offset in meters | int     | should be > min                 | None          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | disp_min_threshold              | Override minimum disparity when less than lower bound                   | int     |                                 | None          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | disp_max_threshold              | Override maximum disparity when greater than upper bound                | int     | should be > min                 | None          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | min_epi_tile_size               | Lower bound of optimal epipolar tile size for dense matching            | int     | should be > 0                   | 300           | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | max_epi_tile_size               | Upper bound of optimal epipolar tile size for dense matching            | int     | should be > 0 and > min         | 1500          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | epipolar_tile_margin_in_percent | Size of the margin used for dense matching (percent of tile size)       | int     |                                 | 60            | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | generate_performance_map        | Generate a performance map from disparity map                           | boolean |                                 | False         | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_ambiguity          | Ambiguity confidence eta max used for performance map                   | float   |                                 | 0.99          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_max_risk               | Risk confidence eta max used for performance map                        | float   |                                 | 0.25          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_eta_step                   | Risk and Ambiguity confidence eta step used for performance map         | float   |                                 | 0.04          | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | perf_ambiguity_threshold        | Maximal ambiguity considered for performance map                        | float   |                                 | 0.6           | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
-            | save_disparity_map              | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
-            +---------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | Name                               | Description                                                             | Type    | Available value                 | Default value | Required |
+            +====================================+=========================================================================+=========+=================================+===============+==========+
+            | method                             | Method for dense matching                                               | string  | "census_sgm", "mccnn_sgm"       | "census_sgm"  | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | loader                             | external library use to compute dense matching                          | string  | "pandora"                       | "pandora"     | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | loader_conf                        | Configuration associated with loader                                    | dict    |                                 |               | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | min_elevation_offset               | Override minimum disparity from prepare step with this offset in meters | int     |                                 | None          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | max_elevation_offset               | Override maximum disparity from prepare step with this offset in meters | int     | should be > min                 | None          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | disp_min_threshold                 | Override minimum disparity when less than lower bound                   | int     |                                 | None          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | disp_max_threshold                 | Override maximum disparity when greater than upper bound                | int     | should be > min                 | None          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | min_epi_tile_size                  | Lower bound of optimal epipolar tile size for dense matching            | int     | should be > 0                   | 300           | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | max_epi_tile_size                  | Upper bound of optimal epipolar tile size for dense matching            | int     | should be > 0 and > min         | 1500          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | epipolar_tile_margin_in_percent    | Size of the margin used for dense matching (percent of tile size)       | int     |                                 | 60            | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | generate_performance_map           | Generate a performance map from disparity map                           | boolean |                                 | False         | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_ambiguity             | Ambiguity confidence eta max used for performance map                   | float   |                                 | 0.99          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_max_risk                  | Risk confidence eta max used for performance map                        | float   |                                 | 0.25          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_eta_step                      | Risk and Ambiguity confidence eta step used for performance map         | float   |                                 | 0.04          | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | perf_ambiguity_threshold           | Maximal ambiguity considered for performance map                        | float   |                                 | 0.6           | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | save_disparity_map                 | Save disparity map and disparity confidence                             | boolean |                                 | false         | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | use_global_disp_range              | If true, use global disparity range, otherwise local range estimation   | boolean |                                 | false         | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | disparity_margin                   | Disparity margin to apply to each range                                 | float   |                                 | 0.3           | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | local_disp_grid_step               | Step of disparity min/ max grid used to resample dense disparity range  | int     |                                 | 30            | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
+            | disp_range_propagation_filter_size | Filter size of local min/max disparity, to propagate local min/max      | int     | should be > 0                   | 300           | No       |
+            +------------------------------------+-------------------------------------------------------------------------+---------+---------------------------------+---------------+----------+
 
             See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
@@ -933,6 +941,7 @@ The structure follows this organisation:
 
             .. note::
 
+                * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                 * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                 * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
 

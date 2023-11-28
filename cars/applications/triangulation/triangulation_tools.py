@@ -23,13 +23,16 @@ Preprocessing module:
 contains functions used for triangulation
 """
 
+# Third party imports
+import logging
+
 # Standard imports
 from typing import Dict
 
-# Third party imports
 import numpy as np
 import pandas
 import xarray as xr
+from scipy.interpolate import LinearNDInterpolator
 
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
@@ -362,14 +365,25 @@ def geoid_offset(points, geoid):
 
         else:
             # one dimension is equal to 1, happens with matches tiangulation
-            ref_interp = geoid.interp(
-                {
-                    "lat": out_pc[cst.Y].values,
-                    "lon": longitudes,
-                }
+            lon_grid, lat_grid = np.meshgrid(
+                geoid.coords["lon"],
+                geoid.coords["lat"],
+            )
+            geoid_height_grid = geoid["hgt"].values
+
+            interp = LinearNDInterpolator(
+                (lon_grid.flatten(), lat_grid.flatten()),
+                geoid_height_grid.flatten(),
             )
 
-            ref_interp_hgt = ref_interp.hgt.values.diagonal()
+            # interpolate
+            points = np.swapaxes(
+                np.array([out_pc[cst.X].values, out_pc[cst.Y].values]), 0, 1
+            )
+            # Nan if on the border of geoid
+            ref_interp_hgt = interp(points)
+            if np.any(np.isnan(ref_interp_hgt)):
+                logging.error("Geoid interpolation: nan on border")
 
         # offset using geoid height
         out_pc[cst.Z] -= ref_interp_hgt

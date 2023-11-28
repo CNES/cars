@@ -22,6 +22,7 @@
 Contains function to convert the point cloud dataframe to laz format:
 """
 import logging
+import warnings
 
 import laspy
 import laspy.file
@@ -135,8 +136,17 @@ def generate_prj_file(output_filename, epsg):
     :param output_filename: name of laz file
     :param epsg: code of output epsg
     """
-    crs = CRS.from_epsg(epsg)
-    proj = crs.to_proj4()
+    with warnings.catch_warnings():
+        # Ignore some crs warning
+        warnings.filterwarnings(
+            "ignore",
+            category=UserWarning,
+            message=".*You will likely lose important projection"
+            " information when converting to a PROJ string from "
+            "another format.*",
+        )
+        crs = CRS.from_epsg(epsg)
+        proj = crs.to_proj4()
     if crs.is_geographic:
         logging.warning(
             "Coordinate system of points cloud is geographic: "

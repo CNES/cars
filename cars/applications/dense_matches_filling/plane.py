@@ -23,6 +23,8 @@ this module contains the fill_disp application class.
 """
 
 
+import copy
+
 # Standard imports
 import logging
 
@@ -377,6 +379,7 @@ class PlaneFill(
                                     interp_options=interp_options,
                                     saving_info=full_saving_info,
                                 )
+
                 res = new_epipolar_disparity_map
 
             else:
@@ -435,6 +438,7 @@ def wrapper_fill_disparity(
     :return: disp map
     :rtype: xr.Dataset
     """
+
     # Create combined xarray Dataset
     (
         combined_dataset,
@@ -465,8 +469,8 @@ def wrapper_fill_disparity(
     )
 
     # Find xarray Dataset corresponding to current tile
-    input_disp = corresponding_tiles_tools.find_tile_dataset(
-        corresponding_tiles, window
+    input_disp = copy.deepcopy(
+        corresponding_tiles_tools.find_tile_dataset(corresponding_tiles, window)
     )
 
     # Add additional attribute "filling" to dataset template

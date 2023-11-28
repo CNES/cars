@@ -31,7 +31,10 @@ import pytest
 
 # CARS imports
 import cars.applications.dense_matching.dense_matching_tools as dense_match
-from cars.applications.dense_matching.census_mccnn_sgm import compute_disparity
+from cars.applications.dense_matching.census_mccnn_sgm import (
+    CensusMccnnSgm,
+    compute_disparity,
+)
 from cars.applications.resampling.bicubic_resampling import (
     generate_epipolar_images_wrapper,
 )
@@ -39,6 +42,7 @@ from cars.applications.triangulation.line_of_sight_intersection import (
     compute_points_cloud,
 )
 from cars.conf import input_parameters as in_params
+from cars.data_structures import cars_dataset
 
 # CARS Tests imports
 from ..helpers import (
@@ -130,13 +134,14 @@ def test_epipolar_pipeline(
         overlaps,
         overlaps,
         window,
-        initial_margins,
         epipolar_size_x,
         epipolar_size_y,
         img1,
         img2,
         grid1,
         grid2,
+        used_disp_min=-13 - 1,
+        used_disp_max=14 + 1,
         add_color=True,
         color1=color1,
         mask1=mask1,
@@ -145,10 +150,26 @@ def test_epipolar_pipeline(
         nodata2=nodata2,
     )
 
+    right_grid = cars_dataset.CarsDataset("arrays")
+    right_grid.attributes = {
+        "epipolar_size_x": epipolar_size_x,
+        "epipolar_size_y": epipolar_size_y,
+        "disp_to_alt_ratio": None,
+    }
+    dense_matching_app = CensusMccnnSgm()
+    # Overide margin
+    dense_matching_app.disparity_margin = 0
+    disp_range_grid = dense_matching_app.generate_disparity_grids(
+        None,
+        right_grid,
+        None,
+        dmin=-13,
+        dmax=14,
+        pair_folder=None,
+    )
+
     disp_map = compute_disparity(
-        left_image,
-        right_image,
-        corr_cfg,
+        left_image, right_image, corr_cfg, disp_range_grid
     )
 
     points_cloud = compute_points_cloud(

@@ -21,6 +21,7 @@
 """
 this module contains the dense_matching application class.
 """
+# pylint: disable=too-many-lines
 import collections
 
 # Standard imports
@@ -30,14 +31,21 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
+import affine
+import numpy as np
 import xarray as xr
+from affine import Affine
 from json_checker import And, Checker, Or
+from scipy.ndimage import generic_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dense_matching import dense_matching_tools
+from cars.applications.dense_matching import dense_matching_tools as dm_tools
 from cars.applications.dense_matching.dense_matching import DenseMatching
+from cars.applications.dense_matching.dense_matching_tools import (
+    LinearInterpNearestExtrap,
+)
 from cars.applications.dense_matching.loaders.pandora_loader import (
     PandoraLoader,
 )
@@ -45,6 +53,8 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core import inputs, projection
+from cars.core.projection import points_cloud_conversion
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -86,6 +96,15 @@ class CensusMccnnSgm(
         ]
         self.perf_ambiguity_threshold = self.used_config[
             "perf_ambiguity_threshold"
+        ]
+
+        # Margins computation parameters
+        # Use local disp
+        self.use_global_disp_range = self.used_config["use_global_disp_range"]
+        self.disparity_margin = self.used_config["disparity_margin"]
+        self.local_disp_grid_step = self.used_config["local_disp_grid_step"]
+        self.disp_range_propagation_filter_size = self.used_config[
+            "disp_range_propagation_filter_size"
         ]
         # Saving files
         self.save_disparity_map = self.used_config["save_disparity_map"]
@@ -157,6 +176,18 @@ class CensusMccnnSgm(
         overloaded_conf["perf_ambiguity_threshold"] = conf.get(
             "perf_ambiguity_threshold", 0.6
         )
+        # Margins computation parameters
+        overloaded_conf["use_global_disp_range"] = conf.get(
+            "use_global_disp_range", False
+        )
+        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.3)
+        overloaded_conf["local_disp_grid_step"] = conf.get(
+            "local_disp_grid_step", 30
+        )
+        overloaded_conf["disp_range_propagation_filter_size"] = conf.get(
+            "disp_range_propagation_filter_size", 300
+        )
+
         # Saving files
         overloaded_conf["save_disparity_map"] = conf.get(
             "save_disparity_map", False
@@ -196,6 +227,12 @@ class CensusMccnnSgm(
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
             "perf_ambiguity_threshold": float,
+            "use_global_disp_range": bool,
+            "disparity_margin": And(Or(int, float), lambda x: x >= 0),
+            "local_disp_grid_step": int,
+            "disp_range_propagation_filter_size": And(
+                Or(int, float), lambda x: x >= 0
+            ),
             "loader_conf": dict,
             "loader": str,
         }
@@ -240,33 +277,23 @@ class CensusMccnnSgm(
 
         return overloaded_conf
 
-    def get_margins(self, grid_left, disp_min=None, disp_max=None):
+    def get_margins_fun(self, grid_left, disp_range_grid):
         """
-        Get Margins needed by matching method, to use during resampling
+        Get Margins function  that generates margins needed by
+        matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min: minimum disparity
-        :param disp_max: maximum disparity
-        :return: margins, updated disp_min, updated disp_max
+        :param disp_min_grid: minimum and maximumdisparity grid
+        :return: function that generates margin for given roi
 
         """
 
-        if self.disp_min_threshold is not None:
-            if disp_min < self.disp_min_threshold:
-                logging.warning(
-                    "Override disp_min {} with disp_min_threshold {}".format(
-                        disp_min, self.disp_min_threshold
-                    )
-                )
-                disp_min = self.disp_min_threshold
-        if self.disp_max_threshold is not None:
-            if disp_max > self.disp_max_threshold:
-                logging.warning(
-                    "Override disp_max {} with disp_max_threshold {}".format(
-                        disp_max, self.disp_max_threshold
-                    )
-                )
-                disp_max = self.disp_max_threshold
+        disp_min_grid_arr = disp_range_grid[0, 0]["disp_min_grid"].values
+        disp_max_grid_arr = disp_range_grid[0, 0]["disp_max_grid"].values
+        step_row = disp_range_grid.attributes["step_row"]
+        step_col = disp_range_grid.attributes["step_col"]
+        row_range = disp_range_grid.attributes["row_range"]
+        col_range = disp_range_grid.attributes["col_range"]
 
         # get disp_to_alt_ratio
         disp_to_alt_ratio = grid_left.attributes["disp_to_alt_ratio"]
@@ -274,82 +301,151 @@ class CensusMccnnSgm(
         # Check if we need to override disp_min
         if self.min_elevation_offset is not None:
             user_disp_min = self.min_elevation_offset / disp_to_alt_ratio
-            if user_disp_min > disp_min:
+            if np.any(disp_min_grid_arr < user_disp_min):
                 logging.warning(
                     (
                         "Overridden disparity minimum "
                         "= {:.3f} pix. (= {:.3f} m.) "
                         "is greater than disparity minimum estimated "
-                        "in prepare step = {:.3f} pix. (or {:.3f} m.) "
+                        "in prepare step "
                         "for current pair"
                     ).format(
                         user_disp_min,
                         self.min_elevation_offset,
-                        disp_min,
-                        disp_min * disp_to_alt_ratio,
                     )
                 )
-            disp_min = user_disp_min
+            disp_min_grid_arr[:, :] = user_disp_min
 
         # Check if we need to override disp_max
         if self.max_elevation_offset is not None:
             user_disp_max = self.max_elevation_offset / disp_to_alt_ratio
-            if user_disp_max < disp_max:
+            if np.any(disp_max_grid_arr > user_disp_max):
                 logging.warning(
                     (
                         "Overridden disparity maximum "
                         "= {:.3f} pix. (or {:.3f} m.) "
                         "is lower than disparity maximum estimated "
-                        "in prepare step = {:.3f} pix. (or {:.3f} m.) "
+                        "in prepare step "
                         "for current pair"
                     ).format(
                         user_disp_max,
                         self.max_elevation_offset,
-                        disp_max,
-                        disp_max * disp_to_alt_ratio,
                     )
                 )
-            disp_max = user_disp_max
+            disp_max_grid_arr[:, :] = user_disp_max
+
+        # Compute global range of logging
+        disp_min_global = np.min(disp_min_grid_arr)
+        disp_max_global = np.max(disp_max_grid_arr)
 
         logging.info(
-            "Disparity range for current pair: [{:.3f} pix., {:.3f} pix.] "
+            "Global Disparity range for current pair:  "
+            "[{:.3f} pix., {:.3f} pix.] "
             "(or [{:.3f} m., {:.3f} m.])".format(
-                disp_min,
-                disp_max,
-                disp_min * disp_to_alt_ratio,
-                disp_max * disp_to_alt_ratio,
+                disp_min_global,
+                disp_max_global,
+                disp_min_global * disp_to_alt_ratio,
+                disp_max_global * disp_to_alt_ratio,
             )
         )
 
-        # round disp min and max
-        disp_min = int(math.floor(disp_min))
-        disp_max = int(math.ceil(disp_max))
+        def margins_wrapper(row_min, row_max, col_min, col_max):
+            """
+            Generates margins Dataset used in resampling
 
-        # Compute margins for the correlator
-        # TODO use loader correlators
-        margins = dense_matching_tools.get_margins(
-            disp_min, disp_max, self.corr_config
-        )
+            :param row_min: row min
+            :param row_max: row max
+            :param col_min: col min
+            :param col_max: col max
 
-        return margins, disp_min, disp_max
+            :return: margins
+            :rtype: xr.Dataset
+            """
 
-    def get_optimal_tile_size(self, disp_min, disp_max, max_ram_per_worker):
+            assert row_min < row_max
+            assert col_min < col_max
+
+            # Get region in grid
+
+            grid_row_min = max(0, int(np.floor((row_min - 1) / step_row)) - 1)
+            grid_row_max = min(
+                len(row_range), int(np.ceil((row_max + 1) / step_row) + 1)
+            )
+            grid_col_min = max(0, int(np.floor((col_min - 1) / step_col)) - 1)
+            grid_col_max = min(
+                len(col_range), int(np.ceil((col_max + 1) / step_col)) + 1
+            )
+
+            # Compute disp min and max in row
+            disp_min = np.min(
+                disp_min_grid_arr[
+                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
+                ]
+            )
+            disp_max = np.max(
+                disp_max_grid_arr[
+                    grid_row_min:grid_row_max, grid_col_min:grid_col_max
+                ]
+            )
+            # round disp min and max
+            disp_min = int(math.floor(disp_min))
+            disp_max = int(math.ceil(disp_max))
+
+            # Compute margins for the correlator
+            # TODO use loader correlators
+            margins = dm_tools.get_margins(disp_min, disp_max, self.corr_config)
+            return margins
+
+        return margins_wrapper
+
+    def get_optimal_tile_size(self, disp_range_grid, max_ram_per_worker):
         """
         Get the optimal tile size to use during dense matching.
 
-        :param disp_min: minimum disparity
-        :param disp_max: maximum disparity
+        :param disp_range_grid: minimum and maximum disparity grid
         :param max_ram_per_worker: maximum ram per worker
         :return: optimal tile size
 
         """
 
-        # Get tiling params from static conf
+        disp_min_grids = disp_range_grid[0, 0][dm_cst.DISP_MIN_GRID].values
+        disp_max_grids = disp_range_grid[0, 0][dm_cst.DISP_MAX_GRID].values
 
-        opt_epipolar_tile_size = (
-            dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
-                disp_min,
-                disp_max,
+        # use max tile size as overlap for min and max:
+        # max Point to point diff is less than diff of tile
+
+        # use filter of size max_epi_tile_size
+        overlap = 3 * int(self.max_epi_tile_size / self.local_disp_grid_step)
+        disp_min_grids = generic_filter(
+            disp_min_grids, np.min, [overlap, overlap]
+        )
+        disp_max_grids = generic_filter(
+            disp_max_grids, np.max, [overlap, overlap]
+        )
+
+        # Worst cases scenario:
+        # 1: [global max - max diff, global max]
+        # 2: [global min, global min  max diff]
+
+        max_diff = np.round(np.max(disp_max_grids - disp_min_grids)) + 1
+        global_min = np.ceil(np.min(disp_min_grids)) - 1
+        global_max = np.round(np.max(disp_max_grids)) + 1
+
+        # Get tiling param
+        opt_epipolar_tile_size_1 = (
+            dm_tools.optimal_tile_size_pandora_plugin_libsgm(
+                global_min,
+                global_min + max_diff,
+                self.min_epi_tile_size,
+                self.max_epi_tile_size,
+                max_ram_per_worker,
+                margin=self.epipolar_tile_margin_in_percent,
+            )
+        )
+        opt_epipolar_tile_size_2 = (
+            dm_tools.optimal_tile_size_pandora_plugin_libsgm(
+                global_max - max_diff,
+                global_max,
                 self.min_epi_tile_size,
                 self.max_epi_tile_size,
                 max_ram_per_worker,
@@ -357,17 +453,410 @@ class CensusMccnnSgm(
             )
         )
 
-        return opt_epipolar_tile_size
+        # return worst case
+        opt_epipolar_tile_size = max(
+            opt_epipolar_tile_size_1, opt_epipolar_tile_size_2
+        )
+
+        # Define function to compute local optimal size for each tile
+        def local_tile_optimal_size_fun(local_disp_min, local_disp_max):
+            """
+            Compute optimal tile size for tile
+
+            :return: local tile size, global optimal tile sizes
+
+            """
+            local_opt_tile_size = (
+                dm_tools.optimal_tile_size_pandora_plugin_libsgm(
+                    local_disp_min,
+                    local_disp_max,
+                    0,
+                    20000,  # arbitrary
+                    max_ram_per_worker,
+                    margin=self.epipolar_tile_margin_in_percent,
+                )
+            )
+
+            return local_opt_tile_size, opt_epipolar_tile_size
+
+        return opt_epipolar_tile_size, local_tile_optimal_size_fun
+
+    def generate_disparity_grids(  # noqa: C901
+        self,
+        sensor_image_right,
+        grid_right,
+        geom_plugin_with_dem_and_geoid,
+        dmin=None,
+        dmax=None,
+        dem_mean=None,
+        dem_min=None,
+        dem_max=None,
+        pair_folder=None,
+    ):
+        """
+        Generate disparity grids min and max, with given step
+
+        global mode: uses dmin and dmax
+        local mode: uses dems
+
+
+        :param sensor_image_right: sensor image right
+        :type sensor_image_right: dict
+        :param grid_right: right epipolar grid
+        :type grid_right: CarsDataset
+        :param geom_plugin_with_dem_and_geoid: geometry plugin with dem mean
+            used to generate epipolar grids
+        :type geom_plugin_with_dem_and_geoid: GeometryPlugin
+        :param dmin: minimum disparity
+        :type dmin: float
+        :param dmax: maximum disparity
+        :type dmax: float
+        :param dem_mean: path to mean dem
+        :type dem_mean: str
+        :param dem_min: path to minimum dem
+        :type dem_min: str
+        :param dem_max: path to maximum dem
+        :type dem_max: str
+        :param pair_folder: folder used for current pair
+        :type pair_folder: str
+
+
+        :return disparity grid range, containing grid min and max
+        :rtype: CarsDataset
+        """
+
+        # Create sequential orchestrator for savings
+        grid_orchestrator = ocht.Orchestrator(
+            orchestrator_conf={"mode": "sequential"}
+        )
+
+        epi_size_row = grid_right.attributes["epipolar_size_y"]
+        epi_size_col = grid_right.attributes["epipolar_size_x"]
+        disp_to_alt_ratio = grid_right.attributes["disp_to_alt_ratio"]
+
+        # Generate grid array
+        nb_rows = int(epi_size_row / self.local_disp_grid_step) + 1
+        nb_cols = int(epi_size_col / self.local_disp_grid_step) + 1
+        row_range, step_row = np.linspace(
+            0, epi_size_row, nb_rows, retstep=True
+        )
+        col_range, step_col = np.linspace(
+            0, epi_size_col, nb_cols, retstep=True
+        )
+
+        grid_min = np.empty((len(row_range), len(col_range)))
+        grid_max = np.empty((len(row_range), len(col_range)))
+
+        # Create CarsDataset
+        grid_disp_range = cars_dataset.CarsDataset("arrays")
+        # Only one tile
+        grid_disp_range.tiling_grid = np.array(
+            [[[0, epi_size_row, 0, epi_size_col]]]
+        )
+
+        grid_attributes = {
+            "step_row": step_row,
+            "step_col": step_col,
+            "row_range": row_range,
+            "col_range": col_range,
+        }
+        grid_disp_range.attributes = grid_attributes.copy()
+
+        # saving infos
+        # disp grids
+        if self.save_disparity_map:
+            grid_min_path = os.path.join(pair_folder, "disp_min_grid.tif")
+            grid_orchestrator.add_to_save_lists(
+                grid_min_path,
+                dm_cst.DISP_MIN_GRID,
+                grid_disp_range,
+                dtype=np.float32,
+                cars_ds_name="disp_min_grid",
+            )
+            grid_max_path = os.path.join(pair_folder, "disp_max_grid.tif")
+            grid_orchestrator.add_to_save_lists(
+                grid_max_path,
+                dm_cst.DISP_MAX_GRID,
+                grid_disp_range,
+                dtype=np.float32,
+                cars_ds_name="disp_max_grid",
+            )
+
+        if None not in (dmin, dmax):
+            # use global disparity range
+            if None not in (dem_min, dem_max):
+                raise RuntimeError("Mix between local and global mode")
+
+            grid_min[:, :] = dmin
+            grid_max[:, :] = dmax
+
+        elif None not in (dem_min, dem_max, dem_mean):
+            # use local disparity
+            if None not in (dmin, dmax):
+                raise RuntimeError("Mix between local and global mode")
+
+            # dem mean, min max are the same shape
+
+            # Get associated alti mean / min / max values
+            dem_min_shape = inputs.rasterio_get_size(dem_min)
+            dem_max_shape = inputs.rasterio_get_size(dem_max)
+
+            assert dem_min_shape == dem_max_shape
+            # dem mean can be different. Computation is based on dem min shape
+
+            # get epsg
+            terrain_epsg = inputs.rasterio_get_epsg(dem_min)
+
+            # Get epipolar position of all dem mean
+            transform = inputs.rasterio_get_transform(dem_min)
+            # index position to terrain position
+            terrain_positions = np.empty(
+                (dem_min_shape[0] * dem_min_shape[1], 2)
+            )
+            row_shape = dem_min_shape[0]
+            col_shape = dem_min_shape[1]
+            for row in range(row_shape):
+                for col in range(col_shape):
+                    col_geo, row_geo = transform * (row + 0.5, col + 0.5)
+                    terrain_positions[row + row_shape * col, :] = (
+                        row_geo,
+                        col_geo,
+                    )
+
+            # dem min and max are in 4326
+            x_mean = terrain_positions[:, 0]
+            y_mean = terrain_positions[:, 1]
+
+            dem_mean_list = inputs.rasterio_get_values(
+                dem_mean, x_mean, y_mean, points_cloud_conversion
+            )
+            dem_min_list = inputs.rasterio_get_values(
+                dem_min, x_mean, y_mean, points_cloud_conversion
+            )
+            dem_max_list = inputs.rasterio_get_values(
+                dem_max, x_mean, y_mean, points_cloud_conversion
+            )
+
+            # transform to lon lat
+            terrain_position_lon_lat = projection.points_cloud_conversion(
+                terrain_positions, terrain_epsg, 4326
+            )
+            new_x = terrain_position_lon_lat[:, 0]
+            new_y = terrain_position_lon_lat[:, 1]
+
+            # sensors positions as index
+            (
+                ind_cols_sensor,
+                ind_rows_sensor,
+                _,
+            ) = geom_plugin_with_dem_and_geoid.inverse_loc(
+                sensor_image_right["image"],
+                sensor_image_right["geomodel"],
+                new_x,
+                new_y,
+                z_coord=dem_mean_list,
+            )
+
+            # Generate epipolar disp grids
+            # Get epipolar positions
+            (epipolar_positions_row, epipolar_positions_col) = np.meshgrid(
+                col_range, row_range
+            )
+            epipolar_positions = np.stack(
+                [epipolar_positions_row, epipolar_positions_col], axis=2
+            )
+
+            # Get sensor position
+            sensors_positions = (
+                geom_plugin_with_dem_and_geoid.sensor_position_from_grid(
+                    grid_right,
+                    np.reshape(
+                        epipolar_positions,
+                        (
+                            epipolar_positions.shape[0]
+                            * epipolar_positions.shape[1],
+                            2,
+                        ),
+                    ),
+                )
+            )
+
+            # compute reverse matrix
+            transform_sensor = inputs.rasterio_get_transform(
+                sensor_image_right["image"]
+            )
+
+            trans_inv = ~transform_sensor
+            # Transform to positive values
+            trans_inv = np.array(trans_inv)
+            trans_inv = np.reshape(trans_inv, (3, 3))
+            if trans_inv[0, 0] < 0:
+                trans_inv[0, :] *= -1
+            if trans_inv[1, 1] < 0:
+                trans_inv[1, :] *= -1
+            trans_inv = affine.Affine(*list(trans_inv.flatten()))
+
+            # Transform physical position to index
+            index_positions = np.empty(sensors_positions.shape)
+            for row_point in range(index_positions.shape[0]):
+                row_geo, col_geo = sensors_positions[row_point, :]
+                col, row = trans_inv * (row_geo, col_geo)
+                index_positions[row_point, :] = (row, col)
+
+            ind_rows_sensor_grid = index_positions[:, 0] - 0.5
+            ind_cols_sensor_grid = index_positions[:, 1] - 0.5
+
+            # Interpolate disparity
+            disp_min_points = (
+                -(dem_max_list - dem_mean_list) / disp_to_alt_ratio
+            )
+            disp_max_points = (
+                -(dem_min_list - dem_mean_list) / disp_to_alt_ratio
+            )
+
+            interp_min_linear = LinearInterpNearestExtrap(
+                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
+                disp_min_points,
+            )
+            interp_max_linear = LinearInterpNearestExtrap(
+                list(zip(ind_rows_sensor, ind_cols_sensor)),  # noqa: B905
+                disp_max_points,
+            )
+
+            grid_min = np.reshape(
+                interp_min_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
+                (
+                    epipolar_positions.shape[0],
+                    epipolar_positions.shape[1],
+                ),
+            )
+
+            grid_max = np.reshape(
+                interp_max_linear(ind_rows_sensor_grid, ind_cols_sensor_grid),
+                (
+                    epipolar_positions.shape[0],
+                    epipolar_positions.shape[1],
+                ),
+            )
+
+        else:
+            raise RuntimeError(
+                "Not a global or local mode for disparity range estimation"
+            )
+
+        # Add margin
+        diff = grid_max - grid_min
+
+        logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
+
+        margin_array = diff * self.disparity_margin
+        grid_min -= margin_array
+        grid_max += margin_array
+
+        np.save("grid_disp_min.npy", grid_min)
+        np.save("grid_disp_max.npy", grid_max)
+
+        if self.disp_min_threshold is not None:
+            if np.any(grid_min < self.disp_min_threshold):
+                logging.warning(
+                    "Override disp_min  with disp_min_threshold {}".format(
+                        self.disp_min_threshold
+                    )
+                )
+                grid_min[
+                    grid_min < self.disp_min_threshold
+                ] = self.disp_min_threshold
+        if self.disp_max_threshold is not None:
+            if np.any(grid_max > self.disp_max_threshold):
+                logging.warning(
+                    "Override disp_max with disp_max_threshold {}".format(
+                        self.disp_max_threshold
+                    )
+                )
+                grid_max[
+                    grid_max > self.disp_max_threshold
+                ] = self.disp_max_threshold
+
+        # use filter to propagate min and max
+        overlap = (
+            2
+            * int(
+                self.disp_range_propagation_filter_size
+                / self.local_disp_grid_step
+            )
+            + 1
+        )
+        grid_min = generic_filter(grid_min, np.min, [overlap, overlap])
+        grid_max = generic_filter(grid_max, np.max, [overlap, overlap])
+
+        # Generate dataset
+        # min and max are reversed
+        disp_range_tile = xr.Dataset(
+            data_vars={
+                dm_cst.DISP_MIN_GRID: (["row", "col"], grid_min),
+                dm_cst.DISP_MAX_GRID: (["row", "col"], grid_max),
+            },
+            coords={
+                "row": np.arange(0, grid_min.shape[0]),
+                "col": np.arange(0, grid_min.shape[1]),
+            },
+        )
+
+        # Save
+        [  # pylint: disable=unbalanced-tuple-unpacking
+            saving_info
+        ] = grid_orchestrator.get_saving_infos([grid_disp_range])
+        saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
+        # Generate profile
+        # Generate profile
+        geotransform = (
+            epi_size_row,
+            step_row,
+            0.0,
+            epi_size_col,
+            0.0,
+            step_col,
+        )
+
+        transform = Affine.from_gdal(*geotransform)
+        raster_profile = collections.OrderedDict(
+            {
+                "height": nb_rows,
+                "width": nb_cols,
+                "driver": "GTiff",
+                "dtype": "float32",
+                "transform": transform,
+                "tiled": True,
+            }
+        )
+        cars_dataset.fill_dataset(
+            disp_range_tile,
+            saving_info=saving_info,
+            window=None,
+            profile=raster_profile,
+            attributes=None,
+            overlaps=None,
+        )
+        grid_disp_range[0, 0] = disp_range_tile
+
+        if self.save_disparity_map:
+            grid_orchestrator.breakpoint()
+
+        if np.any(diff < 0):
+            logging.error("grid min > grid max in {}".format(pair_folder))
+            raise RuntimeError("grid min > grid max in {}".format(pair_folder))
+
+        return grid_disp_range
 
     def run(
         self,
         epipolar_images_left,
         epipolar_images_right,
+        local_tile_optimal_size_fun,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
-        disp_min=None,
-        disp_max=None,
+        disp_range_grid=None,
         compute_disparity_masks=False,
         disp_to_alt_ratio=None,
     ):
@@ -402,15 +891,16 @@ class CensusMccnnSgm(
                 - attributes containing:
                     "largest_epipolar_region","opt_epipolar_tile_size"
         :type epipolar_images_right: CarsDataset
+        :param local_tile_optimal_size_fun: function to compute local
+             optimal tile size
+        :type local_tile_optimal_size_fun: func
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
         :param pair_key: pair id
         :type pair_key: str
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
+        :param disp_range_grid: minimum and maximum disparity grid
+        :type disp_range_grid: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio used for performance map
         :type disp_to_alt_ratio: float
 
@@ -422,7 +912,8 @@ class CensusMccnnSgm(
                 - data with keys : "disp", "disp_msk"
                 - attrs with keys: profile, window, overlaps
             - attributes containing:
-                "largest_epipolar_region","opt_epipolar_tile_size"
+                "largest_epipolar_region","opt_epipolar_tile_size",
+                 "disp_min_tiling", "disp_max_tiling"
 
         :rtype: CarsDataset
         """
@@ -496,6 +987,26 @@ class CensusMccnnSgm(
                     optional_data=True,
                 )
 
+                # disparity grids
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_min.tif",
+                    ),
+                    cst_disp.EPI_DISP_MIN_GRID,
+                    epipolar_disparity_map,
+                    cars_ds_name="disp_min",
+                )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_disp_max.tif",
+                    ),
+                    cst_disp.EPI_DISP_MAX_GRID,
+                    epipolar_disparity_map,
+                    cars_ds_name="disp_max",
+                )
+
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(
                 [epipolar_disparity_map]
@@ -505,7 +1016,22 @@ class CensusMccnnSgm(
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
                     pair_key: {
-                        dm_cst.DENSE_MATCHING_RUN_TAG: {},
+                        dm_cst.DENSE_MATCHING_RUN_TAG: {
+                            "global_disp_min": (
+                                np.nanmin(
+                                    disp_range_grid[0, 0][
+                                        dm_cst.DISP_MIN_GRID
+                                    ].values
+                                )
+                            ),
+                            "global_disp_max": (
+                                np.nanmax(
+                                    disp_range_grid[0, 0][
+                                        dm_cst.DISP_MAX_GRID
+                                    ].values
+                                )
+                            ),
+                        },
                     }
                 }
             }
@@ -516,10 +1042,62 @@ class CensusMccnnSgm(
                     * epipolar_disparity_map.shape[0]
                 )
             )
+
+            nb_invalid_tile = 0
+            nb_total_tiles_roi = 0
+            disp_ranges = []
+
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
-                    if epipolar_images_left[row, col] is not None:
+                    use_tile = False
+                    if type(None) not in (
+                        type(epipolar_images_left[row, col]),
+                        type(epipolar_images_right[row, col]),
+                    ):
+                        nb_total_tiles_roi += 1
+
+                        # Compute optimal tile size for tile
+                        (
+                            opt_tile_size,
+                            global_opt_tile_size,
+                        ) = local_tile_optimal_size_fun(
+                            np.array(
+                                epipolar_images_left.attributes[
+                                    "disp_min_tiling"
+                                ]
+                            )[row, col],
+                            np.array(
+                                epipolar_images_left.attributes[
+                                    "disp_max_tiling"
+                                ]
+                            )[row, col],
+                        )
+
+                        if opt_tile_size >= min(
+                            global_opt_tile_size, self.min_epi_tile_size
+                        ):
+                            # Tile is likely to crash in worker
+                            # due to memory consumtion
+                            use_tile = True
+                        else:
+                            nb_invalid_tile += 1
+                            disp_ranges.append(
+                                [
+                                    np.array(
+                                        epipolar_images_left.attributes[
+                                            "disp_min_tiling"
+                                        ]
+                                    )[row, col],
+                                    np.array(
+                                        epipolar_images_left.attributes[
+                                            "disp_max_tiling"
+                                        ]
+                                    )[row, col],
+                                ]
+                            )
+
+                    if use_tile:
                         # update saving infos  for potential replacement
                         full_saving_info = ocht.update_saving_infos(
                             saving_info, row=row, col=col
@@ -533,8 +1111,7 @@ class CensusMccnnSgm(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
                             self.corr_config,
-                            disp_min=disp_min,
-                            disp_max=disp_max,
+                            disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
                             generate_performance_map=(
@@ -545,12 +1122,24 @@ class CensusMccnnSgm(
                             ),
                             disp_to_alt_ratio=disp_to_alt_ratio,
                         )
+
+            # Message info about not computed tiles
+            tile_missing_message = (
+                "Dense matching: {} tiles not computed over {} tiles, "
+                "these tile were likely to crash due to memory "
+                "consumption, in pair {}. Disparity ranges: {}".format(
+                    nb_invalid_tile, nb_total_tiles_roi, pair_key, disp_ranges
+                )
+            )
+            if nb_invalid_tile == 0:
+                logging.info(tile_missing_message)
+            else:
+                logging.error(tile_missing_message)
         else:
             logging.error(
                 "DenseMatching application doesn't "
                 "support this input data format"
             )
-
         return epipolar_disparity_map
 
 
@@ -558,8 +1147,7 @@ def compute_disparity(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,
-    disp_min=None,
-    disp_max=None,
+    disp_range_grid,
     saving_info=None,
     compute_disparity_masks=False,
     generate_performance_map=False,
@@ -588,10 +1176,8 @@ def compute_disparity(
     :type right_image_object: xr.Dataset
     :param corr_cfg: Correlator configuration
     :type corr_cfg: dict
-    :param disp_min: minimum disparity
-    :type disp_min: int
-    :param disp_max: maximum disparity
-    :type disp_max: int
+    :param disp_range_grid: minimum and maximum disparity grid
+    :type disp_range_grid: np.ndarray
     :param compute_disparity_masks: Compute all the disparity \
                         pandora masks(disable by default)
     :type compute_disparity_masks: bool
@@ -610,15 +1196,20 @@ def compute_disparity(
         - cst.EPI_COLOR
 
     """
+    # Generate disparity grids
+    (
+        disp_min_grid,
+        disp_max_grid,
+    ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
 
     # Compute disparity
     # TODO : remove overwriting of EPI_MSK
-    disp_dataset = dense_matching_tools.compute_disparity(
+    disp_dataset = dm_tools.compute_disparity(
         left_image_object,
         right_image_object,
         corr_cfg,
-        disp_min,
-        disp_max,
+        disp_min_grid=disp_min_grid,
+        disp_max_grid=disp_max_grid,
         compute_disparity_masks=compute_disparity_masks,
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,

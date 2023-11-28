@@ -24,8 +24,9 @@ CARS Disparity Constants module
 
 # disparity map
 MAP = "disp"
-
 CONFIDENCE = "confidence"
+EPI_DISP_MIN_GRID = "disp_min_grid"
+EPI_DISP_MAX_GRID = "disp_max_grid"
 
 # disparity mask
 VALID = "disp_msk"
