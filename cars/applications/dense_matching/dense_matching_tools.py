@@ -195,7 +195,7 @@ def add_classification(
         )
 
 
-def create_disp_dataset(
+def create_disp_dataset(  # noqa: C901
     disp: xr.Dataset,
     ref_dataset: xr.Dataset,
     secondary_dataset: xr.Dataset,
@@ -269,8 +269,8 @@ def create_disp_dataset(
             right_classif,
             disp_map,
             pandora_masks[cst_disp.VALID],
-            disp_min,
-            disp_max,
+            int(np.floor(np.min(disp_min_grid))),
+            int(np.ceil(np.max(disp_max_grid))),
         )
 
     # Merge right classif
@@ -409,7 +409,6 @@ def estimate_right_clasif_on_left(
     :return: right classif on left image
     :rtype: np nadarray
     """
-
     left_from_right_classif = np.empty(right_classif.shape)
 
     data_shape = left_from_right_classif.shape
