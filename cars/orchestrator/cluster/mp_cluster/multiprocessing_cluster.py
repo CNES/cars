@@ -102,7 +102,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.factorize_tasks = self.checked_conf_cluster["factorize_tasks"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
-        mp_mode = "forkserver"
+        mp_mode = "fork"
 
         self.launch_worker = launch_worker
 
@@ -129,7 +129,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.pool = mp.get_context(mp_mode).Pool(
                 self.nb_workers,
                 initializer=freeze_support,
-                maxtasksperchild=100,
+                maxtasksperchild=1,
             )
 
             self.queue = Queue()

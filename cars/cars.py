@@ -124,6 +124,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # Force the use of OpenMP in numba
+    os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
     os.environ["NUMBA_THREADING_LAYER"] = "omp"
 
     # Force the use of CARS dask configuration
