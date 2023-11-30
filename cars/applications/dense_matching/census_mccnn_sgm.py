@@ -417,19 +417,19 @@ class CensusMccnnSgm(
         # use filter of size max_epi_tile_size
         overlap = 3 * int(self.max_epi_tile_size / self.local_disp_grid_step)
         disp_min_grids = generic_filter(
-            disp_min_grids, np.min, [overlap, overlap]
+            disp_min_grids, np.nanmin, [overlap, overlap], mode="nearest"
         )
         disp_max_grids = generic_filter(
-            disp_max_grids, np.max, [overlap, overlap]
+            disp_max_grids, np.nanmax, [overlap, overlap], mode="nearest"
         )
 
         # Worst cases scenario:
         # 1: [global max - max diff, global max]
         # 2: [global min, global min  max diff]
 
-        max_diff = np.round(np.max(disp_max_grids - disp_min_grids)) + 1
-        global_min = np.ceil(np.min(disp_min_grids)) - 1
-        global_max = np.round(np.max(disp_max_grids)) + 1
+        max_diff = np.round(np.nanmax(disp_max_grids - disp_min_grids)) + 1
+        global_min = np.ceil(np.nanmin(disp_min_grids)) - 1
+        global_max = np.round(np.nanmax(disp_max_grids)) + 1
 
         # Get tiling param
         opt_epipolar_tile_size_1 = (
@@ -753,9 +753,6 @@ class CensusMccnnSgm(
         grid_min -= margin_array
         grid_max += margin_array
 
-        np.save("grid_disp_min.npy", grid_min)
-        np.save("grid_disp_max.npy", grid_max)
-
         if self.disp_min_threshold is not None:
             if np.any(grid_min < self.disp_min_threshold):
                 logging.warning(
@@ -786,8 +783,13 @@ class CensusMccnnSgm(
             )
             + 1
         )
-        grid_min = generic_filter(grid_min, np.min, [overlap, overlap])
-        grid_max = generic_filter(grid_max, np.max, [overlap, overlap])
+
+        grid_min = generic_filter(
+            grid_min, np.min, [overlap, overlap], mode="nearest"
+        )
+        grid_max = generic_filter(
+            grid_max, np.max, [overlap, overlap], mode="nearest"
+        )
 
         # Generate dataset
         # min and max are reversed
