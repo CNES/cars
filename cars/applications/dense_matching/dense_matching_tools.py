@@ -29,11 +29,12 @@ import math
 from importlib import metadata
 from typing import Dict, List
 
-# Third party imports
 import numpy as np
 import pandora
 import pandora.marge
 import xarray as xr
+
+# Third party imports
 from numba import njit, prange
 from pandora import constants as p_cst
 from pandora.img_tools import check_dataset
@@ -265,7 +266,7 @@ def create_disp_dataset(  # noqa: C901
         right_classif = secondary_dataset[cst.EPI_CLASSIFICATION].values
         right_band_classif = secondary_dataset.coords[cst.BAND_CLASSIF].values
 
-        left_from_right_classif = estimate_right_clasif_on_left(
+        left_from_right_classif = estimate_right_classif_on_left(
             right_classif,
             disp_map,
             pandora_masks[cst_disp.VALID],
@@ -389,7 +390,8 @@ def create_disp_dataset(  # noqa: C901
     return disp_ds
 
 
-def estimate_right_clasif_on_left(
+@njit
+def estimate_right_classif_on_left(
     right_classif, disp_map, disp_mask, disp_min, disp_max
 ):
     """
@@ -409,11 +411,12 @@ def estimate_right_clasif_on_left(
     :return: right classif on left image
     :rtype: np nadarray
     """
+
     left_from_right_classif = np.empty(right_classif.shape)
 
     data_shape = left_from_right_classif.shape
-    for row in range(data_shape[1]):
-        for col in range(data_shape[2]):
+    for row in prange(data_shape[1]):  # pylint: disable=E1133
+        for col in prange(data_shape[2]):  # pylint: disable=E1133
             # find classif
             disp = disp_map[row, col]
             valid = not np.isnan(disp)
@@ -427,16 +430,20 @@ def estimate_right_clasif_on_left(
                 ]
             else:
                 # estimate with global range
-                classif_in_range = np.any(
-                    right_classif[
-                        :,
-                        row,
-                        max(0, col + disp_min) : min(
-                            data_shape[1], col + disp_max
-                        ),
-                    ],
-                    axis=1,
-                ).astype(bool)
+                classif_in_range = np.full(
+                    (left_from_right_classif.shape[0]), False
+                )
+
+                for classif_c in prange(  # pylint: disable=E1133
+                    classif_in_range.shape[0]
+                ):
+                    for col_classif in prange(  # pylint: disable=E1133
+                        max(0, col + disp_min),
+                        min(data_shape[1], col + disp_max),
+                    ):
+                        if right_classif[classif_c, row, col_classif]:
+                            classif_in_range[classif_c] = True
+
                 left_from_right_classif[:, row, col] = classif_in_range
 
     return left_from_right_classif

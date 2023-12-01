@@ -359,9 +359,9 @@ def test_estimate_right_grid_disp():
 
 
 @pytest.mark.unit_tests
-def test_estimate_right_clasif_on_left():
+def test_estimate_right_classif_on_left():
     """
-    Test estimate_right_clasif_on_left
+    Test estimate_right_classif_on_left
     """
 
     right_classif, _ = inputs.rasterio_read_as_array(
@@ -379,7 +379,7 @@ def test_estimate_right_clasif_on_left():
     # Test1: one band
 
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_clasif_on_left(
+        dense_matching_tools.estimate_right_classif_on_left(
             np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10
         )
     )
@@ -402,7 +402,7 @@ def test_estimate_right_clasif_on_left():
     # Test 2: 2 bands
     expanded_right_classif = np.expand_dims(right_classif, axis=0)
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_clasif_on_left(
+        dense_matching_tools.estimate_right_classif_on_left(
             np.stack([expanded_right_classif, expanded_right_classif], axis=0),
             disp_map,
             None,
@@ -447,7 +447,7 @@ def test_merge_classif_left_right():
 
     left_classif = np.stack([left_classif, left_classif], axis=0)
     left_from_right_classif = (
-        dense_matching_tools.estimate_right_clasif_on_left(
+        dense_matching_tools.estimate_right_classif_on_left(
             np.stack([right_classif, right_classif], axis=0),
             disp_map,
             None,
