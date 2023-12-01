@@ -33,6 +33,7 @@ from cars.applications.dense_matching import dense_matching_tools
 # CARS imports
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core import inputs
 
 # CARS Tests imports
 from tests.helpers import (
@@ -355,3 +356,152 @@ def test_estimate_right_grid_disp():
 
     assert (disp_min_right_grid == ref_right_min).all()
     assert (disp_max_right_grid == ref_right_max).all()
+
+
+@pytest.mark.unit_tests
+def test_estimate_right_classif_on_left():
+    """
+    Test estimate_right_classif_on_left
+    """
+
+    right_classif, _ = inputs.rasterio_read_as_array(
+        absolute_data_path(
+            "input/test_classification/epi_img_right_classif.tif"
+        )
+    )
+
+    disp_map, _ = inputs.rasterio_read_as_array(
+        absolute_data_path("input/test_classification/epi_disp.tif")
+    )
+    # add nan
+    disp_map[2::20, 4::25] = np.nan
+
+    # Test1: one band
+
+    left_from_right_classif = (
+        dense_matching_tools.estimate_right_classif_on_left(
+            np.expand_dims(right_classif, axis=0), disp_map, None, -10, 10
+        )
+    )
+
+    # Uncomment to update baseline
+    # np.save(
+    #     absolute_data_path(
+    #         "ref_output/dense_matching_classif_right1.npy"
+    #     ),
+    #     left_from_right_classif
+    # )
+
+    ref_array = np.load(
+        absolute_data_path("ref_output/dense_matching_classif_right1.npy")
+    )
+
+    # assert
+    np.testing.assert_allclose(left_from_right_classif, ref_array)
+
+    # Test 2: 2 bands
+    expanded_right_classif = np.expand_dims(right_classif, axis=0)
+    left_from_right_classif = (
+        dense_matching_tools.estimate_right_classif_on_left(
+            np.stack([expanded_right_classif, expanded_right_classif], axis=0),
+            disp_map,
+            None,
+            -10,
+            10,
+        )
+    )
+
+    # Uncomment to update baseline
+    # np.save(
+    #     absolute_data_path(
+    #         "ref_output/dense_matching_classif_right2.npy"
+    #     ),
+    #     left_from_right_classif
+    # )
+
+    ref_array = np.load(
+        absolute_data_path("ref_output/dense_matching_classif_right2.npy")
+    )
+
+    # assert
+    np.testing.assert_allclose(left_from_right_classif, ref_array)
+
+
+@pytest.mark.unit_tests
+def test_merge_classif_left_right():
+    """
+    Test merge_classif_left_right
+    """
+
+    left_classif, _ = inputs.rasterio_read_as_array(
+        absolute_data_path("input/test_classification/epi_img_left_classif.tif")
+    )
+    right_classif, _ = inputs.rasterio_read_as_array(
+        absolute_data_path(
+            "input/test_classification/epi_img_right_classif.tif"
+        )
+    )
+    disp_map, _ = inputs.rasterio_read_as_array(
+        absolute_data_path("input/test_classification/epi_disp.tif")
+    )
+
+    left_classif = np.stack([left_classif, left_classif], axis=0)
+    left_from_right_classif = (
+        dense_matching_tools.estimate_right_classif_on_left(
+            np.stack([right_classif, right_classif], axis=0),
+            disp_map,
+            None,
+            -10,
+            10,
+        )
+    )
+
+    # Test 1: same keys
+
+    merged_clasif, band_list = dense_matching_tools.merge_classif_left_right(
+        left_classif,
+        ["cloud", "building"],
+        left_from_right_classif,
+        ["cloud", "building"],
+    )
+
+    # Uncomment to update baseline
+    # np.save(
+    #     absolute_data_path(
+    #         "ref_output/dense_matching_merged_classif1.npy"
+    #     ),
+    #     merged_clasif
+    # )
+
+    ref_array = np.load(
+        absolute_data_path("ref_output/dense_matching_merged_classif1.npy")
+    )
+
+    # assert
+    np.testing.assert_allclose(merged_clasif, ref_array)
+    assert band_list == ["cloud", "building"]
+
+    # Test 2: different keys
+    merged_clasif, band_list = dense_matching_tools.merge_classif_left_right(
+        left_classif,
+        ["cloud", "building"],
+        left_from_right_classif,
+        ["cloud", "forest"],
+    )
+
+    # Uncomment to update baseline
+    # np.save(
+    #     absolute_data_path(
+    #         "ref_output/dense_matching_merged_classif2.npy"
+    #     ),
+    #     merged_clasif
+    # )
+
+    ref_array = np.load(
+        absolute_data_path("ref_output/dense_matching_merged_classif2.npy")
+    )
+
+    # assert
+    np.testing.assert_allclose(merged_clasif, ref_array)
+    assert merged_clasif.shape[0] == 3
+    assert band_list == ["cloud", "building", "forest"]
