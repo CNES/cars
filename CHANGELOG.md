@@ -1,6 +1,29 @@
 # Changelog
 
 
+
+## 0.7.4  Local disparity ranges (December 2023)
+
+### Added
+
+- Local disparity ranges are used [#695]
+- Write point cloud by pair [#727]
+- Left and right classification fusion on disparity map [#729]
+
+### Changed
+
+- Plane filling method: no propagation by default [#725]
+
+### Fixed
+
+- Slurm cluster launch [#736]
+- None tiles managed in save_cars_dataset [#716]
+- Color data type propagated to the end [#642]
+- Memory unreleased in multiprocessing mode [#731]
+- Loglevel could not be set [#734]
+
+
+
 ## 0.7.3  CARS fully pip installable (November 2023)
 
 ### Added
