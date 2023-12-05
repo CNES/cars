@@ -152,7 +152,12 @@ class PandoraLoader:
         return self.pandora_config
 
     def check_conf(
-        self, user_cfg, img_left, img_right, classif_left, classif_right
+        self,
+        user_cfg,
+        img_left,
+        img_right,
+        classif_left=None,
+        classif_right=None,
     ):
         """
         Check configuration
