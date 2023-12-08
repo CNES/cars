@@ -1,11 +1,11 @@
-.. _recipes:
+.. _howto:
 
-=======
-Recipes
-=======
+=========
+How to...
+=========
 
-Input image preparation
-=======================
+Prepare input images
+====================
 
 .. _make_input_roi_images:
 
@@ -91,8 +91,8 @@ To add a band name /description in tiff files, for classification or color files
     data_in = None
 
 
-Output Post Processing
-======================
+Post process output
+===================
 
 .. _merge_laz_files:
 
