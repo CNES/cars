@@ -33,8 +33,17 @@ import time
 import uuid
 from abc import ABCMeta, abstractmethod
 from importlib import import_module
+from multiprocessing import Pipe
+from threading import Thread
 
+import matplotlib.pyplot as plt
+import numpy as np
+import pandas as pd
 import psutil
+from json_checker import Checker
+
+from cars.core import cars_logging
+from cars.core.utils import safe_makedirs
 
 
 # pylint: disable=too-few-public-methods
@@ -43,44 +52,127 @@ class AbstractLogWrapper(metaclass=ABCMeta):
     AbstractLogWrapper
     """
 
-    @abstractmethod
-    def __init__(self, func):
-        """
-        Init the log/profiling wrapper (store function name)
+    available_modes = {}
 
-        :param func: function to run
+    def __new__(cls, conf_profiling, out_dir):  # pylint: disable=W0613
+        """
+        Return Log wrapper
+        """
+        profiling_mode = "cars_profiling"
+
+        if "mode" not in conf_profiling:
+            logging.debug("Profiling mode not defined, default is used")
+        else:
+            profiling_mode = conf_profiling["mode"]
+
+        return super(AbstractLogWrapper, cls).__new__(
+            cls.available_modes[profiling_mode]
+        )
+
+    def __init__(self, conf_profiling, out_dir):
+        # Check conf
+        self.checked_conf_profiling = self.check_conf(conf_profiling)
+        self.out_dir = out_dir
+
+    @classmethod
+    def register_subclass(cls, short_name: str):
+        """
+        Allows to register the subclass with its short name
+        :param short_name: the subclass to be registered
+        :type short_name: string
+        """
+
+        def decorator(subclass):
+            """
+            Registers the subclass in the available methods
+            :param subclass: the subclass to be registered
+            :type subclass: object
+            """
+            cls.available_modes[short_name] = subclass
+            return subclass
+
+        return decorator
+
+    @abstractmethod
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
         """
 
     @abstractmethod
-    def func_args_plus(self):
+    def get_func_args_plus(self, func):
         """
         getter for the args of the future function
+
+        :param: function to apply
 
         :return: function to apply, overloaded key arguments
         """
 
 
+@AbstractLogWrapper.register_subclass("cars_profiling")
 class LogWrapper(AbstractLogWrapper):
     """
     LogWrapper
 
-    simple log wrapper to eval the function elapsed time
+    simple log wrapper doing nothing
     """
 
-    def __init__(self, func, loop_testing):
-        self.used_function = func
-        self.loop_testing = loop_testing
+    def __init__(self, conf_profiling, out_dir):
+        self.out_dir = out_dir
+        # call parent init
+        super().__init__(conf_profiling, out_dir)
+        self.loop_testing = self.checked_conf_profiling["loop_testing"]
 
-    def func_args_plus(self):
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+        # init conf
+        if conf is not None:
+            overloaded_conf = conf.copy()
+        else:
+            conf = {}
+            overloaded_conf = {}
+
+        # Overload conf
+        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
+        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
+
+        cluster_schema = {"mode": str, "loop_testing": bool}
+
+        # Check conf
+        checker = Checker(cluster_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
+    def get_func_args_plus(self, func):
         fun = log_function
         new_kwarg = {
-            "fun_log_wrapper": self.used_function,
+            "fun_log_wrapper": func,
             "loop_testing": self.loop_testing,
         }
 
         return fun, new_kwarg
 
 
+@AbstractLogWrapper.register_subclass("cprofile")
 class CProfileWrapper(AbstractLogWrapper):
     """
     CProfileWrapper
@@ -89,16 +181,48 @@ class CProfileWrapper(AbstractLogWrapper):
     The wrapper use cprofile API.
     """
 
-    def __init__(self, func):
-        self.used_function = func
+    def __init__(self, conf_profiling, out_dir):
+        self.out_dir = out_dir
+        # call parent init
+        super().__init__(conf_profiling, out_dir)
 
-    def func_args_plus(self):
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+        # init conf
+        if conf is not None:
+            overloaded_conf = conf.copy()
+        else:
+            conf = {}
+            overloaded_conf = {}
+
+        # Overload conf
+        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
+        cluster_schema = {"mode": str}
+
+        # Check conf
+        checker = Checker(cluster_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
+    def get_func_args_plus(self, func):
         fun = time_profiling_function
-        new_kwarg = {"fun_log_wrapper": self.used_function}
+        new_kwarg = {"fun_log_wrapper": func}
 
         return fun, new_kwarg
 
 
+@AbstractLogWrapper.register_subclass("memray")
 class MemrayWrapper(AbstractLogWrapper):
     """
     MemrayWrapper
@@ -108,15 +232,49 @@ class MemrayWrapper(AbstractLogWrapper):
     The wrapper use cprofile API.
     """
 
-    def __init__(self, func, loop_testing, out_dir):
-        self.used_function = func
-        self.loop_testing = loop_testing
+    def __init__(self, conf_profiling, out_dir):
         self.out_dir = out_dir
+        profiling_memory_dir = os.path.join(out_dir, "profiling", "memray")
+        safe_makedirs(profiling_memory_dir, cleanup=True)
+        # call parent init
+        super().__init__(conf_profiling, out_dir)
+        self.loop_testing = self.checked_conf_profiling["loop_testing"]
 
-    def func_args_plus(self):
+    def check_conf(self, conf):
+        """
+        Check configuration
+
+        :param conf: configuration to check
+        :type conf: dict
+
+        :return: overloaded configuration
+        :rtype: dict
+
+        """
+
+        # init conf
+        if conf is not None:
+            overloaded_conf = conf.copy()
+        else:
+            conf = {}
+            overloaded_conf = {}
+
+        # Overload conf
+        overloaded_conf["mode"] = conf.get("mode", "cars_profiling")
+        overloaded_conf["loop_testing"] = conf.get("loop_testing", False)
+
+        cluster_schema = {"mode": str, "loop_testing": bool}
+
+        # Check conf
+        checker = Checker(cluster_schema)
+        checker.validate(overloaded_conf)
+
+        return overloaded_conf
+
+    def get_func_args_plus(self, func):
         fun = memory_profiling_function
         new_kwarg = {
-            "fun_log_wrapper": self.used_function,
+            "fun_log_wrapper": func,
             "loop_testing": self.loop_testing,
             "out_dir": self.out_dir,
         }
@@ -137,19 +295,14 @@ def log_function(*argv, **kwargs):
     loop_testing = kwargs["loop_testing"]
     kwargs.pop("fun_log_wrapper")
     kwargs.pop("loop_testing")
-    start_time = time.time()
-
-    memory_start = get_current_memory()
 
     if loop_testing:
-        res = loop_function(argv, kwargs, func)
+        # Profile
+        res = cars_profile(name=func.__name__ + "_looped", interval=0.2)(
+            loop_function
+        )(argv, kwargs, func)
     else:
-        res = func(*argv, **kwargs)
-    total_time = time.time() - start_time
-    switch_messages(func, total_time)
-
-    memory_end = get_current_memory()
-    log_delta_memory(func, memory_start, memory_end)
+        res = cars_profile(interval=0.2)(func)(*argv, **kwargs)
 
     return res
 
@@ -234,7 +387,7 @@ def memory_profiling_function(*argv, **kwargs):
     return res
 
 
-def switch_messages(func, total_time):
+def switch_messages(func, total_time, max_memory=None):
     """
     create profile message with specific message
     depends on elapsed time (LONG, FAST...).
@@ -243,24 +396,20 @@ def switch_messages(func, total_time):
     :param func : profiled function
     :param total_time : elapsed time of the function
     """
+    message = "Clock# %{}%: %{:.4f}% s Max ram : {} MiB".format(
+        func.__name__.capitalize(), total_time, max_memory
+    )
+
     if total_time >= 1:
-        message = "# {}: {:.3f} s LONG".format(
-            func.__name__.capitalize(), total_time
-        )
-        log_message(func, message)
+        message += " LONG"
     elif 1 > total_time >= 0.001:
-        message = "# {}: {:.4f} s FAST".format(
-            func.__name__.capitalize(), total_time
-        )
-        log_message(func, message)
+        message += " FAST"
     elif 0.001 > total_time >= 0.000001:
-        message = "# {}: {:.4f} ms VERY FAST".format(
-            func.__name__.capitalize(), total_time * 1000.0
-        )
-        log_message(func, message)
+        message += " VERY FAST"
     else:
-        message = "# {}: TOO FAST".format(func.__name__.capitalize())
-        log_message(func, message)
+        message += " TOO FAST"
+
+    log_message(func, message)
 
 
 def log_message(func, message):
@@ -270,10 +419,8 @@ def log_message(func, message):
     :param func : logged function
     :param message : log message
     """
-    logging.info(message)
-    logging.info(func.__module__)
-    print(message)
-    print(func.__module__)
+    cars_logging.add_profiling_message(message)
+    cars_logging.add_profiling_message(func.__module__)
 
 
 def loop_function(argv, kwargs, func, nb_iteration=5):
@@ -340,3 +487,285 @@ def log_delta_memory(func, memory_start, memory_end):
     )
 
     log_message(func, message)
+
+
+def generate_summary(out_dir):
+    """
+    Generate Profiling summary
+    """
+    log_file_main = os.path.join(
+        out_dir,
+        "workers_log",
+        "profiling.log",
+    )
+
+    out_profiling_main = os.path.join(out_dir, "profiling", "profiling.log")
+
+    log_files = [log_file_main, out_profiling_main]
+
+    names = []
+    times = []
+    max_ram = []
+    start_ram = []
+    end_ram = []
+    max_cpu = []
+
+    for log_file in log_files:
+        if not os.path.exists(log_file):
+            logging.debug("{} log file does not exist".format(log_file))
+            return
+
+        with open(log_file, encoding="UTF-8") as file_desc:
+            for item in file_desc:
+                if "CarsProfiling" in item:
+                    splited_items = item.split("%")
+                    names.append(splited_items[1])
+                    times.append(float(splited_items[3]))
+                    max_ram.append(float(splited_items[5]))
+                    start_ram.append(float(splited_items[7]))
+                    end_ram.append(float(splited_items[9]))
+                    max_cpu.append(float(splited_items[11]))
+
+    times_df = pd.DataFrame(
+        {
+            "name": names,
+            "time": times,
+            "max_ram": max_ram,
+            "start_ram": start_ram,
+            "end_ram": end_ram,
+            "max_cpu": max_cpu,
+        }
+    )
+
+    # Generate summary message
+    cars_logging.add_profiling_message(
+        "\n \n \n "
+        "----------------------------------------"
+        " SUMMARY PROFILLING  "
+        "----------------------------------------"
+        " \n \n \n"
+    )
+
+    summary_names = []
+    summary_max_ram = []
+    summary_max_ram_relative = []
+    summary_mean_time_per_task = []
+    summary_total_time = []
+    summary_max_cpu = []
+    summary_nb_calls = []
+
+    for name in pd.unique(times_df["name"]):
+        current_df = times_df.loc[times_df["name"] == name]
+
+        current_med_time = current_df["time"].mean()
+        total_time = current_df["time"].sum()
+        max_ram = current_df["max_ram"].max()
+        max_cpu = current_df["max_cpu"].max()
+        max_ram_without_start = (
+            current_df["max_ram"] - current_df["start_ram"]
+        ).max()
+        diff_end_start = (current_df["end_ram"] - current_df["start_ram"]).max()
+        nb_values = len(current_df)
+
+        # fill lists for figures
+        summary_names.append(name)
+        summary_max_ram.append(max_ram)
+        summary_max_ram_relative.append(max_ram_without_start)
+        summary_mean_time_per_task.append(current_med_time)
+        summary_total_time.append(total_time)
+        summary_max_cpu.append(max_cpu)
+        summary_nb_calls.append(nb_values)
+
+        message = (
+            "Task {} ran {} times, with mean time {} sec, "
+            "total time: {} sec, Max cpu: {} %"
+            " max ram in process during task: {} MiB, "
+            "max ram - start ram: {},  "
+            " end - start ram : {}".format(
+                name,
+                nb_values,
+                current_med_time,
+                total_time,
+                max_cpu,
+                max_ram,
+                max_ram_without_start,
+                diff_end_start,
+            )
+        )
+
+        cars_logging.add_profiling_message(message)
+
+    # Generate png
+    _, axs = plt.subplots(3, 2, figsize=(15, 15), layout="tight")
+    # Fill
+    generate_histo(
+        axs.flat[0], summary_names, summary_max_cpu, "Max CPU usage", "%"
+    )
+    generate_histo(
+        axs.flat[1], summary_names, summary_total_time, "Total Time", "s"
+    )
+    generate_histo(
+        axs.flat[2],
+        summary_names,
+        summary_mean_time_per_task,
+        "Mean time per task",
+        "s",
+    )
+    generate_histo(
+        axs.flat[3], summary_names, summary_max_ram, "Max RAM used", "MiB"
+    )
+    generate_histo(
+        axs.flat[4],
+        summary_names,
+        summary_max_ram_relative,
+        "Max RAM added",
+        "MiB",
+    )
+    generate_histo(
+        axs.flat[5],
+        summary_nb_calls,
+        summary_max_ram_relative,
+        "NB calls",
+        "callss",
+    )
+
+    for axis in axs.flat[5:]:
+        axis.remove()
+
+    # file_name
+    profiling_plot = os.path.join(
+        out_dir,
+        "profiling",
+        "profiling_plots.pdf",
+    )
+    plt.savefig(profiling_plot)
+
+
+def generate_histo(axis, names, data, title, data_type):
+    """
+    Generate histogram
+    """
+    y_pos = np.arange(len(names))
+    axis.barh(y_pos, data, align="center")
+    axis.set_yticks(y_pos, labels=names)
+    axis.invert_yaxis()
+    axis.set_xlabel(data_type)
+    axis.set_title(title)
+
+
+def cars_profile(name=None, interval=0.1):
+    """
+    CARS profiling decorator
+
+    :param: func: function to monitor
+
+    """
+
+    def decorator_generator(func):
+        """
+        Inner function
+        """
+
+        def wrapper_cars_profile(*args, **kwargs):
+            """
+            Profiling wrapper
+
+            Generate profiling logs of functio, run
+
+            :return: func(*args, **kwargs)
+
+            """
+            start_time = time.time()
+
+            memory_start = get_current_memory()
+
+            # Launch memory profiling thread
+            child_pipe, parent_pipe = Pipe()
+            thread_monitoring = CarsMemProf(
+                os.getpid(), child_pipe, interval=interval
+            )
+            thread_monitoring.start()
+            parent_pipe.recv()
+
+            res = func(*args, **kwargs)
+            total_time = time.time() - start_time
+
+            # end memprofiling monitoring
+            parent_pipe.send(0)
+            max_memory = parent_pipe.recv()
+            max_cpu = parent_pipe.recv()
+            memory_end = get_current_memory()
+
+            func_name = name
+            if name is None:
+                func_name = func.__name__.capitalize()
+
+            message = (
+                "CarsProfiling# %{}%: %{:.4f}% s Max ram : %{}% MiB"
+                " Start Ram: %{}% MiB, End Ram: %{}% MiB, "
+                " Max CPU usage: %{}%".format(
+                    func_name,
+                    total_time,
+                    max_memory,
+                    memory_start,
+                    memory_end,
+                    max_cpu,
+                )
+            )
+
+            cars_logging.add_profiling_message(message)
+
+            return res
+
+        return wrapper_cars_profile
+
+    return decorator_generator
+
+
+class CarsMemProf(Thread):
+    """
+    CarsMemProf
+
+    Profiling thread
+    """
+
+    def __init__(self, pid, pipe, interval=0.1):
+        """
+        Init function of CarsMemProf
+        """
+        super().__init__()
+        self.pipe = pipe
+        self.interval = interval
+        self.cpu_interval = 0.1
+        self.process = psutil.Process(pid)
+
+    def run(self):
+        """
+        Run
+        """
+
+        max_mem = 0
+        max_cpu = 0
+
+        # tell parent profiling is ready
+        self.pipe.send(0)
+        stop = False
+        while True:
+            # Get memory
+            current_mem = self.process.memory_info().rss
+
+            if current_mem > max_mem:
+                max_mem = current_mem
+
+            # Get cpu max
+            current_cpu = self.process.cpu_percent(interval=self.cpu_interval)
+            if current_cpu > max_cpu:
+                max_cpu = current_cpu
+
+            if stop:
+                break
+            stop = self.pipe.poll(self.interval)
+
+        # Convert nbytes size for logger
+        self.pipe.send(float(max_mem) / 1000000)
+        self.pipe.send(max_cpu)

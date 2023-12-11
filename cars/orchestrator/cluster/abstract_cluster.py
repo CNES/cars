@@ -30,7 +30,6 @@ from typing import Dict
 
 # CARS imports
 from cars.conf.input_parameters import ConfigType
-from cars.core.utils import safe_makedirs
 from cars.orchestrator.cluster import log_wrapper
 
 
@@ -44,7 +43,7 @@ class AbstractCluster(metaclass=ABCMeta):
 
     # Define abstract attributes
 
-    # profiling config parameter: activated, mode, loop_testing, memray
+    # profiling config parameter: mode, loop_testing, memray
     profiling: ConfigType
     # cluster mode output directory
     out_dir: str
@@ -73,27 +72,8 @@ class AbstractCluster(metaclass=ABCMeta):
             logging.error("No mode named {} registered".format(cluster_mode))
             raise KeyError("No mode named {} registered".format(cluster_mode))
 
-        profiling = {"activated": False, "mode": "time", "loop_testing": False}
-        if "profiling" in conf_cluster:
-            conf_profiling = conf_cluster["profiling"]
-            if "activated" in conf_profiling:
-                profiling["activated"] = conf_profiling["activated"]
-            if profiling["activated"]:
-                if "mode" in conf_profiling:
-                    profiling["mode"] = conf_profiling["mode"]
-                if "loop_testing" in conf_profiling:
-                    profiling["loop_testing"] = conf_profiling["loop_testing"]
-                if "memray" in profiling["mode"]:
-                    profiling_memory_dir = os.path.join(
-                        out_dir, "profiling", "memray"
-                    )
-                    safe_makedirs(profiling_memory_dir, cleanup=True)
-        conf_cluster["profiling"] = profiling
         logging.info("The AbstractCluster {} will be used".format(cluster_mode))
-        cls.worker_log_dir = os.path.join(out_dir, "workers_log")
-        if not os.path.exists(cls.worker_log_dir):
-            os.makedirs(cls.worker_log_dir)
-        cls.log_level = logging.getLogger().getEffectiveLevel()
+
         return super(AbstractCluster, cls).__new__(
             cls.available_modes[cluster_mode]
         )
@@ -127,8 +107,28 @@ class AbstractCluster(metaclass=ABCMeta):
 
         """
         self.out_dir = out_dir
+
+        self.worker_log_dir = os.path.join(out_dir, "workers_log")
+        if not os.path.exists(self.worker_log_dir):
+            os.makedirs(self.worker_log_dir)
+
+        self.log_level = logging.getLogger().getEffectiveLevel()
+        handlers = logging.getLogger().handlers
+        for hand in handlers:
+            if "stdout" == hand.get_name():
+                self.log_level = hand.level
+
         # Check conf
         self.checked_conf_cluster = self.check_conf(conf_cluster)
+
+        self.profiling_logger = (
+            log_wrapper.AbstractLogWrapper(  # pylint: disable=E0110
+                self.checked_conf_cluster["profiling"], out_dir
+            )
+        )
+        self.checked_conf_cluster[
+            "profiling"
+        ] = self.profiling_logger.checked_conf_profiling
 
     @abstractmethod
     def cleanup(self):
@@ -175,27 +175,12 @@ class AbstractCluster(metaclass=ABCMeta):
             :param argv: list of input arguments
             :param kwargs: list of named input arguments
             """
-            if not self.profiling["activated"]:
-                return self.create_task_wrapped(func, nout=nout)(
-                    *argv, **kwargs
-                )
 
-            if self.profiling["mode"] == "time":
-                (wrapper_func, additionnal_kwargs) = log_wrapper.LogWrapper(
-                    func, self.profiling["loop_testing"]
-                ).func_args_plus()
-            elif self.profiling["mode"] == "cprofile":
-                (
-                    wrapper_func,
-                    additionnal_kwargs,
-                ) = log_wrapper.CProfileWrapper(func).func_args_plus()
-            elif self.profiling["mode"] == "memray":
-                (
-                    wrapper_func,
-                    additionnal_kwargs,
-                ) = log_wrapper.MemrayWrapper(
-                    func, self.profiling["loop_testing"], self.out_dir
-                ).func_args_plus()
+            (
+                wrapper_func,
+                additionnal_kwargs,
+            ) = self.profiling_logger.get_func_args_plus(func)
+
             return self.create_task_wrapped(wrapper_func, nout=nout)(
                 *argv, **kwargs, **additionnal_kwargs
             )

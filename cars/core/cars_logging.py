@@ -30,14 +30,22 @@ import logging.config
 import os
 
 # Standard imports
-import sys
 from datetime import datetime
+from functools import wraps
 
 PROGRESS = 21
 logging.addLevelName(PROGRESS, "PROGRESS")
+PROFILING_LOG = 15
+logging.addLevelName(PROFILING_LOG, "PROFILING_LOG")
 
 
-def create(loglevel="PROGRESS"):
+def setup_logging(
+    loglevel="PROGRESS",
+    out_dir=None,
+    log_dir=None,
+    pipeline="",
+    in_worker=False,
+):
     """
     Setup the CARS logging configuration
 
@@ -47,17 +55,143 @@ def create(loglevel="PROGRESS"):
     if loglevel == "PROGRESS":
         numeric_level = PROGRESS
     else:
-        numeric_level = getattr(logging, loglevel, None)
+        if isinstance(loglevel, int):
+            numeric_level = loglevel
+        else:
+            numeric_level = getattr(logging, loglevel, None)
 
     if not isinstance(numeric_level, int):
         raise ValueError("Invalid log level: %s" % loglevel)
 
-    logging.basicConfig(
-        stream=sys.stdout,
-        level=numeric_level,
-        datefmt="%y-%m-%d %H:%M:%S",
-        format="%(asctime)s :: %(levelname)s :: %(message)s",
-    )
+    def add_handler_name(config, handler_name):
+        for key in config["loggers"].keys():
+            config["loggers"][key]["handlers"].append(handler_name)
+
+    def add_handler_to_logging(
+        log_file_name, formatter, log_level, handler_name
+    ):
+        cars_logger = logging.getLogger()
+        formatter_log = logging.Formatter(formatter)
+        h_log_file = logging.FileHandler(log_file_name)
+        h_log_file.setFormatter(formatter_log)
+        h_log_file.setLevel(log_level)
+        h_log_file.set_name(handler_name)
+        cars_logger.addHandler(h_log_file)
+
+    logging_config = {
+        "version": 1,
+        "disable_existing_loggers": True,
+        "formatters": {
+            "standard": {
+                "format": "%(asctime)s :: %(levelname)s ::  %(message)s"
+            },
+            "workers": {
+                "format": "%(asctime)s :: %(levelname)s "
+                + ":: %(thread)d :: %(process)d :: %(message)s"
+            },
+        },
+        "handlers": {
+            "stdout": {
+                "level": numeric_level,
+                "formatter": "standard",
+                "class": "logging.StreamHandler",
+                "stream": "ext://sys.stdout",  # Default is stderr
+            }
+        },
+        "loggers": {
+            "": {  # root logger
+                "handlers": [],
+                "level": min(numeric_level, PROFILING_LOG),
+                "propagate": False,
+            },
+            "cars": {
+                "handlers": [],
+                "level": min(numeric_level, PROFILING_LOG),
+                "propagate": False,
+            },
+            "__main__": {  # if __name__ == '__main__'
+                "handlers": [],
+                "level": min(numeric_level, PROFILING_LOG),
+                "propagate": False,
+            },
+        },
+    }
+
+    # add file formaters:
+    if out_dir is not None:
+        if not os.path.exists(out_dir):
+            os.makedirs(out_dir)
+        log_file = os.path.join(
+            out_dir,
+            "{}_{}.log".format(
+                datetime.now().strftime("%y-%m-%d_%Hh%Mm"), pipeline
+            ),
+        )
+        handler_main = "file_main"
+        logging_config["handlers"][handler_main] = {
+            "class": "logging.FileHandler",
+            "filename": log_file,
+            "level": min(numeric_level, logging.INFO),
+            "mode": "w",
+            "formatter": "standard",
+        }
+        add_handler_name(logging_config, handler_main)
+
+        # profiling for main
+        profiling_dir = os.path.join(out_dir, "profiling")
+        if not os.path.exists(profiling_dir):
+            os.makedirs(profiling_dir)
+        profiling_file = os.path.join(profiling_dir, "profiling.log")
+
+        handler_main_profiling = "file_main_profiling"
+        logging_config["handlers"][handler_main_profiling] = {
+            "class": "logging.FileHandler",
+            "filename": profiling_file,
+            "level": min(numeric_level, PROFILING_LOG),
+            "mode": "w",
+            "formatter": "standard",
+        }
+        add_handler_name(logging_config, handler_main_profiling)
+
+    if not in_worker:
+        add_handler_name(logging_config, "stdout")
+        logging.config.dictConfig(logging_config)
+    else:
+        # remove stdout as handler
+        del logging_config["handlers"]["stdout"]
+
+        # add file handlers
+        if log_dir is not None:
+            if not os.path.exists(log_dir):
+                os.makedirs(log_dir)
+
+            # change level of root logger in workerss
+            logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
+            if len(logging.getLogger().handlers) < 2:
+                log_file_workers = os.path.join(
+                    log_dir,
+                    "workers.log",
+                )
+                handler_workers = "file_workers"
+                add_handler_to_logging(
+                    log_file_workers,
+                    logging_config["formatters"]["workers"]["format"],
+                    min(numeric_level, logging.INFO),
+                    handler_workers,
+                )
+
+                # profiling
+                log_file_workers_profiling = os.path.join(
+                    log_dir,
+                    "profiling.log",
+                )
+                handler_workers_profiling = "file_workers_profiling"
+                add_handler_to_logging(
+                    log_file_workers_profiling,
+                    logging_config["formatters"]["workers"]["format"],
+                    min(numeric_level, PROFILING_LOG),
+                    handler_workers_profiling,
+                )
 
 
 def add_progress_message(message):
@@ -70,31 +204,14 @@ def add_progress_message(message):
     logging.log(PROGRESS, message)
 
 
-def add_log_file(out_dir, command):
+def add_profiling_message(message):
     """
-    Add dated file handler to the logger.
+    Add enforced message with PROFILING_LOG level
+    to stdout and logging file
 
-    :param out_dir: output directory in which the log file will be created
-    :type out_dir: str
-    :param command: command name which will be part of the log file name
-    :type command: str
+    :param message: logging message
     """
-    # set file log handler
-    now = datetime.now()
-    h_log_file = logging.FileHandler(
-        os.path.join(
-            out_dir,
-            "{}_{}.log".format(now.strftime("%y-%m-%d_%Hh%Mm"), command),
-        )
-    )
-
-    formatter = logging.Formatter(
-        fmt="%(asctime)s :: %(levelname)s :: %(message)s",
-        datefmt="%y-%m-%d %H:%M:%S",
-    )
-    h_log_file.setFormatter(formatter)
-    h_log_file.setLevel(logging.getLogger().getEffectiveLevel())
-    logging.getLogger().addHandler(h_log_file)
+    logging.log(PROFILING_LOG, message)
 
 
 def wrap_logger(func, log_dir, log_level):
@@ -106,6 +223,7 @@ def wrap_logger(func, log_dir, log_level):
     :param log_level: logging level of the worker logs
     """
 
+    @wraps(func)
     def wrapper_builder(*args, **kwargs):
         """
         Wrapper function
@@ -115,7 +233,7 @@ def wrap_logger(func, log_dir, log_level):
         """
         # init logger
         try:
-            setup_logger(log_dir, log_level)
+            setup_logging(loglevel=log_level, log_dir=log_dir, in_worker=True)
             res = func(*args, **kwargs)
         except Exception as worker_error:
             logging.exception(worker_error, exc_info=True)
@@ -149,42 +267,9 @@ def logger_func(*args, **kwargs):
         ) from exc
     # init logger
     try:
-        setup_logger(log_dir, log_level)
+        setup_logging(loglevel=log_level, log_dir=log_dir, in_worker=True)
         res = func(*args, **kwargs)
     except Exception as worker_error:
         logging.exception(worker_error, exc_info=True)
         raise worker_error
     return res
-
-
-def setup_logger(log_dir, log_level):
-    """
-    Setup the worker logger inside wrapper
-    :param log_dir: output directory of worker logs
-    :param log_level: logging level of the worker logs
-    """
-    cars_logger = logging.getLogger()
-    if len(logging.getLogger().handlers) < 1:
-        formatter = logging.Formatter(
-            fmt="%(asctime)s :: %(levelname)s "
-            + ":: %(thread)d :: %(process)d :: %(message)s",
-            datefmt="%y-%m-%d %H:%M:%S",
-        )
-        if log_level == logging.DEBUG:
-            formatter = logging.Formatter(
-                fmt="%(asctime)s :: %(module)s "
-                + ":: %(levelname)s :: %(thread)d "
-                + ":: %(process)d :: %(message)s",
-                datefmt="%y-%m-%d %H:%M:%S",
-            )
-        if os.path.exists(log_dir):
-            h_log_file = logging.FileHandler(
-                os.path.join(
-                    log_dir,
-                    "workers.log",
-                )
-            )
-            h_log_file.setFormatter(formatter)
-            h_log_file.setLevel(log_level)
-            cars_logger.addHandler(h_log_file)
-            cars_logger.setLevel(log_level)

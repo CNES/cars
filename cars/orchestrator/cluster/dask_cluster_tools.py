@@ -65,11 +65,7 @@ def create_checker_schema(conf):
         "walltime": str,
         "config_name": str,
         "activate_dashboard": bool,
-        "profiling": {
-            "activated": bool,
-            "mode": str,
-            "loop_testing": bool,
-        },
+        "profiling": dict,
         "python": Or(None, str),
     }
 

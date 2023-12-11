@@ -35,7 +35,7 @@ from pyproj import CRS
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.point_cloud_fusion import pc_tif_tools
-from cars.core import cars_logging, preprocessing, roi_tools
+from cars.core import preprocessing, roi_tools
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.pipelines.pipeline import Pipeline
@@ -264,7 +264,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         """
 
         out_dir = self.output["out_dir"]
-        cars_logging.add_log_file(out_dir, "merging")
 
         # Save used conf
         out_dir = self.output["out_dir"]

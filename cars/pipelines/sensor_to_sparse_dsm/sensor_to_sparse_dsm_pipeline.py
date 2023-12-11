@@ -41,11 +41,12 @@ from cars.applications.dem_generation import (
 from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
-from cars.core import cars_logging, preprocessing, roi_tools
+from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
@@ -299,13 +300,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
+    @cars_profile(name="run_sparse_pipeline", interval=0.5)
     def run(self):
         """
         Run pipeline
 
         """
         out_dir = self.output["out_dir"]
-        cars_logging.add_log_file(out_dir, "sensors_to_sparse_dsm")
 
         # Save used conf
         cars_dataset.save_dict(
@@ -654,8 +655,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["corrected_grid_left"],
                         pairs[pair_key]["corrected_grid_right"],
                         self.geom_plugin_with_dem_and_geoid,
-                        orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
                         disp_min=dmin,
                         disp_max=dmax,
                     )

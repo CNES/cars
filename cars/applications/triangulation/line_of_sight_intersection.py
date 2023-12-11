@@ -469,7 +469,7 @@ class LineOfSightIntersection(
                     (
                         epipolar_points_cloud[row][col]
                     ) = self.orchestrator.cluster.create_task(
-                        compute_points_cloud
+                        triangulation_wrapper
                     )(
                         epipolar_disparity_map[row, col],
                         sensor1,
@@ -487,7 +487,7 @@ class LineOfSightIntersection(
         return epipolar_points_cloud
 
 
-def compute_points_cloud(
+def triangulation_wrapper(
     disparity_object: xr.Dataset,
     sensor1,
     sensor2,

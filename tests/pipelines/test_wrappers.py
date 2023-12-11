@@ -39,7 +39,7 @@ from cars.applications.resampling.bicubic_resampling import (
     generate_epipolar_images_wrapper,
 )
 from cars.applications.triangulation.line_of_sight_intersection import (
-    compute_points_cloud,
+    triangulation_wrapper,
 )
 from cars.conf import input_parameters as in_params
 from cars.data_structures import cars_dataset
@@ -172,7 +172,7 @@ def test_epipolar_pipeline(
         left_image, right_image, corr_cfg, disp_range_grid
     )
 
-    points_cloud = compute_points_cloud(
+    points_cloud = triangulation_wrapper(
         disp_map,
         img1,
         img2,

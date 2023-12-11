@@ -36,6 +36,7 @@ import sys
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
+from cars.orchestrator.cluster import log_wrapper
 
 
 class StreamCapture:
@@ -114,17 +115,13 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
     :param dry_run: activate only arguments checking
     """
+
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
 
     # Change stdout to clean (Os) OTB output from image_envelope app.
     original_stdout = sys.stdout
     sys.stdout = StreamCapture(sys.stdout, r"(0s)")
-
-    # Logging configuration with args Loglevel
-    loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-    cars_logging.create(loglevel)
-    logging.debug("Show argparse arguments: {}".format(args))
 
     # Force the use of OpenMP in numba
     os.environ["NUMBA_THREADING_LAYER"] = "omp"
@@ -146,8 +143,16 @@ def main_cli(args, dry_run=False):  # noqa: C901
             config = json.load(fstream)
 
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
-
         pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
+
+        # Logging configuration with args Loglevel
+        loglevel = getattr(args, "loglevel", "PROGRESS").upper()
+        out_dir = config["output"]["out_dir"]
+        cars_logging.setup_logging(
+            loglevel, out_dir=out_dir, pipeline=pipeline_name
+        )
+        logging.debug("Show argparse arguments: {}".format(args))
+
         # Generate pipeline and check conf
         cars_logging.add_progress_message("Check configuration...")
         used_pipeline = Pipeline(pipeline_name, config, config_json_dir)
@@ -155,6 +160,9 @@ def main_cli(args, dry_run=False):  # noqa: C901
         if not dry_run:
             # run pipeline
             used_pipeline.run()
+
+        # Generate summary of tasks
+        log_wrapper.generate_summary(out_dir)
         cars_logging.add_progress_message(
             "CARS has successfully completed the pipeline."
         )

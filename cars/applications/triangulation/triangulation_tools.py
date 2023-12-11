@@ -36,6 +36,7 @@ from scipy.interpolate import LinearNDInterpolator
 
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def triangulate(
@@ -98,6 +99,7 @@ def triangulate(
     return point_clouds
 
 
+@cars_profile(name="Matches triangulation")
 def triangulate_matches(
     geometry_plugin,
     sensor1,
