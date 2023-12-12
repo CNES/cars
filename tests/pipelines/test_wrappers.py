@@ -33,7 +33,7 @@ import pytest
 import cars.applications.dense_matching.dense_matching_tools as dense_match
 from cars.applications.dense_matching.census_mccnn_sgm import (
     CensusMccnnSgm,
-    compute_disparity,
+    compute_disparity_wrapper,
 )
 from cars.applications.resampling.bicubic_resampling import (
     generate_epipolar_images_wrapper,
@@ -168,7 +168,7 @@ def test_epipolar_pipeline(
         pair_folder=None,
     )
 
-    disp_map = compute_disparity(
+    disp_map = compute_disparity_wrapper(
         left_image, right_image, corr_cfg, disp_range_grid
     )
 

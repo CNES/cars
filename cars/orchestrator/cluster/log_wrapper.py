@@ -21,6 +21,7 @@
 """
 Contains functions for wrapper logs
 """
+# pylint: disable=too-many-lines
 
 import copy
 import cProfile
@@ -489,10 +490,15 @@ def log_delta_memory(func, memory_start, memory_end):
     log_message(func, message)
 
 
-def generate_summary(out_dir):
+def generate_summary(out_dir, used_conf):
     """
     Generate Profiling summary
     """
+
+    nb_workers = 1
+    if "nb_workers" in used_conf["orchestrator"]:
+        nb_workers = used_conf["orchestrator"]["nb_workers"]
+
     log_file_main = os.path.join(
         out_dir,
         "workers_log",
@@ -596,7 +602,7 @@ def generate_summary(out_dir):
         cars_logging.add_profiling_message(message)
 
     # Generate png
-    _, axs = plt.subplots(3, 2, figsize=(15, 15), layout="tight")
+    _, axs = plt.subplots(4, 2, figsize=(15, 15), layout="tight")
     # Fill
     generate_histo(
         axs.flat[0], summary_names, summary_max_cpu, "Max CPU usage", "%"
@@ -604,10 +610,19 @@ def generate_summary(out_dir):
     generate_histo(
         axs.flat[1], summary_names, summary_total_time, "Total Time", "s"
     )
-    generate_histo(
-        axs.flat[2],
+
+    (
+        summary_names_without_pipeline,
+        summary_total_time_without_pipeline,
+    ) = filter_lists(
         summary_names,
         summary_mean_time_per_task,
+        lambda name: "pipeline" not in name,
+    )
+    generate_histo(
+        axs.flat[2],
+        summary_names_without_pipeline,
+        summary_total_time_without_pipeline,
         "Mean time per task",
         "s",
     )
@@ -623,14 +638,43 @@ def generate_summary(out_dir):
     )
     generate_histo(
         axs.flat[5],
+        summary_names,
         summary_nb_calls,
-        summary_max_ram_relative,
         "NB calls",
-        "callss",
+        "calls",
     )
 
-    for axis in axs.flat[5:]:
-        axis.remove()
+    # Pie chart
+
+    (name_task_workers, summary_workers) = filter_lists(
+        summary_names, summary_total_time, lambda name: "wrapper" in name
+    )
+
+    (name_task_main, summary_main) = filter_lists(
+        summary_names,
+        summary_total_time,
+        lambda name: "wrapper" not in name and "pipeline" not in name,
+    )
+
+    (_, [pipeline_time]) = filter_lists(
+        summary_names, summary_total_time, lambda name: "pipeline" in name
+    )
+
+    total_time_workers = nb_workers * pipeline_time
+    generate_pie_chart(
+        axs.flat[6],
+        name_task_workers,
+        100 * np.array(summary_workers) / total_time_workers,
+        "Total time in workers ({} workers) lives "
+        "(not always with tasks)".format(nb_workers),
+    )
+
+    generate_pie_chart(
+        axs.flat[7],
+        name_task_main,
+        100 * np.array(summary_main) / pipeline_time,
+        "Total time in main (with waiting for workers)",
+    )
 
     # file_name
     profiling_plot = os.path.join(
@@ -639,6 +683,22 @@ def generate_summary(out_dir):
         "profiling_plots.pdf",
     )
     plt.savefig(profiling_plot)
+
+
+def filter_lists(names, data, cond):
+    """
+    Filter lists with condition on name
+    """
+
+    filtered_names = []
+    filtered_data = []
+
+    for name, dat in zip(names, data):  # noqa: B905
+        if cond(name):
+            filtered_names.append(name)
+            filtered_data.append(dat)
+
+    return filtered_names, filtered_data
 
 
 def generate_histo(axis, names, data, title, data_type):
@@ -650,6 +710,27 @@ def generate_histo(axis, names, data, title, data_type):
     axis.set_yticks(y_pos, labels=names)
     axis.invert_yaxis()
     axis.set_xlabel(data_type)
+    axis.set_title(title)
+
+
+def generate_pie_chart(axis, names, data, title):
+    """
+    Generate pie chart, data in %
+    """
+    names = list(names)
+    data = list(data)
+
+    if np.sum(data) > 100:
+        cars_logging.add_profiling_message(
+            "Chart: sum of data {}> 100%".format(title)
+        )
+        title += " (with sum > 100%) "
+    else:
+        others = 100 - np.sum(data)
+        data.append(others)
+        names.append("other")
+
+    axis.pie(data, labels=names, autopct="%1.1f%%")
     axis.set_title(title)
 
 

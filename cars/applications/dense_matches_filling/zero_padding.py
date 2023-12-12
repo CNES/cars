@@ -220,7 +220,7 @@ class ZerosPadding(
                             (
                                 new_epipolar_disparity_map[row, col]
                             ) = self.orchestrator.cluster.create_task(
-                                wrapper_fill_disparity
+                                fill_disparity_zeros_wrapper
                             )(
                                 epipolar_disparity_map[row, col],
                                 window,
@@ -239,7 +239,7 @@ class ZerosPadding(
         return res
 
 
-def wrapper_fill_disparity(
+def fill_disparity_zeros_wrapper(
     disp,
     window,
     overlap,

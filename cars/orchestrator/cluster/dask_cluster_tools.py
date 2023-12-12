@@ -56,6 +56,7 @@ def create_checker_schema(conf):
         "activate_dashboard", False
     )
     overloaded_conf["python"] = conf.get("python", None)
+    overloaded_conf["profiling"] = conf.get("profiling", {})
 
     cluster_schema = {
         "mode": str,

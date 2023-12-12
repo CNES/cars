@@ -554,7 +554,7 @@ class Sift(SparseMatching, short_name="sift"):
                             ):
                                 delayed_matches_row_col.append(
                                     self.orchestrator.cluster.create_task(
-                                        compute_matches, nout=1
+                                        compute_matches_wrapper, nout=1
                                     )(
                                         epipolar_images_left[row, col],
                                         epipolar_images_right[
@@ -586,7 +586,7 @@ class Sift(SparseMatching, short_name="sift"):
                         (
                             epipolar_disparity_map_left[row, col]
                         ) = self.orchestrator.cluster.create_task(
-                            merge_matches, nout=1
+                            merge_matches_wrapper, nout=1
                         )(
                             delayed_matches_row_col,
                             saving_info_left=full_saving_info_left,
@@ -775,7 +775,7 @@ class Sift(SparseMatching, short_name="sift"):
         return matches
 
 
-def compute_matches(
+def compute_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     matching_threshold=None,
@@ -864,7 +864,7 @@ def compute_matches(
     return left_matches_dataframe
 
 
-def merge_matches(list_of_matches, saving_info_left=None):
+def merge_matches_wrapper(list_of_matches, saving_info_left=None):
     """
     Concatenate matches
 

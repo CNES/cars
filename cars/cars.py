@@ -162,7 +162,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             used_pipeline.run()
 
         # Generate summary of tasks
-        log_wrapper.generate_summary(out_dir)
+        log_wrapper.generate_summary(out_dir, used_pipeline.used_conf)
         cars_logging.add_progress_message(
             "CARS has successfully completed the pipeline."
         )

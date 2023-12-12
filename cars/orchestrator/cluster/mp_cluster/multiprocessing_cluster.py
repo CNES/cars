@@ -184,6 +184,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
         overloaded_conf["factorize_tasks"] = conf.get("factorize_tasks", True)
+        overloaded_conf["profiling"] = conf.get("profiling", {})
 
         cluster_schema = {
             "mode": str,

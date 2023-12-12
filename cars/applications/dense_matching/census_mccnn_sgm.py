@@ -1118,7 +1118,7 @@ class CensusMccnnSgm(
                         (
                             epipolar_disparity_map[row, col]
                         ) = self.orchestrator.cluster.create_task(
-                            compute_disparity
+                            compute_disparity_wrapper
                         )(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
@@ -1155,7 +1155,7 @@ class CensusMccnnSgm(
         return epipolar_disparity_map
 
 
-def compute_disparity(
+def compute_disparity_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,
