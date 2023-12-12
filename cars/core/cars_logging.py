@@ -64,12 +64,18 @@ def setup_logging(
         raise ValueError("Invalid log level: %s" % loglevel)
 
     def add_handler_name(config, handler_name):
+        """
+        add handler name in known handlers of loggers
+        """
         for key in config["loggers"].keys():
             config["loggers"][key]["handlers"].append(handler_name)
 
     def add_handler_to_logging(
         log_file_name, formatter, log_level, handler_name
     ):
+        """
+        Add handler to logging
+        """
         cars_logger = logging.getLogger()
         formatter_log = logging.Formatter(formatter)
         h_log_file = logging.FileHandler(log_file_name)
