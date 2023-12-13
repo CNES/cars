@@ -554,8 +554,12 @@ def generate_summary(out_dir, used_conf):
 
     summary_names = []
     summary_max_ram = []
+    summary_max_ram_err_min = []
+    summary_max_ram_err_max = []
     summary_max_ram_relative = []
     summary_mean_time_per_task = []
+    summary_mean_time_per_task_err_min = []
+    summary_mean_time_per_task_err_max = []
     summary_total_time = []
     summary_max_cpu = []
     summary_nb_calls = []
@@ -564,8 +568,12 @@ def generate_summary(out_dir, used_conf):
         current_df = times_df.loc[times_df["name"] == name]
 
         current_med_time = current_df["time"].mean()
+        current_med_time_err_min = current_med_time - current_df["time"].min()
+        current_med_time_err_max = current_df["time"].max() - current_med_time
         total_time = current_df["time"].sum()
-        max_ram = current_df["max_ram"].max()
+        max_ram = current_df["max_ram"].mean()
+        max_ram_err_min = max_ram - current_df["max_ram"].min()
+        max_ram_err_max = current_df["max_ram"].max() - max_ram
         max_cpu = current_df["max_cpu"].max()
         max_ram_without_start = (
             current_df["max_ram"] - current_df["start_ram"]
@@ -576,8 +584,12 @@ def generate_summary(out_dir, used_conf):
         # fill lists for figures
         summary_names.append(name)
         summary_max_ram.append(max_ram)
+        summary_max_ram_err_min.append(max_ram_err_min)
+        summary_max_ram_err_max.append(max_ram_err_max)
         summary_max_ram_relative.append(max_ram_without_start)
         summary_mean_time_per_task.append(current_med_time)
+        summary_mean_time_per_task_err_min.append(current_med_time_err_min)
+        summary_mean_time_per_task_err_max.append(current_med_time_err_max)
         summary_total_time.append(total_time)
         summary_max_cpu.append(max_cpu)
         summary_nb_calls.append(nb_values)
@@ -613,21 +625,46 @@ def generate_summary(out_dir, used_conf):
 
     (
         summary_names_without_pipeline,
-        summary_total_time_without_pipeline,
+        summary_mean_time_without_pipeline,
     ) = filter_lists(
         summary_names,
         summary_mean_time_per_task,
         lambda name: "pipeline" not in name,
     )
+    (
+        _,
+        summary_mean_time_per_task_err_min_without_pipeline,
+    ) = filter_lists(
+        summary_names,
+        summary_mean_time_per_task_err_min,
+        lambda name: "pipeline" not in name,
+    )
+    (
+        _,
+        summary_mean_time_per_task_err_min_without_pipeline,
+    ) = filter_lists(
+        summary_names,
+        summary_mean_time_per_task_err_min,
+        lambda name: "pipeline" not in name,
+    )
+
     generate_histo(
         axs.flat[2],
         summary_names_without_pipeline,
-        summary_total_time_without_pipeline,
+        summary_mean_time_without_pipeline,
         "Mean time per task",
         "s",
+        data_min_err=summary_mean_time_per_task_err_min_without_pipeline,
+        data_max_err=summary_mean_time_per_task_err_min_without_pipeline,
     )
     generate_histo(
-        axs.flat[3], summary_names, summary_max_ram, "Max RAM used", "MiB"
+        axs.flat[3],
+        summary_names,
+        summary_max_ram,
+        "Max RAM used",
+        "MiB",
+        data_min_err=summary_max_ram_err_min,
+        data_max_err=summary_max_ram_err_max,
     )
     generate_histo(
         axs.flat[4],
@@ -701,12 +738,22 @@ def filter_lists(names, data, cond):
     return filtered_names, filtered_data
 
 
-def generate_histo(axis, names, data, title, data_type):
+def generate_histo(
+    axis, names, data, title, data_type, data_min_err=None, data_max_err=None
+):
     """
     Generate histogram
     """
     y_pos = np.arange(len(names))
-    axis.barh(y_pos, data, align="center")
+    if None not in (data_min_err, data_max_err):
+        data_min_err = np.array(data_min_err)
+        data_max_err = np.array(data_max_err)
+        xerr = np.empty((2, data_min_err.shape[0]))
+        xerr[0, :] = data_min_err
+        xerr[1, :] = data_max_err
+        axis.barh(y_pos, data, xerr=xerr, align="center")
+    else:
+        axis.barh(y_pos, data, align="center")
     axis.set_yticks(y_pos, labels=names)
     axis.invert_yaxis()
     axis.set_xlabel(data_type)

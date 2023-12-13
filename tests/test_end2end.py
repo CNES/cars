@@ -415,8 +415,7 @@ def test_end2end_ventoux_unique():
                 "max_ram_per_worker": 1000,
                 "activate_dashboard": False,
                 "profiling": {
-                    "activated": False,
-                    "mode": "time",
+                    "mode": "cars_profiling",
                     "loop_testing": False,
                 },
                 "python": None,
@@ -1707,8 +1706,7 @@ def test_end2end_use_epipolar_a_priori():
                 "walltime": "00:10:00",
                 "nb_workers": 4,
                 "profiling": {
-                    "activated": False,
-                    "mode": "time",
+                    "mode": "cars_profiling",
                     "loop_testing": False,
                 },
                 "python": None,
