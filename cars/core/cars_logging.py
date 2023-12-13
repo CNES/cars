@@ -25,6 +25,7 @@ contains cars logging setup logger for main thread
 and workers
 """
 
+import fcntl
 import logging
 import logging.config
 import os
@@ -37,6 +38,61 @@ PROGRESS = 21
 logging.addLevelName(PROGRESS, "PROGRESS")
 PROFILING_LOG = 15
 logging.addLevelName(PROFILING_LOG, "PROFILING_LOG")
+
+profiling_logger = logging.getLogger("profiling_logger")
+
+
+class ProfilingFilter(logging.Filter):  # pylint: disable=R0903
+    """
+    ProfilingFilter
+    """
+
+    def filter(self, record):
+        """ "
+        Filter message
+        """
+        return "PROFILING_LOG" not in record.msg
+
+
+class ProfilinglHandler(logging.FileHandler):  # pylint: disable=R0903
+    """
+    Profiling
+    """
+
+    def __init__(self, log_file):
+        """
+        Init
+        """
+        self.sender = LogSender(log_file)
+        logging.FileHandler.__init__(self, log_file, "a")
+
+    def emit(self, record):
+        """
+        Emit
+        """
+        if "PROFILING" in record.levelname:
+            self.sender.write_log(self.format(record) + "\n")
+
+
+class LogSender:  # pylint: disable=R0903
+    """
+    LogSender
+    """
+
+    def __init__(self, log_file):
+        """
+        Init
+        """
+        self.log_file = log_file
+
+    def write_log(self, msg) -> None:
+        """
+        Write log
+        """
+        with open(self.log_file, "a", encoding="utf-8") as file:
+            fcntl.flock(file, fcntl.LOCK_EX)
+            file.write(msg)
+            fcntl.flock(file, fcntl.LOCK_UN)
 
 
 def setup_logging(
@@ -76,13 +132,12 @@ def setup_logging(
         """
         Add handler to logging
         """
-        cars_logger = logging.getLogger()
         formatter_log = logging.Formatter(formatter)
-        h_log_file = logging.FileHandler(log_file_name)
+        h_log_file = ProfilinglHandler(log_file_name)
         h_log_file.setFormatter(formatter_log)
         h_log_file.setLevel(log_level)
         h_log_file.set_name(handler_name)
-        cars_logger.addHandler(h_log_file)
+        logging.getLogger().addHandler(h_log_file)
 
     logging_config = {
         "version": 1,
@@ -103,9 +158,11 @@ def setup_logging(
                 "level": numeric_level,
                 "formatter": "standard",
                 "class": "logging.StreamHandler",
-                "stream": "ext://sys.stdout",  # Default is stderr
+                "stream": "ext://sys.stdout",
+                "filters": ["no_profiling"],
             }
         },
+        "filters": {"no_profiling": {"()": ProfilingFilter}},
         "loggers": {
             "": {  # root logger
                 "handlers": [],
@@ -137,7 +194,7 @@ def setup_logging(
         )
         handler_main = "file_main"
         logging_config["handlers"][handler_main] = {
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": log_file,
             "level": min(numeric_level, logging.INFO),
             "mode": "w",
@@ -153,7 +210,7 @@ def setup_logging(
 
         handler_main_profiling = "file_main_profiling"
         logging_config["handlers"][handler_main_profiling] = {
-            "class": "logging.FileHandler",
+            "class": "logging.handlers.WatchedFileHandler",
             "filename": profiling_file,
             "level": min(numeric_level, PROFILING_LOG),
             "mode": "w",
@@ -167,39 +224,44 @@ def setup_logging(
     else:
         # remove stdout as handler
         del logging_config["handlers"]["stdout"]
+        logging.config.dictConfig(logging_config)
 
         # add file handlers
         if log_dir is not None:
             if not os.path.exists(log_dir):
                 os.makedirs(log_dir)
 
-            # change level of root logger in workerss
-            logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
-            if len(logging.getLogger().handlers) < 2:
-                log_file_workers = os.path.join(
-                    log_dir,
-                    "workers.log",
-                )
-                handler_workers = "file_workers"
-                add_handler_to_logging(
-                    log_file_workers,
-                    logging_config["formatters"]["workers"]["format"],
-                    min(numeric_level, logging.INFO),
-                    handler_workers,
-                )
+        # change level of root logger in workerss
+        logging.getLogger().setLevel(min(numeric_level, PROFILING_LOG))
+        profiling_logger.setLevel(min(numeric_level, PROFILING_LOG))
+        # Add filter to existing logger
+        for handler in logging.root.handlers:
+            handler.addFilter(ProfilingFilter())
+        # sett handlers
+        log_file_workers = os.path.join(
+            log_dir,
+            "workers.log",
+        )
+        handler_workers = "file_workers"
+        add_handler_to_logging(
+            log_file_workers,
+            logging_config["formatters"]["workers"]["format"],
+            min(numeric_level, logging.INFO),
+            handler_workers,
+        )
 
-                # profiling
-                log_file_workers_profiling = os.path.join(
-                    log_dir,
-                    "profiling.log",
-                )
-                handler_workers_profiling = "file_workers_profiling"
-                add_handler_to_logging(
-                    log_file_workers_profiling,
-                    logging_config["formatters"]["workers"]["format"],
-                    min(numeric_level, PROFILING_LOG),
-                    handler_workers_profiling,
-                )
+        # profiling
+        log_file_workers_profiling = os.path.join(
+            log_dir,
+            "profiling.log",
+        )
+        handler_workers_profiling = "file_workers_profiling"
+        add_handler_to_logging(
+            log_file_workers_profiling,
+            logging_config["formatters"]["workers"]["format"],
+            min(numeric_level, PROFILING_LOG),
+            handler_workers_profiling,
+        )
 
 
 def add_progress_message(message):

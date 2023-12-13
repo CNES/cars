@@ -563,6 +563,10 @@ def generate_summary(out_dir, used_conf):
     summary_total_time = []
     summary_max_cpu = []
     summary_nb_calls = []
+    full_max_ram = []
+    full_added_ram = []
+    full_time = []
+    full_max_cpu = []
 
     for name in pd.unique(times_df["name"]):
         current_df = times_df.loc[times_df["name"] == name]
@@ -580,6 +584,14 @@ def generate_summary(out_dir, used_conf):
         ).max()
         diff_end_start = (current_df["end_ram"] - current_df["start_ram"]).max()
         nb_values = len(current_df)
+
+        # Fill lists with all data
+        full_max_ram.append(list(current_df["max_ram"]))
+        full_added_ram.append(
+            list(current_df["max_ram"] - current_df["start_ram"])
+        )
+        full_time.append(list(current_df["time"]))
+        full_max_cpu.append(list(current_df["max_cpu"]))
 
         # fill lists for figures
         summary_names.append(name)
@@ -616,8 +628,9 @@ def generate_summary(out_dir, used_conf):
     # Generate png
     _, axs = plt.subplots(4, 2, figsize=(15, 15), layout="tight")
     # Fill
-    generate_histo(
-        axs.flat[0], summary_names, summary_max_cpu, "Max CPU usage", "%"
+
+    generate_boxplot(
+        axs.flat[0], summary_names, full_max_cpu, "Max CPU usage", "%"
     )
     generate_histo(
         axs.flat[1], summary_names, summary_total_time, "Total Time", "s"
@@ -625,51 +638,32 @@ def generate_summary(out_dir, used_conf):
 
     (
         summary_names_without_pipeline,
-        summary_mean_time_without_pipeline,
+        total_full_time_without_pipeline,
     ) = filter_lists(
         summary_names,
-        summary_mean_time_per_task,
+        full_time,
         lambda name: "pipeline" not in name,
     )
-    (
-        _,
-        summary_mean_time_per_task_err_min_without_pipeline,
-    ) = filter_lists(
-        summary_names,
-        summary_mean_time_per_task_err_min,
-        lambda name: "pipeline" not in name,
-    )
-    (
-        _,
-        summary_mean_time_per_task_err_min_without_pipeline,
-    ) = filter_lists(
-        summary_names,
-        summary_mean_time_per_task_err_min,
-        lambda name: "pipeline" not in name,
-    )
-
-    generate_histo(
+    generate_boxplot(
         axs.flat[2],
         summary_names_without_pipeline,
-        summary_mean_time_without_pipeline,
-        "Mean time per task",
+        total_full_time_without_pipeline,
+        "Time per task",
         "s",
-        data_min_err=summary_mean_time_per_task_err_min_without_pipeline,
-        data_max_err=summary_mean_time_per_task_err_min_without_pipeline,
     )
-    generate_histo(
+
+    generate_boxplot(
         axs.flat[3],
         summary_names,
-        summary_max_ram,
+        full_max_ram,
         "Max RAM used",
         "MiB",
-        data_min_err=summary_max_ram_err_min,
-        data_max_err=summary_max_ram_err_max,
     )
-    generate_histo(
+
+    generate_boxplot(
         axs.flat[4],
         summary_names,
-        summary_max_ram_relative,
+        full_added_ram,
         "Max RAM added",
         "MiB",
     )
@@ -736,6 +730,17 @@ def filter_lists(names, data, cond):
             filtered_data.append(dat)
 
     return filtered_names, filtered_data
+
+
+def generate_boxplot(axis, names, data_full, title, data_type):
+    """
+    Generate boxplot
+    """
+
+    axis.boxplot(data_full, vert=False, showfliers=False, labels=names)
+    axis.invert_yaxis()
+    axis.set_xlabel(data_type)
+    axis.set_title(title)
 
 
 def generate_histo(
