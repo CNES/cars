@@ -269,9 +269,7 @@ class LineOfSightIntersection(
             application_constants.APPLICATION_TAG: {
                 pair_key: {
                     triangulation_constants.TRIANGULATION_RUN_TAG: {
-                        triangulation_constants.ALT_REFERENCE_TAG: (
-                            alt_reference
-                        )
+                        triangulation_constants.ALT_REFERENCE_TAG: alt_reference
                     },
                 }
             }

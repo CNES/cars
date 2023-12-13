@@ -146,9 +146,9 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ] = None
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
-            cst.PC_EPSG
-        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("epsg", 4326)
+        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.PC_EPSG] = (
+            conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("epsg", 4326)
+        )
         # validate
         checker_pc.validate(
             overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
@@ -271,11 +271,11 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                 if point_cloud[tag] is not None:
                     for confidence_name in point_cloud[tag]:
                         if point_cloud[tag][confidence_name] is not None:
-                            point_cloud[tag][
-                                confidence_name
-                            ] = make_relative_path_absolute(
-                                point_cloud[tag][confidence_name],
-                                config_json_dir,
+                            point_cloud[tag][confidence_name] = (
+                                make_relative_path_absolute(
+                                    point_cloud[tag][confidence_name],
+                                    config_json_dir,
+                                )
                             )
 
     if overloaded_conf[sens_cst.ROI] is not None:
