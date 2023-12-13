@@ -486,10 +486,10 @@ def create_raster_dataset(
         raster_out["{}{}".format(cst.RASTER_BAND_MEAN, i_layer)] = xr.DataArray(
             mean[..., i_layer], coords=raster_coords, dims=raster_dims
         )
-        raster_out[
-            "{}{}".format(cst.RASTER_BAND_STD_DEV, i_layer)
-        ] = xr.DataArray(
-            stdev[..., i_layer], coords=raster_coords, dims=raster_dims
+        raster_out["{}{}".format(cst.RASTER_BAND_STD_DEV, i_layer)] = (
+            xr.DataArray(
+                stdev[..., i_layer], coords=raster_coords, dims=raster_dims
+            )
         )
 
     raster_out[cst.RASTER_NB_PTS] = xr.DataArray(n_pts, dims=raster_dims)

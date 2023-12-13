@@ -146,7 +146,6 @@ class WrapperNone(AbstractWrapper):
 
 
 class WrapperDisk(AbstractWrapper):
-
     """
     WrapperDisk
     """

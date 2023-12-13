@@ -327,9 +327,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             },
         )
 
-        [  # pylint: disable=unbalanced-tuple-unpacking
-            saving_info
-        ] = self.orchestrator.get_saving_infos([dem])
+        [saving_info] = (  # pylint: disable=unbalanced-tuple-unpacking
+            self.orchestrator.get_saving_infos([dem])
+        )
         saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
         window = cars_dataset.window_array_to_dict(dem.tiling_grid[0, 0])
         cars_dataset.fill_dataset(

@@ -203,9 +203,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 {"method": "small_components"},
             ),
         )
-        used_conf[
-            "point_cloud_outliers_removing.1"
-        ] = self.pc_outliers_removing_1_app.get_conf()
+        used_conf["point_cloud_outliers_removing.1"] = (
+            self.pc_outliers_removing_1_app.get_conf()
+        )
 
         # Points cloud outlier removing statistical
         self.pc_outliers_removing_2_app = Application(
@@ -215,18 +215,18 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 {"method": "statistical"},
             ),
         )
-        used_conf[
-            "point_cloud_outliers_removing.2"
-        ] = self.pc_outliers_removing_2_app.get_conf()
+        used_conf["point_cloud_outliers_removing.2"] = (
+            self.pc_outliers_removing_2_app.get_conf()
+        )
 
         # Rasterization
         self.rasterization_application = Application(
             "point_cloud_rasterization",
             cfg=conf.get("point_cloud_rasterization", {}),
         )
-        used_conf[
-            "point_cloud_rasterization"
-        ] = self.rasterization_application.get_conf()
+        used_conf["point_cloud_rasterization"] = (
+            self.rasterization_application.get_conf()
+        )
 
         return used_conf
 

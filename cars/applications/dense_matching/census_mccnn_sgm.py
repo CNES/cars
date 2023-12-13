@@ -762,9 +762,9 @@ class CensusMccnnSgm(
                         self.disp_min_threshold
                     )
                 )
-                grid_min[
-                    grid_min < self.disp_min_threshold
-                ] = self.disp_min_threshold
+                grid_min[grid_min < self.disp_min_threshold] = (
+                    self.disp_min_threshold
+                )
         if self.disp_max_threshold is not None:
             if np.any(grid_max > self.disp_max_threshold):
                 logging.warning(
@@ -772,9 +772,9 @@ class CensusMccnnSgm(
                         self.disp_max_threshold
                     )
                 )
-                grid_max[
-                    grid_max > self.disp_max_threshold
-                ] = self.disp_max_threshold
+                grid_max[grid_max > self.disp_max_threshold] = (
+                    self.disp_max_threshold
+                )
 
         # use filter to propagate min and max
         overlap = (
@@ -807,9 +807,9 @@ class CensusMccnnSgm(
         )
 
         # Save
-        [  # pylint: disable=unbalanced-tuple-unpacking
-            saving_info
-        ] = grid_orchestrator.get_saving_infos([grid_disp_range])
+        [saving_info] = (  # pylint: disable=unbalanced-tuple-unpacking
+            grid_orchestrator.get_saving_infos([grid_disp_range])
+        )
         saving_info = ocht.update_saving_infos(saving_info, row=0, col=0)
         # Generate profile
         # Generate profile
@@ -1029,19 +1029,15 @@ class CensusMccnnSgm(
                 application_constants.APPLICATION_TAG: {
                     pair_key: {
                         dm_cst.DENSE_MATCHING_RUN_TAG: {
-                            "global_disp_min": (
-                                np.nanmin(
-                                    disp_range_grid[0, 0][
-                                        dm_cst.DISP_MIN_GRID
-                                    ].values
-                                )
+                            "global_disp_min": np.nanmin(
+                                disp_range_grid[0, 0][
+                                    dm_cst.DISP_MIN_GRID
+                                ].values
                             ),
-                            "global_disp_max": (
-                                np.nanmax(
-                                    disp_range_grid[0, 0][
-                                        dm_cst.DISP_MAX_GRID
-                                    ].values
-                                )
+                            "global_disp_max": np.nanmax(
+                                disp_range_grid[0, 0][
+                                    dm_cst.DISP_MAX_GRID
+                                ].values
                             ),
                         },
                     }

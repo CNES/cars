@@ -252,12 +252,12 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
 
         # Epipolar grid generation
-        self.epipolar_grid_generation_application = Application(
+        self.epipolar_grid_generation_app = Application(
             "grid_generation", cfg=conf.get("grid_generation", {})
         )
-        used_conf[
-            "grid_generation"
-        ] = self.epipolar_grid_generation_application.get_conf()
+        used_conf["grid_generation"] = (
+            self.epipolar_grid_generation_app.get_conf()
+        )
 
         # Sparse Matching
         self.sparse_matching_app = Application(
@@ -294,9 +294,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "point_cloud_rasterization",
             cfg=conf.get("point_cloud_rasterization", {}),
         )
-        used_conf[
-            "point_cloud_rasterization"
-        ] = self.rasterization_application.get_conf()
+        used_conf["point_cloud_rasterization"] = (
+            self.rasterization_application.get_conf()
+        )
 
         return used_conf
 
@@ -385,7 +385,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 (
                     pairs[pair_key]["grid_left"],
                     pairs[pair_key]["grid_right"],
-                ) = self.epipolar_grid_generation_application.run(
+                ) = self.epipolar_grid_generation_app.run(
                     pairs[pair_key]["sensor_image_left"],
                     pairs[pair_key]["sensor_image_right"],
                     geom_plugin,
@@ -456,13 +456,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
 
                 # Correct grid right
-                pairs[pair_key][
-                    "corrected_grid_right"
-                ] = grid_correction.correct_grid(
-                    pairs[pair_key]["grid_right"],
-                    pairs[pair_key]["grid_correction_coef"],
-                    self.epipolar_grid_generation_application.save_grids,
-                    pairs[pair_key]["pair_folder"],
+                pairs[pair_key]["corrected_grid_right"] = (
+                    grid_correction.correct_grid(
+                        pairs[pair_key]["grid_right"],
+                        pairs[pair_key]["grid_correction_coef"],
+                        self.epipolar_grid_generation_app.save_grids,
+                        pairs[pair_key]["pair_folder"],
+                    )
                 )
 
                 pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
@@ -470,27 +470,29 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 ]
 
                 # Triangulate matches
-                pairs[pair_key][
-                    "triangulated_matches"
-                ] = dem_generation_tools.triangulate_sparse_matches(
-                    pairs[pair_key]["sensor_image_left"],
-                    pairs[pair_key]["sensor_image_right"],
-                    pairs[pair_key]["grid_left"],
-                    pairs[pair_key]["corrected_grid_right"],
-                    pairs[pair_key]["corrected_matches_array"],
-                    geom_plugin,
+                pairs[pair_key]["triangulated_matches"] = (
+                    dem_generation_tools.triangulate_sparse_matches(
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        pairs[pair_key]["grid_left"],
+                        pairs[pair_key]["corrected_grid_right"],
+                        pairs[pair_key]["corrected_matches_array"],
+                        geom_plugin,
+                    )
                 )
                 # filter triangulated_matches
-                pairs[pair_key][
-                    "filtered_triangulated_matches"
-                ] = sparse_matching_tools.filter_point_cloud_matches(
-                    pairs[pair_key]["triangulated_matches"],
-                    matches_filter_knn=(
-                        self.sparse_matching_app.get_matches_filter_knn()
-                    ),
-                    matches_filter_dev_factor=(
-                        self.sparse_matching_app.get_matches_filter_dev_factor()
-                    ),
+                matches_filter_knn = (
+                    self.sparse_matching_app.get_matches_filter_knn()
+                )
+                matches_filter_dev_factor = (
+                    self.sparse_matching_app.get_matches_filter_dev_factor()
+                )
+                pairs[pair_key]["filtered_triangulated_matches"] = (
+                    sparse_matching_tools.filter_point_cloud_matches(
+                        pairs[pair_key]["triangulated_matches"],
+                        matches_filter_knn=matches_filter_knn,
+                        matches_filter_dev_factor=matches_filter_dev_factor,
+                    )
                 )
                 triangulated_matches_list.append(
                     pairs[pair_key]["filtered_triangulated_matches"]
@@ -532,11 +534,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 dem_max=dem_max,
             )
 
-            # get parameter
-            matches_filter_dev_factor = (
-                self.sparse_matching_app.get_matches_filter_dev_factor()
-            )
-
             for pair_key, _, _ in list_sensor_pairs:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
                 if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
@@ -544,7 +541,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     (
                         pairs[pair_key]["new_grid_left"],
                         pairs[pair_key]["new_grid_right"],
-                    ) = self.epipolar_grid_generation_application.run(
+                    ) = self.epipolar_grid_generation_app.run(
                         pairs[pair_key]["sensor_image_left"],
                         pairs[pair_key]["sensor_image_right"],
                         geom_plugin,
@@ -588,39 +585,43 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     )
 
                     # Correct grid right
-                    pairs[pair_key][
-                        "corrected_grid_right"
-                    ] = grid_correction.correct_grid(
-                        pairs[pair_key]["new_grid_right"],
-                        pairs[pair_key]["grid_correction_coef"],
-                        self.epipolar_grid_generation_application.save_grids,
-                        pairs[pair_key]["pair_folder"],
+                    pairs[pair_key]["corrected_grid_right"] = (
+                        grid_correction.correct_grid(
+                            pairs[pair_key]["new_grid_right"],
+                            pairs[pair_key]["grid_correction_coef"],
+                            self.epipolar_grid_generation_app.save_grids,
+                            pairs[pair_key]["pair_folder"],
+                        )
                     )
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "new_grid_left"
                     ]
 
                     # Triangulate new matches
-                    pairs[pair_key][
-                        "triangulated_matches"
-                    ] = dem_generation_tools.triangulate_sparse_matches(
-                        pairs[pair_key]["sensor_image_left"],
-                        pairs[pair_key]["sensor_image_right"],
-                        pairs[pair_key]["corrected_grid_left"],
-                        pairs[pair_key]["corrected_grid_right"],
-                        corrected_matches_array,
-                        geometry_plugin=geom_plugin,
+                    pairs[pair_key]["triangulated_matches"] = (
+                        dem_generation_tools.triangulate_sparse_matches(
+                            pairs[pair_key]["sensor_image_left"],
+                            pairs[pair_key]["sensor_image_right"],
+                            pairs[pair_key]["corrected_grid_left"],
+                            pairs[pair_key]["corrected_grid_right"],
+                            corrected_matches_array,
+                            geometry_plugin=geom_plugin,
+                        )
                     )
 
                     # filter triangulated_matches
-                    pairs[pair_key][
-                        "filtered_triangulated_matches"
-                    ] = sparse_matching_tools.filter_point_cloud_matches(
-                        pairs[pair_key]["triangulated_matches"],
-                        matches_filter_knn=(
-                            self.sparse_matching_app.get_matches_filter_knn()
-                        ),
-                        matches_filter_dev_factor=matches_filter_dev_factor,
+                    matches_filter_knn = (
+                        self.sparse_matching_app.get_matches_filter_knn()
+                    )
+                    matches_filter_dev_factor = (
+                        self.sparse_matching_app.get_matches_filter_dev_factor()
+                    )
+                    pairs[pair_key]["filtered_triangulated_matches"] = (
+                        sparse_matching_tools.filter_point_cloud_matches(
+                            pairs[pair_key]["triangulated_matches"],
+                            matches_filter_knn=matches_filter_knn,
+                            matches_filter_dev_factor=matches_filter_dev_factor,
+                        )
                     )
 
                 # Compute disp_min and disp_max
@@ -720,9 +721,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 # add pair key
                 epipolar_points_cloud.attributes["source_pc_name"] = pair_key
                 # add color type
-                epipolar_points_cloud.attributes[
-                    "color_type"
-                ] = new_epipolar_image_left.attributes["color_type"]
+                epipolar_points_cloud.attributes["color_type"] = (
+                    new_epipolar_image_left.attributes["color_type"]
+                )
 
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)

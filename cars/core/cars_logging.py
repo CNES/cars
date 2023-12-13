@@ -92,8 +92,10 @@ def setup_logging(
                 "format": "%(asctime)s :: %(levelname)s ::  %(message)s"
             },
             "workers": {
-                "format": "%(asctime)s :: %(levelname)s "
-                + ":: %(thread)d :: %(process)d :: %(message)s"
+                "format": (
+                    "%(asctime)s :: %(levelname)s "
+                    + ":: %(thread)d :: %(process)d :: %(message)s"
+                )
             },
         },
         "handlers": {

@@ -126,9 +126,9 @@ class AbstractCluster(metaclass=ABCMeta):
                 self.checked_conf_cluster["profiling"], out_dir
             )
         )
-        self.checked_conf_cluster[
-            "profiling"
-        ] = self.profiling_logger.checked_conf_profiling
+        self.checked_conf_cluster["profiling"] = (
+            self.profiling_logger.checked_conf_profiling
+        )
 
     @abstractmethod
     def cleanup(self):

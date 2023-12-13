@@ -122,20 +122,20 @@ def sensors_check_inputs(  # noqa: C901
 
     # Check terrain a priori
     if check_epipolar_a_priori and overloaded_conf[sens_cst.TERRAIN_A_PRIORI]:
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DEM_MEAN
-        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DEM_MEAN, None
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MEAN] = (
+            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+                sens_cst.DEM_MEAN, None
+            )
         )
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DEM_MIN
-        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DEM_MIN, None
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MIN] = (
+            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+                sens_cst.DEM_MIN, None
+            )
         )
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][
-            sens_cst.DEM_MAX
-        ] = overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-            sens_cst.DEM_MAX, None
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MAX] = (
+            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
+                sens_cst.DEM_MAX, None
+            )
         )
         terrain_a_priori_schema = {
             sens_cst.DEM_MEAN: str,

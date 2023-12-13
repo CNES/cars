@@ -761,9 +761,7 @@ class Sift(SparseMatching, short_name="sift"):
                         ),
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
-                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: (
-                            epi_error_mean
-                        ),
+                        sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_STD: epi_error_std,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MAX: epi_error_max,
                     }
