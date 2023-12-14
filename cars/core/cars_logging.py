@@ -194,7 +194,7 @@ def setup_logging(
         )
         handler_main = "file_main"
         logging_config["handlers"][handler_main] = {
-            "class": "logging.handlers.WatchedFileHandler",
+            "class": "logging.handlers.FileHandler",
             "filename": log_file,
             "level": min(numeric_level, logging.INFO),
             "mode": "w",
@@ -210,7 +210,7 @@ def setup_logging(
 
         handler_main_profiling = "file_main_profiling"
         logging_config["handlers"][handler_main_profiling] = {
-            "class": "logging.handlers.WatchedFileHandler",
+            "class": "logging.handlers.FileHandler",
             "filename": profiling_file,
             "level": min(numeric_level, PROFILING_LOG),
             "mode": "w",
