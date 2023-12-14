@@ -395,6 +395,7 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
 
         xyz = points_cloud_conversion(xyz, cloud.attrs[cst.EPSG], epsg_out)
         xyz = xyz.reshape(xyz_shape)
+        xyz[xyz == np.inf] = np.nan
         if isinstance(cloud, xr.Dataset):
             # # Update cloud_in x, y and z values
             cloud[cst.X].values = xyz[:, :, 0]

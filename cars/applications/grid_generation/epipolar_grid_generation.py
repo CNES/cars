@@ -268,30 +268,22 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
             application_constants.APPLICATION_TAG: {
                 pair_key: {
                     grid_constants.GRID_GENERATION_RUN_TAG: {
-                        grid_constants.EPIPOLAR_SIZE_X_TAG: (epipolar_size[0]),
-                        grid_constants.EPIPOLAR_SIZE_Y_TAG: (epipolar_size[1]),
-                        grid_constants.EPIPOLAR_ORIGIN_X_TAG: (grid_origin[0]),
-                        grid_constants.EPIPOLAR_ORIGIN_Y_TAG: (grid_origin[1]),
-                        grid_constants.EPIPOLAR_SPACING_X_TAG: (
-                            grid_spacing[0]
-                        ),
-                        grid_constants.EPIPOLAR_SPACING_Y_TAG: (
-                            grid_spacing[1]
-                        ),
-                        grid_constants.DISP_TO_ALT_RATIO_TAG: (
-                            disp_to_alt_ratio
-                        ),
-                        grid_constants.LEFT_AZIMUTH_ANGLE_TAG: (left_az),
+                        grid_constants.EPIPOLAR_SIZE_X_TAG: epipolar_size[0],
+                        grid_constants.EPIPOLAR_SIZE_Y_TAG: epipolar_size[1],
+                        grid_constants.EPIPOLAR_ORIGIN_X_TAG: grid_origin[0],
+                        grid_constants.EPIPOLAR_ORIGIN_Y_TAG: grid_origin[1],
+                        grid_constants.EPIPOLAR_SPACING_X_TAG: grid_spacing[0],
+                        grid_constants.EPIPOLAR_SPACING_Y_TAG: grid_spacing[1],
+                        grid_constants.DISP_TO_ALT_RATIO_TAG: disp_to_alt_ratio,
+                        grid_constants.LEFT_AZIMUTH_ANGLE_TAG: left_az,
                         grid_constants.LEFT_ELEVATION_ANGLE_TAG: (
                             left_elev_angle
                         ),
-                        grid_constants.RIGHT_AZIMUTH_ANGLE_TAG: (right_az),
+                        grid_constants.RIGHT_AZIMUTH_ANGLE_TAG: right_az,
                         grid_constants.RIGHT_ELEVATION_ANGLE_TAG: (
                             right_elev_angle
                         ),
-                        grid_constants.CONVERGENCE_ANGLE_TAG: (
-                            convergence_angle
-                        ),
+                        grid_constants.CONVERGENCE_ANGLE_TAG: convergence_angle,
                     },
                 }
             }
