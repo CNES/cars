@@ -220,9 +220,9 @@ def create_combined_sparse_cloud(  # noqa: C901
         crop_cloud[cloud_indexes.index(cst.Z), :] = crop_z
 
         # add index of original point cloud
-        crop_cloud[cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :] = (
-            cloud_global_id
-        )
+        crop_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :
+        ] = cloud_global_id
 
         # add the original image coordinates information to the current cloud
         if with_coords:
@@ -509,9 +509,9 @@ def create_combined_dense_cloud(  # noqa: C901
         flatten_cloud[cloud_indexes.index(cst.Z), :] = np.ravel(crop_z)
 
         # add index of original point cloud
-        flatten_cloud[cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :] = (
-            cloud_global_id
-        )
+        flatten_cloud[
+            cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :
+        ] = cloud_global_id
 
         # add additional information to point cloud
         arrays_to_add_to_points_cloud = [
@@ -604,6 +604,7 @@ def create_points_cloud_index(cloud_sample):
     # Add color indexes
     if cst.EPI_COLOR in cloud_sample:
         band_color = list(cloud_sample.coords[cst.BAND_IM].to_numpy())
+        color_type = "float32"
         if "color_type" in cloud_sample.attrs:
             color_type = cloud_sample.attrs["color_type"]
         for band in band_color:
