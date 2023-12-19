@@ -235,7 +235,7 @@ def create_disp_dataset(  # noqa: C901
 
     # Retrieve original mask of panchromatic image
     epi_msk = None
-    if cst.EPI_COLOR in ref_dataset:
+    if cst.EPI_MSK in ref_dataset:
         epi_msk = ref_dataset[cst.EPI_MSK].values
 
     # Retrieve masks from pandora
@@ -340,7 +340,7 @@ def create_disp_dataset(  # noqa: C901
             cst_disp.MAP: ([cst.ROW, cst.COL], np.copy(disp_map)),
             cst_disp.VALID: (
                 [cst.ROW, cst.COL],
-                np.copy(pandora_masks[cst_disp.VALID]),
+                pandora_masks[cst_disp.VALID].astype("uint8"),
             ),
         },
         coords={cst.ROW: row, cst.COL: col},
@@ -351,7 +351,9 @@ def create_disp_dataset(  # noqa: C901
 
     # add original mask
     if epi_msk is not None:
-        disp_ds[cst.EPI_MSK] = xr.DataArray(epi_msk, dims=[cst.ROW, cst.COL])
+        disp_ds[cst.EPI_MSK] = xr.DataArray(
+            epi_msk.astype("uint8"), dims=[cst.ROW, cst.COL]
+        )
 
     # add color
     add_color(
@@ -649,8 +651,8 @@ def compute_disparity_grid(disp_range_grid, left_image_object):
 
     row_grid, col_grid = np.meshgrid(row_range, col_range, indexing="ij")
 
-    disp_min_grid = interp_min((row_grid, col_grid))
-    disp_max_grid = interp_max((row_grid, col_grid))
+    disp_min_grid = interp_min((row_grid, col_grid)).astype("float32")
+    disp_max_grid = interp_max((row_grid, col_grid)).astype("float32")
 
     return disp_min_grid, disp_max_grid
 

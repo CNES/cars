@@ -252,7 +252,7 @@ def compute_points_cloud(
     # add color and data type of image
     color_type = None
     if cst.EPI_COLOR in data:
-        add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud, nodata_index)
+        add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud)
         color_type = data[cst.EPI_COLOR].attrs["color_type"]
     elif cst.EPI_IMAGE in data:
         color_type = data[cst.EPI_IMAGE].attrs["color_type"]
@@ -288,9 +288,7 @@ def compute_points_cloud(
     return point_cloud
 
 
-def add_layer(
-    dataset, layer_name, layer_coords, point_cloud, nodata_index=None
-):
+def add_layer(dataset, layer_name, layer_coords, point_cloud):
     """
     Add layer point cloud to point cloud dataset
 
@@ -300,10 +298,6 @@ def add_layer(
     """
     layers = dataset[layer_name].values
     band_layer = dataset.coords[layer_coords]
-    if nodata_index:
-        nb_bands = layers.shape[0]
-        for k in range(nb_bands):
-            layers[k, :, :][nodata_index] = np.nan
 
     if layer_coords not in point_cloud.dims:
         point_cloud.coords[layer_coords] = band_layer

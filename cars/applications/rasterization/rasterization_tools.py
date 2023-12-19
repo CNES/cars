@@ -468,8 +468,6 @@ def create_raster_dataset(
         # update raster output with classification data
         raster_out = xr.merge((raster_out, color_out))
 
-    # print(color_out)
-
     raster_out.attrs[cst.EPSG] = epsg
     raster_out.attrs[cst.RESOLUTION] = resolution
 
