@@ -43,12 +43,13 @@ from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
-from cars.core import cars_logging, preprocessing, roi_tools
+from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
@@ -432,6 +433,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                     )
                                 )
 
+    @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self):  # noqa C901
         """
         Run pipeline
@@ -439,7 +441,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
 
         out_dir = self.output["out_dir"]
-        cars_logging.add_log_file(out_dir, "sensor_to_dense_dsm")
 
         # Save used conf
         cars_dataset.save_dict(
@@ -642,7 +643,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             ),
                         )
                     )
-
                     # Compute grid correction
                     (
                         pairs[pair_key]["grid_correction_coef"],
@@ -714,10 +714,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             else:
                 # Use initial elevation if provided, and generate dems
-                dem_mean = None
-                dem_min = None
-                dem_max = None
-
                 # Generate MNT from matches
                 dem = self.dem_generation_application.run(
                     triangulated_matches_list,
@@ -1102,8 +1098,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["corrected_grid_left"],
                         pairs[pair_key]["corrected_grid_right"],
                         self.geom_plugin_with_dem_and_geoid,
-                        orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
                         disp_min=np.min(
                             disp_range_grid[0, 0]["disp_min_grid"].values
                         ),

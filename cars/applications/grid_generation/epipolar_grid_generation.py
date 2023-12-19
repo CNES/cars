@@ -39,6 +39,7 @@ from cars.core import projection
 # CARS imports
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
@@ -105,6 +106,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
 
         return overloaded_conf
 
+    @cars_profile(name="Epi Grid Generation")
     def run(
         self,
         image_left,

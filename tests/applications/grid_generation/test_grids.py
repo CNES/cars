@@ -417,7 +417,7 @@ def test_grid_generation(save_reference, input_file, ref_file):
         orchestrator_conf = {
             "mode": "sequential",
             "max_ram_per_worker": 40,
-            "profiling": {"mode": "time", "activated": True},
+            "profiling": {"mode": "cars_profiling"},
         }
 
         with orchestrator.Orchestrator(

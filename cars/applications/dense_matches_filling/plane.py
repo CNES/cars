@@ -358,7 +358,7 @@ class PlaneFill(
                                 (
                                     new_epipolar_disparity_map[row, col]
                                 ) = self.orchestrator.cluster.create_task(
-                                    wrapper_fill_disparity
+                                    fill_disparity_plane_wrapper
                                 )(
                                     corresponding_tiles,
                                     corresponding_holes,
@@ -390,7 +390,7 @@ class PlaneFill(
         return res
 
 
-def wrapper_fill_disparity(
+def fill_disparity_plane_wrapper(
     corresponding_tiles,
     corresponding_poly,
     window,

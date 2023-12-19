@@ -57,6 +57,7 @@ from cars.core import inputs, projection
 from cars.core.projection import points_cloud_conversion
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 class CensusMccnnSgm(
@@ -481,6 +482,7 @@ class CensusMccnnSgm(
 
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
+    @cars_profile(name="Disp Grid Generation")
     def generate_disparity_grids(  # noqa: C901
         self,
         sensor_image_right,
@@ -1112,7 +1114,7 @@ class CensusMccnnSgm(
                         (
                             epipolar_disparity_map[row, col]
                         ) = self.orchestrator.cluster.create_task(
-                            compute_disparity
+                            compute_disparity_wrapper
                         )(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
@@ -1149,7 +1151,7 @@ class CensusMccnnSgm(
         return epipolar_disparity_map
 
 
-def compute_disparity(
+def compute_disparity_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_cfg: dict,

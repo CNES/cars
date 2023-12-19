@@ -40,6 +40,8 @@ from scipy.spatial import tsearch  # pylint: disable=no-name-in-module
 from shapely.geometry import box, mapping
 from shapely.geometry.multipolygon import MultiPolygon
 
+from cars.orchestrator.cluster.log_wrapper import cars_profile
+
 
 def grid(
     xmin: float, ymin: float, xmax: float, ymax: float, xsplit: int, ysplit: int
@@ -561,6 +563,7 @@ def region_hash_string(region: Tuple):
     return "{}_{}_{}_{}".format(region[0], region[1], region[2], region[3])
 
 
+@cars_profile(name="Tiles correspondance")
 def get_corresponding_tiles_row_col(
     terrain_tiling_grid: np.ndarray,
     row: int,

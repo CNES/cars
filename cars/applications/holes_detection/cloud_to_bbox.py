@@ -225,7 +225,7 @@ class CloudToBbox(
                                 left_bbox_cars_ds[row, col],
                                 right_bbox_cars_ds[row, col],
                             ) = self.orchestrator.cluster.create_task(
-                                compute_mask_bboxes, nout=2
+                                compute_mask_bboxes_wrapper, nout=2
                             )(
                                 epipolar_images_left[row, col],
                                 epipolar_images_right[row, col],
@@ -246,7 +246,7 @@ class CloudToBbox(
         return left_bbox_cars_ds, right_bbox_cars_ds
 
 
-def compute_mask_bboxes(
+def compute_mask_bboxes_wrapper(
     left_image_dataset,
     right_image_dataset,
     window_left,

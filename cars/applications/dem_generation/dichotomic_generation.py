@@ -47,6 +47,7 @@ from cars.core import constants as cst
 from cars.core import projection
 from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
@@ -120,6 +121,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         return overloaded_conf
 
+    @cars_profile(name="DEM Generation")
     def run(self, triangulated_matches_list, output_dir, geoid_path):
         """
         Run dichotomic dem generation using matches

@@ -512,15 +512,13 @@ The structure follows this organisation:
                 }
             }
 
-        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | Name                | Description                                               | Type                                    | Default value | Required |
-        +=====================+===========================================================+=========================================+===============+==========+
-        | *activated*         | activation of the profiling mode (disabled by default)    | bool                                    | False         | No       |
-        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *mode*              | type of profiling mode "time, cprofile, memray"           | string                                  | time          | No       |
-        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *loop_testing*      | enable loop mode to execute each step multiple times      | bool                                    | False         | No       |
-        +---------------------+-----------------------------------------------------------+-----------------------------------------+---------------+----------+
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
+        | Name                | Description                                               | Type                                    | Default value  | Required |
+        +=====================+===========================================================+=========================================+================+==========+
+        | *mode*              | type of profiling mode "cars_profiling, cprofile, memray" | string                                  | cars_profiling | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
+        | *loop_testing*      | enable loop mode to execute each step multiple times      | bool                                    | False          | No       |
+        +---------------------+-----------------------------------------------------------+-----------------------------------------+----------------+----------+
 
         - Please use make command 'profile-memory-report' to generate a memory profiling report from the memray outputs files (after the memray profiling execution).
         - Please disabled profiling to eval memory profiling at master orchestrator level and execute make command instead: 'profile-memory-all'.
@@ -529,7 +527,8 @@ The structure follows this organisation:
 
             The logging system provides messages for all orchestration modes, both for the main process and the worker processes.
             The logging output file of the main process is located in the output directory.
-            In the case of distributed orchestration, the worker's logging output file is located in the workers_log directory (the message format indicates thread ID and process ID). 
+            In the case of distributed orchestration, the worker's logging output file is located in the workers_log directory (the message format indicates thread ID and process ID).
+            A summary of basic profiling is generated in output directory.
 
    .. tab:: Pipelines
 

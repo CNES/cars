@@ -76,15 +76,12 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["max_ram_per_worker"] = conf.get(
             "max_ram_per_worker", 2000
         )
+        overloaded_conf["profiling"] = conf.get("profiling", {})
 
         cluster_schema = {
             "mode": str,
             "max_ram_per_worker": Or(float, int),
-            "profiling": {
-                "activated": bool,
-                "mode": str,
-                "loop_testing": bool,
-            },
+            "profiling": dict,
         }
 
         # Check conf

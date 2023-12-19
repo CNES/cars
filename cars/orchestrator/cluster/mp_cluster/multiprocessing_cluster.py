@@ -34,6 +34,7 @@ import signal
 import threading
 import time
 import traceback
+from functools import wraps
 from multiprocessing import freeze_support
 from queue import Queue
 
@@ -83,7 +84,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
 
         # retrieve parameters
-        self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.nb_workers = self.nb_workers = self.checked_conf_cluster[
+            "nb_workers"
+        ]
         self.dump_to_disk = self.checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = self.checked_conf_cluster["per_job_timeout"]
         self.profiling = self.checked_conf_cluster["profiling"]
@@ -181,6 +184,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
         overloaded_conf["factorize_tasks"] = conf.get("factorize_tasks", True)
+        overloaded_conf["profiling"] = conf.get("profiling", {})
 
         cluster_schema = {
             "mode": str,
@@ -188,11 +192,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "nb_workers": And(int, lambda x: x > 0),
             "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
             "per_job_timeout": Or(float, int),
-            "profiling": {
-                "activated": bool,
-                "mode": str,
-                "loop_testing": bool,
-            },
+            "profiling": dict,
             "factorize_tasks": bool,
         }
 
@@ -239,6 +239,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param nout: number of outputs
         """
 
+        @wraps(func)
         def mp_delayed_builder(*argv, **kwargs):
             """
             Create a MPDelayed builder

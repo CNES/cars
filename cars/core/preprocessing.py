@@ -359,8 +359,6 @@ def compute_epsg(
     grid_left,
     grid_right,
     geometry_plugin,
-    orchestrator=None,
-    pair_folder=None,
     disp_min=-10,
     disp_max=10,
 ):
@@ -397,10 +395,6 @@ def compute_epsg(
     :type grid_right: CarsDataset
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
-    :param orchestrator: orchestrator
-    :type orchestrator: Orchestrator
-    :param pair_folder: pair folder to save data to
-    :type pair_folder: str
     :param srtm_dir: srtm directory
     :type srtm_dir: str
     :param default_alt: default altitude
@@ -418,18 +412,6 @@ def compute_epsg(
     sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
     geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]
     geomodel2 = sensor_image_right[sens_cst.INPUT_GEO_MODEL]
-
-    if pair_folder is None:
-        # Default orchestrator
-        if orchestrator is None:
-            # Create default sequential orchestrator for current application
-            # be awere, no out_json will be shared between orchestrators
-            # No files saved
-            orchestrator = ocht.Orchestrator(
-                orchestrator_conf={"mode": "sequential"}
-            )
-
-        pair_folder = os.path.join(orchestrator.out_dir, "pair_0")
 
     # Get largest epipolar regions from configuration file
     largest_epipolar_region = [
