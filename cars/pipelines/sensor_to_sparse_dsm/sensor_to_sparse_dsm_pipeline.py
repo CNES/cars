@@ -407,6 +407,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins_fun=self.sparse_matching_app.get_margins_fun(),
+                    tile_width=None,
+                    tile_height=self.sparse_matching_app.strip_height,
                     add_color=False,
                 )
 
@@ -679,6 +681,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     margins_fun=self.sparse_matching_app.get_margins_fun(
                         disp_min=dmin, disp_max=dmax
                     ),
+                    tile_width=500,
+                    tile_height=500,
                     add_color=False,
                 )
 

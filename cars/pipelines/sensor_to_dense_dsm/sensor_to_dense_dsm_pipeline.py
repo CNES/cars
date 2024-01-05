@@ -604,6 +604,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_folder=pairs[pair_key]["pair_folder"],
                         pair_key=pair_key,
                         margins_fun=self.sparse_mtch_app.get_margins_fun(),
+                        tile_width=None,
+                        tile_height=self.sparse_mtch_app.strip_height,
                         add_color=False,
                     )
 
@@ -1031,7 +1033,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins_fun=dense_matching_margins_fun,
-                    optimum_tile_size=optimum_tile_size,
+                    tile_width=optimum_tile_size,
+                    tile_height=optimum_tile_size,
                     add_color=True,
                     epipolar_roi=epipolar_roi,
                 )
