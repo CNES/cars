@@ -82,6 +82,40 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
 
         return cars_ds_list
 
+    def get_cars_ds_replacer_corresponding_id(self, obj_id):
+        """
+        Get the SingleCarsDatasetReplacer corresponding to given id
+
+        :param obj_id: cars dataset id
+        :type obj_id: int
+
+        :return : single cars dataset replacer
+        :rtype : SingleCarsDatasetReplacer
+        """
+
+        cars_ds_replacer = None
+        for obj in self.registered_cars_datasets_replacers:
+            if obj_id == obj.obj_id:
+                cars_ds_replacer = obj
+                break
+
+        return cars_ds_replacer
+
+    def get_cars_ds(self, future_result):
+        """
+        Get a list of registered CarsDataset
+
+        :param future_result: object to get cars dataset from
+
+        :return corresponding CarsDataset
+        :rtype: CarsDataset
+        """
+
+        obj_id = self.get_future_cars_dataset_id(future_result)
+        cars_ds_replacer = self.get_cars_ds_replacer_corresponding_id(obj_id)
+
+        return cars_ds_replacer.cars_ds
+
     def add_cars_ds_to_replace(self, cars_ds):
         """
         Add cars dataset to registry

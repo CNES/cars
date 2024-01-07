@@ -248,6 +248,48 @@ class Orchestrator:
 
         return saving_infos
 
+    def get_data(self, tag, future_object):
+        """
+        Get data already on disk corresponding to window of object
+
+        :param tag: tag
+        :type tag: str
+        :param future_object: object
+        :type future_object: xarray Dataset
+
+        :return: data on disk corresponding to tag
+        :rtype: np.ndarray
+        """
+        data = None
+
+        # Get descriptor if exists
+        obj_id = self.cars_ds_savers_registry.get_future_cars_dataset_id(
+            future_object
+        )
+        cars_ds_saver = (
+            self.cars_ds_savers_registry.get_cars_ds_saver_corresponding_id(
+                obj_id
+            )
+        )
+
+        if len(cars_ds_saver.descriptors) == 0 or tag not in cars_ds_saver.tags:
+            # nothing is written yet
+            return data, None
+
+        index = cars_ds_saver.tags.index(tag)
+        descriptor = cars_ds_saver.descriptors[index]
+        nodata = cars_ds_saver.nodatas[index]
+
+        # Get window
+        window = cars_dataset.get_window_dataset(future_object)
+        rio_window = cars_dataset.generate_rasterio_window(window)
+
+        # Read data window
+        # Read data window
+        data = descriptor.read(window=rio_window)
+
+        return data, nodata
+
     def compute_futures(self):
         """
         Compute all futures from regitries
@@ -292,6 +334,17 @@ class Orchestrator:
             for future_obj in self.cluster.future_iterator(future_objects):
                 # get corresponding CarsDataset and save tile
                 if future_obj is not None:
+                    # Apply function if exists
+                    final_function = None
+                    current_cars_ds = self.cars_ds_savers_registry.get_cars_ds(
+                        future_obj
+                    )
+                    if current_cars_ds is None:
+                        self.cars_ds_replacer_registry.get_cars_ds(future_obj)
+                    if current_cars_ds is not None:
+                        final_function = current_cars_ds.final_function
+                    if final_function is not None:
+                        future_obj = final_function(self, future_obj)
                     # Save future if needs to
                     self.cars_ds_savers_registry.save(future_obj)
                     # Replace future in cars_ds if needs to

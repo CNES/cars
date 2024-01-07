@@ -74,6 +74,17 @@ class AbstractCarsDatasetRegistry:
         :rtype: list(CarsDataset)
         """
 
+    @abstractmethod
+    def get_cars_ds(self, future_result):
+        """
+        Get a list of registered CarsDataset
+
+        :param future_result: object to get cars dataset from
+
+        :return corresponding CarsDataset
+        :rtype: CarsDataset
+        """
+
     @staticmethod
     def get_future_cars_dataset_id(future_result):
         """

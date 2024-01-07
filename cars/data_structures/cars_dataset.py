@@ -106,6 +106,9 @@ class CarsDataset:
         self.overlaps = None
         self.attributes = {}
 
+        # Method to apply at the reception of tile
+        self.final_function = None
+
         if load_from_disk is not None:
             self.load_cars_dataset_from_disk(load_from_disk)
 
@@ -465,7 +468,9 @@ class CarsDataset:
         if nodata is not None:
             new_profile["nodata"] = nodata
 
-        descriptor = rio.open(file_name, "w", **new_profile, BIGTIFF="IF_SAFER")
+        descriptor = rio.open(
+            file_name, "w+", **new_profile, BIGTIFF="IF_SAFER"
+        )
 
         return descriptor
 

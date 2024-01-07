@@ -877,28 +877,34 @@ class CarsMemProf(Thread):
         Run
         """
 
-        max_mem = 0
-        max_cpu = 0
+        try:
+            max_mem = 0
+            max_cpu = 0
 
-        # tell parent profiling is ready
-        self.pipe.send(0)
-        stop = False
-        while True:
-            # Get memory
-            current_mem = self.process.memory_info().rss
+            # tell parent profiling is ready
+            self.pipe.send(0)
+            stop = False
+            while True:
+                # Get memory
+                current_mem = self.process.memory_info().rss
 
-            if current_mem > max_mem:
-                max_mem = current_mem
+                if current_mem > max_mem:
+                    max_mem = current_mem
 
-            # Get cpu max
-            current_cpu = self.process.cpu_percent(interval=self.cpu_interval)
-            if current_cpu > max_cpu:
-                max_cpu = current_cpu
+                # Get cpu max
+                current_cpu = self.process.cpu_percent(
+                    interval=self.cpu_interval
+                )
+                if current_cpu > max_cpu:
+                    max_cpu = current_cpu
 
-            if stop:
-                break
-            stop = self.pipe.poll(self.interval)
+                if stop:
+                    break
+                stop = self.pipe.poll(self.interval)
 
-        # Convert nbytes size for logger
-        self.pipe.send(float(max_mem) / 1000000)
-        self.pipe.send(max_cpu)
+            # Convert nbytes size for logger
+            self.pipe.send(float(max_mem) / 1000000)
+            self.pipe.send(max_cpu)
+
+        except BrokenPipeError:
+            logging.debug("broken pipe error in log wrapper ")

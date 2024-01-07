@@ -135,7 +135,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        merged_points_cloud,
+        points_clouds,
         epsg,
         orchestrator=None,
         dsm_file_name=None,
@@ -146,8 +146,8 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
 
         Creates a CarsDataset filled with dsm tiles.
 
-        :param merged_points_cloud: merged point cloud
-        :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
+        :param points_clouds: merged point cloud
+        :type points_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
         :param orchestrator: orchestrator used

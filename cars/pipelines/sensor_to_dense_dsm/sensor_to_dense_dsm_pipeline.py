@@ -67,7 +67,11 @@ from cars.pipelines.sensor_to_dense_dsm import (
 from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 
-@Pipeline.register("sensors_to_dense_dsm", "sensors_to_dense_point_clouds")
+@Pipeline.register(
+    "sensors_to_dense_dsm",
+    "sensors_to_dense_dsm_no_merging",
+    "sensors_to_dense_point_clouds",
+)
 class SensorToDenseDsmPipeline(PipelineTemplate):
     """
     SensorToDenseDsmPipeline
@@ -95,7 +99,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         self.generate_terrain_products = True
         # set json pipeline file
-        if self.used_conf[PIPELINE] == "sensors_to_dense_dsm":
+        if "sensors_to_dense_dsm" in self.used_conf[PIPELINE]:
             json_conf_file_name = "sensor_to_dense_dsm.json"
         else:
             json_conf_file_name = "sensor_to_pc.json"
@@ -157,7 +161,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Check conf application
         self.application_conf = self.check_applications(
-            self.conf.get(APPLICATIONS, {}), self.generate_terrain_products
+            self.conf.get(APPLICATIONS, {}),
+            self.generate_terrain_products,
+            no_merging="no_merging" in self.used_conf[PIPELINE],
         )
         self.used_conf[APPLICATIONS] = self.application_conf
 
@@ -195,7 +201,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
         return dsm_output.dense_dsm_check_output(conf)
 
-    def check_applications(self, conf, generate_terrain_products):
+    def check_applications(
+        self, conf, generate_terrain_products, no_merging=False
+    ):
         """
         Check the given configuration for applications,
         and generates needed applications for pipeline.
@@ -223,16 +231,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         ]
 
         terrain_applications = [
-            "point_cloud_fusion",
             "point_cloud_rasterization",
-            "point_cloud_outliers_removing.1",
-            "point_cloud_outliers_removing.2",
         ]
+
+        if not no_merging:
+            terrain_applications.append("point_cloud_fusion")
+            terrain_applications.append("point_cloud_outliers_removing.1")
+            terrain_applications.append("point_cloud_outliers_removing.2")
 
         pipeline_name = "sensors_to_dense_point_clouds"
         if generate_terrain_products:
             needed_applications += terrain_applications
             pipeline_name = "sensors_to_dense_dsm"
+            if no_merging:
+                pipeline_name += "_no_merging"
 
         # Initialize used config
         used_conf = {}
@@ -322,9 +334,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.pc_fusion_application = Application(
                 "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
             )
-            used_conf["point_cloud_fusion"] = (
-                self.pc_fusion_application.get_conf()
-            )
+            if not no_merging:
+                used_conf["point_cloud_fusion"] = (
+                    self.pc_fusion_application.get_conf()
+                )
 
             # Points cloud outlier removing small components
             self.pc_outliers_removing_1_app = Application(
@@ -334,9 +347,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     {"method": "small_components"},
                 ),
             )
-            used_conf["point_cloud_outliers_removing.1"] = (
-                self.pc_outliers_removing_1_app.get_conf()
-            )
+            if not no_merging:
+                used_conf["point_cloud_outliers_removing.1"] = (
+                    self.pc_outliers_removing_1_app.get_conf()
+                )
 
             # Points cloud outlier removing statistical
             self.pc_outliers_removing_2_app = Application(
@@ -346,9 +360,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     {"method": "statistical"},
                 ),
             )
-            used_conf["point_cloud_outliers_removing.2"] = (
-                self.pc_outliers_removing_2_app.get_conf()
-            )
+            if not no_merging:
+                used_conf["point_cloud_outliers_removing.2"] = (
+                    self.pc_outliers_removing_2_app.get_conf()
+                )
 
             # Rasterization
             self.rasterization_application = Application(
@@ -1182,54 +1197,71 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     resolution=self.rasterization_application.get_resolution(),
                 )
 
-                # Merge point clouds
-                merged_points_clouds = self.pc_fusion_application.run(
-                    list_epipolar_points_cloud,
-                    terrain_bounds,
-                    epsg,
-                    orchestrator=cars_orchestrator,
-                    margins=(
+                if "no_merging" in self.used_conf[PIPELINE]:
+                    point_cloud_to_rasterize = (
+                        list_epipolar_points_cloud,
+                        terrain_bounds,
+                    )
+                else:
+                    # Merge point clouds
+                    pc_outliers_removing_1_margins = (
                         self.pc_outliers_removing_1_app.get_on_ground_margin(
                             resolution=(
                                 self.rasterization_application.get_resolution()
                             )
                         )
-                        + self.pc_outliers_removing_2_app.get_on_ground_margin(
+                    )
+                    pc_outliers_removing_2_margins = (
+                        self.pc_outliers_removing_2_app.get_on_ground_margin(
                             resolution=(
                                 self.rasterization_application.get_resolution()
                             )
                         )
-                        + self.rasterization_application.get_margins()
-                    ),
-                    optimal_terrain_tile_width=optimal_terrain_tile_width,
-                    roi=(roi_poly if self.debug_with_roi else None),
-                )
-
-                # Add pair names to retrieve source pair of each point
-                pairs_names = [
-                    pair_name for pair_name, _, _ in list_sensor_pairs
-                ]
-                merged_points_clouds.attributes["source_pc_names"] = pairs_names
-
-                # Remove outliers with small components method
-                filtered_1_merged_points_clouds = (
-                    self.pc_outliers_removing_1_app.run(
-                        merged_points_clouds,
-                        orchestrator=cars_orchestrator,
                     )
-                )
-
-                # Remove outliers with statistical components method
-                filtered_2_merged_points_clouds = (
-                    self.pc_outliers_removing_2_app.run(
-                        filtered_1_merged_points_clouds,
+                    merged_points_clouds = self.pc_fusion_application.run(
+                        list_epipolar_points_cloud,
+                        terrain_bounds,
+                        epsg,
                         orchestrator=cars_orchestrator,
+                        margins=(
+                            pc_outliers_removing_1_margins
+                            + pc_outliers_removing_2_margins
+                            + self.rasterization_application.get_margins()
+                        ),
+                        optimal_terrain_tile_width=optimal_terrain_tile_width,
+                        roi=(roi_poly if self.debug_with_roi else None),
                     )
-                )
+
+                    # Add pair names to retrieve source pair of each point
+                    pairs_names = [
+                        pair_name for pair_name, _, _ in list_sensor_pairs
+                    ]
+                    merged_points_clouds.attributes["source_pc_names"] = (
+                        pairs_names
+                    )
+
+                    # Remove outliers with small components method
+                    filtered_1_merged_points_clouds = (
+                        self.pc_outliers_removing_1_app.run(
+                            merged_points_clouds,
+                            orchestrator=cars_orchestrator,
+                        )
+                    )
+
+                    # Remove outliers with statistical components method
+                    filtered_2_merged_points_clouds = (
+                        self.pc_outliers_removing_2_app.run(
+                            filtered_1_merged_points_clouds,
+                            orchestrator=cars_orchestrator,
+                        )
+                    )
+
+                    # Rasterize merged and filtered point cloud
+                    point_cloud_to_rasterize = filtered_2_merged_points_clouds
 
                 # rasterize point cloud
                 _ = self.rasterization_application.run(
-                    filtered_2_merged_points_clouds,
+                    point_cloud_to_rasterize,
                     epsg,
                     orchestrator=cars_orchestrator,
                     dsm_file_name=os.path.join(
