@@ -33,6 +33,7 @@ from json_checker import Checker
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.dtm_intersection import DTMIntersection
 from shareloc.geofunctions.triangulation import epipolar_triangulation
+from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
 from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
@@ -149,12 +150,7 @@ class SharelocGeometry(AbstractGeometry):
         else:
             geomodel_type = RPC_TYPE
 
-        if geomodel_type == GRID_TYPE:
-            shareloc_model = Grid(geomodel)
-        elif geomodel_type == RPC_TYPE:
-            shareloc_model = RPC.from_any(geomodel)
-        else:
-            raise ValueError(f"Model type {geomodel_type} is not supported")
+        shareloc_model = GeoModel(geomodel, geomodel_type)
 
         if shareloc_model is None:
             raise ValueError(f"Model {geomodel} could not be read by shareloc")

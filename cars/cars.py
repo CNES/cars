@@ -125,6 +125,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
     # Force the use of OpenMP in numba
     os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
+    os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)
     os.environ["NUMBA_THREADING_LAYER"] = "omp"
 
     # Force the use of CARS dask configuration
