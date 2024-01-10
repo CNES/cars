@@ -854,6 +854,8 @@ def compute_matches_wrapper(
         edge_threshold=edge_threshold,
         magnification=magnification,
         backmatching=backmatching,
+        disp_lower_bound=disp_lower_bound,
+        disp_upper_bound=disp_upper_bound,
     )
 
     # Filter matches outside disparity range
