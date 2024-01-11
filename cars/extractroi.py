@@ -57,7 +57,7 @@ def create_geom_file(src, geom_filename):
                     key_idx = key + "_%02d" % idx
                     value_idx = str(rpcs_as_dict[key][idx])
                     writer.write(key_idx + ": " + value_idx)
-                    writer.write( "\n")
+                    writer.write("\n")
             else:
                 writer.write(key + ": " + str(rpcs_as_dict[key]))
                 writer.write("\n")
