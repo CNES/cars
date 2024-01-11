@@ -4,6 +4,46 @@
 How to...
 =========
 
+Get full stereo products
+========================
+
+.. _get_stereo_products:
+
+Dinamis
+-------
+
+DINAMIS is a platform that acquires and distributes satellite Earth imagery for French and foreign institutional users under `specific subscription conditions. <https://dinamis.data-terra.org/en/eligible-users/>`_. Please visit the dinamis website for more information: https://dinamis.data-terra.org/.
+
+
+AIRBUS Pleiades NEO example files
+---------------------------------
+Example files are available here: https://intelligence.airbus.com/imagery/sample-imagery/pleiades-neo-tristereo-marseille/ (A form must be filled out to access the data).
+
+
+Maxar WorldView example files
+-----------------------------
+
+.. _maxar_example_files:
+
+| Example files are available on AWS S3 through the SpaceNet challenge here: s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/
+| You need to install `aws-cli <https://github.com/aws/aws-cli>`_
+
+.. code-block:: console
+
+   python -m venv venv-aws-cli # create a virtual environment
+   source ./venv-aws-cli/bin/activate # activate it
+   pip install --upgrade pip # upgrade pip
+   pip install awscli
+
+
+And download a stereo:
+
+.. code-block:: console
+
+   aws s3 cp --no-sign-request s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/18DEC15WV031000015DEC18140522-P1BS-500515572020_01_P001_________AAE_0AAAAABPABJ0.NTF .
+   aws s3 cp --no-sign-request s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/18DEC15WV031000015DEC18140554-P1BS-500515572030_01_P001_________AAE_0AAAAABPABJ0.NTF  .
+
+
 Prepare input images
 ====================
 
@@ -12,28 +52,33 @@ Prepare input images
 Make input ROI images
 ---------------------
 
-CARS supports the :term:`ROI` products extracts done with the `otbcli_ExtractROI <https://www.orfeo-toolbox.org/CookBook/Applications/app_ExtractROI.html>`_ OTB application (raster + geometric model).
-
-* First, retrieve the coordinates of the desired extract on the first image (lets call it ``img1.jp2``), under the form ``startx``, ``starty``, ``sizex``, ``sizey`` (in pixels).
-
-* Perform the extraction of the first image with:
+``cars-extractroi`` script allows to extract region of interest from your image product.
 
 .. code-block:: console
 
-    otbcli_ExtractROI -in img1.jp2 -out img1_xt.tif uint16 -startx startx -starty starty -sizex sizex -sizey sizey
+    cars-extractroi -h
+    usage: cars-extractroi [-h] -il [IL [IL ...]] -out OUT -window ulx uly lrx lry
 
-* Extract the same zone on the second image (for example ``img2.jp2``), the ``-mode fit`` application option has to be used:
+    Helper to extract roi from bounding box
+
+    optional arguments:
+      -h, --help            show this help message and exit
+      -il [IL [IL ...]]     Image products
+      -out OUT              Extracts directory
+      -window ulx uly lrx lry
+
+
+For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you can choose a region of interest with `geojson.io <https://geojson.io/#map=16.43/-34.490433/-58.586864>`_
+
+And then extract region, create config file and launch cars:
 
 .. code-block:: console
 
-    otbcli_ExtractROI -in img2.jp2 -out img2_xt.tif uint16 -mode fit -mode.fit.im img1_xt.tif
+   cars-extractroi -il *.NTF -out ext_dir -window -58.5896 -34.4872 -58.5818 -34.4943
+   cars-starter -il ext_dir/*.tif -out out_dir > config.json
+   cars config.json
 
-The application will automatically look for the zone corresponding to ``img1_xt.tif`` within ``img2.jp2``.
-
-It is possible to use the ``-elev.dem srtm/`` option to use the DEM during this search in order to be more accurate.
-
-It is to be noted that the ``-mode.fit.vec`` option also exists. It accepts a vector file (for example a shapefile or a kml) which enables the image extraction from a footprint.
-
+      
 .. _make_a_simple_pan_sharpening:
 
 Make a simple pan sharpening
