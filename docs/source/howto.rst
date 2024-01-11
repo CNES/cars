@@ -4,29 +4,30 @@
 How to...
 =========
 
+.. _get_stereo_products:
+
 Get full stereo products
 ========================
 
-.. _get_stereo_products:
 
 Dinamis
 -------
 
-DINAMIS is a platform that acquires and distributes satellite Earth imagery for French and foreign institutional users under `specific subscription conditions. <https://dinamis.data-terra.org/en/eligible-users/>`_. Please visit the dinamis website for more information: https://dinamis.data-terra.org/.
+| DINAMIS is a platform that acquires and distributes satellite Earth imagery for French and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
+| Please visit the dinamis website for more information: https://dinamis.data-terra.org/.
 
 
 AIRBUS Pleiades NEO example files
 ---------------------------------
 Example files are available here: https://intelligence.airbus.com/imagery/sample-imagery/pleiades-neo-tristereo-marseille/ (A form must be filled out to access the data).
 
+.. _maxar_example_files:
 
 Maxar WorldView example files
 -----------------------------
 
-.. _maxar_example_files:
-
-| Example files are available on AWS S3 through the SpaceNet challenge here: s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/
-| You need to install `aws-cli <https://github.com/aws/aws-cli>`_
+| Example files are available on AWS S3 through the SpaceNet challenge here: s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/.
+| You need to install `aws-cli <https://github.com/aws/aws-cli>`_:
 
 .. code-block:: console
 
@@ -68,7 +69,7 @@ Make input ROI images
       -window ulx uly lrx lry
 
 
-For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you can choose a region of interest with `geojson.io <https://geojson.io/#map=16.43/-34.490433/-58.586864>`_
+For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you can choose a region of interest with `geojson.io <https://geojson.io/#map=16.43/-34.490433/-58.586864>`_.
 
 And then extract region, create config file and launch cars:
 
