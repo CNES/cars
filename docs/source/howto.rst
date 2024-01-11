@@ -57,17 +57,17 @@ Make input ROI images
 
 .. code-block:: console
 
-    cars-extractroi -h
-    usage: cars-extractroi [-h] -il [IL [IL ...]] -out OUT -window ulx uly lrx lry
+   usage: cars-extractroi [-h] -il [IL [IL ...]] -out OUT -bbx x1 y1 x2 y2
 
-    Helper to extract roi from bounding box
+   Helper to extract roi from bounding box
 
-    optional arguments:
-      -h, --help            show this help message and exit
-      -il [IL [IL ...]]     Image products
-      -out OUT              Extracts directory
-      -window ulx uly lrx lry
+   optional arguments:
+     -h, --help         show this help message and exit
+     -il [IL [IL ...]]  Image products
+     -out OUT           Extracts directory
+     -bbx x1 y1 x2 y2   Bounding box from two points (x1, y1) and (x2, y2)
 
+		
 
 For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you can choose a region of interest with `geojson.io <https://geojson.io/#map=16.43/-34.490433/-58.586864>`_.
 
@@ -75,7 +75,7 @@ And then extract region, create config file and launch cars:
 
 .. code-block:: console
 
-   cars-extractroi -il *.NTF -out ext_dir -window -58.5896 -34.4872 -58.5818 -34.4943
+   cars-extractroi -il *.NTF -out ext_dir -bbx -58.5896 -34.4872 -58.5818 -34.4943
    cars-starter -il ext_dir/*.tif -out out_dir > config.json
    cars config.json
 

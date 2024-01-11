@@ -32,16 +32,19 @@ from affine import Affine
 from rasterio.windows import Window
 
 
-def get_window_from_roi(src, roi):
-    """get window from region of interest"""
+def get_slices_from_bbx(src, bbx):
+    """get slices from bounding box"""
     coordinates = []
     transformer = rio.transform.RPCTransformer(src.rpcs)
-    for x in [roi[0], roi[2]]:
-        for y in [roi[1], roi[3]]:
+    for x in [bbx[0], bbx[2]]:
+        for y in [bbx[1], bbx[3]]:
             coordinates.append(transformer.rowcol(x, y))
     coordinates = np.array(coordinates)
-    (left, bottom), (right, top) = np.amin(coordinates, axis=0), np.amax(coordinates, axis=0)
-    return left, bottom, right, top
+    (row_start, col_start) = np.amin(coordinates, axis=0)
+    (row_stop, col_stop) = np.amax(coordinates, axis=0)
+    rows = (row_start, row_stop)
+    cols = (col_start, col_stop)
+    return rows, cols
 
 
 def create_geom_file(src, geom_filename):
@@ -51,9 +54,13 @@ def create_geom_file(src, geom_filename):
         for key in rpcs_as_dict:
             if isinstance(rpcs_as_dict[key], list):
                 for idx, coef in enumerate(rpcs_as_dict[key]):
-                    writer.write(": ".join([key+"_%02d"%idx, str(rpcs_as_dict[key][idx])]) +"\n")
+                    key_idx = key + "_%02d" % idx
+                    value_idx = str(rpcs_as_dict[key][idx])
+                    writer.write(key_idx + ": " + value_idx)
+                    writer.write( "\n")
             else:
-                writer.write(": ".join([key, str(rpcs_as_dict[key])])+"\n")
+                writer.write(key + ": " + str(rpcs_as_dict[key]))
+                writer.write("\n")
 
         writer.write("type:  ossimRpcModel\n")
         writer.write("polynomial_format:  B\n")
@@ -82,27 +89,27 @@ def main():
     )
 
     parser.add_argument(
-        "-window",
+        "-bbx",
         type=float,
         nargs=4,
-        metavar=("ulx", "uly", "lrx", "lry"),
+        help="Bounding box from two points (x1, y1) and (x2, y2)",
+        metavar=("x1", "y1", "x2", "y2"),
         required=True,
     )
 
     args = parser.parse_args()
     if not os.path.exists(args.out):
         os.makedirs(args.out)
-    
+
     # check first input in list to determine pipeline
     for idx, image in enumerate(args.il):
         ext = os.path.join(args.out, "ext_%03d.tif" % idx)
-        geom = os.path.splitext(ext)[0]+".geom"
+        geom = os.path.splitext(ext)[0] + ".geom"
 
         with rio.open(image) as src:
-            # read window from roi
-            row_start, col_start, row_stop, col_stop = get_window_from_roi(src, args.window)
-            
-            window = Window.from_slices((row_start, row_stop), (col_start, col_stop))
+            # read window from bbx
+            rows, cols = get_slices_from_bbx(src, args.bbx)
+            window = Window.from_slices(rows, cols)
             array = src.read(1, window=window)
 
             # update profile for extract
@@ -112,7 +119,9 @@ def main():
             profile["height"] = window.height
             if "crs" in profile:
                 del profile["crs"]
-            profile["transform"] = profile["transform"] * Affine.translation(window.col_off, window.row_off)
+
+            translate = Affine.translation(window.col_off, window.row_off)
+            profile["transform"] *= translate
 
             # write extract
             with rio.open(ext, "w", **profile) as dst:
@@ -121,6 +130,6 @@ def main():
             # write associated geom
             create_geom_file(src, geom)
 
-        
+
 if __name__ == "__main__":
     main()
