@@ -27,17 +27,17 @@ import os
 
 import numpy as np
 import rasterio as rio
-from affine import Affine
 from rasterio.windows import Window
+from affine import Affine
 
 
 def get_slices_from_bbx(src, bbx):
     """get slices from bounding box"""
     coordinates = []
     transformer = rio.transform.RPCTransformer(src.rpcs)
-    for x in [bbx[0], bbx[2]]:
-        for y in [bbx[1], bbx[3]]:
-            coordinates.append(transformer.rowcol(x, y))
+    for x_bbx in [bbx[0], bbx[2]]:
+        for y_bbx in [bbx[1], bbx[3]]:
+            coordinates.append(transformer.rowcol(x_bbx, y_bbx))
     coordinates = np.array(coordinates)
     (row_start, col_start) = np.amin(coordinates, axis=0)
     (row_stop, col_stop) = np.amax(coordinates, axis=0)
@@ -49,7 +49,7 @@ def get_slices_from_bbx(src, bbx):
 def create_geom_file(src, geom_filename):
     """create .geom file from rasterio dataset"""
     rpcs_as_dict = src.rpcs.to_dict()
-    with open(geom_filename, "w") as writer:
+    with open(geom_filename, "w", encoding="utf-8") as writer:
         for key in rpcs_as_dict:
             if isinstance(rpcs_as_dict[key], list):
                 for idx, coef in enumerate(rpcs_as_dict[key]):
