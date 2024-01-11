@@ -22,15 +22,15 @@
 cars-extractroi: helper to extract region of interest from image product
 """
 
-import os
-import glob
 import argparse
+import glob
+import os
 
 import numpy as np
-
 import rasterio as rio
-from rasterio.windows import Window
 from affine import Affine
+from rasterio.windows import Window
+
 
 def get_window_from_roi(src, roi):
     """get window from region of interest"""
