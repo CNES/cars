@@ -27,7 +27,6 @@ import os
 
 import numpy as np
 import rasterio as rio
-from rasterio.windows import Window
 from affine import Affine
 
 
@@ -106,7 +105,7 @@ def main():
         with rio.open(image) as src:
             # read window from bbx
             rows, cols = get_slices_from_bbx(src, args.bbx)
-            window = Window.from_slices(rows, cols)
+            window = rio.windows.Window.from_slices(rows, cols)
             array = src.read(1, window=window)
 
             # update profile for extract
