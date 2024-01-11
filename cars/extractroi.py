@@ -23,7 +23,6 @@ cars-extractroi: helper to extract region of interest from image product
 """
 
 import argparse
-import glob
 import os
 
 import numpy as np
@@ -54,9 +53,7 @@ def create_geom_file(src, geom_filename):
         for key in rpcs_as_dict:
             if isinstance(rpcs_as_dict[key], list):
                 for idx, coef in enumerate(rpcs_as_dict[key]):
-                    key_idx = key + "_%02d" % idx
-                    value_idx = str(rpcs_as_dict[key][idx])
-                    writer.write(key_idx + ": " + value_idx)
+                    writer.write(key + "_%02d" % idx + ": " + str(coef))
                     writer.write("\n")
             else:
                 writer.write(key + ": " + str(rpcs_as_dict[key]))
