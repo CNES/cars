@@ -681,8 +681,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     margins_fun=self.sparse_matching_app.get_margins_fun(
                         disp_min=dmin, disp_max=dmax
                     ),
-                    tile_width=500,
-                    tile_height=500,
+                    tile_width=None,
+                    tile_height=self.sparse_matching_app.strip_heigth,
                     add_color=False,
                 )
 
