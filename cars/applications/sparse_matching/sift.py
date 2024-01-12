@@ -139,7 +139,7 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["method"] = conf.get("method", "sift")
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
-            "elevation_delta_lower_bound", -9000
+            "elevation_delta_lower_bound", -1000
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", 9000
@@ -474,32 +474,19 @@ class Sift(SparseMatching, short_name="sift"):
                     cars_ds_name="epi_matches_left",
                 )
 
-            # Get max window size
-            image_tiling_grid = epipolar_images_left.tiling_grid
-
-            max_window_col_size = np.max(
-                image_tiling_grid[:, :, 3] - image_tiling_grid[:, :, 2]
-            )
-
             # Compute disparity range
             if self.elevation_delta_lower_bound is None:
-                disp_lower_bound = -np.inf
-                min_offset = -image_tiling_grid.shape[0]
-            else:
-                disp_lower_bound = (
-                    self.elevation_delta_lower_bound / disp_to_alt_ratio
-                )
-                min_offset = math.floor(disp_lower_bound / max_window_col_size)
-            if self.elevation_delta_upper_bound is None:
                 disp_upper_bound = np.inf
-                max_offset = image_tiling_grid.shape[0]
             else:
                 disp_upper_bound = (
-                    self.elevation_delta_upper_bound / disp_to_alt_ratio
+                    -self.elevation_delta_lower_bound / disp_to_alt_ratio
                 )
-                max_offset = math.ceil(disp_upper_bound / max_window_col_size)
-
-            offsets = range(min_offset, max_offset + 1)
+            if self.elevation_delta_upper_bound is None:
+                disp_lower_bound = -np.inf
+            else:
+                disp_lower_bound = (
+                    -self.elevation_delta_upper_bound / disp_to_alt_ratio
+                )
 
             attributes = {
                 "disp_lower_bound": disp_lower_bound,
@@ -540,61 +527,47 @@ class Sift(SparseMatching, short_name="sift"):
             )
 
             # Generate disparity maps
-            for col in range(epipolar_disparity_map_left.shape[1]):
-                for row in range(epipolar_disparity_map_left.shape[0]):
-                    # initialize list of matches
-                    delayed_matches_row_col = []
-                    # iterate on offsets
-                    for offset in offsets:
-                        if (
-                            0
-                            <= col + offset
-                            < epipolar_disparity_map_left.shape[1]
-                        ):
-                            # Compute matches
-                            if type(None) not in (
-                                type(epipolar_images_left[row, col]),
-                                type(epipolar_images_right[row, col + offset]),
-                            ):
-                                delayed_matches_row_col.append(
-                                    self.orchestrator.cluster.create_task(
-                                        compute_matches_wrapper, nout=1
-                                    )(
-                                        epipolar_images_left[row, col],
-                                        epipolar_images_right[
-                                            row, col + offset
-                                        ],
-                                        matching_threshold=(
-                                            self.sift_matching_threshold
-                                        ),
-                                        n_octave=self.sift_n_octave,
-                                        n_scale_per_octave=(
-                                            self.sift_n_scale_per_octave
-                                        ),
-                                        peak_threshold=tmp_sift_peak_threshold,
-                                        edge_threshold=self.sift_edge_threshold,
-                                        magnification=self.sift_magnification,
-                                        backmatching=self.sift_back_matching,
-                                        disp_lower_bound=disp_lower_bound,
-                                        disp_upper_bound=disp_upper_bound,
-                                    )
-                                )
-
-                    # Merge matches corresponding to left tile
-                    if len(delayed_matches_row_col) > 0:
-                        # update saving_info with row and col
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-
-                        (
-                            epipolar_disparity_map_left[row, col]
-                        ) = self.orchestrator.cluster.create_task(
-                            merge_matches_wrapper, nout=1
+            for row in range(epipolar_disparity_map_left.shape[0]):
+                # initialize list of matches
+                delayed_matches_row_col = []
+                # Compute matches
+                if type(None) not in (
+                    type(epipolar_images_left[row, 0]),
+                    type(epipolar_images_right[row, 0]),
+                ):
+                    delayed_matches_row_col.append(
+                        self.orchestrator.cluster.create_task(
+                            compute_matches_wrapper, nout=1
                         )(
-                            delayed_matches_row_col,
-                            saving_info_left=full_saving_info_left,
+                            epipolar_images_left[row, 0],
+                            epipolar_images_right[row, 0],
+                            matching_threshold=self.sift_matching_threshold,
+                            n_octave=self.sift_n_octave,
+                            n_scale_per_octave=self.sift_n_scale_per_octave,
+                            peak_threshold=tmp_sift_peak_threshold,
+                            edge_threshold=self.sift_edge_threshold,
+                            magnification=self.sift_magnification,
+                            backmatching=self.sift_back_matching,
+                            disp_lower_bound=disp_lower_bound,
+                            disp_upper_bound=disp_upper_bound,
                         )
+                    )
+
+                # Merge matches corresponding to left tile
+                if len(delayed_matches_row_col) > 0:
+                    # update saving_info with row and col
+                    full_saving_info_left = ocht.update_saving_infos(
+                        saving_info_left, row=row, col=0
+                    )
+
+                    (
+                        epipolar_disparity_map_left[row, 0]
+                    ) = self.orchestrator.cluster.create_task(
+                        merge_matches_wrapper, nout=1
+                    )(
+                        delayed_matches_row_col,
+                        saving_info_left=full_saving_info_left,
+                    )
 
         else:
             logging.error(
