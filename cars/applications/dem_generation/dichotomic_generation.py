@@ -31,6 +31,7 @@ import os
 # Third party imports
 import numpy as np
 import pandas
+import rasterio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
@@ -73,6 +74,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.margin = self.used_config["margin"]
         self.percentile = self.used_config["percentile"]
         self.min_number_matches = self.used_config["min_number_matches"]
+        self.fillnodata_max_search_distance = self.used_config[
+            "fillnodata_max_search_distance"
+        ]
 
         # Init orchestrator
         self.orchestrator = None
@@ -102,9 +106,13 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
-        overloaded_conf["percentile"] = conf.get("percentile", 3)
+        overloaded_conf["percentile"] = conf.get("percentile", 5)
         overloaded_conf["min_number_matches"] = conf.get(
-            "min_number_matches", 30
+            "min_number_matches", 100
+        )
+
+        overloaded_conf["fillnodata_max_search_distance"] = conf.get(
+            "fillnodata_max_search_distance", 3
         )
 
         rectification_schema = {
@@ -113,6 +121,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "margin": And(Or(float, int), lambda x: x > 0),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
+            "fillnodata_max_search_distance": And(int, lambda x: x > 0),
         }
 
         # Check conf
@@ -241,11 +250,21 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             alti_zeros_dataset, geoid_data
         )
 
-        mnt_mean = list_z_grid[0] + geoid_offset[cst.Z].values
-        mnt_min = list_z_grid[1] + geoid_offset[cst.Z].values
-        mnt_max = list_z_grid[2] + geoid_offset[cst.Z].values
+        # fillnodata
+        valid = np.isfinite(list_z_grid[0])
+        msd = self.fillnodata_max_search_distance
+        for idx in range(3):
+            list_z_grid[idx] = rasterio.fill.fillnodata(
+                list_z_grid[idx], mask=valid, max_search_distance=msd
+            )
+            list_z_grid[idx] += geoid_offset[cst.Z].values
+            list_z_grid[idx] = np.nan_to_num(list_z_grid[idx])
 
-        if np.any((mnt_max - mnt_min) < 0):
+        dem_mean = list_z_grid[0]
+        dem_min = list_z_grid[1]
+        dem_max = list_z_grid[2]
+
+        if np.any((dem_max - dem_min) < 0):
             logging.error("dem min > dem max")
             raise RuntimeError("dem min > dem max")
 
@@ -317,9 +336,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # Generate dataset
         dem_tile = xr.Dataset(
             data_vars={
-                "dem_mean": (["row", "col"], np.flip(mnt_mean, axis=0)),
-                "dem_min": (["row", "col"], np.flip(mnt_min, axis=0)),
-                "dem_max": (["row", "col"], np.flip(mnt_max, axis=0)),
+                "dem_mean": (["row", "col"], np.flip(dem_mean, axis=0)),
+                "dem_min": (["row", "col"], np.flip(dem_min, axis=0)),
+                "dem_max": (["row", "col"], np.flip(dem_max, axis=0)),
             },
             coords={
                 "row": np.arange(0, row_max),
@@ -446,6 +465,8 @@ def multi_res_rec(
     ymin = np.nanmin(y_values)
     xmax = np.nanmax(x_values)
     ymax = np.nanmax(y_values)
+    xcenter = (xmax + xmin) / 2
+    ycenter = (ymax + ymin) / 2
 
     # find points
     tile_pc = pd_pc.loc[
@@ -464,13 +485,19 @@ def multi_res_rec(
     ):
         # apply global value
         for fun, z_grid in zip(list_fun, list_z_grid):  # noqa: B905
-            if isinstance(fun, tuple):
-                # percentile
-                z_grid[row_min:row_max, col_min:col_max] = fun[0](
-                    tile_pc["z"], fun[1]
-                )
+            if (
+                np.abs(xcenter - np.median(tile_pc["x"])) < overlap
+                and np.abs(ycenter - np.median(tile_pc["y"])) < overlap
+            ):
+                if isinstance(fun, tuple):
+                    # percentile
+                    z_grid[row_min:row_max, col_min:col_max] = fun[0](
+                        tile_pc["z"], fun[1]
+                    )
+                else:
+                    z_grid[row_min:row_max, col_min:col_max] = fun(tile_pc["z"])
             else:
-                z_grid[row_min:row_max, col_min:col_max] = fun(tile_pc["z"])
+                z_grid[row_min:row_max, col_min:col_max] = np.nan
 
         list_row = []
         if row_max - row_min >= 2:
