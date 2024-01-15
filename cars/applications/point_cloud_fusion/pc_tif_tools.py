@@ -32,6 +32,7 @@ import logging
 import numpy as np
 import pandas as pd
 import rasterio as rio
+import xarray as xr
 from shapely import geometry, length
 
 import cars.orchestrator.orchestrator as ocht
@@ -452,6 +453,244 @@ def read_band(
                 cloud_data[band_full_name] = np.ravel(
                     band_file.read(1 + id_band, window=window)
                 )
+
+
+def generate_point_clouds(list_clouds, orchestrator, tile_size=1000):
+    """
+    Generate point cloud  cars Datasets from list
+
+    :param list_clouds: list of clouds
+    :type list_clouds: dict
+    :param orchestrator: orchestrator
+    :type orchestrator: Orchestrator
+    :param tile_size: tile size
+    :type tile_size: int
+
+    :return list of point clouds
+    :rtype: list(CarsDataset)
+    """
+    list_epipolar_points_cloud = []
+
+    # Create cars datasets
+
+    list_names = list(list_clouds.keys())
+
+    for cloud_id, key in enumerate(list_clouds):
+        cloud = list_clouds[key]
+        cars_ds = cars_dataset.CarsDataset(dataset_type="arrays")
+
+        epipolar_size_x, epipolar_size_y = inputs.rasterio_get_size(cloud["x"])
+
+        # Generate tiling grid
+        cars_ds.tiling_grid = tiling.generate_tiling_grid(
+            0,
+            0,
+            epipolar_size_y,
+            epipolar_size_x,
+            tile_size,
+            tile_size,
+        )
+
+        color_type = None
+        if cst.POINTS_CLOUD_CLR_KEY_ROOT in cloud:
+            # Get color type
+            color_type = inputs.rasterio_get_image_type(
+                cloud[cst.POINTS_CLOUD_CLR_KEY_ROOT]
+            )
+        cars_ds.attributes = {
+            "color_type": color_type,
+            "source_pc_names": list_names,
+        }
+
+        for col in range(cars_ds.shape[1]):
+            for row in range(cars_ds.shape[0]):
+                # get window
+                window = cars_ds.get_window_as_dict(row, col)
+                rio_window = cars_dataset.generate_rasterio_window(window)
+
+                # Generate tile
+                cars_ds[row, col] = orchestrator.cluster.create_task(
+                    generate_pc_wrapper, nout=1
+                )(
+                    cloud,
+                    rio_window,
+                    color_type=color_type,
+                    cloud_id=cloud_id,
+                    list_cloud_ids=list_names,
+                )
+
+        list_epipolar_points_cloud.append(cars_ds)
+
+    return list_epipolar_points_cloud
+
+
+def read_image_full(band_path, window=None, squeeze=False):
+    """
+    Read image with window
+
+    :param band_path: path to image
+    :param window: window
+    :param squeeze: squeeze data if true
+
+    :return array
+    """
+
+    with rio.open(band_path) as desc_band:
+        data = desc_band.read(window=window)
+    if squeeze:
+        data = np.squeeze(data)
+
+    return data
+
+
+def generate_pc_wrapper(
+    cloud, window, color_type=None, cloud_id=None, list_cloud_ids=None
+):
+    """
+    Generate point cloud  dataset
+
+    :param cloud: cloud dict
+    :param window: window
+    :param color_type: color type
+    :param cloud_id: cloud id
+    :param list_cloud_ids: list of global cloud ids
+
+    :return cloud
+    :rtype: xr.Dataset
+    """
+
+    list_keys = cloud.keys()
+    # x y z
+    data_x = read_image_full(cloud["x"], window=window, squeeze=True)
+    data_y = read_image_full(cloud["y"], window=window, squeeze=True)
+    data_z = read_image_full(cloud["z"], window=window, squeeze=True)
+
+    shape = data_x.shape
+
+    row = np.arange(0, shape[0])
+    col = np.arange(0, shape[1])
+
+    values = {
+        cst.X: ([cst.ROW, cst.COL], data_x),  # longitudes
+        cst.Y: ([cst.ROW, cst.COL], data_y),  # latitudes
+        cst.Z: ([cst.ROW, cst.COL], data_z),
+    }
+
+    coords = {cst.ROW: row, cst.COL: col}
+
+    attributes = {"cloud_id": cloud_id, "number_of_pc": len(list_cloud_ids)}
+
+    for key in list_keys:
+        if cloud[key] is None and key != "mask":
+            pass
+        elif key in ["x", "y", "z"]:
+            pass
+        elif key == "point_cloud_epsg":
+            attributes["epsg"] = cloud[key]
+        elif key == "mask":
+            if cloud[key] is None:
+                data = ~np.isnan(data_x) * 255
+            else:
+                data = read_image_full(cloud[key], window=window, squeeze=True)
+            values[cst.POINTS_CLOUD_CORR_MSK] = ([cst.ROW, cst.COL], data)
+
+        elif key == cst.EPI_CLASSIFICATION:
+            data = read_image_full(cloud[key], window=window, squeeze=False)
+            descriptions = inputs.get_descriptions_bands(cloud[key])
+            values[cst.EPI_CLASSIFICATION] = (
+                [cst.BAND_CLASSIF, cst.ROW, cst.COL],
+                data,
+            )
+            if cst.BAND_CLASSIF not in coords:
+                coords[cst.BAND_CLASSIF] = descriptions
+
+        elif key == cst.EPI_COLOR:
+            data = read_image_full(cloud[key], window=window, squeeze=False)
+            descriptions = list(inputs.get_descriptions_bands(cloud[key]))
+            attributes["color_type"] = color_type
+            values[cst.EPI_COLOR] = ([cst.BAND_IM, cst.ROW, cst.COL], data)
+
+            if cst.EPI_COLOR not in coords:
+                coords[cst.BAND_IM] = descriptions
+
+        elif key == cst.EPI_FILLING:
+            data = read_image_full(cloud[key], window=window, squeeze=False)
+            descriptions = inputs.get_descriptions_bands(cloud[key])
+            values[cst.EPI_FILLING] = (
+                [cst.BAND_FILLING, cst.ROW, cst.COL],
+                data,
+            )
+            if cst.BAND_FILLING not in coords:
+                coords[cst.BAND_FILLING] = descriptions
+        else:
+            data = read_image_full(cloud[key], window=window, squeeze=True)
+            if data.shape == 2:
+                values[key] = ([cst.ROW, cst.COL], data)
+            else:
+                logging.error(" {} data not managed".format(key))
+
+    xr_cloud = xr.Dataset(values, coords=coords)
+    xr_cloud.attrs = attributes
+
+    return xr_cloud
+
+
+def get_bounds(
+    list_epipolar_points_cloud,
+    epsg,
+    roi_poly=None,
+):
+    """
+    Get bounds of clouds
+
+    :param list_epipolar_points_cloud: list of clouds
+    :type list_epipolar_points_cloud: dict
+    :param epsg: epsg of wanted roi
+    :param roi_poly: crop with given roi
+
+    :return bounds
+    """
+    xmin_list = []
+    xmax_list = []
+    ymin_list = []
+    ymax_list = []
+
+    for _, point_cloud in list_epipolar_points_cloud.items():
+
+        local_x_y_min_max = get_min_max_band(
+            point_cloud[cst.X],
+            point_cloud[cst.Y],
+            point_cloud[cst.Z],
+            point_cloud[cst.PC_EPSG],
+            epsg,
+        )
+
+        xmin_list.append(local_x_y_min_max[0])
+        xmax_list.append(local_x_y_min_max[1])
+        ymin_list.append(local_x_y_min_max[2])
+        ymax_list.append(local_x_y_min_max[3])
+
+    # Define a terrain tiling from the terrain bounds (in terrain epsg)
+    global_xmin = min(xmin_list)
+    global_xmax = max(xmax_list)
+    global_ymin = min(ymin_list)
+    global_ymax = max(ymax_list)
+
+    if roi_poly is not None:
+        (
+            global_xmin,
+            global_ymin,
+            global_xmax,
+            global_ymax,
+        ) = preprocessing.crop_terrain_bounds_with_roi(
+            roi_poly, global_xmin, global_ymin, global_xmax, global_ymax
+        )
+
+    terrain_bbox = [global_xmin, global_ymin, global_xmax, global_ymax]
+
+    logging.info("terrain bbox in epsg {}: {}".format(str(epsg), terrain_bbox))
+
+    return terrain_bbox
 
 
 def transform_input_pc(

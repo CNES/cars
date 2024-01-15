@@ -38,6 +38,7 @@ from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.core import preprocessing, roi_tools
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
@@ -54,7 +55,10 @@ from cars.pipelines.sensor_to_dense_dsm import (
 )
 
 
-@Pipeline.register("dense_point_clouds_to_dense_dsm")
+@Pipeline.register(
+    "dense_point_clouds_to_dense_dsm_no_merging",
+    "dense_point_clouds_to_dense_dsm",
+)
 class PointCloudsToDsmPipeline(PipelineTemplate):
     """
     PointCloudsToDsmPipeline
@@ -95,7 +99,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         self.used_conf = {}
 
         # Pipeline
-        self.used_conf[PIPELINE] = "dense_point_clouds_to_dense_dsm"
+        self.used_conf[PIPELINE] = conf.get(
+            PIPELINE, "dense_point_clouds_to_dense_dsm"
+        )
 
         # Check conf orchestrator
         self.orchestrator_conf = self.check_orchestrator(
@@ -123,7 +129,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
         # Check conf application
         application_conf = self.check_applications(
-            self.conf.get(APPLICATIONS, {})
+            self.conf.get(APPLICATIONS, {}),
+            no_merging="no_merging" in self.used_conf[PIPELINE],
         )
         self.used_conf[APPLICATIONS] = application_conf
 
@@ -161,21 +168,25 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         """
         return dsm_output.dense_dsm_check_output(conf)
 
-    def check_applications(self, conf):
+    def check_applications(self, conf, no_merging=False):
         """
         Check the given configuration for applications
 
         :param conf: configuration of applications
         :type conf: dict
+        :param no_merging: True if skip PC fusion and PC removing
+        :type no_merging: bool
         """
 
         # Check if all specified applications are used
         needed_applications = [
-            "point_cloud_fusion",
             "point_cloud_rasterization",
-            "point_cloud_outliers_removing.1",
-            "point_cloud_outliers_removing.2",
         ]
+
+        if not no_merging:
+            needed_applications.append("point_cloud_fusion")
+            needed_applications.append("point_cloud_outliers_removing.1")
+            needed_applications.append("point_cloud_outliers_removing.2")
 
         # Initialize used config
         used_conf = {}
@@ -257,6 +268,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                         + "fixed according to the epsg"
                     )
 
+    @cars_profile(name="run_pc_pipeline", interval=0.5)
     def run(self):
         """
         Run pipeline
@@ -306,105 +318,147 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 self.input_roi_poly, self.input_roi_epsg, epsg
             )
 
-            # Compute terrain bounds and transform point clouds
-            (
-                terrain_bounds,
-                list_epipolar_points_cloud_by_tiles,
-            ) = pc_tif_tools.transform_input_pc(
-                self.inputs["point_clouds"],
-                epsg,
-                roi_poly=roi_poly,
-                epipolar_tile_size=1000,  # TODO change it
-                orchestrator=cars_orchestrator,
-            )
-            # Compute number of superposing point cloud for density
-            max_number_superposing_point_clouds = (
-                pc_tif_tools.compute_max_nb_point_clouds(
-                    list_epipolar_points_cloud_by_tiles
+            if "no_merging" in self.used_conf[PIPELINE]:
+                # compute bounds
+                terrain_bounds = pc_tif_tools.get_bounds(
+                    self.inputs["point_clouds"],
+                    epsg,
+                    roi_poly=roi_poly,
                 )
-            )
 
-            # Compute average distance between two points
-            average_distance_point_cloud = (
-                pc_tif_tools.compute_average_distance(
-                    list_epipolar_points_cloud_by_tiles
+                list_epipolar_points_cloud = pc_tif_tools.generate_point_clouds(
+                    self.inputs["point_clouds"],
+                    cars_orchestrator,
+                    tile_size=1000,
                 )
-            )
-            optimal_terrain_tile_width = min(
-                self.pc_outliers_removing_1_app.get_optimal_tile_size(
-                    cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
-                self.pc_outliers_removing_2_app.get_optimal_tile_size(
-                    cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
-                self.rasterization_application.get_optimal_tile_size(
-                    cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
-            )
-            # epsg_cloud and optimal_terrain_tile_width have the same epsg
-            optimal_terrain_tile_width = (
-                preprocessing.convert_optimal_tile_size_with_epsg(
-                    terrain_bounds, optimal_terrain_tile_width, epsg, epsg_cloud
+                # Generate cars datasets
+                point_cloud_to_rasterize = (
+                    list_epipolar_points_cloud,
+                    terrain_bounds,
                 )
-            )
 
-            # Merge point clouds
-            merged_points_clouds = self.pc_fusion_application.run(
-                list_epipolar_points_cloud_by_tiles,
-                terrain_bounds,
-                epsg,
-                orchestrator=cars_orchestrator,
-                margins=self.pc_outliers_removing_1_app.get_on_ground_margin(
-                    resolution=(self.rasterization_application.get_resolution())
+                color_type = point_cloud_to_rasterize[0][0].attributes.get(
+                    "color_type", None
                 )
-                + self.pc_outliers_removing_2_app.get_on_ground_margin(
-                    resolution=(self.rasterization_application.get_resolution())
-                )
-                + self.rasterization_application.get_margins(),
-                optimal_terrain_tile_width=optimal_terrain_tile_width,
-            )
 
-            # Add file names to retrieve source file of each point
-            pc_file_names = list(self.inputs["point_clouds"])
-            merged_points_clouds.attributes["source_pc_names"] = pc_file_names
-
-            # Remove outliers with small components method
-            filtered_1_merged_points_clouds = (
-                self.pc_outliers_removing_1_app.run(
-                    merged_points_clouds,
+            else:
+                # Compute terrain bounds and transform point clouds
+                (
+                    terrain_bounds,
+                    list_epipolar_points_cloud_by_tiles,
+                ) = pc_tif_tools.transform_input_pc(
+                    self.inputs["point_clouds"],
+                    epsg,
+                    roi_poly=roi_poly,
+                    epipolar_tile_size=1000,  # TODO change it
                     orchestrator=cars_orchestrator,
                 )
-            )
 
-            # Remove outliers with statistical components method
-            filtered_2_merged_points_clouds = (
-                self.pc_outliers_removing_2_app.run(
-                    filtered_1_merged_points_clouds,
-                    orchestrator=cars_orchestrator,
+                # Compute number of superposing point cloud for density
+                max_number_superposing_point_clouds = (
+                    pc_tif_tools.compute_max_nb_point_clouds(
+                        list_epipolar_points_cloud_by_tiles
+                    )
                 )
-            )
+
+                # Compute average distance between two points
+                average_distance_point_cloud = (
+                    pc_tif_tools.compute_average_distance(
+                        list_epipolar_points_cloud_by_tiles
+                    )
+                )
+                optimal_terrain_tile_width = min(
+                    self.pc_outliers_removing_1_app.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                    self.pc_outliers_removing_2_app.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                    self.rasterization_application.get_optimal_tile_size(
+                        cars_orchestrator.cluster.checked_conf_cluster[
+                            "max_ram_per_worker"
+                        ],
+                        superposing_point_clouds=(
+                            max_number_superposing_point_clouds
+                        ),
+                        point_cloud_resolution=average_distance_point_cloud,
+                    ),
+                )
+                # epsg_cloud and optimal_terrain_tile_width have the same epsg
+                optimal_terrain_tile_width = (
+                    preprocessing.convert_optimal_tile_size_with_epsg(
+                        terrain_bounds,
+                        optimal_terrain_tile_width,
+                        epsg,
+                        epsg_cloud,
+                    )
+                )
+
+                # Merge point clouds
+                merged_points_clouds = self.pc_fusion_application.run(
+                    list_epipolar_points_cloud_by_tiles,
+                    terrain_bounds,
+                    epsg,
+                    orchestrator=cars_orchestrator,
+                    margins=(
+                        self.pc_outliers_removing_1_app.get_on_ground_margin(
+                            resolution=(
+                                self.rasterization_application.get_resolution()
+                            )
+                        )
+                        + self.pc_outliers_removing_2_app.get_on_ground_margin(
+                            resolution=(
+                                self.rasterization_application.get_resolution()
+                            )
+                        )
+                        + self.rasterization_application.get_margins(),
+                    ),
+                    optimal_terrain_tile_width=optimal_terrain_tile_width,
+                )
+
+                # Add file names to retrieve source file of each point
+                pc_file_names = list(self.inputs["point_clouds"])
+                merged_points_clouds.attributes["source_pc_names"] = (
+                    pc_file_names
+                )
+
+                # Remove outliers with small components method
+                filtered_1_merged_points_clouds = (
+                    self.pc_outliers_removing_1_app.run(
+                        merged_points_clouds,
+                        orchestrator=cars_orchestrator,
+                    )
+                )
+
+                # Remove outliers with statistical components method
+                filtered_2_merged_points_clouds = (
+                    self.pc_outliers_removing_2_app.run(
+                        filtered_1_merged_points_clouds,
+                        orchestrator=cars_orchestrator,
+                    )
+                )
+
+                point_cloud_to_rasterize = filtered_2_merged_points_clouds
+
+                color_type = point_cloud_to_rasterize.attributes.get(
+                    "color_type", None
+                )
 
             # rasterize point cloud
             _ = self.rasterization_application.run(
-                filtered_2_merged_points_clouds,
+                point_cloud_to_rasterize,
                 epsg,
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
@@ -413,5 +467,5 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 color_file_name=os.path.join(
                     out_dir, self.output[sens_cst.CLR_BASENAME]
                 ),
-                color_dtype=merged_points_clouds.attributes["color_type"],
+                color_dtype=color_type,
             )

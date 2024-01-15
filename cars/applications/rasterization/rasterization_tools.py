@@ -295,15 +295,13 @@ def compute_vector_raster_and_stats(
     # 5. source point cloud
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
+    number_of_pc = cloud.attrs["number_of_pc"]
     if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(
             list_computed_layers, cst.POINTS_CLOUD_SOURCE_KEY_ROOT
         )
     ):
-        number_of_pc = (
-            int(np.round(np.max(cloud[cst.POINTS_CLOUD_GLOBAL_ID]))) + 1
-        )
         for pc_id in range(number_of_pc):
             # Create binary list that indicates from each point whether it comes
             # from point cloud number "pc_id"
@@ -529,6 +527,8 @@ def create_raster_dataset(
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
+    print(source_pc.shape)
+    print(source_pc_names)
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
         source_pc_out = xr.Dataset(
@@ -727,7 +727,9 @@ def update_weights(old_weights, weights):
     return new_weights
 
 
-def update_data(old_data, current_data, weights, old_weights, nodata):
+def update_data(
+    old_data, current_data, weights, old_weights, nodata, method="basic"
+):
     """
     Update current data with old data and weigths
 
@@ -779,11 +781,16 @@ def update_data(old_data, current_data, weights, old_weights, nodata):
         )
 
         # assign old weights
-        new_data = np.zeros(shape)
-        new_data[old_valid] = old_data[old_valid] * old_factor[old_valid]
-        new_data[current_valid] += (
-            current_data[current_valid] * current_factor[current_valid]
-        )
+        if method == "basic":
+            new_data = np.zeros(shape)
+            new_data[old_valid] = old_data[old_valid] * old_factor[old_valid]
+            new_data[current_valid] += (
+                current_data[current_valid] * current_factor[current_valid]
+            )
+        elif method == "sum":
+            new_data = np.zeros(shape)
+            new_data[old_valid] = old_data[old_valid]
+            new_data[current_valid] += current_data[current_valid]
 
         # set nodata
         all_nodata = (current_valid + old_valid) == 0

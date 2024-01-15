@@ -366,7 +366,12 @@ class SimpleGaussian(
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
         if self.save_source_pc:
-            source_pc_names = points_clouds.attributes["source_pc_names"]
+            if isinstance(points_clouds, tuple):
+                source_pc_names = points_clouds[0][0].attributes[
+                    "source_pc_names"
+                ]
+            else:
+                source_pc_names = points_clouds.attributes["source_pc_names"]
         else:
             source_pc_names = None
 
@@ -742,10 +747,16 @@ def rasterization_wrapper(
     # If the points cloud is not in the right epsg referential, it is converted
     if isinstance(cloud, xarray.Dataset):
         # Transform Dataset to Dataframe
-        cloud_ids = [None]  # TODO
+        attributes = cloud.attrs
         cloud, cloud_epsg = point_cloud_tools.create_combined_cloud(
-            [cloud], cloud_ids, epsg
+            [cloud], [cloud.attrs["cloud_id"]], epsg
         )
+        cloud.attrs = attributes
+        if "number_of_pc" not in cloud.attrs:
+            cloud.attrs["number_of_pc"] = len(source_pc_names)
+    elif cloud is None:
+        logging.warning("Input cloud is None")
+        return None
     else:
         cloud_epsg = cars_dataset.get_attributes_dataframe(cloud)["epsg"]
 
@@ -753,7 +764,8 @@ def rasterization_wrapper(
         projection.points_cloud_conversion_dataframe(cloud, cloud_epsg, epsg)
 
     # filter cloud
-    cloud = cloud[cloud["mask"] == 0]
+    if "mask" in cloud:
+        cloud = cloud[cloud["mask"] == 0]
     # Compute start and size
     if terrain_region is None:
         # compute region from cloud
@@ -817,8 +829,6 @@ def rasterization_wrapper(
 
         window = cars_dataset.window_array_to_dict(window)
 
-    # TODO use overlap to crop margin
-
     # Call simple_rasterization
     raster = rasterization_step.simple_rasterization_dataset_wrapper(
         cloud,
@@ -876,11 +886,21 @@ def raster_final_function(orchestrator, future_object):
 
         if tag != cst.RASTER_WEIGHTS_SUM:
 
+            if tag in [cst.RASTER_NB_PTS, cst.RASTER_NB_PTS_IN_CELL]:
+                method = "sum"
+            else:
+                method = "basic"
+
             old_data, nodata_raster = orchestrator.get_data(tag, future_object)
             current_data = future_object[tag].values
             future_object[tag].values = np.reshape(
                 rasterization_step.update_data(
-                    old_data, current_data, weights, old_weights, nodata_raster
+                    old_data,
+                    current_data,
+                    weights,
+                    old_weights,
+                    nodata_raster,
+                    method=method,
                 ),
                 current_data.shape,
             )

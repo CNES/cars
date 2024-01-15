@@ -213,6 +213,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :param generate_terrain_products: true if uses point cloud
             fusion, pc removing, rasterization
         :type generate_terrain_products: bool
+        :param no_merging: True if skip PC fusion and PC removing
+        :type no_merging: bool
         """
 
         # Check if all specified applications are used
@@ -762,7 +764,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 self.dense_matching_app.use_global_disp_range
             )
 
-            for pair_key, _, _ in list_sensor_pairs:
+            pairs_names = [pair_name for pair_name, _, _ in list_sensor_pairs]
+
+            for cloud_id, (pair_key, _, _) in enumerate(list_sensor_pairs):
                 # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
@@ -1142,6 +1146,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
+                    cloud_id=cloud_id,
+                )
+                epipolar_points_cloud.attributes["source_pc_names"] = (
+                    pairs_names
                 )
 
                 if self.generate_terrain_products:
@@ -1233,9 +1241,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
 
                     # Add pair names to retrieve source pair of each point
-                    pairs_names = [
-                        pair_name for pair_name, _, _ in list_sensor_pairs
-                    ]
                     merged_points_clouds.attributes["source_pc_names"] = (
                         pairs_names
                     )

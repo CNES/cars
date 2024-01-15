@@ -307,8 +307,9 @@ class MappingToTerrainTiles(
                 color_file = list_epipolar_points_cloud[0].tiles[0][0]["data"][
                     "color"
                 ]
-                color_type = inputs.rasterio_get_image_type(color_file)
-                merged_point_cloud.attributes["color_type"] = color_type
+                if color_file is not None:
+                    color_type = inputs.rasterio_get_image_type(color_file)
+                    merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
             if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
@@ -574,6 +575,7 @@ def compute_point_cloud_wrapper(
         "save_points_cloud_as_laz": save_pc_as_laz,
         "save_points_cloud_as_csv": save_pc_as_csv,
         "source_pc_names": source_pc_names,
+        "number_of_pc": len(source_pc_names),
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes

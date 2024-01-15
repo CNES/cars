@@ -142,6 +142,7 @@ class LineOfSightIntersection(
         pair_key="PAIR_0",
         uncorrected_grid_right=None,
         geoid_path=None,
+        cloud_id=None,
     ):
         """
         Run Triangulation application.
@@ -479,6 +480,7 @@ class LineOfSightIntersection(
                         geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
+                        cloud_id=cloud_id,
                         saving_info=full_saving_info,
                     )
 
@@ -496,6 +498,7 @@ def triangulation_wrapper(
     geometry_plugin,
     epsg,
     geoid_data: xr.Dataset = None,
+    cloud_id=None,
     saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
@@ -581,6 +584,7 @@ def triangulation_wrapper(
 
     # Fill datasets
     pc_dataset = points[cst.STEREO_REF]
+    pc_dataset.attrs["cloud_id"] = cloud_id
 
     attributes = None
     if isinstance(disp_ref, pandas.DataFrame):
