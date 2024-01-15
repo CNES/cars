@@ -529,43 +529,30 @@ class Sift(SparseMatching, short_name="sift"):
             # Generate disparity maps
             for row in range(epipolar_disparity_map_left.shape[0]):
                 # initialize list of matches
-                delayed_matches_row_col = []
+                full_saving_info_left = ocht.update_saving_infos(
+                    saving_info_left, row=row, col=0
+                )
                 # Compute matches
                 if type(None) not in (
                     type(epipolar_images_left[row, 0]),
                     type(epipolar_images_right[row, 0]),
                 ):
-                    delayed_matches_row_col.append(
-                        self.orchestrator.cluster.create_task(
-                            compute_matches_wrapper, nout=1
-                        )(
-                            epipolar_images_left[row, 0],
-                            epipolar_images_right[row, 0],
-                            matching_threshold=self.sift_matching_threshold,
-                            n_octave=self.sift_n_octave,
-                            n_scale_per_octave=self.sift_n_scale_per_octave,
-                            peak_threshold=tmp_sift_peak_threshold,
-                            edge_threshold=self.sift_edge_threshold,
-                            magnification=self.sift_magnification,
-                            backmatching=self.sift_back_matching,
-                            disp_lower_bound=disp_lower_bound,
-                            disp_upper_bound=disp_upper_bound,
-                        )
-                    )
-
-                # Merge matches corresponding to left tile
-                if len(delayed_matches_row_col) > 0:
-                    # update saving_info with row and col
-                    full_saving_info_left = ocht.update_saving_infos(
-                        saving_info_left, row=row, col=0
-                    )
-
                     (
                         epipolar_disparity_map_left[row, 0]
                     ) = self.orchestrator.cluster.create_task(
-                        merge_matches_wrapper, nout=1
+                        compute_matches_wrapper, nout=1
                     )(
-                        delayed_matches_row_col,
+                        epipolar_images_left[row, 0],
+                        epipolar_images_right[row, 0],
+                        matching_threshold=self.sift_matching_threshold,
+                        n_octave=self.sift_n_octave,
+                        n_scale_per_octave=self.sift_n_scale_per_octave,
+                        peak_threshold=tmp_sift_peak_threshold,
+                        edge_threshold=self.sift_edge_threshold,
+                        magnification=self.sift_magnification,
+                        backmatching=self.sift_back_matching,
+                        disp_lower_bound=disp_lower_bound,
+                        disp_upper_bound=disp_upper_bound,
                         saving_info_left=full_saving_info_left,
                     )
 
@@ -782,6 +769,7 @@ def compute_matches_wrapper(
     backmatching=None,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    saving_info_left=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute matches from image objects.
@@ -858,25 +846,8 @@ def compute_matches_wrapper(
     left_image_object[cst.EPI_MSK].values = saved_left_mask
     right_image_object[cst.EPI_MSK].values = saved_right_mask
 
-    return left_matches_dataframe
-
-
-def merge_matches_wrapper(list_of_matches, saving_info_left=None):
-    """
-    Concatenate matches
-
-    :param list_of_matches: list of matches
-    :type list_of_matches: list(pandas.DataFrame)
-
-    """
-    concatenated_matches = pandas.concat(
-        list_of_matches,
-        ignore_index=True,
-        sort=False,
-    )
-
     cars_dataset.fill_dataframe(
-        concatenated_matches, saving_info=saving_info_left, attributes=None
+        left_matches_dataframe, saving_info=saving_info_left, attributes=None
     )
 
-    return concatenated_matches
+    return left_matches_dataframe
