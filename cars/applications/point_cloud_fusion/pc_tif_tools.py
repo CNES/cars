@@ -1161,7 +1161,6 @@ def compute_correspondance_single_pc_terrain(
                 terrain_tiling_grid[terrain_row, terrain_col, 1],
                 terrain_tiling_grid[terrain_row, terrain_col, 3],
             ]
-
             region_with_margin = list(
                 np.array(terrain_region)
                 + np.array([-margins, margins, -margins, margins])

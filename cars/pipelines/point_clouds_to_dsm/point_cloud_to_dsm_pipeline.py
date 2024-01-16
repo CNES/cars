@@ -423,7 +423,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                                 self.rasterization_application.get_resolution()
                             )
                         )
-                        + self.rasterization_application.get_margins(),
+                        + self.rasterization_application.get_margins()
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
                 )

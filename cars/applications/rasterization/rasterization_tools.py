@@ -295,7 +295,7 @@ def compute_vector_raster_and_stats(
     # 5. source point cloud
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
-    number_of_pc = cloud.attrs["number_of_pc"]
+    number_of_pc = cloud.attrs["attributes"]["number_of_pc"]
     if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(
@@ -527,8 +527,6 @@ def create_raster_dataset(
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
 
-    print(source_pc.shape)
-    print(source_pc_names)
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
         source_pc_out = xr.Dataset(

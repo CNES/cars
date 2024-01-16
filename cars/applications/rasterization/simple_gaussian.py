@@ -751,6 +751,7 @@ def rasterization_wrapper(
         cloud, cloud_epsg = point_cloud_tools.create_combined_cloud(
             [cloud], [cloud.attrs["cloud_id"]], epsg
         )
+        cars_dataset.fill_dataframe(cloud, attributes=attributes)
         cloud.attrs = attributes
         if "number_of_pc" not in cloud.attrs:
             cloud.attrs["number_of_pc"] = len(source_pc_names)
@@ -830,6 +831,8 @@ def rasterization_wrapper(
         window = cars_dataset.window_array_to_dict(window)
 
     # Call simple_rasterization
+    logging.error(cloud)
+    logging.error(cloud.attrs)
     raster = rasterization_step.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,

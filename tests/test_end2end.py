@@ -1182,6 +1182,51 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 atol=1.0e-7,
             )
 
+            # launch with no merging pipeline
+            input_dsm_config["pipeline"] = (
+                "dense_point_clouds_to_dense_dsm_no_merging"
+            )
+            input_dsm_config["output"] = {"out_dir": output_path + "no_merging"}
+
+            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
+                input_dsm_config
+            )
+            dsm_pipeline.run()
+
+            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "dsm.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
+                    )
+                ),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "clr.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "source_pc.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "source_pc_end2end_ventoux_split_4326.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+
 
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_unique_split():
