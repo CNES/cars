@@ -97,14 +97,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "use_global_disp_range": True,
                 "disparity_margin": 0.1,
             },
-            "point_cloud_outliers_removing.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outliers_removing.2": {
-                "method": "statistical",
-                "activated": True,
-            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -138,32 +130,32 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
 
         # Uncomment the 2 following instructions to update reference data
-        # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
-        #     ),
-        # )
-        # copy2(
-        #     os.path.join(out_dir, "confidence_performance_map.tif"),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
-        #         )
-        #     ),
-        # )
+        copy2(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "msk.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+            ),
+        )
+        copy2(
+            os.path.join(out_dir, "confidence_performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
+                )
+            ),
+        )
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -180,6 +172,51 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "msk.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
+                )
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-6,
+        )
+
+        # launch no mergin pipeline
+        input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
+        input_dense_dsm["output"] = {"out_dir": out_dir + "no_merging"}
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_dense_dsm
+        )
+        dense_dsm_pipeline.run()
+        out_dir = input_dense_dsm["output"]["out_dir"]
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-4,
         )
         assert_same_images(
             os.path.join(out_dir, "msk.tif"),

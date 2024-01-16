@@ -38,6 +38,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
+from cars.data_structures import cars_dataset
 
 
 def compute_xy_starts_and_sizes(
@@ -295,7 +296,7 @@ def compute_vector_raster_and_stats(
     # 5. source point cloud
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
-    number_of_pc = cloud.attrs["attributes"]["number_of_pc"]
+    number_of_pc = cars_dataset.get_attributes_dataframe(cloud)["number_of_pc"]
     if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(

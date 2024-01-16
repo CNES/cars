@@ -365,15 +365,10 @@ class SimpleGaussian(
         xsize, ysize = tiling.roi_to_start_and_size(bounds, self.resolution)[2:]
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        if self.save_source_pc:
-            if isinstance(points_clouds, tuple):
-                source_pc_names = points_clouds[0][0].attributes[
-                    "source_pc_names"
-                ]
-            else:
-                source_pc_names = points_clouds.attributes["source_pc_names"]
+        if isinstance(points_clouds, tuple):
+            source_pc_names = points_clouds[0][0].attributes["source_pc_names"]
         else:
-            source_pc_names = None
+            source_pc_names = points_clouds.attributes["source_pc_names"]
 
         # Save objects
         # Initialize files names
@@ -749,12 +744,11 @@ def rasterization_wrapper(
         # Transform Dataset to Dataframe
         attributes = cloud.attrs
         cloud, cloud_epsg = point_cloud_tools.create_combined_cloud(
-            [cloud], [cloud.attrs["cloud_id"]], epsg
+            [cloud], [attributes["cloud_id"]], epsg
         )
+        if "number_of_pc" not in attributes and source_pc_names is not None:
+            attributes["number_of_pc"] = len(source_pc_names)
         cars_dataset.fill_dataframe(cloud, attributes=attributes)
-        cloud.attrs = attributes
-        if "number_of_pc" not in cloud.attrs:
-            cloud.attrs["number_of_pc"] = len(source_pc_names)
     elif cloud is None:
         logging.warning("Input cloud is None")
         return None
@@ -776,10 +770,10 @@ def rasterization_wrapper(
         ymax = np.nanmax(cloud["y"])
         # Add margin to be sure every point is rasterized
         terrain_region = [
-            xmin - resolution,
-            ymin - resolution,
-            xmax + resolution,
-            ymax + resolution,
+            xmin - radius * resolution,
+            ymin - radius * resolution,
+            xmax + radius * resolution,
+            ymax + radius * resolution,
         ]
 
         if terrain_full_roi is not None:
@@ -831,8 +825,6 @@ def rasterization_wrapper(
         window = cars_dataset.window_array_to_dict(window)
 
     # Call simple_rasterization
-    logging.error(cloud)
-    logging.error(cloud.attrs)
     raster = rasterization_step.simple_rasterization_dataset_wrapper(
         cloud,
         resolution,

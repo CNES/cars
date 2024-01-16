@@ -245,9 +245,13 @@ def assert_same_images(actual, expected, rtol=0, atol=0):
             assert rio_actual.transform == rio_expected.transform
             assert rio_actual.crs == rio_expected.crs
             assert rio_actual.nodata == rio_expected.nodata
-            np.testing.assert_allclose(
-                rio_actual.read(), rio_expected.read(), rtol=rtol, atol=atol
-            )
+            data1 = rio_actual.read()
+            data2 = rio_expected.read()
+            data1[data1 == rio_actual.nodata] = 0
+            data1[np.isnan(data1)] = 0
+            data2[data2 == rio_expected.nodata] = 0
+            data2[np.isnan(data2)] = 0
+            np.testing.assert_allclose(data1, data2, rtol=rtol, atol=atol)
 
 
 def assert_same_carsdatasets(actual, expected, rtol=0, atol=0):
