@@ -44,6 +44,7 @@ from cars.applications import application_constants
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.applications.sparse_matching.sparse_matching import SparseMatching
 from cars.core import constants as cst
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -603,6 +604,8 @@ class Sift(SparseMatching, short_name="sift"):
     def filter_matches(
         self,
         epipolar_matches_left,
+        grid_left,
+        grid_right,
         orchestrator=None,
         pair_key="pair_0",
         pair_folder=None,
@@ -621,6 +624,10 @@ class Sift(SparseMatching, short_name="sift"):
             - attributes containing "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type epipolar_matches_left: CarsDataset
+        :param grid_left: left epipolar grid
+        :type grid_left: CarsDataset
+        :param grid_right: right epipolar grid
+        :type grid_right: CarsDataset
         :param save_matches: true is matches needs to be saved
         :type save_matches: bool
 
@@ -654,13 +661,24 @@ class Sift(SparseMatching, short_name="sift"):
         for row in range(epipolar_matches_left.shape[0]):
             for col in range(epipolar_matches_left.shape[1]):
                 # CarsDataset containing Pandas DataFrame, not Delayed anymore
-                list_matches.append(epipolar_matches_left[row, col])
+                epipolar_matches = epipolar_matches_left[row, col].to_numpy()
+                sensor_matches = AbstractGeometry.matches_to_sensor_coords(
+                    grid_left,
+                    grid_right,
+                    epipolar_matches,
+                    cst.MATCHES_MODE,
+                )
+                sensor_matches = np.concatenate(sensor_matches, axis=1)
+                matches = np.concatenate(
+                    [
+                        epipolar_matches,
+                        sensor_matches,
+                    ],
+                    axis=1,
+                )
+                list_matches.append(matches)
 
-        matches = pandas.concat(
-            list_matches,
-            ignore_index=True,
-            sort=False,
-        ).to_numpy()
+        matches = np.concatenate(list_matches)
 
         raw_nb_matches = matches.shape[0]
 

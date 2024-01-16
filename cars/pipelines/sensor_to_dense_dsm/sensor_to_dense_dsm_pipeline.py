@@ -631,10 +631,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 )
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
                     # Estimate grid correction if no epipolar a priori
-                    # Filter matches
+                    # Filter and save matches
                     pairs[pair_key]["matches_array"] = (
                         self.sparse_mtch_app.filter_matches(
                             pairs[pair_key]["epipolar_matches_left"],
+                            pairs[pair_key]["grid_left"],
+                            pairs[pair_key]["grid_right"],
                             orchestrator=cars_orchestrator,
                             pair_key=pair_key,
                             pair_folder=pairs[pair_key]["pair_folder"],

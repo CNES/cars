@@ -806,7 +806,7 @@ The structure follows this organisation:
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | save_matches                         | Save matches                                                                                   | boolean     |                        | false         | No       |
+            | save_matches                         | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
 
 	        For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
