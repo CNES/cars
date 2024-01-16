@@ -433,6 +433,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 # Filter matches
                 matches_array = self.sparse_matching_app.filter_matches(
                     pairs[pair_key]["epipolar_matches_left"],
+                    pairs[pair_key]["grid_left"],
+                    pairs[pair_key]["grid_right"],
                     orchestrator=cars_orchestrator,
                     pair_key=pair_key,
                     pair_folder=pair_folder,
