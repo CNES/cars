@@ -624,6 +624,10 @@ class Sift(SparseMatching, short_name="sift"):
             - attributes containing "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"
         :type epipolar_matches_left: CarsDataset
+        :param grid_left: left epipolar grid
+        :type grid_left: CarsDataset
+        :param grid_right: right epipolar grid
+        :type grid_right: CarsDataset
         :param save_matches: true is matches needs to be saved
         :type save_matches: bool
 
