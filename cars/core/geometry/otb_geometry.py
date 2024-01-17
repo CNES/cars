@@ -75,7 +75,7 @@ class OTBGeometry(AbstractGeometry):
         """
         not_available = []
         for module in [
-            "ConvertSensorToGeoMultiPointFast",
+            "ConvertSensorToGeoMultiPointFast2",
             "EpipolarTriangulation",
             "LocalizeInverse",
         ]:
