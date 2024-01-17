@@ -61,6 +61,7 @@ def test_simple_rasterization_synthetic_case():
     )
 
     pd_cloud = pandas.DataFrame(cloud, columns=[cst.X, cst.Y, cst.Z])
+    pd_cloud.attrs = {"attributes": {"number_of_pc": 1}}
     raster = rasterization_tools.rasterize(
         pd_cloud, 1, None, 0, 12, 3, 2, 0.3, 0
     )
@@ -131,6 +132,7 @@ def test_simple_rasterization_single():
         )
     )
     cloud_df = cloud_xr.to_dataframe()
+    cloud_df.attrs = {"attributes": {"number_of_pc": 1}}
 
     # Remove data where data in invalid
     cloud_df = cloud_df[cloud_df["data_valid"] == 1]
@@ -207,7 +209,6 @@ def test_simple_rasterization_dataset_1():
 
     # combine datasets
     cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
-    print(cloud)
     cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
         [(cloud, cloud_id)],
         epsg,
@@ -219,6 +220,7 @@ def test_simple_rasterization_dataset_1():
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
+        source_pc_names=["1"],
     )
 
     # TODO test from here -> dump cloud as test data input
@@ -296,6 +298,7 @@ def test_simple_rasterization_dataset_2():
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
+        source_pc_names=["1"],
     )
 
     # TODO test from here -> dump cloud as test data input
@@ -373,6 +376,7 @@ def test_simple_rasterization_dataset_():
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
+        source_pc_names=["1"],
     )
 
     # TODO test from here -> dump cloud as test data input
@@ -458,6 +462,7 @@ def test_simple_rasterization_multiple_datasets():
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
+        source_pc_names=["1", "2"],
     )
 
     # TODO test from here -> dump cloud as test data input
@@ -543,6 +548,7 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
         save_pc_as_laz=False,
         save_pc_as_csv=False,
         saving_info=None,
+        source_pc_names=["1", "2"],
     )
 
     # TODO test from here -> dump cloud as test data input
@@ -632,9 +638,11 @@ def test_mask_interp_case1(
     cloud_pd = pandas.DataFrame(
         cloud, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
     )
+    cloud_pd.attrs = {"attributes": {"number_of_pc": 1}}
 
     # test mask_interp function
     (
+        __,
         __,
         __,
         __,
