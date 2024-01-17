@@ -137,6 +137,7 @@ class LineOfSightIntersection(
         epipolar_disparity_map,
         epsg,
         geometry_plugin,
+        source_pc_names=None,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
@@ -201,6 +202,8 @@ class LineOfSightIntersection(
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
         :type epipolar_disparity_map: CarsDataset
+        :param source_pc_names: source pc names
+        :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
@@ -237,6 +240,9 @@ class LineOfSightIntersection(
             )
         else:
             self.orchestrator = orchestrator
+
+        if source_pc_names is None:
+            source_pc_names = ["PAIR_0"]
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
@@ -332,6 +338,9 @@ class LineOfSightIntersection(
             "opt_epipolar_tile_size": epipolar_image.attributes[
                 "opt_epipolar_tile_size"
             ],
+            "source_pc_names": source_pc_names,
+            "source_pc_name": pair_key,
+            "color_type": epipolar_image.attributes["color_type"],
         }
 
         if epipolar_disparity_map.dataset_type in ("arrays", "points"):

@@ -1141,15 +1141,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     filled_with_2_epipolar_disparity_map,
                     epsg,
                     self.geom_plugin_without_dem_and_geoid,
+                    source_pc_names=pairs_names,
                     orchestrator=cars_orchestrator,
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
                     cloud_id=cloud_id,
-                )
-                epipolar_points_cloud.attributes["source_pc_names"] = (
-                    pairs_names
                 )
 
                 if self.generate_terrain_products:
@@ -1183,13 +1181,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     )
                     list_terrain_roi.append(current_terrain_roi_bbox)
-
-                # add pair key
-                epipolar_points_cloud.attributes["source_pc_name"] = pair_key
-                # add color type
-                epipolar_points_cloud.attributes["color_type"] = (
-                    new_epipolar_image_left.attributes["color_type"]
-                )
 
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)
@@ -1230,6 +1221,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         list_epipolar_points_cloud,
                         terrain_bounds,
                         epsg,
+                        source_pc_names=pairs_names,
                         orchestrator=cars_orchestrator,
                         margins=(
                             pc_outliers_removing_1_margins
@@ -1238,11 +1230,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         ),
                         optimal_terrain_tile_width=optimal_terrain_tile_width,
                         roi=(roi_poly if self.debug_with_roi else None),
-                    )
-
-                    # Add pair names to retrieve source pair of each point
-                    merged_points_clouds.attributes["source_pc_names"] = (
-                        pairs_names
                     )
 
                     # Remove outliers with small components method

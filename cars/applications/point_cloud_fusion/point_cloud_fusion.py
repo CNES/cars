@@ -99,9 +99,11 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         list_epipolar_points_cloud,
         bounds,
         epsg,
+        source_pc_names=None,
         orchestrator=None,
         margins=0,
         optimal_terrain_tile_width=500,
+        roi=None,
     ):
         """
         Run EpipolarCloudFusion application.
@@ -109,21 +111,45 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         Creates a CarsDataset corresponding to the merged points clouds,
         tiled with the terrain grid used during rasterization.
 
-        :param list_epipolar_points_cloud: list with points clouds
+        :param list_epipolar_points_cloud: list with points clouds\
+            Each CarsDataset contains:
+
+            - N x M Delayed tiles. \
+                Each tile will be a future xarray Dataset containing:
+
+                - data : with keys : "x", "y", "z", "corr_msk" \
+                    optional: "color", "msk",
+                - attrs with keys: "margins", "epi_full_size", "epsg"
+            - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
+                "elevation_delta_lower_bound", "elevation_delta_upper_bound"
         :type list_epipolar_points_cloud: list(CarsDataset) filled with
           xr.Dataset
         :param bounds: terrain bounds
         :type bounds: list
         :param epsg: epsg to use
         :type epsg: str
+        :param source_pc_names: source pc names
+        :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
-        :param margins: margins to add to tiles
+        :param margins: margins needed for tiles, meter or degree
         :type margins: float
         :param optimal_terrain_tile_width: optimal terrain tile width
         :type optimal_terrain_tile_width: int
 
         :return: Merged points clouds
+
+            CarsDataset contains:
+
+            - Z x W Delayed tiles\
+                Each tile will be a future pandas DataFrame containing:
+
+                - data : with keys : "x", "y", "z", "corr_msk" \
+                    optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
+                     "coord_epi_geom_j","idx_im_epi"
+                - attrs with keys: "epsg"
+            - attributes containing: "bounds", "epsg"
+
         :rtype: CarsDataset filled with pandas.DataFrame
 
         """
