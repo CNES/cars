@@ -49,6 +49,18 @@ class CarsDatasetRegistryUnseen(AbstractCarsDatasetRegistry):
         super().__init__(id_generator)
         self.registered_cars_datasets_unseen = []
 
+    def get_cars_ds(self, future_result):
+        """
+        Get a list of registered CarsDataset
+
+        :param obj: object to get cars dataset from
+
+        :return corresponding CarsDataset
+        :rtype: CarsDataset
+        """
+
+        return None
+
     def cars_dataset_in_registry(self, cars_ds):
         """
         Check if a CarsDataset is already registered, return id if exists
