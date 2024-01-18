@@ -661,22 +661,25 @@ class Sift(SparseMatching, short_name="sift"):
         for row in range(epipolar_matches_left.shape[0]):
             for col in range(epipolar_matches_left.shape[1]):
                 # CarsDataset containing Pandas DataFrame, not Delayed anymore
-                epipolar_matches = epipolar_matches_left[row, col].to_numpy()
-                sensor_matches = AbstractGeometry.matches_to_sensor_coords(
-                    grid_left,
-                    grid_right,
-                    epipolar_matches,
-                    cst.MATCHES_MODE,
-                )
-                sensor_matches = np.concatenate(sensor_matches, axis=1)
-                matches = np.concatenate(
-                    [
+                if epipolar_matches_left[row, col] is not None:
+                    epipolar_matches = epipolar_matches_left[
+                        row, col
+                    ].to_numpy()
+                    sensor_matches = AbstractGeometry.matches_to_sensor_coords(
+                        grid_left,
+                        grid_right,
                         epipolar_matches,
-                        sensor_matches,
-                    ],
-                    axis=1,
-                )
-                list_matches.append(matches)
+                        cst.MATCHES_MODE,
+                    )
+                    sensor_matches = np.concatenate(sensor_matches, axis=1)
+                    matches = np.concatenate(
+                        [
+                            epipolar_matches,
+                            sensor_matches,
+                        ],
+                        axis=1,
+                    )
+                    list_matches.append(matches)
 
         matches = np.concatenate(list_matches)
 
