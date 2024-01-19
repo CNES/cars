@@ -62,7 +62,7 @@ class AbstractCluster(metaclass=ABCMeta):
         :return: a cltser object
         """
 
-        cluster_mode = "local_dask"
+        cluster_mode = "multiprocessing"
         if "mode" not in conf_cluster:
             logging.warning("Cluster mode not defined, default is used")
         else:
@@ -79,11 +79,11 @@ class AbstractCluster(metaclass=ABCMeta):
         )
 
     @classmethod
-    def register_subclass(cls, short_name: str):
+    def register_subclass(cls, *short_names: str):
         """
         Allows to register the subclass with its short name
-        :param short_name: the subclass to be registered
-        :type short_name: string
+        :param short_names: the subclasses to be registered
+        :type short_names: string
         """
 
         def decorator(subclass):
@@ -92,7 +92,8 @@ class AbstractCluster(metaclass=ABCMeta):
             :param subclass: the subclass to be registered
             :type subclass: object
             """
-            cls.available_modes[short_name] = subclass
+            for short_name in short_names:
+                cls.available_modes[short_name] = subclass
             return subclass
 
         return decorator

@@ -390,7 +390,7 @@ The structure follows this organisation:
                         }
                     }
                 },
-                "debug_with_roi": true,
+                 "debug_with_roi": true,
             }
         }
 
@@ -413,13 +413,13 @@ The structure follows this organisation:
 
         The ``orchestrator`` key is optional and allows to define orchestrator configuration that controls the distribution:
 
-        +------------------+-------------------------------------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | Name             | Description                                                                         | Type                                    | Default value | Required |
-        +==================+=====================================================================================+=========================================+===============+==========+
-        | *mode*           | Parallelization mode "local_dask", "pbs_dask", "slurm_dask", "mp" or "sequential"   | string                                  |local_dask     | Yes      |
-        +------------------+-------------------------------------------------------------------------------------+-----------------------------------------+---------------+----------+
-        | *profiling*      | Configuration for CARS profiling mode                                               | dict                                    |               | No       |
-        +------------------+-------------------------------------------------------------------------------------+-----------------------------------------+---------------+----------+
+        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
+        | Name             | Description                                                                                      | Type                                    | Default value   | Required |
+        +==================+==================================================================================================+=========================================+=================+==========+
+        | *mode*           | Parallelization mode "local_dask", "pbs_dask", "slurm_dask", "multiprocessing" or "sequential"   | string                                  | multiprocessing | Yes      |
+        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
+        | *profiling*      | Configuration for CARS profiling mode                                                            | dict                                    |                 | No       |
+        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
 
         .. note::
             `sequential` orchestrator purposes are mostly for studies, debug and notebooks. If you want to use it with large data, consider using a ROI and Epipolar A Priori. Only tiles needed for the specified ROI will be computed. If Epipolar A priori is not specified, Epipolar Resampling and Sparse Matching will be performed on the whole image, no matter what ROI field is filled with.

@@ -65,7 +65,7 @@ REFRESH_TIME = 0.05
 job_counter = itertools.count()
 
 
-@abstract_cluster.AbstractCluster.register_subclass("mp")
+@abstract_cluster.AbstractCluster.register_subclass("mp", "multiprocessing")
 class MultiprocessingCluster(abstract_cluster.AbstractCluster):
     """
     MultiprocessingCluster
@@ -79,6 +79,15 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param conf_cluster: configuration for cluster
 
         """
+
+        # TODO: remove message
+        if conf_cluster["mode"] == "mp":
+            message = (
+                " 'mp' keyword has been deprecated, use "
+                "'multiprocessing' instead"
+            )
+            logging.warning(message)
+
         self.out_dir = out_dir
         # call parent init
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
