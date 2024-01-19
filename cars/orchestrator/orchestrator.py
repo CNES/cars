@@ -81,10 +81,10 @@ class Orchestrator:
 
         # overload orchestrator_conf
         if orchestrator_conf is None:
-            orchestrator_conf = {"mode": "local_dask"}
+            orchestrator_conf = {"mode": "multiprocessing"}
             logging.info(
                 "No orchestrator configuration given: "
-                "local_dask mode is used"
+                "multiprocessing mode is used"
             )
 
         # set OTB_MAX_RAM_HINT
