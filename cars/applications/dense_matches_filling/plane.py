@@ -477,7 +477,7 @@ def fill_disparity_plane_wrapper(
     input_disp[cst.EPI_FILLING] = combined_dataset[cst.EPI_FILLING]
 
     # Crop Dataset to get tile disparity
-    croped_disp = corresponding_tiles_tools.crop_dataset(
+    cropped_disp = corresponding_tiles_tools.crop_dataset(
         combined_dataset,
         input_disp,
         window,
@@ -488,7 +488,7 @@ def fill_disparity_plane_wrapper(
 
     # Fill with attributes
     cars_dataset.fill_dataset(
-        croped_disp,
+        cropped_disp,
         saving_info=saving_info,
         window=cars_dataset.window_array_to_dict(window),
         profile=None,
@@ -496,7 +496,7 @@ def fill_disparity_plane_wrapper(
         overlaps=cars_dataset.overlap_array_to_dict(overlap),
     )
 
-    return croped_disp
+    return cropped_disp
 
 
 def wrapper_copy_disparity(

@@ -303,20 +303,21 @@ def create_combined_cloud_from_tif(
     clouds_pd_list = []
     color_types = []
     for cloud in clouds:
-        for type_band in cloud["data"].keys():
-            band_path = cloud["data"][type_band]
+        for band_name in cloud["data"].keys():
+            band_path = cloud["data"][band_name]
     # Create multiple pc pandas dataframes
     for cloud_file_id, cloud in zip(clouds_id, clouds):  # noqa: B905
         window = cloud["window"]
         cloud_epsg = cloud["cloud_epsg"]
         cloud_data_bands = []
+        cloud_data_types = []
         cloud_data = {}
-        for type_band in cloud["data"].keys():
+        for band_name in cloud["data"].keys():
             # open file and get data
-            band_path = cloud["data"][type_band]
+            band_path = cloud["data"][band_name]
 
             if band_path is not None:
-                if cst.POINTS_CLOUD_CLR_KEY_ROOT in type_band:
+                if cst.POINTS_CLOUD_CLR_KEY_ROOT in band_name:
                     # Get color type
                     color_types.append(
                         inputs.rasterio_get_image_type(band_path)
@@ -325,20 +326,22 @@ def create_combined_cloud_from_tif(
                 if isinstance(band_path, dict):
                     for key in band_path:
                         sub_band_path = band_path[key]
-                        sub_type_band = key
+                        sub_band_name = key
                         read_band(
-                            sub_type_band,
+                            sub_band_name,
                             sub_band_path,
                             window,
                             cloud_data_bands,
+                            cloud_data_types,
                             cloud_data,
                         )
                 else:
                     read_band(
-                        type_band,
+                        band_name,
                         band_path,
                         window,
                         cloud_data_bands,
+                        cloud_data_types,
                         cloud_data,
                     )
 
@@ -347,6 +350,7 @@ def create_combined_cloud_from_tif(
             np.ones(cloud_data[cst.X].shape) * cloud_file_id
         )
         cloud_data_bands.append(cst.POINTS_CLOUD_GLOBAL_ID)
+        cloud_data_types.append("uint16")
 
         # Create cloud pandas
         cloud_pd = pd.DataFrame(cloud_data, columns=cloud_data_bands)
@@ -365,6 +369,12 @@ def create_combined_cloud_from_tif(
                 | (np.isnan(cloud_pd[cst.Y]))  # pylint: disable=E1136
             ]
         )
+
+        # Cast types according to band
+        cloud_data_types = dict(
+            zip(cloud_data_bands, cloud_data_types)  # noqa: B905
+        )
+        cloud_pd = cloud_pd.astype(cloud_data_types)
 
         # Convert pc if necessary
         if cloud_epsg != epsg:
@@ -402,12 +412,14 @@ def create_combined_cloud_from_tif(
     return combined_pd_cloud, epsg, color_type
 
 
-def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
+def read_band(
+    band_name, band_path, window, cloud_data_bands, cloud_data_types, cloud_data
+):
     """
     Extract from tif point cloud and put in carsdataset point cloud
 
-    :param type_band: type of point cloud data
-    :type type_band: str
+    :param band_name: type of point cloud data
+    :type band_name: str
     :param band_path: path of the tif point cloud file
     :type band_path: str
     :param window: window to use
@@ -417,17 +429,28 @@ def read_band(type_band, band_path, window, cloud_data_bands, cloud_data):
     :param cloud_data: point cloud numpy dict
     :type cloud_data: dict
     """
-    with rio.open(band_path) as desc_band:
-        if desc_band.count == 1:
-            cloud_data_bands.append(type_band)
-            cloud_data[type_band] = np.ravel(desc_band.read(1, window=window))
+    # Determine type
+    band_type = inputs.rasterio_get_image_type(band_path)
+    if cst.POINTS_CLOUD_MSK in band_name:
+        band_type = "uint8"
+    if (
+        cst.POINTS_CLOUD_CLASSIF_KEY_ROOT in band_name
+        or cst.POINTS_CLOUD_FILLING_KEY_ROOT in band_name
+    ):
+        band_type = "boolean"
+    with rio.open(band_path) as band_file:
+        if band_file.count == 1:
+            cloud_data_bands.append(band_name)
+            cloud_data_types.append(band_type)
+            cloud_data[band_name] = np.ravel(band_file.read(1, window=window))
         else:
             descriptions = inputs.get_descriptions_bands(band_path)
-            for id_band, band_name in enumerate(descriptions):
-                band_name = "{}_{}".format(type_band, band_name)
-                cloud_data_bands.append(band_name)
-                cloud_data[band_name] = np.ravel(
-                    desc_band.read(1 + id_band, window=window)
+            for id_band, band_desc in enumerate(descriptions):
+                band_full_name = "{}_{}".format(band_name, band_desc)
+                cloud_data_bands.append(band_full_name)
+                cloud_data_types.append(band_type)
+                cloud_data[band_full_name] = np.ravel(
+                    band_file.read(1 + id_band, window=window)
                 )
 
 

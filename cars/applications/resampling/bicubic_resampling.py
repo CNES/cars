@@ -676,6 +676,9 @@ def generate_epipolar_images_wrapper(
 
         # Add input color type
         color_type = inputs.rasterio_get_image_type(color1)
+        left_dataset[cst.EPI_COLOR] = left_dataset[cst.EPI_COLOR].astype(
+            color_type
+        )
         left_dataset[cst.EPI_COLOR].attrs["color_type"] = color_type
     else:
         color_types = inputs.rasterio_get_image_type(img1)
@@ -689,7 +692,7 @@ def generate_epipolar_images_wrapper(
         left_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
             left_classif_dataset[cst.EPI_IMAGE].values,
             dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
-        )
+        ).astype(bool)
     if right_classif_dataset:
         right_dataset.coords[cst.BAND_CLASSIF] = right_classif_dataset.attrs[
             cst.BAND_NAMES
@@ -697,7 +700,7 @@ def generate_epipolar_images_wrapper(
         right_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
             right_classif_dataset[cst.EPI_IMAGE].values,
             dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
-        )
+        ).astype(bool)
     # Add attributes info
     attributes = {}
     # fill datasets with saving info, window, profile, overlaps for correct

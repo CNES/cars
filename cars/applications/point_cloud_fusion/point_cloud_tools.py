@@ -151,10 +151,14 @@ def create_combined_sparse_cloud(  # noqa: C901
         and ymax is not None
     )
 
-    cloud_indexes = create_points_cloud_index(cloud_list[0])
+    cloud_indexes_with_types = create_points_cloud_index(cloud_list[0])
 
     if with_coords:
-        cloud_indexes.extend([cst.POINTS_CLOUD_COORD_EPI_GEOM_I])
+        cloud_indexes_with_types.update(
+            {cst.POINTS_CLOUD_COORD_EPI_GEOM_I: "uint16"}
+        )
+
+    cloud_indexes = list(cloud_indexes_with_types.keys())
 
     # iterate through input clouds
     combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float64)
@@ -424,20 +428,22 @@ def create_combined_dense_cloud(  # noqa: C901
     )
 
     # Create point cloud index
-    cloud_indexes = create_points_cloud_index(cloud_list[0])
+    cloud_indexes_with_types = create_points_cloud_index(cloud_list[0])
 
     # Add coords
     if with_coords:
-        cloud_indexes.extend(
-            [
-                cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-                cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-                cst.POINTS_CLOUD_ID_IM_EPI,
-            ]
+        cloud_indexes_with_types.update(
+            {
+                cst.POINTS_CLOUD_COORD_EPI_GEOM_I: "uint16",
+                cst.POINTS_CLOUD_COORD_EPI_GEOM_J: "uint16",
+                cst.POINTS_CLOUD_ID_IM_EPI: "uint16",
+            }
         )
 
+    cloud_indexes = list(cloud_indexes_with_types.keys())
+
     # Iterate through input clouds
-    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float64)
+    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float16)
     nb_points = 0
     for cloud_global_id, (cloud_list_id, points_cloud) in zip(  # noqa: B905
         cloud_id, enumerate(cloud_list)
@@ -575,6 +581,7 @@ def create_combined_dense_cloud(  # noqa: C901
     )
 
     pd_cloud = pandas.DataFrame(combined_cloud, columns=cloud_indexes)
+    pd_cloud = pd_cloud.astype(cloud_indexes_with_types)
 
     return pd_cloud, epsg
 
@@ -583,44 +590,47 @@ def create_points_cloud_index(cloud_sample):
     """
     Create point cloud index from cloud list keys and color inputs
     """
-    cloud_indexes = [
-        cst.POINTS_CLOUD_GLOBAL_ID,
-        cst.X,
-        cst.Y,
-        cst.Z,
-    ]
+    cloud_indexes_with_types = {
+        cst.POINTS_CLOUD_GLOBAL_ID: "uint16",
+        cst.X: "float64",
+        cst.Y: "float64",
+        cst.Z: "float64",
+    }
 
     # Add mask index
     if cst.EPI_MSK in cloud_sample:
-        cloud_indexes.append(cst.POINTS_CLOUD_MSK)
+        cloud_indexes_with_types[cst.POINTS_CLOUD_MSK] = "uint8"
 
     # Add color indexes
     if cst.EPI_COLOR in cloud_sample:
         band_color = list(cloud_sample.coords[cst.BAND_IM].to_numpy())
+        color_type = "float32"
+        if "color_type" in cloud_sample.attrs:
+            color_type = cloud_sample.attrs["color_type"]
         for band in band_color:
             band_index = "{}_{}".format(cst.POINTS_CLOUD_CLR_KEY_ROOT, band)
-            cloud_indexes.append(band_index)
+            cloud_indexes_with_types[band_index] = color_type
 
     # Add classif indexes
     if cst.EPI_CLASSIFICATION in cloud_sample:
         band_classif = list(cloud_sample.coords[cst.BAND_CLASSIF].to_numpy())
         for band in band_classif:
             band_index = "{}_{}".format(cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, band)
-            cloud_indexes.append(band_index)
+            cloud_indexes_with_types[band_index] = "boolean"
 
     # Add filling information indexes
     if cst.EPI_FILLING in cloud_sample:
         band_filling = list(cloud_sample.coords[cst.BAND_FILLING].to_numpy())
         for band in band_filling:
             band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
-            cloud_indexes.append(band_index)
+            cloud_indexes_with_types[band_index] = "boolean"
 
     # Add confidence indexes
     for key in cloud_sample:
         if cst.EPI_CONFIDENCE_KEY_ROOT in key:
-            cloud_indexes.append(key)
+            cloud_indexes_with_types[key] = "float32"
 
-    return cloud_indexes
+    return cloud_indexes_with_types
 
 
 def add_information_to_cloud(

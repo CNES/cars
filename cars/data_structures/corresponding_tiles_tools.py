@@ -46,7 +46,6 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
     :rtype: xr.Dataset, int, int
 
     """
-
     if tiles[0][2] is None:
         return None, None, None
 
@@ -101,6 +100,7 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
 
     for tag in list_tags:
         # reconstruct data
+        data_type = tiles[0][2][tag].dtype
         data_shape = (nb_rows, nb_cols)
         dims = tiles[0][2][tag].dims
         if len(dims) == 3:
@@ -179,7 +179,7 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
         new_dataset[tag] = xr.DataArray(
             data,
             dims=dims,
-        )
+        ).astype(data_type)
     return new_dataset, row_min - ol_row_min, col_min - ol_col_min
 
 

@@ -857,7 +857,7 @@ def add_empty_filling_band(
     nb_band = len(filling_types)
     nb_row = len(output_dataset.coords[cst.ROW])
     nb_col = len(output_dataset.coords[cst.COL])
-    filling = np.zeros((nb_band, nb_row, nb_col))
+    filling = np.zeros((nb_band, nb_row, nb_col), dtype=bool)
     filling = xr.Dataset(
         data_vars={
             cst.EPI_FILLING: ([cst.BAND_FILLING, cst.ROW, cst.COL], filling)

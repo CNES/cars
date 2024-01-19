@@ -196,13 +196,13 @@ def compute_points_cloud(
     Compute points cloud
 
     :param geometry_plugin: geometry plugin to use
-    :param data: The reference to disparity map dataset
     :param sensor1: path to left sensor image
     :param sensor2: path to right sensor image
     :param geomodel1: path and attributes for left geomodel
     :param geomodel2: path and attributes for right geomodel
     :param grid1: dataset of the reference image grid file
     :param grid2: dataset of the secondary image grid file
+    :param data: The reference to disparity map dataset
     :param roi_key: roi of the disparity map key
           ('roi' if cropped while calling create_disp_dataset,
           otherwise 'roi_with_margins')
@@ -252,7 +252,7 @@ def compute_points_cloud(
     # add color and data type of image
     color_type = None
     if cst.EPI_COLOR in data:
-        add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud, nodata_index)
+        add_layer(data, cst.EPI_COLOR, cst.BAND_IM, point_cloud)
         color_type = data[cst.EPI_COLOR].attrs["color_type"]
     elif cst.EPI_IMAGE in data:
         color_type = data[cst.EPI_IMAGE].attrs["color_type"]
@@ -288,22 +288,17 @@ def compute_points_cloud(
     return point_cloud
 
 
-def add_layer(
-    dataset, layer_name, layer_coords, point_cloud, nodata_index=None
-):
+def add_layer(dataset, layer_name, layer_coords, point_cloud):
     """
     Add layer point cloud to point cloud dataset
 
-    :param data: layer point cloud dataset
-    :param nodata_index: nodata index array
-    :param point_cloud: point cloud dataset
+    :param dataset: input disparity map dataset
+    :param layer_name: layer key in disparity dataset
+    :param layer_coords: layer axis name in disparity dataset
+    :param point_cloud: output point cloud dataset
     """
     layers = dataset[layer_name].values
     band_layer = dataset.coords[layer_coords]
-    if nodata_index:
-        nb_bands = layers.shape[0]
-        for k in range(nb_bands):
-            layers[k, :, :][nodata_index] = np.nan
 
     if layer_coords not in point_cloud.dims:
         point_cloud.coords[layer_coords] = band_layer
