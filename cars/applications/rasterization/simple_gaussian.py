@@ -811,7 +811,7 @@ def rasterization_wrapper(
         terrain_region, resolution
     )
     if window is None:
-        transform = profile["transform"]
+        transform = rio.Affine(*profile["transform"][0:6])
         row_pix_pos, col_pix_pos = rio.transform.AffineTransformer(
             transform
         ).rowcol(xstart, ystart)

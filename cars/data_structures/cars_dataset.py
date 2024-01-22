@@ -1285,12 +1285,7 @@ def dict_profile_to_rio_profile(dict_profile: Dict) -> Dict:
     if "transform" in dict_profile:
         if dict_profile["transform"] is not None:
             transform = rio.Affine(
-                dict_profile["transform"][0],
-                dict_profile["transform"][1],
-                dict_profile["transform"][2],
-                dict_profile["transform"][3],
-                dict_profile["transform"][4],
-                dict_profile["transform"][5],
+                *dict_profile["transform"][0:6],
             )
     crs = None
     if "crs" in dict_profile:
