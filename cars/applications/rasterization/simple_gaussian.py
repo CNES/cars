@@ -761,6 +761,10 @@ def rasterization_wrapper(
     # filter cloud
     if "mask" in cloud:
         cloud = cloud[cloud["mask"] == 0]
+
+    if cloud.dropna().empty:
+        return None
+
     # Compute start and size
     if terrain_region is None:
         # compute region from cloud
