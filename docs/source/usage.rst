@@ -567,7 +567,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/cars_pipeline_sensor2dsm.png
+            .. figure:: ./images/cars_pipeline_sensor2dsm.png
                 :width: 700px
                 :align: center
 
@@ -596,7 +596,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/sensor_to_low_dsm.png
+            .. figure:: ./images/sensor_to_low_dsm.png
                 :width: 700px
                 :align: center
 
@@ -621,7 +621,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/cars_pipeline_sensor_to_pc.png
+            .. figure:: ./images/cars_pipeline_sensor_to_pc.png
                 :width: 700px
                 :align: center
 
@@ -643,7 +643,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/pc_to_dsm.png
+            .. figure:: ./images/pc_to_dsm.png
                 :width: 700px
                 :align: center
 
@@ -1056,7 +1056,6 @@ The structure follows this organisation:
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
 
@@ -1408,7 +1407,7 @@ This section describes optional plugins possibilities of CARS.
   Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
 
 
-.. include:: ../links_substitution.rst
+.. include:: ./links_substitution.rst
   
 Overview
 ========
@@ -1416,7 +1415,7 @@ Overview
 To summarize, CARS pipeline is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
 
 
-.. figure:: ../images/cars_pipeline_multi_pair.png
+.. figure:: ./images/cars_pipeline_multi_pair.png
     :width: 1000px
     :align: center
 
