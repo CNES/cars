@@ -594,7 +594,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/cars_pipeline_sensor2dsm_no_merging.png
+            .. figure:: ./images/cars_pipeline_sensor2dsm_no_merging.png
                 :width: 700px
                 :align: center
 
@@ -681,7 +681,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/pc_to_dsm_no_merging.png
+            .. figure:: ./images/pc_to_dsm_no_merging.png
                 :width: 700px
                 :align: center
 
