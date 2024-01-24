@@ -38,6 +38,7 @@ import xarray as xr
 
 # CARS imports
 from cars.core import constants as cst
+from cars.data_structures import cars_dataset
 
 
 def compute_xy_starts_and_sizes(
@@ -295,15 +296,13 @@ def compute_vector_raster_and_stats(
     # 5. source point cloud
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
+    number_of_pc = cars_dataset.get_attributes_dataframe(cloud)["number_of_pc"]
     if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(
             list_computed_layers, cst.POINTS_CLOUD_SOURCE_KEY_ROOT
         )
     ):
-        number_of_pc = (
-            int(np.round(np.max(cloud[cst.POINTS_CLOUD_GLOBAL_ID]))) + 1
-        )
         for pc_id in range(number_of_pc):
             # Create binary list that indicates from each point whether it comes
             # from point cloud number "pc_id"
@@ -331,17 +330,19 @@ def compute_vector_raster_and_stats(
         else np.empty((0, nb_points))
     )
 
-    out, mean, stdev, nb_pts_in_disc, nb_pts_in_cell = crasterize.pc_to_dsm(
-        points,
-        values,
-        valid,
-        x_start,
-        y_start,
-        x_size,
-        y_size,
-        resolution,
-        radius,
-        sigma,
+    (out, weights_sum, mean, stdev, nb_pts_in_disc, nb_pts_in_cell) = (
+        crasterize.pc_to_dsm(
+            points,
+            values,
+            valid,
+            x_start,
+            y_start,
+            x_size,
+            y_size,
+            resolution,
+            radius,
+            sigma,
+        )
     )
 
     # pylint: disable=unbalanced-tuple-unpacking
@@ -373,6 +374,7 @@ def compute_vector_raster_and_stats(
 
     return (
         out,
+        weights_sum,
         mean,
         stdev,
         nb_pts_in_disc,
@@ -390,6 +392,7 @@ def compute_vector_raster_and_stats(
 
 def create_raster_dataset(
     raster: np.ndarray,
+    weights_sum: np.ndarray,
     x_start: float,
     y_start: float,
     x_size: int,
@@ -447,7 +450,11 @@ def create_raster_dataset(
     raster_coords = {cst.X: x_values_1d, cst.Y: y_values_1d}
     hgt = np.nan_to_num(raster[0], nan=hgt_no_data)
     raster_out = xr.Dataset(
-        {cst.RASTER_HGT: ([cst.Y, cst.X], hgt)}, coords=raster_coords
+        {
+            cst.RASTER_HGT: ([cst.Y, cst.X], hgt),
+            cst.RASTER_WEIGHTS_SUM: ([cst.Y, cst.X], weights_sum),
+        },
+        coords=raster_coords,
     )
 
     if raster.shape[0] > 1:  # rasterizer produced color output
@@ -610,6 +617,7 @@ def rasterize(
 
     (
         out,
+        weights_sum,
         mean,
         stdev,
         n_pts,
@@ -645,6 +653,8 @@ def rasterize(
     out = out.reshape(shape_out + (-1,))
     out = np.moveaxis(out, 2, 0)
 
+    weights_sum = weights_sum.reshape(shape_out)
+
     if classif is not None:
         classif = classif.reshape(shape_out + (-1,))
         classif = np.moveaxis(classif, 2, 0)
@@ -667,6 +677,7 @@ def rasterize(
     # build output dataset
     raster_out = create_raster_dataset(
         out,
+        weights_sum,
         x_start,
         y_start,
         x_size,
@@ -692,3 +703,95 @@ def rasterize(
     )
 
     return raster_out
+
+
+def update_weights(old_weights, weights):
+    """
+    Update weights
+
+    :param weights: current weights
+    :param old_weights: old weights
+
+    :return: updated weights
+    """
+
+    new_weights = weights
+    if old_weights is not None:
+        current_nan = weights == 0
+        old_nan = old_weights == 0
+        weights[current_nan] = 0
+        old_weights[old_nan] = 0
+        new_weights = old_weights + weights
+
+    return new_weights
+
+
+def update_data(
+    old_data, current_data, weights, old_weights, nodata, method="basic"
+):
+    """
+    Update current data with old data and weigths
+
+    :param old_data: old data
+    :param current_data: current data
+    :param weights: current weights
+    :param old_weights: old weights
+    :param nodata: nodata associated to tag
+
+    :return: updated current data
+    """
+    new_data = current_data
+    if old_data is not None:
+        old_data = np.squeeze(old_data)
+        old_weights = np.squeeze(old_weights)
+        shape = old_data.shape
+        if len(old_data.shape) == 3:
+            old_weights = np.repeat(
+                np.expand_dims(old_weights, axis=0), old_data.shape[0], axis=0
+            )
+
+        current_data = np.squeeze(current_data)
+        weights = np.squeeze(weights)
+        if len(current_data.shape) == 3:
+            weights = np.repeat(
+                np.expand_dims(weights, axis=0), current_data.shape[0], axis=0
+            )
+
+        # compute masks
+        current_valid = weights != 0
+        old_valid = old_weights != 0
+
+        both_valid = np.logical_and(current_valid, old_valid)
+        total_weight = np.zeros(shape)
+        total_weight[both_valid] = weights[both_valid] + old_weights[both_valid]
+
+        # current factor
+        current_factor = np.zeros(shape)
+        current_factor[current_valid] = 1
+        current_factor[both_valid] = (
+            weights[both_valid] / total_weight[both_valid]
+        )
+
+        # old factor
+        old_factor = np.zeros(shape)
+        old_factor[old_valid] = 1
+        old_factor[both_valid] = (
+            old_weights[both_valid] / total_weight[both_valid]
+        )
+
+        # assign old weights
+        if method == "basic":
+            new_data = np.zeros(shape)
+            new_data[old_valid] = old_data[old_valid] * old_factor[old_valid]
+            new_data[current_valid] += (
+                current_data[current_valid] * current_factor[current_valid]
+            )
+        elif method == "sum":
+            new_data = np.zeros(shape)
+            new_data[old_valid] = old_data[old_valid]
+            new_data[current_valid] += current_data[current_valid]
+
+        # set nodata
+        all_nodata = (current_valid + old_valid) == 0
+        new_data[all_nodata] = nodata
+    return new_data

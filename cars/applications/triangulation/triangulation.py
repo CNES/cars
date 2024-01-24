@@ -94,7 +94,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def run(
+    def run(  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,
@@ -104,13 +104,13 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_disparity_map,
         epsg,
         geometry_plugin,
+        source_pc_names=None,
         orchestrator=None,
         pair_folder=None,
         pair_key="PAIR_0",
         uncorrected_grid_right=None,
         geoid_path=None,
-        disp_min=0,  # used for corresponding tiles in fusion pre processing
-        disp_max=0,  # TODO remove
+        cloud_id=None,
     ):
         """
         Run Triangulation application.
@@ -119,18 +119,58 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         corresponding to 3D points clouds, stored on epipolar geometry grid.
 
         :param sensor_image_left: tiled sensor left image
+            Dict Must contain keys : "image", "color", "geomodel",
+            "no_data", "mask". Paths must be absolutes
         :type sensor_image_left: CarsDataset
         :param sensor_image_right: tiled sensor right image
+            Dict Must contain keys : "image", "color", "geomodel",
+            "no_data", "mask". Paths must be absolutes
         :type sensor_image_right: CarsDataset
-        :param epipolar_images: tiled epipolar left image
-        :type epipolar_images: CarsDataset
-        :param grid_left: left epipolar grid
+        :param epipolar_image: tiled epipolar left image
+        :type epipolar_image: CarsDataset
+        :param grid_left: left epipolar grid. Grid CarsDataset contains :
+
+            - A single tile stored in [0,0], containing a (N, M, 2) shape \
+                array in xarray Dataset
+            - Attributes containing: "grid_spacing", "grid_origin",\
+                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",\
+                "epipolar_origin_y","epipolar_spacing_x",\
+                "epipolar_spacing", "disp_to_alt_ratio",\
         :type grid_left: CarsDataset
-        :param grid_right: right epipolar grid
+        :param grid_right: right epipolar grid. Grid CarsDataset contains :
+
+            - A single tile stored in [0,0], containing a (N, M, 2) shape
+                array in xarray Dataset
+            - Attributes containing: "grid_spacing", "grid_origin",
+                "epipolar_size_x", epipolar_size_y", "epipolar_origin_x",
+                "epipolar_origin_y","epipolar_spacing_x",
+                "epipolar_spacing", "disp_to_alt_ratio",
         :type grid_right: CarsDataset
-        :param epipolar_disparity_map: tiled disparity map or
-            sparse matches
+        :param epipolar_disparity_map: tiled left disparity map or \
+            sparse matches:
+
+            - if CarsDataset is instance of "arrays", CarsDataset contains:
+
+                - N x M Delayed tiles \
+                    Each tile will be a future xarray Dataset containing:
+
+                    - data with keys : "disp", "disp_msk"
+                    - attrs with keys: profile, window, overlaps
+                - attributes containing:"largest_epipolar_region"\
+                  "opt_epipolar_tile_size"
+
+            - if CarsDataset is instance of "points", CarsDataset contains:
+
+                - N x M Delayed tiles \
+                    Each tile will be a future pandas DataFrame containing:
+
+                    - data : (L, 4) shape matches
+                - attributes containing:"disp_lower_bound","disp_upper_bound",\
+                    "elevation_delta_lower_bound","elevation_delta_upper_bound"
+
         :type epipolar_disparity_map: CarsDataset
+        :param source_pc_names: source pc names
+        :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
         :param pair_folder: folder used for current pair
         :type pair_folder: str
@@ -141,11 +181,18 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
-        :param disp_min: minimum disparity
-        :type disp_min: int
-        :param disp_max: maximum disparity
-        :type disp_max: int
 
-        :return left points cloud, right points cloud
-        :rtype: CarsDataset
+        :return: points cloud \
+                The CarsDataset contains:
+
+            - N x M Delayed tiles \
+                Each tile will be a future xarray Dataset containing:
+
+                - data : with keys : "x", "y", "z", "corr_msk"\
+                    optional: "color", "msk",
+                - attrs with keys: "margins", "epi_full_size", "epsg"
+            - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
+                "elevation_delta_lower_bound","elevation_delta_upper_bound"
+
+        :rtype: Tuple(CarsDataset, CarsDataset)
         """

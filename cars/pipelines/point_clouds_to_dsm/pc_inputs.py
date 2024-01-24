@@ -76,7 +76,7 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
         cst.Z: str,
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
-        cst.POINTS_CLOUD_CLR_KEY_ROOT: Or(str, None),
+        cst.POINTS_CLOUD_CLR_KEY_ROOT: str,
         cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_MSK: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),

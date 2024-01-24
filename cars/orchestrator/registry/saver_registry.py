@@ -53,6 +53,24 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         super().__init__(id_generator)
         self.registered_cars_datasets_savers = []
 
+    def get_cars_ds(self, future_result):
+        """
+        Get a list of registered CarsDataset
+
+        :param obj: object to get cars dataset from
+
+        :return corresponding CarsDataset
+        :rtype: CarsDataset
+        """
+
+        obj_id = self.get_future_cars_dataset_id(future_result)
+        cars_ds_saver = self.get_cars_ds_saver_corresponding_id(obj_id)
+
+        if cars_ds_saver is None:
+            return None
+
+        return cars_ds_saver.cars_ds
+
     def get_cars_datasets_list(self):
         """
         Get a list of registered CarsDataset

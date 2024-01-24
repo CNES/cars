@@ -80,6 +80,7 @@ POINTS_CLOUD_MATCHES = "points_cloud_matches"
 
 # raster fields (xarray Dataset)
 RASTER_HGT = "hgt"
+RASTER_WEIGHTS_SUM = "weights_sum"
 RASTER_COLOR_IMG = "img"
 RASTER_MSK = "raster_msk"
 RASTER_CLASSIF = "raster_classif"

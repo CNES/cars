@@ -128,11 +128,12 @@ class MappingToTerrainTiles(
 
         return overloaded_conf
 
-    def run(
+    def run(  # noqa: C901
         self,
         list_epipolar_points_cloud,
         bounds,
         epsg,
+        source_pc_names=None,
         orchestrator=None,
         margins=0,
         optimal_terrain_tile_width=500,
@@ -161,6 +162,8 @@ class MappingToTerrainTiles(
         :type bounds: list
         :param epsg: epsg to use
         :type epsg: str
+        :param source_pc_names: source pc names
+        :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
         :type orchestrator: Orchestrator
         :param margins: margins needed for tiles, meter or degree
@@ -195,6 +198,9 @@ class MappingToTerrainTiles(
             )
         else:
             self.orchestrator = orchestrator
+
+        if source_pc_names is None:
+            source_pc_names = ["PAIR_0"]
 
         # Compute bounds and terrain grid
         [xmin, ymin, xmax, ymax] = bounds
@@ -231,6 +237,7 @@ class MappingToTerrainTiles(
             # update attributes
             merged_point_cloud.attributes["bounds"] = bounds
             merged_point_cloud.attributes["epsg"] = epsg
+            merged_point_cloud.attributes["source_pc_names"] = source_pc_names
 
             number_of_terrain_tiles = (
                 merged_point_cloud.tiling_grid.shape[1]
@@ -307,8 +314,9 @@ class MappingToTerrainTiles(
                 color_file = list_epipolar_points_cloud[0].tiles[0][0]["data"][
                     "color"
                 ]
-                color_type = inputs.rasterio_get_image_type(color_file)
-                merged_point_cloud.attributes["color_type"] = color_type
+                if color_file is not None:
+                    color_type = inputs.rasterio_get_image_type(color_file)
+                    merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
             if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
@@ -574,6 +582,7 @@ def compute_point_cloud_wrapper(
         "save_points_cloud_as_laz": save_pc_as_laz,
         "save_points_cloud_as_csv": save_pc_as_csv,
         "source_pc_names": source_pc_names,
+        "number_of_pc": len(source_pc_names),
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes

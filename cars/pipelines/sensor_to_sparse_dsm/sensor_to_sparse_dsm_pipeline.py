@@ -720,12 +720,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
                 )
                 list_terrain_roi.append(current_terrain_roi_bbox)
-                # add pair key
-                epipolar_points_cloud.attributes["source_pc_name"] = pair_key
-                # add color type
-                epipolar_points_cloud.attributes["color_type"] = (
-                    new_epipolar_image_left.attributes["color_type"]
-                )
 
                 # add points cloud to list
                 list_epipolar_points_cloud.append(epipolar_points_cloud)
@@ -746,18 +740,17 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             )
 
             # Merge point clouds
+            # Add pair names to retrieve source pair of each point
+            pairs_names = [pair_name for pair_name, _, _ in list_sensor_pairs]
             merged_points_clouds = self.pc_fusion_application.run(
                 list_epipolar_points_cloud,
                 terrain_bounds,
                 epsg,
+                source_pc_names=pairs_names,
                 orchestrator=cars_orchestrator,
                 margins=self.rasterization_application.get_margins(),
                 optimal_terrain_tile_width=optimal_terrain_tile_width,
             )
-
-            # Add pair names to retrieve source pair of each point
-            pairs_names = [pair_name for pair_name, _, _ in list_sensor_pairs]
-            merged_points_clouds.attributes["source_pc_names"] = pairs_names
 
             # rasterize point cloud
             _ = self.rasterization_application.run(
