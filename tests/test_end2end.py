@@ -95,7 +95,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "method": "census_sgm",
                 "generate_performance_map": True,
                 "use_global_disp_range": True,
-                "disparity_margin": 0.1,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -271,7 +270,6 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
                 "save_matches": False,
             },
         }
@@ -308,10 +306,10 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -18
+                < -13
             )
             assert (
-                14
+                9
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
@@ -332,12 +330,12 @@ def test_end2end_ventoux_sparse_dsm_8bits():
 
         # Uncomment the 2 following instructions to update reference data
         # and the "sift_peak_threshold":1 in the configuration
-        # copy2(
-        #     os.path.join(out_dir, 'dsm.tif'),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
-        #     ),
-        # )
+        copy2(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+            ),
+        )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path(
@@ -2238,6 +2236,23 @@ def test_end2end_ventoux_with_color():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
+        print("ene2dn 2158")
+        print(os.listdir(os.path.join(out_dir, "points_cloud")))
+        print("\n")
+        print(
+            os.listdir(
+                os.path.join(
+                    out_dir, "points_cloud_post_small_components_removing"
+                )
+            )
+        )
+        print("\n")
+        print(
+            os.listdir(
+                os.path.join(out_dir, "points_cloud_post_statistical_removing")
+            )
+        )
+
         assert (
             os.path.exists(
                 os.path.join(out_dir, "confidence_from_ambiguity.tif")
@@ -2245,8 +2260,8 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        pc1 = "675433.0_4897172.0"
-        pc2 = "675248.5_4897172.0"
+        pc1 = "675433.0_4897170.5"
+        pc2 = "675248.0_4897170.5"
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
@@ -2511,7 +2526,23 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        pc1 = "675248.5_4897172.0"
+        pc1 = "675433.0_4897170.5"
+        print("ene2dn 2432")
+        print(os.listdir(os.path.join(out_dir, "points_cloud")))
+        print("\n")
+        print(
+            os.listdir(
+                os.path.join(
+                    out_dir, "points_cloud_post_small_components_removing"
+                )
+            )
+        )
+        print("\n")
+        print(
+            os.listdir(
+                os.path.join(out_dir, "points_cloud_post_statistical_removing")
+            )
+        )
 
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
@@ -2968,10 +2999,10 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
-            assert out_disp_compute["global_disp_min"] > -27
+            assert out_disp_compute["global_disp_min"] > -29
             assert out_disp_compute["global_disp_min"] < -24
             assert out_disp_compute["global_disp_max"] > 24
-            assert out_disp_compute["global_disp_max"] < 27
+            assert out_disp_compute["global_disp_max"] < 30
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][

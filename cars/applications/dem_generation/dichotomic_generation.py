@@ -33,7 +33,6 @@ import numpy as np
 import pandas
 import rasterio
 import xarray as xr
-from affine import Affine
 from json_checker import And, Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
@@ -45,7 +44,7 @@ from cars.applications.triangulation import triangulation_tools
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core import projection
+from cars.core import preprocessing, projection
 from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -72,6 +71,13 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.resolution = self.used_config["resolution"]
         # Saving bools
         self.margin = self.used_config["margin"]
+        height_margin = self.used_config["height_margin"]
+        if isinstance(height_margin, list):
+            self.min_height_margin = height_margin[0]
+            self.max_height_margin = height_margin[1]
+        else:
+            self.min_height_margin = height_margin
+            self.max_height_margin = height_margin
         self.percentile = self.used_config["percentile"]
         self.min_number_matches = self.used_config["min_number_matches"]
         self.fillnodata_max_search_distance = self.used_config[
@@ -106,6 +112,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
+        overloaded_conf["height_margin"] = conf.get("height_margin", 20)
         overloaded_conf["percentile"] = conf.get("percentile", 5)
         overloaded_conf["min_number_matches"] = conf.get(
             "min_number_matches", 100
@@ -119,6 +126,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
             "margin": And(Or(float, int), lambda x: x > 0),
+            "height_margin": Or(list, int),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
@@ -154,7 +162,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
 
         # Generate point cloud
-        epsg = None
+        epsg = 4326
 
         for pair_pc in triangulated_matches_list:
             if epsg is None:
@@ -172,15 +180,28 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
         merged_point_cloud.attrs["epsg"] = epsg
 
-        # Get borders
-
         # Get min max with margin
         mins = merged_point_cloud.min(skipna=True)
         maxs = merged_point_cloud.max(skipna=True)
-        xmin = mins["x"] - self.margin
-        ymin = mins["y"] - self.margin
-        xmax = maxs["x"] + self.margin
-        ymax = maxs["y"] + self.margin
+        xmin = mins["x"]
+        ymin = mins["y"]
+        xmax = maxs["x"]
+        ymax = maxs["y"]
+        bounds_cloud = [xmin, ymin, xmax, ymax]
+
+        # Convert resolution and margin to degrees
+        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+        conversion_factor = preprocessing.get_conversion_factor(
+            bounds_cloud, epsg, utm_epsg
+        )
+        self.margin *= conversion_factor
+        self.resolution *= conversion_factor
+
+        # Get borders, adding margin
+        xmin = xmin - self.margin
+        ymin = ymin - self.margin
+        xmax = xmax + self.margin
+        ymax = ymax + self.margin
 
         # Generate regular grid
         xnew, ynew = generate_grid(
@@ -268,6 +289,15 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             logging.error("dem min > dem max")
             raise RuntimeError("dem min > dem max")
 
+        # apply height margin
+        dem_min -= self.min_height_margin
+        dem_max += self.max_height_margin
+
+        # Convert to int
+        dem_mean = dem_mean.astype(int)
+        dem_min = np.floor(dem_min).astype(int)
+        dem_max = np.ceil(dem_max).astype(int)
+
         # Generate CarsDataset
 
         dem = cars_dataset.CarsDataset("arrays")
@@ -283,7 +313,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_mean_path,
             dem_gen_cst.DEM_MEAN,
             dem,
-            dtype=np.float32,
+            dtype=np.int32,
+            nodata=-32768,
             cars_ds_name="dem_mean",
         )
         dem.attributes[dem_gen_cst.DEM_MEAN_PATH] = dem_mean_path
@@ -293,7 +324,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_min_path,
             dem_gen_cst.DEM_MIN,
             dem,
-            dtype=np.float32,
+            dtype=np.int32,
+            nodata=-32768,
             cars_ds_name="dem_min",
         )
         dem.attributes[dem_gen_cst.DEM_MIN_PATH] = dem_min_path
@@ -303,7 +335,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_max_path,
             dem_gen_cst.DEM_MAX,
             dem,
-            dtype=np.float32,
+            dtype=np.int32,
+            nodata=-32768,
             cars_ds_name="dem_max",
         )
         dem.attributes[dem_gen_cst.DEM_MAX_PATH] = dem_max_path
@@ -312,15 +345,15 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Generate profile
         geotransform = (
-            bounds[0],
             self.resolution,
-            0.5,
-            bounds[3],
-            0.5,
+            0,
+            bounds[0],
+            0,
             -self.resolution,
+            bounds[3],
         )
 
-        transform = Affine.from_gdal(*geotransform)
+        transform = rasterio.Affine(*geotransform)
         raster_profile = collections.OrderedDict(
             {
                 "height": row_max,

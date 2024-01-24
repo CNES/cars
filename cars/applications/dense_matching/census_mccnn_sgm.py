@@ -102,7 +102,6 @@ class CensusMccnnSgm(
         # Margins computation parameters
         # Use local disp
         self.use_global_disp_range = self.used_config["use_global_disp_range"]
-        self.disparity_margin = self.used_config["disparity_margin"]
         self.local_disp_grid_step = self.used_config["local_disp_grid_step"]
         self.disp_range_propagation_filter_size = self.used_config[
             "disp_range_propagation_filter_size"
@@ -181,7 +180,6 @@ class CensusMccnnSgm(
         overloaded_conf["use_global_disp_range"] = conf.get(
             "use_global_disp_range", False
         )
-        overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.3)
         overloaded_conf["local_disp_grid_step"] = conf.get(
             "local_disp_grid_step", 30
         )
@@ -229,7 +227,6 @@ class CensusMccnnSgm(
             "perf_eta_step": float,
             "perf_ambiguity_threshold": float,
             "use_global_disp_range": bool,
-            "disparity_margin": And(Or(int, float), lambda x: x >= 0),
             "local_disp_grid_step": int,
             "disp_range_propagation_filter_size": And(
                 Or(int, float), lambda x: x >= 0
@@ -750,10 +747,6 @@ class CensusMccnnSgm(
         diff = grid_max - grid_min
 
         logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
-
-        margin_array = diff * self.disparity_margin
-        grid_min -= margin_array
-        grid_max += margin_array
 
         if self.disp_min_threshold is not None:
             if np.any(grid_min < self.disp_min_threshold):
