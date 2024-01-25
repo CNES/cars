@@ -588,13 +588,13 @@ The structure follows this organisation:
                 10. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
                 11. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
-         .. tab:: Sensor to Dense DSM no merging
+        .. tab:: Sensor to Dense DSM no merging
 
             **Name**: "sensors_to_dense_dsm_no_merging"
 
             **Description**
 
-            .. figure:: ../images/cars_pipeline_sensor2dsm_no_merging.png
+            .. figure:: ./images/cars_pipeline_sensor2dsm_no_merging.png
                 :width: 700px
                 :align: center
 
@@ -681,7 +681,7 @@ The structure follows this organisation:
 
             **Description**
 
-            .. figure:: ../images/pc_to_dsm_no_merging.png
+            .. figure:: ./images/pc_to_dsm_no_merging.png
                 :width: 700px
                 :align: center
 

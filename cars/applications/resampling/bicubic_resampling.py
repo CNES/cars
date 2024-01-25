@@ -676,6 +676,14 @@ def generate_epipolar_images_wrapper(
 
         # Add input color type
         color_type = inputs.rasterio_get_image_type(color1)
+        # Safe cast
+        if np.issubdtype(color_type, np.floating):
+            max_value_clr = np.finfo(color_type).max
+        else:
+            max_value_clr = np.iinfo(color_type).max
+        left_dataset[cst.EPI_COLOR].values[
+            left_dataset[cst.EPI_COLOR].values > max_value_clr
+        ] = max_value_clr
         left_dataset[cst.EPI_COLOR] = left_dataset[cst.EPI_COLOR].astype(
             color_type
         )
