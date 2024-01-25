@@ -39,7 +39,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     libinsighttoolkit4-dev=4.13.2-dfsg1-8 \
     libopenthreads-dev=3.6.5+dfsg1-6~focal2 \
     libossim-dev=2.9.1-2build3 \
-    libtinyxml-dev=2.6.2-4build1 \
+    libtinyxml-dev=2.6.2-4+deb10u1build0.20.04.1 \
     libmuparser-dev=2.2.6.1+dfsg-1build1 \
     libmuparserx-dev=4.0.7+dfsg-3build1 \
     libsvm-dev=3.24+ds-3build1 \
