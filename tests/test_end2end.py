@@ -330,12 +330,12 @@ def test_end2end_ventoux_sparse_dsm_8bits():
 
         # Uncomment the 2 following instructions to update reference data
         # and the "sift_peak_threshold":1 in the configuration
-        copy2(
-            os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
-            ),
-        )
+        # copy2(
+        #     os.path.join(out_dir, "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+        #     ),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
             absolute_data_path(
