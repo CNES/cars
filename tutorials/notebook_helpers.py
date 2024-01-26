@@ -362,7 +362,7 @@ def overide_input_conf_with_a_priori(
     terrain_a_priori = a_priori_dict_full["inputs"]["terrain_a_priori"]
 
     # Overide paths
-    for key in ["dem_mean", "dem_min", "dem_max"]:
+    for key in ["dem_median", "dem_min", "dem_max"]:
         if not os.path.isfile(terrain_a_priori[key]):
             terrain_a_priori[key] = os.path.join(
                 input_dir_path,
@@ -390,11 +390,11 @@ def extract_a_priori_from_config(conf):
     disparity_range = epipolar_a_priori[key]["disparity_range"]
 
     terrain_a_priori = conf["terrain_a_priori"]
-    dem_mean = terrain_a_priori["dem_mean"]
+    dem_median = terrain_a_priori["dem_median"]
     dem_min = terrain_a_priori["dem_min"]
     dem_max = terrain_a_priori["dem_max"]
 
-    return grid_coefficients, disparity_range, dem_mean, dem_min, dem_max
+    return grid_coefficients, disparity_range, dem_median, dem_min, dem_max
 
 
 def apply_grid_correction(grid, grid_coefficients, save_folder):

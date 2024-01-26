@@ -506,17 +506,15 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 cars_orchestrator.out_dir,
                 self.inputs[sens_cst.GEOID],
             )
-            dem_mean = self.inputs[sens_cst.INITIAL_ELEVATION]
-            if dem_mean is None:
-                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
-                # Generate geometry loader with dem and geoid
-                self.geom_plugin_with_dem_and_geoid = (
-                    sensors_inputs.generate_geometry_plugin_with_dem(
-                        self.used_conf[GEOMETRY_PLUGIN],
-                        self.inputs,
-                        dem=dem_mean,
-                    )
+            dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
+            # Generate geometry loader with dem and geoid
+            self.geom_plugin_with_dem_and_geoid = (
+                sensors_inputs.generate_geometry_plugin_with_dem(
+                    self.used_conf[GEOMETRY_PLUGIN],
+                    self.inputs,
+                    dem=dem_median,
                 )
+            )
             dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
             dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
@@ -525,13 +523,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 sensors_inputs.generate_geometry_plugin_with_dem(
                     self.used_conf[GEOMETRY_PLUGIN],
                     self.inputs,
-                    dem=dem_mean,
+                    dem=dem_median,
                 )
             )
 
             sensors_inputs.update_conf(
                 self.config_full_res,
-                dem_mean=dem_mean,
+                dem_median=dem_median,
                 dem_min=dem_min,
                 dem_max=dem_max,
             )

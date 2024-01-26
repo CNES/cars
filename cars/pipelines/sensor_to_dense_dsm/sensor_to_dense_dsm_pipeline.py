@@ -725,8 +725,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             if self.used_conf[INPUTS]["use_epipolar_a_priori"]:
                 # Use a priori
-                dem_mean = self.used_conf[INPUTS]["terrain_a_priori"][
-                    "dem_mean"
+                dem_median = self.used_conf[INPUTS]["terrain_a_priori"][
+                    "dem_median"
                 ]
                 dem_min = self.used_conf[INPUTS]["terrain_a_priori"]["dem_min"]
                 dem_max = self.used_conf[INPUTS]["terrain_a_priori"]["dem_max"]
@@ -739,13 +739,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     cars_orchestrator.out_dir,
                     self.inputs[sens_cst.GEOID],
                 )
-                dem_mean = dem.attributes[dem_gen_cst.DEM_MEAN_PATH]
+                dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
                 # Generate geometry loader with dem and geoid
                 self.geom_plugin_with_dem_and_geoid = (
                     sensors_inputs.generate_geometry_plugin_with_dem(
                         self.used_conf[GEOMETRY_PLUGIN],
                         self.inputs,
-                        dem=dem_mean,
+                        dem=dem_median,
                     )
                 )
                 dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
@@ -754,7 +754,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # update used configuration with terrain a priori
             sensors_inputs.update_conf(
                 self.used_conf,
-                dem_mean=dem_mean,
+                dem_median=dem_median,
                 dem_min=dem_min,
                 dem_max=dem_max,
             )
@@ -950,7 +950,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             self.geom_plugin_with_dem_and_geoid,
                             dem_min=dem_min,
                             dem_max=dem_max,
-                            dem_mean=dem_mean,
+                            dem_median=dem_median,
                             pair_folder=pairs[pair_key]["pair_folder"],
                         )
                     )

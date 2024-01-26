@@ -31,8 +31,8 @@ import os
 # Third party imports
 import numpy as np
 import pandas
+import rasterio
 import xarray as xr
-from affine import Affine
 from json_checker import And, Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
@@ -44,7 +44,7 @@ from cars.applications.triangulation import triangulation_tools
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core import projection
+from cars.core import preprocessing, projection
 from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -71,8 +71,18 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.resolution = self.used_config["resolution"]
         # Saving bools
         self.margin = self.used_config["margin"]
+        height_margin = self.used_config["height_margin"]
+        if isinstance(height_margin, list):
+            self.min_height_margin = height_margin[0]
+            self.max_height_margin = height_margin[1]
+        else:
+            self.min_height_margin = height_margin
+            self.max_height_margin = height_margin
         self.percentile = self.used_config["percentile"]
         self.min_number_matches = self.used_config["min_number_matches"]
+        self.fillnodata_max_search_distance = self.used_config[
+            "fillnodata_max_search_distance"
+        ]
 
         # Init orchestrator
         self.orchestrator = None
@@ -102,17 +112,24 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # default margin: (z max - zmin) * tan(teta)
         # with z max = 9000, z min = 0, teta = 30 degrees
         overloaded_conf["margin"] = conf.get("margin", 6000)
-        overloaded_conf["percentile"] = conf.get("percentile", 3)
+        overloaded_conf["height_margin"] = conf.get("height_margin", 20)
+        overloaded_conf["percentile"] = conf.get("percentile", 5)
         overloaded_conf["min_number_matches"] = conf.get(
-            "min_number_matches", 30
+            "min_number_matches", 100
+        )
+
+        overloaded_conf["fillnodata_max_search_distance"] = conf.get(
+            "fillnodata_max_search_distance", 3
         )
 
         rectification_schema = {
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
             "margin": And(Or(float, int), lambda x: x > 0),
+            "height_margin": Or(list, int),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
+            "fillnodata_max_search_distance": And(int, lambda x: x > 0),
         }
 
         # Check conf
@@ -135,7 +152,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         :return: dem data computed with mean, min and max.
             dem is also saved in disk, and paths are available in attributes.
-            (DEM_MEAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
+            (DEM_MEDIAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
         :rtype: CarsDataset
         """
 
@@ -145,7 +162,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
 
         # Generate point cloud
-        epsg = None
+        epsg = 4326
 
         for pair_pc in triangulated_matches_list:
             if epsg is None:
@@ -163,15 +180,28 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
         merged_point_cloud.attrs["epsg"] = epsg
 
-        # Get borders
-
         # Get min max with margin
         mins = merged_point_cloud.min(skipna=True)
         maxs = merged_point_cloud.max(skipna=True)
-        xmin = mins["x"] - self.margin
-        ymin = mins["y"] - self.margin
-        xmax = maxs["x"] + self.margin
-        ymax = maxs["y"] + self.margin
+        xmin = mins["x"]
+        ymin = mins["y"]
+        xmax = maxs["x"]
+        ymax = maxs["y"]
+        bounds_cloud = [xmin, ymin, xmax, ymax]
+
+        # Convert resolution and margin to degrees
+        utm_epsg = preprocessing.get_utm_zone_as_epsg_code(xmin, ymin)
+        conversion_factor = preprocessing.get_conversion_factor(
+            bounds_cloud, epsg, utm_epsg
+        )
+        self.margin *= conversion_factor
+        self.resolution *= conversion_factor
+
+        # Get borders, adding margin
+        xmin = xmin - self.margin
+        ymin = ymin - self.margin
+        xmax = xmax + self.margin
+        ymax = ymax + self.margin
 
         # Generate regular grid
         xnew, ynew = generate_grid(
@@ -241,13 +271,32 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             alti_zeros_dataset, geoid_data
         )
 
-        mnt_mean = list_z_grid[0] + geoid_offset[cst.Z].values
-        mnt_min = list_z_grid[1] + geoid_offset[cst.Z].values
-        mnt_max = list_z_grid[2] + geoid_offset[cst.Z].values
+        # fillnodata
+        valid = np.isfinite(list_z_grid[0])
+        msd = self.fillnodata_max_search_distance
+        for idx in range(3):
+            list_z_grid[idx] = rasterio.fill.fillnodata(
+                list_z_grid[idx], mask=valid, max_search_distance=msd
+            )
+            list_z_grid[idx] += geoid_offset[cst.Z].values
+            list_z_grid[idx] = np.nan_to_num(list_z_grid[idx])
 
-        if np.any((mnt_max - mnt_min) < 0):
+        dem_median = list_z_grid[0]
+        dem_min = list_z_grid[1]
+        dem_max = list_z_grid[2]
+
+        if np.any((dem_max - dem_min) < 0):
             logging.error("dem min > dem max")
             raise RuntimeError("dem min > dem max")
+
+        # apply height margin
+        dem_min -= self.min_height_margin
+        dem_max += self.max_height_margin
+
+        # Convert to int
+        dem_median = dem_median.astype(int)
+        dem_min = np.floor(dem_min).astype(int)
+        dem_max = np.ceil(dem_max).astype(int)
 
         # Generate CarsDataset
 
@@ -259,22 +308,24 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # saving infos
         # dem mean
-        dem_mean_path = os.path.join(output_dir, "dem_mean.tif")
+        dem_median_path = os.path.join(output_dir, "dem_median.tif")
         self.orchestrator.add_to_save_lists(
-            dem_mean_path,
-            dem_gen_cst.DEM_MEAN,
+            dem_median_path,
+            dem_gen_cst.DEM_MEDIAN,
             dem,
-            dtype=np.float32,
-            cars_ds_name="dem_mean",
+            dtype=np.int32,
+            nodata=-32768,
+            cars_ds_name="dem_median",
         )
-        dem.attributes[dem_gen_cst.DEM_MEAN_PATH] = dem_mean_path
+        dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH] = dem_median_path
         # dem min
         dem_min_path = os.path.join(output_dir, "dem_min.tif")
         self.orchestrator.add_to_save_lists(
             dem_min_path,
             dem_gen_cst.DEM_MIN,
             dem,
-            dtype=np.float32,
+            dtype=np.int32,
+            nodata=-32768,
             cars_ds_name="dem_min",
         )
         dem.attributes[dem_gen_cst.DEM_MIN_PATH] = dem_min_path
@@ -284,7 +335,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             dem_max_path,
             dem_gen_cst.DEM_MAX,
             dem,
-            dtype=np.float32,
+            dtype=np.int32,
+            nodata=-32768,
             cars_ds_name="dem_max",
         )
         dem.attributes[dem_gen_cst.DEM_MAX_PATH] = dem_max_path
@@ -293,15 +345,15 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Generate profile
         geotransform = (
-            bounds[0],
             self.resolution,
-            0.5,
-            bounds[3],
-            0.5,
+            0,
+            bounds[0],
+            0,
             -self.resolution,
+            bounds[3],
         )
 
-        transform = Affine.from_gdal(*geotransform)
+        transform = rasterio.Affine(*geotransform)
         raster_profile = collections.OrderedDict(
             {
                 "height": row_max,
@@ -317,9 +369,9 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # Generate dataset
         dem_tile = xr.Dataset(
             data_vars={
-                "dem_mean": (["row", "col"], np.flip(mnt_mean, axis=0)),
-                "dem_min": (["row", "col"], np.flip(mnt_min, axis=0)),
-                "dem_max": (["row", "col"], np.flip(mnt_max, axis=0)),
+                "dem_median": (["row", "col"], np.flip(dem_median, axis=0)),
+                "dem_min": (["row", "col"], np.flip(dem_min, axis=0)),
+                "dem_max": (["row", "col"], np.flip(dem_max, axis=0)),
             },
             coords={
                 "row": np.arange(0, row_max),
@@ -446,6 +498,8 @@ def multi_res_rec(
     ymin = np.nanmin(y_values)
     xmax = np.nanmax(x_values)
     ymax = np.nanmax(y_values)
+    xcenter = (xmax + xmin) / 2
+    ycenter = (ymax + ymin) / 2
 
     # find points
     tile_pc = pd_pc.loc[
@@ -464,13 +518,19 @@ def multi_res_rec(
     ):
         # apply global value
         for fun, z_grid in zip(list_fun, list_z_grid):  # noqa: B905
-            if isinstance(fun, tuple):
-                # percentile
-                z_grid[row_min:row_max, col_min:col_max] = fun[0](
-                    tile_pc["z"], fun[1]
-                )
+            if (
+                np.abs(xcenter - np.median(tile_pc["x"])) < overlap
+                and np.abs(ycenter - np.median(tile_pc["y"])) < overlap
+            ):
+                if isinstance(fun, tuple):
+                    # percentile
+                    z_grid[row_min:row_max, col_min:col_max] = fun[0](
+                        tile_pc["z"], fun[1]
+                    )
+                else:
+                    z_grid[row_min:row_max, col_min:col_max] = fun(tile_pc["z"])
             else:
-                z_grid[row_min:row_max, col_min:col_max] = fun(tile_pc["z"])
+                z_grid[row_min:row_max, col_min:col_max] = np.nan
 
         list_row = []
         if row_max - row_min >= 2:

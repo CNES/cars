@@ -23,10 +23,10 @@ this module contains the dem generation constants.
 """
 
 
-DEM_MEAN = "dem_mean"
+DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
 
-DEM_MEAN_PATH = "dem_mean_path"
+DEM_MEDIAN_PATH = "dem_median_path"
 DEM_MIN_PATH = "dem_min_path"
 DEM_MAX_PATH = "dem_max_path"
