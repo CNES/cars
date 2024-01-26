@@ -1729,10 +1729,10 @@ def test_end2end_use_epipolar_a_priori():
             )
             # Uncomment the 2 following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir, "dem_mean.tif"),
+            #     os.path.join(out_dir, "dem_median.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "dem_mean" + "_end2end_ventoux.tif"
+            #             ref_output_dir, "dem_median" + "_end2end_ventoux.tif"
             #         )
             #     ),
             # )
@@ -1754,9 +1754,11 @@ def test_end2end_use_epipolar_a_priori():
             # )
 
             assert_same_images(
-                os.path.join(out_dir, "dem_mean.tif"),
+                os.path.join(out_dir, "dem_median.tif"),
                 absolute_data_path(
-                    os.path.join(ref_output_dir, "dem_mean_end2end_ventoux.tif")
+                    os.path.join(
+                        ref_output_dir, "dem_median_end2end_ventoux.tif"
+                    )
                 ),
                 atol=0.0001,
                 rtol=1e-6,
@@ -1857,7 +1859,7 @@ def test_end2end_use_epipolar_a_priori():
                 ]
             )
             assert (
-                "dem_mean"
+                "dem_median"
                 in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
             )
             assert (
@@ -3018,11 +3020,11 @@ def test_end2end_quality_stats():
         )
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_mean.tif"),
+        #     os.path.join(out_dir, "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "dem_mean_end2end_ventoux_quality_stats.tif"
+        #             "dem_median_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
@@ -3100,10 +3102,11 @@ def test_end2end_quality_stats():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_mean.tif"),
+            os.path.join(out_dir, "dem_median.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "dem_mean_end2end_ventoux_quality_stats.tif"
+                    ref_output_dir,
+                    "dem_median_end2end_ventoux_quality_stats.tif",
                 )
             ),
             atol=0.0001,

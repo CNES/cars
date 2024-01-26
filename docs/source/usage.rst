@@ -229,7 +229,7 @@ The structure follows this organisation:
             +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
             | Name           | Description                                                 | Type   | Default value  | Required                         |
             +================+=============================================================+========+================+==================================+
-            | *dem_mean*     | DEM generated with mean function                            | str    |                | if use_epipolar_a_priori is True |
+            | *dem_median*   | DEM generated with median function                          | str    |                | if use_epipolar_a_priori is True |
             +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
             | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
             +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
@@ -876,7 +876,7 @@ The structure follows this organisation:
             Generates dem from sparse matches. 
 
             3 dems are generated, with different methods:
-            * mean
+            * median
             * min
             * max
 

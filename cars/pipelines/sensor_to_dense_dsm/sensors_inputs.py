@@ -122,9 +122,9 @@ def sensors_check_inputs(  # noqa: C901
 
     # Check terrain a priori
     if check_epipolar_a_priori and overloaded_conf[sens_cst.TERRAIN_A_PRIORI]:
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MEAN] = (
+        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MEDIAN] = (
             overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-                sens_cst.DEM_MEAN, None
+                sens_cst.DEM_MEDIAN, None
             )
         )
         overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MIN] = (
@@ -138,7 +138,7 @@ def sensors_check_inputs(  # noqa: C901
             )
         )
         terrain_a_priori_schema = {
-            sens_cst.DEM_MEAN: str,
+            sens_cst.DEM_MEDIAN: str,
             sens_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
             sens_cst.DEM_MAX: Or(str, None),
         }
@@ -322,13 +322,13 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         )
     )
 
-    # If use a priori, overide initial elevation with dem_mean
+    # If use a priori, overide initial elevation with dem_median
     if "use_epipolar_a_priori" in conf_inputs:
         if conf_inputs["use_epipolar_a_priori"]:
-            if "dem_mean" in conf_inputs["terrain_a_priori"]:
+            if "dem_median" in conf_inputs["terrain_a_priori"]:
                 conf_inputs[sens_cst.INITIAL_ELEVATION] = conf_inputs[
                     "terrain_a_priori"
-                ]["dem_mean"]
+                ]["dem_median"]
 
     # Check products consistency with this plugin
     overloaded_conf_inputs = conf_inputs.copy()
@@ -658,7 +658,7 @@ def update_conf(
     dmin=None,
     dmax=None,
     pair_key=None,
-    dem_mean=None,
+    dem_median=None,
     dem_min=None,
     dem_max=None,
 ):
@@ -701,8 +701,8 @@ def update_conf(
                 dmax,
             ]
 
-    if dem_mean is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_mean"] = dem_mean
+    if dem_median is not None:
+        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_median"] = dem_median
     if dem_min is not None:
         conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
     if dem_max is not None:

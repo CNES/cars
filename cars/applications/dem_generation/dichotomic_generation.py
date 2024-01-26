@@ -152,7 +152,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         :return: dem data computed with mean, min and max.
             dem is also saved in disk, and paths are available in attributes.
-            (DEM_MEAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
+            (DEM_MEDIAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
         :rtype: CarsDataset
         """
 
@@ -281,7 +281,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             list_z_grid[idx] += geoid_offset[cst.Z].values
             list_z_grid[idx] = np.nan_to_num(list_z_grid[idx])
 
-        dem_mean = list_z_grid[0]
+        dem_median = list_z_grid[0]
         dem_min = list_z_grid[1]
         dem_max = list_z_grid[2]
 
@@ -294,7 +294,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         dem_max += self.max_height_margin
 
         # Convert to int
-        dem_mean = dem_mean.astype(int)
+        dem_median = dem_median.astype(int)
         dem_min = np.floor(dem_min).astype(int)
         dem_max = np.ceil(dem_max).astype(int)
 
@@ -308,16 +308,16 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # saving infos
         # dem mean
-        dem_mean_path = os.path.join(output_dir, "dem_mean.tif")
+        dem_median_path = os.path.join(output_dir, "dem_median.tif")
         self.orchestrator.add_to_save_lists(
-            dem_mean_path,
-            dem_gen_cst.DEM_MEAN,
+            dem_median_path,
+            dem_gen_cst.DEM_MEDIAN,
             dem,
             dtype=np.int32,
             nodata=-32768,
-            cars_ds_name="dem_mean",
+            cars_ds_name="dem_median",
         )
-        dem.attributes[dem_gen_cst.DEM_MEAN_PATH] = dem_mean_path
+        dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH] = dem_median_path
         # dem min
         dem_min_path = os.path.join(output_dir, "dem_min.tif")
         self.orchestrator.add_to_save_lists(
@@ -369,7 +369,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         # Generate dataset
         dem_tile = xr.Dataset(
             data_vars={
-                "dem_mean": (["row", "col"], np.flip(dem_mean, axis=0)),
+                "dem_median": (["row", "col"], np.flip(dem_median, axis=0)),
                 "dem_min": (["row", "col"], np.flip(dem_min, axis=0)),
                 "dem_max": (["row", "col"], np.flip(dem_max, axis=0)),
             },

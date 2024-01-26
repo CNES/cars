@@ -487,7 +487,7 @@ class CensusMccnnSgm(
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
-        dem_mean=None,
+        dem_median=None,
         dem_min=None,
         dem_max=None,
         pair_folder=None,
@@ -510,8 +510,8 @@ class CensusMccnnSgm(
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
-        :param dem_mean: path to mean dem
-        :type dem_mean: str
+        :param dem_median: path to median dem
+        :type dem_median: str
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
@@ -589,7 +589,7 @@ class CensusMccnnSgm(
             grid_min[:, :] = dmin
             grid_max[:, :] = dmax
 
-        elif None not in (dem_min, dem_max, dem_mean):
+        elif None not in (dem_min, dem_max, dem_median):
             # use local disparity
             if None not in (dmin, dmax):
                 raise RuntimeError("Mix between local and global mode")
@@ -626,8 +626,8 @@ class CensusMccnnSgm(
             x_mean = terrain_positions[:, 0]
             y_mean = terrain_positions[:, 1]
 
-            dem_mean_list = inputs.rasterio_get_values(
-                dem_mean, x_mean, y_mean, points_cloud_conversion
+            dem_median_list = inputs.rasterio_get_values(
+                dem_median, x_mean, y_mean, points_cloud_conversion
             )
             dem_min_list = inputs.rasterio_get_values(
                 dem_min, x_mean, y_mean, points_cloud_conversion
@@ -653,7 +653,7 @@ class CensusMccnnSgm(
                 sensor_image_right["geomodel"],
                 new_x,
                 new_y,
-                z_coord=dem_mean_list,
+                z_coord=dem_median_list,
             )
 
             # Generate epipolar disp grids
@@ -707,10 +707,10 @@ class CensusMccnnSgm(
 
             # Interpolate disparity
             disp_min_points = (
-                -(dem_max_list - dem_mean_list) / disp_to_alt_ratio
+                -(dem_max_list - dem_median_list) / disp_to_alt_ratio
             )
             disp_max_points = (
-                -(dem_min_list - dem_mean_list) / disp_to_alt_ratio
+                -(dem_min_list - dem_median_list) / disp_to_alt_ratio
             )
 
             interp_min_linear = LinearInterpNearestExtrap(

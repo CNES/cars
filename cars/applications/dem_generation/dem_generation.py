@@ -107,6 +107,6 @@ class DemGeneration(ApplicationTemplate, metaclass=ABCMeta):
 
         :return: dem data computed with mean, min and max.
             dem is also saved in disk, and paths are available in attributes.
-            (DEM_MEAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
+            (DEM_MEDIAN_PATH, DEM_MIN_PATH, DEM_MAX_PATH)
         :rtype: CarsDataset
         """

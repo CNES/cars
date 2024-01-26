@@ -52,7 +52,7 @@ TERRAIN_A_PRIORI = "terrain_a_priori"
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
 DISPARITY_RANGE = "disparity_range"
-DEM_MEAN = "dem_mean"
+DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
 
