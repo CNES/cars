@@ -171,24 +171,24 @@ def get_geometry_plugin(
     :return: AbstractGeometry object to use in tests
     """
 
-    # Make OTB the default geometry plugin if available, otherwise Shareloc
-    if geometry_plugin is None:
-        # Try to get OTBGeometry plugin
-        try:
-            from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
-                OTBGeometry,
-            )
-
-            otb_module_avail = True
-        except ModuleNotFoundError:
-            logging.info("OTBGeometry not available")
-            otb_module_avail = False
-
-        # Get SharelocGeometry plugin
-        from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
-            SharelocGeometry,
+    # Try to get OTBGeometry plugin
+    try:
+        from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
+            OTBGeometry,
         )
 
+        otb_module_avail = True
+    except ModuleNotFoundError:
+        logging.info("OTBGeometry not available")
+        otb_module_avail = False
+
+    # Get SharelocGeometry plugin
+    from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
+        SharelocGeometry,
+    )
+
+    # Make OTB the default geometry plugin if available, otherwise Shareloc
+    if geometry_plugin is None:
         # 1/ Check otbApplication python module
         otb_app = importlib.util.find_spec("otbApplication")
         # 2/ Check remote modules
