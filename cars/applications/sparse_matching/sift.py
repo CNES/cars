@@ -76,6 +76,7 @@ class Sift(SparseMatching, short_name="sift"):
             "elevation_delta_upper_bound"
         ]
         self.strip_height = self.used_config["strip_height"]
+        self.strip_margin = self.used_config["strip_margin"]
         self.epipolar_error_upper_bound = self.used_config[
             "epipolar_error_upper_bound"
         ]
@@ -145,6 +146,7 @@ class Sift(SparseMatching, short_name="sift"):
             "elevation_delta_upper_bound", 9000
         )
         overloaded_conf["strip_height"] = conf.get("strip_height", 100)
+        overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
         )
@@ -204,6 +206,7 @@ class Sift(SparseMatching, short_name="sift"):
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
             "strip_height": And(int, lambda x: x > 0),
+            "strip_margin": And(int, lambda x: x > 0),
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
             "sift_matching_threshold": And(float, lambda x: x > 0),
@@ -302,33 +305,19 @@ class Sift(SparseMatching, short_name="sift"):
         )
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
+        left_margin = self.strip_margin
+        right_margin = left_margin + int(
+            math.floor(
+                self.epipolar_error_upper_bound
+                + self.epipolar_error_maximum_bias
+            )
+        )
+
+        # Compute margins for left region
+        margins["left_margin"].data = [0, left_margin, 0, left_margin]
+
         # Compute margins for right region
-        margins["right_margin"].data = [
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.ceil(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-        ]
+        margins["right_margin"].data = [0, right_margin, 0, right_margin]
 
         # add disp range info
         margins.attrs["disp_min"] = disp_min
