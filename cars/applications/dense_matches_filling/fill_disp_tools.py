@@ -105,6 +105,7 @@ def fill_central_area_using_plane(  # noqa: C901
     """
 
     # Generate a structuring element that will consider features
+
     # connected even if they touch diagonally
     struct = generate_binary_structure(2, 2)
 
@@ -288,8 +289,12 @@ def add_surrounding_nodata_to_roi(
     labeled_msk_array, __ = label(all_mask.astype(int), structure=struct)
     label_of_interest = np.unique(labeled_msk_array[np.where(roi_mask == 1)])
     if len(label_of_interest) != 1:
-        logging.error("More than one label found for ROI :\
-            {}".format(label_of_interest))
+        logging.error(
+            "More than one label found for ROI :\
+            {}".format(
+                label_of_interest
+            )
+        )
 
         for label_o_i in label_of_interest:
             roi_mask[labeled_msk_array == label_o_i] = 1
