@@ -140,10 +140,10 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["method"] = conf.get("method", "sift")
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
-            "elevation_delta_lower_bound", -1000
+            "elevation_delta_lower_bound", None
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
-            "elevation_delta_upper_bound", 9000
+            "elevation_delta_upper_bound", None
         )
         overloaded_conf["strip_height"] = conf.get("strip_height", 100)
         overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
@@ -322,6 +322,12 @@ class Sift(SparseMatching, short_name="sift"):
         # add disp range info
         margins.attrs["disp_min"] = disp_min
         margins.attrs["disp_max"] = disp_max
+
+        logging.info(
+            "Margins added to left region for matching: {}".format(
+                margins["left_margin"].data
+            )
+        )
 
         logging.info(
             "Margins added to right region for matching: {}".format(
