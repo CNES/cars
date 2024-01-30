@@ -192,10 +192,16 @@ def compute_matches(
             # Find right block extremas
             right_x_min = np.min(left_frames_block[:, 1]) + disp_lower_bound
             right_x_max = np.max(left_frames_block[:, 1]) + disp_upper_bound
-            left_id = np.min(np.where(right_frames[:, 1] > right_x_min))
-            right_id = np.max(np.where(right_frames[:, 1] < right_x_max))
-            right_descr_block = right_descr[left_id:right_id]
-            right_id_offset = left_id
+            if (
+                np.max(right_frames[:, 1]) > right_x_min
+                and np.min(right_frames[:, 1]) < right_x_max
+            ):
+                left_id = np.min(np.where(right_frames[:, 1] > right_x_min))
+                right_id = np.max(np.where(right_frames[:, 1] < right_x_max))
+                right_descr_block = right_descr[left_id:right_id]
+                right_id_offset = left_id
+            else:
+                right_descr_block = []
         else:
             right_descr_block = right_descr
             right_id_offset = 0
@@ -245,7 +251,10 @@ def compute_matches(
 
             matches_id.append(id_matches_dlr)
 
-    matches_id = np.concatenate(matches_id)
+    if matches_id:
+        matches_id = np.concatenate(matches_id)
+    else:
+        matches_id = np.empty((0, 4))
 
     # retrieve points: [Y, X, S, TH] X: 1, Y: 0
     # fyi: ``S`` is the scale and ``TH`` is the orientation (in radians)
