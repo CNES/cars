@@ -35,10 +35,14 @@ from pyproj import CRS
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
+from cars.applications.dem_generation import (
+    dem_generation_constants as dem_gen_cst,
+)
 from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
 from cars.core import roi_tools
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -485,8 +489,157 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
 
             # Generate MNT from matches
-            _ = self.dem_generation_application.run(
+            dem = self.dem_generation_application.run(
                 triangulated_matches_list,
                 cars_orchestrator.out_dir,
                 self.inputs[sens_cst.GEOID],
+            )
+            dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
+            # Generate geometry loader with dem and geoid
+            self.geom_plugin_with_dem_and_geoid = (
+                sensors_inputs.generate_geometry_plugin_with_dem(
+                    self.used_conf[GEOMETRY_PLUGIN],
+                    self.inputs,
+                    dem=dem_median,
+                )
+            )
+            dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
+            dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
+
+            # Generate geometry loader with dem and geoid
+            self.geom_plugin_with_dem_and_geoid = (
+                sensors_inputs.generate_geometry_plugin_with_dem(
+                    self.used_conf[GEOMETRY_PLUGIN],
+                    self.inputs,
+                    dem=dem_median,
+                )
+            )
+
+            sensors_inputs.update_conf(
+                self.config_full_res,
+                dem_median=dem_median,
+                dem_min=dem_min,
+                dem_max=dem_max,
+            )
+
+            for pair_key, _, _ in list_sensor_pairs:
+                geom_plugin = self.geom_plugin_with_dem_and_geoid
+                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                    # Generate grids with new MNT
+                    (
+                        pairs[pair_key]["new_grid_left"],
+                        pairs[pair_key]["new_grid_right"],
+                    ) = self.epipolar_grid_generation_app.run(
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        geom_plugin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                    )
+
+                    # Correct grids with former matches
+                    # Transform matches to new grids
+
+                    new_grid_matches_array = (
+                        AbstractGeometry.transform_matches_from_grids(
+                            pairs[pair_key]["corrected_matches_array"],
+                            pairs[pair_key]["corrected_grid_left"],
+                            pairs[pair_key]["corrected_grid_right"],
+                            pairs[pair_key]["new_grid_left"],
+                            pairs[pair_key]["new_grid_right"],
+                        )
+                    )
+
+                    # Estimate grid_correction
+                    (
+                        pairs[pair_key]["grid_correction_coef"],
+                        corrected_matches_array,
+                        pairs[pair_key]["corrected_matches_cars_ds"],
+                        _,
+                        _,
+                    ) = grid_correction.estimate_right_grid_correction(
+                        new_grid_matches_array,
+                        pairs[pair_key]["new_grid_right"],
+                        initial_cars_ds=pairs[pair_key][
+                            "epipolar_matches_left"
+                        ],
+                        save_matches=(
+                            self.sparse_matching_app.get_save_matches()
+                        ),
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                        orchestrator=cars_orchestrator,
+                    )
+
+                    # Correct grid right
+                    pairs[pair_key]["corrected_grid_right"] = (
+                        grid_correction.correct_grid(
+                            pairs[pair_key]["new_grid_right"],
+                            pairs[pair_key]["grid_correction_coef"],
+                            self.epipolar_grid_generation_app.save_grids,
+                            pairs[pair_key]["pair_folder"],
+                        )
+                    )
+                    pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
+                        "new_grid_left"
+                    ]
+
+                    # Triangulate new matches
+                    pairs[pair_key]["triangulated_matches"] = (
+                        dem_generation_tools.triangulate_sparse_matches(
+                            pairs[pair_key]["sensor_image_left"],
+                            pairs[pair_key]["sensor_image_right"],
+                            pairs[pair_key]["corrected_grid_left"],
+                            pairs[pair_key]["corrected_grid_right"],
+                            corrected_matches_array,
+                            geometry_plugin=geom_plugin,
+                        )
+                    )
+
+                    # filter triangulated_matches
+                    matches_filter_knn = (
+                        self.sparse_matching_app.get_matches_filter_knn()
+                    )
+                    matches_filter_dev_factor = (
+                        self.sparse_matching_app.get_matches_filter_dev_factor()
+                    )
+                    pairs[pair_key]["filtered_triangulated_matches"] = (
+                        sparse_matching_tools.filter_point_cloud_matches(
+                            pairs[pair_key]["triangulated_matches"],
+                            matches_filter_knn=matches_filter_knn,
+                            matches_filter_dev_factor=matches_filter_dev_factor,
+                        )
+                    )
+
+                # Compute disp_min and disp_max
+                (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(
+                    pairs[pair_key]["filtered_triangulated_matches"],
+                    cars_orchestrator,
+                    disp_margin=(
+                        self.sparse_matching_app.get_disparity_margin()
+                    ),
+                    pair_key=pair_key,
+                    disp_to_alt_ratio=pairs[pair_key][
+                        "corrected_grid_left"
+                    ].attributes["disp_to_alt_ratio"],
+                )
+
+                # Update full res pipeline configuration
+                # with grid correction and disparity range
+                sensors_inputs.update_conf(
+                    self.config_full_res,
+                    grid_correction_coef=pairs[pair_key][
+                        "grid_correction_coef"
+                    ],
+                    dmin=dmin,
+                    dmax=dmax,
+                    pair_key=pair_key,
+                )
+
+            # Save the refined full res pipeline configuration
+            cars_dataset.save_dict(
+                self.config_full_res,
+                os.path.join(out_dir, "refined_config_dense_dsm.json"),
+                safe_save=True,
             )

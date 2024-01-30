@@ -91,6 +91,10 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "sparse_matching": {
+                "method": "sift",
+                "strip_height": 150,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "generate_performance_map": True,
@@ -262,7 +266,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
 
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
                 # Uncomment the following line to update dsm reference data
@@ -329,17 +333,53 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
 
         # Uncomment the 2 following instructions to update reference data
-        # and the "sift_peak_threshold":1 in the configuration
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dem_median.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+        #         os.path.join(
+        #             ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
+        #         )
         #     ),
         # )
+        # copy2(
+        #     os.path.join(out_dir, "dem_min.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dem_min_end2end_ventoux_8bit.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dem_max.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dem_max_end2end_ventoux_8bit.tif"
+        #         )
+        #     ),
+        # )
+
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dem_median.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_ventoux_8bits.tif")
+                os.path.join(
+                    ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_min.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
             atol=0.0001,
             rtol=1e-6,
@@ -371,9 +411,10 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -440,6 +481,64 @@ def test_end2end_ventoux_unique():
                 ]
             )
 
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = (
+            "ref_output"
+            if input_config_sparse_dsm["geometry_plugin"] == "OTBGeometry"
+            else os.path.join("ref_output", "shareloc")
+        )
+
+        # Uncomment the 2 following instructions to update reference data
+        # copy2(
+        #     os.path.join(out_dir, "dem_median.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dem_median_end2end_ventoux.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dem_min.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dem_min_end2end_ventoux.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dem_max.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dem_max_end2end_ventoux.tif"
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dem_median.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_min.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dem_max.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
         # Check used_conf for sparse res
 
         gt_used_conf_orchestrator = {
@@ -481,57 +580,6 @@ def test_end2end_ventoux_unique():
                 used_conf["orchestrator"]
                 == gt_used_conf_orchestrator["orchestrator"]
             )
-            assert (
-                os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
-                    )
-                )
-            ) is True
-
-            for k in range(0, 3):
-                for j in range(0, 3):
-                    nb_str = str(k) + "_" + str(j)
-                    assert (
-                        os.path.exists(
-                            os.path.join(
-                                out_dir,
-                                "left_right",
-                                "epi_pc",
-                                nb_str + ".csv",
-                            )
-                        )
-                    ) is True
-                    assert (
-                        os.path.exists(
-                            os.path.join(
-                                out_dir,
-                                "left_right",
-                                "epi_pc",
-                                nb_str + "_attrs.json",
-                            )
-                        )
-                    ) is True
-                    assert (
-                        os.path.exists(
-                            os.path.join(
-                                out_dir,
-                                "left_right",
-                                "epi_pc",
-                                nb_str + ".laz",
-                            )
-                        )
-                    ) is True
-                    assert (
-                        os.path.exists(
-                            os.path.join(
-                                out_dir,
-                                "left_right",
-                                "epi_pc",
-                                nb_str + ".laz.prj",
-                            )
-                        )
-                    ) is True
 
             # check used_conf reentry
             _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
@@ -657,13 +705,6 @@ def test_end2end_ventoux_unique():
             )
             # check used_conf reentry
             _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
-
-        # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -887,9 +928,10 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -982,9 +1024,10 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -1289,9 +1332,10 @@ def test_end2end_ventoux_unique_split():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 200,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -1664,8 +1708,9 @@ def test_end2end_use_epipolar_a_priori():
 
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
+                "strip_height": 200,
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
@@ -1700,11 +1745,11 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -29
+                -28
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -27
+                < -26
             )
             assert (
                 24
@@ -1732,7 +1777,8 @@ def test_end2end_use_epipolar_a_priori():
             #     os.path.join(out_dir, "dem_median.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "dem_median" + "_end2end_ventoux.tif"
+            #             ref_output_dir,
+            #             "dem_median_end2end_ventoux_no_srtm.tif"
             #         )
             #     ),
             # )
@@ -1740,7 +1786,8 @@ def test_end2end_use_epipolar_a_priori():
             #     os.path.join(out_dir, "dem_min.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "dem_min" + "_end2end_ventoux.tif"
+            #             ref_output_dir,
+            #             "dem_min_end2end_ventoux_no_srtm.tif"
             #         )
             #     ),
             # )
@@ -1748,7 +1795,8 @@ def test_end2end_use_epipolar_a_priori():
             #     os.path.join(out_dir, "dem_max.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "dem_max" + "_end2end_ventoux.tif"
+            #             ref_output_dir,
+            #             "dem_max_end2end_ventoux_no_srtm.tif"
             #         )
             #     ),
             # )
@@ -1757,7 +1805,7 @@ def test_end2end_use_epipolar_a_priori():
                 os.path.join(out_dir, "dem_median.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "dem_median_end2end_ventoux.tif"
+                        ref_output_dir, "dem_median_end2end_ventoux_no_srtm.tif"
                     )
                 ),
                 atol=0.0001,
@@ -1766,7 +1814,9 @@ def test_end2end_use_epipolar_a_priori():
             assert_same_images(
                 os.path.join(out_dir, "dem_min.tif"),
                 absolute_data_path(
-                    os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
+                    os.path.join(
+                        ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
+                    )
                 ),
                 atol=0.0001,
                 rtol=1e-6,
@@ -1774,7 +1824,9 @@ def test_end2end_use_epipolar_a_priori():
             assert_same_images(
                 os.path.join(out_dir, "dem_max.tif"),
                 absolute_data_path(
-                    os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
+                    os.path.join(
+                        ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
+                    )
                 ),
                 atol=0.0001,
                 rtol=1e-6,
@@ -2021,13 +2073,14 @@ def test_prepare_ventoux_bias():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 100,
                 "epipolar_error_upper_bound": 43.0,
                 "epipolar_error_maximum_bias": 50.0,
-                "elevation_delta_lower_bound": -120.0,
-                "elevation_delta_upper_bound": 20.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 120.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
             },
@@ -2095,12 +2148,12 @@ def test_end2end_ventoux_with_color():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {
                 "method": "bicubic",
-                "epi_tile_size": 250,
                 "save_epipolar_image": True,
                 "save_epipolar_color": False,
             },
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2152,34 +2205,6 @@ def test_end2end_ventoux_with_color():
                     "corrected_filtered_matches"
                 ]
             )
-
-            pc1 = "675375.0_4897185.0"
-            pc2 = "675240.0_4897185.0"
-
-            assert (
-                os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", pc1 + "_left_right.laz"
-                    )
-                )
-                and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", pc1 + "_left_right.csv"
-                    )
-                )
-            ) is True
-            assert (
-                os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", pc2 + "_left_right.laz"
-                    )
-                )
-                and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", pc2 + "_left_right.csv"
-                    )
-                )
-            ) is True
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -2391,12 +2416,12 @@ def test_end2end_ventoux_with_classif():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {
                 "method": "bicubic",
-                "epi_tile_size": 250,
                 "save_epipolar_image": True,
                 "save_epipolar_color": False,
             },
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2447,31 +2472,6 @@ def test_end2end_ventoux_with_classif():
                     "corrected_filtered_matches"
                 ]
             )
-
-            assert (
-                os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.laz"
-                    )
-                )
-                and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675375.0_4897185.0.csv"
-                    )
-                )
-            ) is True
-            assert (
-                os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675375.0_4897185.0.laz"
-                    )
-                )
-                and os.path.exists(
-                    os.path.join(
-                        out_dir, "points_cloud", "675240.0_4897185.0.csv"
-                    )
-                )
-            ) is True
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -2668,13 +2668,14 @@ def test_compute_dsm_with_roi_ventoux():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -1000,  # -20.0,
                 "elevation_delta_upper_bound": 1000,  # 20.0,
@@ -2822,9 +2823,10 @@ def test_compute_dsm_with_snap_to_img1():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2945,9 +2947,10 @@ def test_end2end_quality_stats():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
@@ -3003,8 +3006,8 @@ def test_end2end_quality_stats():
             ]
             assert out_disp_compute["global_disp_min"] > -29
             assert out_disp_compute["global_disp_min"] < -24
-            assert out_disp_compute["global_disp_max"] > 24
-            assert out_disp_compute["global_disp_max"] < 30
+            assert out_disp_compute["global_disp_max"] > 25
+            assert out_disp_compute["global_disp_max"] < 31
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3221,9 +3224,10 @@ def test_end2end_ventoux_egm96_geoid():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3355,9 +3359,10 @@ def test_end2end_ventoux_egm96_geoid():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3447,9 +3452,10 @@ def test_end2end_paca_with_mask():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3567,9 +3573,10 @@ def test_end2end_paca_with_mask():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "epi_tile_size": 250},
+            "resampling": {"method": "bicubic"},
             "sparse_matching": {
                 "method": "sift",
+                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
