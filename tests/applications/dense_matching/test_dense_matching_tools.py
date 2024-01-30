@@ -57,7 +57,7 @@ def test_optimal_tile_size():
         0, disp, min_tile_size=0, max_tile_size=1000, max_ram_per_worker=mem
     )
 
-    assert res == 400
+    assert res == 350
 
     res = dense_matching_tools.optimal_tile_size_pandora_plugin_libsgm(
         0, disp, min_tile_size=0, max_tile_size=300, max_ram_per_worker=mem
@@ -83,6 +83,27 @@ def test_optimal_tile_size():
         )
         == 33
     )
+
+
+@pytest.mark.unit_tests
+def test_get_max_disp_from_opt_tile_size():
+    """
+    Test get_max_disp_from_opt_tile_size function
+    """
+
+    max_ram_per_worker = 313
+
+    max_range = dense_matching_tools.get_max_disp_from_opt_tile_size(
+        300, max_ram_per_worker, margin=20, used_disparity_range=0
+    )
+
+    assert max_range == 76
+
+    max_range = dense_matching_tools.get_max_disp_from_opt_tile_size(
+        300, max_ram_per_worker, margin=20, used_disparity_range=100
+    )
+
+    assert max_range == 58
 
 
 @pytest.mark.unit_tests

@@ -45,6 +45,8 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
+from cars.applications.dense_matches_filling import fill_disp_tools
+
 # CARS imports
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
@@ -206,6 +208,7 @@ def create_disp_dataset(  # noqa: C901
     disp_to_alt_ratio=None,
     disp_min_grid=None,
     disp_max_grid=None,
+    cropped_range=None,
 ) -> xr.Dataset:
     """
     Create the disparity dataset.
@@ -224,6 +227,8 @@ def create_disp_dataset(  # noqa: C901
     :type disp_to_alt_ratio: float
     :param disp_min_grid: disparity min grid
     :param disp_max_grid: disparity max grid
+    :param cropped_range: true if disparity range was cropped
+    :type cropped_range: numpy array
 
     :return: disparity dataset as used in cars
     """
@@ -323,6 +328,10 @@ def create_disp_dataset(  # noqa: C901
         disp_max_grid = disp_max_grid[
             ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
         ]
+    if cropped_range is not None:
+        cropped_range = cropped_range[
+            ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]
+        ]
 
     # Fill disparity array with 0 value for invalid points
     disp_map[pandora_masks[cst_disp.VALID] == 0] = 0
@@ -380,6 +389,10 @@ def create_disp_dataset(  # noqa: C901
         disp_ds, disp_min_grid=disp_min_grid, disp_max_grid=disp_max_grid
     )
 
+    # Add filling infos
+    if cropped_range is not None:
+        disp_ds = add_crop_info(disp_ds, cropped_range)
+
     if compute_disparity_masks:
         for key, val in pandora_masks.items():
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
@@ -388,6 +401,22 @@ def create_disp_dataset(  # noqa: C901
 
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]
 
+    return disp_ds
+
+
+def add_crop_info(disp_ds, cropped_range):
+    """
+    Add crop info
+
+    :param disp: disp xarray
+    :param cropped_range: was cropped range, bool
+
+    :return updated dataset
+    """
+    disp_ds = fill_disp_tools.add_empty_filling_band(
+        disp_ds, ["cropped_disp_range"]
+    )
+    fill_disp_tools.update_filling(disp_ds, cropped_range, "cropped_disp_range")
     return disp_ds
 
 
@@ -666,6 +695,7 @@ def compute_disparity(
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
     disp_to_alt_ratio=None,
+    cropped_range=None,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will compute disparity.
@@ -691,6 +721,8 @@ def compute_disparity(
     :type perf_ambiguity_threshold: float
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
+    :param cropped_range: true if disparity range was cropped
+    :type cropped_range: numpy array
     :return: Disparity dataset
     """
 
@@ -778,6 +810,7 @@ def compute_disparity(
         disp_to_alt_ratio=disp_to_alt_ratio,
         disp_min_grid=disp_min_grid,
         disp_max_grid=disp_max_grid,
+        cropped_range=cropped_range,
     )
 
     return disp_dataset
@@ -884,7 +917,11 @@ def optimal_tile_size_pandora_plugin_libsgm(
         )
         tile_size = tile_size_rounding
     else:
-        tile_size = (1.0 - margin / 100.0) * np.sqrt(row_or_col)
+        # nb_pixels = tile_size x (tile_size + disp)
+        # hence tile_size not equal to sqrt(nb_pixels)
+        # but sqrt(nb_pixels + (disp/2)**2) - disp/2
+        tile_size = np.sqrt(row_or_col + (disp / 2) ** 2) - disp / 2
+        tile_size = (1.0 - margin / 100.0) * tile_size
         tile_size = tile_size_rounding * int(tile_size / tile_size_rounding)
 
     if tile_size > max_tile_size:
@@ -893,6 +930,52 @@ def optimal_tile_size_pandora_plugin_libsgm(
         tile_size = min_tile_size
 
     return tile_size
+
+
+def get_max_disp_from_opt_tile_size(
+    opt_epipolar_tile_size, max_ram_per_worker, margin=0, used_disparity_range=0
+):
+    """
+    Compute optimal tile size according to estimated memory usage
+    (pandora_plugin_libsgm)
+    Returned optimal tile size will be at least equal to tile_size_rounding.
+
+    :param opt_epipolar_tile_size: used tile size
+    :param max_ram_per_worker: amount of RAM allocated per worker
+    :param tile_size_rounding: Optimal tile size will be aligned to multiples\
+                               of tile_size_rounding
+    :param margin: margin to remove to the computed tile size
+                   (as a percent of the computed tile size)
+    :returns: max disp range to use
+    """
+
+    import_ = 200
+    memory = max_ram_per_worker
+
+    # not depending on disp
+    image = 32 * 2
+    disp_ref = 32
+    validity_mask_ref = 16
+    confidence = 32
+    penal = 8 * 32 * 2
+    img_crop = 32 * 2
+    # depending on disp  : data * disp
+    cv_ = 32
+    nan_ = 8
+    cv_uint = 8
+
+    row = opt_epipolar_tile_size / (1.0 - margin / 100.0)
+    col = row + used_disparity_range
+    row_or_col = row * col
+    tot = float(((memory - import_) * 2**23)) / row_or_col
+
+    disp_tot = tot - (
+        image + disp_ref + validity_mask_ref + confidence + penal + img_crop
+    )
+    # disp_tot = disp * (2 * cv_ + nan_ + cv_uint)
+    max_range = int(disp_tot / (2 * cv_ + nan_ + cv_uint) + 1)
+
+    return max_range
 
 
 class LinearInterpNearestExtrap:  # pylint: disable=too-few-public-methods
