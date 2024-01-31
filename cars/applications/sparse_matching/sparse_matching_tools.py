@@ -69,6 +69,8 @@ def compute_matches(
     edge_threshold: float = 5.0,
     magnification: float = 2.0,
     backmatching: bool = True,
+    disp_lower_bound=None,
+    disp_upper_bound=None,
 ):
     """
     Compute matches between left and right
@@ -159,47 +161,105 @@ def compute_matches(
 
     # translate matches according image origin
     # revert origin due to frame convention: [Y, X, S, TH] X: 1, Y: 0)
-    left_frames[..., 0:2] += left_origin[::-1]
-    right_frames[..., 0:2] += right_origin[::-1]
+    left_frames[:, 0:2] += left_origin[::-1]
+    right_frames[:, 0:2] += right_origin[::-1]
 
-    # compute euclidean matrix distance
-    emd = euclidean_matrix_distance(left_descr, right_descr)
+    # sort frames (and descriptors) along X axis
+    order = np.argsort(left_frames[:, 1])
+    left_frames = left_frames[order]
+    left_descr = left_descr[order]
 
-    # get nearest sift (regarding descriptors)
-    idx_nearest_dlr = (np.arange(np.shape(emd)[0]), np.nanargmin(emd, axis=1))
-    idx_nearest_drl = (np.nanargmin(emd, axis=0), np.arange(np.shape(emd)[1]))
+    order = np.argsort(right_frames[:, 1])
+    right_frames = right_frames[order]
+    right_descr = right_descr[order]
 
-    # get absolute distances
-    dist_dlr = emd[idx_nearest_dlr]
-    dist_drl = emd[idx_nearest_drl]
+    # compute best matches by blocks
+    splits = np.arange(500, len(left_frames), 500)
+    left_frames_splitted = np.split(left_frames, splits)
+    left_descr_splitted = np.split(left_descr, splits)
+    splits = np.insert(splits, 0, 0)
 
-    # get relative distance (ratio to second nearest distance)
-    second_dist_dlr = np.partition(emd, 1, axis=1)[:, 1]
-    dist_dlr /= second_dist_dlr
-    second_dist_drl = np.partition(emd, 1, axis=0)[1, :]
-    dist_drl /= second_dist_drl
+    matches_id = []
 
-    # stack matches which its distance
-    idx_matches_dlr = np.column_stack((*idx_nearest_dlr, dist_dlr))
-    idx_matches_drl = np.column_stack((*idx_nearest_drl, dist_drl))
+    for (
+        left_id_offset,
+        left_frames_block,
+        left_descr_block,
+    ) in zip(  # noqa: B905
+        splits, left_frames_splitted, left_descr_splitted
+    ):
+        if disp_lower_bound is not None and disp_upper_bound is not None:
+            # Find right block extremas
+            right_x_min = np.min(left_frames_block[:, 1]) + disp_lower_bound
+            right_x_max = np.max(left_frames_block[:, 1]) + disp_upper_bound
+            if (
+                np.max(right_frames[:, 1]) > right_x_min
+                and np.min(right_frames[:, 1]) < right_x_max
+            ):
+                left_id = np.min(np.where(right_frames[:, 1] > right_x_min))
+                right_id = np.max(np.where(right_frames[:, 1] < right_x_max))
+                right_descr_block = right_descr[left_id:right_id]
+                right_id_offset = left_id
+            else:
+                right_descr_block = []
+        else:
+            right_descr_block = right_descr
+            right_id_offset = 0
 
-    # check backmatching
-    if backmatching is True:
-        back = (
-            idx_matches_dlr[:, 0]
-            == idx_matches_drl[idx_matches_dlr[:, 1].astype(int)][:, 0]
-        )
-        matches_idx = idx_matches_dlr[back]
+        if len(right_descr_block) >= 2:
+            # compute euclidean matrix distance
+            emd = euclidean_matrix_distance(left_descr_block, right_descr_block)
+
+            # get nearest sift (regarding descriptors)
+            id_nearest_dlr = (
+                np.arange(np.shape(emd)[0]),
+                np.nanargmin(emd, axis=1),
+            )
+            id_nearest_drl = (
+                np.nanargmin(emd, axis=0),
+                np.arange(np.shape(emd)[1]),
+            )
+
+            # get absolute distances
+            dist_dlr = emd[id_nearest_dlr]
+            dist_drl = emd[id_nearest_drl]
+
+            # get relative distance (ratio to second nearest distance)
+            second_dist_dlr = np.partition(emd, 1, axis=1)[:, 1]
+            dist_dlr /= second_dist_dlr
+            second_dist_drl = np.partition(emd, 1, axis=0)[1, :]
+            dist_drl /= second_dist_drl
+
+            # stack matches which its distance
+            id_matches_dlr = np.column_stack((*id_nearest_dlr, dist_dlr))
+            id_matches_drl = np.column_stack((*id_nearest_drl, dist_drl))
+
+            # check backmatching
+            if backmatching is True:
+                back = (
+                    id_matches_dlr[:, 0]
+                    == id_matches_drl[id_matches_dlr[:, 1].astype(int)][:, 0]
+                )
+                id_matches_dlr = id_matches_dlr[back]
+
+            # threshold matches
+            id_matches_dlr = id_matches_dlr[
+                id_matches_dlr[:, -1] < matching_threshold, :
+            ][:, :-1]
+
+            id_matches_dlr += (left_id_offset, right_id_offset)
+
+            matches_id.append(id_matches_dlr)
+
+    if matches_id:
+        matches_id = np.concatenate(matches_id)
     else:
-        matches_idx = idx_matches_dlr
-
-    # threshold matches
-    matches_idx = matches_idx[matches_idx[:, -1] < matching_threshold, :]
+        matches_id = np.empty((0, 4))
 
     # retrieve points: [Y, X, S, TH] X: 1, Y: 0
     # fyi: ``S`` is the scale and ``TH`` is the orientation (in radians)
-    left_points = left_frames[matches_idx[:, 0].astype(int), 1::-1]
-    right_points = right_frames[matches_idx[:, 1].astype(int), 1::-1]
+    left_points = left_frames[matches_id[:, 0].astype(int), 1::-1]
+    right_points = right_frames[matches_id[:, 1].astype(int), 1::-1]
     matches = np.concatenate((left_points, right_points), axis=1)
     return matches
 
@@ -214,6 +274,8 @@ def dataset_matching(
     edge_threshold=5.0,
     magnification=2.0,
     backmatching=True,
+    disp_lower_bound=None,
+    disp_upper_bound=None,
 ):
     """
     Compute sift matches between two datasets
@@ -261,6 +323,8 @@ def dataset_matching(
         edge_threshold=edge_threshold,
         magnification=magnification,
         backmatching=backmatching,
+        disp_lower_bound=disp_lower_bound,
+        disp_upper_bound=disp_upper_bound,
     )
 
     return matches

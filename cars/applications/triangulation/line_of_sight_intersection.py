@@ -335,12 +335,10 @@ class LineOfSightIntersection(
             "largest_epipolar_region": epipolar_image.attributes[
                 "largest_epipolar_region"
             ],
-            "opt_epipolar_tile_size": epipolar_image.attributes[
-                "opt_epipolar_tile_size"
-            ],
             "source_pc_names": source_pc_names,
             "source_pc_name": pair_key,
             "color_type": epipolar_image.attributes["color_type"],
+            "opt_epipolar_tile_size": epipolar_image.attributes["tile_width"],
         }
 
         if epipolar_disparity_map.dataset_type in ("arrays", "points"):

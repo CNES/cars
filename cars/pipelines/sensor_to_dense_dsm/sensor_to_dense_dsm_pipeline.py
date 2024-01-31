@@ -165,10 +165,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.generate_terrain_products,
             no_merging="no_merging" in self.used_conf[PIPELINE],
         )
-        self.used_conf[APPLICATIONS] = self.application_conf
 
         # Check conf application vs inputs application
-        self.check_inputs_with_applications(self.inputs, self.application_conf)
+        self.application_conf = self.check_inputs_with_applications(
+            self.inputs, self.application_conf
+        )
+
+        self.used_conf[APPLICATIONS] = self.application_conf
 
     @staticmethod
     def check_inputs(conf, config_json_dir=None):
@@ -387,8 +390,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    @staticmethod
-    def check_inputs_with_applications(inputs_conf, application_conf):
+    def check_inputs_with_applications(self, inputs_conf, application_conf):
         """
         Check for each application the input configuration consistency
 
@@ -413,6 +415,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         + "point_cloud_rasterization should be "
                         + "fixed according to the epsg"
                     )
+
+        initial_elevation = self.inputs["initial_elevation"] is not None
+        if self.sparse_mtch_app.elevation_delta_lower_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
+                -100 if initial_elevation else -1000
+            )
+            self.sparse_mtch_app.elevation_delta_lower_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_lower_bound"]
+            )
+        if self.sparse_mtch_app.elevation_delta_upper_bound is None:
+            self.sparse_mtch_app.used_config["elevation_delta_upper_bound"] = (
+                1000 if initial_elevation else 9000
+            )
+            self.sparse_mtch_app.elevation_delta_upper_bound = (
+                self.sparse_mtch_app.used_config["elevation_delta_upper_bound"]
+            )
+        application_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # check classification application parameter compare
         # to each sensors inputs classification list
@@ -449,6 +468,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                         ]
                                     )
                                 )
+
+        return application_conf
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self):  # noqa C901
@@ -604,6 +625,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_folder=pairs[pair_key]["pair_folder"],
                         pair_key=pair_key,
                         margins_fun=self.sparse_mtch_app.get_margins_fun(),
+                        tile_width=None,
+                        tile_height=self.sparse_mtch_app.strip_height,
                         add_color=False,
                     )
 
@@ -1031,7 +1054,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins_fun=dense_matching_margins_fun,
-                    optimum_tile_size=optimum_tile_size,
+                    tile_width=optimum_tile_size,
+                    tile_height=optimum_tile_size,
                     add_color=True,
                     epipolar_roi=epipolar_roi,
                 )

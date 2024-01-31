@@ -105,7 +105,8 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         pair_folder=None,
         pair_key="PAIR_0",
         margins_fun=None,
-        optimum_tile_size=None,
+        tile_width=None,
+        tile_height=None,
         add_color=True,
         epipolar_roi=None,
     ):  # noqa: C901

@@ -34,7 +34,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import And, Checker
+from json_checker import Checker
 from shapely.geometry import Polygon
 
 # CARS imports
@@ -71,7 +71,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # check conf
         self.used_method = self.used_config["method"]
-        self.epi_tile_size = self.used_config["epi_tile_size"]
+
         # Saving bools
         self.save_epipolar_image = self.used_config["save_epipolar_image"]
         self.save_epipolar_color = self.used_config["save_epipolar_color"]
@@ -102,7 +102,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # get rasterization parameter
         overloaded_conf["method"] = conf.get("method", "bicubic")
-        overloaded_conf["epi_tile_size"] = conf.get("epi_tile_size", 500)
         # Saving bools
         overloaded_conf["save_epipolar_image"] = conf.get(
             "save_epipolar_image", False
@@ -113,7 +112,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         rectification_schema = {
             "method": str,
-            "epi_tile_size": And(int, lambda x: x > 0),
             "save_epipolar_image": bool,
             "save_epipolar_color": bool,
         }
@@ -127,7 +125,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
     def pre_run(
         self,
         grid_left,
-        optimum_tile_size,
+        tile_width,
+        tile_height,
     ):
         """
         Pre run some computations : tiling grid
@@ -159,15 +158,16 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         logging.debug("Origin of epipolar grid: {}".format(origin))
         logging.debug("Spacing of epipolar grid: {}".format(spacing))
 
-        # get optimum tile_size
-        if optimum_tile_size is None:
-            opt_epipolar_tile_size = self.epi_tile_size
-        else:
-            opt_epipolar_tile_size = optimum_tile_size
+        if tile_width is None:
+            tile_width = grid_left.attributes["epipolar_size_x"]
+        if tile_height is None:
+            tile_height = grid_left.attributes["epipolar_size_y"]
 
         logging.info(
-            "Optimal tile size for epipolar regions: "
-            "{size}x{size} pixels".format(size=opt_epipolar_tile_size)
+            "Tile size for epipolar regions: "
+            "{width}x{height} pixels".format(
+                width=tile_width, height=tile_height
+            )
         )
 
         epipolar_regions_grid = tiling.generate_tiling_grid(
@@ -175,8 +175,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             0,
             grid_left.attributes["epipolar_size_y"],
             grid_left.attributes["epipolar_size_x"],
-            opt_epipolar_tile_size,
-            opt_epipolar_tile_size,
+            tile_height,
+            tile_width,
         )
 
         logging.info(
@@ -187,7 +187,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         return (
             epipolar_regions_grid,
-            opt_epipolar_tile_size,
+            tile_width,
+            tile_height,
             largest_epipolar_region,
         )
 
@@ -201,7 +202,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         pair_folder=None,
         pair_key="PAIR_0",
         margins_fun=None,
-        optimum_tile_size=None,
+        tile_width=None,
+        tile_height=None,
         add_color=True,
         epipolar_roi=None,
     ):  # noqa: C901
@@ -306,11 +308,13 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Get grids and regions for current pair
         (
             epipolar_regions_grid,
-            opt_epipolar_tile_size,
+            tile_width,
+            tile_height,
             largest_epipolar_region,
         ) = self.pre_run(
             grid_left,
-            optimum_tile_size,
+            tile_width,
+            tile_height,
         )
 
         epipolar_images_left, epipolar_images_right = None, None
@@ -354,6 +358,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         ) = format_transformation.grid_margins_2_overlaps(
             epipolar_images_left.tiling_grid, margins_fun
         )
+
         # add image type in attributes for future checking
         im_type = inputs.rasterio_get_image_type(
             sensor_image_left[sens_cst.INPUT_IMG]
@@ -368,7 +373,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # update attributes
         epipolar_images_attributes = {
             "largest_epipolar_region": largest_epipolar_region,
-            "opt_epipolar_tile_size": opt_epipolar_tile_size,
+            "tile_width": tile_width,
+            "tile_height": tile_height,
             "disp_min_tiling": used_disp_min,
             "disp_max_tiling": used_disp_max,
             "image_type": im_type,

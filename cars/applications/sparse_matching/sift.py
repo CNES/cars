@@ -75,6 +75,8 @@ class Sift(SparseMatching, short_name="sift"):
         self.elevation_delta_upper_bound = self.used_config[
             "elevation_delta_upper_bound"
         ]
+        self.strip_height = self.used_config["strip_height"]
+        self.strip_margin = self.used_config["strip_margin"]
         self.epipolar_error_upper_bound = self.used_config[
             "epipolar_error_upper_bound"
         ]
@@ -138,11 +140,13 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["method"] = conf.get("method", "sift")
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
-            "elevation_delta_lower_bound", -9000
+            "elevation_delta_lower_bound", None
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
-            "elevation_delta_upper_bound", 9000
+            "elevation_delta_upper_bound", None
         )
+        overloaded_conf["strip_height"] = conf.get("strip_height", 100)
+        overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
         )
@@ -201,6 +205,8 @@ class Sift(SparseMatching, short_name="sift"):
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
+            "strip_height": And(int, lambda x: x > 0),
+            "strip_margin": And(int, lambda x: x > 0),
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
             "sift_matching_threshold": And(float, lambda x: x > 0),
@@ -299,37 +305,29 @@ class Sift(SparseMatching, short_name="sift"):
         )
         margins["right_margin"] = xr.DataArray(data, dims=["col"])
 
+        left_margin = self.strip_margin
+        right_margin = left_margin + int(
+            math.floor(
+                self.epipolar_error_upper_bound
+                + self.epipolar_error_maximum_bias
+            )
+        )
+
+        # Compute margins for left region
+        margins["left_margin"].data = [0, left_margin, 0, left_margin]
+
         # Compute margins for right region
-        margins["right_margin"].data = [
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.floor(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-            int(
-                math.ceil(
-                    self.epipolar_error_upper_bound
-                    + self.epipolar_error_maximum_bias
-                )
-            ),
-        ]
+        margins["right_margin"].data = [0, right_margin, 0, right_margin]
 
         # add disp range info
         margins.attrs["disp_min"] = disp_min
         margins.attrs["disp_max"] = disp_max
+
+        logging.info(
+            "Margins added to left region for matching: {}".format(
+                margins["left_margin"].data
+            )
+        )
 
         logging.info(
             "Margins added to right region for matching: {}".format(
@@ -465,38 +463,25 @@ class Sift(SparseMatching, short_name="sift"):
             # Save disparity maps
             if self.save_matches:
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_folder, "epi_matches_left.tif"),
+                    os.path.join(pair_folder, "epi_matches_left"),
                     None,
                     epipolar_disparity_map_left,
                     cars_ds_name="epi_matches_left",
                 )
 
-            # Get max window size
-            image_tiling_grid = epipolar_images_left.tiling_grid
-
-            max_window_col_size = np.max(
-                image_tiling_grid[:, :, 3] - image_tiling_grid[:, :, 2]
-            )
-
             # Compute disparity range
             if self.elevation_delta_lower_bound is None:
-                disp_lower_bound = -np.inf
-                min_offset = -image_tiling_grid.shape[0]
-            else:
-                disp_lower_bound = (
-                    self.elevation_delta_lower_bound / disp_to_alt_ratio
-                )
-                min_offset = math.floor(disp_lower_bound / max_window_col_size)
-            if self.elevation_delta_upper_bound is None:
                 disp_upper_bound = np.inf
-                max_offset = image_tiling_grid.shape[0]
             else:
                 disp_upper_bound = (
-                    self.elevation_delta_upper_bound / disp_to_alt_ratio
+                    -self.elevation_delta_lower_bound / disp_to_alt_ratio
                 )
-                max_offset = math.ceil(disp_upper_bound / max_window_col_size)
-
-            offsets = range(min_offset, max_offset + 1)
+            if self.elevation_delta_upper_bound is None:
+                disp_lower_bound = -np.inf
+            else:
+                disp_lower_bound = (
+                    -self.elevation_delta_upper_bound / disp_to_alt_ratio
+                )
 
             attributes = {
                 "disp_lower_bound": disp_lower_bound,
@@ -537,61 +522,34 @@ class Sift(SparseMatching, short_name="sift"):
             )
 
             # Generate disparity maps
-            for col in range(epipolar_disparity_map_left.shape[1]):
-                for row in range(epipolar_disparity_map_left.shape[0]):
-                    # initialize list of matches
-                    delayed_matches_row_col = []
-                    # iterate on offsets
-                    for offset in offsets:
-                        if (
-                            0
-                            <= col + offset
-                            < epipolar_disparity_map_left.shape[1]
-                        ):
-                            # Compute matches
-                            if type(None) not in (
-                                type(epipolar_images_left[row, col]),
-                                type(epipolar_images_right[row, col + offset]),
-                            ):
-                                delayed_matches_row_col.append(
-                                    self.orchestrator.cluster.create_task(
-                                        compute_matches_wrapper, nout=1
-                                    )(
-                                        epipolar_images_left[row, col],
-                                        epipolar_images_right[
-                                            row, col + offset
-                                        ],
-                                        matching_threshold=(
-                                            self.sift_matching_threshold
-                                        ),
-                                        n_octave=self.sift_n_octave,
-                                        n_scale_per_octave=(
-                                            self.sift_n_scale_per_octave
-                                        ),
-                                        peak_threshold=tmp_sift_peak_threshold,
-                                        edge_threshold=self.sift_edge_threshold,
-                                        magnification=self.sift_magnification,
-                                        backmatching=self.sift_back_matching,
-                                        disp_lower_bound=disp_lower_bound,
-                                        disp_upper_bound=disp_upper_bound,
-                                    )
-                                )
-
-                    # Merge matches corresponding to left tile
-                    if len(delayed_matches_row_col) > 0:
-                        # update saving_info with row and col
-                        full_saving_info_left = ocht.update_saving_infos(
-                            saving_info_left, row=row, col=col
-                        )
-
-                        (
-                            epipolar_disparity_map_left[row, col]
-                        ) = self.orchestrator.cluster.create_task(
-                            merge_matches_wrapper, nout=1
-                        )(
-                            delayed_matches_row_col,
-                            saving_info_left=full_saving_info_left,
-                        )
+            for row in range(epipolar_disparity_map_left.shape[0]):
+                # initialize list of matches
+                full_saving_info_left = ocht.update_saving_infos(
+                    saving_info_left, row=row, col=0
+                )
+                # Compute matches
+                if type(None) not in (
+                    type(epipolar_images_left[row, 0]),
+                    type(epipolar_images_right[row, 0]),
+                ):
+                    (
+                        epipolar_disparity_map_left[row, 0]
+                    ) = self.orchestrator.cluster.create_task(
+                        compute_matches_wrapper, nout=1
+                    )(
+                        epipolar_images_left[row, 0],
+                        epipolar_images_right[row, 0],
+                        matching_threshold=self.sift_matching_threshold,
+                        n_octave=self.sift_n_octave,
+                        n_scale_per_octave=self.sift_n_scale_per_octave,
+                        peak_threshold=tmp_sift_peak_threshold,
+                        edge_threshold=self.sift_edge_threshold,
+                        magnification=self.sift_magnification,
+                        backmatching=self.sift_back_matching,
+                        disp_lower_bound=disp_lower_bound,
+                        disp_upper_bound=disp_upper_bound,
+                        saving_info_left=full_saving_info_left,
+                    )
 
         else:
             logging.error(
@@ -806,6 +764,7 @@ def compute_matches_wrapper(
     backmatching=None,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    saving_info_left=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute matches from image objects.
@@ -851,6 +810,8 @@ def compute_matches_wrapper(
         edge_threshold=edge_threshold,
         magnification=magnification,
         backmatching=backmatching,
+        disp_lower_bound=disp_lower_bound,
+        disp_upper_bound=disp_upper_bound,
     )
 
     # Filter matches outside disparity range
@@ -880,25 +841,8 @@ def compute_matches_wrapper(
     left_image_object[cst.EPI_MSK].values = saved_left_mask
     right_image_object[cst.EPI_MSK].values = saved_right_mask
 
-    return left_matches_dataframe
-
-
-def merge_matches_wrapper(list_of_matches, saving_info_left=None):
-    """
-    Concatenate matches
-
-    :param list_of_matches: list of matches
-    :type list_of_matches: list(pandas.DataFrame)
-
-    """
-    concatenated_matches = pandas.concat(
-        list_of_matches,
-        ignore_index=True,
-        sort=False,
-    )
-
     cars_dataset.fill_dataframe(
-        concatenated_matches, saving_info=saving_info_left, attributes=None
+        left_matches_dataframe, saving_info=saving_info_left, attributes=None
     )
 
-    return concatenated_matches
+    return left_matches_dataframe

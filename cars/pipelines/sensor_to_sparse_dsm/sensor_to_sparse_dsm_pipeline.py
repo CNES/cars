@@ -41,7 +41,7 @@ from cars.applications.dem_generation import (
 from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import sparse_matching_tools
-from cars.core import preprocessing, roi_tools
+from cars.core import roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -333,20 +333,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             )
 
             # Run applications
-
-            # Initialize epsg for terrain tiles
-            epsg = self.inputs[sens_cst.EPSG]
-            if epsg is not None:
-                # Compute roi polygon, in input EPSG
-                roi_poly = preprocessing.compute_roi_poly(
-                    self.input_roi_poly, self.input_roi_epsg, epsg
-                )
-
-            list_terrain_roi = []
-
-            # initialise lists of points
-            list_epipolar_points_cloud = []
-
             list_sensor_pairs = sensors_inputs.generate_inputs(
                 self.inputs, self.geom_plugin_without_dem_and_geoid
             )
@@ -407,6 +393,8 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     margins_fun=self.sparse_matching_app.get_margins_fun(),
+                    tile_width=None,
+                    tile_height=self.sparse_matching_app.strip_height,
                     add_color=False,
                 )
 
@@ -648,118 +636,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     dmax=dmax,
                     pair_key=pair_key,
                 )
-                if epsg is None:
-                    # compute epsg
-                    epsg = preprocessing.compute_epsg(
-                        pairs[pair_key]["sensor_image_left"],
-                        pairs[pair_key]["sensor_image_right"],
-                        pairs[pair_key]["corrected_grid_left"],
-                        pairs[pair_key]["corrected_grid_right"],
-                        self.geom_plugin_with_dem_and_geoid,
-                        disp_min=dmin,
-                        disp_max=dmax,
-                    )
-                    # Compute roi polygon, in input EPSG
-                    roi_poly = preprocessing.compute_roi_poly(
-                        self.input_roi_poly, self.input_roi_epsg, epsg
-                    )
 
-                # Run epipolar resampling
-                (
-                    new_epipolar_image_left,
-                    _,
-                ) = self.resampling_application.run(
-                    pairs[pair_key]["sensor_image_left"],
-                    pairs[pair_key]["sensor_image_right"],
-                    pairs[pair_key]["corrected_grid_left"],
-                    pairs[pair_key]["corrected_grid_right"],
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
-                    pair_key=pair_key,
-                    margins_fun=self.sparse_matching_app.get_margins_fun(
-                        disp_min=dmin, disp_max=dmax
-                    ),
-                    add_color=False,
-                )
-
-                # Run epipolar triangulation application
-                (epipolar_points_cloud) = self.triangulation_application.run(
-                    pairs[pair_key]["sensor_image_left"],
-                    pairs[pair_key]["sensor_image_right"],
-                    new_epipolar_image_left,
-                    pairs[pair_key]["corrected_grid_left"],
-                    pairs[pair_key]["corrected_grid_right"],
-                    pairs[pair_key]["corrected_matches_cars_ds"],
-                    epsg,
-                    self.geom_plugin_without_dem_and_geoid,
-                    orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
-                    pair_key=pair_key,
-                    uncorrected_grid_right=pairs[pair_key]["grid_right"],
-                    geoid_path=self.inputs[sens_cst.GEOID],
-                )
-
-                # Compute terrain bounding box /roi related to current images
-                current_terrain_roi_bbox = preprocessing.compute_terrain_bbox(
-                    pairs[pair_key]["sensor_image_left"],
-                    pairs[pair_key]["sensor_image_right"],
-                    new_epipolar_image_left,
-                    pairs[pair_key]["corrected_grid_left"],
-                    pairs[pair_key]["corrected_grid_right"],
-                    epsg,
-                    self.geom_plugin_with_dem_and_geoid,
-                    resolution=self.rasterization_application.get_resolution(),
-                    disp_min=dmin,
-                    disp_max=dmax,
-                    roi_poly=roi_poly,
-                    orchestrator=cars_orchestrator,
-                    pair_key=pair_key,
-                    pair_folder=pairs[pair_key]["pair_folder"],
-                    check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
-                )
-                list_terrain_roi.append(current_terrain_roi_bbox)
-
-                # add points cloud to list
-                list_epipolar_points_cloud.append(epipolar_points_cloud)
             # Save the refined full res pipeline configuration
             cars_dataset.save_dict(
                 self.config_full_res,
                 os.path.join(out_dir, "refined_config_dense_dsm.json"),
                 safe_save=True,
-            )
-            # compute terrain bounds
-            (
-                terrain_bounds,
-                optimal_terrain_tile_width,
-            ) = preprocessing.compute_terrain_bounds(
-                list_terrain_roi,
-                roi_poly=roi_poly,
-                resolution=self.rasterization_application.get_resolution(),
-            )
-
-            # Merge point clouds
-            # Add pair names to retrieve source pair of each point
-            pairs_names = [pair_name for pair_name, _, _ in list_sensor_pairs]
-            merged_points_clouds = self.pc_fusion_application.run(
-                list_epipolar_points_cloud,
-                terrain_bounds,
-                epsg,
-                source_pc_names=pairs_names,
-                orchestrator=cars_orchestrator,
-                margins=self.rasterization_application.get_margins(),
-                optimal_terrain_tile_width=optimal_terrain_tile_width,
-            )
-
-            # rasterize point cloud
-            _ = self.rasterization_application.run(
-                merged_points_clouds,
-                epsg,
-                orchestrator=cars_orchestrator,
-                dsm_file_name=os.path.join(
-                    self.used_conf[OUTPUT]["out_dir"],
-                    self.output[sens_cst.DSM_BASENAME],
-                ),
-                color_dtype=list_epipolar_points_cloud[0].attributes[
-                    "color_type"
-                ],
             )
