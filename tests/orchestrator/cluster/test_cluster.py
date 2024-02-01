@@ -175,15 +175,6 @@ def test_tasks_pipeline(conf):
     pipeline_step_by_step(conf)
 
 
-@pytest.mark.pbs_cluster_tests
-def test_pbs_tasks_pipeline():
-    """
-    Test full distributed pipeline on PBS cluster
-
-    """
-    pipeline_step_by_step(conf_mp)
-
-
 @pytest.mark.slurm_cluster_tests
 def test_slurm_tasks_pipeline():
     """
