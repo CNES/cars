@@ -21,3 +21,10 @@
 """
 CARS tests module
 """
+
+import os
+
+# Force the use of OpenMP in numba
+os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
+os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)
+os.environ["NUMBA_THREADING_LAYER"] = "omp"
