@@ -384,7 +384,6 @@ def create_disp_dataset(  # noqa: C901
         for key, val in pandora_masks.items():
             disp_ds[key] = xr.DataArray(np.copy(val), dims=[cst.ROW, cst.COL])
 
-    disp_ds.attrs = disp.attrs.copy()
     disp_ds.attrs[cst.ROI] = ref_dataset.attrs[cst.ROI]
 
     disp_ds.attrs[cst.EPI_FULL_SIZE] = ref_dataset.attrs[cst.EPI_FULL_SIZE]

@@ -124,9 +124,6 @@ def test_compute_disparity_1():
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
 
-    # Change type from NoneType to String to allow netCDF save
-    output.attrs["band_correl"] = str(output.attrs["band_correl"])
-
     # Uncomment to update baseline
     # output.to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
 
@@ -177,9 +174,6 @@ def test_compute_disparity_3():
         np.array([16500, 23160, 16590, 23250]),
     )
 
-    # Change type from NoneType to String to allow netCDF save
-    output.attrs["band_correl"] = str(output.attrs["band_correl"])
-
     # Uncomment to update baseline
     # output.to_netcdf(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
 
@@ -225,9 +219,6 @@ def test_compute_disparity_with_all_confidences():
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
-
-    # Change type from NoneType to String to allow netCDF save
-    output.attrs["band_correl"] = str(output.attrs["band_correl"])
 
     # Uncomment to update baseline
     # output.to_netcdf(
@@ -275,9 +266,6 @@ def test_compute_disparity_1_msk_ref():
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
-
-    # Change type from NoneType to String to allow netCDF save
-    output.attrs["band_correl"] = str(output.attrs["band_correl"])
 
     # Uncomment to update baseline
     # output.to_netcdf(
@@ -331,9 +319,6 @@ def test_compute_disparity_1_msk_sec():
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
-
-    # Change type from NoneType to String to allow netCDF save
-    output.attrs["band_correl"] = str(output.attrs["band_correl"])
 
     # Uncomment to update baseline
     # output.to_netcdf(
