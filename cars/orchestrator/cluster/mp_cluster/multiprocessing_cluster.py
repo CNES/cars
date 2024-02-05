@@ -96,6 +96,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.nb_workers = self.nb_workers = self.checked_conf_cluster[
             "nb_workers"
         ]
+        self.max_tasks_per_worker = self.checked_conf_cluster[
+            "max_tasks_per_worker"
+        ]
         self.dump_to_disk = self.checked_conf_cluster["dump_to_disk"]
         self.per_job_timeout = self.checked_conf_cluster["per_job_timeout"]
         self.profiling = self.checked_conf_cluster["profiling"]
@@ -129,7 +132,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             self.pool = mp.get_context(mp_mode).Pool(
                 self.nb_workers,
                 initializer=freeze_support,
-                maxtasksperchild=1,
+                maxtasksperchild=self.max_tasks_per_worker,
             )
 
             self.queue = Queue()
@@ -194,6 +197,9 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["max_ram_per_worker"] = conf.get(
             "max_ram_per_worker", 2000
         )
+        overloaded_conf["max_tasks_per_worker"] = conf.get(
+            "max_tasks_per_worker", 10
+        )
         overloaded_conf["dump_to_disk"] = conf.get("dump_to_disk", True)
         overloaded_conf["per_job_timeout"] = conf.get("per_job_timeout", 600)
         overloaded_conf["factorize_tasks"] = conf.get("factorize_tasks", True)
@@ -204,6 +210,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "dump_to_disk": bool,
             "nb_workers": And(int, lambda x: x > 0),
             "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
+            "max_tasks_per_worker": And(int, lambda x: x > 0),
             "per_job_timeout": Or(float, int),
             "profiling": dict,
             "factorize_tasks": bool,
