@@ -275,7 +275,7 @@ class CensusMccnnSgm(
                 "Maximal disparity should be bigger than "
                 "minimal disparity for dense matching"
             )
-        
+
         # Check consistency between compute_intervals and loader_conf
         if overloaded_conf["compute_intervals"]:
             flag_intervals = True
@@ -289,8 +289,6 @@ class CensusMccnnSgm(
                     "but no interval confidence is in the "
                     "dense_matching_configuration loader_conf"
                 )
-
-
 
         return overloaded_conf
 

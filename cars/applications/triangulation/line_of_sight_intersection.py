@@ -411,7 +411,6 @@ class LineOfSightIntersection(
                             cars_ds_name="epi_pc_z_sup",
                         )
 
-
                     self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_pc_corr_msk.tif"),
                         cst.POINTS_CLOUD_CORR_MSK,
@@ -623,7 +622,6 @@ def triangulation_wrapper(
             points[cst.STEREO_REF][cst.Z_SUP] = points_sup[cst.STEREO_REF][
                 cst.Z
             ]
-
 
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches

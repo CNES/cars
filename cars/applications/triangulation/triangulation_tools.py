@@ -88,10 +88,12 @@ def triangulate(
     """
 
     if disp_key != cst_disp.MAP:
-        # Switching the variable names so that the desired disparity is named 'disp'
+        # Switching the variable names so the desired disparity is named 'disp'
         # It does not modifies the dataset outside of this function
-        disp_ref = disp_ref.rename_vars({disp_key: cst_disp.MAP, cst_disp.MAP: disp_key})
-    
+        disp_ref = disp_ref.rename_vars(
+            {disp_key: cst_disp.MAP, cst_disp.MAP: disp_key}
+        )
+
     point_clouds = {}
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
         geometry_plugin,

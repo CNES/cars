@@ -19,6 +19,7 @@
 # limitations under the License.
 #
 # pylint: disable=too-many-lines
+
 """
 This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
@@ -463,7 +464,7 @@ def create_raster_dataset(
 
     layers_to_rm = 2 if contains_intervals else 0
     if raster.shape[0] > 1:  # rasterizer produced color output
-        color = np.nan_to_num(raster[1+layers_to_rm:], nan=color_no_data)
+        color = np.nan_to_num(raster[1 + layers_to_rm :], nan=color_no_data)
         for idx, band_name in enumerate(band_im):
             band_im[idx] = band_name.replace(
                 cst.POINTS_CLOUD_CLR_KEY_ROOT + "_", ""
@@ -490,7 +491,7 @@ def create_raster_dataset(
     raster_out[cst.RASTER_HGT_STD_DEV] = xr.DataArray(
         stdev[..., 0], coords=raster_coords, dims=raster_dims
     )
-    
+
     if contains_intervals:
         # statistics layer of confidence intervaks
         raster_out[cst.RASTER_HGT_INF_MEAN] = xr.DataArray(
@@ -508,13 +509,17 @@ def create_raster_dataset(
         )
 
     # add each band statistics
-    for i_layer in range(1, n_layers-layers_to_rm):
+    for i_layer in range(1, n_layers - layers_to_rm):
         raster_out["{}{}".format(cst.RASTER_BAND_MEAN, i_layer)] = xr.DataArray(
-            mean[..., i_layer+layers_to_rm], coords=raster_coords, dims=raster_dims
+            mean[..., i_layer + layers_to_rm],
+            coords=raster_coords,
+            dims=raster_dims,
         )
         raster_out["{}{}".format(cst.RASTER_BAND_STD_DEV, i_layer)] = (
             xr.DataArray(
-                stdev[..., i_layer+layers_to_rm], coords=raster_coords, dims=raster_dims
+                stdev[..., i_layer + layers_to_rm],
+                coords=raster_coords,
+                dims=raster_dims,
             )
         )
 
@@ -694,12 +699,11 @@ def rasterize(
     if filling is not None:
         filling = filling.reshape(shape_out + (-1,))
         filling = np.moveaxis(filling, 2, 0)
-    
+
     # Checking if confidence intervals are present in the point cloud
     contains_intervals = (
         len([k for k in cloud if k in [cst.Z_INF, cst.Z_SUP]]) == 2
     )
-
 
     # build output dataset
     raster_out = create_raster_dataset(

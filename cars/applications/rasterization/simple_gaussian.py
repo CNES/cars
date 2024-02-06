@@ -18,10 +18,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
+
 """
 this module contains the dense_matching application class.
 """
-# pylint: disable=too-many-lines
 
 import collections
 

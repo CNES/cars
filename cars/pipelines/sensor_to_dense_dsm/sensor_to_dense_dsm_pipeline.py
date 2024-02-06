@@ -18,10 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
 """
 CARS sensors_to_dense_dsm pipeline class file
 """
-# pylint: disable=too-many-lines
 # Standard imports
 from __future__ import print_function
 
@@ -43,8 +43,8 @@ from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
-from cars.core import preprocessing, roi_tools
 from cars.core import constants_disparity as cst_disp
+from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
 from cars.core.utils import safe_makedirs
@@ -1174,7 +1174,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     roi_poly = preprocessing.compute_roi_poly(
                         self.input_roi_poly, self.input_roi_epsg, epsg
                     )
-                
+
                 # Checking disparity intervals indicators
                 dm_conf = self.application_conf["dense_matching"]
                 if dm_conf["compute_intervals"]:
@@ -1190,7 +1190,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 break
                 else:
                     intervals = None
-
 
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
