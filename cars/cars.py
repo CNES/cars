@@ -140,7 +140,9 @@ def main_cli(args, dry_run=False):  # noqa: C901
             config = json.load(fstream)
 
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
-        pipeline_name = config.get("pipeline", "sensors_to_dense_dsm")
+        pipeline_name = config.get(
+            "pipeline", "sensors_to_dense_dsm_no_merging"
+        )
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
