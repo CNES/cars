@@ -36,10 +36,14 @@ except Exception:  # pylint: disable=broad-except
 __author__ = "CNES"
 __email__ = "cars@cnes.fr"
 
-# Force the use of OpenMP in numba
+# Force monothread for child workers
 os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
 os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)
-os.environ["NUMBA_THREADING_LAYER"] = "omp"
+os.environ["OMP_NUM_THREADS"] = "1"
+os.environ["MKL_NUM_THREADS"] = "1"
+os.environ["NUMBA_NUM_THREADS"] = "1"
+os.environ["GDAL_NUM_THREADS"] = "1"
+os.environ["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = "1"
 
 
 def import_plugins() -> None:
