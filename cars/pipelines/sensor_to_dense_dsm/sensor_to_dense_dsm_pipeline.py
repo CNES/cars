@@ -95,7 +95,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         self.used_conf = {}
 
         # Pipeline
-        self.used_conf[PIPELINE] = conf.get(PIPELINE, "sensors_to_dense_dsm")
+        self.used_conf[PIPELINE] = conf.get(
+            PIPELINE, "sensors_to_dense_dsm_no_merging"
+        )
 
         self.generate_terrain_products = True
         # set json pipeline file
