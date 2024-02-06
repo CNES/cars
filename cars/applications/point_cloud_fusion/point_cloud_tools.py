@@ -509,6 +509,22 @@ def create_combined_dense_cloud(  # noqa: C901
         flatten_cloud[cloud_indexes.index(cst.Y), :] = np.ravel(crop_y)
         flatten_cloud[cloud_indexes.index(cst.Z), :] = np.ravel(crop_z)
 
+        if (cst.Z_INF in cloud_indexes) and (cst.Z_SUP in cloud_indexes):
+            full_z_inf = points_cloud[cst.Z_INF].values
+            full_z_sup = points_cloud[cst.Z_SUP].values
+            crop_z_inf = full_z_inf[
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
+            crop_z_sup = full_z_sup[
+                bbox[0] : bbox[2] + 1, bbox[1] : bbox[3] + 1
+            ]
+            flatten_cloud[cloud_indexes.index(cst.Z_INF), :] = np.ravel(
+                crop_z_inf
+            )
+            flatten_cloud[cloud_indexes.index(cst.Z_SUP), :] = np.ravel(
+                crop_z_sup
+            )
+
         # add index of original point cloud
         flatten_cloud[cloud_indexes.index(cst.POINTS_CLOUD_GLOBAL_ID), :] = (
             cloud_global_id
@@ -597,6 +613,11 @@ def create_points_cloud_index(cloud_sample):
         cst.Y: "float64",
         cst.Z: "float64",
     }
+
+    # Add Z_inf and Z_sup if intervals have been computed
+    if (cst.Z_INF in cloud_sample) and (cst.Z_SUP in cloud_sample):
+        cloud_indexes_with_types[cst.Z_INF] = "float64"
+        cloud_indexes_with_types[cst.Z_SUP] = "float64"
 
     # Add mask index
     if cst.EPI_MSK in cloud_sample:

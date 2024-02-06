@@ -96,6 +96,7 @@ class SimpleGaussian(
         self.save_mask = self.used_config["save_mask"]
         self.save_classif = self.used_config["save_classif"]
         self.save_dsm = self.used_config["save_dsm"]
+        self.save_intervals = self.used_config["save_intervals"]
         self.save_confidence = self.used_config["save_confidence"]
         self.save_source_pc = self.used_config["save_source_pc"]
         self.save_filling = self.used_config["save_filling"]
@@ -145,6 +146,7 @@ class SimpleGaussian(
         overloaded_conf["save_mask"] = conf.get("save_mask", False)
         overloaded_conf["save_classif"] = conf.get("save_classif", False)
         overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
+        overloaded_conf["save_intervals"] = conf.get("save_intervals", False)
         overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
         overloaded_conf["save_source_pc"] = conf.get("save_source_pc", False)
         overloaded_conf["save_filling"] = conf.get("save_filling", False)
@@ -175,6 +177,7 @@ class SimpleGaussian(
             "save_classif": bool,
             "save_stats": bool,
             "save_dsm": bool,
+            "save_intervals": bool,
             "save_confidence": bool,
             "save_source_pc": bool,
             "save_filling": bool,
@@ -411,6 +414,32 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_weights",
             )
+
+        # TODO Check that intervals indeed exist!
+        if self.save_intervals:
+            out_dsm_inf_mean_file_name = os.path.join(
+                self.orchestrator.out_dir, "dsm_inf.tif"
+            )
+            self.orchestrator.add_to_save_lists(
+                out_dsm_inf_mean_file_name,
+                cst.RASTER_HGT_INF_MEAN,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_inf",
+            )
+            out_dsm_sup_mean_file_name = os.path.join(
+                self.orchestrator.out_dir, "dsm_sup.tif"
+            )
+            self.orchestrator.add_to_save_lists(
+                out_dsm_sup_mean_file_name,
+                cst.RASTER_HGT_SUP_MEAN,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_sup",
+            )
+
         if self.save_color:
             if color_file_name is not None:
                 out_clr_file_name = color_file_name
@@ -473,6 +502,73 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_pts_in_cells",
             )
+            if self.save_intervals:
+                out_dsm_inf_std_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_std.tif"
+                )
+                out_dsm_inf_n_pts_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_n_pts.tif"
+                )
+                out_dsm_inf_points_in_cell_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_pts_in_cell.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_std_file_name,
+                    cst.RASTER_HGT_INF_STD_DEV,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_inf_std",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_n_pts_file_name,
+                    cst.RASTER_NB_PTS,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_inf_n_pts",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_points_in_cell_file_name,
+                    cst.RASTER_NB_PTS_IN_CELL,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_inf_pts_in_cells",
+                )
+                out_dsm_sup_std_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_std.tif"
+                )
+                out_dsm_sup_n_pts_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_n_pts.tif"
+                )
+                out_dsm_sup_points_in_cell_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_pts_in_cell.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_std_file_name,
+                    cst.RASTER_HGT_SUP_STD_DEV,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_sup_std",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_n_pts_file_name,
+                    cst.RASTER_NB_PTS,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_sup_n_pts",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_points_in_cell_file_name,
+                    cst.RASTER_NB_PTS_IN_CELL,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_sup_pts_in_cells",
+                )
         if self.save_classif:
             out_classif_file_name = os.path.join(
                 self.orchestrator.out_dir, "classif.tif"

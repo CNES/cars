@@ -145,6 +145,7 @@ class LineOfSightIntersection(
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
+        intervals=None,
     ):
         """
         Run Triangulation application.
@@ -215,6 +216,8 @@ class LineOfSightIntersection(
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
+        :param intervals: Either None or a List of 2 intervals indicators
+        :type intervals: None or [str, str]
 
         :return: points cloud \
                 The CarsDataset contains:
@@ -394,6 +397,21 @@ class LineOfSightIntersection(
                         dtype=np.float64,
                     )
 
+                    if intervals is not None:
+                        self.orchestrator.add_to_save_lists(
+                            os.path.join(pair_folder, "epi_pc_Z_inf.tif"),
+                            cst.Z_INF,
+                            epipolar_points_cloud,
+                            cars_ds_name="epi_pc_z_inf",
+                        )
+                        self.orchestrator.add_to_save_lists(
+                            os.path.join(pair_folder, "epi_pc_Z_sup.tif"),
+                            cst.Z_SUP,
+                            epipolar_points_cloud,
+                            cars_ds_name="epi_pc_z_sup",
+                        )
+
+
                     self.orchestrator.add_to_save_lists(
                         os.path.join(pair_folder, "epi_pc_corr_msk.tif"),
                         cst.POINTS_CLOUD_CORR_MSK,
@@ -497,6 +515,7 @@ class LineOfSightIntersection(
                         epsg,
                         geoid_data=geoid_data_futures,
                         cloud_id=cloud_id,
+                        intervals=intervals,
                         saving_info=full_saving_info,
                     )
 
@@ -515,6 +534,7 @@ def triangulation_wrapper(
     epsg,
     geoid_data: xr.Dataset = None,
     cloud_id=None,
+    intervals=None,
     saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
@@ -542,9 +562,8 @@ def triangulation_wrapper(
     :param geoid_data: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
     :type geoid_data: str
-    :param snap_to_img1: If True, Lines of Sight of img2 are moved so as to
-                         cross those of img1
-    :type snap_to_img1: bool
+    :param intervals: Either None or a List of 2 intervals indicators
+        :type intervals: None or [str, str]
 
     :return: Left disparity object
 
@@ -572,6 +591,39 @@ def triangulation_wrapper(
             grid2,
             disp_ref,
         )
+
+        if intervals is not None:
+            points_inf = triangulation_tools.triangulate(
+                geometry_plugin,
+                sensor1,
+                sensor2,
+                geomodel1,
+                geomodel2,
+                grid1,
+                grid2,
+                disp_ref,
+                disp_key=intervals[0],
+            )
+
+            points_sup = triangulation_tools.triangulate(
+                geometry_plugin,
+                sensor1,
+                sensor2,
+                geomodel1,
+                geomodel2,
+                grid1,
+                grid2,
+                disp_ref,
+                disp_key=intervals[1],
+            )
+
+            points[cst.STEREO_REF][cst.Z_INF] = points_inf[cst.STEREO_REF][
+                cst.Z
+            ]
+            points[cst.STEREO_REF][cst.Z_SUP] = points_sup[cst.STEREO_REF][
+                cst.Z
+            ]
+
 
     elif isinstance(disp_ref, pandas.DataFrame):
         # Triangulate epipolar sparse matches

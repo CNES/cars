@@ -44,6 +44,7 @@ from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
 from cars.core import preprocessing, roi_tools
+from cars.core import constants_disparity as cst_disp
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
 from cars.core.utils import safe_makedirs
@@ -1173,6 +1174,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     roi_poly = preprocessing.compute_roi_poly(
                         self.input_roi_poly, self.input_roi_epsg, epsg
                     )
+                
+                # Checking disparity intervals indicators
+                dm_conf = self.application_conf["dense_matching"]
+                if dm_conf["compute_intervals"]:
+                    intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
+                    for key, item in dm_conf["loader_conf"]["pipeline"].items():
+                        if cst_disp.CONFIDENCE_KEY in key:
+                            if item["confidence_method"] == cst_disp.INTERVAL:
+                                indicator = key.split(".")
+                                if len(indicator) > 1:
+                                    intervals[0] += "." + indicator[-1]
+                                    intervals[1] += "." + indicator[-1]
+                                # Only processing the first encountered interval
+                                break
+                else:
+                    intervals = None
+
 
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
@@ -1191,6 +1209,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
                     cloud_id=cloud_id,
+                    intervals=intervals,
                 )
 
                 if self.generate_terrain_products:

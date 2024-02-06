@@ -163,6 +163,9 @@ class CensusMccnnSgm(
         overloaded_conf["generate_performance_map"] = conf.get(
             "generate_performance_map", False
         )
+        overloaded_conf["compute_intervals"] = conf.get(
+            "compute_intervals", False
+        )
         overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
             "perf_eta_max_ambiguity", 0.99
         )
@@ -219,6 +222,7 @@ class CensusMccnnSgm(
             "max_elevation_offset": Or(None, int),
             "disp_min_threshold": Or(None, int),
             "disp_max_threshold": Or(None, int),
+            "compute_intervals": bool,
             "save_disparity_map": bool,
             "generate_performance_map": bool,
             "perf_eta_max_ambiguity": float,
@@ -271,16 +275,32 @@ class CensusMccnnSgm(
                 "Maximal disparity should be bigger than "
                 "minimal disparity for dense matching"
             )
+        
+        # Check consistency between compute_intervals and loader_conf
+        if overloaded_conf["compute_intervals"]:
+            flag_intervals = True
+            for key, item in overloaded_conf["loader_conf"]["pipeline"].items():
+                if cst_disp.CONFIDENCE_KEY in key:
+                    if item["confidence_method"] == cst_disp.INTERVAL:
+                        flag_intervals = False
+            if flag_intervals:
+                raise KeyError(
+                    "Interval computation has been requested "
+                    "but no interval confidence is in the "
+                    "dense_matching_configuration loader_conf"
+                )
+
+
 
         return overloaded_conf
 
     def get_margins_fun(self, grid_left, disp_range_grid):
         """
-        Get Margins function  that generates margins needed by
+        Get Margins function that generates margins needed by
         matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min_grid: minimum and maximumdisparity grid
+        :param disp_min_grid: minimum and maximum disparity grid
         :return: function that generates margin for given roi
 
         """
