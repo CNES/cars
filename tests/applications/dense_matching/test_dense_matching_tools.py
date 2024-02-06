@@ -99,7 +99,7 @@ def test_compute_disparity_1():
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
-    corr_cfg = create_corr_conf(corr_cfg)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
@@ -125,8 +125,7 @@ def test_compute_disparity_1():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path(
-    #     "ref_output/disp1_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path("ref_output/disp1_ref_pandora.nc"))
     assert_same_datasets(output, ref, atol=5.0e-6)
@@ -146,7 +145,7 @@ def test_compute_disparity_3():
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
-    corr_cfg = create_corr_conf(corr_cfg)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     disp_min_grid = -43 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 41 * np.ones(left_input["im"].values.shape)
@@ -176,8 +175,7 @@ def test_compute_disparity_3():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path(
-    #     "ref_output/disp3_ref_pandora.nc"))
+    # output.to_netcdf(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
 
     ref = xr.open_dataset(absolute_data_path("ref_output/disp3_ref_pandora.nc"))
     assert_same_datasets(output, ref, atol=5.0e-6)
@@ -197,7 +195,7 @@ def test_compute_disparity_with_all_confidences():
 
     # Pandora configuration
     corr_cfg = corr_conf_with_confidence()
-    corr_cfg = create_corr_conf(corr_cfg)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
@@ -248,7 +246,7 @@ def test_compute_disparity_1_msk_ref():
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
-    corr_cfg = create_corr_conf(corr_cfg)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)
@@ -270,8 +268,9 @@ def test_compute_disparity_1_msk_ref():
     )
 
     # Uncomment to update baseline
-    # output.to_netcdf(absolute_data_path(
-    # "ref_output/disp1_ref_pandora_msk_ref.nc"))
+    # output.to_netcdf(
+    #     absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc")
+    # )
 
     ref = xr.open_dataset(
         absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc")
@@ -295,7 +294,7 @@ def test_compute_disparity_1_msk_sec():
 
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
-    corr_cfg = create_corr_conf(corr_cfg)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     disp_min_grid = -13 * np.ones(left_input["im"].values.shape)
     disp_max_grid = 14 * np.ones(left_input["im"].values.shape)

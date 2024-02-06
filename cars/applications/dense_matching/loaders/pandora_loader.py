@@ -31,12 +31,13 @@ from typing import Dict
 import numpy as np
 import pandora
 from json_checker import Checker, Or
-from pandora.check_json import (
+from pandora.check_configuration import (
     check_pipeline_section,
     concat_conf,
     get_config_pipeline,
     update_conf,
 )
+from pandora.img_tools import get_metadata
 from pandora.state_machine import PandoraMachine
 
 
@@ -137,7 +138,7 @@ class PandoraLoader:
                 )
 
         # Check conf
-        self.pandora_configuration = self.check_conf(conf)
+        self.pandora_config = conf
 
     def get_conf(self):
         """
@@ -148,9 +149,16 @@ class PandoraLoader:
 
         """
 
-        return self.pandora_configuration
+        return self.pandora_config
 
-    def check_conf(self, user_cfg):
+    def check_conf(
+        self,
+        user_cfg,
+        img_left,
+        img_right,
+        classif_left=None,
+        classif_right=None,
+    ):
         """
         Check configuration
 
@@ -168,9 +176,12 @@ class PandoraLoader:
         # Instantiate pandora state machine
         pandora_machine = PandoraMachine()
         # check pipeline
+        metadata_left = get_metadata(img_left, classif=classif_left)
+        metadata_right = get_metadata(img_right, classif=classif_right)
+
         user_cfg_pipeline = get_config_pipeline(user_cfg)
         cfg_pipeline = check_pipeline_section(
-            user_cfg_pipeline, pandora_machine
+            user_cfg_pipeline, metadata_left, metadata_right, pandora_machine
         )
         # check a part of input section
         user_cfg_input = get_config_input_custom_cars(user_cfg)

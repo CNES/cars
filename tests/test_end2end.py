@@ -129,67 +129,67 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
 
         # Uncomment the 2 following instructions to update reference data
-        copy2(
-            os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "clr.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "msk.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
-                )
-            ),
-        )
-
-        # assert_same_images(
+        # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
         #     ),
-        #     atol=0.0001,
-        #     rtol=1e-6,
         # )
-        # assert_same_images(
+        # copy2(
         #     os.path.join(out_dir, "clr.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
         #     ),
-        #     rtol=1.0e-7,
-        #     atol=1.0e-7,
         # )
-        # assert_same_images(
+        # copy2(
         #     os.path.join(out_dir, "msk.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
         #     ),
-        #     rtol=1.0e-7,
-        #     atol=1.0e-7,
         # )
-        # assert_same_images(
+        # copy2(
         #     os.path.join(out_dir, "confidence_performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
         #         )
         #     ),
-        #     rtol=1.0e-6,
-        #     atol=1.0e-6,
         # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "msk.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "confidence_performance_map.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
+                )
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-6,
+        )
 
         # launch no mergin pipeline
         input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
@@ -201,39 +201,39 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         dense_dsm_pipeline.run()
         out_dir = input_dense_dsm["output"]["out_dir"]
 
-        copy2(
-            os.path.join(out_dir, "dsm.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "clr.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "msk.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
-                )
-            ),
-        )
-        copy2(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir,
-                    "performance_map_end2end_gizeh_crop_no_merging.tif",
-                )
-            ),
-        )
+        # copy2(
+        #     os.path.join(out_dir, "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "clr.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "msk.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "confidence_performance_map.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "performance_map_end2end_gizeh_crop_no_merging.tif",
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm.tif"),
@@ -651,7 +651,6 @@ def test_end2end_ventoux_unique():
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
-                        "right_disp_map": {"method": "accurate"},
                         "matching_cost": {
                             "matching_cost_method": "census",
                             "window_size": 5,
@@ -697,7 +696,7 @@ def test_end2end_ventoux_unique():
                         "refinement": {"refinement_method": "vfit"},
                         "filter": {"filter_method": "median", "filter_size": 3},
                         "validation": {
-                            "validation_method": "cross_checking",
+                            "validation_method": "cross_checking_accurate",
                             "cross_checking_threshold": 1.0,
                         },
                     },
@@ -1386,7 +1385,6 @@ def test_end2end_ventoux_unique_split():
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
-                        "right_disp_map": {"method": "accurate"},
                         "matching_cost": {
                             "matching_cost_method": "census",
                             "window_size": 5,
@@ -1420,7 +1418,7 @@ def test_end2end_ventoux_unique_split():
                         "refinement": {"refinement_method": "vfit"},
                         "filter": {"filter_method": "median", "filter_size": 3},
                         "validation": {
-                            "validation_method": "cross_checking",
+                            "validation_method": "cross_checking_accurate",
                             "cross_checking_threshold": 1.0,
                         },
                     },

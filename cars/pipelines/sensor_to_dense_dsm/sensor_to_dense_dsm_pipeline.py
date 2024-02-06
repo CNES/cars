@@ -298,7 +298,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.dense_matches_filling_1.get_conf()
         )
 
-        # disparity filling  2
+        # disparity filling 2
         self.dense_matches_filling_2 = Application(
             "dense_matches_filling",
             cfg=conf.get(
@@ -468,6 +468,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                         ]
                                     )
                                 )
+        for key1, key2 in inputs_conf["pairing"]:
+            corr_cfg = self.dense_matching_app.loader.get_conf()
+            img_left = inputs_conf["sensors"][key1]["image"]
+            img_right = inputs_conf["sensors"][key2]["image"]
+            classif_left = None
+            classif_right = None
+            if "classification" in inputs_conf["sensors"][key1]:
+                classif_left = inputs_conf["sensors"][key1]["classification"]
+            if "classification" in inputs_conf["sensors"][key2]:
+                classif_right = inputs_conf["sensors"][key2]["classification"]
+            self.dense_matching_app.corr_config = (
+                self.dense_matching_app.loader.check_conf(
+                    corr_cfg,
+                    img_left,
+                    img_right,
+                    classif_left,
+                    classif_right,
+                )
+            )
 
         return application_conf
 

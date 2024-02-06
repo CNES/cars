@@ -22,6 +22,8 @@
 Cars module init file
 """
 
+import os
+
 # Standard imports
 from importlib import metadata
 
@@ -33,6 +35,11 @@ except Exception:  # pylint: disable=broad-except
 
 __author__ = "CNES"
 __email__ = "cars@cnes.fr"
+
+# Force the use of OpenMP in numba
+os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
+os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)
+os.environ["NUMBA_THREADING_LAYER"] = "omp"
 
 
 def import_plugins() -> None:

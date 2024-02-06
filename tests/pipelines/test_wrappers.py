@@ -28,6 +28,7 @@ import pickle
 
 # Third party imports
 import pytest
+from pandora.img_tools import get_metadata
 
 # CARS imports
 import cars.applications.dense_matching.dense_matching_tools as dense_match
@@ -82,10 +83,30 @@ def test_epipolar_pipeline(
         disparities_conf["preprocessing"]["output"]
     )
 
+    img1 = configuration["input"][in_params.IMG1_TAG]
+    img2 = configuration["input"][in_params.IMG2_TAG]
+    geomodel1 = {
+        "path": configuration["input"][in_params.MODEL1_TAG],
+        "model_type": configuration["input"][in_params.MODEL1_TYPE_TAG],
+    }
+    geomodel2 = {
+        "path": configuration["input"][in_params.MODEL2_TAG],
+        "model_type": configuration["input"][in_params.MODEL2_TYPE_TAG],
+    }
+    color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
+    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
+    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
+    nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
+    nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
+    mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
+    mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
+
     region = [420, 200, 530, 320]
     # Pandora configuration
     corr_cfg = corr_conf_defaut()
-    corr_cfg = create_corr_conf(corr_cfg)
+    left_input = get_metadata(img1)
+    right_input = get_metadata(img2)
+    corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
     initial_margins = dense_match.get_margins(-13, 14, corr_cfg)
     pandora_margins = initial_margins["left_margin"].values
@@ -112,23 +133,6 @@ def test_epipolar_pipeline(
     epipolar_size_y = configuration["preprocessing"]["output"][
         "epipolar_size_y"
     ]
-    img1 = configuration["input"][in_params.IMG1_TAG]
-    img2 = configuration["input"][in_params.IMG2_TAG]
-    geomodel1 = {
-        "path": configuration["input"][in_params.MODEL1_TAG],
-        "model_type": configuration["input"][in_params.MODEL1_TYPE_TAG],
-    }
-    geomodel2 = {
-        "path": configuration["input"][in_params.MODEL2_TAG],
-        "model_type": configuration["input"][in_params.MODEL2_TYPE_TAG],
-    }
-    color1 = configuration["input"].get(in_params.COLOR1_TAG, None)
-    grid1 = configuration["preprocessing"]["output"]["left_epipolar_grid"]
-    grid2 = configuration["preprocessing"]["output"]["right_epipolar_grid"]
-    nodata1 = configuration["input"].get(in_params.NODATA1_TAG, None)
-    nodata2 = configuration["input"].get(in_params.NODATA2_TAG, None)
-    mask1 = configuration["input"].get(in_params.MASK1_TAG, None)
-    mask2 = configuration["input"].get(in_params.MASK2_TAG, None)
 
     left_image, right_image = generate_epipolar_images_wrapper(
         overlaps,

@@ -30,9 +30,11 @@ import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
 import xarray as xr
 from json_checker import Checker
+from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
 from shareloc.geofunctions.dtm_intersection import DTMIntersection
 from shareloc.geofunctions.triangulation import epipolar_triangulation
+from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
 from shareloc.geomodels.rpc import RPC
 from shareloc.image import Image
@@ -76,8 +78,21 @@ class SharelocGeometry(AbstractGeometry):
 
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
+            dtm_image = dtm_reader(
+                dem,
+                geoid,
+                read_data=True,
+                roi=roi,
+                roi_is_in_physical_space=True,
+                fill_nodata="mean",
+                fill_value=0.0,
+            )
             self.elevation = DTMIntersection(
-                dem, geoid, roi=roi, fill_nodata="mean"
+                dtm_image.epsg,
+                dtm_image.alt_data,
+                dtm_image.nb_rows,
+                dtm_image.nb_columns,
+                dtm_image.transform,
             )
         else:
             self.elevation = default_alt
@@ -149,12 +164,7 @@ class SharelocGeometry(AbstractGeometry):
         else:
             geomodel_type = RPC_TYPE
 
-        if geomodel_type == GRID_TYPE:
-            shareloc_model = Grid(geomodel)
-        elif geomodel_type == RPC_TYPE:
-            shareloc_model = RPC.from_any(geomodel)
-        else:
-            raise ValueError(f"Model type {geomodel_type} is not supported")
+        shareloc_model = GeoModel(geomodel, geomodel_type)
 
         if shareloc_model is None:
             raise ValueError(f"Model {geomodel} could not be read by shareloc")
@@ -336,9 +346,9 @@ class SharelocGeometry(AbstractGeometry):
         (
             grid1,
             grid2,
-            epipolar_size_y,
-            epipolar_size_x,
+            [epipolar_size_y, epipolar_size_x],
             alt_to_disp_ratio,
+            _,
         ) = rectif.compute_stereorectification_epipolar_grids(
             image1,
             shareloc_model1,
@@ -349,8 +359,9 @@ class SharelocGeometry(AbstractGeometry):
         )
 
         # rearrange output to match the expected structure of CARS
-        grid1 = np.moveaxis(grid1.data[::-1, :, :], 0, -1)
-        grid2 = np.moveaxis(grid2.data[::-1, :, :], 0, -1)
+        # grid[:, :, 2] with altitudes is not used
+        grid1 = grid1[:, :, 0:2][:, :, ::-1]
+        grid2 = grid2[:, :, 0:2][:, :, ::-1]
 
         # compute associated characteristics
         with rio.open(sensor1, "r") as rio_dst:

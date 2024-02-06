@@ -298,7 +298,7 @@ def save_data(cars_ds, file_name, tag, dtype="float32", nodata=-9999):
     desc.close()
 
 
-def show_epilolar_images(
+def show_epipolar_images(
     img_left, mask_left, img_right, mask_right, fig_size=8
 ):
     """

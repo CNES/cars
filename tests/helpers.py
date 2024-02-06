@@ -40,7 +40,7 @@ import pandas
 import pandora
 import rasterio as rio
 import xarray as xr
-from pandora.check_json import (
+from pandora.check_configuration import (
     check_pipeline_section,
     concat_conf,
     get_config_pipeline,
@@ -436,7 +436,7 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
     return new_dataset
 
 
-def create_corr_conf(user_cfg):
+def create_corr_conf(user_cfg, left_input, right_input):
     """
     Create correlator configuration for stereo testing
     TODO: put in CARS source code ? (external?)
@@ -449,7 +449,17 @@ def create_corr_conf(user_cfg):
     pandora_machine = PandoraMachine()
     # check pipeline
     user_cfg_pipeline = get_config_pipeline(user_cfg)
-    cfg_pipeline = check_pipeline_section(user_cfg_pipeline, pandora_machine)
+
+    left_input = left_input.copy()
+    right_input = right_input.copy()
+    left_input.coords[cst.BAND_IM] = [None]
+    right_input.coords[cst.BAND_IM] = [None]
+    left_input.attrs["disparity_source"] = None
+    right_input.attrs["disparity_source"] = None
+
+    cfg_pipeline = check_pipeline_section(
+        user_cfg_pipeline, left_input, right_input, pandora_machine
+    )
     # check a part of input section
     user_cfg_input = get_config_input_custom_cars(user_cfg)
     cfg_input = check_input_section_custom_cars(user_cfg_input)
