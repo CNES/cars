@@ -266,13 +266,19 @@ def crop_dataset(full_dataset, in_dataset, window, overlap, row_min, col_min):
             )
 
         xarray_coords = {}
-        for coord in full_dataset[tag].coords:
-            if coord in coords:
-                xarray_coords[coord] = coords[coord]
+        for coord_tag in full_dataset[tag].coords:
+            if coord_tag in coords:
+                xarray_coords[coord_tag] = coords[coord_tag]
             else:
-                xarray_coords[coord] = full_dataset[tag].coords[coord]
+                xarray_coords[coord_tag] = full_dataset[tag].coords[coord_tag]
 
-        data_array = xr.DataArray(values, coords=xarray_coords)
+        dims = full_dataset[tag].dims
+
+        data_array = xr.DataArray(values, coords=xarray_coords, dims=dims)
+        if tag in in_dataset:
+            data_array.attrs = in_dataset[tag].attrs
         cropped[tag] = data_array
+
+    cropped.attrs = in_dataset.attrs
 
     return cropped
