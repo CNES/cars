@@ -936,9 +936,8 @@ def get_max_disp_from_opt_tile_size(
     opt_epipolar_tile_size, max_ram_per_worker, margin=0, used_disparity_range=0
 ):
     """
-    Compute optimal tile size according to estimated memory usage
-    (pandora_plugin_libsgm)
-    Returned optimal tile size will be at least equal to tile_size_rounding.
+    Compute max range possible depending on max ram per worker
+    Return max range usable
 
     :param opt_epipolar_tile_size: used tile size
     :param max_ram_per_worker: amount of RAM allocated per worker

@@ -1066,9 +1066,7 @@ class CensusMccnnSgm(
                 )
             )
 
-            nb_invalid_tile = 0
             nb_total_tiles_roi = 0
-            disp_ranges = []
 
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
@@ -1083,8 +1081,8 @@ class CensusMccnnSgm(
 
                         # Compute optimal tile size for tile
                         (
-                            opt_tile_size,
-                            global_opt_tile_size,
+                            _,
+                            _,
                             crop_with_range,
                         ) = local_tile_optimal_size_fun(
                             np.array(
@@ -1097,28 +1095,6 @@ class CensusMccnnSgm(
                                     "disp_max_tiling"
                                 ]
                             )[row, col],
-                        )
-
-                        if opt_tile_size < min(
-                            global_opt_tile_size, self.min_epi_tile_size
-                        ):
-                            # Tile is likely to crash in worker
-                            # due to memory consumtion
-                            nb_invalid_tile += 1
-
-                        disp_ranges.append(
-                            [
-                                np.array(
-                                    epipolar_images_left.attributes[
-                                        "disp_min_tiling"
-                                    ]
-                                )[row, col],
-                                np.array(
-                                    epipolar_images_left.attributes[
-                                        "disp_max_tiling"
-                                    ]
-                                )[row, col],
-                            ]
                         )
 
                     if use_tile:
@@ -1148,19 +1124,6 @@ class CensusMccnnSgm(
                             crop_with_range=crop_with_range,
                         )
 
-            # Message info about not computed tiles
-            tile_missing_message = (
-                "Dense matching: {} tiles over {} tiles, "
-                "will use cropped disparity range. "
-                "These tiles were likely to crash due to memory "
-                "consumption, in pair {}. Disparity ranges: {}".format(
-                    nb_invalid_tile, nb_total_tiles_roi, pair_key, disp_ranges
-                )
-            )
-            if nb_invalid_tile == 0:
-                logging.info(tile_missing_message)
-            else:
-                logging.error(tile_missing_message)
         else:
             logging.error(
                 "DenseMatching application doesn't "
@@ -1231,14 +1194,13 @@ def compute_disparity_wrapper(
         disp_max_grid,
     ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
 
-    disp_min_grid[:, :] = -100
-    disp_max_grid[:, :] = 100
     # Crop interval if needed
     mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
     if crop_with_range is not None:
         current_min = np.min(disp_min_grid)
         current_max = np.max(disp_max_grid)
         if (current_max - current_min) > crop_with_range:
+            logging.warning("disparity range for current tile is cropped")
             # crop
             new_min = (
                 current_min * crop_with_range / (current_max - current_min)
