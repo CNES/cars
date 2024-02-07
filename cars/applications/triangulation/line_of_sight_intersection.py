@@ -345,7 +345,8 @@ class LineOfSightIntersection(
             # Create CarsDataset
             # Epipolar_point_cloud
             epipolar_points_cloud = cars_dataset.CarsDataset(
-                epipolar_disparity_map.dataset_type
+                epipolar_disparity_map.dataset_type,
+                name="triangulation_" + pair_key,
             )
             epipolar_points_cloud.create_empty_copy(epipolar_image)
             epipolar_points_cloud.overlaps *= 0  # Margins removed

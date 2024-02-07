@@ -42,6 +42,7 @@ from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
 from cars.orchestrator.orchestrator_constants import CARS_DS_COL, CARS_DS_ROW
 from cars.orchestrator.registry import id_generator as id_gen
 from cars.orchestrator.registry import replacer_registry, saver_registry
+from cars.orchestrator.tiles_profiler import TileProfiler
 
 
 class Orchestrator:
@@ -106,6 +107,16 @@ class Orchestrator:
         # init CarsDataset replacement registry
         self.cars_ds_replacer_registry = (
             replacer_registry.CarsDatasetRegistryReplacer(self.id_generator)
+        )
+
+        # init tile profiler
+        self.dir_tile_profiling = os.path.join(self.out_dir, "tile_processing")
+        if not os.path.exists(self.dir_tile_profiling):
+            os.makedirs(self.dir_tile_profiling)
+        self.tile_profiler = TileProfiler(
+            self.dir_tile_profiling,
+            self.cars_ds_savers_registry,
+            self.cars_ds_replacer_registry,
         )
 
         # init cars_ds_names_info for pbar printing
@@ -331,6 +342,7 @@ class Orchestrator:
                 leave=True,
                 file=sys.stdout,
             )
+
             for future_obj in self.cluster.future_iterator(future_objects):
                 # get corresponding CarsDataset and save tile
                 if future_obj is not None:
@@ -349,6 +361,8 @@ class Orchestrator:
                     self.cars_ds_savers_registry.save(future_obj)
                     # Replace future in cars_ds if needs to
                     self.cars_ds_replacer_registry.replace(future_obj)
+                    # notify tile profiler for new tile
+                    self.tile_profiler.add_tile(future_obj)
                 else:
                     logging.debug("None tile: not saved")
                 pbar.update()
@@ -374,6 +388,13 @@ class Orchestrator:
         #  CarsDataset replacement registry
         self.cars_ds_replacer_registry = (
             replacer_registry.CarsDatasetRegistryReplacer(self.id_generator)
+        )
+
+        # tile profiler
+        self.tile_profiler = TileProfiler(
+            self.dir_tile_profiling,
+            self.cars_ds_savers_registry,
+            self.cars_ds_replacer_registry,
         )
 
         # reset cars_ds names infos

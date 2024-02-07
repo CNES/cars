@@ -432,7 +432,9 @@ class Sift(SparseMatching, short_name="sift"):
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
             # Epipolar_disparity
-            epipolar_disparity_map_left = cars_dataset.CarsDataset("points")
+            epipolar_disparity_map_left = cars_dataset.CarsDataset(
+                "points", name="sparse_matching_" + pair_key
+            )
             epipolar_disparity_map_left.create_empty_copy(epipolar_images_left)
 
             # Update attributes to get epipolar info

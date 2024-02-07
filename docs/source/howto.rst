@@ -79,7 +79,29 @@ And then extract region, create config file and launch cars:
    cars-starter -il ext_dir/*.tif -out out_dir > config.json
    cars config.json
 
-      
+
+Monitor tiles progression
+-------------------------
+
+``cars-dashboard`` script allows to monitor the progression of tiles computation on a web browser.
+
+.. code-block:: console
+
+    usage: cars-dashboard [-h] -out OUT
+
+    Helper to monitor tiles progress
+
+    optional arguments:
+    -h, --help  show this help message and exit
+    -out OUT    CARS output folder to monitor
+
+For example, if you want to monitor the computation of a CARS run:
+
+.. code-block:: console
+
+    cars-dashboard -out output_cars
+
+
 .. _make_a_simple_pan_sharpening:
 
 Make a simple pan sharpening

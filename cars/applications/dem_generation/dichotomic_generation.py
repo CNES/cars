@@ -300,7 +300,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
         # Generate CarsDataset
 
-        dem = cars_dataset.CarsDataset("arrays")
+        dem = cars_dataset.CarsDataset("arrays", name="dem_generation")
 
         # Compute tiling grid
         # Only one tile

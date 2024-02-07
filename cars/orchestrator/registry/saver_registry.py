@@ -63,10 +63,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
 
         obj_id = self.get_future_cars_dataset_id(future_result)
         cars_ds_saver = self.get_cars_ds_saver_corresponding_id(obj_id)
-
         if cars_ds_saver is None:
             return None
-
         return cars_ds_saver.cars_ds
 
     def get_cars_datasets_list(self):

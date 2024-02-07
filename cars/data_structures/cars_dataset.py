@@ -80,7 +80,7 @@ class CarsDataset:
     (xr.Datasets or pd.DataFrames).
     """
 
-    def __init__(self, dataset_type, load_from_disk=None):
+    def __init__(self, dataset_type, load_from_disk=None, name="unknown"):
         """
         Init function of CarsDataset.
         If a path is provided, restore CarsDataset saved on disk.
@@ -105,6 +105,7 @@ class CarsDataset:
         self._tiling_grid = None
         self.overlaps = None
         self.attributes = {}
+        self.name = name
 
         # Method to apply at the reception of tile
         self.final_function = None

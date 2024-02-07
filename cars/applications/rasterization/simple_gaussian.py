@@ -338,7 +338,9 @@ class SimpleGaussian(
             raise RuntimeError(message)
 
         # Create CarsDataset
-        terrain_raster = cars_dataset.CarsDataset("arrays")
+        terrain_raster = cars_dataset.CarsDataset(
+            "arrays", name="rasterization"
+        )
 
         if isinstance(points_clouds, cars_dataset.CarsDataset):
             # Get tiling grid
