@@ -972,7 +972,7 @@ def get_max_disp_from_opt_tile_size(
     disp_tot = tot - (
         image + disp_ref + validity_mask_ref + confidence + penal + img_crop
     )
-    # disp_tot = disp * (2 * cv_ + nan_ + cv_uint)
+    # disp tot = disp x (2 x cv_ + nan_ + cv uint)
     max_range = int(disp_tot / (2 * cv_ + nan_ + cv_uint) + 1)
 
     return max_range
