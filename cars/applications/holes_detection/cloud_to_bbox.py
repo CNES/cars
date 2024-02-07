@@ -154,11 +154,15 @@ class CloudToBbox(
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
             # Epipolar_disparity
-            left_bbox_cars_ds = cars_dataset.CarsDataset("dict")
+            left_bbox_cars_ds = cars_dataset.CarsDataset(
+                "dict", name="cloud_to_bbox_left_" + pair_key
+            )
             left_bbox_cars_ds.create_empty_copy(epipolar_images_left)
             left_bbox_cars_ds.overlaps *= 0
 
-            right_bbox_cars_ds = cars_dataset.CarsDataset("dict")
+            right_bbox_cars_ds = cars_dataset.CarsDataset(
+                "dict", name="cloud_to_bbox_left_" + pair_key
+            )
             right_bbox_cars_ds.create_empty_copy(epipolar_images_right)
             right_bbox_cars_ds.overlaps *= 0
 

@@ -340,8 +340,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # Create CarsDataset
         # Epipolar_images
-        epipolar_images_left = cars_dataset.CarsDataset("arrays")
-        epipolar_images_right = cars_dataset.CarsDataset("arrays")
+        epipolar_images_left = cars_dataset.CarsDataset(
+            "arrays", name="resampling_left_" + pair_key
+        )
+        epipolar_images_right = cars_dataset.CarsDataset(
+            "arrays", name="resampling_" + pair_key
+        )
 
         # Compute tiling grid
         epipolar_images_left.tiling_grid = epipolar_regions_grid

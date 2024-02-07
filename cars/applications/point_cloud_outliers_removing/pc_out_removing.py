@@ -166,7 +166,9 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
             app_name = ""
 
         # Create CarsDataset
-        filtered_point_cloud = cars_dataset.CarsDataset("points")
+        filtered_point_cloud = cars_dataset.CarsDataset(
+            "points", name="point_cloud_removing_" + app_name
+        )
 
         # Get tiling grid
         filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid

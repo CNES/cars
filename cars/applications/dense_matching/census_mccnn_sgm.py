@@ -548,7 +548,9 @@ class CensusMccnnSgm(
         grid_max = np.empty((len(row_range), len(col_range)))
 
         # Create CarsDataset
-        grid_disp_range = cars_dataset.CarsDataset("arrays")
+        grid_disp_range = cars_dataset.CarsDataset(
+            "arrays", name="grid_disp_range_unknown_pair"
+        )
         # Only one tile
         grid_disp_range.tiling_grid = np.array(
             [[[0, epi_size_row, 0, epi_size_col]]]
@@ -941,7 +943,9 @@ class CensusMccnnSgm(
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
             # Epipolar_disparity
-            epipolar_disparity_map = cars_dataset.CarsDataset("arrays")
+            epipolar_disparity_map = cars_dataset.CarsDataset(
+                "arrays", name="dense_matching_" + pair_key
+            )
             epipolar_disparity_map.create_empty_copy(epipolar_images_left)
             epipolar_disparity_map.overlaps *= 0
 

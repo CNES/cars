@@ -209,8 +209,12 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         )
 
         # Create CarsDataset
-        grid_left = cars_dataset.CarsDataset("arrays")
-        grid_right = cars_dataset.CarsDataset("arrays")
+        grid_left = cars_dataset.CarsDataset(
+            "arrays", name="grid_left_" + pair_key
+        )
+        grid_right = cars_dataset.CarsDataset(
+            "arrays", name="grid_right_" + pair_key
+        )
 
         # Compute tiling grid
         # Only one tile

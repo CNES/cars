@@ -177,7 +177,10 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
             app_name = ""
 
         # Create CarsDataset Epipolar_disparity
-        new_epipolar_disparity_map = cars_dataset.CarsDataset("arrays")
+        new_epipolar_disparity_map = cars_dataset.CarsDataset(
+            "arrays",
+            name="dense_matches_filling_" + app_name + "_" + pair_folder,
+        )
         new_epipolar_disparity_map.create_empty_copy(epipolar_disparity_map)
 
         # Update attributes to get epipolar info

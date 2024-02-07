@@ -114,6 +114,8 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
         obj_id = self.get_future_cars_dataset_id(future_result)
         cars_ds_replacer = self.get_cars_ds_replacer_corresponding_id(obj_id)
 
+        if cars_ds_replacer is None:
+            return None
         return cars_ds_replacer.cars_ds
 
     def add_cars_ds_to_replace(self, cars_ds):

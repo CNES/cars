@@ -229,7 +229,9 @@ class MappingToTerrainTiles(
             "points",
         ):
             # Create CarsDataset
-            merged_point_cloud = cars_dataset.CarsDataset("points")
+            merged_point_cloud = cars_dataset.CarsDataset(
+                "points", name="point_cloud_fusion"
+            )
 
             # Compute tiling grid
             merged_point_cloud.tiling_grid = terrain_tiling_grid
