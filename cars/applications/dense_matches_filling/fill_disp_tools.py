@@ -893,4 +893,5 @@ def update_filling(
     # Select accurate band of output according to the type of filling
     filling_type = {cst.BAND_FILLING: filling_type}
     # Add True values from inputmask to output accurate band
+    filling = filling.astype(bool)
     output_dataset[cst.EPI_FILLING].sel(**filling_type).values[filling] = True

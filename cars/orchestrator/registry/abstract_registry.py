@@ -134,10 +134,10 @@ class AbstractCarsDatasetRegistry:
             if CARS_DS_ROW in attributes_info_dict[SAVING_INFO]:
                 cars_ds_row = attributes_info_dict[SAVING_INFO][CARS_DS_ROW]
             else:
-                logging.warning("No row given in object")
+                logging.debug("No row given in object")
             if CARS_DS_COL in attributes_info_dict[SAVING_INFO]:
                 cars_ds_col = attributes_info_dict[SAVING_INFO][CARS_DS_COL]
             else:
-                logging.warning("No col given in object")
+                logging.debug("No col given in object")
 
         return cars_ds_row, cars_ds_col

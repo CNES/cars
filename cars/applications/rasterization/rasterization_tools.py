@@ -23,6 +23,7 @@ This module is responsible for the rasterization step:
 - it contains all functions related to 3D representation on a 2D raster grid
 TODO: refactor in several files and remove too-many-lines
 """
+# pylint: disable=too-many-lines
 
 # Standard imports
 import logging
@@ -780,14 +781,18 @@ def update_data(
         )
 
         # assign old weights
+        new_data = np.zeros(shape)
         if method == "basic":
-            new_data = np.zeros(shape)
             new_data[old_valid] = old_data[old_valid] * old_factor[old_valid]
             new_data[current_valid] += (
                 current_data[current_valid] * current_factor[current_valid]
             )
+        elif method == "bool":
+            new_data[old_valid] = old_data[old_valid]
+            new_data[current_valid] = np.logical_or(
+                current_data[current_valid], new_data[current_valid]
+            )
         elif method == "sum":
-            new_data = np.zeros(shape)
             new_data[old_valid] = old_data[old_valid]
             new_data[current_valid] += current_data[current_valid]
 

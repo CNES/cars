@@ -453,7 +453,7 @@ class CensusMccnnSgm(
         )
 
         # return worst case
-        opt_epipolar_tile_size = max(
+        opt_epipolar_tile_size = min(
             opt_epipolar_tile_size_1, opt_epipolar_tile_size_2
         )
 
@@ -476,7 +476,15 @@ class CensusMccnnSgm(
                 )
             )
 
-            return local_opt_tile_size, opt_epipolar_tile_size
+            # Get max range to use with current optimal size
+            max_range = dm_tools.get_max_disp_from_opt_tile_size(
+                opt_epipolar_tile_size,
+                max_ram_per_worker,
+                margin=self.epipolar_tile_margin_in_percent,
+                used_disparity_range=(local_disp_max - local_disp_min),
+            )
+
+            return local_opt_tile_size, opt_epipolar_tile_size, max_range
 
         return opt_epipolar_tile_size, local_tile_optimal_size_fun
 
@@ -1016,6 +1024,16 @@ class CensusMccnnSgm(
                     epipolar_disparity_map,
                     cars_ds_name="disp_max",
                 )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(
+                        pair_folder,
+                        "epi_filling_disp.tif",
+                    ),
+                    cst_disp.FILLING,
+                    epipolar_disparity_map,
+                    cars_ds_name="epi_filling_disp",
+                    nodata=-1,
+                )
 
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(
@@ -1049,9 +1067,7 @@ class CensusMccnnSgm(
                 )
             )
 
-            nb_invalid_tile = 0
             nb_total_tiles_roi = 0
-            disp_ranges = []
 
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
@@ -1061,12 +1077,14 @@ class CensusMccnnSgm(
                         type(epipolar_images_left[row, col]),
                         type(epipolar_images_right[row, col]),
                     ):
+                        use_tile = True
                         nb_total_tiles_roi += 1
 
                         # Compute optimal tile size for tile
                         (
-                            opt_tile_size,
-                            global_opt_tile_size,
+                            _,
+                            _,
+                            crop_with_range,
                         ) = local_tile_optimal_size_fun(
                             np.array(
                                 epipolar_images_left.attributes[
@@ -1079,29 +1097,6 @@ class CensusMccnnSgm(
                                 ]
                             )[row, col],
                         )
-
-                        if opt_tile_size >= min(
-                            global_opt_tile_size, self.min_epi_tile_size
-                        ):
-                            # Tile is likely to crash in worker
-                            # due to memory consumtion
-                            use_tile = True
-                        else:
-                            nb_invalid_tile += 1
-                            disp_ranges.append(
-                                [
-                                    np.array(
-                                        epipolar_images_left.attributes[
-                                            "disp_min_tiling"
-                                        ]
-                                    )[row, col],
-                                    np.array(
-                                        epipolar_images_left.attributes[
-                                            "disp_max_tiling"
-                                        ]
-                                    )[row, col],
-                                ]
-                            )
 
                     if use_tile:
                         # update saving infos  for potential replacement
@@ -1127,20 +1122,9 @@ class CensusMccnnSgm(
                                 self.perf_ambiguity_threshold
                             ),
                             disp_to_alt_ratio=disp_to_alt_ratio,
+                            crop_with_range=crop_with_range,
                         )
 
-            # Message info about not computed tiles
-            tile_missing_message = (
-                "Dense matching: {} tiles not computed over {} tiles, "
-                "these tile were likely to crash due to memory "
-                "consumption, in pair {}. Disparity ranges: {}".format(
-                    nb_invalid_tile, nb_total_tiles_roi, pair_key, disp_ranges
-                )
-            )
-            if nb_invalid_tile == 0:
-                logging.info(tile_missing_message)
-            else:
-                logging.error(tile_missing_message)
         else:
             logging.error(
                 "DenseMatching application doesn't "
@@ -1159,6 +1143,7 @@ def compute_disparity_wrapper(
     generate_performance_map=False,
     perf_ambiguity_threshold=0.6,
     disp_to_alt_ratio=None,
+    crop_with_range=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
     Compute disparity maps from image objects.
@@ -1194,6 +1179,8 @@ def compute_disparity_wrapper(
     :type perf_ambiguity_threshold: float
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
+    :param crop_with_range: range length to crop disparity range with
+    :type crop_with_range: float
     :return: Left to right disparity dataset
         Returned dataset is composed of :
 
@@ -1208,6 +1195,28 @@ def compute_disparity_wrapper(
         disp_max_grid,
     ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
 
+    # Crop interval if needed
+    mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
+    if crop_with_range is not None:
+        current_min = np.min(disp_min_grid)
+        current_max = np.max(disp_max_grid)
+        if (current_max - current_min) > crop_with_range:
+            logging.warning("disparity range for current tile is cropped")
+            # crop
+            new_min = (
+                current_min * crop_with_range / (current_max - current_min)
+            )
+            new_max = (
+                current_max * crop_with_range / (current_max - current_min)
+            )
+
+            mask_crop = np.logical_or(
+                disp_min_grid < new_min, disp_max_grid > new_max
+            )
+            mask_crop = mask_crop.astype(bool)
+            disp_min_grid[mask_crop] = new_min
+            disp_max_grid[mask_crop] = new_max
+
     # Compute disparity
     # TODO : remove overwriting of EPI_MSK
     disp_dataset = dm_tools.compute_disparity(
@@ -1220,6 +1229,7 @@ def compute_disparity_wrapper(
         generate_performance_map=generate_performance_map,
         perf_ambiguity_threshold=perf_ambiguity_threshold,
         disp_to_alt_ratio=disp_to_alt_ratio,
+        cropped_range=mask_crop,
     )
 
     # Fill with attributes

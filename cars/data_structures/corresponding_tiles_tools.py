@@ -23,11 +23,11 @@ Contains functions for array reconstructions and crop for multiple tiles
 """
 
 
-import copy
-
 # Third party imports
 import numpy as np
 import xarray as xr
+
+import cars.core.constants as cst
 
 
 def reconstruct_data(tiles, window, overlap):  # noqa: C901
@@ -226,9 +226,15 @@ def crop_dataset(full_dataset, in_dataset, window, overlap, row_min, col_min):
     :rtype: xr.Dataset
 
     """
-    cropped = copy.copy(in_dataset)
+    cropped = xr.Dataset()
 
-    list_tags = list(in_dataset.keys())
+    coords = {}
+    if cst.ROW in in_dataset:
+        coords[cst.ROW] = in_dataset.coords[cst.ROW]
+    if cst.COL in in_dataset:
+        coords[cst.COL] = in_dataset.coords[cst.COL]
+
+    list_tags = list(full_dataset.keys())
 
     for tag in list_tags:
         full_data = full_dataset[tag].values
@@ -237,10 +243,10 @@ def crop_dataset(full_dataset, in_dataset, window, overlap, row_min, col_min):
         offset_col = int(window[2] - overlap[2] - col_min)
 
         if len(full_data.shape) == 2:
-            nb_row = int(cropped[tag].values.shape[0])
-            nb_col = int(cropped[tag].values.shape[1])
+            nb_row = int(in_dataset[tag].values.shape[0])
+            nb_col = int(in_dataset[tag].values.shape[1])
 
-            cropped[tag].values = np.ascontiguousarray(
+            values = np.ascontiguousarray(
                 full_data[
                     offset_row : offset_row + nb_row,
                     offset_col : offset_col + nb_col,
@@ -248,15 +254,31 @@ def crop_dataset(full_dataset, in_dataset, window, overlap, row_min, col_min):
             )
 
         else:
-            nb_row = int(cropped[tag].values.shape[1])
-            nb_col = int(cropped[tag].values.shape[2])
+            nb_row = int(in_dataset[tag].values.shape[1])
+            nb_col = int(in_dataset[tag].values.shape[2])
 
-            cropped[tag].values = np.ascontiguousarray(
+            values = np.ascontiguousarray(
                 full_data[
                     :,
                     offset_row : offset_row + nb_row,
                     offset_col : offset_col + nb_col,
                 ]
             )
+
+        xarray_coords = {}
+        for coord_tag in full_dataset[tag].coords:
+            if coord_tag in coords:
+                xarray_coords[coord_tag] = coords[coord_tag]
+            else:
+                xarray_coords[coord_tag] = full_dataset[tag].coords[coord_tag]
+
+        dims = full_dataset[tag].dims
+
+        data_array = xr.DataArray(values, coords=xarray_coords, dims=dims)
+        if tag in in_dataset:
+            data_array.attrs = in_dataset[tag].attrs
+        cropped[tag] = data_array
+
+    cropped.attrs = in_dataset.attrs
 
     return cropped
