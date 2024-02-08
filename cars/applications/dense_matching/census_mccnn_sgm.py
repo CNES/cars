@@ -1032,6 +1032,7 @@ class CensusMccnnSgm(
                     cst_disp.FILLING,
                     epipolar_disparity_map,
                     cars_ds_name="epi_filling_disp",
+                    nodata=-1,
                 )
 
             # Get saving infos in order to save tiles when they are computed

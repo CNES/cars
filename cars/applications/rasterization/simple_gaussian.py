@@ -889,6 +889,13 @@ def raster_final_function(orchestrator, future_object):
 
             if tag in [cst.RASTER_NB_PTS, cst.RASTER_NB_PTS_IN_CELL]:
                 method = "sum"
+            elif tag in [
+                cst.RASTER_FILLING,
+                cst.RASTER_CLASSIF,
+                cst.RASTER_SOURCE_PC,
+            ]:
+                method = "bool"
+
             else:
                 method = "basic"
 

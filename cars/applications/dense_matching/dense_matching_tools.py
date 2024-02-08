@@ -413,6 +413,7 @@ def add_crop_info(disp_ds, cropped_range):
 
     :return updated dataset
     """
+
     disp_ds = fill_disp_tools.add_empty_filling_band(
         disp_ds, ["cropped_disp_range"]
     )
