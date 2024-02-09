@@ -399,6 +399,8 @@ def create_combined_dense_cloud(  # noqa: C901
             image (coord_epi_geom_i, coord_epi_geom_j) are added\
             to the dataframe along with the index of its original cloud\
             in the cloud_list input.
+        - if confidence intervals on Z in input, then\
+            [cst.Z_INF, cst.Z_SUP] are also added to the labels
 
 
     :param dsm_epsg: epsg code for the CRS of the final output raster

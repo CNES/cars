@@ -118,7 +118,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk" \
-                    optional: "color", "msk",
+                    optional: "color", "msk", "z_inf", "z_sup"
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound", "elevation_delta_upper_bound"
@@ -146,7 +146,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
 
                 - data : with keys : "x", "y", "z", "corr_msk" \
                     optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
-                     "coord_epi_geom_j","idx_im_epi"
+                     "coord_epi_geom_j","idx_im_epi", "z_inf", "z_sup"
                 - attrs with keys: "epsg"
             - attributes containing: "bounds", "epsg"
 

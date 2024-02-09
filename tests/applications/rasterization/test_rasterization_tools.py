@@ -249,6 +249,87 @@ def test_simple_rasterization_dataset_1():
 
 
 @pytest.mark.unit_tests
+def test_simple_rasterization_dataset_1_intervals():
+    """
+    Test simple rasterization dataset with confidence intervals
+    from test cloud cloud1_ref_epsg_32630.nc
+    Configuration 1 : random xstart, ystart, xsize, ysize values
+    """
+
+    cloud = xr.open_dataset(
+        absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
+    )
+    cloud[cst.Z_INF] = cloud[cst.Z] - 0.5
+    cloud[cst.Z_SUP] = cloud[cst.Z] + 1
+
+    color = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+    )
+    cloud_id = 0
+
+    xstart = 1154790
+    ystart = 4927552
+    xsize = 114
+    ysize = 112
+    resolution = 0.5
+
+    # equals to :
+    xmin = xstart
+    xmax = xstart + (xsize + 1) * resolution
+    ymin = ystart - (ysize + 1) * resolution
+    ymax = ystart
+
+    epsg = 32630
+    sigma = 0.3
+    radius = 3
+
+    # Compute margin
+    on_ground_margin = 0
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # combine datasets
+    cloud = add_color(cloud, color[cst.EPI_IMAGE].values)
+    cloud = mapping_to_terrain_tiles.compute_point_cloud_wrapper(
+        [(cloud, cloud_id)],
+        epsg,
+        xmin=xmin,
+        xmax=xmax,
+        ymin=ymin,
+        ymax=ymax,
+        margins=used_margin,
+        save_pc_as_laz=False,
+        save_pc_as_csv=False,
+        saving_info=None,
+        source_pc_names=["1"],
+    )
+
+    # TODO test from here -> dump cloud as test data input
+
+    raster = rasterization_tools.simple_rasterization_dataset_wrapper(
+        cloud,
+        resolution,
+        epsg,
+        xstart=xstart,
+        ystart=ystart,
+        xsize=xsize,
+        ysize=ysize,
+        sigma=sigma,
+        radius=radius,
+    )
+
+    # Uncomment to update references
+    # raster.to_netcdf(
+    #     absolute_data_path('ref_output/rasterization_res_ref_1_intervals.nc'),
+    # )
+
+    raster_ref = xr.open_dataset(
+        absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc")
+    )
+    assert_same_datasets(raster, raster_ref, atol=1.0e-10, rtol=1.0e-10)
+
+
+@pytest.mark.unit_tests
 def test_simple_rasterization_dataset_2():
     """
     Test simple rasterization dataset from test cloud cloud1_ref_epsg_32630.nc

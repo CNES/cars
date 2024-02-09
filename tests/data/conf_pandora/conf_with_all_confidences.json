@@ -28,6 +28,9 @@
         "cost_volume_confidence.risk":{
             "confidence_method": "risk"
         },
+        "cost_volume_confidence.intervals":{
+            "confidence_method": "interval_bounds"
+        },
         "disparity": {
             "disparity_method": "wta",
             "invalid_disparity": "NaN"

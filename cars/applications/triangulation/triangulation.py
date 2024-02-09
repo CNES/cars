@@ -192,7 +192,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk"\
-                    optional: "color", "msk",
+                    optional: "color", "msk", "z_inf", "z_sup"
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"

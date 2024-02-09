@@ -135,12 +135,7 @@ def test_compute_disparity_1():
 
     assert output[cst_disp.MAP].shape == (120, 110)
     assert output[cst_disp.VALID].shape == (120, 110)
-    assert output[cst_disp.MAP].shape == (120, 110)
-    assert output[cst_disp.VALID].shape == (120, 110)
 
-    np.testing.assert_allclose(
-        output.attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
@@ -183,13 +178,7 @@ def test_compute_disparity_3():
 
     assert output[cst_disp.MAP].shape == (90, 90)
     assert output[cst_disp.VALID].shape == (90, 90)
-    assert output[cst_disp.MAP].shape == (90, 90)
-    assert output[cst_disp.VALID].shape == (90, 90)
 
-    np.testing.assert_allclose(
-        output.attrs[cst.ROI],
-        np.array([16500, 23160, 16590, 23250]),
-    )
     np.testing.assert_allclose(
         output.attrs[cst.ROI],
         np.array([16500, 23160, 16590, 23250]),
@@ -231,12 +220,7 @@ def test_compute_disparity_with_all_confidences():
 
     assert output[cst_disp.MAP].shape == (120, 110)
     assert output[cst_disp.VALID].shape == (120, 110)
-    assert output[cst_disp.MAP].shape == (120, 110)
-    assert output[cst_disp.VALID].shape == (120, 110)
 
-    np.testing.assert_allclose(
-        output.attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )
@@ -331,12 +315,7 @@ def test_compute_disparity_1_msk_sec():
 
     assert output[cst_disp.MAP].shape == (120, 110)
     assert output[cst_disp.VALID].shape == (120, 110)
-    assert output[cst_disp.MAP].shape == (120, 110)
-    assert output[cst_disp.VALID].shape == (120, 110)
 
-    np.testing.assert_allclose(
-        output.attrs[cst.ROI], np.array([420, 200, 530, 320])
-    )
     np.testing.assert_allclose(
         output.attrs[cst.ROI], np.array([420, 200, 530, 320])
     )

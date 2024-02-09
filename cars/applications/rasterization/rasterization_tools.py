@@ -493,6 +493,14 @@ def create_raster_dataset(
     )
 
     if contains_intervals:
+        hgt_inf = np.nan_to_num(raster[1], nan=hgt_no_data)
+        raster_out[cst.RASTER_HGT_INF] = xr.DataArray(
+            hgt_inf, coords=raster_coords, dims=raster_dims
+        )
+        hgt_sup = np.nan_to_num(raster[2], nan=hgt_no_data)
+        raster_out[cst.RASTER_HGT_SUP] = xr.DataArray(
+            hgt_sup, coords=raster_coords, dims=raster_dims
+        )
         # statistics layer of confidence intervaks
         raster_out[cst.RASTER_HGT_INF_MEAN] = xr.DataArray(
             mean[..., 1], coords=raster_coords, dims=raster_dims
