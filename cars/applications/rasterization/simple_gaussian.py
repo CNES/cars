@@ -381,6 +381,8 @@ class SimpleGaussian(
         # Initialize files names
         # TODO get from config ?
         out_dsm_file_name = None
+        out_dsm_inf_file_name = None
+        out_dsm_sup_file_name = None
         out_weights_file_name = None
         out_clr_file_name = None
         out_msk_file_name = None
@@ -389,6 +391,14 @@ class SimpleGaussian(
         out_dsm_std_file_name = None
         out_dsm_n_pts_file_name = None
         out_dsm_points_in_cell_file_name = None
+        out_dsm_inf_mean_file_name = None
+        out_dsm_inf_std_file_name = None
+        out_dsm_inf_n_pts_file_name = None
+        out_dsm_inf_points_in_cell_file_name = None
+        out_dsm_sup_mean_file_name = None
+        out_dsm_sup_std_file_name = None
+        out_dsm_sup_n_pts_file_name = None
+        out_dsm_sup_points_in_cell_file_name = None
 
         if self.save_dsm:
             if dsm_file_name is not None:
