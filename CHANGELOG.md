@@ -2,6 +2,32 @@
 
 
 
+## 0.7.5  Pandora integration (February 2024)
+
+### Added
+
+ - New default pipeline sensors_to_dense_dsm_no_merging with cumulative rasterisation [#698]
+ - Profiling report for multiprocessing mode [#745]
+ - Dashboard showing tiles processing during a run [#765]
+ - Save of sparse matches in sensor geometry [#761]
+
+### Changed
+
+ - Version 1.6.0 of Pandora is used [#688]
+ - Version 0.2.0a1 of Shareloc is used [#756]
+ - Sparse matching processed by strip to improve computation time [#753]
+ - DEM generation improved : less artifacts, filling of invalid regions [#754]
+ - Default orchestrator is multiprocessing [#755]
+ - Disparity interval cropped when it is too high [#757]
+
+### Fixed
+
+ - Data is typed to save memory consumption [#661]
+ - Multiprocessing workers started with fork and not forkserver to avoid memory overload [#730]
+ - CPU usage limited to 100% per worker [#750]
+
+
+
 ## 0.7.4  Local disparity ranges (December 2023)
 
 ### Added
