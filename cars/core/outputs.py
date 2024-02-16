@@ -137,12 +137,7 @@ def rasterio_write_georaster(
 
         if len(data.shape) == 2:
             descriptor.write(data, 1, window=window)
-        elif len(data.shape) > 2:
-            if data.shape[2] < 5:
-                # wrong convention : cols, rows, bands
-                # revert axis to bands, cols, rows
-                data = np.moveaxis(data, [0, 1, 2], [2, 0, 1])
-
+        else:
             descriptor.write(data, window=window)
 
     if descriptor is not None:
