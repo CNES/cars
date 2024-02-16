@@ -121,11 +121,39 @@ class PandoraLoader:
                     "eta_max": perf_eta_max_risk,
                     "eta_step": perf_eta_step,
                 },
+                "cost_volume_confidence.cars_3": {
+                    "confidence_method": "interval_bounds",
+                },
             }
 
             conf["pipeline"] = overload_pandora_conf_with_confidence(
                 conf["pipeline"], perf_conf
             )
+
+            # To ensure the consistency between the disparity map
+            # and the intervals, the median filter for intervals
+            # must be similar to the median filter. The filter is
+            # added at the end of the conf as it is applied during
+            # the disp_map state.
+            try:
+                filter_size = conf["pipeline"]["filter"]["filter_size"]
+            except KeyError:
+                filter_size = 3
+
+            conf_filter_interval = {
+                "filter.cars_3": {
+                    "filter_method": "median_for_intervals",
+                    "filter_size": filter_size,
+                    "interval_indicator": "cars_3",
+                    "regularization": True,
+                    "ambiguity_indicator": "cars_1",
+                }
+            }
+            pipeline_dict = OrderedDict()
+            pipeline_dict.update(conf["pipeline"])
+            pipeline_dict.update(conf_filter_interval)
+
+            conf["pipeline"] = pipeline_dict
 
         else:
             # by default generate ambiguity user uses
@@ -296,7 +324,6 @@ def overload_pandora_conf_with_confidence(conf, confidence_conf):
     disp_index = conf_keys.index("disparity")
 
     # move to end every key from disparity
-
     for ind in range(disp_index, len(conf_keys)):
         out_dict.move_to_end(conf_keys[ind])
 
