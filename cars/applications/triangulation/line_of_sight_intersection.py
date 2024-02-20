@@ -492,38 +492,12 @@ class LineOfSightIntersection(
 
         # Determining if a lower disparity inf corresponds to a lower or higher
         # hgt. It depends on the image pairing and geometrical models.
-        if intervals is not None:
-            # We create a fake disparity map
-            # with two pixels and triangulate them
-            fake_disp = xr.Dataset(
-                data_vars={"disp": (["row", "col"], [[1, 0]])},
-                coords={"row": [0], "col": [0, 1]},
-                attrs={"roi": [0, 0, 1, 2]},
-            )
-            fake_triangulation = geometry_plugin.triangulate(
-                sensor1,
-                sensor2,
-                geomodel1,
-                geomodel2,
-                cst.DISP_MODE,
-                fake_disp,
-                grid_left,
-                grid_right,
-                roi_key=cst.ROI,
-            )
-            # Left pixel (0,0) is matched to right pixel (0,1)
-            # Left pixel (0,1) is also matched to right pixel (0,1)
-            # If the triangulated first point is lower than the second
-            # then the sensors are as follows:
-            # sensor_1  sensor_2
-            #     \ \    /
-            #      \ \  /
-            #       \ \/
-            #        \/
-            # meaning that disp_min corresponds to hgt_sup.
-            # We thus need to reverse the orders of the intervals.
-            if fake_triangulation[0, 0, 2] < fake_triangulation[1, 0, 2]:
-                intervals[0], intervals[1] = intervals[1], intervals[0]
+        if (
+            intervals is not None
+        ) and geometry_plugin.sensors_arrangement_left_right(
+            sensor1, sensor2, geomodel1, geomodel2, grid_left, grid_right
+        ):
+            intervals[0], intervals[1] = intervals[1], intervals[0]
 
         for col in range(epipolar_disparity_map.shape[1]):
             for row in range(epipolar_disparity_map.shape[0]):
