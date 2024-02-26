@@ -90,6 +90,12 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
 
         return overloaded_conf
 
+    def get_delayed_type(self):
+        """
+        Get delayed type
+        """
+        return object
+
     def cleanup(self):
         """
         Cleanup cluster
@@ -121,7 +127,7 @@ class SequentialCluster(abstract_cluster.AbstractCluster):
         """
         return data
 
-    def future_iterator(self, future_list):
+    def future_iterator(self, future_list, timeout=None):
         """
         Start all tasks
 

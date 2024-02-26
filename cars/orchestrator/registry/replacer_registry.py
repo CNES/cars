@@ -101,6 +101,16 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
 
         return cars_ds_replacer
 
+    def replace_lasting_jobs(self, delayed_type):
+        """
+        Replace last jobs by Nones
+        """
+        for cars_ds in self.get_cars_datasets_list():
+            for row in range(cars_ds.shape[0]):
+                for col in range(cars_ds.shape[1]):
+                    if isinstance(cars_ds[row, col], delayed_type):
+                        cars_ds[row, col] = None
+
     def get_cars_ds(self, future_result):
         """
         Get a list of registered CarsDataset
@@ -168,9 +178,9 @@ class CarsDatasetRegistryReplacer(AbstractCarsDatasetRegistry):
         if replacer is not None:
             if not replacer.as_been_seen:
                 # reset all tiles to None
-                for row in range(replacer.cars_ds.shape[0]):
-                    for col in range(replacer.cars_ds.shape[1]):
-                        replacer.cars_ds[row, col] = None
+                # for row in range(replacer.cars_ds.shape[0]):
+                #     for col in range(replacer.cars_ds.shape[1]):
+                #         replacer.cars_ds[row, col] = None
 
                 replacer.as_been_seen = True
 

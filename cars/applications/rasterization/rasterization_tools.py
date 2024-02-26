@@ -359,11 +359,11 @@ def compute_vector_raster_and_stats(
 
     msk_out = None
     if len(msk_indexes) > 0:
-        msk_out = msk
+        msk_out = np.ceil(msk)
 
     classif_out = None
     if len(classif_indexes) > 0:
-        classif_out = classif
+        classif_out = np.ceil(classif)
 
     source_pc_out = None
     if len(source_pc_indexes) > 0:

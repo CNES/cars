@@ -46,6 +46,8 @@ from json_checker import Checker
 from cars.core import cars_logging
 from cars.core.utils import safe_makedirs
 
+THREAD_TIMEOUT = 2
+
 
 # pylint: disable=too-few-public-methods
 class AbstractLogWrapper(metaclass=ABCMeta):
@@ -818,15 +820,20 @@ def cars_profile(name=None, interval=0.1):
                 os.getpid(), child_pipe, interval=interval
             )
             thread_monitoring.start()
-            parent_pipe.recv()
+            if parent_pipe.poll(THREAD_TIMEOUT):
+                parent_pipe.recv()
 
             res = func(*args, **kwargs)
             total_time = time.time() - start_time
 
             # end memprofiling monitoring
             parent_pipe.send(0)
-            max_memory = parent_pipe.recv()
-            max_cpu = parent_pipe.recv()
+            max_memory = None
+            max_cpu = None
+            if parent_pipe.poll(THREAD_TIMEOUT):
+                max_memory = parent_pipe.recv()
+            if parent_pipe.poll(THREAD_TIMEOUT):
+                max_cpu = parent_pipe.recv()
             memory_end = get_current_memory()
 
             func_name = name

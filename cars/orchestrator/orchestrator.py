@@ -38,8 +38,13 @@ from tqdm import tqdm
 # CARS imports
 from cars.core.cars_logging import add_progress_message
 from cars.data_structures import cars_dataset
+from cars.orchestrator import achievement_tracker
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
-from cars.orchestrator.orchestrator_constants import CARS_DS_COL, CARS_DS_ROW
+from cars.orchestrator.orchestrator_constants import (
+    CARS_DATASET_KEY,
+    CARS_DS_COL,
+    CARS_DS_ROW,
+)
 from cars.orchestrator.registry import id_generator as id_gen
 from cars.orchestrator.registry import replacer_registry, saver_registry
 from cars.orchestrator.tiles_profiler import TileProfiler
@@ -88,9 +93,9 @@ class Orchestrator:
                 "multiprocessing mode is used"
             )
 
-        # set OTB_MAX_RAM_HINT
-        self.former_otb_max_ram = os.environ.get("OTB_MAX_RAM_HINT", None)
-        os.environ["OTB_MAX_RAM_HINT"] = "3000"  # 60% 5Gb
+        self.orchestrator_conf = orchestrator_conf
+
+        self.task_timeout = 600  # seconds = 10 min
 
         # init cluster
         self.cluster = AbstractCluster(  # pylint: disable=E0110
@@ -108,6 +113,8 @@ class Orchestrator:
         self.cars_ds_replacer_registry = (
             replacer_registry.CarsDatasetRegistryReplacer(self.id_generator)
         )
+        # Achievement tracker
+        self.achievement_tracker = achievement_tracker.AchievementTracker()
 
         # init tile profiler
         self.dir_tile_profiling = os.path.join(self.out_dir, "tile_processing")
@@ -179,6 +186,11 @@ class Orchestrator:
         if cars_ds_name is not None:
             self.cars_ds_names_info.append(cars_ds_name)
 
+        # add to tracking
+        self.achievement_tracker.track(
+            cars_ds, self.get_saving_infos([cars_ds])[0][CARS_DATASET_KEY]
+        )
+
     def add_to_replace_lists(self, cars_ds, cars_ds_name=None):
         """
         Add CarsDataset to replacing Registry
@@ -194,6 +206,11 @@ class Orchestrator:
         # add name if exists
         if cars_ds_name is not None:
             self.cars_ds_names_info.append(cars_ds_name)
+
+        # add to tracking
+        self.achievement_tracker.track(
+            cars_ds, self.get_saving_infos([cars_ds])[0][CARS_DATASET_KEY]
+        )
 
     def save_out_json(self):
         """
@@ -301,9 +318,11 @@ class Orchestrator:
 
         return data, nodata
 
-    def compute_futures(self):
+    def compute_futures(self, only_remaining_delayed=None):
         """
         Compute all futures from regitries
+
+        :param only_remaining_delayed: list of delayed if second run
 
         """
 
@@ -314,10 +333,14 @@ class Orchestrator:
             # run compute and save files
             logging.info("Compute delayed ...")
             # Flatten to list
-            delayed_objects = flatten_object(
-                self.cars_ds_savers_registry.get_cars_datasets_list()
-                + self.cars_ds_replacer_registry.get_cars_datasets_list()
-            )
+            if only_remaining_delayed is None:
+                delayed_objects = flatten_object(
+                    self.cars_ds_savers_registry.get_cars_datasets_list()
+                    + self.cars_ds_replacer_registry.get_cars_datasets_list(),
+                    self.cluster.get_delayed_type(),
+                )
+            else:
+                delayed_objects = only_remaining_delayed
 
             # Compute delayed
             future_objects = self.cluster.start_tasks(delayed_objects)
@@ -342,30 +365,65 @@ class Orchestrator:
                 leave=True,
                 file=sys.stdout,
             )
+            nb_tiles_computed = 0
 
-            for future_obj in self.cluster.future_iterator(future_objects):
-                # get corresponding CarsDataset and save tile
-                if future_obj is not None:
-                    # Apply function if exists
-                    final_function = None
-                    current_cars_ds = self.cars_ds_savers_registry.get_cars_ds(
-                        future_obj
+            try:
+                for future_obj in self.cluster.future_iterator(
+                    future_objects, timeout=self.task_timeout
+                ):
+                    # get corresponding CarsDataset and save tile
+                    if future_obj is not None:
+
+                        # Apply function if exists
+                        final_function = None
+                        current_cars_ds = (
+                            self.cars_ds_savers_registry.get_cars_ds(future_obj)
+                        )
+                        if current_cars_ds is None:
+                            self.cars_ds_replacer_registry.get_cars_ds(
+                                future_obj
+                            )
+                        if current_cars_ds is not None:
+                            final_function = current_cars_ds.final_function
+                        if final_function is not None:
+                            future_obj = final_function(self, future_obj)
+                        # Save future if needs to
+                        self.cars_ds_savers_registry.save(future_obj)
+                        # Replace future in cars_ds if needs to
+                        self.cars_ds_replacer_registry.replace(future_obj)
+                        # notify tile profiler for new tile
+                        self.tile_profiler.add_tile(future_obj)
+                        # update achievement
+                        self.achievement_tracker.add_tile(future_obj)
+                        nb_tiles_computed += 1
+                    else:
+                        logging.debug("None tile: not saved")
+                    pbar.update()
+
+            except TimeoutError:
+                logging.error("TimeOut")
+                self.reset_cluster()
+                del pbar
+
+                if only_remaining_delayed is None:
+                    logging.error("Retry failed tasks ...")
+                    self.compute_futures(
+                        only_remaining_delayed=(
+                            self.achievement_tracker.get_remaining_tiles()
+                        )
                     )
-                    if current_cars_ds is None:
-                        self.cars_ds_replacer_registry.get_cars_ds(future_obj)
-                    if current_cars_ds is not None:
-                        final_function = current_cars_ds.final_function
-                    if final_function is not None:
-                        future_obj = final_function(self, future_obj)
-                    # Save future if needs to
-                    self.cars_ds_savers_registry.save(future_obj)
-                    # Replace future in cars_ds if needs to
-                    self.cars_ds_replacer_registry.replace(future_obj)
-                    # notify tile profiler for new tile
-                    self.tile_profiler.add_tile(future_obj)
+
                 else:
-                    logging.debug("None tile: not saved")
-                pbar.update()
+                    # replace Delayed to be replaced by None
+                    self.cars_ds_replacer_registry.replace_lasting_jobs(
+                        self.cluster.get_delayed_type()
+                    )
+                    self.reset_registries()
+
+            if nb_tiles_computed == 0:
+                logging.warning(
+                    "Result have not been saved because all tiles are None"
+                )
 
             # close files
             logging.info("Close files ...")
@@ -374,6 +432,19 @@ class Orchestrator:
             logging.debug(
                 "orchestrator launch_worker is False, no content.json saved"
             )
+
+    def reset_cluster(self):
+        """
+        Reset Cluster
+
+        """
+        if self.launch_worker:
+            self.cluster.cleanup()
+        self.cluster = AbstractCluster(  # pylint: disable=E0110
+            self.orchestrator_conf,
+            self.out_dir,
+            launch_worker=self.launch_worker,
+        )
 
     def reset_registries(self):
         """
@@ -396,6 +467,9 @@ class Orchestrator:
             self.cars_ds_savers_registry,
             self.cars_ds_replacer_registry,
         )
+
+        # achievement tracker
+        self.achievement_tracker = achievement_tracker.AchievementTracker()
 
         # reset cars_ds names infos
         self.cars_ds_names_info = []
@@ -453,19 +527,14 @@ class Orchestrator:
             if tmp_dir is not None and os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
 
-        # reset OTB_MAX_RAM_HINT
-        if self.former_otb_max_ram is None:
-            del os.environ["OTB_MAX_RAM_HINT"]
-        else:
-            os.environ["OTB_MAX_RAM_HINT"] = self.former_otb_max_ram
 
-
-def flatten_object(cars_ds_list):
+def flatten_object(cars_ds_list, delayed_type):
     """
     Flatten list of CarsDatasets to list of delayed
 
     :param cars_ds_list: list of cars datasets flatten
     :type cars_ds_list: list[CarsDataset]
+    :param delayed_type: type of delayed
 
     :return: list of delayed
     :rtype: list[Delayed]
@@ -486,7 +555,7 @@ def flatten_object(cars_ds_list):
             obj
             for obj_list in cars_ds.tiles
             for obj in obj_list
-            if obj is not None
+            if isinstance(obj, delayed_type) and obj is not None
         ]
 
     return flattened_objects
