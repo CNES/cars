@@ -650,12 +650,17 @@ class SimpleGaussian(
                             source_pc_names=source_pc_names,
                         )
         else:
+
             # Add final function to apply
             terrain_raster.final_function = raster_final_function
             ind_tile = 0
             for point_cloud in points_clouds[0]:
                 for row_pc in range(point_cloud.shape[0]):
                     for col_pc in range(point_cloud.shape[1]):
+                        # update saving infos  for potential replacement
+                        full_saving_info = ocht.update_saving_infos(
+                            saving_info, row=0, col=ind_tile
+                        )
                         if point_cloud[row_pc, col_pc] is not None:
                             # Delayed call to rasterization operations using all
                             #  required point clouds
@@ -672,7 +677,7 @@ class SimpleGaussian(
                                 terrain_region=None,
                                 terrain_full_roi=bounds,
                                 list_computed_layers=self.list_computed_layers,
-                                saving_info=saving_info,
+                                saving_info=full_saving_info,
                                 radius=self.dsm_radius,
                                 sigma=self.sigma,
                                 dsm_no_data=self.dsm_no_data,

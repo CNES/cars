@@ -10,6 +10,7 @@
  - Profiling report for multiprocessing mode [#745]
  - Dashboard showing tiles processing during a run [#765]
  - Save of sparse matches in sensor geometry [#761]
+ - Relaunch of frozen tasks after timeout [#768]
 
 ### Changed
 
@@ -23,8 +24,9 @@
 ### Fixed
 
  - Data is typed to save memory consumption [#661]
- - Multiprocessing workers started with fork and not forkserver to avoid memory overload [#730]
+ - Preload of CARS in workers for multiprocessing mode to reduce forking time [#730]
  - CPU usage limited to 100% per worker [#750]
+ - Output classification pixels cannot be floating-point numbers anymore
 
 
 

@@ -21,7 +21,9 @@
 """
 Contains abstract function for multiprocessing Cluster
 """
+# pylint: disable=C0302
 
+import copy
 import itertools
 import logging
 import logging.handlers
@@ -105,7 +107,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.factorize_tasks = self.checked_conf_cluster["factorize_tasks"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
-        mp_mode = "fork"
+        mp_mode = "forkserver"
 
         self.launch_worker = launch_worker
 
@@ -129,7 +131,11 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 self.wrapper = mp_wrapper.WrapperNone(None)
 
             # Create pool
-            self.pool = mp.get_context(mp_mode).Pool(
+            ctx_in_main = mp.get_context(mp_mode)
+            # import cars for env variables firts
+            # import cars pipelines for numba compilation
+            ctx_in_main.set_forkserver_preload(["cars", "cars.pipelines"])
+            self.pool = ctx_in_main.Pool(
                 self.nb_workers,
                 initializer=freeze_support,
                 maxtasksperchild=self.max_tasks_per_worker,
@@ -222,6 +228,12 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
 
         return overloaded_conf
 
+    def get_delayed_type(self):
+        """
+        Get delayed type
+        """
+        return MpDelayed
+
     def cleanup(self):
         """
         Cleanup cluster
@@ -234,7 +246,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             time.sleep(0)
 
         # close pool
-        self.pool.close()
+        self.pool.terminate()
         self.pool.join()
 
         # clean tmpdir if exists
@@ -299,6 +311,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         :param task_list: task list
         """
         memorize = {}
+        # Use a copy of input delayed
+        task_list = copy.deepcopy(task_list)
         if self.factorize_tasks:
             mp_factorizer.factorize_delayed(task_list)
         future_list = [self.rec_start(task, memorize) for task in task_list]
@@ -590,14 +604,14 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
                 priority_list.append(task_id)
         return priority_list
 
-    def future_iterator(self, future_list):
+    def future_iterator(self, future_list, timeout=None):
         """
         Start all tasks
 
         :param future_list: future_list list
         """
 
-        return MpFutureIterator(future_list, self)
+        return MpFutureIterator(future_list, self, timeout=timeout)
 
 
 def get_job_ids_from_futures(future_list):

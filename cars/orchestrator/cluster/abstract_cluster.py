@@ -132,6 +132,12 @@ class AbstractCluster(metaclass=ABCMeta):
         )
 
     @abstractmethod
+    def get_delayed_type(self):
+        """
+        Get delayed type
+        """
+
+    @abstractmethod
     def cleanup(self):
         """
         Cleanup cluster
@@ -214,9 +220,10 @@ class AbstractCluster(metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def future_iterator(self, future_list):
+    def future_iterator(self, future_list, timeout=None):
         """
         Iterator, iterating on computed futures
 
         :param future_list: future_list list
+        :param timeout: time to wait for next job
         """

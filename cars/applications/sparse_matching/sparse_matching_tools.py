@@ -206,7 +206,7 @@ def compute_matches(
             right_descr_block = right_descr
             right_id_offset = 0
 
-        if len(right_descr_block) >= 2:
+        if len(left_descr_block) >= 2 and len(right_descr_block) >= 2:
             # compute euclidean matrix distance
             emd = euclidean_matrix_distance(left_descr_block, right_descr_block)
 

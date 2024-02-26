@@ -37,6 +37,7 @@ import xarray as xr
 import yaml
 from dask.config import global_config as global_dask_config
 from dask.config import set as dask_config_set
+from dask.delayed import Delayed
 from dask.distributed import as_completed
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
@@ -125,6 +126,12 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
             nout=nout,
         )
 
+    def get_delayed_type(self):
+        """
+        Get delayed type
+        """
+        return Delayed
+
     def start_tasks(self, task_list):
         """
         Start all tasks
@@ -142,14 +149,14 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         """
         return self.client.scatter(data, broadcast=broadcast)
 
-    def future_iterator(self, future_list):
+    def future_iterator(self, future_list, timeout=None):
         """
         Start all tasks
 
         :param future_list: future_list list
         """
 
-        return DaskFutureIterator(future_list)
+        return DaskFutureIterator(future_list, timeout=timeout)
 
 
 class DaskFutureIterator:
@@ -158,7 +165,8 @@ class DaskFutureIterator:
     Only returns the actual results, delete the future after usage
     """
 
-    def __init__(self, future_list):
+    def __init__(self, future_list, timeout=None):  # pylint: disable=W0613
+        # TODO: python 3.9: add timeout=timeout as parameter
         self.dask_a_c = as_completed(future_list, with_results=True)
         self.prev = None
 
@@ -173,6 +181,8 @@ class DaskFutureIterator:
                 self.prev.cancel()
                 self.prev = None
             raise exception
+        except dask.distributed.TimeoutError as exception:
+            raise TimeoutError("No tasks available") from exception
         # release previous future
         if self.prev is not None:
             self.prev.cancel()

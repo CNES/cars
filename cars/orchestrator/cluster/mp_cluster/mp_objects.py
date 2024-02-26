@@ -23,6 +23,7 @@ Contains class objects used by multiprocessing cluster
 """
 
 import threading
+import time
 
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data_rec
 
@@ -35,6 +36,7 @@ class MpJob:  # pylint: disable=R0903
     __slots__ = ["task_id", "r_idx"]
 
     def __init__(self, idx, return_index):
+        self.__class__.__name__ = "MpJob"
         self.task_id = idx
         self.r_idx = return_index
 
@@ -53,6 +55,7 @@ class MpDelayedTask:  # pylint: disable=R0903
         :param kw_args: kwargs of function
 
         """
+        self.__class__.__name__ = "MpDelayedTask"
         self.func = func
         self.args = args
         self.kw_args = kw_args
@@ -111,6 +114,7 @@ class MpDelayed:  # pylint: disable=R0903
     """
 
     def __init__(self, delayed_task, return_index=0):
+        self.__class__.__name__ = "MpDelayed"
         self.delayed_task = delayed_task
         self.return_index = return_index
 
@@ -214,6 +218,7 @@ class MpFuture:
         :param return_index: index of return object
 
         """
+        self.__class__.__name__ = "MpFuture"
 
         self.mp_future_task = mp_future_task
         # register itself to future_task
@@ -297,7 +302,7 @@ class MpFutureIterator:
     Only returns the actual results, delete the future after usage
     """
 
-    def __init__(self, future_list, cluster):
+    def __init__(self, future_list, cluster, timeout=None):
         """
         Init function of MpFutureIterator
 
@@ -307,6 +312,8 @@ class MpFutureIterator:
         self.future_list = future_list
         self.cluster = cluster
         self.was_killed = False
+        self.timeout = timeout
+        self.past_time = time.time()
 
         # update future list for cleaning
         for future in future_list:
@@ -328,11 +335,15 @@ class MpFutureIterator:
             raise StopIteration
         res = None
         while res is None:
+            if self.timeout is not None:
+                if time.time() - self.past_time > self.timeout:
+                    raise TimeoutError("No task completed before timeout")
             for item in self.future_list:
                 if item.ready():
                     if not item.successful():
                         raise RuntimeError("Failure in tasks")
                     res = item
+                    self.past_time = time.time()
                     break
 
         self.future_list.remove(res)

@@ -145,7 +145,7 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", None
         )
-        overloaded_conf["strip_height"] = conf.get("strip_height", 100)
+        overloaded_conf["strip_height"] = conf.get("strip_height", 60)
         overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
