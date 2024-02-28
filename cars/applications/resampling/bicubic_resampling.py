@@ -204,6 +204,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         margins_fun=None,
         tile_width=None,
         tile_height=None,
+        step=None,
         add_color=True,
         epipolar_roi=None,
     ):  # noqa: C901
@@ -249,6 +250,12 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type margins_fun: fun
         :param optimum_tile_size: optimum tile size to use
         :type optimum_tile_size: int
+        :param tile_width: width of tile
+        :type tile_width: int
+        :param tile_height: height of tile
+        :type tile_height: int
+        :param step: horizontal step of resampling (useful for strip resampling)
+        :type step: int
         :param add_color: add color image to dataset
         :type add_color: bool
         :param epipolar_roi: Epipolar roi to use if set.
@@ -566,6 +573,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         img2,
                         grid1,
                         grid2,
+                        step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_color=add_color,
@@ -598,6 +606,7 @@ def generate_epipolar_images_wrapper(
     img2,
     grid1,
     grid2,
+    step=None,
     used_disp_min=None,
     used_disp_max=None,
     add_color=True,
@@ -660,6 +669,7 @@ def generate_epipolar_images_wrapper(
         margins,
         epipolar_size_x,
         epipolar_size_y,
+        step=step,
         color1=color1,
         mask1=mask1,
         mask2=mask2,

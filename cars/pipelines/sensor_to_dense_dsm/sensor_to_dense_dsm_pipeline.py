@@ -648,6 +648,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         margins_fun=self.sparse_mtch_app.get_margins_fun(),
                         tile_width=None,
                         tile_height=self.sparse_mtch_app.strip_height,
+                        step=100,
                         add_color=False,
                     )
 
