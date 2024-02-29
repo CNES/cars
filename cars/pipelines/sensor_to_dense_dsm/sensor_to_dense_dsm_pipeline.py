@@ -790,6 +790,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.used_conf[GEOMETRY_PLUGIN],
                         self.inputs,
                         dem=dem_median,
+                        crop_dem=False,
                     )
                 )
                 dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
