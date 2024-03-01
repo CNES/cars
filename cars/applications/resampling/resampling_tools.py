@@ -110,6 +110,7 @@ def epipolar_rectify_images(
         img1,
         grid1,
         [epipolar_size_x, epipolar_size_y],
+        step=step,
         region=left_region,
         nodata=nodata1,
         mask=mask1,
