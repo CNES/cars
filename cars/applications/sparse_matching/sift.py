@@ -75,7 +75,6 @@ class Sift(SparseMatching, short_name="sift"):
         self.elevation_delta_upper_bound = self.used_config[
             "elevation_delta_upper_bound"
         ]
-        self.strip_height = self.used_config["strip_height"]
         self.strip_margin = self.used_config["strip_margin"]
         self.epipolar_error_upper_bound = self.used_config[
             "epipolar_error_upper_bound"
@@ -145,7 +144,6 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", None
         )
-        overloaded_conf["strip_height"] = conf.get("strip_height", 60)
         overloaded_conf["strip_margin"] = conf.get("strip_margin", 10)
         overloaded_conf["epipolar_error_upper_bound"] = conf.get(
             "epipolar_error_upper_bound", 10.0
@@ -205,7 +203,6 @@ class Sift(SparseMatching, short_name="sift"):
             "minimum_nb_matches": And(int, lambda x: x > 0),
             "elevation_delta_lower_bound": Or(int, float, None),
             "elevation_delta_upper_bound": Or(int, float, None),
-            "strip_height": And(int, lambda x: x > 0),
             "strip_margin": And(int, lambda x: x > 0),
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
