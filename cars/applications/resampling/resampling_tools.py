@@ -269,9 +269,9 @@ def resample_image(
     ymax = region[3]
     # Initialize outputs of the entire tile
     nb_bands = inputs.rasterio_get_nb_bands(img)
-    resamp = np.empty((nb_bands, region[3] - region[1], 0))
+    resamp = np.empty((nb_bands, region[3] - region[1], 0), dtype=np.float32)
     if nodata is not None or mask is not None:
-        msk = np.empty((1, region[3] - region[1], 0))
+        msk = np.empty((1, region[3] - region[1], 0), dtype=np.float32)
     else:
         msk = None
 
@@ -397,49 +397,49 @@ def resample_image(
                     )
                 )
 
-        resamp = np.concatenate((resamp, block_resamp), axis=2)
+            resamp = np.concatenate((resamp, block_resamp), axis=2)
 
-        # create msk
-        if nodata is not None or mask is not None:
-            if in_sensor:
-                # get mask in source geometry
-                nodata_index = img_as_array == nodata
+            # create msk
+            if nodata is not None or mask is not None:
+                if in_sensor:
+                    # get mask in source geometry
+                    nodata_index = img_as_array == nodata
 
-                if mask is not None:
-                    with rio.open(mask) as msk_reader:
-                        msk_as_array = msk_reader.read(window=img_window)
+                    if mask is not None:
+                        with rio.open(mask) as msk_reader:
+                            msk_as_array = msk_reader.read(window=img_window)
+                    else:
+                        msk_as_array = np.zeros(img_as_array.shape)
+
+                    nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+                    msk_as_array[nodata_index] = nodata_msk
+
+                    # resample mask
+                    block_msk = cresample.grid(
+                        msk_as_array,
+                        grid_as_array,
+                        oversampling,
+                        interpolator="nearest",
+                        nodata=nodata_msk,
+                    )
+
+                    block_msk = block_msk[
+                        ...,
+                        ext_region[1] : ext_region[3] - 1,
+                        ext_region[0] : ext_region[2] - 1,
+                    ]
                 else:
-                    msk_as_array = np.zeros(img_as_array.shape)
+                    nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+                    block_msk = np.full(
+                        (
+                            1,
+                            block_region[3] - block_region[1],
+                            block_region[2] - block_region[0],
+                        ),
+                        fill_value=nodata_msk,
+                    )
 
-                nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-                msk_as_array[nodata_index] = nodata_msk
-
-                # resample mask
-                block_msk = cresample.grid(
-                    msk_as_array,
-                    grid_as_array,
-                    oversampling,
-                    interpolator="nearest",
-                    nodata=nodata_msk,
-                )
-
-                block_msk = block_msk[
-                    ...,
-                    ext_region[1] : ext_region[3] - 1,
-                    ext_region[0] : ext_region[2] - 1,
-                ]
-            else:
-                nodata_msk = msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
-                block_msk = np.full(
-                    (
-                        1,
-                        block_region[3] - block_region[1],
-                        block_region[2] - block_region[0],
-                    ),
-                    fill_value=nodata_msk,
-                )
-
-            msk = np.concatenate((msk, block_msk), axis=2)
+                msk = np.concatenate((msk, block_msk), axis=2)
     dataset = datasets.create_im_dataset(
         resamp, region, largest_size, img, band_coords, msk
     )
