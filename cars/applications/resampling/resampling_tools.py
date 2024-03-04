@@ -275,10 +275,10 @@ def resample_image(
     else:
         msk = None
 
-    for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
-        block_region = [xmin, ymin, xmax, ymax]
-        # Build rectification pipelines for images
-        with rio.open(grid) as grid_reader:
+    with rio.open(grid) as grid_reader, rio.open(img) as img_reader:
+        for xmin, xmax in zip(xmin_of_blocks, xmax_of_blocks):  # noqa: B905
+            block_region = [xmin, ymin, xmax, ymax]
+            # Build rectification pipelines for images
             res_x, res_y = grid_reader.res
             assert res_x == res_y
             oversampling = int(res_x)
@@ -325,8 +325,7 @@ def resample_image(
             left -= filter_margin
             right += filter_margin
 
-        # extract src according to grid values
-        with rio.open(img) as img_reader:
+            # extract src according to grid values
             transform = img_reader.transform
             res_x = int(transform[0] / abs(transform[0]))
             res_y = int(transform[4] / abs(transform[4]))
