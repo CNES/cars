@@ -179,7 +179,7 @@ def start_cluster(
         out_dir,
         activate_dashboard,
         python,
-        core_memory=30000,
+        core_memory=7000,
         cluster_name="SLURM",
     )
 
