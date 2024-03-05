@@ -448,10 +448,9 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -964,10 +963,9 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -1060,10 +1058,9 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -1368,10 +1365,9 @@ def test_end2end_ventoux_unique_split():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 200},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 200,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -1743,9 +1739,8 @@ def test_end2end_use_epipolar_a_priori():
 
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 200},
             "sparse_matching": {
-                "strip_height": 200,
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
@@ -2108,10 +2103,9 @@ def test_prepare_ventoux_bias():
         )
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 100},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 100,
                 "epipolar_error_upper_bound": 43.0,
                 "epipolar_error_maximum_bias": 50.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -2183,12 +2177,12 @@ def test_end2end_ventoux_with_color():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {
                 "method": "bicubic",
+                "strip_height": 80,
                 "save_epipolar_image": True,
                 "save_epipolar_color": False,
             },
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2451,12 +2445,12 @@ def test_end2end_ventoux_with_classif():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {
                 "method": "bicubic",
+                "strip_height": 80,
                 "save_epipolar_image": True,
                 "save_epipolar_color": False,
             },
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2703,14 +2697,13 @@ def test_compute_dsm_with_roi_ventoux():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -1000,  # -20.0,
                 "elevation_delta_upper_bound": 1000,  # 20.0,
@@ -2858,10 +2851,9 @@ def test_compute_dsm_with_snap_to_img1():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -2982,10 +2974,9 @@ def test_end2end_quality_stats():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
                 "save_matches": True,
@@ -3259,10 +3250,9 @@ def test_end2end_ventoux_egm96_geoid():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3394,10 +3384,9 @@ def test_end2end_ventoux_egm96_geoid():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3487,10 +3476,9 @@ def test_end2end_paca_with_mask():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
@@ -3608,10 +3596,9 @@ def test_end2end_paca_with_mask():
         resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic"},
+            "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
-                "strip_height": 80,
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,

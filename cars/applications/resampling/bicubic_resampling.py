@@ -34,7 +34,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import Checker
+from json_checker import And, Checker, Or
 from shapely.geometry import Polygon
 
 # CARS imports
@@ -71,6 +71,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # check conf
         self.used_method = self.used_config["method"]
+        self.strip_height = self.used_config["strip_height"]
+        self.step = self.used_config["step"]
 
         # Saving bools
         self.save_epipolar_image = self.used_config["save_epipolar_image"]
@@ -102,6 +104,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # get rasterization parameter
         overloaded_conf["method"] = conf.get("method", "bicubic")
+        overloaded_conf["strip_height"] = conf.get("strip_height", 60)
+        overloaded_conf["step"] = conf.get("step", 500)
         # Saving bools
         overloaded_conf["save_epipolar_image"] = conf.get(
             "save_epipolar_image", False
@@ -112,6 +116,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         rectification_schema = {
             "method": str,
+            "strip_height": And(int, lambda x: x > 0),
+            "step": Or(None, int),
             "save_epipolar_image": bool,
             "save_epipolar_color": bool,
         }
@@ -161,7 +167,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         if tile_width is None:
             tile_width = grid_left.attributes["epipolar_size_x"]
         if tile_height is None:
-            tile_height = grid_left.attributes["epipolar_size_y"]
+            tile_height = self.strip_height
 
         logging.info(
             "Tile size for epipolar regions: "
@@ -249,6 +255,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type margins_fun: fun
         :param optimum_tile_size: optimum tile size to use
         :type optimum_tile_size: int
+        :param tile_width: width of tile
+        :type tile_width: int
+        :param tile_height: height of tile
+        :type tile_height: int
         :param add_color: add color image to dataset
         :type add_color: bool
         :param epipolar_roi: Epipolar roi to use if set.
@@ -566,6 +576,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         img2,
                         grid1,
                         grid2,
+                        self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_color=add_color,
@@ -598,6 +609,7 @@ def generate_epipolar_images_wrapper(
     img2,
     grid1,
     grid2,
+    step=None,
     used_disp_min=None,
     used_disp_max=None,
     add_color=True,
@@ -660,6 +672,7 @@ def generate_epipolar_images_wrapper(
         margins,
         epipolar_size_x,
         epipolar_size_y,
+        step=step,
         color1=color1,
         mask1=mask1,
         mask2=mask2,
