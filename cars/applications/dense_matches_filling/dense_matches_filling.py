@@ -158,6 +158,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_disparity_map,
         save_disparity_map,
         pair_folder,
+        pair_key,
         app_name=None,
     ):
         """
@@ -169,6 +170,8 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
         :type save_disparity_map: bool
         :param pair_folder: path to folder
         :type pair_folder: str
+        :param pair_key: pair id
+        :type pair_key: str
         :param app_name: application name for file names
         :type app_name: str
 
@@ -179,7 +182,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
         # Create CarsDataset Epipolar_disparity
         new_epipolar_disparity_map = cars_dataset.CarsDataset(
             "arrays",
-            name="dense_matches_filling_" + app_name + "_" + pair_folder,
+            name="dense_matches_filling_" + app_name + "_" + pair_key,
         )
         new_epipolar_disparity_map.create_empty_copy(epipolar_disparity_map)
 

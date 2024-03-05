@@ -238,6 +238,7 @@ class PlaneFill(
                     epipolar_disparity_map,
                     self.save_disparity_map,
                     pair_folder,
+                    pair_key,
                     app_name="plane",
                 )
 

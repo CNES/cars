@@ -175,6 +175,7 @@ class ZerosPadding(
                     epipolar_disparity_map,
                     self.save_disparity_map,
                     pair_folder,
+                    pair_key,
                     app_name="zero_padding",
                 )
 
