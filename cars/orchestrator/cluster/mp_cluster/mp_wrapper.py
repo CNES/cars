@@ -36,7 +36,6 @@ import xarray as xr
 
 # CARS imports
 from cars.data_structures import cars_dataset, cars_dict
-from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
 
 # Third party imports
@@ -344,7 +343,6 @@ def is_dumped_object(obj):
     return is_dumped
 
 
-@cars_profile(name="Load_disk_obj_MP_wrapper")
 def load(path):
     """
     Load object from disk
@@ -423,7 +421,6 @@ def create_path(obj, tmp_dir, id_num):
     return path
 
 
-@cars_profile(name="Dump_disk_obj_MP_wrapper")
 def dump(res, tmp_dir, id_list):
     """
     Dump results to tmp_dir, according to ids
