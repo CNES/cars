@@ -2,7 +2,7 @@
 
 
 
-## 0.7.5  Pandora integration (February 2024)
+## 0.7.5  Pandora integration (March 2024)
 
 ### Added
 
@@ -15,7 +15,7 @@
 ### Changed
 
  - Version 1.6.0 of Pandora is used [#688]
- - Version 0.2.0a1 of Shareloc is used [#756]
+ - Version 0.2.0a2 of Shareloc is used [#756]
  - Sparse matching processed by strip to improve computation time [#753]
  - DEM generation improved : less artifacts, filling of invalid regions [#754]
  - Default orchestrator is multiprocessing [#755]
@@ -27,6 +27,7 @@
  - Preload of CARS in workers for multiprocessing mode to reduce forking time [#730]
  - CPU usage limited to 100% per worker [#750]
  - Output classification pixels cannot be floating-point numbers anymore
+ - ROI not used for endogeneous DEM [#772]
 
 
 
