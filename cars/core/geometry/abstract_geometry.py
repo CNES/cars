@@ -345,8 +345,8 @@ class AbstractGeometry(metaclass=ABCMeta):
             # Get step
             step_col = grid.attributes["grid_spacing"][1]
             step_row = grid.attributes["grid_spacing"][0]
-            ori_col = step_col / 2
-            ori_row = step_row / 2
+            ori_col = grid.attributes["grid_origin"][1]
+            ori_row = grid.attributes["grid_origin"][0]
             last_row = ori_row + step_row * grid_data.shape[0]
             last_col = ori_col + step_col * grid_data.shape[1]
 
