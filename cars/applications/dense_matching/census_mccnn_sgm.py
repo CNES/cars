@@ -982,6 +982,7 @@ class CensusMccnnSgm(
                     os.path.join(pair_folder, "epi_disp_mask.tif"),
                     cst_disp.VALID,
                     epipolar_disparity_map,
+                    dtype=np.uint8,
                     cars_ds_name="epi_disp_mask",
                     optional_data=True,
                 )
@@ -990,6 +991,7 @@ class CensusMccnnSgm(
                     os.path.join(pair_folder, "epi_disp_classif.tif"),
                     cst.EPI_CLASSIFICATION,
                     epipolar_disparity_map,
+                    dtype=np.uint8,
                     cars_ds_name="epi_disp_classif",
                     optional_data=True,
                 )
@@ -1027,12 +1029,13 @@ class CensusMccnnSgm(
                 self.orchestrator.add_to_save_lists(
                     os.path.join(
                         pair_folder,
-                        "epi_filling_disp.tif",
+                        "epi_disp_filling.tif",
                     ),
                     cst_disp.FILLING,
                     epipolar_disparity_map,
-                    cars_ds_name="epi_filling_disp",
-                    nodata=-1,
+                    dtype=np.uint8,
+                    cars_ds_name="epi_disp_filling",
+                    nodata=255,
                 )
 
             # Get saving infos in order to save tiles when they are computed

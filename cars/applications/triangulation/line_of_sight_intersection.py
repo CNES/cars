@@ -28,6 +28,7 @@ import os
 from typing import Dict, Tuple
 
 # Third party imports
+import numpy as np
 import pandas
 import xarray as xr
 from json_checker import Checker
@@ -374,6 +375,7 @@ class LineOfSightIntersection(
                         cst.X,
                         epipolar_points_cloud,
                         cars_ds_name="epi_pc_x",
+                        dtype=np.float64,
                     )
 
                     self.orchestrator.add_to_save_lists(
@@ -381,6 +383,7 @@ class LineOfSightIntersection(
                         cst.Y,
                         epipolar_points_cloud,
                         cars_ds_name="epi_pc_y",
+                        dtype=np.float64,
                     )
 
                     self.orchestrator.add_to_save_lists(
@@ -388,6 +391,7 @@ class LineOfSightIntersection(
                         cst.Z,
                         epipolar_points_cloud,
                         cars_ds_name="epi_pc_z",
+                        dtype=np.float64,
                     )
 
                     self.orchestrator.add_to_save_lists(
@@ -405,6 +409,7 @@ class LineOfSightIntersection(
                         cars_ds_name="epi_pc_msk",
                         nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                         optional_data=True,
+                        dtype=np.uint8,
                     )
 
                     self.orchestrator.add_to_save_lists(
@@ -413,6 +418,7 @@ class LineOfSightIntersection(
                         epipolar_points_cloud,
                         cars_ds_name="epi_classification",
                         optional_data=True,
+                        dtype=np.uint8,
                     )
 
                     self.orchestrator.add_to_save_lists(
@@ -421,6 +427,8 @@ class LineOfSightIntersection(
                         epipolar_points_cloud,
                         cars_ds_name="epi_filling",
                         optional_data=True,
+                        dtype=np.uint8,
+                        nodata=255,
                     )
 
                     self.orchestrator.add_to_save_lists(

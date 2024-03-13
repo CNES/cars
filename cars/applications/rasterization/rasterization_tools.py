@@ -90,7 +90,7 @@ def simple_rasterization_dataset_wrapper(
     radius: int = 1,
     dsm_no_data: int = np.nan,
     color_no_data: int = np.nan,
-    msk_no_data: int = 65535,
+    msk_no_data: int = 255,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
 ) -> xr.Dataset:
@@ -577,7 +577,7 @@ def rasterize(
     radius: int = 1,
     hgt_no_data: int = -32768,
     color_no_data: int = 0,
-    msk_no_data: int = 65535,
+    msk_no_data: int = 255,
     list_computed_layers: List[str] = None,
     source_pc_names: List[str] = None,
 ) -> Union[xr.Dataset, None]:
