@@ -524,93 +524,88 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
             for pair_key, _, _ in list_sensor_pairs:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
-                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
-                    # Generate grids with new MNT
-                    (
+                # Generate grids with new MNT
+                (
+                    pairs[pair_key]["new_grid_left"],
+                    pairs[pair_key]["new_grid_right"],
+                ) = self.epipolar_grid_generation_app.run(
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    geom_plugin,
+                    orchestrator=cars_orchestrator,
+                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_key=pair_key,
+                )
+
+                # Correct grids with former matches
+                # Transform matches to new grids
+
+                new_grid_matches_array = (
+                    AbstractGeometry.transform_matches_from_grids(
+                        pairs[pair_key]["corrected_matches_array"],
+                        pairs[pair_key]["corrected_grid_left"],
+                        pairs[pair_key]["corrected_grid_right"],
                         pairs[pair_key]["new_grid_left"],
                         pairs[pair_key]["new_grid_right"],
-                    ) = self.epipolar_grid_generation_app.run(
+                    )
+                )
+
+                # Estimate grid_correction
+                (
+                    pairs[pair_key]["grid_correction_coef"],
+                    corrected_matches_array,
+                    pairs[pair_key]["corrected_matches_cars_ds"],
+                    _,
+                    _,
+                ) = grid_correction.estimate_right_grid_correction(
+                    new_grid_matches_array,
+                    pairs[pair_key]["new_grid_right"],
+                    initial_cars_ds=pairs[pair_key]["epipolar_matches_left"],
+                    save_matches=(self.sparse_matching_app.get_save_matches()),
+                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_key=pair_key,
+                    orchestrator=cars_orchestrator,
+                )
+
+                # Correct grid right
+                pairs[pair_key]["corrected_grid_right"] = (
+                    grid_correction.correct_grid(
+                        pairs[pair_key]["new_grid_right"],
+                        pairs[pair_key]["grid_correction_coef"],
+                        self.epipolar_grid_generation_app.save_grids,
+                        pairs[pair_key]["pair_folder"],
+                    )
+                )
+                pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
+                    "new_grid_left"
+                ]
+
+                # Triangulate new matches
+                pairs[pair_key]["triangulated_matches"] = (
+                    dem_generation_tools.triangulate_sparse_matches(
                         pairs[pair_key]["sensor_image_left"],
                         pairs[pair_key]["sensor_image_right"],
-                        geom_plugin,
-                        orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
-                        pair_key=pair_key,
-                    )
-
-                    # Correct grids with former matches
-                    # Transform matches to new grids
-
-                    new_grid_matches_array = (
-                        AbstractGeometry.transform_matches_from_grids(
-                            pairs[pair_key]["corrected_matches_array"],
-                            pairs[pair_key]["corrected_grid_left"],
-                            pairs[pair_key]["corrected_grid_right"],
-                            pairs[pair_key]["new_grid_left"],
-                            pairs[pair_key]["new_grid_right"],
-                        )
-                    )
-
-                    # Estimate grid_correction
-                    (
-                        pairs[pair_key]["grid_correction_coef"],
+                        pairs[pair_key]["corrected_grid_left"],
+                        pairs[pair_key]["corrected_grid_right"],
                         corrected_matches_array,
-                        pairs[pair_key]["corrected_matches_cars_ds"],
-                        _,
-                        _,
-                    ) = grid_correction.estimate_right_grid_correction(
-                        new_grid_matches_array,
-                        pairs[pair_key]["new_grid_right"],
-                        initial_cars_ds=pairs[pair_key][
-                            "epipolar_matches_left"
-                        ],
-                        save_matches=(
-                            self.sparse_matching_app.get_save_matches()
-                        ),
-                        pair_folder=pairs[pair_key]["pair_folder"],
-                        pair_key=pair_key,
-                        orchestrator=cars_orchestrator,
+                        geometry_plugin=geom_plugin,
                     )
+                )
 
-                    # Correct grid right
-                    pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction.correct_grid(
-                            pairs[pair_key]["new_grid_right"],
-                            pairs[pair_key]["grid_correction_coef"],
-                            self.epipolar_grid_generation_app.save_grids,
-                            pairs[pair_key]["pair_folder"],
-                        )
+                # filter triangulated_matches
+                matches_filter_knn = (
+                    self.sparse_matching_app.get_matches_filter_knn()
+                )
+                matches_filter_dev_factor = (
+                    self.sparse_matching_app.get_matches_filter_dev_factor()
+                )
+                pairs[pair_key]["filtered_triangulated_matches"] = (
+                    sparse_matching_tools.filter_point_cloud_matches(
+                        pairs[pair_key]["triangulated_matches"],
+                        matches_filter_knn=matches_filter_knn,
+                        matches_filter_dev_factor=matches_filter_dev_factor,
                     )
-                    pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
-                        "new_grid_left"
-                    ]
-
-                    # Triangulate new matches
-                    pairs[pair_key]["triangulated_matches"] = (
-                        dem_generation_tools.triangulate_sparse_matches(
-                            pairs[pair_key]["sensor_image_left"],
-                            pairs[pair_key]["sensor_image_right"],
-                            pairs[pair_key]["corrected_grid_left"],
-                            pairs[pair_key]["corrected_grid_right"],
-                            corrected_matches_array,
-                            geometry_plugin=geom_plugin,
-                        )
-                    )
-
-                    # filter triangulated_matches
-                    matches_filter_knn = (
-                        self.sparse_matching_app.get_matches_filter_knn()
-                    )
-                    matches_filter_dev_factor = (
-                        self.sparse_matching_app.get_matches_filter_dev_factor()
-                    )
-                    pairs[pair_key]["filtered_triangulated_matches"] = (
-                        sparse_matching_tools.filter_point_cloud_matches(
-                            pairs[pair_key]["triangulated_matches"],
-                            matches_filter_knn=matches_filter_knn,
-                            matches_filter_dev_factor=matches_filter_dev_factor,
-                        )
-                    )
+                )
 
                 # Compute disp_min and disp_max
                 (dmin, dmax) = sparse_matching_tools.compute_disp_min_disp_max(

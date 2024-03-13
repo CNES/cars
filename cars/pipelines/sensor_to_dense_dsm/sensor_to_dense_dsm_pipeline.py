@@ -815,95 +815,92 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
-                    if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
-                        # Generate grids with new MNT
-                        (
+                    # Generate grids with new MNT
+                    (
+                        pairs[pair_key]["new_grid_left"],
+                        pairs[pair_key]["new_grid_right"],
+                    ) = self.epipolar_grid_generation_application.run(
+                        pairs[pair_key]["sensor_image_left"],
+                        pairs[pair_key]["sensor_image_right"],
+                        geom_plugin,
+                        orchestrator=cars_orchestrator,
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                    )
+
+                    # Correct grids with former matches
+                    # Transform matches to new grids
+                    new_grid_matches_array = (
+                        AbstractGeometry.transform_matches_from_grids(
+                            pairs[pair_key]["corrected_matches_array"],
+                            pairs[pair_key]["corrected_grid_left"],
+                            pairs[pair_key]["corrected_grid_right"],
                             pairs[pair_key]["new_grid_left"],
                             pairs[pair_key]["new_grid_right"],
-                        ) = self.epipolar_grid_generation_application.run(
-                            pairs[pair_key]["sensor_image_left"],
-                            pairs[pair_key]["sensor_image_right"],
-                            geom_plugin,
-                            orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
-                            pair_key=pair_key,
                         )
+                    )
 
-                        # Correct grids with former matches
-                        # Transform matches to new grids
-                        new_grid_matches_array = (
-                            AbstractGeometry.transform_matches_from_grids(
-                                pairs[pair_key]["corrected_matches_array"],
+                    # Estimate grid_correction
+                    (
+                        pairs[pair_key]["grid_correction_coef"],
+                        pairs[pair_key]["corrected_matches_array"],
+                        _,
+                        _,
+                        _,
+                    ) = grid_correction.estimate_right_grid_correction(
+                        new_grid_matches_array,
+                        pairs[pair_key]["new_grid_right"],
+                        save_matches=(self.sparse_mtch_app.get_save_matches()),
+                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_key=pair_key,
+                        orchestrator=cars_orchestrator,
+                    )
+
+                    # Correct grid right
+
+                    pairs[pair_key]["corrected_grid_right"] = (
+                        grid_correction.correct_grid(
+                            pairs[pair_key]["new_grid_right"],
+                            pairs[pair_key]["grid_correction_coef"],
+                            save_corrected_grid,
+                            pairs[pair_key]["pair_folder"],
+                        )
+                    )
+
+                    pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
+                        "new_grid_left"
+                    ]
+
+                    # matches filter params
+                    matches_filter_knn = (
+                        self.sparse_mtch_app.get_matches_filter_knn()
+                    )
+                    matches_filter_dev_factor = (
+                        self.sparse_mtch_app.get_matches_filter_dev_factor()
+                    )
+                    if use_global_disp_range:
+                        # Triangulate new matches
+                        pairs[pair_key]["triangulated_matches"] = (
+                            dem_generation_tools.triangulate_sparse_matches(
+                                pairs[pair_key]["sensor_image_left"],
+                                pairs[pair_key]["sensor_image_right"],
                                 pairs[pair_key]["corrected_grid_left"],
                                 pairs[pair_key]["corrected_grid_right"],
-                                pairs[pair_key]["new_grid_left"],
-                                pairs[pair_key]["new_grid_right"],
+                                pairs[pair_key]["corrected_matches_array"],
+                                geometry_plugin=geom_plugin,
                             )
                         )
-
-                        # Estimate grid_correction
-                        (
-                            pairs[pair_key]["grid_correction_coef"],
-                            pairs[pair_key]["corrected_matches_array"],
-                            _,
-                            _,
-                            _,
-                        ) = grid_correction.estimate_right_grid_correction(
-                            new_grid_matches_array,
-                            pairs[pair_key]["new_grid_right"],
-                            save_matches=(
-                                self.sparse_mtch_app.get_save_matches()
-                            ),
-                            pair_folder=pairs[pair_key]["pair_folder"],
-                            pair_key=pair_key,
-                            orchestrator=cars_orchestrator,
-                        )
-
-                        # Correct grid right
-
-                        pairs[pair_key]["corrected_grid_right"] = (
-                            grid_correction.correct_grid(
-                                pairs[pair_key]["new_grid_right"],
-                                pairs[pair_key]["grid_correction_coef"],
-                                save_corrected_grid,
-                                pairs[pair_key]["pair_folder"],
+                        # filter triangulated_matches
+                        # Filter outliers
+                        pairs[pair_key]["filtered_triangulated_matches"] = (
+                            sparse_mtch_tools.filter_point_cloud_matches(
+                                pairs[pair_key]["triangulated_matches"],
+                                matches_filter_knn=matches_filter_knn,
+                                matches_filter_dev_factor=(
+                                    matches_filter_dev_factor
+                                ),
                             )
                         )
-
-                        pairs[pair_key]["corrected_grid_left"] = pairs[
-                            pair_key
-                        ]["new_grid_left"]
-
-                        # matches filter params
-                        matches_filter_knn = (
-                            self.sparse_mtch_app.get_matches_filter_knn()
-                        )
-                        matches_filter_dev_factor = (
-                            self.sparse_mtch_app.get_matches_filter_dev_factor()
-                        )
-                        if use_global_disp_range:
-                            # Triangulate new matches
-                            pairs[pair_key]["triangulated_matches"] = (
-                                dem_generation_tools.triangulate_sparse_matches(
-                                    pairs[pair_key]["sensor_image_left"],
-                                    pairs[pair_key]["sensor_image_right"],
-                                    pairs[pair_key]["corrected_grid_left"],
-                                    pairs[pair_key]["corrected_grid_right"],
-                                    pairs[pair_key]["corrected_matches_array"],
-                                    geometry_plugin=geom_plugin,
-                                )
-                            )
-                            # filter triangulated_matches
-                            # Filter outliers
-                            pairs[pair_key]["filtered_triangulated_matches"] = (
-                                sparse_mtch_tools.filter_point_cloud_matches(
-                                    pairs[pair_key]["triangulated_matches"],
-                                    matches_filter_knn=matches_filter_knn,
-                                    matches_filter_dev_factor=(
-                                        matches_filter_dev_factor
-                                    ),
-                                )
-                            )
 
                     if use_global_disp_range:
                         # Compute disp_min and disp_max
