@@ -25,6 +25,7 @@ Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 import logging
 from typing import List, Tuple, Union
 
+import bindings_cpp
 import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
@@ -81,13 +82,12 @@ class SharelocGeometry(AbstractGeometry):
             dtm_image = dtm_reader(
                 dem,
                 geoid,
-                read_data=True,
                 roi=roi,
                 roi_is_in_physical_space=True,
                 fill_nodata="mean",
                 fill_value=0.0,
             )
-            self.elevation = DTMIntersection(
+            self.elevation = bindings_cpp.DTMIntersection(
                 dtm_image.epsg,
                 dtm_image.alt_data,
                 dtm_image.nb_rows,
@@ -163,6 +163,9 @@ class SharelocGeometry(AbstractGeometry):
             geomodel_type = model[GEO_MODEL_TYPE_TAG]
         else:
             geomodel_type = RPC_TYPE
+
+        if geomodel_type == "RPC":
+            geomodel_type = "RPCoptim"
 
         shareloc_model = GeoModel(geomodel, geomodel_type)
 
@@ -307,6 +310,145 @@ class SharelocGeometry(AbstractGeometry):
 
         return llh
 
+    @staticmethod
+    def compute_stereorectification_epipolar_grids(
+        left_im: Image,
+        geom_model_left: GeoModel,
+        right_im: Image,
+        geom_model_right: GeoModel,
+        elevation: Union[float, DTMIntersection] = 0.0,
+        epi_step: float = 1.0,
+        elevation_offset: float = 50.0,
+    ):
+        """
+        Compute stereo-rectification epipolar grids.
+        Rectification scheme is composed of :
+        - rectification grid initialisation
+        - compute first grid row (one vertical strip by moving along rows)
+        - compute all columns (one horizontal strip along columns)
+        - transform position to displacement grid
+
+        :param left_im: left image
+        :type left_im: shareloc Image object
+        :param geom_model_left: geometric model of the left image
+        :type geom_model_left: GeoModelTemplate
+        :param right_im: right image
+        :type right_im: shareloc Image object
+        :param geom_model_right: geometric model of the right image
+        :type geom_model_right: GeoModelTemplate
+        :param elevation: elevation
+        :type elevation: DTMIntersection or float
+        :param epi_step: epipolar step
+        :type epi_step: float
+        :param elevation_offset: elevation difference to estimate local tangent
+        :type elevation_offset: float
+        :return:
+            Returns left and right epipolar displacement grid,
+            epipolar image size, mean of base to height ratio
+            and geotransfrom of the grid in a tuple containing :
+            - left epipolar grid, np.ndarray of size (nb_rows,nb_cols,3):
+            [nb rows, nb cols, [row displacement, col displacement, alt]]
+            - right epipolar grid, np.ndarray object of (nb_rows,nb_cols,3) :
+            [nb rows, nb cols, [row displacement, col displacement, alt]]
+            - size of epipolar image, [nb_rows,nb_cols]
+            - mean value of the baseline to sensor altitude ratio, float
+            - epipolar grid geotransform, Affine
+        :rtype: Tuple(np.ndarray, np.ndarray, List[int], float, Affine)
+        """
+
+        # Initialize rectification with sensor image starting
+        # position and epipolar image and grid information.
+        (
+            left_starting_point,
+            right_starting_point,
+            spacing,
+            grid_size,
+            rectified_image_size,
+        ) = rectif.init_inputs_rectification(
+            left_im,
+            geom_model_left,
+            right_im,
+            geom_model_right,
+            elevation,
+            epi_step,
+            elevation_offset,
+        )
+
+        if isinstance(elevation, (float, int)) or (
+            elevation.get_epsg() == geom_model_left.epsg
+            and elevation.get_epsg() == geom_model_right.epsg
+        ):
+            compute_strip_of_epipolar_grid = (
+                bindings_cpp.compute_strip_of_epipolar_grid
+            )
+        else:
+            logging.warning(
+                "Optimized version of grid generation cannot be used"
+            )
+            compute_strip_of_epipolar_grid = (
+                rectif.compute_strip_of_epipolar_grid
+            )
+
+        # Create the first row by moving along columns (axis = 0)
+        # with number of rows of the grids.
+        # It returns (grid_size[0],1,3) shaped grids, epipolar angles,
+        # and mean baseline ratio for the first columns.
+        left_grid, right_grid, alphas, mean_br_col = (
+            compute_strip_of_epipolar_grid(
+                geom_model_left,
+                geom_model_right,
+                left_starting_point,
+                right_starting_point,
+                spacing,
+                0,
+                grid_size[0],
+                epi_step,
+                elevation,
+                elevation_offset,
+                None,
+            )
+        )
+
+        # Moving along row (axis = 1) using previous results
+        # It returns (grid_size[0],grid_size[1],3) shaped grids,
+        # epipolar angles, and mean baseline ratio
+        # for the (grid_size[0] -1 ,grid_size[1],3) positions, already
+        # computed epipolar angles are not included in mean baseline ratio.
+        left_grid, right_grid, alphas, mean_br = compute_strip_of_epipolar_grid(
+            geom_model_left,
+            geom_model_right,
+            left_grid,
+            right_grid,
+            spacing,
+            1,
+            grid_size[1],
+            epi_step,
+            elevation,
+            elevation_offset,
+            alphas,
+        )
+
+        # Compute global mean baseline ratio using the two strip
+        mean_baseline_ratio = (
+            mean_br * (grid_size[1] * (grid_size[0] - 1))
+            + mean_br_col * grid_size[0]
+        ) / (grid_size[1] * grid_size[0])
+
+        # Convert position to displacement grids
+        left_grid, right_grid, transform = (
+            rectif.positions_to_displacement_grid(
+                left_grid, right_grid, epi_step
+            )
+        )
+
+        return (
+            left_grid,
+            right_grid,
+            rectified_image_size,
+            mean_baseline_ratio,
+            transform,
+        )
+
     def generate_epipolar_grids(
         self,
         sensor1,
@@ -349,7 +491,7 @@ class SharelocGeometry(AbstractGeometry):
             [epipolar_size_y, epipolar_size_x],
             alt_to_disp_ratio,
             _,
-        ) = rectif.compute_stereorectification_epipolar_grids(
+        ) = SharelocGeometry.compute_stereorectification_epipolar_grids(
             image1,
             shareloc_model1,
             image2,
