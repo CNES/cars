@@ -28,8 +28,9 @@ From stereo images  |  CARS produces a Digital Surface Model (DSM)
 This Multiview Stereo framework is intended for massive DSM production with a robust, performant and modular design.
 
 Be aware that the project is new and is evolving to maturity with CNES usage roadmaps and projects such as:
-- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.jpg" width="20" height="20"/></a>
-- <a href="https://www.ai4geo.eu/">AI4GEO project &nbsp;&nbsp;&nbsp;  </a>
+- <a href="https://co3d.cnes.fr/en/co3d-0">CO3D project &nbsp;&nbsp;&nbsp;  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo_co3D_cnes.jpg" height="20"/></a>
+- <a href="https://www.ai4geo.eu">AI4GEO project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-ai4geo.png" height="20"/> </a>
+- <a href="https://www.evo-land.eu">Evoland project &nbsp;&nbsp;&nbsp; <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/logo-evoland.png" height="20"/> </a>
 
 ## Quick start
 
