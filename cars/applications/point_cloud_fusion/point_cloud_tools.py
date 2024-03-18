@@ -18,11 +18,12 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
 """
 This module is responsible for the transition between triangulation and
 rasterization steps
 """
-# pylint: disable=too-many-lines
+
 
 # Standard imports
 import logging

@@ -17,12 +17,12 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+# pylint: disable=too-many-lines
 """
 This module is responsible for the filling disparity algorithms:
 thus it fills the disparity map with values estimated according to
 their neighbourhood.
 """
-# pylint: disable=too-many-lines
 
 
 import copy
