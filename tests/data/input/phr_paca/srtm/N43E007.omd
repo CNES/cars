@@ -1,7 +1,10 @@
+band1.max_value:  2064
+band1.min_value:  -11
 band1.null_value:  -32768
 byte_order:  big_endian
 decimal_degrees_per_pixel_lat:  0.000833333333333333
 decimal_degrees_per_pixel_lon:  0.000833333333333333
+filename:  /work/CAMPUS/etudes/3D/Development/rouxm/repo_cars/cars_with_otb/tests/data/input/phr_paca/srtm/N43E007.hgt
 number_bands:  1
 number_lines:  1201
 number_samples:  1201
