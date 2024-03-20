@@ -114,7 +114,7 @@ class SharelocGeometry(AbstractGeometry):
             # Footprint of right image
             coords_list.extend(self.image_envelope(image2, geomodel2))
             # Epipolar extent
-            image1 = Image(image1)
+            image1 = SharelocGeometry.load_image(image1)
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
             epipolar_extent = rectif.get_epipolar_extent(
@@ -183,7 +183,7 @@ class SharelocGeometry(AbstractGeometry):
         :return: The Image object
         """
         try:
-            shareloc_img = Image(img)
+            shareloc_img = Image(img, vertical_direction="north")
         except Exception as error:
             raise ValueError(f"Image type {img} is not supported") from error
 
@@ -342,8 +342,8 @@ class SharelocGeometry(AbstractGeometry):
         shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
         shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
-        image1 = Image(sensor1)
-        image2 = Image(sensor2)
+        image1 = SharelocGeometry.load_image(sensor1)
+        image2 = SharelocGeometry.load_image(sensor2)
 
         # compute epipolar grids
         (
@@ -413,7 +413,7 @@ class SharelocGeometry(AbstractGeometry):
         """
         # load model and image with shareloc
         shareloc_model = SharelocGeometry.load_geom_model(geomodel)
-        shareloc_image = Image(sensor)
+        shareloc_image = SharelocGeometry.load_image(sensor)
 
         # perform direct localization operation
         loc = localization.Localization(
@@ -460,7 +460,7 @@ class SharelocGeometry(AbstractGeometry):
 
         # load model and image with shareloc
         shareloc_model = SharelocGeometry.load_geom_model(geomodel)
-        shareloc_image = Image(sensor)
+        shareloc_image = SharelocGeometry.load_image(sensor)
 
         # perform inverse localization operation
         loc = localization.Localization(
