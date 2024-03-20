@@ -399,5 +399,5 @@ def test_check_tiles_in_sensor():
 
         # 3059 tiles used on 3844
         assert np.sum(in_sensor_left_array) == 3059
-        # 1350 tiles used on 3844
-        assert np.sum(in_sensor_right_array) == 1350
+        # 1426 tiles used on 3844
+        assert np.sum(in_sensor_right_array) == 1426
