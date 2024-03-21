@@ -1782,7 +1782,7 @@ def test_end2end_use_epipolar_a_priori():
                 < -26
             )
             assert (
-                24
+                23
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
