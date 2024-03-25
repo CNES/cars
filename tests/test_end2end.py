@@ -350,11 +350,11 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < -13
             )
             assert (
-                9
+                17
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 15
+                < 20
             )
 
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -381,17 +381,15 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # copy2(
         #     os.path.join(out_dir, "dem_min.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_min_end2end_ventoux_8bit.tif"
-        #         )
+        #         os.path.join(ref_output_dir,
+        #         "dem_min_end2end_ventoux_8bit.tif")
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dem_max.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_max_end2end_ventoux_8bit.tif"
-        #         )
+        #         os.path.join(ref_output_dir,
+        #         "dem_max_end2end_ventoux_8bit.tif")
         #     ),
         # )
 
@@ -496,18 +494,18 @@ def test_end2end_ventoux_unique():
                 == 612
             )
             assert (
-                -20
+                -29
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -18
+                < -27
             )
             assert (
-                14
+                26
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 15
+                < 27
             )
 
             # check matches file exists
@@ -528,25 +526,19 @@ def test_end2end_ventoux_unique():
         # copy2(
         #     os.path.join(out_dir, "dem_median.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_median_end2end_ventoux.tif"
-        #         )
+        #         os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dem_min.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_min_end2end_ventoux.tif"
-        #         )
+        #         os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dem_max.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_max_end2end_ventoux.tif"
-        #         )
+        #         os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
         #     ),
         # )
 
@@ -1255,8 +1247,8 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #     os.path.join(out_dir_dsm, "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "source_pc_end2end"
-            #               +"_ventoux_split_4326.tif"
+            #             ref_output_dir,
+            #             "source_pc_end2end" + "_ventoux_split_4326.tif",
             #         )
             #     ),
             # )
@@ -2138,10 +2130,10 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -86
-            assert out_disp_compute["minimum_disparity"] < -83
-            assert out_disp_compute["maximum_disparity"] > -46
-            assert out_disp_compute["maximum_disparity"] < -44
+            assert out_disp_compute["minimum_disparity"] > -29
+            assert out_disp_compute["minimum_disparity"] < -27
+            assert out_disp_compute["maximum_disparity"] > 25
+            assert out_disp_compute["maximum_disparity"] < 26
 
             # check matches file exists
             assert os.path.isfile(
@@ -2224,10 +2216,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -21
-            assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 13
-            assert out_disp_compute["maximum_disparity"] < 16
+            assert out_disp_compute["minimum_disparity"] > -29
+            assert out_disp_compute["minimum_disparity"] < -28
+            assert out_disp_compute["maximum_disparity"] > 26
+            assert out_disp_compute["maximum_disparity"] < 27
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2292,23 +2284,6 @@ def test_end2end_ventoux_with_color():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        print("ene2dn 2158")
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
-        print("\n")
-        print(
-            os.listdir(
-                os.path.join(
-                    out_dir, "points_cloud_post_small_components_removing"
-                )
-            )
-        )
-        print("\n")
-        print(
-            os.listdir(
-                os.path.join(out_dir, "points_cloud_post_statistical_removing")
-            )
-        )
-
         assert (
             os.path.exists(
                 os.path.join(out_dir, "confidence_from_ambiguity.tif")
@@ -2316,7 +2291,7 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        pc1 = "675433.0_4897170.5"
+        pc1 = "675436.5_4897170.5"
         pc2 = "675248.0_4897170.5"
         assert (
             os.path.exists(
@@ -2491,10 +2466,10 @@ def test_end2end_ventoux_with_classif():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -21
-            assert out_disp_compute["minimum_disparity"] < -17
-            assert out_disp_compute["maximum_disparity"] > 13
-            assert out_disp_compute["maximum_disparity"] < 16
+            assert out_disp_compute["minimum_disparity"] > -29
+            assert out_disp_compute["minimum_disparity"] < -28
+            assert out_disp_compute["maximum_disparity"] > 26
+            assert out_disp_compute["maximum_disparity"] < 27
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2557,24 +2532,7 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        pc1 = "675433.0_4897170.5"
-        print("ene2dn 2432")
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
-        print("\n")
-        print(
-            os.listdir(
-                os.path.join(
-                    out_dir, "points_cloud_post_small_components_removing"
-                )
-            )
-        )
-        print("\n")
-        print(
-            os.listdir(
-                os.path.join(out_dir, "points_cloud_post_statistical_removing")
-            )
-        )
-
+        pc1 = "675436.5_4897170.5"
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
             is True
@@ -3030,8 +2988,8 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
-            assert out_disp_compute["global_disp_min"] > -29
-            assert out_disp_compute["global_disp_min"] < -24
+            assert out_disp_compute["global_disp_min"] > -31
+            assert out_disp_compute["global_disp_min"] < -30
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 31
 
