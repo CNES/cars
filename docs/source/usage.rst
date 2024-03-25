@@ -1272,7 +1272,7 @@ The structure follows this organisation:
             | color_dtype                          | By default, it's retrieved from the input color              | string     | "uint8", "uint16" | None            | No       |
             |                                      | Otherwise, specify an image type                             |            | "float32" ...     |                 |          |
             +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | msk_no_data                          | No data value for mask  and classif                          | int        |                   | 65535           |          |
+            | msk_no_data                          | No data value for mask, classif, filling and source_pc       | int        | between 2 and 255 | 255             |          |
             +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
             | save_color                           | Save color ortho-image                                       | boolean    |                   | true            | No       |
             +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
