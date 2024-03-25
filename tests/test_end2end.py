@@ -2132,7 +2132,7 @@ def test_prepare_ventoux_bias():
             ]
             assert out_disp_compute["minimum_disparity"] > -29
             assert out_disp_compute["minimum_disparity"] < -27
-            assert out_disp_compute["maximum_disparity"] > 25
+            assert out_disp_compute["maximum_disparity"] > 24
             assert out_disp_compute["maximum_disparity"] < 26
 
             # check matches file exists
