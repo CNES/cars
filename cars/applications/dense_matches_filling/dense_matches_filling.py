@@ -26,6 +26,8 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
+import numpy as np
+
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core import constants as cst
@@ -219,6 +221,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
                 ),
                 cst_disp.VALID,
                 new_epipolar_disparity_map,
+                dtype=np.uint8,
                 cars_ds_name="epi_disp_mask_" + app_name + "_filled",
             )
 
@@ -239,6 +242,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
                 ),
                 cst_disp.FILLING,
                 new_epipolar_disparity_map,
+                dtype=np.uint8,
                 cars_ds_name="epi_filling_" + app_name,
             )
 

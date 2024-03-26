@@ -137,7 +137,7 @@ class SimpleGaussian(
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
         overloaded_conf["color_no_data"] = conf.get("color_no_data", 0)
         overloaded_conf["color_dtype"] = conf.get("color_dtype", None)
-        overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 65535)
+        overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
 
         # Get if color, mask and stats are saved
         overloaded_conf["save_color"] = conf.get("save_color", True)
@@ -481,7 +481,7 @@ class SimpleGaussian(
                 out_classif_file_name,
                 cst.RASTER_CLASSIF,
                 terrain_raster,
-                dtype=np.float32,
+                dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="dsm_classif",
             )
@@ -493,7 +493,7 @@ class SimpleGaussian(
                 out_msk_file_name,
                 cst.RASTER_MSK,
                 terrain_raster,
-                dtype=np.uint16,
+                dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="dsm_mask",
             )
@@ -519,7 +519,7 @@ class SimpleGaussian(
                 out_source_pc,
                 cst.RASTER_SOURCE_PC,
                 terrain_raster,
-                dtype=np.float32,
+                dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="source_pc",
             )
@@ -530,7 +530,7 @@ class SimpleGaussian(
                 out_filling,
                 cst.RASTER_FILLING,
                 terrain_raster,
-                dtype=np.float32,
+                dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="filling",
             )
@@ -706,7 +706,7 @@ def rasterization_wrapper(
     radius: int = 1,
     dsm_no_data: int = np.nan,
     color_no_data: int = np.nan,
-    msk_no_data: int = 65535,
+    msk_no_data: int = 255,
     source_pc_names=None,
 ):
     """

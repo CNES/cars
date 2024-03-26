@@ -418,6 +418,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_MSK,
                 epipolar_images_left,
                 cars_ds_name="epi_img_left_mask",
+                dtype=np.uint8,
             )
 
             self.orchestrator.add_to_save_lists(
@@ -425,6 +426,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_CLASSIFICATION,
                 epipolar_images_left,
                 cars_ds_name="epi_img_left_classif",
+                dtype=np.uint8,
             )
 
             self.orchestrator.add_to_save_lists(
@@ -432,6 +434,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_MSK,
                 epipolar_images_right,
                 cars_ds_name="epi_img_right_mask",
+                dtype=np.uint8,
             )
 
             self.orchestrator.add_to_save_lists(
@@ -439,6 +442,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 cst.EPI_CLASSIFICATION,
                 epipolar_images_right,
                 cars_ds_name="epi_img_right_classif",
+                dtype=np.uint8,
             )
 
         if self.save_epipolar_color:

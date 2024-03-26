@@ -162,7 +162,7 @@ def create_combined_sparse_cloud(  # noqa: C901
     cloud_indexes = list(cloud_indexes_with_types.keys())
 
     # iterate through input clouds
-    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float64)
+    combined_cloud = np.zeros((0, len(cloud_indexes)))
     nb_points = 0
     for cloud_global_id, points_cloud in zip(  # noqa: B905
         cloud_ids, cloud_list
@@ -444,7 +444,7 @@ def create_combined_dense_cloud(  # noqa: C901
     cloud_indexes = list(cloud_indexes_with_types.keys())
 
     # Iterate through input clouds
-    combined_cloud = np.zeros((0, len(cloud_indexes)), dtype=np.float16)
+    combined_cloud = np.zeros((0, len(cloud_indexes)))
     nb_points = 0
     for cloud_global_id, (cloud_list_id, points_cloud) in zip(  # noqa: B905
         cloud_id, enumerate(cloud_list)
