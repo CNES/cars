@@ -158,6 +158,14 @@ def sensors_check_inputs(  # noqa: C901
 
     for sensor_image_key in conf[sens_cst.SENSORS]:
         # Overload optional parameters
+        geomodel = conf[sens_cst.SENSORS][sensor_image_key].get(
+            "geomodel",
+            conf[sens_cst.SENSORS][sensor_image_key][sens_cst.INPUT_IMG],
+        )
+        overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+            "geomodel"
+        ] = geomodel
+
         color = conf[sens_cst.SENSORS][sensor_image_key].get(
             "color",
             conf[sens_cst.SENSORS][sensor_image_key][sens_cst.INPUT_IMG],
