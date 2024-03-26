@@ -25,6 +25,7 @@ Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 import logging
 from typing import List, Tuple, Union
 
+import bindings_cpp
 import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
@@ -32,7 +33,6 @@ import xarray as xr
 from json_checker import Checker
 from shareloc.dtm_reader import dtm_reader
 from shareloc.geofunctions import localization
-from shareloc.geofunctions.dtm_intersection import DTMIntersection
 from shareloc.geofunctions.triangulation import epipolar_triangulation
 from shareloc.geomodels.geomodel import GeoModel
 from shareloc.geomodels.grid import Grid
@@ -81,13 +81,12 @@ class SharelocGeometry(AbstractGeometry):
             dtm_image = dtm_reader(
                 dem,
                 geoid,
-                read_data=True,
                 roi=roi,
                 roi_is_in_physical_space=True,
                 fill_nodata="mean",
                 fill_value=0.0,
             )
-            self.elevation = DTMIntersection(
+            self.elevation = bindings_cpp.DTMIntersection(
                 dtm_image.epsg,
                 dtm_image.alt_data,
                 dtm_image.nb_rows,
@@ -115,7 +114,7 @@ class SharelocGeometry(AbstractGeometry):
             # Footprint of right image
             coords_list.extend(self.image_envelope(image2, geomodel2))
             # Epipolar extent
-            image1 = Image(image1)
+            image1 = SharelocGeometry.load_image(image1)
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
             epipolar_extent = rectif.get_epipolar_extent(
@@ -164,6 +163,10 @@ class SharelocGeometry(AbstractGeometry):
         else:
             geomodel_type = RPC_TYPE
 
+        # Use RPCoptim class to use optimized C++ direct localizations
+        if geomodel_type == "RPC":
+            geomodel_type = "RPCoptim"
+
         shareloc_model = GeoModel(geomodel, geomodel_type)
 
         if shareloc_model is None:
@@ -180,7 +183,7 @@ class SharelocGeometry(AbstractGeometry):
         :return: The Image object
         """
         try:
-            shareloc_img = Image(img)
+            shareloc_img = Image(img, vertical_direction="north")
         except Exception as error:
             raise ValueError(f"Image type {img} is not supported") from error
 
@@ -339,8 +342,8 @@ class SharelocGeometry(AbstractGeometry):
         shareloc_model1 = SharelocGeometry.load_geom_model(geomodel1)
         shareloc_model2 = SharelocGeometry.load_geom_model(geomodel2)
 
-        image1 = Image(sensor1)
-        image2 = Image(sensor2)
+        image1 = SharelocGeometry.load_image(sensor1)
+        image2 = SharelocGeometry.load_image(sensor2)
 
         # compute epipolar grids
         (
@@ -410,7 +413,7 @@ class SharelocGeometry(AbstractGeometry):
         """
         # load model and image with shareloc
         shareloc_model = SharelocGeometry.load_geom_model(geomodel)
-        shareloc_image = Image(sensor)
+        shareloc_image = SharelocGeometry.load_image(sensor)
 
         # perform direct localization operation
         loc = localization.Localization(
@@ -457,7 +460,7 @@ class SharelocGeometry(AbstractGeometry):
 
         # load model and image with shareloc
         shareloc_model = SharelocGeometry.load_geom_model(geomodel)
-        shareloc_image = Image(sensor)
+        shareloc_image = SharelocGeometry.load_image(sensor)
 
         # perform inverse localization operation
         loc = localization.Localization(
