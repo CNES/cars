@@ -1176,10 +1176,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
 
                 # Checking disparity intervals indicators
-                dm_conf = self.application_conf["dense_matching"]
-                if dm_conf["compute_intervals"]:
+                if self.application_conf["dense_matching"][
+                    "generate_confidence_intervals"
+                ]:
                     intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
-                    for key, item in dm_conf["loader_conf"]["pipeline"].items():
+                    for key, item in self.dense_matching_app.corr_config[
+                        "pipeline"
+                    ].items():
                         if cst_disp.CONFIDENCE_KEY in key:
                             if item["confidence_method"] == cst_disp.INTERVAL:
                                 indicator = key.split(".")

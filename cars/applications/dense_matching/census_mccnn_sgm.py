@@ -163,8 +163,8 @@ class CensusMccnnSgm(
         overloaded_conf["generate_performance_map"] = conf.get(
             "generate_performance_map", False
         )
-        overloaded_conf["compute_intervals"] = conf.get(
-            "compute_intervals", False
+        overloaded_conf["generate_confidence_intervals"] = conf.get(
+            "generate_confidence_intervals", False
         )
         overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
             "perf_eta_max_ambiguity", 0.99
@@ -202,6 +202,9 @@ class CensusMccnnSgm(
             generate_performance_map=overloaded_conf[
                 "generate_performance_map"
             ],
+            generate_confidence_intervals=overloaded_conf[
+                "generate_confidence_intervals"
+            ],
             perf_eta_max_ambiguity=overloaded_conf["perf_eta_max_ambiguity"],
             perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
             perf_eta_step=overloaded_conf["perf_eta_step"],
@@ -222,9 +225,9 @@ class CensusMccnnSgm(
             "max_elevation_offset": Or(None, int),
             "disp_min_threshold": Or(None, int),
             "disp_max_threshold": Or(None, int),
-            "compute_intervals": bool,
             "save_disparity_map": bool,
             "generate_performance_map": bool,
+            "generate_confidence_intervals": bool,
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
@@ -275,20 +278,6 @@ class CensusMccnnSgm(
                 "Maximal disparity should be bigger than "
                 "minimal disparity for dense matching"
             )
-
-        # Check consistency between compute_intervals and loader_conf
-        if overloaded_conf["compute_intervals"]:
-            flag_intervals = True
-            for key, item in overloaded_conf["loader_conf"]["pipeline"].items():
-                if cst_disp.CONFIDENCE_KEY in key:
-                    if item["confidence_method"] == cst_disp.INTERVAL:
-                        flag_intervals = False
-            if flag_intervals:
-                raise KeyError(
-                    "Interval computation has been requested "
-                    "but no interval confidence is in the "
-                    "dense_matching_configuration loader_conf"
-                )
 
         return overloaded_conf
 

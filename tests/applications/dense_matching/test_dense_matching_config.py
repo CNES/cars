@@ -47,7 +47,8 @@ def test_check_conf_with_error(
         "method": "census_sgm",
         "min_elevation_offset": 20,
         "max_elevation_offset": max_offset,  # should be > min
-        "compute_intervals": confidence_intervals,
+        "generate_confidence_intervals": confidence_intervals,
+        "loader_conf": {"pipeline": {"disparity": {}}},
     }
     with pytest.raises(expected_error):
         _ = CensusMccnnSgm(conf)

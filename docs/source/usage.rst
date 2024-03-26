@@ -1002,10 +1002,8 @@ The structure follows this organisation:
                   - 
                   - False
                   - No
-                * - compute_intervals
-                  - | Compute confidence intervals from disparity map. 
-                    | Confidence from intervals must either be specified
-                    | in the loader conf or *generate_performance_map* set to True
+                * - generate_confidence_intervals
+                  - Compute confidence intervals from disparity map. 
                   - boolean
                   - 
                   - False
