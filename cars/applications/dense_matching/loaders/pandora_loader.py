@@ -74,7 +74,12 @@ class PandoraLoader:
 
         uses_cars_pandora_conf = False
 
-        if conf is None:
+        if isinstance(conf, str):
+            # load file
+            with open(conf, "r", encoding="utf8") as fstream:
+                conf = json.load(fstream)
+
+        elif conf is None:
             uses_cars_pandora_conf = True
             package_path = os.path.dirname(__file__)
 
