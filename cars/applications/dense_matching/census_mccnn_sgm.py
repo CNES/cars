@@ -204,13 +204,11 @@ class CensusMccnnSgm(
             perf_eta_step=overloaded_conf["perf_eta_step"],
         )
         overloaded_conf["loader"] = loader
-        overloaded_conf["loader_conf"] = collections.OrderedDict(
-            pandora_loader.get_conf()
-        )
+        overloaded_conf["loader_conf"] = loader_conf
 
         # Get params from loader
         self.loader = pandora_loader
-        self.corr_config = overloaded_conf["loader_conf"]
+        self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
 
         application_schema = {
             "method": str,
@@ -232,7 +230,7 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size": And(
                 Or(int, float), lambda x: x >= 0
             ),
-            "loader_conf": dict,
+            "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "loader": str,
         }
 
@@ -1043,6 +1041,9 @@ class CensusMccnnSgm(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
+                    dm_cst.DENSE_MATCHING_PARAM_TAG: {
+                        "pandora_config": self.corr_config
+                    },
                     pair_key: {
                         dm_cst.DENSE_MATCHING_RUN_TAG: {
                             "global_disp_min": np.nanmin(
@@ -1056,7 +1057,7 @@ class CensusMccnnSgm(
                                 ].values
                             ),
                         },
-                    }
+                    },
                 }
             }
             self.orchestrator.update_out_info(updating_dict)
