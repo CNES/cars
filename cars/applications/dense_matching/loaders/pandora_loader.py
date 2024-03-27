@@ -197,6 +197,9 @@ class PandoraLoader:
             }
             pipeline_dict = OrderedDict()
             pipeline_dict.update(conf["pipeline"])
+            # Filter is placed after validation in config
+            # and should be placed before.
+            # However it does not have any incidence on operation
             pipeline_dict.update(conf_filter_interval)
 
             conf["pipeline"] = pipeline_dict

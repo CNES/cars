@@ -267,7 +267,7 @@ def compute_vector_raster_and_stats(
     split_indexes = []
 
     # 1. altitudes and colors
-    values_bands = [k for k in cloud if k in [cst.Z, cst.Z_INF, cst.Z_SUP]]
+    values_bands = [cst.Z] if cst.Z in cloud else []
 
     clr_indexes = find_indexes_in_point_cloud(
         cloud, cst.POINTS_CLOUD_CLR_KEY_ROOT
@@ -282,21 +282,28 @@ def compute_vector_raster_and_stats(
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
-    # 3. mask
+    # 3. confidence interval
+    interval_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_INTERVALS_KEY_ROOT, list_computed_layers
+    )
+    values_bands.extend(interval_indexes)
+    split_indexes.append(len(interval_indexes))
+
+    # 4. mask
     msk_indexes = find_indexes_in_point_cloud(
         cloud, cst.POINTS_CLOUD_MSK, list_computed_layers
     )
     values_bands.extend(msk_indexes)
     split_indexes.append(len(msk_indexes))
 
-    # 4. classification
+    # 5. classification
     classif_indexes = find_indexes_in_point_cloud(
         cloud, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(classif_indexes)
     split_indexes.append(len(classif_indexes))
 
-    # 5. source point cloud
+    # 6. source point cloud
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
     number_of_pc = cars_dataset.get_attributes_dataframe(cloud)["number_of_pc"]
@@ -321,7 +328,7 @@ def compute_vector_raster_and_stats(
     values_bands.extend(source_pc_indexes)
     split_indexes.append(len(source_pc_indexes))
 
-    # 6. filling
+    # 7. filling
     filling_indexes = find_indexes_in_point_cloud(
         cloud, cst.POINTS_CLOUD_FILLING_KEY_ROOT, list_computed_layers
     )
@@ -349,7 +356,7 @@ def compute_vector_raster_and_stats(
     )
 
     # pylint: disable=unbalanced-tuple-unpacking
-    out, confidences, msk, classif, source_pc, filling = np.split(
+    out, confidences, interval, msk, classif, source_pc, filling = np.split(
         out, np.cumsum(split_indexes), axis=-1
     )
 
@@ -358,6 +365,10 @@ def compute_vector_raster_and_stats(
         confidences_out = {}
         for k, key in enumerate(confidences_indexes):
             confidences_out[key] = confidences[..., k]
+
+    interval_out = None
+    if len(interval_indexes) > 0:
+        interval_out = interval
 
     msk_out = None
     if len(msk_indexes) > 0:
@@ -387,6 +398,7 @@ def compute_vector_raster_and_stats(
         classif_out,
         classif_indexes,
         confidences_out,
+        interval_out,
         source_pc_out,
         filling_out,
         filling_indexes,
@@ -414,11 +426,11 @@ def create_raster_dataset(
     classif: np.ndarray = None,
     band_classif: List[str] = None,
     confidences: np.ndarray = None,
+    interval: np.ndarray = None,
     source_pc: np.ndarray = None,
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
     band_filling: List[str] = None,
-    contains_intervals: bool = False,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -444,7 +456,6 @@ def create_raster_dataset(
     :param source_pc: binary raster with source point cloud information
     :param source_pc_names: list of names of points cloud before merging :
         name of sensors pair or name of point cloud file
-    :param contains_intervals: Indicates if intervals have been rasterized
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
@@ -462,9 +473,8 @@ def create_raster_dataset(
         coords=raster_coords,
     )
 
-    layers_to_rm = 2 if contains_intervals else 0
     if raster.shape[0] > 1:  # rasterizer produced color output
-        color = np.nan_to_num(raster[1 + layers_to_rm :], nan=color_no_data)
+        color = np.nan_to_num(raster[1:], nan=color_no_data)
         for idx, band_name in enumerate(band_im):
             band_im[idx] = band_name.replace(
                 cst.POINTS_CLOUD_CLR_KEY_ROOT + "_", ""
@@ -492,40 +502,16 @@ def create_raster_dataset(
         stdev[..., 0], coords=raster_coords, dims=raster_dims
     )
 
-    if contains_intervals:
-        hgt_inf = np.nan_to_num(raster[1], nan=hgt_no_data)
-        raster_out[cst.RASTER_HGT_INF] = xr.DataArray(
-            hgt_inf, coords=raster_coords, dims=raster_dims
-        )
-        hgt_sup = np.nan_to_num(raster[2], nan=hgt_no_data)
-        raster_out[cst.RASTER_HGT_SUP] = xr.DataArray(
-            hgt_sup, coords=raster_coords, dims=raster_dims
-        )
-        # statistics layer of confidence intervaks
-        raster_out[cst.RASTER_HGT_INF_MEAN] = xr.DataArray(
-            mean[..., 1], coords=raster_coords, dims=raster_dims
-        )
-        raster_out[cst.RASTER_HGT_INF_STD_DEV] = xr.DataArray(
-            stdev[..., 1], coords=raster_coords, dims=raster_dims
-        )
-
-        raster_out[cst.RASTER_HGT_SUP_MEAN] = xr.DataArray(
-            mean[..., 2], coords=raster_coords, dims=raster_dims
-        )
-        raster_out[cst.RASTER_HGT_SUP_STD_DEV] = xr.DataArray(
-            stdev[..., 2], coords=raster_coords, dims=raster_dims
-        )
-
     # add each band statistics
-    for i_layer in range(1, n_layers - layers_to_rm):
+    for i_layer in range(1, n_layers):
         raster_out["{}{}".format(cst.RASTER_BAND_MEAN, i_layer)] = xr.DataArray(
-            mean[..., i_layer + layers_to_rm],
+            mean[..., i_layer],
             coords=raster_coords,
             dims=raster_dims,
         )
         raster_out["{}{}".format(cst.RASTER_BAND_STD_DEV, i_layer)] = (
             xr.DataArray(
-                stdev[..., i_layer + layers_to_rm],
+                stdev[..., i_layer],
                 coords=raster_coords,
                 dims=raster_dims,
             )
@@ -561,6 +547,16 @@ def create_raster_dataset(
     if confidences is not None:  # rasterizer produced color output
         for key in confidences:
             raster_out[key] = xr.DataArray(confidences[key], dims=raster_dims)
+
+    if interval is not None:
+        hgt_inf = np.nan_to_num(interval[0], nan=hgt_no_data)
+        raster_out[cst.RASTER_HGT_INF] = xr.DataArray(
+            hgt_inf, coords=raster_coords, dims=raster_dims
+        )
+        hgt_sup = np.nan_to_num(interval[1], nan=hgt_no_data)
+        raster_out[cst.RASTER_HGT_SUP] = xr.DataArray(
+            hgt_sup, coords=raster_coords, dims=raster_dims
+        )
 
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
@@ -661,6 +657,7 @@ def rasterize(
         classif,
         classif_indexes,
         confidences,
+        interval,
         source_pc,
         filling,
         filling_indexes,
@@ -700,6 +697,10 @@ def rasterize(
         for key in confidences:
             confidences[key] = confidences[key].reshape(shape_out)
 
+    if interval is not None:
+        interval = interval.reshape(shape_out + (-1,))
+        interval = np.moveaxis(interval, 2, 0)
+
     if source_pc is not None:
         source_pc = source_pc.reshape(shape_out + (-1,))
         source_pc = np.moveaxis(source_pc, 2, 0)
@@ -707,11 +708,6 @@ def rasterize(
     if filling is not None:
         filling = filling.reshape(shape_out + (-1,))
         filling = np.moveaxis(filling, 2, 0)
-
-    # Checking if confidence intervals are present in the point cloud
-    contains_intervals = (
-        len([k for k in cloud if k in [cst.Z_INF, cst.Z_SUP]]) == 2
-    )
 
     # build output dataset
     raster_out = create_raster_dataset(
@@ -735,11 +731,11 @@ def rasterize(
         classif,
         classif_indexes,
         confidences,
+        interval,
         source_pc,
         source_pc_names,
         filling,
         filling_indexes,
-        contains_intervals=contains_intervals,
     )
 
     return raster_out
