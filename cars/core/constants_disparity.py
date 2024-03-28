@@ -25,6 +25,10 @@ CARS Disparity Constants module
 # disparity map
 MAP = "disp"
 CONFIDENCE = "confidence"
+CONFIDENCE_KEY = "cost_volume_confidence"
+INTERVAL = "interval_bounds"
+INTERVAL_INF = "confidence_from_interval_bounds_inf"
+INTERVAL_SUP = "confidence_from_interval_bounds_sup"
 EPI_DISP_MIN_GRID = "disp_min_grid"
 EPI_DISP_MAX_GRID = "disp_max_grid"
 

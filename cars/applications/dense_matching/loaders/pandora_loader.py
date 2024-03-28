@@ -40,6 +40,8 @@ from pandora.check_configuration import (
 from pandora.img_tools import get_metadata
 from pandora.state_machine import PandoraMachine
 
+from cars.core import constants_disparity as cst_disp
+
 
 class PandoraLoader:
     """
@@ -47,11 +49,12 @@ class PandoraLoader:
 
     """
 
-    def __init__(
+    def __init__(  # noqa: C901
         self,
         conf=None,
         method_name=None,
         generate_performance_map=False,
+        generate_confidence_intervals=False,
         perf_eta_max_ambiguity=0.99,
         perf_eta_max_risk=0.25,
         perf_eta_step=0.04,
@@ -108,39 +111,98 @@ class PandoraLoader:
                     "No method named {} in pandora loader".format(method_name)
                 )
 
-        # add performance map in configuration
-        if generate_performance_map:
-            perf_conf = {
-                "cost_volume_confidence.cars_1": {
-                    "confidence_method": "ambiguity",
-                    "eta_max": perf_eta_max_ambiguity,
-                    "eta_step": perf_eta_step,
-                },
-                "cost_volume_confidence.cars_2": {
-                    "confidence_method": "risk",
-                    "eta_max": perf_eta_max_risk,
-                    "eta_step": perf_eta_step,
-                },
+        # add required confidences
+        basic_ambiguity_conf = {
+            "cost_volume_confidence": {
+                "confidence_method": "ambiguity",
+                "eta_max": 0.7,
+                "eta_step": 0.01,
             }
+        }
 
-            conf["pipeline"] = overload_pandora_conf_with_confidence(
-                conf["pipeline"], perf_conf
-            )
+        perf_ambiguity_conf = {
+            "cost_volume_confidence.cars_1": {
+                "confidence_method": "ambiguity",
+                "eta_max": perf_eta_max_ambiguity,
+                "eta_step": perf_eta_step,
+            }
+        }
 
-        else:
-            # by default generate ambiguity user uses
-            # cars loaded configurations
+        perf_risk_conf = {
+            "cost_volume_confidence.cars_2": {
+                "confidence_method": "risk",
+                "eta_max": perf_eta_max_risk,
+                "eta_step": perf_eta_step,
+            }
+        }
+
+        intervals_conf = {
+            "cost_volume_confidence.cars_3": {
+                "confidence_method": "interval_bounds",
+            }
+        }
+
+        confidences = {}
+        if generate_performance_map:
+            confidences.update(perf_ambiguity_conf)
+            confidences.update(perf_risk_conf)
+        if generate_confidence_intervals:
             if uses_cars_pandora_conf:
-                ambi_conf = {
-                    "cost_volume_confidence": {
-                        "confidence_method": "ambiguity",
-                        "eta_max": 0.7,
-                        "eta_step": 0.01,
-                    },
+                confidences.update(perf_ambiguity_conf)
+                confidences.update(intervals_conf)
+            else:
+                flag_intervals = True
+                # Check consistency between generate_confidence_intervals
+                # and loader_conf
+                for key, item in conf["pipeline"].items():
+                    if cst_disp.CONFIDENCE_KEY in key:
+                        if item["confidence_method"] == cst_disp.INTERVAL:
+                            flag_intervals = False
+                if flag_intervals:
+                    raise KeyError(
+                        "Interval computation has been requested "
+                        "but no interval confidence is in the "
+                        "dense_matching_configuration loader_conf"
+                    )
+        if (
+            not generate_performance_map
+            and not generate_confidence_intervals
+            and uses_cars_pandora_conf
+        ):
+            confidences.update(basic_ambiguity_conf)
+
+        conf["pipeline"] = overload_pandora_conf_with_confidence(
+            conf["pipeline"], confidences
+        )
+
+        if generate_confidence_intervals:
+            # To ensure the consistency between the disparity map
+            # and the intervals, the median filter for intervals
+            # must be similar to the median filter. The filter is
+            # added at the end of the conf as it is applied during
+            # the disp_map state.
+            try:
+                filter_size = conf["pipeline"]["filter"]["filter_size"]
+            except KeyError:
+                filter_size = 3
+
+            conf_filter_interval = {
+                "filter.cars_3": {
+                    "filter_method": "median_for_intervals",
+                    "filter_size": filter_size,
+                    "interval_indicator": "cars_3",
+                    "regularization": True,
+                    "ambiguity_indicator": "cars_1",
                 }
-                conf["pipeline"] = overload_pandora_conf_with_confidence(
-                    conf["pipeline"], ambi_conf
-                )
+            }
+            pipeline_dict = OrderedDict()
+            pipeline_dict.update(conf["pipeline"])
+            # Filter is placed after validation in config
+            # and should be placed before.
+            # However it does not have any incidence on operation
+            pipeline_dict.update(conf_filter_interval)
+
+            conf["pipeline"] = pipeline_dict
 
         # Check conf
         self.pandora_config = conf
@@ -296,7 +358,6 @@ def overload_pandora_conf_with_confidence(conf, confidence_conf):
     disp_index = conf_keys.index("disparity")
 
     # move to end every key from disparity
-
     for ind in range(disp_index, len(conf_keys)):
         out_dict.move_to_end(conf_keys[ind])
 

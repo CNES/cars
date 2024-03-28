@@ -111,6 +111,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
+        intervals=None,
     ):
         """
         Run Triangulation application.
@@ -181,6 +182,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type uncorrected_grid_right: CarsDataset
         :param geoid_path: geoid path
         :type geoid_path: str
+        :param intervals: Either None or a List of 2 intervals indicators
+        :type intervals: None or [str, str]
 
         :return: points cloud \
                 The CarsDataset contains:
@@ -189,7 +192,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "x", "y", "z", "corr_msk"\
-                    optional: "color", "msk",
+                    optional: "color", "msk", "z_inf", "z_sup"
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound", \
                 "elevation_delta_lower_bound","elevation_delta_upper_bound"

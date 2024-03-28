@@ -925,51 +925,137 @@ The structure follows this organisation:
             **Description**
 
             Compute disparity map from stereo-rectified pair images
-
-
-            **Configuration**
-
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | Name                               | Description                                                             | Type        | Available value                 | Default value | Required |
-            +====================================+=========================================================================+=============+=================================+===============+==========+
-            | method                             | Method for dense matching                                               | string      | "census_sgm", "mccnn_sgm"       | "census_sgm"  | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | loader                             | external library use to compute dense matching                          | string      | "pandora"                       | "pandora"     | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | loader_conf                        | Configuration associated with loader, dictionary or path to config      | dict or str |                                 |               | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | min_elevation_offset               | Override minimum disparity from prepare step with this offset in meters | int         |                                 | None          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | max_elevation_offset               | Override maximum disparity from prepare step with this offset in meters | int         | should be > min                 | None          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | disp_min_threshold                 | Override minimum disparity when less than lower bound                   | int         |                                 | None          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | disp_max_threshold                 | Override maximum disparity when greater than upper bound                | int         | should be > min                 | None          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | min_epi_tile_size                  | Lower bound of optimal epipolar tile size for dense matching            | int         | should be > 0                   | 300           | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | max_epi_tile_size                  | Upper bound of optimal epipolar tile size for dense matching            | int         | should be > 0 and > min         | 1500          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | epipolar_tile_margin_in_percent    | Size of the margin used for dense matching (percent of tile size)       | int         |                                 | 60            | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | generate_performance_map           | Generate a performance map from disparity map                           | boolean     |                                 | False         | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | perf_eta_max_ambiguity             | Ambiguity confidence eta max used for performance map                   | float       |                                 | 0.99          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | perf_eta_max_risk                  | Risk confidence eta max used for performance map                        | float       |                                 | 0.25          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | perf_eta_step                      | Risk and Ambiguity confidence eta step used for performance map         | float       |                                 | 0.04          | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | perf_ambiguity_threshold           | Maximal ambiguity considered for performance map                        | float       |                                 | 0.6           | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | save_disparity_map                 | Save disparity map and disparity confidence                             | boolean     |                                 | false         | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | use_global_disp_range              | If true, use global disparity range, otherwise local range estimation   | boolean     |                                 | false         | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | local_disp_grid_step               | Step of disparity min/ max grid used to resample dense disparity range  | int         |                                 | 30            | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
-            | disp_range_propagation_filter_size | Filter size of local min/max disparity, to propagate local min/max      | int         | should be > 0                   | 300           | No       |
-            +------------------------------------+-------------------------------------------------------------------------+-------------+---------------------------------+---------------+----------+
+            
+            .. list-table:: Configuration
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+                
+                * - Name
+                  - Description
+                  - Type
+                  - Available value
+                  - Default value
+                  - Required
+                * - method
+                  - Method for dense matching
+                  - string
+                  - "census_sgm", "mccnn_sgm"
+                  - "census_sgm"
+                  - No
+                * - loader
+                  - external library use to compute dense matching
+                  - string
+                  - "pandora"
+                  - "pandora"
+                  - No
+                * - loader_conf
+                  - Configuration associated with loader, dictionary or path to config
+                  - dict or str
+                  - 
+                  - 
+                  - No
+                * - min_elevation_offset
+                  - Override minimum disparity from prepare step with this offset in meters
+                  - int
+                  - 
+                  - None
+                  - No
+                * - max_elevation_offset
+                  - Override maximum disparity from prepare step with this offset in meters
+                  - int
+                  - should be > min
+                  - None
+                  - No
+                * - disp_min_threshold
+                  - Override minimum disparity when less than lower bound
+                  - int
+                  - 
+                  - None
+                  - No
+                * - disp_max_threshold
+                  - Override maximum disparity when greater than upper bound
+                  - int
+                  - should be > min
+                  - None
+                  - No
+                * - min_epi_tile_size
+                  - Lower bound of optimal epipolar tile size for dense matching
+                  - int
+                  - should be > 0
+                  - 300
+                  - No
+                * - max_epi_tile_size
+                  - Upper bound of optimal epipolar tile size for dense matching
+                  - int
+                  - should be > 0 and > min
+                  - 1500
+                  - No
+                * - epipolar_tile_margin_in_percent
+                  - Size of the margin used for dense matching (percent of tile size)
+                  - int
+                  - 
+                  - 60
+                  - No
+                * - generate_performance_map
+                  - Generate a performance map from disparity map
+                  - boolean
+                  - 
+                  - False
+                  - No
+                * - generate_confidence_intervals
+                  - Compute confidence intervals from disparity map. 
+                  - boolean
+                  - 
+                  - False
+                  - No
+                * - perf_eta_max_ambiguity
+                  - Ambiguity confidence eta max used for performance map
+                  - float
+                  - 
+                  - 0.99
+                  - No
+                * - perf_eta_max_risk
+                  - Risk confidence eta max used for performance map
+                  - float
+                  - 
+                  - 0.25
+                  - No
+                * - perf_eta_step
+                  - Risk and Ambiguity confidence eta step used for performance map
+                  - float
+                  - 
+                  - 0.04
+                  - No
+                * - perf_ambiguity_threshold
+                  - Maximal ambiguity considered for performance map
+                  - float
+                  - 
+                  - 0.6
+                  - No
+                * - save_disparity_map
+                  - Save disparity map and disparity confidence
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - use_global_disp_range
+                  - If true, use global disparity range, otherwise local range estimation
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - local_disp_grid_step
+                  - Step of disparity min/ max grid used to resample dense disparity range
+                  - int
+                  - 
+                  - 30
+                  - No
+                * - disp_range_propagation_filter_size
+                  - Filter size of local min/max disparity, to propagate local min/max
+                  - int
+                  - should be > 0
+                  - 300
+                  - No
 
             See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
@@ -1251,52 +1337,138 @@ The structure follows this organisation:
             Project altitudes on regular grid.
 
             Only one simple gaussian method is available for now.
-
-            **Configuration**
-
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | Name                                 | Description                                                  | Type       | Available value   | Default value   | Required |
-            +======================================+==============================================================+============+===================+=================+==========+
-            | method                               |                                                              | string     | "simple_gaussian" | simple_gaussian | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | dsm_radius                           |                                                              | float, int |                   | 1.0             | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | sigma                                |                                                              | float      |                   | None            | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | grid_points_division_factor          |                                                              | int        |                   | None            | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | resolution                           | Altitude grid step (dsm)                                     | float      | should be > 0     | 0.5             | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | dsm_no_data                          |                                                              | int        |                   | -32768          |          |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | color_no_data                        |                                                              | int        |                   | 0               |          |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | color_dtype                          | By default, it's retrieved from the input color              | string     | "uint8", "uint16" | None            | No       |
-            |                                      | Otherwise, specify an image type                             |            | "float32" ...     |                 |          |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | msk_no_data                          | No data value for mask, classif, filling and source_pc       | int        | between 2 and 255 | 255             |          |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_color                           | Save color ortho-image                                       | boolean    |                   | true            | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_stats                           |                                                              | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_mask                            | Save mask raster                                             | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_classif                         | Save classification mask raster                              | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_dsm                             | Save dsm                                                     | boolean    |                   | true            | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_confidence                      | Save all the disparity confidence                            | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_source_pc                       | Save mask with data source                                   | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | save_filling                         | Save mask with filling information                           | boolean    |                   | false           | No       |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
-            | compute_all                          | Compute all layers even                                      | boolean    |                   | false           | No       |
-            |                                      | if one or more layers                                        |            |                   |                 |          |
-            |                                      | are not saved (color                                         |            |                   |                 |          |
-            |                                      | , dsm, msk..)                                                |            |                   |                 |          |
-            +--------------------------------------+--------------------------------------------------------------+------------+-------------------+-----------------+----------+
+            
+            .. list-table:: Configuration
+                :widths: 19 19 19 19 19 19
+                :header-rows: 1
+            
+                * - Name
+                  - Description
+                  - Type
+                  - Available value
+                  - Default value
+                  - Required
+                * - method
+                  - 
+                  - string
+                  - "simple_gaussian"
+                  - simple_gaussian
+                  - No
+                * - dsm_radius
+                  - 
+                  - float, int
+                  - 
+                  - 1.0
+                  - No
+                * - sigma
+                  - 
+                  - float
+                  - 
+                  - None
+                  - No
+                * - grid_points_division_factor
+                  - 
+                  - int
+                  - 
+                  - None
+                  - No
+                * - resolution
+                  - Altitude grid step (dsm)
+                  - float
+                  - should be > 0
+                  - 0.5
+                  - No
+                * - dsm_no_data
+                  - 
+                  - int
+                  - 
+                  - -32768
+                  - 
+                * - color_no_data
+                  - 
+                  - int
+                  - 
+                  - 0
+                  - 
+                * - color_dtype
+                  - | By default, it's retrieved from the input color
+                    | Otherwise, specify an image type
+                  - string
+                  - | "uint8", "uint16"
+                    | "float32" ...
+                  - None
+                  - No
+                * - msk_no_data
+                  - No data value for mask  and classif
+                  - int
+                  - 
+                  - 255
+                  - 
+                * - save_color
+                  - Save color ortho-image
+                  - boolean
+                  - 
+                  - true
+                  - No
+                * - save_stats
+                  - 
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_mask
+                  - Save mask raster
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_classif
+                  - Save classification mask raster
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_dsm
+                  - Save dsm
+                  - boolean
+                  - 
+                  - true
+                  - No
+                * - save_confidence
+                  - Save all the disparity confidence
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_intervals
+                  - | Save the propagated height confidence intervals
+                    | Confidence disparity intervals must have been
+                    | computed during the dense matching step.
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_source_pc
+                  - Save mask with data source
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - save_filling
+                  - Save mask with filling information
+                  - boolean
+                  - 
+                  - false
+                  - No
+                * - compute_all
+                  - | Compute all layers even
+                    | if one or more layers
+                    | are not saved (color
+                    | , dsm, msk..)
+                  - boolean
+                  - 
+                  - false
+                  - No
 
             **Example**
 

@@ -48,6 +48,7 @@ def triangulate(
     grid1,
     grid2,
     disp_ref: xr.Dataset,
+    disp_key: str = cst_disp.MAP,
 ) -> Dict[str, xr.Dataset]:
     """
     This function will perform triangulation from a disparity map
@@ -69,6 +70,8 @@ def triangulate(
     :param disp_ref: left to right disparity map dataset
     :param im_ref_msk_ds: reference image dataset (image and
                           mask (if indicated by the user) in epipolar geometry)
+    :param disp_key: disparity key in the dataset\
+            usually set to cst_disp.MAP, but can be a disparity interval bound
     :returns: point_cloud as a dictionary of dataset containing:
 
         - Array with shape (roi_size_x,roi_size_y,3), with last dimension \
@@ -83,6 +86,14 @@ def triangulate(
         - 'sec' to retrieve the dataset built from the right to \
            left disparity map (if provided in input)
     """
+
+    if disp_key != cst_disp.MAP:
+        # Switching the variable names so the desired disparity is named 'disp'
+        # It does not modifies the dataset outside of this function
+        disp_ref = disp_ref.rename_vars(
+            {disp_key: cst_disp.MAP, cst_disp.MAP: disp_key}
+        )
+
     point_clouds = {}
     point_clouds[cst.STEREO_REF] = compute_points_cloud(
         geometry_plugin,

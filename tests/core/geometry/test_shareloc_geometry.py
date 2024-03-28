@@ -134,3 +134,32 @@ def test_get_roi():
         5.202048185183154,
     ]
     np.testing.assert_allclose(roi, ref_roi)
+
+
+@pytest.mark.unit_tests
+def test_sensors_arrangement_left_right():
+    """
+    Test sensors arrangement detection
+    """
+    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
+    geomodel1_path = absolute_data_path("input/phr_ventoux/left_image.geom")
+    geomodel1 = {"path": geomodel1_path, "model_type": RPC_TYPE}
+    grid1 = absolute_data_path("input/phr_ventoux/left_epi_grid.tif")
+
+    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
+    geomodel2_path = absolute_data_path("input/phr_ventoux/right_image.geom")
+    geomodel2 = {"path": geomodel2_path, "model_type": RPC_TYPE}
+    grid2 = absolute_data_path("input/phr_ventoux/corrected_right_epi_grid.tif")
+
+    geo_plugin = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry"
+        )
+    )
+
+    assert geo_plugin.sensors_arrangement_left_right(
+        sensor1, sensor2, geomodel1, geomodel2, grid1, grid2
+    )
+    assert not geo_plugin.sensors_arrangement_left_right(
+        sensor2, sensor1, geomodel2, geomodel1, grid2, grid1
+    )

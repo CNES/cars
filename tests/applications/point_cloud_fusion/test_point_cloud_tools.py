@@ -18,6 +18,7 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
 """
 Test module for cars/steps/point_cloud_tools.py
 """
@@ -54,7 +55,7 @@ def test_create_combined_dense_cloud():
     epsg = 4326
 
     # test only color
-    def get_cloud0_ds(with_msk):
+    def get_cloud0_ds(with_msk, with_conf_intervals=False):
         """Return local test point cloud 10x10 dataset"""
         row = 10
         col = 10
@@ -62,6 +63,8 @@ def test_create_combined_dense_cloud():
         x_coord = x_coord.reshape((row, col))
         y_coord = x_coord + 1
         z_coord = y_coord + 1
+        z_inf_coord = z_coord - 0.5
+        z_sup_coord = z_coord + 1
         corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
         corr_msk[4, 4] = 0
         if with_msk:
@@ -77,6 +80,9 @@ def test_create_combined_dense_cloud():
 
         if with_msk:
             ds_values[cst.EPI_MSK] = ([cst.ROW, cst.COL], msk)
+        if with_conf_intervals:
+            ds_values[cst.Z_INF] = ([cst.ROW, cst.COL], z_inf_coord)
+            ds_values[cst.Z_SUP] = ([cst.ROW, cst.COL], z_sup_coord)
 
         cloud0 = xr.Dataset(
             ds_values,
@@ -378,6 +384,177 @@ def test_create_combined_dense_cloud():
     ref_cloud_coords = np.concatenate([ref_cloud_coords0, ref_cloud_coords2])
 
     assert np.allclose(cloud, ref_cloud_coords)
+
+    # Test with confidence intervals
+    row = 10
+    col = 10
+    x_coord = np.full((row, col), fill_value=0, dtype=np.float64)
+    y_coord = np.full((row, col), fill_value=1, dtype=np.float64)
+    z_coord = np.full((row, col), fill_value=2, dtype=np.float64)
+    z_inf_coord = np.full((row, col), fill_value=0.5, dtype=np.float64)
+    z_sup_coord = np.full((row, col), fill_value=2.5, dtype=np.float64)
+
+    corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
+    corr_msk[6, 6] = 0
+
+    cloud1 = xr.Dataset(
+        {
+            cst.X: ([cst.ROW, cst.COL], x_coord),
+            cst.Y: ([cst.ROW, cst.COL], y_coord),
+            cst.Z: ([cst.ROW, cst.COL], z_coord),
+            cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
+            cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
+            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+        },
+        coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
+    )
+    cloud1.attrs[cst.EPSG] = epsg
+
+    row = 5
+    col = 5
+    x_coord = np.full((row, col), fill_value=45, dtype=np.float64)
+    y_coord = np.full((row, col), fill_value=45, dtype=np.float64)
+    z_coord = np.full((row, col), fill_value=50, dtype=np.float64)
+    z_inf_coord = np.full((row, col), fill_value=49.5, dtype=np.float64)
+    z_sup_coord = np.full((row, col), fill_value=51, dtype=np.float64)
+    corr_msk = np.full((row, col), fill_value=255, dtype=np.int16)
+    corr_msk[2, 2] = 0
+
+    cloud2 = xr.Dataset(
+        {
+            cst.X: ([cst.ROW, cst.COL], x_coord),
+            cst.Y: ([cst.ROW, cst.COL], y_coord),
+            cst.Z: ([cst.ROW, cst.COL], z_coord),
+            cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
+            cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
+            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+        },
+        coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
+    )
+    cloud2.attrs[cst.EPSG] = epsg
+
+    cloud_list = [
+        get_cloud0_ds(with_msk=False, with_conf_intervals=True),
+        cloud1,
+        cloud2,
+    ]
+    cloud_id = list(range(3))
+
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
+    cloud, epsg = point_cloud_tools.create_combined_cloud(
+        cloud_list,
+        cloud_id,
+        epsg,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
+        with_coords=False,
+    )
+
+    ref_cloud0 = np.array(
+        [
+            [0.0, 39.0, 40.0, 41.0, 41.0 - 0.5, 41.0 + 1],
+            [0.0, 40.0, 41.0, 42.0, 42.0 - 0.5, 42.0 + 1],
+            [0.0, 41.0, 42.0, 43.0, 43.0 - 0.5, 43.0 + 1],
+            [0.0, 42.0, 43.0, 44.0, 44.0 - 0.5, 44.0 + 1],
+            [0.0, 43.0, 44.0, 45.0, 45.0 - 0.5, 45.0 + 1],
+            [0.0, 45.0, 46.0, 47.0, 47.0 - 0.5, 47.0 + 1],
+            [0.0, 46.0, 47.0, 48.0, 48.0 - 0.5, 48.0 + 1],
+            [0.0, 47.0, 48.0, 49.0, 49.0 - 0.5, 49.0 + 1],
+            [0.0, 48.0, 49.0, 50.0, 50.0 - 0.5, 50.0 + 1],
+            [0.0, 49.0, 50.0, 51.0, 51.0 - 0.5, 51.0 + 1],
+            [0.0, 50.0, 51.0, 52.0, 52.0 - 0.5, 52.0 + 1],
+        ]
+    )
+
+    ref_cloud2 = np.zeros((row * col, 6))
+    ref_cloud2[:, 0] = 2
+    ref_cloud2[:, 1] = 45
+    ref_cloud2[:, 2] = 45
+    ref_cloud2[:, 3] = 50
+    ref_cloud2[:, 4] = 49.5
+    ref_cloud2[:, 5] = 51
+
+    ref_cloud2 = np.delete(ref_cloud2, 2 * col + 2, 0)
+
+    ref_cloud = np.concatenate([ref_cloud0, ref_cloud2])
+    assert np.allclose(cloud.values, ref_cloud)
+
+    # Test with colors and confidence intervals
+    band = 3
+    row = 10
+    col = 10
+    clr0 = np.zeros((band, row, col))
+    clr0[0, :, :] = 10
+    clr0[1, :, :] = 20
+    clr0[2, :, :] = 30
+    cloud_with_color0 = add_color(
+        get_cloud0_ds(with_msk=False, with_conf_intervals=True), clr0
+    )
+
+    clr1 = np.full((band, row, col), fill_value=20)
+    cloud_with_color1 = add_color(cloud1, clr1)
+
+    row = 5
+    col = 5
+    clr2 = np.zeros((band, row, col))
+    clr2[0, :, :] = np.arange(row * col).reshape((row, col))
+    clr2[1, :, :] = clr2[0, :, :] + 1
+    clr2[2, :, :] = clr2[1, :, :] + 1
+    cloud_with_color2 = add_color(cloud2, clr2)
+
+    cloud_list_with_color = [
+        cloud_with_color0,
+        cloud_with_color1,
+        cloud_with_color2,
+    ]
+    cloud_id = list(range(3))
+
+    # Compute margin
+    on_ground_margin = 1
+    resolution = 0.5
+    radius = 1
+    # Former computation of merged margin
+    used_margin = (on_ground_margin + radius + 1) * resolution
+
+    # former :  xstart=40.0, ystart=50.0, xsize=20, ysize=25
+    cloud, epsg = point_cloud_tools.create_combined_cloud(
+        cloud_list_with_color,
+        cloud_id,
+        epsg,
+        xmin=40.0,
+        ymin=37.0,
+        xmax=50.5,
+        ymax=50,
+        margin=used_margin,
+        with_coords=False,
+    )
+
+    ref_clr0 = np.zeros((11, 3))
+    ref_clr0[:, 0] = 10
+    ref_clr0[:, 1] = 20
+    ref_clr0[:, 2] = 30
+    ref_cloud_clr0 = np.concatenate([ref_cloud0, ref_clr0], axis=1)
+
+    ref_clr2 = np.zeros((row * col, 3))
+    ref_clr2[:, 0] = np.arange(row * col)
+    ref_clr2[:, 1] = ref_clr2[:, 0] + 1
+    ref_clr2[:, 2] = ref_clr2[:, 1] + 1
+    ref_clr2 = np.delete(ref_clr2, 2 * col + 2, 0)
+    ref_cloud_clr2 = np.concatenate([ref_cloud2, ref_clr2], axis=1)
+
+    ref_cloud_clr = np.concatenate([ref_cloud_clr0, ref_cloud_clr2])
+
+    assert np.allclose(cloud.values, ref_cloud_clr)
 
 
 @pytest.mark.unit_tests

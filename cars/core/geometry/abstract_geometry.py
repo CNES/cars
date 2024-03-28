@@ -35,6 +35,7 @@ from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
 
 from cars.core import constants as cst
+from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, outputs
 from cars.data_structures import cars_dataset
 
@@ -533,6 +534,62 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param z_coord: Z Altitude list
         :return: X  / Y / Z Coordinates list in input image as a numpy array
         """
+
+    def sensors_arrangement_left_right(
+        self, sensor1, sensor2, geomodel1, geomodel2, grid_left, grid_right
+    ):
+        """
+        Determine the arrangement of sensors, either:
+        (double slashes represent Lines Of Sight)
+        +---------------------+---------------------+
+        |    Arrangement 1    |    Arrangement 2    |
+        |  sensor1   sensor2  |   sensor2  sensor1  |
+        |   \\ \\    //       |       \\    // //   |
+        |    \\ \\  //        |        \\  // //    |
+        |     \\ \\// <-- z_2 | z_1 --> \\// //     |
+        |      \\ //          |          \\ //      |
+        |       \\/   <-- z_1 | z_2 -->   \\/       |
+        +---------------------+---------------------+
+        This allows to know if a lower disparity corresponds to a lower or
+        higher hgt. It depends on the image pairing and geometrical models.
+        A fake triangulation determines z_1 and z_2.
+        If z_1 < z_2 then the sensors are in arrangement 1
+        If z_2 < z_1 then the sensors are in arrangement 2
+
+        :param sensor1: path to left sensor image
+        :param sensor2: path to right sensor image
+        :param geomodel1: path and attributes for left geomodel
+        :param geomodel2: path and attributes for right geomodel
+        :param grid1: path or dataset for epipolar grid of sensor1
+        :param grid2: path or dataset for epipolar grid of sensor2
+
+        :return: boolean indicating if sensors are in arrangement 1 or not
+        """
+        # Create a fake disparity dataset, where the two LOS from
+        # sensor1 are associated with the same LOS from sensor2
+        fake_disp = xr.Dataset(
+            data_vars={
+                cst_disp.MAP: (
+                    [cst.ROW, cst.COL],
+                    np.array([[1, 0]], dtype=float),
+                )
+            },
+            coords={cst.ROW: [0], cst.COL: [0, 1]},
+            attrs={cst.ROI: [0, 0, 2, 1], cst.EPI_FULL_SIZE: [2, 1]},
+        )
+        fake_triangulation = self.triangulate(
+            sensor1,
+            sensor2,
+            geomodel1,
+            geomodel2,
+            cst.DISP_MODE,
+            fake_disp,
+            grid_left,
+            grid_right,
+            roi_key=cst.ROI,
+        )
+        # True if arrangement 1, False if arrangement 2
+        return fake_triangulation[0, 0, 2] < fake_triangulation[0, 1, 2]
 
     def image_envelope(self, sensor, geomodel, shp=None):
         """

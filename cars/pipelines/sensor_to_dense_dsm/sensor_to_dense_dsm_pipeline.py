@@ -18,10 +18,10 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
 """
 CARS sensors_to_dense_dsm pipeline class file
 """
-# pylint: disable=too-many-lines
 # Standard imports
 from __future__ import print_function
 
@@ -43,6 +43,7 @@ from cars.applications.grid_generation import grid_correction
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
 )
+from cars.core import constants_disparity as cst_disp
 from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.inputs import get_descriptions_bands
@@ -1174,6 +1175,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.input_roi_poly, self.input_roi_epsg, epsg
                     )
 
+                # Checking disparity intervals indicators
+                if self.application_conf["dense_matching"][
+                    "generate_confidence_intervals"
+                ]:
+                    intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
+                    for key, item in self.dense_matching_app.corr_config[
+                        "pipeline"
+                    ].items():
+                        if cst_disp.CONFIDENCE_KEY in key:
+                            if item["confidence_method"] == cst_disp.INTERVAL:
+                                indicator = key.split(".")
+                                if len(indicator) > 1:
+                                    intervals[0] += "." + indicator[-1]
+                                    intervals[1] += "." + indicator[-1]
+                                # Only processing the first encountered interval
+                                break
+                else:
+                    intervals = None
+
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
                     pairs[pair_key]["sensor_image_left"],
@@ -1191,6 +1211,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=self.inputs[sens_cst.GEOID],
                     cloud_id=cloud_id,
+                    intervals=intervals,
                 )
 
                 if self.generate_terrain_products:

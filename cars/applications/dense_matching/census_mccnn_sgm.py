@@ -163,6 +163,9 @@ class CensusMccnnSgm(
         overloaded_conf["generate_performance_map"] = conf.get(
             "generate_performance_map", False
         )
+        overloaded_conf["generate_confidence_intervals"] = conf.get(
+            "generate_confidence_intervals", False
+        )
         overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
             "perf_eta_max_ambiguity", 0.99
         )
@@ -199,6 +202,9 @@ class CensusMccnnSgm(
             generate_performance_map=overloaded_conf[
                 "generate_performance_map"
             ],
+            generate_confidence_intervals=overloaded_conf[
+                "generate_confidence_intervals"
+            ],
             perf_eta_max_ambiguity=overloaded_conf["perf_eta_max_ambiguity"],
             perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
             perf_eta_step=overloaded_conf["perf_eta_step"],
@@ -221,6 +227,7 @@ class CensusMccnnSgm(
             "disp_max_threshold": Or(None, int),
             "save_disparity_map": bool,
             "generate_performance_map": bool,
+            "generate_confidence_intervals": bool,
             "perf_eta_max_ambiguity": float,
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
@@ -276,11 +283,11 @@ class CensusMccnnSgm(
 
     def get_margins_fun(self, grid_left, disp_range_grid):
         """
-        Get Margins function  that generates margins needed by
+        Get Margins function that generates margins needed by
         matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min_grid: minimum and maximumdisparity grid
+        :param disp_min_grid: minimum and maximum disparity grid
         :return: function that generates margin for given roi
 
         """

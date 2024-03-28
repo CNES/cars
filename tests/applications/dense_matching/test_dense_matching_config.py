@@ -30,15 +30,25 @@ from cars.applications.dense_matching.census_mccnn_sgm import CensusMccnnSgm
 
 
 @pytest.mark.unit_tests
-def test_check_conf_with_error():
+@pytest.mark.parametrize(
+    "max_offset,confidence_intervals,expected_error",
+    [(10, False, ValueError), (30, True, KeyError)],
+)
+def test_check_conf_with_error(
+    max_offset, confidence_intervals, expected_error
+):
     """
     Test configuration check for dense matching application
-    with forbidden value for elevation offset (min > max)
+    First, with forbidden value for elevation offset (min > max)
+    Then, with incoherent confidence intervals conf
+    not present in the loader conf
     """
     conf = {
         "method": "census_sgm",
         "min_elevation_offset": 20,
-        "max_elevation_offset": 10,  # should be > min
+        "max_elevation_offset": max_offset,  # should be > min
+        "generate_confidence_intervals": confidence_intervals,
+        "loader_conf": {"pipeline": {"disparity": {}}},
     }
-    with pytest.raises(ValueError):
+    with pytest.raises(expected_error):
         _ = CensusMccnnSgm(conf)

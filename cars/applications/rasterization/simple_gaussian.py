@@ -18,10 +18,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
+
 """
 this module contains the dense_matching application class.
 """
-# pylint: disable=too-many-lines
 
 import collections
 
@@ -96,6 +97,7 @@ class SimpleGaussian(
         self.save_mask = self.used_config["save_mask"]
         self.save_classif = self.used_config["save_classif"]
         self.save_dsm = self.used_config["save_dsm"]
+        self.save_intervals = self.used_config["save_intervals"]
         self.save_confidence = self.used_config["save_confidence"]
         self.save_source_pc = self.used_config["save_source_pc"]
         self.save_filling = self.used_config["save_filling"]
@@ -145,6 +147,7 @@ class SimpleGaussian(
         overloaded_conf["save_mask"] = conf.get("save_mask", False)
         overloaded_conf["save_classif"] = conf.get("save_classif", False)
         overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
+        overloaded_conf["save_intervals"] = conf.get("save_intervals", False)
         overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
         overloaded_conf["save_source_pc"] = conf.get("save_source_pc", False)
         overloaded_conf["save_filling"] = conf.get("save_filling", False)
@@ -175,6 +178,7 @@ class SimpleGaussian(
             "save_classif": bool,
             "save_stats": bool,
             "save_dsm": bool,
+            "save_intervals": bool,
             "save_confidence": bool,
             "save_source_pc": bool,
             "save_filling": bool,
@@ -264,7 +268,7 @@ class SimpleGaussian(
                 Each tile will be a future pandas DataFrame containing:
 
                 - data with keys  "x", "y", "z", "corr_msk" \
-                    optional: "color", "mask", "data_valid",\
+                    optional: "color", "mask", "data_valid", "z_inf", "z_sup"\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
                 - attrs with keys "epsg", "ysize", "xsize", "xstart", "ystart"
 
@@ -276,7 +280,7 @@ class SimpleGaussian(
              Tuple(list of CarsDataset Arrays, bounds). With list of point
                 clouds:
                 list of CarsDataset of type array, with:
-                - data with keys x", "y", "z", "corr_msk" \
+                - data with keys x", "y", "z", "corr_msk", "z_inf", "z_sup"\
                     optional: "color", "mask", "data_valid",\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
 
@@ -297,7 +301,8 @@ class SimpleGaussian(
                 Each tile will be a future xarray Dataset containing:
 
                 - data : with keys : "hgt", "img", "raster_msk",optional : \
-                  "n_pts", "pts_in_cell", "hgt_mean", "hgt_stdev"
+                  "n_pts", "pts_in_cell", "hgt_mean", "hgt_stdev",\
+                  "hgt_inf", "hgt_sup"
                 - attrs with keys: "epsg"
             - attributes containing: None
 
@@ -376,6 +381,8 @@ class SimpleGaussian(
         # Initialize files names
         # TODO get from config ?
         out_dsm_file_name = None
+        out_dsm_inf_file_name = None
+        out_dsm_sup_file_name = None
         out_weights_file_name = None
         out_clr_file_name = None
         out_msk_file_name = None
@@ -384,6 +391,14 @@ class SimpleGaussian(
         out_dsm_std_file_name = None
         out_dsm_n_pts_file_name = None
         out_dsm_points_in_cell_file_name = None
+        out_dsm_inf_mean_file_name = None
+        out_dsm_inf_std_file_name = None
+        out_dsm_inf_n_pts_file_name = None
+        out_dsm_inf_points_in_cell_file_name = None
+        out_dsm_sup_mean_file_name = None
+        out_dsm_sup_std_file_name = None
+        out_dsm_sup_n_pts_file_name = None
+        out_dsm_sup_points_in_cell_file_name = None
 
         if self.save_dsm:
             if dsm_file_name is not None:
@@ -411,6 +426,32 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_weights",
             )
+
+        # TODO Check that intervals indeed exist!
+        if self.save_intervals:
+            out_dsm_inf_file_name = os.path.join(
+                self.orchestrator.out_dir, "dsm_inf.tif"
+            )
+            self.orchestrator.add_to_save_lists(
+                out_dsm_inf_file_name,
+                cst.RASTER_HGT_INF,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_inf",
+            )
+            out_dsm_sup_file_name = os.path.join(
+                self.orchestrator.out_dir, "dsm_sup.tif"
+            )
+            self.orchestrator.add_to_save_lists(
+                out_dsm_sup_file_name,
+                cst.RASTER_HGT_SUP,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_sup",
+            )
+
         if self.save_color:
             if color_file_name is not None:
                 out_clr_file_name = color_file_name
@@ -473,6 +514,95 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_pts_in_cells",
             )
+            if self.save_intervals:
+                out_dsm_inf_mean_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_mean.tif"
+                )
+                out_dsm_inf_std_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_std.tif"
+                )
+                out_dsm_inf_n_pts_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_n_pts.tif"
+                )
+                out_dsm_inf_points_in_cell_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_inf_pts_in_cell.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_mean_file_name,
+                    cst.RASTER_HGT_INF_MEAN,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_inf_mean",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_std_file_name,
+                    cst.RASTER_HGT_INF_STD_DEV,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_inf_std",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_n_pts_file_name,
+                    cst.RASTER_NB_PTS,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_inf_n_pts",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_inf_points_in_cell_file_name,
+                    cst.RASTER_NB_PTS_IN_CELL,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_inf_pts_in_cells",
+                )
+                out_dsm_sup_mean_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_mean.tif"
+                )
+                out_dsm_sup_std_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_std.tif"
+                )
+                out_dsm_sup_n_pts_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_n_pts.tif"
+                )
+                out_dsm_sup_points_in_cell_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dsm_sup_pts_in_cell.tif"
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_mean_file_name,
+                    cst.RASTER_HGT_SUP_MEAN,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_sup_mean",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_std_file_name,
+                    cst.RASTER_HGT_SUP_STD_DEV,
+                    terrain_raster,
+                    dtype=np.float32,
+                    nodata=self.dsm_no_data,
+                    cars_ds_name="dsm_sup_std",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_n_pts_file_name,
+                    cst.RASTER_NB_PTS,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_sup_n_pts",
+                )
+                self.orchestrator.add_to_save_lists(
+                    out_dsm_sup_points_in_cell_file_name,
+                    cst.RASTER_NB_PTS_IN_CELL,
+                    terrain_raster,
+                    dtype=np.uint16,
+                    nodata=0,
+                    cars_ds_name="dsm_sup_pts_in_cells",
+                )
         if self.save_classif:
             out_classif_file_name = os.path.join(
                 self.orchestrator.out_dir, "classif.tif"
@@ -577,6 +707,8 @@ class SimpleGaussian(
                 raster_cst.RASTERIZATION_RUN_TAG: {
                     raster_cst.EPSG_TAG: epsg,
                     raster_cst.DSM_TAG: out_dsm_file_name,
+                    raster_cst.DSM_INF_TAG: out_dsm_inf_file_name,
+                    raster_cst.DSM_SUP_TAG: out_dsm_sup_file_name,
                     raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
                     raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
                     raster_cst.COLOR_TAG: out_clr_file_name,
@@ -587,6 +719,18 @@ class SimpleGaussian(
                     raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,
                     raster_cst.DSM_POINTS_IN_CELL_TAG: (
                         out_dsm_points_in_cell_file_name
+                    ),
+                    raster_cst.DSM_INF_MEAN_TAG: out_dsm_inf_mean_file_name,
+                    raster_cst.DSM_INF_STD_TAG: out_dsm_inf_std_file_name,
+                    raster_cst.DSM_INF_N_PTS_TAG: out_dsm_inf_n_pts_file_name,
+                    raster_cst.DSM_INF_POINTS_IN_CELL_TAG: (
+                        out_dsm_inf_points_in_cell_file_name
+                    ),
+                    raster_cst.DSM_SUP_MEAN_TAG: out_dsm_sup_mean_file_name,
+                    raster_cst.DSM_SUP_STD_TAG: out_dsm_sup_std_file_name,
+                    raster_cst.DSM_SUP_N_PTS_TAG: out_dsm_sup_n_pts_file_name,
+                    raster_cst.DSM_SUP_POINTS_IN_CELL_TAG: (
+                        out_dsm_sup_points_in_cell_file_name
                     ),
                 },
             }

@@ -290,3 +290,157 @@ def test_geoid_offset_from_pandas():
         atol=1e-1,
         rtol=1e-1,
     )
+
+
+@pytest.mark.unit_tests
+def test_triangulation_intervals_otb(
+    images_and_grids_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test triangulation with disparity intervals on ventoux dataset
+    """
+    disp1_ref = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/disp1_ref.nc")
+    )
+    disp1_ref["confidence_from_interval_bounds_inf.int"] = disp1_ref["disp"] - 1
+    disp1_ref["confidence_from_interval_bounds_sup.int"] = disp1_ref["disp"] + 1
+
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
+    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
+
+    point_cloud_dict = triangulation_tools.triangulate(
+        get_geometry_plugin("OTBGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+    )
+
+    point_cloud_dict_inf = triangulation_tools.triangulate(
+        get_geometry_plugin("OTBGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+        disp_key="confidence_from_interval_bounds_inf.int",
+    )
+
+    point_cloud_dict_sup = triangulation_tools.triangulate(
+        get_geometry_plugin("OTBGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+        disp_key="confidence_from_interval_bounds_sup.int",
+    )
+
+    point_cloud_dict[cst.STEREO_REF][cst.Z_INF] = point_cloud_dict_inf[
+        cst.STEREO_REF
+    ][cst.Z]
+    point_cloud_dict[cst.STEREO_REF][cst.Z_SUP] = point_cloud_dict_sup[
+        cst.STEREO_REF
+    ][cst.Z]
+
+    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
+
+    # Uncomment to update baseline
+    # point_cloud_dict[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/triangulation1_ref_intervals.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path("ref_output/triangulation1_ref_intervals.nc")
+    )
+    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
+
+
+@pytest.mark.unit_tests
+def test_triangulation_intervals_shareloc(
+    images_and_grids_conf,
+):  # pylint: disable=redefined-outer-name
+    """
+    Test triangulation with disparity intervals on ventoux dataset
+    """
+    disp1_ref = xr.open_dataset(
+        absolute_data_path("input/intermediate_results/disp1_ref.nc")
+    )
+    disp1_ref["confidence_from_interval_bounds_inf.int"] = disp1_ref["disp"] - 1
+    disp1_ref["confidence_from_interval_bounds_sup.int"] = disp1_ref["disp"] + 1
+
+    sensor1 = images_and_grids_conf["input"]["img1"]
+    sensor2 = images_and_grids_conf["input"]["img2"]
+    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
+    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
+    grid_left = images_and_grids_conf["preprocessing"]["output"][
+        "left_epipolar_grid"
+    ]
+    grid_right = images_and_grids_conf["preprocessing"]["output"][
+        "right_epipolar_grid"
+    ]
+
+    point_cloud_dict = triangulation_tools.triangulate(
+        get_geometry_plugin("SharelocGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+    )
+
+    point_cloud_dict_inf = triangulation_tools.triangulate(
+        get_geometry_plugin("SharelocGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+        disp_key="confidence_from_interval_bounds_inf.int",
+    )
+
+    point_cloud_dict_sup = triangulation_tools.triangulate(
+        get_geometry_plugin("SharelocGeometry"),
+        sensor1,
+        sensor2,
+        geomodel1,
+        geomodel2,
+        grid_left,
+        grid_right,
+        disp1_ref,
+        disp_key="confidence_from_interval_bounds_sup.int",
+    )
+
+    point_cloud_dict[cst.STEREO_REF][cst.Z_INF] = point_cloud_dict_inf[
+        cst.STEREO_REF
+    ][cst.Z]
+    point_cloud_dict[cst.STEREO_REF][cst.Z_SUP] = point_cloud_dict_sup[
+        cst.STEREO_REF
+    ][cst.Z]
+
+    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
+
+    # Uncomment to update baseline
+    # point_cloud_dict[cst.STEREO_REF].to_netcdf(absolute_data_path(
+    # "ref_output/triangulation1_ref_intervals.nc"))
+    ref = xr.open_dataset(
+        absolute_data_path("ref_output/triangulation1_ref_intervals.nc")
+    )
+    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
