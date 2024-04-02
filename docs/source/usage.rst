@@ -267,10 +267,12 @@ The structure follows this organisation:
                             "z" : "path_to_z.tif",
                             "color" : "path_to_color.tif",
                             "mask": "path_to_mask.tif",
-                            "classification": "path_to_the_classification.tif",
+                            "classification": "path_to_classification.tif",
+                            "filling": "path_to_filling.tif",
                             "confidence": {
-                                "confidence_name1": "path_to_the_confidence1.tif",
-                                "confidence_name2": "path_to_the_confidence2.tif",
+                                "confidence_name1": "path_to_confidence1.tif",
+                                "confidence_name2": "path_to_confidence2.tif",
+                                "confidence_parformance_map": "path_to_performance_map.tif",
                             }
                             "epsg": "point_cloud_epsg"
                         }
@@ -279,6 +281,10 @@ The structure follows this organisation:
                 }
 
             These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
+
+            .. note::
+
+                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_disparity_map` of `dense_matching` application must be activated in sensors_to_dense_point_clouds pipeline. The output performance map is `epi_confidence_performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_point_clouds_to_dense_dsm pipeline to save the performance map.
 
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | Name             | Description                                                       | Type           | Default value | Required |
@@ -294,6 +300,8 @@ The structure follows this organisation:
             | *mask*           | Validity mask of point cloud : 0 values are considered valid data | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | *classification* | Classification of point cloud                                     | string         |               | No       |
+            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+            | *filling*        | Filling map of point cloud                                        | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | *confidence*     | Dict of paths to the confidences of point cloud                   | dict           |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
