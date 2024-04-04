@@ -68,6 +68,19 @@ class AchievementTracker:
         :type tile: xarray Dataset or Pandas Dataframe
         """
 
+        try:
+            self._add_tile(tile)
+        except RuntimeError:
+            logging.error("Error getting id in Achiement Tracker")
+
+    def _add_tile(self, tile):
+        """
+        Add finished tile
+
+        :param tile: finished tile
+        :type tile: xarray Dataset or Pandas Dataframe
+        """
+
         # Get cars dataset id
         cars_ds_id = AbstractCarsDatasetRegistry.get_future_cars_dataset_id(
             tile

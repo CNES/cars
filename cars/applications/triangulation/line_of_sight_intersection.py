@@ -138,6 +138,7 @@ class LineOfSightIntersection(
         epipolar_disparity_map,
         epsg,
         geometry_plugin,
+        denoising_overload_fun=None,
         source_pc_names=None,
         orchestrator=None,
         pair_folder=None,
@@ -204,6 +205,8 @@ class LineOfSightIntersection(
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
         :type epipolar_disparity_map: CarsDataset
+        :param denoising_overload_fun: function to overload dataset
+        :type denoising_overload_fun: fun
         :param source_pc_names: source pc names
         :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
@@ -522,6 +525,7 @@ class LineOfSightIntersection(
                         geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
+                        denoising_overload_fun=denoising_overload_fun,
                         cloud_id=cloud_id,
                         intervals=intervals,
                         saving_info=full_saving_info,
@@ -541,6 +545,7 @@ def triangulation_wrapper(
     geometry_plugin,
     epsg,
     geoid_data: xr.Dataset = None,
+    denoising_overload_fun=None,
     cloud_id=None,
     intervals=None,
     saving_info=None,
@@ -572,6 +577,8 @@ def triangulation_wrapper(
     :type geoid_data: str
     :param intervals: Either None or a List of 2 intervals indicators
         :type intervals: None or [str, str]
+    :param denoising_overload_fun: function to overload dataset
+    :type denoising_overload_fun: fun
 
     :return: Left disparity object
 
@@ -662,6 +669,23 @@ def triangulation_wrapper(
     # Fill datasets
     pc_dataset = points[cst.STEREO_REF]
     pc_dataset.attrs["cloud_id"] = cloud_id
+
+    # Overload dataset with denoising fun
+    if denoising_overload_fun is not None:
+        if isinstance(pc_dataset, xr.Dataset):
+            denoising_overload_fun(
+                pc_dataset,
+                sensor1,
+                sensor2,
+                geomodel1,
+                geomodel2,
+                grid1,
+                grid2,
+                geometry_plugin,
+                disp_ref,
+            )
+        else:
+            raise RuntimeError("wrong pc type for denoising func")
 
     attributes = None
     if isinstance(disp_ref, pandas.DataFrame):

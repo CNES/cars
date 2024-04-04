@@ -104,6 +104,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         epipolar_disparity_map,
         epsg,
         geometry_plugin,
+        denoising_overload_fun=None,
         source_pc_names=None,
         orchestrator=None,
         pair_folder=None,
@@ -170,6 +171,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                     "elevation_delta_lower_bound","elevation_delta_upper_bound"
 
         :type epipolar_disparity_map: CarsDataset
+        :param denoising_overload_fun: function to overload dataset
+        :type denoising_overload_fun: fun
         :param source_pc_names: source pc names
         :type source_pc_names: list[str]
         :param orchestrator: orchestrator used

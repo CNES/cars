@@ -77,6 +77,7 @@ class Application:
             app_class = cls.available_applications[name]
         except KeyError:
             logging.error("No application named {0} supported".format(name))
+            return None
 
         app = app_class(cfg)
         return app

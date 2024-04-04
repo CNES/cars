@@ -235,6 +235,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "sparse_matching",
             "dense_matching",
             "triangulation",
+            "pc_denoising",
             "dem_generation",
         ]
 
@@ -330,6 +331,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             "triangulation", cfg=conf.get("triangulation", {})
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
+
+        self.pc_denoising_application = Application(
+            "pc_denoising", cfg=conf.get("pc_denoising", {"method": "none"})
+        )
 
         # MNT generation
         self.dem_generation_application = Application(
@@ -810,6 +815,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 self.dense_matching_app.use_global_disp_range
             )
 
+            if self.pc_denoising_application is not None:
+                denoising_overload_fun = (
+                    self.pc_denoising_application.get_triangulation_overload()
+                )
+            else:
+                denoising_overload_fun = None
+
             pairs_names = [pair_name for pair_name, _, _ in list_sensor_pairs]
 
             for cloud_id, (pair_key, _, _) in enumerate(list_sensor_pairs):
@@ -1204,6 +1216,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     filled_with_2_epipolar_disparity_map,
                     epsg,
                     self.geom_plugin_without_dem_and_geoid,
+                    denoising_overload_fun=denoising_overload_fun,
                     source_pc_names=pairs_names,
                     orchestrator=cars_orchestrator,
                     pair_folder=pairs[pair_key]["pair_folder"],
@@ -1213,6 +1226,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     cloud_id=cloud_id,
                     intervals=intervals,
                 )
+
+                if "no_merging" in self.used_conf[PIPELINE]:
+                    denoised_epipolar_points_cloud = (
+                        self.pc_denoising_application.run(
+                            epipolar_points_cloud,
+                            orchestrator=cars_orchestrator,
+                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_key=pair_key,
+                        )
+                    )
 
                 if self.generate_terrain_products:
                     # Compute terrain bounding box /roi related to
@@ -1247,7 +1270,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     list_terrain_roi.append(current_terrain_roi_bbox)
 
                 # add points cloud to list
-                list_epipolar_points_cloud.append(epipolar_points_cloud)
+                if "no_merging" in self.used_conf[PIPELINE]:
+                    list_epipolar_points_cloud.append(
+                        denoised_epipolar_points_cloud
+                    )
+                else:
+                    list_epipolar_points_cloud.append(epipolar_points_cloud)
 
             if self.generate_terrain_products:
                 # compute terrain bounds
@@ -1312,8 +1340,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     )
 
+                    # denoise point cloud
+                    denoised_merged_points_clouds = (
+                        self.pc_denoising_application.run(
+                            filtered_2_merged_points_clouds,
+                            orchestrator=cars_orchestrator,
+                        )
+                    )
+
                     # Rasterize merged and filtered point cloud
-                    point_cloud_to_rasterize = filtered_2_merged_points_clouds
+                    point_cloud_to_rasterize = denoised_merged_points_clouds
 
                 # rasterize point cloud
                 _ = self.rasterization_application.run(

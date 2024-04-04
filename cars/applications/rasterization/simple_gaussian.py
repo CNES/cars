@@ -26,12 +26,14 @@ this module contains the dense_matching application class.
 
 import collections
 
+# Third party imports
+import copy
+
 # Standard imports
 import logging
 import os
 from typing import List
 
-# Third party imports
 import numpy as np
 import rasterio as rio
 import xarray
@@ -324,7 +326,7 @@ class SimpleGaussian(
         data_valid = True
         if isinstance(points_clouds, tuple):
             if isinstance(points_clouds[0][0], cars_dataset.CarsDataset):
-                if points_clouds[0][0].dataset_type != "arrays":
+                if points_clouds[0][0].dataset_type not in ("arrays", "points"):
                     data_valid = False
             else:
                 data_valid = False
@@ -888,23 +890,33 @@ def rasterization_wrapper(
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
     """
+    # update attributes
+    attributes = copy.deepcopy(cloud.attrs)
+    attributes.update(attributes.get("attributes", {}))
+    if "attributes" in attributes:
+        del attributes["attributes"]
+    if "saving_info" in attributes:
+        del attributes["saving_info"]
 
     # convert back to correct epsg
     # If the points cloud is not in the right epsg referential, it is converted
     if isinstance(cloud, xarray.Dataset):
         # Transform Dataset to Dataframe
-        attributes = cloud.attrs
         cloud, cloud_epsg = point_cloud_tools.create_combined_cloud(
             [cloud], [attributes["cloud_id"]], epsg
         )
-        if "number_of_pc" not in attributes and source_pc_names is not None:
-            attributes["number_of_pc"] = len(source_pc_names)
-        cars_dataset.fill_dataframe(cloud, attributes=attributes)
     elif cloud is None:
         logging.warning("Input cloud is None")
         return None
     else:
-        cloud_epsg = cars_dataset.get_attributes_dataframe(cloud)["epsg"]
+        cloud_epsg = attributes.get("epsg")
+
+    if "number_of_pc" not in attributes and source_pc_names is not None:
+        attributes["number_of_pc"] = len(source_pc_names)
+
+    # update attributes
+    cloud.attrs = {}
+    cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     if epsg != cloud_epsg:
         projection.points_cloud_conversion_dataframe(cloud, cloud_epsg, epsg)

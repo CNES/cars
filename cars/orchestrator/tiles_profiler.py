@@ -61,6 +61,16 @@ class TileProfiler:  # pylint: disable=too-few-public-methods
         Add tile to profiling
         """
 
+        try:
+            self._add_tile(tile_object)
+        except Exception:
+            logging.error("Error in TileProfiler.add_tile ")
+
+    def _add_tile(self, tile_object):
+        """
+        Add tile to profiling
+        """
+
         # Get Cars Dastaset id
         cars_ds_id = self.saver_registry.get_future_cars_dataset_id(tile_object)
 
@@ -71,6 +81,8 @@ class TileProfiler:  # pylint: disable=too-few-public-methods
             cars_ds = self.saver_registry.get_cars_ds(tile_object)
             if cars_ds is None:
                 cars_ds = self.replacer_registry.get_cars_ds(tile_object)
+            if cars_ds is None:
+                raise RuntimeError("CARS Dataset is None")
             self.monitored_cars_ds.append(cars_ds)
 
             # Create array

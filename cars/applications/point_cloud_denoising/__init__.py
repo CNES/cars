@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,19 +19,11 @@
 # limitations under the License.
 #
 """
-CARS application module init file
+CARS holes detection module init file
 """
+# flake8: noqa: F401
 
-# Imports needed in order to register application for Application factory
-from . import dem_generation  # noqa: F401
-from . import dense_matches_filling  # noqa: F401
-from . import dense_matching  # noqa: F401
-from . import grid_generation  # noqa: F401
-from . import holes_detection  # noqa: F401
-from . import point_cloud_denoising  # noqa: F401
-from . import point_cloud_fusion  # noqa: F401
-from . import point_cloud_outliers_removing  # noqa: F401
-from . import rasterization  # noqa: F401
-from . import resampling  # noqa: F401
-from . import sparse_matching  # noqa: F401
-from . import triangulation  # noqa: F401
+import cars.applications.point_cloud_denoising.point_cloud_denoising
+from cars.applications.point_cloud_denoising.point_cloud_denoising import (
+    PCDenoising,
+)
