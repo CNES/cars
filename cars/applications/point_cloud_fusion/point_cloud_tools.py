@@ -540,8 +540,14 @@ def create_combined_dense_cloud(  # noqa: C901
             (cst.EPI_FILLING, cst.POINTS_CLOUD_FILLING_KEY_ROOT),
         ]
 
+        # add confidence layers
         for array_name in points_cloud:
             if cst.EPI_CONFIDENCE_KEY_ROOT in array_name:
+                arrays_to_add_to_points_cloud.append((array_name, array_name))
+
+        # add denoising info layers
+        for array_name in points_cloud:
+            if cst.EPI_DENOISING_INFO_KEY_ROOT in array_name:
                 arrays_to_add_to_points_cloud.append((array_name, array_name))
 
         for input_band, output_column in arrays_to_add_to_points_cloud:
