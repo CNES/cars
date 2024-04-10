@@ -45,6 +45,7 @@ from cars.orchestrator.orchestrator_constants import (
     CARS_DS_COL,
     CARS_DS_ROW,
 )
+from cars.orchestrator.registry import compute_registry
 from cars.orchestrator.registry import id_generator as id_gen
 from cars.orchestrator.registry import replacer_registry, saver_registry
 from cars.orchestrator.tiles_profiler import TileProfiler
@@ -113,6 +114,11 @@ class Orchestrator:
         self.cars_ds_replacer_registry = (
             replacer_registry.CarsDatasetRegistryReplacer(self.id_generator)
         )
+        # init CarsDataset compute registry
+        self.cars_ds_compute_registry = (
+            compute_registry.CarsDatasetRegistryCompute(self.id_generator)
+        )
+
         # Achievement tracker
         self.achievement_tracker = achievement_tracker.AchievementTracker()
 
@@ -202,6 +208,28 @@ class Orchestrator:
         """
 
         self.cars_ds_replacer_registry.add_cars_ds_to_replace(cars_ds)
+
+        # add name if exists
+        if cars_ds_name is not None:
+            self.cars_ds_names_info.append(cars_ds_name)
+
+        # add to tracking
+        self.achievement_tracker.track(
+            cars_ds, self.get_saving_infos([cars_ds])[0][CARS_DATASET_KEY]
+        )
+
+    def add_to_compute_lists(self, cars_ds, cars_ds_name=None):
+        """
+        Add CarsDataset to compute Registry: computed, but not used
+        in main process
+
+        :param cars_ds: CarsDataset to comput
+        :type cars_ds: CarsDataset
+        :param cars_ds_name: name corresponding to CarsDataset,
+            for information during logging
+        """
+
+        self.cars_ds_compute_registry.add_cars_ds_to_compute(cars_ds)
 
         # add name if exists
         if cars_ds_name is not None:
@@ -336,7 +364,8 @@ class Orchestrator:
             if only_remaining_delayed is None:
                 delayed_objects = flatten_object(
                     self.cars_ds_savers_registry.get_cars_datasets_list()
-                    + self.cars_ds_replacer_registry.get_cars_datasets_list(),
+                    + self.cars_ds_replacer_registry.get_cars_datasets_list()
+                    + self.cars_ds_compute_registry.get_cars_datasets_list(),
                     self.cluster.get_delayed_type(),
                 )
             else:
@@ -459,6 +488,10 @@ class Orchestrator:
         #  CarsDataset replacement registry
         self.cars_ds_replacer_registry = (
             replacer_registry.CarsDatasetRegistryReplacer(self.id_generator)
+        )
+        # Compute registry
+        self.cars_ds_compute_registry = (
+            compute_registry.CarsDatasetRegistryCompute(self.id_generator)
         )
 
         # tile profiler

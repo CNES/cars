@@ -593,16 +593,12 @@ def run_save_points(
 
     """
 
-    if overwrite:
-        # remove pickle file if already exists
-        if os.path.exists(file_name):
-            os.remove(file_name)
     # Save
     save_all_dataframe(
         future_result,
         file_name,
         save_points_cloud_by_pair=save_points_cloud_by_pair,
-        overwrite=False,
+        overwrite=overwrite,
     )
 
 
@@ -964,7 +960,6 @@ def save_all_dataframe(
                 + str(dataframe.attrs["saving_info"]["cars_ds_row"])
             ),
         )
-
     if not save_points_cloud_by_pair:
         save_dataframe(dataframe, file_name, overwrite)
     else:
@@ -989,7 +984,7 @@ def save_dataframe(dataframe, file_name, overwrite=True):
     """
     # Save attributes
     attributes_file_name = file_name + "_attrs.json"
-    save_dict(dataframe.attrs, attributes_file_name)
+    save_dict(dataframe.attrs, attributes_file_name, safe_save=True)
 
     # Save point cloud to laz format
     if (
