@@ -295,7 +295,7 @@ class SmallComponents(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-            (filtered_point_cloud) = self.__register_dataset__(
+            (filtered_point_cloud, pc_file_name) = self.__register_dataset__(
                 merged_points_cloud,
                 self.save_points_cloud_as_laz,
                 self.save_points_cloud_as_csv,
@@ -335,6 +335,10 @@ class SmallComponents(
                             self.clusters_distance_threshold,
                             self.save_points_cloud_as_laz,
                             self.save_points_cloud_as_csv,
+                            save_points_cloud_by_pair=(
+                                self.save_points_cloud_by_pair
+                            ),
+                            point_cloud_file_name=pc_file_name,
                             saving_info=full_saving_info,
                         )
 
@@ -355,6 +359,8 @@ def small_components_removing_wrapper(
     clusters_distance_threshold,
     save_points_cloud_as_laz,
     save_points_cloud_as_csv,
+    save_points_cloud_by_pair: bool = False,
+    point_cloud_file_name=None,
     saving_info=None,
 ):
     """
@@ -372,6 +378,10 @@ def small_components_removing_wrapper(
     :type save_points_cloud_as_laz: bool
     :param save_points_cloud_as_csv: activation of point cloud saving to csv
     :type save_points_cloud_as_csv: bool
+    :param save_points_cloud_by_pair: save point cloud as pair
+    :type save_points_cloud_by_pair: bool
+    :param point_cloud_file_name: point cloud filename
+    :type point_cloud_file_name: str
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -433,5 +443,14 @@ def small_components_removing_wrapper(
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )
+
+    # save point cloud in worker
+    if save_points_cloud_as_laz or save_points_cloud_as_csv:
+        cars_dataset.run_save_points(
+            new_cloud,
+            point_cloud_file_name,
+            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            overwrite=True,
+        )
 
     return new_cloud

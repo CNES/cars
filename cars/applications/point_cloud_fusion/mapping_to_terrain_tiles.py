@@ -44,6 +44,7 @@ from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,
 )
 from cars.core import inputs, projection, tiling
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
@@ -321,18 +322,17 @@ class MappingToTerrainTiles(
                     merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
+            pc_file_name = None
             if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
                 # Points cloud file name
                 # TODO in input conf file
                 pc_file_name = os.path.join(
                     self.orchestrator.out_dir, "points_cloud"
                 )
-                self.orchestrator.add_to_save_lists(
-                    pc_file_name,
-                    None,
-                    merged_point_cloud,
-                    cars_ds_name="merged_points_cloud",
-                    save_points_cloud_by_pair=self.save_points_cloud_by_pair,
+                safe_makedirs(pc_file_name)
+                pc_file_name = os.path.join(pc_file_name, "pc")
+                self.orchestrator.add_to_compute_lists(
+                    merged_point_cloud, cars_ds_name="merged_points_cloud"
                 )
 
             # Get saving infos in order to save tiles when they are computed
@@ -412,8 +412,16 @@ class MappingToTerrainTiles(
                             xmax=terrain_region[2],
                             ymax=terrain_region[3],
                             margins=margins,
-                            save_pc_as_laz=self.save_points_cloud_as_laz,
-                            save_pc_as_csv=self.save_points_cloud_as_csv,
+                            save_points_cloud_as_laz=(
+                                self.save_points_cloud_as_laz
+                            ),
+                            save_points_cloud_as_csv=(
+                                self.save_points_cloud_as_csv
+                            ),
+                            save_points_cloud_by_pair=(
+                                self.save_points_cloud_by_pair
+                            ),
+                            point_cloud_file_name=pc_file_name,
                             saving_info=full_saving_info,
                             source_pc_names=source_pc_names,
                         )
@@ -478,8 +486,10 @@ def compute_point_cloud_wrapper(
     xmax: float = None,
     ymax: float = None,
     margins: float = 0,
-    save_pc_as_laz: bool = False,
-    save_pc_as_csv: bool = False,
+    save_points_cloud_as_laz: bool = False,
+    save_points_cloud_as_csv: bool = False,
+    save_points_cloud_by_pair: bool = False,
+    point_cloud_file_name=None,
     saving_info=None,
     source_pc_names=None,
 ):
@@ -507,10 +517,14 @@ def compute_point_cloud_wrapper(
         (if None, will be estimated by the function)
     :param margins: margins needed for tiles, meter or degree
     :type margins: float
-    :param save_pc_as_laz: save point cloud as laz
-    :type save_pc_as_laz: bool
-    :param save_pc_as_csv: save point cloud as csv
-    :type save_pc_as_csv: bool
+    :param save_points_cloud_as_laz: save point cloud as laz
+    :type save_points_cloud_as_laz: bool
+    :param save_points_cloud_as_csv: save point cloud as csv
+    :type save_points_cloud_as_csv: bool
+    :param save_points_cloud_by_pair: save point cloud as pair
+    :type save_points_cloud_by_pair: bool
+    :param point_cloud_file_name: point cloud filename
+    :type point_cloud_file_name: str
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
     :param source_pc_names: source point cloud name (correspond to pair_key)
@@ -581,13 +595,22 @@ def compute_point_cloud_wrapper(
         "ymin": ymin,
         "ymax": ymax,
         "color_type": color_type,
-        "save_points_cloud_as_laz": save_pc_as_laz,
-        "save_points_cloud_as_csv": save_pc_as_csv,
+        "save_points_cloud_as_laz": save_points_cloud_as_laz,
+        "save_points_cloud_as_csv": save_points_cloud_as_csv,
         "source_pc_names": source_pc_names,
         "number_of_pc": len(source_pc_names),
     }
     cars_dataset.fill_dataframe(
         pc_pandas, saving_info=saving_info, attributes=attributes
     )
+
+    # save point cloud in worker
+    if save_points_cloud_as_laz or save_points_cloud_as_csv:
+        cars_dataset.run_save_points(
+            pc_pandas,
+            point_cloud_file_name,
+            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            overwrite=True,
+        )
 
     return pc_pandas

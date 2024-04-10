@@ -29,6 +29,7 @@ from typing import Dict
 
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
@@ -176,6 +177,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
 
         # Save objects
+        pc_file_name = None
         if save_points_cloud_as_laz or save_points_cloud_as_csv:
             # Points cloud file name
             # TODO in input conf file
@@ -183,16 +185,14 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
                 self.orchestrator.out_dir,
                 "points_cloud_post_" + app_name + "_removing",
             )
-            self.orchestrator.add_to_save_lists(
-                pc_file_name,
-                None,
+            safe_makedirs(pc_file_name)
+            pc_file_name = os.path.join(pc_file_name, "pc")
+            self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
                 cars_ds_name="filtered_merged_pc_" + app_name,
-                # pylint: disable=E1101
-                save_points_cloud_by_pair=self.save_points_cloud_by_pair,
             )
 
-        return filtered_point_cloud
+        return filtered_point_cloud, pc_file_name
 
     @abstractmethod
     def run(

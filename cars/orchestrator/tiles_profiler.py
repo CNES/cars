@@ -64,7 +64,7 @@ class TileProfiler:  # pylint: disable=too-few-public-methods
         try:
             self._add_tile(tile_object)
         except Exception:
-            logging.error("Error in TileProfiler.add_tile ")
+            logging.debug("Error in TileProfiler.add_tile ")
 
     def _add_tile(self, tile_object):
         """
