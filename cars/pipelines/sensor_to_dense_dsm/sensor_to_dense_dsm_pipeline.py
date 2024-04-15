@@ -1041,6 +1041,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if (
                     cars_orchestrator.cluster.checked_conf_cluster["mode"]
                     == "sequential"
+                    or "no_merging" in self.used_conf[PIPELINE]
                 ):
                     # Generate roi
                     epipolar_roi = preprocessing.compute_epipolar_roi(
