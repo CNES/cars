@@ -791,16 +791,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     self.inputs[sens_cst.GEOID],
                     dem_roi_to_use=self.dem_generation_roi,
                 )
+                # Same geometry plugin if we use exogenous dem
+                # as initial elevation always used before if provided
                 dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
-                # Generate geometry loader with dem and geoid
-                self.geom_plugin_with_dem_and_geoid = (
-                    sensors_inputs.generate_geometry_plugin_with_dem(
-                        self.used_conf[GEOMETRY_PLUGIN],
-                        self.inputs,
-                        dem=dem_median,
-                        crop_dem=False,
+                if (
+                    self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                    and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
+                ):
+                    dem_median = self.inputs[sens_cst.INITIAL_ELEVATION]
+
+                if dem_median != self.inputs[sens_cst.INITIAL_ELEVATION]:
+                    self.geom_plugin_with_dem_and_geoid = (
+                        sensors_inputs.generate_geometry_plugin_with_dem(
+                            self.used_conf[GEOMETRY_PLUGIN],
+                            self.inputs,
+                            dem=dem_median,
+                            crop_dem=False,
+                        )
                     )
-                )
+
                 dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
                 dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
@@ -830,61 +839,68 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
-                    # Generate grids with new MNT
-                    (
-                        pairs[pair_key]["new_grid_left"],
-                        pairs[pair_key]["new_grid_right"],
-                    ) = self.epipolar_grid_generation_application.run(
-                        pairs[pair_key]["sensor_image_left"],
-                        pairs[pair_key]["sensor_image_right"],
-                        geom_plugin,
-                        orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
-                        pair_key=pair_key,
-                    )
 
-                    # Correct grids with former matches
-                    # Transform matches to new grids
-                    new_grid_matches_array = (
-                        AbstractGeometry.transform_matches_from_grids(
-                            pairs[pair_key]["corrected_matches_array"],
-                            pairs[pair_key]["corrected_grid_left"],
-                            pairs[pair_key]["corrected_grid_right"],
+                    if not (
+                        self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                        and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
+                    ):
+                        # Generate grids with new MNT
+                        (
                             pairs[pair_key]["new_grid_left"],
                             pairs[pair_key]["new_grid_right"],
+                        ) = self.epipolar_grid_generation_application.run(
+                            pairs[pair_key]["sensor_image_left"],
+                            pairs[pair_key]["sensor_image_right"],
+                            geom_plugin,
+                            orchestrator=cars_orchestrator,
+                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_key=pair_key,
                         )
-                    )
 
-                    # Estimate grid_correction
-                    (
-                        pairs[pair_key]["grid_correction_coef"],
-                        pairs[pair_key]["corrected_matches_array"],
-                        _,
-                        _,
-                        _,
-                    ) = grid_correction.estimate_right_grid_correction(
-                        new_grid_matches_array,
-                        pairs[pair_key]["new_grid_right"],
-                        save_matches=(self.sparse_mtch_app.get_save_matches()),
-                        pair_folder=pairs[pair_key]["pair_folder"],
-                        pair_key=pair_key,
-                        orchestrator=cars_orchestrator,
-                    )
+                        # Correct grids with former matches
+                        # Transform matches to new grids
+                        new_grid_matches_array = (
+                            AbstractGeometry.transform_matches_from_grids(
+                                pairs[pair_key]["corrected_matches_array"],
+                                pairs[pair_key]["corrected_grid_left"],
+                                pairs[pair_key]["corrected_grid_right"],
+                                pairs[pair_key]["new_grid_left"],
+                                pairs[pair_key]["new_grid_right"],
+                            )
+                        )
 
-                    # Correct grid right
-
-                    pairs[pair_key]["corrected_grid_right"] = (
-                        grid_correction.correct_grid(
-                            pairs[pair_key]["new_grid_right"],
+                        # Estimate grid_correction
+                        (
                             pairs[pair_key]["grid_correction_coef"],
-                            save_corrected_grid,
-                            pairs[pair_key]["pair_folder"],
+                            pairs[pair_key]["corrected_matches_array"],
+                            _,
+                            _,
+                            _,
+                        ) = grid_correction.estimate_right_grid_correction(
+                            new_grid_matches_array,
+                            pairs[pair_key]["new_grid_right"],
+                            save_matches=(
+                                self.sparse_mtch_app.get_save_matches()
+                            ),
+                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_key=pair_key,
+                            orchestrator=cars_orchestrator,
                         )
-                    )
 
-                    pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
-                        "new_grid_left"
-                    ]
+                        # Correct grid right
+
+                        pairs[pair_key]["corrected_grid_right"] = (
+                            grid_correction.correct_grid(
+                                pairs[pair_key]["new_grid_right"],
+                                pairs[pair_key]["grid_correction_coef"],
+                                save_corrected_grid,
+                                pairs[pair_key]["pair_folder"],
+                            )
+                        )
+
+                        pairs[pair_key]["corrected_grid_left"] = pairs[
+                            pair_key
+                        ]["new_grid_left"]
 
                     # matches filter params
                     matches_filter_knn = (
