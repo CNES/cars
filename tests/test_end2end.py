@@ -3900,3 +3900,119 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1.0e-7,
             atol=1.0e-7,
         )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_gizeh_dry_run_of_used_conf():
+    """
+    End to end processing
+
+    Test pipeline with a non square epipolar image, and the generation
+    of the performance map
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path(
+            "input/data_gizeh_crop/configfile_crop.json"
+        )
+
+        # Run sensors pipeline with simple config
+        _, sensors_input_config_first_run = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "multiprocessing",
+        )
+
+        applications = {
+            "triangulation": {
+                "save_points_cloud": True,
+            }
+        }
+
+        sensors_input_config_first_run["applications"].update(applications)
+
+        sensors_pipeline_first_run = (
+            sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+                sensors_input_config_first_run
+            )
+        )
+        sensors_pipeline_first_run.run()
+        sensors_out_dir_first_run = sensors_input_config_first_run["output"][
+            "out_dir"
+        ]
+
+        # Run sensors pipeline with generated config
+        used_conf = os.path.join(sensors_out_dir_first_run, "used_conf.json")
+        with open(used_conf, "r", encoding="utf8") as fstream:
+            sensors_input_config_second_run = json.load(fstream)
+
+        sensors_input_config_second_run["output"][
+            "out_dir"
+        ] += "_from_used_conf"
+
+        sensors_pipeline_second_run = (
+            sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+                sensors_input_config_second_run
+            )
+        )
+        sensors_pipeline_second_run.run()
+        sensors_out_dir_second_run = sensors_input_config_second_run["output"][
+            "out_dir"
+        ]
+
+        assert_same_images(
+            os.path.join(sensors_out_dir_first_run, "dsm.tif"),
+            os.path.join(sensors_out_dir_second_run, "dsm.tif"),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+        with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
+            # Run pc pipeline with simple config
+            epi_pc_path = os.path.join(sensors_out_dir_first_run, "one_two")
+            pc_input_config_first_run = {
+                "inputs": {
+                    "point_clouds": {
+                        "one": {
+                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
+                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
+                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
+                            "color": os.path.join(
+                                epi_pc_path, "epi_pc_color.tif"
+                            ),
+                        }
+                    }
+                },
+                "output": {"out_dir": directory2},
+            }
+
+            pc_pipeline_first_run = pipeline_dsm.PointCloudsToDsmPipeline(
+                pc_input_config_first_run
+            )
+            pc_pipeline_first_run.run()
+            pc_out_dir_first_run = pc_input_config_first_run["output"][
+                "out_dir"
+            ]
+
+            # Run pc pipeline with generated config
+            used_conf = os.path.join(pc_out_dir_first_run, "used_conf.json")
+            with open(used_conf, "r", encoding="utf8") as fstream:
+                pc_input_config_second_run = json.load(fstream)
+
+            pc_input_config_second_run["output"]["out_dir"] += "_from_used_conf"
+
+            pc_pipeline_second_run = pipeline_dsm.PointCloudsToDsmPipeline(
+                pc_input_config_second_run
+            )
+            pc_pipeline_second_run.run()
+            pc_out_dir_second_run = pc_input_config_second_run["output"][
+                "out_dir"
+            ]
+
+            assert_same_images(
+                os.path.join(pc_out_dir_first_run, "dsm.tif"),
+                os.path.join(pc_out_dir_second_run, "dsm.tif"),
+                atol=0.0001,
+                rtol=1e-6,
+            )
