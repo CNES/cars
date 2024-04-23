@@ -2292,8 +2292,12 @@ def test_end2end_ventoux_with_color():
         )
 
         print(os.listdir(os.path.join(out_dir, "points_cloud")))
-        pc1 = "675437.0_4897170.5"
-        pc2 = "675248.5_4897170.5"
+        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
+            pc1 = "675436.5_4897170.5"
+            pc2 = "675248.0_4897170.5"
+        else:
+            pc1 = "675437.0_4897170.5"
+            pc2 = "675248.5_4897170.5"
 
         assert (
             os.path.exists(
@@ -2536,8 +2540,11 @@ def test_end2end_ventoux_with_classif():
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
         print(os.listdir(os.path.join(out_dir, "points_cloud")))
+        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
+            pc1 = "675436.5_4897170.5"
+        else:
+            pc1 = "675437.0_4897170.5"
 
-        pc1 = "675437.0_4897170.5"
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
             is True
