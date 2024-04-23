@@ -1080,6 +1080,11 @@ class CensusMccnnSgm(
 
             nb_total_tiles_roi = 0
 
+            # broadcast grids
+            broadcasted_disp_range_grid = self.orchestrator.cluster.scatter(
+                disp_range_grid
+            )
+
             # Generate disparity maps
             for col in range(epipolar_disparity_map.shape[1]):
                 for row in range(epipolar_disparity_map.shape[0]):
@@ -1123,7 +1128,7 @@ class CensusMccnnSgm(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
                             self.corr_config,
-                            disp_range_grid,
+                            broadcasted_disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
                             generate_performance_map=(
