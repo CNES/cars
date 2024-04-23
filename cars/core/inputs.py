@@ -179,7 +179,9 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
         return (descriptor.width, descriptor.height)
 
 
-def rasterio_get_bounds(raster_file: str) -> Tuple[int, int]:
+def rasterio_get_bounds(
+    raster_file: str, apply_resolution_sign=False
+) -> Tuple[int, int]:
     """
     Get the bounds of an image (file)
 
@@ -188,16 +190,35 @@ def rasterio_get_bounds(raster_file: str) -> Tuple[int, int]:
     """
 
     # get sign of resolution
-    profile = rasterio_get_profile(raster_file)
-    transform = list(profile["transform"])
-    res_x = transform[0]
-    res_y = transform[4]
-    res_x /= abs(res_x)
-    res_y /= abs(res_y)
-    res_signs = np.array([res_x, res_y, res_x, res_y])
+    if apply_resolution_sign:
+        profile = rasterio_get_profile(raster_file)
+        transform = list(profile["transform"])
+        res_x = transform[0]
+        res_y = transform[4]
+        res_x /= abs(res_x)
+        res_y /= abs(res_y)
+        res_signs = np.array([res_x, res_y, res_x, res_y])
+    else:
+        res_signs = np.array([1, 1, 1, 1])
 
     with rio.open(raster_file, "r") as descriptor:
         return np.array(list(descriptor.bounds)) * res_signs
+
+
+def rasterio_get_epsg_code(
+    raster_file: str,
+) -> Tuple[int, int]:
+    """
+    Get the epsg code of an image (file)
+
+    :param raster_file: Image file
+    :return: epsg code
+    """
+
+    with rio.open(raster_file, "r") as descriptor:
+        epsg_code = descriptor.crs
+        print(epsg_code)
+        return epsg_code
 
 
 def rasterio_get_list_min_max(raster_file: str) -> Tuple[int, int]:

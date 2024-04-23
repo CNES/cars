@@ -32,7 +32,7 @@ import rasterio as rio
 from json_checker import Checker, Or
 
 # CARS imports
-from cars.core import inputs
+from cars.core import inputs, preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.pipeline_constants import INPUTS
@@ -360,11 +360,53 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         conf_geom_plugin, conf_inputs
     )
 
+    # Check dem in big enough
+    dem_generation_roi_poly = None
+    needed_dem_roi = geom_plugin_with_dem_and_geoid.dem_roi
+    needed_dem_roi_epsg = geom_plugin_with_dem_and_geoid.dem_roi_epsg
+    if needed_dem_roi is not None:
+        needed_dem_roi_poly = roi_tools.bounds_to_poly(needed_dem_roi)
+        # convert to 4326 roi
+        dem_generation_roi_poly = preprocessing.compute_roi_poly(
+            needed_dem_roi_poly, needed_dem_roi_epsg, 4326
+        )
+
+        if conf_inputs[sens_cst.INITIAL_ELEVATION] is not None:
+            # get dem total roi
+            total_input_roi_poly = roi_tools.bounds_to_poly(
+                inputs.rasterio_get_bounds(
+                    conf_inputs[sens_cst.INITIAL_ELEVATION]
+                )
+            )
+            total_input_roi_epsg = inputs.rasterio_get_epsg_code(
+                conf_inputs[sens_cst.INITIAL_ELEVATION]
+            )
+            total_input_roi_poly = preprocessing.compute_roi_poly(
+                total_input_roi_poly, total_input_roi_epsg, 4326
+            )
+
+            # if needed roi not inside dem, raise error
+            if not total_input_roi_poly.contains_properly(
+                dem_generation_roi_poly
+            ):
+                raise RuntimeError(
+                    "Given initial elevation ROI is not covering needed ROI: "
+                    " EPSG:4326, ROI: {}".format(dem_generation_roi_poly.bounds)
+                )
+
+    else:
+        logging.warning(
+            "Current geometry plugin doesnt compute dem roi needed "
+            "for later computations. Errors related to unsufficient "
+            "dem roi might occur."
+        )
+
     return (
         overloaded_conf_inputs,
         conf_geom_plugin,
         geom_plugin_without_dem_and_geoid,
         geom_plugin_with_dem_and_geoid,
+        dem_generation_roi_poly,
     )
 
 

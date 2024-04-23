@@ -191,3 +191,25 @@ def parse_roi_file(arg_roi_file: str) -> Tuple[List[float], int]:
             )
 
     return roi_poly, roi_epsg
+
+
+def bounds_to_poly(bounds):
+    """
+    Convert bounds to polygon
+
+    :param bounds: bounds: [xmin, ymin, xmax, ymax]
+    :type: bounds: list
+
+    :return polygon
+    """
+
+    poly = Polygon(
+        [
+            [bounds[0], bounds[1]],
+            [bounds[0], bounds[3]],
+            [bounds[2], bounds[3]],
+            [bounds[2], bounds[1]],
+            [bounds[0], bounds[1]],
+        ]
+    )
+    return poly
