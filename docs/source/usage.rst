@@ -106,7 +106,7 @@ The structure follows this organisation:
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *use_endogenous_elevation* | Use endogenous eleveation intead of provided initial_elevation      | bool                  | False                | No       |
             |                            | when endogenous elevation is available                              |                       |                      |          |
-            |                            | If no initial_elevation, endogenous elevation is alxays used        |                       |                      |          |
+            |                            | If no initial_elevation, endogenous elevation is always used        |                       |                      |          |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *default_alt*              | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
             |                            | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
