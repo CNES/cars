@@ -51,14 +51,15 @@ class OTBGeometry(AbstractGeometry):
     # is removed from CARS
 
     def __init__(
-        self,
-        geometry_plugin,
-        dem=None,
-        geoid=None,
-        default_alt=None,
-        pairs_for_roi=None,  # pylint: disable=unused-argument
+        self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
     ):
-        super().__init__(geometry_plugin)
+        super().__init__(
+            geometry_plugin,
+            dem=dem,
+            geoid=geoid,
+            default_alt=default_alt,
+            **kwargs
+        )
 
     @property
     def conf_schema(self):

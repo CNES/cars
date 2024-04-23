@@ -354,7 +354,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 20
+                < 22
             )
 
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -505,7 +505,7 @@ def test_end2end_ventoux_unique():
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 27
+                < 30
             )
 
             # check matches file exists
@@ -1778,7 +1778,7 @@ def test_end2end_use_epipolar_a_priori():
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 27
+                < 28
             )
 
             # check matches file exists
@@ -2133,7 +2133,7 @@ def test_prepare_ventoux_bias():
             assert out_disp_compute["minimum_disparity"] > -29
             assert out_disp_compute["minimum_disparity"] < -27
             assert out_disp_compute["maximum_disparity"] > 24
-            assert out_disp_compute["maximum_disparity"] < 26
+            assert out_disp_compute["maximum_disparity"] < 29
 
             # check matches file exists
             assert os.path.isfile(
@@ -2217,9 +2217,9 @@ def test_end2end_ventoux_with_color():
                 "disparity_range_computation_run"
             ]
             assert out_disp_compute["minimum_disparity"] > -29
-            assert out_disp_compute["minimum_disparity"] < -28
+            assert out_disp_compute["minimum_disparity"] < -27
             assert out_disp_compute["maximum_disparity"] > 26
-            assert out_disp_compute["maximum_disparity"] < 27
+            assert out_disp_compute["maximum_disparity"] < 30
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2291,8 +2291,10 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        pc1 = "675436.5_4897170.5"
-        pc2 = "675248.0_4897170.5"
+        print(os.listdir(os.path.join(out_dir, "points_cloud")))
+        pc1 = "675437.0_4897170.5"
+        pc2 = "675248.5_4897170.5"
+
         assert (
             os.path.exists(
                 os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
@@ -2326,6 +2328,7 @@ def test_end2end_ventoux_with_color():
             )
             is True
         )
+
         assert (
             os.path.exists(
                 os.path.join(
@@ -2467,9 +2470,9 @@ def test_end2end_ventoux_with_classif():
                 "disparity_range_computation_run"
             ]
             assert out_disp_compute["minimum_disparity"] > -29
-            assert out_disp_compute["minimum_disparity"] < -28
+            assert out_disp_compute["minimum_disparity"] < -27
             assert out_disp_compute["maximum_disparity"] > 26
-            assert out_disp_compute["maximum_disparity"] < 27
+            assert out_disp_compute["maximum_disparity"] < 30
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2532,7 +2535,9 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        pc1 = "675436.5_4897170.5"
+        print(os.listdir(os.path.join(out_dir, "points_cloud")))
+
+        pc1 = "675437.0_4897170.5"
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
             is True
@@ -2562,6 +2567,7 @@ def test_end2end_ventoux_with_classif():
             )
             is True
         )
+
         assert (
             os.path.exists(
                 os.path.join(
@@ -2991,7 +2997,7 @@ def test_end2end_quality_stats():
             assert out_disp_compute["global_disp_min"] > -31
             assert out_disp_compute["global_disp_min"] < -30
             assert out_disp_compute["global_disp_max"] > 25
-            assert out_disp_compute["global_disp_max"] < 31
+            assert out_disp_compute["global_disp_max"] < 32
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][

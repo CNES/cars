@@ -131,6 +131,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.used_conf[GEOMETRY_PLUGIN],
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
+            self.dem_generation_roi,
         ) = sensors_inputs.check_geometry_plugin(
             self.inputs, self.conf.get(GEOMETRY_PLUGIN, None)
         )
@@ -493,6 +494,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 triangulated_matches_list,
                 cars_orchestrator.out_dir,
                 self.inputs[sens_cst.GEOID],
+                dem_roi_to_use=self.dem_generation_roi,
             )
             dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
             # Generate geometry loader with dem and geoid
