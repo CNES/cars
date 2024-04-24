@@ -525,6 +525,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             grid_right,
         )
 
+        # broadcast grids
+        broadcasted_grid1 = self.orchestrator.cluster.scatter(grid1)
+        broadcasted_grid2 = self.orchestrator.cluster.scatter(grid2)
+
         # Generate Image pair
         for col in range(epipolar_images_left.shape[1]):
             for row in range(epipolar_images_left.shape[0]):
@@ -578,8 +582,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         epipolar_size_y,
                         img1,
                         img2,
-                        grid1,
-                        grid2,
+                        broadcasted_grid1,
+                        broadcasted_grid2,
                         self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],

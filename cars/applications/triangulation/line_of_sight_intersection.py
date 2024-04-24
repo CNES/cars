@@ -502,6 +502,10 @@ class LineOfSightIntersection(
         ):
             intervals[0], intervals[1] = intervals[1], intervals[0]
 
+        # broadcast grids
+        broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
+        broadcasted_grid_right = self.orchestrator.cluster.scatter(grid_right)
+
         for col in range(epipolar_disparity_map.shape[1]):
             for row in range(epipolar_disparity_map.shape[0]):
                 if epipolar_disparity_map[row, col] is not None:
@@ -520,8 +524,8 @@ class LineOfSightIntersection(
                         sensor2,
                         geomodel1,
                         geomodel2,
-                        grid_left,
-                        grid_right,
+                        broadcasted_grid_left,
+                        broadcasted_grid_right,
                         geometry_plugin,
                         epsg,
                         geoid_data=geoid_data_futures,
