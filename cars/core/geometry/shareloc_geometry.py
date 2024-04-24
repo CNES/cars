@@ -66,32 +66,49 @@ class SharelocGeometry(AbstractGeometry):
     ):
         super().__init__(geometry_plugin)
 
-        roi = None
+        self.dem_roi = None
+        self.roi_shareloc = None
         self.elevation = None
 
-        if dem is not None:
-            # Get dem epsg
-            dem_epsg = inputs.rasterio_get_epsg(dem)
+        # compute roi only when generating geometry object with dem
+        # even if dem is None
+        if geoid is not None and pairs_for_roi is not None:
+            self.dem_roi_epsg = 4326
+            if dem is not None:
+                # Get dem epsg
+                self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
 
-            if pairs_for_roi is not None:
-                roi = self.get_roi(pairs_for_roi, dem_epsg)
+            self.roi_shareloc = self.get_roi(
+                pairs_for_roi, self.dem_roi_epsg, margin=0.012
+            )
+            # change convention
+            self.dem_roi = [
+                self.roi_shareloc[1],
+                self.roi_shareloc[0],
+                self.roi_shareloc[3],
+                self.roi_shareloc[2],
+            ]
+
+        if dem is not None:
 
             # fill_nodata option should be set when dealing with void in DTM
             # see shareloc DTM limitations in sphinx doc for further details
             dtm_image = dtm_reader(
                 dem,
                 geoid,
-                roi=roi,
+                roi=self.roi_shareloc,
                 roi_is_in_physical_space=True,
                 fill_nodata="mean",
                 fill_value=0.0,
             )
-            self.elevation = bindings_cpp.DTMIntersection(
-                dtm_image.epsg,
-                dtm_image.alt_data,
-                dtm_image.nb_rows,
-                dtm_image.nb_columns,
-                dtm_image.transform,
+            self.elevation = (
+                bindings_cpp.DTMIntersection(  # pylint: disable=I1101
+                    dtm_image.epsg,
+                    dtm_image.alt_data,
+                    dtm_image.nb_rows,
+                    dtm_image.nb_columns,
+                    dtm_image.transform,
+                )
             )
         else:
             self.elevation = default_alt

@@ -50,6 +50,17 @@ class OTBGeometry(AbstractGeometry):
     # TODO: remove the hard-coded import in the steps/__init__.py if this class
     # is removed from CARS
 
+    def __init__(
+        self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
+    ):
+        super().__init__(
+            geometry_plugin,
+            dem=dem,
+            geoid=geoid,
+            default_alt=default_alt,
+            **kwargs
+        )
+
     @property
     def conf_schema(self):
         """

@@ -83,8 +83,11 @@ class AbstractGeometry(metaclass=ABCMeta):
     def __init__(
         self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
     ):
+
         self.plugin_name = geometry_plugin
         self.dem = dem
+        self.dem_roi = None
+        self.dem_roi_epsg = None
         self.geoid = geoid
         self.default_alt = default_alt
         self.kwargs = kwargs

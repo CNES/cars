@@ -139,7 +139,13 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         return overloaded_conf
 
     @cars_profile(name="DEM Generation")
-    def run(self, triangulated_matches_list, output_dir, geoid_path):
+    def run(
+        self,
+        triangulated_matches_list,
+        output_dir,
+        geoid_path,
+        dem_roi_to_use=None,
+    ):
         """
         Run dichotomic dem generation using matches
 
@@ -149,6 +155,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         :param output_dir: directory to save dem
         :type output_dir: str
         :param geoid_path: geoid path
+        :param dem_roi_to_use: dem roi polygon to use as roi
 
         :return: dem data computed with mean, min and max.
             dem is also saved in disk, and paths are available in attributes.
@@ -180,13 +187,22 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
         merged_point_cloud.attrs["epsg"] = epsg
 
-        # Get min max with margin
-        mins = merged_point_cloud.min(skipna=True)
-        maxs = merged_point_cloud.max(skipna=True)
-        xmin = mins["x"]
-        ymin = mins["y"]
-        xmax = maxs["x"]
-        ymax = maxs["y"]
+        # Get bounds
+        if dem_roi_to_use is not None:
+            bounds_poly = dem_roi_to_use.bounds
+            xmin = min(bounds_poly[0], bounds_poly[2])
+            xmax = max(bounds_poly[0], bounds_poly[2])
+            ymin = min(bounds_poly[1], bounds_poly[3])
+            ymax = max(bounds_poly[1], bounds_poly[3])
+        else:
+            # Get min max with margin
+            mins = merged_point_cloud.min(skipna=True)
+            maxs = merged_point_cloud.max(skipna=True)
+            xmin = mins["x"]
+            ymin = mins["y"]
+            xmax = maxs["x"]
+            ymax = maxs["y"]
+
         bounds_cloud = [xmin, ymin, xmax, ymax]
 
         # Convert resolution and margin to degrees
