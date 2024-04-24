@@ -613,11 +613,7 @@ class CensusMccnnSgm(
             # dem mean, min max are the same shape
 
             # Get associated alti mean / min / max values
-            dem_min_shape = inputs.rasterio_get_size(dem_min)
-            dem_max_shape = inputs.rasterio_get_size(dem_max)
-
-            assert dem_min_shape == dem_max_shape
-            # dem mean can be different. Computation is based on dem min shape
+            dem_median_shape = inputs.rasterio_get_size(dem_median)
 
             # get epsg
             terrain_epsg = inputs.rasterio_get_epsg(dem_median)
@@ -626,10 +622,10 @@ class CensusMccnnSgm(
             transform = inputs.rasterio_get_transform(dem_median)
             # index position to terrain position
             terrain_positions = np.empty(
-                (dem_min_shape[0] * dem_min_shape[1], 2)
+                (dem_median_shape[0] * dem_median_shape[1], 2)
             )
-            row_shape = dem_min_shape[0]
-            col_shape = dem_min_shape[1]
+            row_shape = dem_median_shape[0]
+            col_shape = dem_median_shape[1]
             for row in range(row_shape):
                 for col in range(col_shape):
                     col_geo, row_geo = transform * (row + 0.5, col + 0.5)
