@@ -486,6 +486,7 @@ class SharelocGeometry(AbstractGeometry):
             elevation=self.elevation,
             epsg=4326,
         )
+        # Rows and columns order is inversed compared with OTB
         col, row, alti = loc.inverse(
             lon_coord.astype(np.float64),
             lat_coord.astype(np.float64),
