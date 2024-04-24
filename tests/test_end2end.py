@@ -2318,8 +2318,8 @@ def test_end2end_ventoux_with_color():
             pc1 = "675436.5_4897170.5"
             pc2 = "675248.0_4897170.5"
         else:
-            pc1 = "675437.0_4897170.5"
-            pc2 = "675248.5_4897170.5"
+            pc1 = "675437.0_4897170.0"
+            pc2 = "675248.5_4897170.0"
 
         assert (
             os.path.exists(
@@ -2567,7 +2567,7 @@ def test_end2end_ventoux_with_classif():
         if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
             pc1 = "675436.5_4897170.5"
         else:
-            pc1 = "675437.0_4897170.5"
+            pc1 = "675437.0_4897170.0"
 
         assert (
             os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
