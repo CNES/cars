@@ -62,6 +62,9 @@ def sensors_check_inputs(  # noqa: C901
     overloaded_conf[sens_cst.INITIAL_ELEVATION] = conf.get(
         sens_cst.INITIAL_ELEVATION, None
     )
+    overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
+        sens_cst.USE_ENDOGENOUS_ELEVATION, False
+    )
     overloaded_conf[sens_cst.DEFAULT_ALT] = conf.get(sens_cst.DEFAULT_ALT, 0)
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
     overloaded_conf[sens_cst.DEBUG_WITH_ROI] = conf.get(
@@ -99,6 +102,7 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.PAIRING: [[str]],
         sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, None),
+        sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.DEFAULT_ALT: int,
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.DEBUG_WITH_ROI: bool,

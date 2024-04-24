@@ -30,6 +30,7 @@ PAIRING = "pairing"
 
 EPSG = "epsg"
 INITIAL_ELEVATION = "initial_elevation"
+USE_ENDOGENOUS_ELEVATION = "use_endogenous_elevation"
 
 CHECK_INPUTS = "check_inputs"
 DEFAULT_ALT = "default_alt"
