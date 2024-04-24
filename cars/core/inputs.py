@@ -217,7 +217,6 @@ def rasterio_get_epsg_code(
 
     with rio.open(raster_file, "r") as descriptor:
         epsg_code = descriptor.crs
-        print(epsg_code)
         return epsg_code
 
 
