@@ -200,7 +200,8 @@ class PandoraLoader:
             # Filter is placed after validation in config
             # and should be placed before.
             # However it does not have any incidence on operation
-            pipeline_dict.update(conf_filter_interval)
+            if uses_cars_pandora_conf:
+                pipeline_dict.update(conf_filter_interval)
 
             conf["pipeline"] = pipeline_dict
 
