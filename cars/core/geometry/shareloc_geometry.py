@@ -78,7 +78,9 @@ class SharelocGeometry(AbstractGeometry):
                 # Get dem epsg
                 self.dem_roi_epsg = inputs.rasterio_get_epsg(dem)
 
-            self.roi_shareloc = self.get_roi(pairs_for_roi, self.dem_roi_epsg)
+            self.roi_shareloc = self.get_roi(
+                pairs_for_roi, self.dem_roi_epsg, margin=0.012
+            )
             # change convention
             self.dem_roi = [
                 self.roi_shareloc[1],
