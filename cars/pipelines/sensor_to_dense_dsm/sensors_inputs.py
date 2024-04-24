@@ -360,7 +360,7 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
         conf_geom_plugin, conf_inputs
     )
 
-    # Check dem in big enough
+    # Check dem is big enough
     dem_generation_roi_poly = None
     needed_dem_roi = geom_plugin_with_dem_and_geoid.dem_roi
     needed_dem_roi_epsg = geom_plugin_with_dem_and_geoid.dem_roi_epsg
