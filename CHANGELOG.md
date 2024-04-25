@@ -2,6 +2,30 @@
 
 
 
+## 0.7.6  Confidence intervals (April 2024)
+
+### Added
+
+ - Integration of Pandora confidence intervals [#764]
+ - Option to choose endogenous or exogenous DEM to resample images [#790]
+ - Geomodel parameter is optional [#785]
+ - Path to JSON file is allowed for dense matching loader configuration [#552]
+ - Support for point cloud denoising plugin [#771]
+ - Check footprint of given initial elevation [#780]
+
+ ### Changed
+
+  - Version 0.2.0 of Shareloc is used : fast grid generation [#781]
+
+ ### Fixed
+
+  - Invert rows and columns for generation of disparity range grids with Shareloc [#804]
+  - Better typing of output files [#758]
+  - Faster LAZ point cloud saving [#795]
+  - Avoid computation of useless epipolar tiles when a ROI is given for no_merging pipelines [#791]
+  - Compute footprint of endogenous DEM according to images and epipolar footprint [#780]
+  - Broadcast delayed objects with dask to avoid memory overload [#796]
+
 ## 0.7.5  Pandora integration (March 2024)
 
 ### Added
