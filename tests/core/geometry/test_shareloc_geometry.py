@@ -97,8 +97,8 @@ def test_inverse_loc_rpc():
         sensor, geomodel, inputs_lat, inputs_lon, z_coord=inputs_z
     )
 
-    reference_col = np.array([0, 5, 10])
-    reference_row = np.array([0, 6, 12])
+    reference_row = np.array([0, 5, 10])
+    reference_col = np.array([0, 6, 12])
     np.testing.assert_allclose(row, reference_row, rtol=0.01, atol=0.01)
     np.testing.assert_allclose(col, reference_col, rtol=0.01, atol=0.01)
     np.testing.assert_allclose(alti, inputs_z, rtol=0.01, atol=0.01)
