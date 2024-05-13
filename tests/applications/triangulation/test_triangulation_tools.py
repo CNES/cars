@@ -45,50 +45,6 @@ from tests.helpers import (
 
 
 @pytest.mark.unit_tests
-def test_triangulation_ventoux_otb(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
-    """
-    Test triangulation ventoux dataset
-    """
-    disp1_ref = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/disp1_ref.nc")
-    )
-    sensor1 = images_and_grids_conf["input"]["img1"]
-    sensor2 = images_and_grids_conf["input"]["img2"]
-    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
-    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
-
-    point_cloud_dict = triangulation_tools.triangulate(
-        get_geometry_plugin("OTBGeometry"),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        disp1_ref,
-    )
-
-    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
-
-    # Uncomment to update baseline
-    # point_cloud_dict[cst.STEREO_REF].to_netcdf(
-    # absolute_data_path("ref_output/triangulation1_ref.nc"))
-
-    ref = xr.open_dataset(
-        absolute_data_path("ref_output/triangulation1_ref.nc")
-    )
-    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
-
-
-@pytest.mark.unit_tests
 def test_triangulation_ventoux_shareloc(
     images_and_grids_conf,
 ):  # pylint: disable=redefined-outer-name
@@ -139,48 +95,6 @@ def test_triangulation_ventoux_shareloc(
 
 
 @pytest.mark.unit_tests
-def test_triangulate_matches_otb(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
-    """
-    Test triangulate_matches function from images_and_grids_conf
-    """
-
-    matches = np.array([[0.0, 0.0, 0.0, 0.0]])
-    sensor1 = images_and_grids_conf["input"]["img1"]
-    sensor2 = images_and_grids_conf["input"]["img2"]
-    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
-    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
-
-    llh = triangulation_tools.triangulate_matches(
-        get_geometry_plugin("OTBGeometry"),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        matches,
-    )
-
-    # Check properties
-    pandas.testing.assert_index_equal(
-        llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
-    )
-    np.testing.assert_almost_equal(llh.x[0], 5.1973629)
-    np.testing.assert_almost_equal(llh.y[0], 44.2079813)
-    np.testing.assert_almost_equal(llh.z[0], 511.4383088)
-    assert llh[cst.DISPARITY][0] == 0.0
-    assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
-
-
-@pytest.mark.unit_tests
 def test_triangulate_matches_shareloc(
     images_and_grids_conf,
 ):  # pylint: disable=redefined-outer-name
@@ -221,10 +135,10 @@ def test_triangulate_matches_shareloc(
         llh.columns, pandas.Index(["x", "y", "z", "disparity", "corr_msk"])
     )
     # put decimal values to 10 to know if modifications are done.
-    # for long/lat, OTB standards to 10**(-8) have been checked
+    # for long/lat, 10**(-8) have been checked
     np.testing.assert_almost_equal(llh.x[0], 5.197362922602653, decimal=10)
     np.testing.assert_almost_equal(llh.y[0], 44.207981250033235, decimal=10)
-    # for altitude, OTB standards to 10**(-3) have been checked
+    # for altitude, 10**(-3) have been checked
     np.testing.assert_almost_equal(llh.z[0], 511.4382467297837, decimal=10)
     # np.testing.assert_almost_equal(llh.z[0], 511.4383088)
     assert llh[cst.DISPARITY][0] == 0.0
@@ -290,83 +204,6 @@ def test_geoid_offset_from_pandas():
         atol=1e-1,
         rtol=1e-1,
     )
-
-
-@pytest.mark.unit_tests
-def test_triangulation_intervals_otb(
-    images_and_grids_conf,
-):  # pylint: disable=redefined-outer-name
-    """
-    Test triangulation with disparity intervals on ventoux dataset
-    """
-    disp1_ref = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/disp1_ref.nc")
-    )
-    disp1_ref["confidence_from_interval_bounds_inf.int"] = disp1_ref["disp"] - 1
-    disp1_ref["confidence_from_interval_bounds_sup.int"] = disp1_ref["disp"] + 1
-
-    sensor1 = images_and_grids_conf["input"]["img1"]
-    sensor2 = images_and_grids_conf["input"]["img2"]
-    geomodel1 = {"path": images_and_grids_conf["input"]["model1"]}
-    geomodel2 = {"path": images_and_grids_conf["input"]["model2"]}
-    grid_left = images_and_grids_conf["preprocessing"]["output"][
-        "left_epipolar_grid"
-    ]
-    grid_right = images_and_grids_conf["preprocessing"]["output"][
-        "right_epipolar_grid"
-    ]
-
-    point_cloud_dict = triangulation_tools.triangulate(
-        get_geometry_plugin("OTBGeometry"),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        disp1_ref,
-    )
-
-    point_cloud_dict_inf = triangulation_tools.triangulate(
-        get_geometry_plugin("OTBGeometry"),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        disp1_ref,
-        disp_key="confidence_from_interval_bounds_inf.int",
-    )
-
-    point_cloud_dict_sup = triangulation_tools.triangulate(
-        get_geometry_plugin("OTBGeometry"),
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        grid_left,
-        grid_right,
-        disp1_ref,
-        disp_key="confidence_from_interval_bounds_sup.int",
-    )
-
-    point_cloud_dict[cst.STEREO_REF][cst.Z_INF] = point_cloud_dict_inf[
-        cst.STEREO_REF
-    ][cst.Z]
-    point_cloud_dict[cst.STEREO_REF][cst.Z_SUP] = point_cloud_dict_sup[
-        cst.STEREO_REF
-    ][cst.Z]
-
-    assert point_cloud_dict[cst.STEREO_REF][cst.X].shape == (120, 110)
-
-    # Uncomment to update baseline
-    # point_cloud_dict[cst.STEREO_REF].to_netcdf(absolute_data_path(
-    # "ref_output/triangulation1_ref_intervals.nc"))
-    ref = xr.open_dataset(
-        absolute_data_path("ref_output/triangulation1_ref_intervals.nc")
-    )
-    assert_same_datasets(point_cloud_dict[cst.STEREO_REF], ref, atol=1.0e-3)
 
 
 @pytest.mark.unit_tests

@@ -115,6 +115,10 @@ It can be recommended to apply a P+XS pansharpening with `OTB`_.
 
     otbcli_BundleToPerfectSensor -inp image.tif -inxs color.tif -out color_pxs.tif
 
+.. code-block:: console
+
+    docker run -w /data -v "$(pwd)"/data:/data --entrypoint=/bin/bash  cnes/cars otbcli_BundleToPerfectSensor -inp /data/image.tif -inxs /data/color.tif -out /data/color_pxs.tif
+
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook-8.0/C++/UserGuide.html#image-data-representation
 
 .. _make_a_water_mask:
@@ -178,3 +182,26 @@ To merge them:
 
 
 .. _`laszip`: https://laszip.org/
+
+
+Docker
+======
+
+A docker is available to use CARS and OTB applications.
+CARS is the docker entrypoint. To use otb, entrypoint must be specified.
+
+Use CARS in docker
+------------------
+
+.. code-block:: console
+
+    docker run -w /data -v "$(pwd)"/data_gizeh_small:/data cnes/cars /data/configfile.json
+
+Use OTB in docker
+-----------------
+
+Any OTB application can be ran in docker
+
+.. code-block:: console
+
+    docker run  --entrypoint=/bin/bash  cnes/cars otbcli_BandMath -help

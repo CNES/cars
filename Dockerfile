@@ -1,32 +1,33 @@
 # hadolint ignore=DL3007
-FROM cnes/cars-deps:latest
+FROM orfeotoolbox/otb:latest
 LABEL maintainer="CNES"
+
+# Dependencies packages
+# hadolint ignore=DL3008
+RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
+    git \
+    libpython3.8 \
+    python3.8-dev \
+    python3.8-venv \
+    python3.8 \
+    python3-pip \
+    python3-numpy \
+    python3-virtualenv \
+    && rm -rf /var/lib/apt/lists/*
 
 # copy and install cars with mccnn plugin capabilities installed (but not configured by default)
 WORKDIR /cars
 COPY . /cars/
 
-RUN make clean && make install-pandora-mccnn
+# Install fiona and rasterio with gdal / proj from otb
+RUN make clean && make install-gdal
 
 # source venv/bin/activate in docker mode
 ENV VIRTUAL_ENV='/cars/venv'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
-# Clean pip cache
+
+# hadolint ignore=DL3013,SC2102
 RUN python -m pip cache purge
-
-# source venv/bin/env_cars.sh
-ENV OTB_APPLICATION_PATH=/cars/venv/lib/:$OTB_APPLICATION_PATH \
-    PATH=$PATH:/cars/venv/bin \
-    LD_LIBRARY_PATH=$LD_LIBRARY_PATH:/cars/venv/lib \
-    OTB_LOGGER_LEVEL=WARNING \
-    OMP_NUM_THREADS=4 \
-    GDAL_CACHEMAX=128 \
-    ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS=1 \
-    CARS_NB_WORKERS_PER_PBS_JOB=2
-
-ENV OPJ_NUM_THREADS=$OMP_NUM_THREADS \
-    GDAL_NUM_THREADS=$OMP_NUM_THREADS \
-    NUMBA_NUM_THREADS=$OMP_NUM_THREADS
 
 # launch cars
 ENTRYPOINT ["cars"]

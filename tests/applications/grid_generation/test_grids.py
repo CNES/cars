@@ -158,65 +158,10 @@ def test_correct_right_grid():
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids_default_alt_otb():
-    """
-    Test generate_epipolar_grids method with default alt and no dem with OTB
-    """
-    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
-    geomodel1 = {
-        "path": absolute_data_path("input/phr_ventoux/left_image.geom")
-    }
-    geomodel2 = {
-        "path": absolute_data_path("input/phr_ventoux/right_image.geom")
-    }
-    default_alt = 500
-    (
-        left_grid,
-        right_grid,
-        _,
-        _,
-        epi_size,
-        baseline,
-    ) = grids.generate_epipolar_grids(
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        get_geometry_plugin(
-            geometry_plugin="OTBGeometry", default_alt=default_alt
-        ),
-        epipolar_step=30,
-    )
-
-    assert epi_size == [612, 612]
-    assert baseline == 1 / 0.7039446234703064
-
-    # Uncomment to update baseline
-    # left_grid.to_netcdf(absolute_data_path(
-    # "ref_output/left_grid_default_alt.nc"))
-
-    left_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/left_grid_default_alt.nc")
-    )
-    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
-    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
-
-    # Uncomment to update baseline
-    # right_grid.to_netcdf(absolute_data_path(
-    # "ref_output/right_grid_default_alt.nc"))
-
-    right_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/right_grid_default_alt.nc")
-    )
-    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
-    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
-
-
-@pytest.mark.unit_tests
 def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
     """
-    Test generate_epipolar_grids method with default alt and no dem with OTB
+    Test generate_epipolar_grids method with default alt and no dem with
+        Shareloc
     """
     # Retrieve information from configuration
     conf = images_and_grids_conf[input_parameters.INPUT_SECTION_TAG]
@@ -244,9 +189,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
 
     assert epi_size == [612, 612]
 
-    # test baseline: 1/(disp to alt ratio), adapted from OTB.
-    # see OTB StereoRectificationGridGenerator output for meaning
-    # difference between shareloc and OTB : sum is not done exactly the same
+    # test baseline: 1/(disp to alt ratio), adapted from Shareloc.
     # but precision result to 10**-5 is enough for baseline
     # put exact values to know if modifications are done.
     # put decimal values to 10 to know if modifications are done.
@@ -274,59 +217,6 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
 
 
 @pytest.mark.unit_tests
-def test_generate_epipolar_grids_otb():
-    """
-    Test generate_epipolar_grids method
-    """
-    sensor1 = absolute_data_path("input/phr_ventoux/left_image.tif")
-    sensor2 = absolute_data_path("input/phr_ventoux/right_image.tif")
-    geomodel1 = {
-        "path": absolute_data_path("input/phr_ventoux/left_image.geom")
-    }
-    geomodel2 = {
-        "path": absolute_data_path("input/phr_ventoux/right_image.geom")
-    }
-    dem = absolute_data_path("input/phr_ventoux/srtm")
-
-    (
-        left_grid,
-        right_grid,
-        _,
-        _,
-        epi_size,
-        baseline,
-    ) = grids.generate_epipolar_grids(
-        sensor1,
-        sensor2,
-        geomodel1,
-        geomodel2,
-        get_geometry_plugin(geometry_plugin="OTBGeometry", dem=dem),
-        epipolar_step=30,
-    )
-
-    assert epi_size == [612, 612]
-    assert baseline == 1 / 0.7039416432380676
-
-    # Uncomment to update baseline
-    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
-
-    left_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/left_grid.nc")
-    )
-    assert np.allclose(left_grid_ref["x"].values, left_grid[:, :, 0])
-    assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
-
-    # Uncomment to update baseline
-    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid.nc"))
-
-    right_grid_ref = xr.open_dataset(
-        absolute_data_path("ref_output/right_grid.nc")
-    )
-    assert np.allclose(right_grid_ref["x"].values, right_grid[:, :, 0])
-    assert np.allclose(right_grid_ref["y"].values, right_grid[:, :, 1])
-
-
-@pytest.mark.unit_tests
 def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     """
     Test generate_epipolar_grids method
@@ -338,7 +228,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     geomodel1 = {"path": conf["model1"], "model_type": conf["model_type1"]}
     geomodel2 = {"path": conf["model2"], "model_type": conf["model_type2"]}
 
-    # use a file and not a directory ! (shareloc != OTB)
+    # use a file and not a directory !
     dem = absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt")
 
     (
@@ -359,10 +249,8 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
 
     assert epi_size == [612, 612]
 
-    # test baseline: 1/(disp to alt ratio) adapted from OTB.
-    # see OTB StereoRectificationGridGenerator output for meaning
-    # difference between shareloc and OTB : sum is not done exactly the same
-    # but precision result to 10**-5 is enough for baseline (shareloc vs OTB)
+    # test baseline: 1/(disp to alt ratio) adapted from Shareloc.
+    # but precision result to 10**-5 is enough for baseline
     # put decimal values to 10 to know if modifications are done.
     np.testing.assert_almost_equal(baseline, 1.4205717708948564, decimal=10)
 
@@ -403,7 +291,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
 def test_grid_generation(save_reference, input_file, ref_file):
     """
     Grid generation application test
-    works with with OTB and Shareloc
+    works with  Shareloc
     """
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         conf = {}
@@ -453,11 +341,7 @@ def test_grid_generation(save_reference, input_file, ref_file):
                     pair_folder=os.path.join(directory, "pair_0"),
                 )
 
-                # set ground truth according to geometry loaders
-                if geometry_plugin.plugin_name == "OTBGeometry":
-                    ref_file = ref_file + "_otb"
-                elif geometry_plugin.plugin_name == "SharelocGeometry":
-                    ref_file = ref_file + "_shareloc"
+                ref_file = ref_file + "_shareloc"
 
                 ref_data_path = absolute_data_path(
                     os.path.join(

@@ -214,7 +214,6 @@ class SharelocGeometry(AbstractGeometry):
         TODO: not used
         - to evolve and use in CARS configuration early in pipeline process
         (new early check input common application ?)
-        - update with former cars clean with otb evolution.
 
         :param sensor: path to sensor image
         :param geomodel: path and attributes for geometrical model

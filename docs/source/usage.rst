@@ -45,7 +45,7 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
     -h, --help            show this help message and exit
     -il [input.{tif,XML} or pair_dir [input.{tif,XML} or pair_dir ...]]
                             Inputs list or Pairs directory list
-    -out out_dir          Output directory
+    -out out_dir          Output ock
     --full                Fill all default values
     --check               Check inputs
 
@@ -711,10 +711,8 @@ The structure follows this organisation:
     +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
     | Name              | Description           | Type   | Default value           | Available values                      | Required |
     +===================+=======================+========+=========================+=======================================+==========+
-    | *geometry_plugin* | The plugin to use     | str    | "OTBGeometry"           | "OTBGeometry", "SharelocGeometry"     | False    |
+    | *geometry_plugin* | The plugin to use     | str    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
     +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
-
-    If the parameter "geometry_plugin" is not specified but OTB is not installed or CARS-specific remote modules are unavailable, the value of geometry_plugin switchs to "SharelocGeometry"
 
     .. code-block:: json
 
@@ -1530,61 +1528,11 @@ This section describes optional plugins possibilities of CARS.
 
 .. tabs::
 
-    .. tab:: OTB Geometry plugin
-
-        By default, the geometry functions in CARS are run through otb.
-
-        To use OTB geometry library, CARS input configuration should be defined as :
-
-        .. code-block:: json
-
-            {
-              "inputs": {
-                "sensors": {
-                  "one": {
-                    "image": "img1.tif",
-                    "geomodel": {
-                      "path": "img1.geom"
-                    },
-                  },
-                  "two": {
-                    "image": "img2.tif",
-                    "geomodel": {
-                      "path": "img2.geom"
-                    },
-                  }
-                },
-                "pairing": [["one", "two"]],
-                "initial_elevation": "path/to/srtm_file"
-              },
-              "geometry_plugin": "OTBGeometry",
-              "output": {
-                "out_dir": "outresults"
-              }
-            }
-
-        The standards parts are described in CARS :ref:`configuration`.
-
-        The particularities in the configuration file are:
-
-        * **geomodel.path**: Field contains the paths to the geometric model files related to `img1` and `img2` respectively.
-        * **initial_elevation**: Field contains the path to the **folder** in which are located the SRTM tiles covering the production.
-        * **geometry_plugin**: Parameter configured to "OTBGeometry" to use OTB library.
-
-        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
-        be changed to a dictionary before launching the pipeline. The dictionary will be :
-
-        .. code-block:: json
-
-            {
-              "path": "img1.geom"
-            }
-
     .. tab:: Shareloc Geometry plugin
 
-        Another geometry library called shareloc is installed with CARS and can be configured to be used as another option.
+        By default, the geometry functions in CARS are run through Shareloc.
 
-        To use Shareloc library, CARS input configuration should be defined as :
+        To use Shareloc geometry library, CARS input configuration should be defined as :
 
         .. code-block:: json
 
@@ -1618,7 +1566,7 @@ This section describes optional plugins possibilities of CARS.
         The particularities in the configuration file are:
 
         * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
-        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory as OTB default configuration !!)
+        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory !!)
         * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
 
         Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
@@ -1634,7 +1582,6 @@ This section describes optional plugins possibilities of CARS.
 
 .. note::
 
-  This library is foreseen to replace otb default in CARS for maintenance and installation ease.
   Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
 
 
