@@ -27,10 +27,6 @@ ifndef LOGLEVEL
 	LOGLEVEL = "INFO"
 endif
 
-# Check CMAKE, OTB variables before venv creation
-CHECK_CMAKE = $(shell command -v cmake 2> /dev/null)
-CHECK_OTB = $(shell command -v otbcli_ReadImageInfo 2> /dev/null)
-
 # Check python install in VENV
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
@@ -51,7 +47,6 @@ CARS_VERSION_MIN =$(shell echo ${CARS_VERSION} | cut -d . -f 1,2,3)
 .PHONY: help
 help: ## this help
 	@echo "      CARS MAKE HELP  LOGLEVEL=${LOGLEVEL}"
-	@echo "  Dependencies: Install OTB before  !"
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-30s\033[0m %s\n", $$1, $$2}'| sort
 
 ## Install section
@@ -62,14 +57,6 @@ venv: ## create virtualenv in CARS_VENV directory if not exists
 	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
-.PHONY: otb-remote-module
-otb-remote-module: ## install remote module otb
-	@[ "${CHECK_CMAKE}" ] || ( echo ">> cmake not found"; exit 1 )
-	@[ "${CHECK_OTB}" ] || ( echo ">> OTB not found"; exit 1 )
-	@[ "${OTB_APPLICATION_PATH}" ] || ( echo ">> OTB_APPLICATION_PATH is not set"; exit 1 )
-	@mkdir -p build
-	@cd build && cmake -DCMAKE_INSTALL_PREFIX=${CARS_VENV} -DOTB_BUILD_MODULE_AS_STANDALONE=ON -DCMAKE_BUILD_TYPE=Release ../otb_remote_module && make install
-
 .PHONY: install-deps
 install-deps: venv ## install python libs
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade cython numpy
@@ -77,39 +64,38 @@ install-deps: venv ## install python libs
 	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 
 .PHONY: install-deps-gdal
-install-deps-gdal: install-deps ## create an healthy python environment for OTB / GDAL
+install-deps-gdal: install-deps ## create an healthy python environment for GDAL/ proj
 	@[ "${CHECK_FIONA}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary fiona fiona
 	@[ "${CHECK_RASTERIO}" ] ||${CARS_VENV}/bin/python -m pip install --no-binary rasterio rasterio
 
 .PHONY: install
-install: install-deps-gdal otb-remote-module ## install cars (not editable) with dev, docs, notebook dependencies
+install: install-deps ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
+
+.PHONY: install-gdal
+install-gdal: install-deps-gdal ## install cars (not editable) with dev, docs, notebook dependencies
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
+	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
+	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
+	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
+	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
+	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
 
 .PHONY: install-pandora-mccnn
-install-pandora-mccnn: install-deps-gdal otb-remote-module  ## install cars (not editable) with dev, docs, notebook dependencies
+install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
 	@echo "CARS ${CARS_VERSION} installed in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
-
-.PHONY: install-dev-with-otb
-install-dev-with-otb: install-deps-gdal otb-remote-module ## install cars in dev editable mode (pip install -e .)
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; source ${CARS_VENV}/bin/env_cars.sh; cars -h"
 
 .PHONY: install-dev
-install-dev: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling otb remote modules, rasterio, fiona
+install-dev: install-deps ## install cars in dev editable mode (pip install -e .) without recompiling rasterio, fiona
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install -e .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
@@ -120,16 +106,12 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 ## Test section
 
 .PHONY: test
-test: ## run unit tests without PBS cluster and without OTB tests + coverage html
+test: ## run unit tests without SLURM cluster + coverage html
 	@${CARS_VENV}/bin/pytest -m "unit_tests and not pbs_cluster_tests" -k "not otb" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 .PHONY: test-ci
 test-ci: ## run unit and pbs tests + coverage for cars-ci
 	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
-
-.PHONY: test-ci-otb-free
-test-ci-otb-free: ## run unit and pbs tests + coverage for cars-ci
-	@${CARS_VENV}/bin/pytest -m "unit_tests or pbs_cluster_tests" -k "not otb" --durations=0 --log-date-format="%Y-%m-%d %H:%M:%S" --log-format="%(asctime)s [%(levelname)8s] (%(filename)s:%(lineno)s) : %(message)s"  -o log_cli=true -o log_cli_level=${LOGLEVEL} --junitxml=pytest-report.xml --cov-config=.coveragerc --cov-report xml --cov
 
 .PHONY: test-end2end
 test-end2end: ## run end2end tests only
@@ -222,20 +204,11 @@ dev: install-dev docs notebook ## install CARS in dev mode : install-dev, notebo
 docker-deps: ## Check and build docker image cnes/cars-deps
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
 	@docker pull hadolint/hadolint
-	@echo "Check Dockerfile.deps with hadolint"
-	@docker run --rm -i hadolint/hadolint < Dockerfile.deps
-	@echo "Build Docker deps image CARS ${CARS_VERSION_MIN}"
-# Set docker options like --build-arg
-ifndef DOCKER_OPTIONS
-	@docker build -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
-else
-	@docker build ${DOCKER_OPTIONS} -t cnes/cars-deps:${CARS_VERSION_MIN} -t cnes/cars-deps:latest . -f Dockerfile.deps
-endif
-
-.PHONY: docker
-docker: docker-deps ## Check and build docker image cnes/cars (depending on cnes/cars-deps)
 	@echo "Check Dockerfile with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile
+
+.PHONY: docker
+docker: docker-deps ## Check and build docker image cnes/cars 
 	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
 # Set docker options like --build-arg
 ifndef DOCKER_OPTIONS
@@ -244,20 +217,6 @@ else
 	@docker build ${DOCKER_OPTIONS} -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
 endif
 
-.PHONY: docker-jupyter
-docker-jupyter: ## Check and build docker image cnes/cars-jupyter
-	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@docker pull hadolint/hadolint
-	@echo "Check Dockerfile.jupyter with hadolint"
-	@docker run --rm -i hadolint/hadolint < Dockerfile.jupyter
-	@echo "Build Docker jupyter notebook image from CARS"
-# Set docker options like --build-arg
-ifndef DOCKER_OPTIONS
-	@docker build -t cnes/cars-jupyter:$(CARS_VERSION_MIN) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
-else
-	@docker build ${DOCKER_OPTIONS} -t cnes/cars-jupyter:$(CARS_VERSION_MIN) -t cnes/cars-jupyter:latest . -f Dockerfile.jupyter
-endif
-	@echo "Build Docker jupyter notebook image from CARS"
 
 ## Clean section
 
@@ -323,13 +282,9 @@ clean-dask:
 .PHONY: clean-docker
 clean-docker: ## clean docker image
 	@@[ "${CHECK_DOCKER}" ] || ( echo ">> docker not found"; exit 1 )
-	@echo "Clean Docker images cars-deps, cars, cars-jupyter ${CARS_VERSION_MIN}"
-	@docker image rm -f cnes/cars-deps:${CARS_VERSION_MIN}
-	@docker image rm -f cnes/cars-deps:latest
+	@echo "Clean Docker images cars ${CARS_VERSION_MIN}"
 	@docker image rm -f cnes/cars:${CARS_VERSION_MIN}
 	@docker image rm -f cnes/cars:latest
-	@docker image rm -f cnes/cars-jupyter:${CARS_VERSION_MIN}
-	@docker image rm -f cnes/cars-jupyter:latest
 
 
 .PHONY: profile-memory-report

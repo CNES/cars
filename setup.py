@@ -24,7 +24,7 @@ CARS setup.py
 from setuptools import setup
 
 try:
-    setup()
+    setup(use_scm_version={"fallback_version": "0.0.0"})
 except Exception:
     print(
         "\n\nAn error occurred while building the project, "

@@ -128,11 +128,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         out_dir = input_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -369,12 +365,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         assert os.path.isfile(used_conf_path)
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_sparse_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
-
+        ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dem_median.tif"),
@@ -522,11 +513,7 @@ def test_end2end_ventoux_unique():
             )
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_sparse_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -1236,11 +1223,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             out_dir_dsm = input_dsm_config["output"]["out_dir"]
 
             # Ref output dir dependent from geometry plugin chosen
-            ref_output_dir = (
-                "ref_output"
-                if input_dsm_config["geometry_plugin"] == "OTBGeometry"
-                else os.path.join("ref_output", "shareloc")
-            )
+            ref_output_dir = "ref_output"
 
             # Uncomment the following instructions to update reference data
             # copy2(
@@ -1548,11 +1531,7 @@ def test_end2end_ventoux_unique_split():
             out_dir_dsm = input_dsm_config["output"]["out_dir"]
 
             # Ref output dir dependent from geometry plugin chosen
-            ref_output_dir = (
-                "ref_output"
-                if input_dsm_config["geometry_plugin"] == "OTBGeometry"
-                else os.path.join("ref_output", "shareloc")
-            )
+            ref_output_dir = "ref_output"
 
             assert (
                 os.path.exists(
@@ -1807,11 +1786,8 @@ def test_end2end_use_epipolar_a_priori():
             )
 
             # Ref output dir dependent from geometry plugin chosen
-            ref_output_dir = (
-                "ref_output"
-                if input_config_sparse_res["geometry_plugin"] == "OTBGeometry"
-                else os.path.join("ref_output", "shareloc")
-            )
+            ref_output_dir = "ref_output"
+
             # Uncomment the 2 following instructions to update reference data
             # copy2(
             #     os.path.join(out_dir, "dem_median.tif"),
@@ -2032,11 +2008,7 @@ def test_end2end_use_epipolar_a_priori():
             _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_sparse_res["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
@@ -2377,11 +2349,7 @@ def test_end2end_ventoux_with_color():
         )
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
         # Uncomment the following instruction to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
@@ -2621,11 +2589,7 @@ def test_end2end_ventoux_with_classif():
         )
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
 
         # Uncomment the following instruction to update reference data
         # copy2(
@@ -2755,11 +2719,7 @@ def test_compute_dsm_with_roi_ventoux():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
@@ -2898,11 +2858,8 @@ def test_compute_dsm_with_snap_to_img1():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
+
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
@@ -3043,11 +3000,8 @@ def test_end2end_quality_stats():
             )
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
+
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dem_median.tif"),
@@ -3315,12 +3269,12 @@ def test_end2end_ventoux_egm96_geoid():
             out_disp_compute = out_data["applications"]["left_right"][
                 "dense_matching_run"
             ]
-            # global_disp_min : -56 otb, -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -57
-            assert out_disp_compute["global_disp_min"] < -21
-            # global max: 25  otb, 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 24
-            assert out_disp_compute["global_disp_max"] < 87
+            # global_disp_min   -21 shareloc
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            # global max: 86 shareloc
+            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] < 31
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3329,11 +3283,7 @@ def test_end2end_ventoux_egm96_geoid():
             )
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -3534,11 +3484,7 @@ def test_end2end_paca_with_mask():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -3750,11 +3696,8 @@ def test_end2end_disparity_filling():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
+
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),
@@ -3881,11 +3824,8 @@ def test_end2end_disparity_filling_with_zeros():
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
         # Ref output dir dependent from geometry plugin chosen
-        ref_output_dir = (
-            "ref_output"
-            if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry"
-            else os.path.join("ref_output", "shareloc")
-        )
+        ref_output_dir = "ref_output"
+
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #     os.path.join(out_dir, "dsm.tif"),

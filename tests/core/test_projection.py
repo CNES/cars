@@ -41,7 +41,7 @@ from cars.core import inputs, projection
 # CARS Tests imports
 from ..helpers import absolute_data_path, get_geometry_plugin, temporary_dir
 
-# Register otbgeometry to be able to use it
+# Register sharelocgeometry to be able to use it
 
 
 @pytest.mark.unit_tests
@@ -180,14 +180,14 @@ def test_ground_intersection_envelopes():
     geomodel1 = {"path": absolute_data_path("input/phr_paca/left_image.geom")}
     geomodel2 = {"path": absolute_data_path("input/phr_paca/right_image.geom")}
     srtm_dir = absolute_data_path("input/phr_paca/srtm/N43E007.hgt")
-    # Ref1 without test_pipelines and test_preprocessing before (OTB bug)
+    # Ref1 without test_pipelines and test_preprocessing before
     intersect_xymin_xymax_ref_1 = (
         7.293045338193613,
         43.68965406063334,
         7.295803791847358,
         43.691682697599205,
     )
-    # Ref2 with OTB tests before with other SRTM ref
+    # Ref2 with shareloc tests before with other SRTM ref
     intersect_xymin_xymax_ref_2 = (
         7.292954644352718,
         43.68961593954899,

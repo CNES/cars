@@ -6,22 +6,21 @@ Plugin
 Geometry plugin
 ^^^^^^^^^^^^^^^^^
 
-Geometry plugins aim to enable the use of different geometry libraries, typically OTB, libGEO or Shareloc to perform CARS geometric operations which require the interpretation of the geometric models of the pairs to process.
+Geometry plugins aim to enable the use of different geometry libraries, typically libGEO or Shareloc to perform CARS geometric operations which require the interpretation of the geometric models of the pairs to process.
 Those operation are:
 
 * The epipolar grids computation
 * The direct localization operation
 * The lines of sight triangulation
 
-`OTBGeometry` and `SharelocGeometry` are the two internal geometry plugins used in the baseline installations of CARS. 
-In the current state, the Orfeo Toolbox or Shareloc has to be installed when using CARS as this class is imported in the step module. 
-The OTBGeometry class might be used as a plugin in the future and be replaced by SharelocGeometry as default plugin, in order to remove the hard-coded import which imposes the installation of the OTB to be able to use CARS.
+`SharelocGeometry` is an internal geometry plugin used in the baseline installations of CARS. 
+In the current state, Shareloc has to be installed when using CARS as this class is imported in the step module. 
 
 Geometry abstract class
 +++++++++++++++++++++++
 
 The CARS abstract geometry class, named `AbstractGeometry`, is defined in the core geometry module  (`cars/core/geometry/__init__.py`).
-Considering the geometry operations, CARS have its own internal implementation of the CARS abstract class using the OTB. External plugins can be used if they are registered correctly :
+Considering the geometry operations, CARS have its own internal implementation of the CARS abstract class using Shareloc External plugins can be used if they are registered correctly :
 
 .. code-block:: python
 
