@@ -427,6 +427,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 epipolar_images_left,
                 cars_ds_name="epi_img_left_classif",
                 dtype=np.uint8,
+                optional_data=True,
             )
 
             self.orchestrator.add_to_save_lists(
@@ -443,9 +444,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 epipolar_images_right,
                 cars_ds_name="epi_img_right_classif",
                 dtype=np.uint8,
+                optional_data=True,
             )
 
-        if self.save_epipolar_color:
+        if self.save_epipolar_color and add_color:
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_color.tif"),
                 cst.EPI_COLOR,
