@@ -560,8 +560,6 @@ def create_raster_dataset(
 
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
-        print("source_pc_names")
-        print(source_pc_names)
         source_pc_out = xr.Dataset(
             {
                 cst.RASTER_SOURCE_PC: (
@@ -694,6 +692,8 @@ def rasterize(
 
     if msk is not None:
         msk = msk.reshape(shape_out)
+    else:
+        msk = np.isnan(out[0, :, :])
 
     if confidences is not None:
         for key in confidences:
