@@ -59,6 +59,10 @@ def create_polygon_from_list_points(list_points):
     for point in list_points:
         list_shapely_points.append((point[0], point[1]))
 
+    # Add first
+    first_point = list_points[0]
+    list_shapely_points.append((first_point[0], first_point[1]))
+
     poly = geometry.Polygon(list_shapely_points)
 
     return poly
@@ -800,7 +804,8 @@ def transform_input_pc(
                 local_x_y_min_max = computed_epi_pc[row, col].data[
                     "x_y_min_max"
                 ]
-                if not any(np.isnan(local_x_y_min_max)):
+
+                if np.all(np.isfinite(local_x_y_min_max)):
                     # Add for global
                     xmin_list.append(local_x_y_min_max[0])
                     xmax_list.append(local_x_y_min_max[1])
@@ -1185,17 +1190,18 @@ def compute_correspondance_single_pc_terrain(
 
                     # Convert the bounds of the point cloud tile into
                     #  shapely point
-                    if any(np.isnan(x_y_min_max)):
-                        continue
-                    point_cloud_tile_polygon = convert_to_polygon(x_y_min_max)
-
-                    if intersect_polygons(
-                        terrain_tile_polygon, point_cloud_tile_polygon
-                    ):
-                        # add to required
-                        terrain_corresp[terrain_row, terrain_col].append(
-                            (epi_pc[tile_row, tile_col], epi_pc_id)
+                    if np.all(np.isfinite(x_y_min_max)):
+                        point_cloud_tile_polygon = convert_to_polygon(
+                            x_y_min_max
                         )
+
+                        if intersect_polygons(
+                            terrain_tile_polygon, point_cloud_tile_polygon
+                        ):
+                            # add to required
+                            terrain_corresp[terrain_row, terrain_col].append(
+                                (epi_pc[tile_row, tile_col], epi_pc_id)
+                            )
 
     # add saving infos
     dict_with_corresp_cars_ds = cars_dict.CarsDict(
