@@ -692,6 +692,8 @@ def rasterize(
 
     if msk is not None:
         msk = msk.reshape(shape_out)
+    else:
+        msk = np.isnan(out[0, :, :])
 
     if confidences is not None:
         for key in confidences:

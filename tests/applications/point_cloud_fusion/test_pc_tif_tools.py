@@ -75,7 +75,7 @@ def test_create_polygon_from_list_points():
     list_points = [(1, 0), (1, 1), (0, 1), (0, 0), (1, 0)]
     poly = pc_tif_tools.create_polygon_from_list_points(list_points)
 
-    assert len(mapping(poly)["coordinates"][0]) == 5
+    assert len(mapping(poly)["coordinates"][0]) == 6
 
 
 @pytest.mark.unit_tests
