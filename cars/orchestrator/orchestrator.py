@@ -33,6 +33,7 @@ import sys
 import tempfile
 import traceback
 
+import psutil
 from tqdm import tqdm
 
 # CARS imports
@@ -87,12 +88,38 @@ class Orchestrator:
         self.launch_worker = launch_worker
 
         # overload orchestrator_conf
-        if orchestrator_conf is None:
-            orchestrator_conf = {"mode": "multiprocessing"}
+        if orchestrator_conf is None or (
+            "mode" in orchestrator_conf and orchestrator_conf["mode"] == "auto"
+        ):
+            if orchestrator_conf is None:
+                logging.info(
+                    "No orchestrator configuration given: auto mode is used"
+                )
             logging.info(
-                "No orchestrator configuration given: "
-                "multiprocessing mode is used"
+                "Auto mode is used for orchestrator: "
+                "number of workers and memory allocated per worker "
+                "will be set automatically"
             )
+            if orchestrator_conf is not None and len(orchestrator_conf) > 1:
+                logging.warning(
+                    "Auto mode is used for orchestator: "
+                    "parameters set by user are ignored"
+                )
+            available_cpu = len(os.sched_getaffinity(0))
+            nb_workers = available_cpu - 1
+            logging.info("Number of workers : {}".format(nb_workers))
+            available_ram_per_worker = (
+                psutil.virtual_memory().available / nb_workers // 1e6
+            )
+            max_ram_per_worker = available_ram_per_worker * 0.8
+            logging.info(
+                "Max memory per worker : {} MB".format(max_ram_per_worker)
+            )
+            orchestrator_conf = {
+                "mode": "multiprocessing",
+                "nb_workers": nb_workers,
+                "max_ram_per_worker": max_ram_per_worker,
+            }
 
         self.orchestrator_conf = orchestrator_conf
 
