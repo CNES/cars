@@ -426,16 +426,23 @@ The structure follows this organisation:
 
         The ``orchestrator`` key is optional and allows to define orchestrator configuration that controls the distribution:
 
-        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
-        | Name             | Description                                                                                      | Type                                    | Default value   | Required |
-        +==================+==================================================================================================+=========================================+=================+==========+
-        | *mode*           | Parallelization mode "local_dask", "pbs_dask", "slurm_dask", "multiprocessing" or "sequential"   | string                                  | multiprocessing | Yes      |
-        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
-        | *profiling*      | Configuration for CARS profiling mode                                                            | dict                                    |                 | No       |
-        +------------------+--------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
+        +------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
+        | Name             | Description                                                                                              | Type                                    | Default value   | Required |
+        +==================+==========================================================================================================+=========================================+=================+==========+
+        | *mode*           | Parallelization mode "local_dask", "pbs_dask", "slurm_dask", "multiprocessing", "auto" or "sequential"   | string                                  | "auto"          | Yes      |
+        +------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
+        | *profiling*      | Configuration for CARS profiling mode                                                                    | dict                                    |                 | No       |
+        +------------------+----------------------------------------------------------------------------------------------------------+-----------------------------------------+-----------------+----------+
 
         .. note::
             `sequential` orchestrator purposes are mostly for studies, debug and notebooks. If you want to use it with large data, consider using a ROI and Epipolar A Priori. Only tiles needed for the specified ROI will be computed. If Epipolar A priori is not specified, Epipolar Resampling and Sparse Matching will be performed on the whole image, no matter what ROI field is filled with.
+
+        .. note::
+            `auto` mode is a shortcut for *multiprocessing* orchestrator with parameters *nb_workers* and *max_ram_per_worker* set according to machine ressources and other parameters set to default value.
+            This mode does not allow additional parameters.
+
+            If CARS is launched on HPC cluster, this mode is not recommended because parameters would be set according to the full node resources.
+            In this case, use multiprocessing mode and fill the parameters *nb_workers* and *max_ram_per_worker* according to the resources you requested.
     
 
         Depending on the used orchestrator mode, the following parameters can be added in the configuration:
