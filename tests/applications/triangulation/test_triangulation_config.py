@@ -20,38 +20,27 @@
 #
 """
 Test module for config of
-cars/applications/grid_generation/epipolar_grid_generation.py
+cars/applications/triangulation/line_of_sight_intersection.py
 """
-
-import json_checker
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.grid_generation.epipolar_grid_generation import (
-    EpipolarGridGeneration,
+from cars.applications.triangulation.line_of_sight_intersection import (
+    LineOfSightIntersection,
 )
 
 
 @pytest.mark.unit_tests
 def test_check_full_conf():
     """
-    Test configuration check for grid generation application
-    """
-    conf = {"method": "epipolar", "epi_step": 30, "save_grids": False}
-    _ = EpipolarGridGeneration(conf)
-
-
-@pytest.mark.unit_tests
-def test_check_conf_with_error():
-    """
-    Test configuration check for grid generation application
-    with forbidden value for epi_step
+    Test configuration check for sparse matching application
     """
     conf = {
-        "method": "epipolar",
-        "epi_step": 0,  # should be > 0
+        "method": "line_of_sight_intersection",
+        "use_geoid_alt": False,
+        "snap_to_img1": False,
+        "save_points_cloud": False,
     }
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = EpipolarGridGeneration(conf)
+    _ = LineOfSightIntersection(conf)

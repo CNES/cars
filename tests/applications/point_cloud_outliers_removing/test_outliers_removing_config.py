@@ -19,7 +19,8 @@
 # limitations under the License.
 #
 """
-Test module for cars/applications/point_cloud_outliers_removing/statistical.py
+Test module for config of
+cars/applications/point_cloud_outliers_removing/statistical.py
 """
 
 import json_checker
@@ -27,10 +28,50 @@ import json_checker
 # Third party imports
 import pytest
 
+from cars.applications.point_cloud_outliers_removing.small_components import (
+    SmallComponents,
+)
+
 # CARS imports
 from cars.applications.point_cloud_outliers_removing.statistical import (
     Statistical,
 )
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_small_components():
+    """
+    Test configuration check for outliers removing application
+    """
+    conf = {
+        "method": "small_components",
+        "save_points_cloud_as_laz": False,
+        "save_points_cloud_as_csv": False,
+        "save_points_cloud_by_pair": False,
+        "activated": False,
+        "on_ground_margin": 11,
+        "connection_distance": 3.0,
+        "nb_points_threshold": 50,
+        "clusters_distance_threshold": None,
+    }
+    _ = SmallComponents(conf)
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_statistical():
+    """
+    Test configuration check for outliers removing application
+    """
+    conf = {
+        "method": "statistical",
+        "save_points_cloud_as_laz": False,
+        "save_points_cloud_as_csv": False,
+        "save_points_cloud_by_pair": False,
+        "activated": False,
+        "k": 50,
+        "std_dev_factor": 5.0,
+    }
+    _ = Statistical(conf)
 
 
 @pytest.mark.unit_tests

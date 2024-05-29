@@ -29,12 +29,48 @@ import pytest
 
 # CARS imports
 from cars.applications.dense_matches_filling.plane import PlaneFill
+from cars.applications.dense_matches_filling.zero_padding import ZerosPadding
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_zero_padding():
+    """
+    Test configuration check for ZerosPadding application
+    """
+    conf = {
+        "method": "zero_padding",
+        "classification": ["water", "building"],
+        "save_disparity_map": False,
+    }
+    _ = ZerosPadding(conf)
+
+
+@pytest.mark.unit_tests
+def test_check_full_conf_plane():
+    """
+    Test configuration check for PlaneFill application
+    """
+    conf = {
+        "method": "plane",
+        "interpolation_type": "pandora",
+        "interpolation_method": "mc_cnn",
+        "max_search_distance": 100,
+        "smoothing_iterations": 1,
+        "ignore_nodata_at_disp_mask_borders": False,
+        "ignore_zero_fill_disp_mask_values": True,
+        "ignore_extrema_disp_values": True,
+        "nb_pix": 20,
+        "percent_to_erode": 0.2,
+        "classification": ["water", "building"],
+        "save_disparity_map": False,
+    }
+    _ = PlaneFill(conf)
 
 
 @pytest.mark.unit_tests
 def test_check_conf_with_error():
     """
-    Test configuration check for dense matching filling application
+    Test configuration check for PlaneFill application
     with forbidden values for classification parameter (list of int
     instead of list of str)
     """

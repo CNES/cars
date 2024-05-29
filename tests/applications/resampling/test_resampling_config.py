@@ -19,39 +19,27 @@
 # limitations under the License.
 #
 """
-Test module for config of
-cars/applications/grid_generation/epipolar_grid_generation.py
+Test module for config of cars/applications/resampling/bicubic_resampling.py
 """
-
-import json_checker
 
 # Third party imports
 import pytest
 
 # CARS imports
-from cars.applications.grid_generation.epipolar_grid_generation import (
-    EpipolarGridGeneration,
-)
+from cars.applications.resampling.bicubic_resampling import BicubicResampling
 
 
 @pytest.mark.unit_tests
 def test_check_full_conf():
     """
-    Test configuration check for grid generation application
-    """
-    conf = {"method": "epipolar", "epi_step": 30, "save_grids": False}
-    _ = EpipolarGridGeneration(conf)
-
-
-@pytest.mark.unit_tests
-def test_check_conf_with_error():
-    """
-    Test configuration check for grid generation application
-    with forbidden value for epi_step
+    Test configuration check for rasterization application
+    with forbidden value for parameter resolution
     """
     conf = {
-        "method": "epipolar",
-        "epi_step": 0,  # should be > 0
+        "method": "bicubic",
+        "strip_height": 60,
+        "step": 500,
+        "save_epipolar_image": False,
+        "save_epipolar_color": False,
     }
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = EpipolarGridGeneration(conf)
+    _ = BicubicResampling(conf)

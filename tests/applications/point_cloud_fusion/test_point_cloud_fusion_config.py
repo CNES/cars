@@ -20,38 +20,25 @@
 #
 """
 Test module for config of
-cars/applications/grid_generation/epipolar_grid_generation.py
+cars/applications/point_cloud_fusion/point_cloud_fusion.py
 """
 
-import json_checker
-
-# Third party imports
 import pytest
 
-# CARS imports
-from cars.applications.grid_generation.epipolar_grid_generation import (
-    EpipolarGridGeneration,
+from cars.applications.point_cloud_fusion.mapping_to_terrain_tiles import (
+    MappingToTerrainTiles,
 )
 
 
 @pytest.mark.unit_tests
 def test_check_full_conf():
     """
-    Test configuration check for grid generation application
-    """
-    conf = {"method": "epipolar", "epi_step": 30, "save_grids": False}
-    _ = EpipolarGridGeneration(conf)
-
-
-@pytest.mark.unit_tests
-def test_check_conf_with_error():
-    """
-    Test configuration check for grid generation application
-    with forbidden value for epi_step
+    Test configuration check for point cloud fusion application
     """
     conf = {
-        "method": "epipolar",
-        "epi_step": 0,  # should be > 0
+        "method": "mapping_to_terrain_tiles",
+        "save_points_cloud_as_laz": False,
+        "save_points_cloud_as_csv": False,
+        "save_points_cloud_by_pair": False,
     }
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = EpipolarGridGeneration(conf)
+    _ = MappingToTerrainTiles(conf)

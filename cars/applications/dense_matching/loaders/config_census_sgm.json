@@ -14,7 +14,7 @@
                 "P2": 32,
                 "p2_method": "constant",
                 "penalty_method": "sgm_penalty"
-              }
+            }
         },
         "disparity": {
             "disparity_method": "wta",
