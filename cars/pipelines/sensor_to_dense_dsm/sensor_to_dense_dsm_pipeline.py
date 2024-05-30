@@ -1211,17 +1211,28 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     "generate_confidence_intervals"
                 ]:
                     intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
+                    intervals_pair_flag = False
                     for key, item in self.dense_matching_app.corr_config[
                         "pipeline"
                     ].items():
-                        if cst_disp.CONFIDENCE_KEY in key:
-                            if item["confidence_method"] == cst_disp.INTERVAL:
-                                indicator = key.split(".")
+                        if (
+                            cst_disp.CONFIDENCE_KEY in key
+                            and item["confidence_method"] == cst_disp.INTERVAL
+                        ):
+                            indicator = key.split(".")
+                            if not intervals_pair_flag:
                                 if len(indicator) > 1:
                                     intervals[0] += "." + indicator[-1]
                                     intervals[1] += "." + indicator[-1]
                                 # Only processing the first encountered interval
-                                break
+                                intervals_pair_flag = True
+                            else:
+                                warn_msg = (
+                                    "Multiple confidence intervals "
+                                    "is not supported. {} will be "
+                                    "ignored. Only {} will be processed"
+                                ).format(key, intervals)
+                                logging.warning(warn_msg)
                 else:
                     intervals = None
 
