@@ -859,6 +859,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                         # Correct grids with former matches
                         # Transform matches to new grids
+
                         new_grid_matches_array = (
                             AbstractGeometry.transform_matches_from_grids(
                                 pairs[pair_key]["corrected_matches_array"],
@@ -868,7 +869,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 pairs[pair_key]["new_grid_right"],
                             )
                         )
-
                         # Estimate grid_correction
                         (
                             pairs[pair_key]["grid_correction_coef"],

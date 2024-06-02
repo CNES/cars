@@ -343,6 +343,7 @@ def resample_image(
                 full_left, full_bottom, full_right, full_top, transform
             )
             img_window = from_bounds(left, bottom, right, top, transform)
+
             # Crop window to be in image
             in_sensor = True
             try:
@@ -351,6 +352,10 @@ def resample_image(
                 # Window not in sensor image
                 logging.debug("Window not in sensor image")
                 in_sensor = False
+
+            # round window
+            img_window = img_window.round_offsets()
+            img_window = img_window.round_lengths()
 
             # Compute offset
             tile_bounds = bounds(img_window, transform)

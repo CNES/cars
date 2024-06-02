@@ -94,6 +94,47 @@ def test_resample_image():
 
 
 @pytest.mark.unit_tests
+def test_resample_image_tiles():
+    """
+    Test resample image method, tile same as full cropped
+    """
+    region = [387, 180, 564, 340]
+
+    img = absolute_data_path(
+        "input/phr_ventoux/left_image_modified_transform.tif"
+    )
+    nodata = 0
+    grid = absolute_data_path("input/stereo_input/left_epipolar_grid.tif")
+    epipolar_size_x = 612
+    epipolar_size_y = 612
+
+    full_dataset = resampling_tools.resample_image(
+        img,
+        grid,
+        [epipolar_size_x, epipolar_size_y],
+        nodata=nodata,
+    )
+
+    tiled_dataset = resampling_tools.resample_image(
+        img,
+        grid,
+        [epipolar_size_x, epipolar_size_y],
+        region=region,
+        nodata=nodata,
+    )
+
+    offset = 40
+
+    full_arr = full_dataset["im"].values[
+        region[1] + offset : region[3] - offset,
+        region[0] + offset : region[2] - offset,
+    ]
+    tiled_arr = tiled_dataset["im"].values[offset:-offset, offset:-offset]
+
+    np.testing.assert_equal(full_arr, tiled_arr)
+
+
+@pytest.mark.unit_tests
 def test_epipolar_rectify_images_1(
     images_and_grids_conf,
     color1_conf,  # pylint: disable=redefined-outer-name

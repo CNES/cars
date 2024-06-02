@@ -69,6 +69,7 @@ def triangulate_sparse_matches(
     :return: disp min and disp max
     :rtype: float, float
     """
+
     sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
     sensor2 = sensor_image_right[sens_cst.INPUT_IMG]
     geomodel1 = sensor_image_left[sens_cst.INPUT_GEO_MODEL]

@@ -548,7 +548,7 @@ def compute_terrain_bounds(list_of_terrain_roi, roi_poly=None, resolution=0.5):
     bounds = [xmin, ymin, xmax, ymax]
 
     # Compute optimal terrain tile width
-    optimal_terrain_tile_width_average = np.mean(list_terrain_epi_tile_width)
+    optimal_terrain_tile_width_average = np.nanmean(list_terrain_epi_tile_width)
 
     optimal_terrain_tile_width = (
         int(math.ceil(optimal_terrain_tile_width_average / resolution))
