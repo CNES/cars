@@ -319,12 +319,21 @@ def estimate_right_grid_correction(
     )
 
     # Perform bilinear regression for both component of epipolar error
-    lstsq_input = np.array([matches_x2 * 0 + 1, matches_x2, matches_y2]).T
+    nan_mask = np.logical_and(
+        ~np.isnan(epipolar_error_x), ~np.isnan(epipolar_error_y)
+    )
+    lstsq_input = np.array(
+        [
+            matches_x2[nan_mask] * 0 + 1,
+            matches_x2[nan_mask],
+            matches_y2[nan_mask],
+        ]
+    ).T
     coefsx, residx, __, __ = np.linalg.lstsq(
-        lstsq_input, epipolar_error_x, rcond=None
+        lstsq_input, epipolar_error_x[nan_mask], rcond=None
     )
     coefsy, residy, __, __ = np.linalg.lstsq(
-        lstsq_input, epipolar_error_y, rcond=None
+        lstsq_input, epipolar_error_y[nan_mask], rcond=None
     )
 
     # Normalize residuals by number of matches

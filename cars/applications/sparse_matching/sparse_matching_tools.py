@@ -409,6 +409,9 @@ def filter_point_cloud_matches(
         dev_factor=matches_filter_dev_factor,
     )
 
+    # filter nans
+    filter_cloud.dropna(axis=0, inplace=True)
+
     return filter_cloud
 
 
@@ -437,8 +440,8 @@ def compute_disp_min_disp_max(
 
     # Obtain dmin dmax
     filt_disparity = np.array(pd_cloud.iloc[:, 3])
-    dmax = np.max(filt_disparity)
-    dmin = np.min(filt_disparity)
+    dmax = np.nanmax(filt_disparity)
+    dmin = np.nanmin(filt_disparity)
 
     margin = abs(dmax - dmin) * disp_margin
     dmin -= margin
