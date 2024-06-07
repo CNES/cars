@@ -36,6 +36,7 @@ import numpy as np
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
+from pandora.img_tools import add_global_disparity
 from scipy.ndimage import generic_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -432,8 +433,8 @@ class CensusMccnnSgm(
         # 2: [global min, global min  max diff]
 
         max_diff = np.round(np.nanmax(disp_max_grids - disp_min_grids)) + 1
-        global_min = np.ceil(np.nanmin(disp_min_grids)) - 1
-        global_max = np.round(np.nanmax(disp_max_grids)) + 1
+        global_min = np.floor(np.nanmin(disp_min_grids))
+        global_max = np.ceil(np.nanmax(disp_max_grids))
 
         # Get tiling param
         opt_epipolar_tile_size_1 = (
@@ -801,7 +802,6 @@ class CensusMccnnSgm(
 
         # Add margin
         diff = grid_max - grid_min
-
         logging.info("Max grid max - grid min : {} disp ".format(np.max(diff)))
 
         if self.disp_min_threshold is not None:
@@ -1250,6 +1250,18 @@ def compute_disparity_wrapper(
         disp_min_grid,
         disp_max_grid,
     ) = dm_tools.compute_disparity_grid(disp_range_grid, left_image_object)
+
+    global_disp_min = np.floor(
+        np.nanmin(disp_range_grid[0, 0]["disp_min_grid"].data)
+    )
+    global_disp_max = np.ceil(
+        np.nanmax(disp_range_grid[0, 0]["disp_max_grid"].data)
+    )
+
+    # add global disparity in case of ambiguity normalization
+    left_image_object = add_global_disparity(
+        left_image_object, global_disp_min, global_disp_max
+    )
 
     # Crop interval if needed
     mask_crop = np.zeros(disp_min_grid.shape, dtype=int)
