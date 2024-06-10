@@ -108,7 +108,12 @@ def test_epipolar_pipeline(
     right_input = get_metadata(img2)
     corr_cfg = create_corr_conf(corr_cfg, left_input, right_input)
 
-    initial_margins = dense_match.get_margins(-13, 14, corr_cfg)
+    global_disp_min = -19
+    global_disp_max = 15
+
+    initial_margins = dense_match.get_margins(
+        global_disp_min, global_disp_max, corr_cfg
+    )
     pandora_margins = initial_margins["left_margin"].values
 
     # overlaps are directly margins because current region is in the center
@@ -144,8 +149,8 @@ def test_epipolar_pipeline(
         img2,
         grid1,
         grid2,
-        used_disp_min=-13 - 1,
-        used_disp_max=14 + 1,
+        used_disp_min=global_disp_min,
+        used_disp_max=global_disp_max,
         add_color=True,
         color1=color1,
         mask1=mask1,
@@ -167,8 +172,8 @@ def test_epipolar_pipeline(
         None,
         right_grid,
         None,
-        dmin=-13,
-        dmax=14,
+        dmin=global_disp_min,
+        dmax=global_disp_max,
         pair_folder=None,
     )
 
