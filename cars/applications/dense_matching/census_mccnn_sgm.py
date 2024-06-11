@@ -610,7 +610,8 @@ class CensusMccnnSgm(
             if None not in (dmin, dmax):
                 raise RuntimeError("Mix between local and global mode")
 
-            # dem mean, min max are the same shape
+            # dem min max are the same shape
+            # dem median is not , hence we crop it
 
             # Get associated alti mean / min / max values
             dem_median_shape = inputs.rasterio_get_size(dem_median)
@@ -620,12 +621,6 @@ class CensusMccnnSgm(
 
             # Get epipolar position of all dem mean
             transform = inputs.rasterio_get_transform(dem_median)
-            # index position to terrain position
-            # terrain_positions = np.empty(
-            #     (dem_median_shape[0] * dem_median_shape[1], 2)
-            # )
-            # row_shape = dem_median_shape[0]
-            # col_shape = dem_median_shape[1]
 
             terrain_positions = []
 
