@@ -621,31 +621,74 @@ class CensusMccnnSgm(
             # Get epipolar position of all dem mean
             transform = inputs.rasterio_get_transform(dem_median)
             # index position to terrain position
-            terrain_positions = np.empty(
-                (dem_median_shape[0] * dem_median_shape[1], 2)
-            )
-            row_shape = dem_median_shape[0]
-            col_shape = dem_median_shape[1]
-            for row in range(row_shape):
-                for col in range(col_shape):
-                    col_geo, row_geo = transform * (row + 0.5, col + 0.5)
-                    terrain_positions[row + row_shape * col, :] = (
-                        row_geo,
-                        col_geo,
-                    )
+            # terrain_positions = np.empty(
+            #     (dem_median_shape[0] * dem_median_shape[1], 2)
+            # )
+            # row_shape = dem_median_shape[0]
+            # col_shape = dem_median_shape[1]
 
-            # dem min and max are in 4326
+            terrain_positions = []
+
+            # get terrain bounds dem min
+            dem_min_bounds = inputs.rasterio_get_bounds(dem_min)
+
+            # find roi in dem_mean
+            roi_points = np.array(
+                [
+                    [dem_min_bounds[0], dem_min_bounds[1]],
+                    [dem_min_bounds[0], dem_min_bounds[3]],
+                    [dem_min_bounds[2], dem_min_bounds[1]],
+                    [dem_min_bounds[2], dem_min_bounds[3]],
+                ]
+            )
+
+            # Transform points to terrain_epsg
+            roi_points_terrain = projection.points_cloud_conversion(
+                roi_points,
+                4326,
+                terrain_epsg,
+            )
+
+            # Get pixel roi in dem mean
+            pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
+                dem_median, roi_points_terrain
+            )
+
+            min_row = int(max(0, np.floor(np.min(pixel_roi_dem_mean[:, 0]))))
+            max_row = int(
+                min(
+                    dem_median_shape[0],
+                    np.ceil(np.max(pixel_roi_dem_mean[:, 0])),
+                )
+            )
+            min_col = int(max(0, np.floor(np.min(pixel_roi_dem_mean[:, 1]))))
+            max_col = int(
+                min(
+                    dem_median_shape[1],
+                    np.ceil(np.max(pixel_roi_dem_mean[:, 1])),
+                )
+            )
+
+            # compute terrain positions to use (all dem min and max)
+            row_indexes = range(min_row, max_row)
+            col_indexes = range(min_col, max_col)
+
+            terrain_positions = []
+            for row in row_indexes:
+                for col in col_indexes:
+
+                    col_geo, row_geo = transform * (row + 0.5, col + 0.5)
+
+                    terrain_positions.append((row_geo, col_geo))
+
+            terrain_positions = np.array(terrain_positions)
+
+            # dem mean in terrain_epsg
             x_mean = terrain_positions[:, 0]
             y_mean = terrain_positions[:, 1]
 
             dem_median_list = inputs.rasterio_get_values(
                 dem_median, x_mean, y_mean, points_cloud_conversion
-            )
-            dem_min_list = inputs.rasterio_get_values(
-                dem_min, x_mean, y_mean, points_cloud_conversion
-            )
-            dem_max_list = inputs.rasterio_get_values(
-                dem_max, x_mean, y_mean, points_cloud_conversion
             )
 
             # transform to lon lat
@@ -654,6 +697,14 @@ class CensusMccnnSgm(
             )
             new_x = terrain_position_lon_lat[:, 0]
             new_y = terrain_position_lon_lat[:, 1]
+
+            # dem min and max are in 4326
+            dem_min_list = inputs.rasterio_get_values(
+                dem_min, new_x, new_y, points_cloud_conversion
+            )
+            dem_max_list = inputs.rasterio_get_values(
+                dem_max, new_x, new_y, points_cloud_conversion
+            )
 
             # sensors positions as index
             (
