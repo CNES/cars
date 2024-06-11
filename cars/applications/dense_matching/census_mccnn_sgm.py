@@ -622,8 +622,6 @@ class CensusMccnnSgm(
             # Get epipolar position of all dem mean
             transform = inputs.rasterio_get_transform(dem_median)
 
-            terrain_positions = []
-
             # get terrain bounds dem min
             dem_min_bounds = inputs.rasterio_get_bounds(dem_min)
 
@@ -637,7 +635,7 @@ class CensusMccnnSgm(
                 ]
             )
 
-            # Transform points to terrain_epsg
+            # Transform points to terrain_epsg (dem min is in 4326)
             roi_points_terrain = projection.points_cloud_conversion(
                 roi_points,
                 4326,
