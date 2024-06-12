@@ -56,29 +56,26 @@ class AbstractGeometry(metaclass=ABCMeta):
         :param geometry_plugin: plugin name to instantiate
         :return: a geometry_plugin object
         """
-        if geometry_plugin is not None:
-            if geometry_plugin not in cls.available_plugins:
-                logging.error(
-                    "No geometry plugin named {} registered".format(
-                        geometry_plugin
-                    )
-                )
-                raise KeyError(
-                    "No geometry plugin named {} registered".format(
-                        geometry_plugin
-                    )
-                )
+        if geometry_plugin is None:
+            geometry_plugin = "SharelocGeometry"
 
-            logging.info(
-                "The AbstractGeometry {} plugin will be used".format(
-                    geometry_plugin
-                )
+        if geometry_plugin not in cls.available_plugins:
+            logging.error(
+                "No geometry plugin named {} registered".format(geometry_plugin)
+            )
+            raise KeyError(
+                "No geometry plugin named {} registered".format(geometry_plugin)
             )
 
-            return super(AbstractGeometry, cls).__new__(
-                cls.available_plugins[geometry_plugin]
+        logging.info(
+            "The AbstractGeometry {} plugin will be used".format(
+                geometry_plugin
             )
-        return super().__new__(cls)
+        )
+
+        return super(AbstractGeometry, cls).__new__(
+            cls.available_plugins[geometry_plugin]
+        )
 
     def __init__(
         self, geometry_plugin, dem=None, geoid=None, default_alt=None, **kwargs
