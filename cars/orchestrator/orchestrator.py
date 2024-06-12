@@ -106,7 +106,9 @@ class Orchestrator:
                     "parameters set by user are ignored"
                 )
             available_cpu = len(os.sched_getaffinity(0))
-            nb_workers = available_cpu - 1
+            if available_cpu == 1:
+                logging.warning("Only one CPU detected.")
+            nb_workers = max(1, available_cpu - 1)
             logging.info("Number of workers : {}".format(nb_workers))
             available_ram_per_worker = (
                 psutil.virtual_memory().available / nb_workers // 1e6
