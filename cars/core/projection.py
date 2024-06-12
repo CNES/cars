@@ -44,7 +44,7 @@ from cars.core import constants as cst
 from cars.core import inputs, outputs, utils
 
 
-def compute_dem_intersection_with_poly(
+def compute_dem_intersection_with_poly(  # noqa: C901
     srtm_dir: str, ref_poly: Polygon, ref_epsg: int
 ) -> Polygon:
     """
@@ -60,7 +60,15 @@ def compute_dem_intersection_with_poly(
         and the reference polygon in input
     """
     dem_poly = None
-    for _, _, srtm_files in os.walk(srtm_dir):
+
+    srtm_files_dir = []
+    if os.path.isfile(os.path.abspath(srtm_dir)):
+        srtm_files_dir.append([srtm_dir])
+    else:
+        for _, _, srtm_files in os.walk(srtm_dir):
+            srtm_files_dir.append(srtm_files)
+
+    for srtm_files in srtm_files_dir:
         logging.info(
             "Browsing all files of the srtm dir. "
             "Some files might be unreadable by rasterio (non blocking matter)."
@@ -443,7 +451,6 @@ def ground_polygon_from_envelopes(
 ) -> Tuple[Polygon, Tuple[int, int, int, int]]:
     """
     compute the ground polygon of the intersection of two envelopes
-    TODO: refacto with externals (OTB) and steps.
 
     :raise: Exception when the envelopes don't intersect one to each other
 

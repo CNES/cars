@@ -64,7 +64,13 @@ class SharelocGeometry(AbstractGeometry):
         default_alt=None,
         pairs_for_roi=None,
     ):
-        super().__init__(geometry_plugin)
+        super().__init__(
+            geometry_plugin,
+            dem=dem,
+            geoid=geoid,
+            default_alt=default_alt,
+            pairs_for_roi=pairs_for_roi,
+        )
 
         self.dem_roi = None
         self.roi_shareloc = None
@@ -485,7 +491,7 @@ class SharelocGeometry(AbstractGeometry):
             elevation=self.elevation,
             epsg=4326,
         )
-        # Rows and columns order is inversed compared with OTB
+        # Rows and columns order is inversed
         col, row, alti = loc.inverse(
             lon_coord.astype(np.float64),
             lat_coord.astype(np.float64),

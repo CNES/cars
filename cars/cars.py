@@ -30,49 +30,12 @@ import argparse
 import json
 import logging
 import os
-import re
 import sys
 
 # CARS imports
 from cars import __version__
 from cars.core import cars_logging
 from cars.orchestrator.cluster import log_wrapper
-
-
-class StreamCapture:
-    """Filter stream (for stdout) with a re pattern
-    From https://stackoverflow.com/a/63662744
-    """
-
-    def __init__(self, stream, re_pattern):
-        """StreamCapture constructor: add pattern, triggered parameters"""
-        self.stream = stream
-        self.pattern = (
-            re.compile(re_pattern)
-            if isinstance(re_pattern, str)
-            else re_pattern
-        )
-        self.triggered = False
-
-    def __getattr__(self, attr_name):
-        """Redefine assignment"""
-        return getattr(self.stream, attr_name)
-
-    def write(self, data):
-        """Change write function of stream and deals \n for loops"""
-        if data == "\n" and self.triggered:
-            self.triggered = False
-        else:
-            if self.pattern.search(data) is None:
-                # Pattern not found, write normally
-                self.stream.write(data)
-                self.stream.flush()
-            else:
-                # caught pattern to filter, no writing.
-                self.triggered = True
-
-    def flush(self):
-        self.stream.flush()
 
 
 def cars_parser() -> argparse.ArgumentParser:
@@ -118,10 +81,6 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
-
-    # Change stdout to clean (Os) OTB output from image_envelope app.
-    original_stdout = sys.stdout
-    sys.stdout = StreamCapture(sys.stdout, r"(0s)")
 
     # Force the use of CARS dask configuration
     dask_config_path = os.path.join(
@@ -170,9 +129,6 @@ def main_cli(args, dry_run=False):  # noqa: C901
         # Catch all exceptions, show debug traceback and exit
         logging.exception("CARS terminated with following error")
         sys.exit(1)
-    finally:
-        # Go back to original stdout
-        sys.stdout = original_stdout
 
 
 def main():

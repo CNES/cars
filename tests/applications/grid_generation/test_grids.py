@@ -183,7 +183,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
         sensor2,
         geomodel1,
         geomodel2,
-        get_geometry_plugin("SharelocGeometry", default_alt=default_alt),
+        get_geometry_plugin(default_alt=default_alt),
         epipolar_step=30,
     )
 
@@ -243,7 +243,7 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
         sensor2,
         geomodel1,
         geomodel2,
-        get_geometry_plugin("SharelocGeometry", dem=dem),
+        get_geometry_plugin(dem=dem),
         epipolar_step=30,
     )
 
