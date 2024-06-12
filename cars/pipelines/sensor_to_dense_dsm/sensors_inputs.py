@@ -23,7 +23,6 @@ CARS containing inputs checking for sensor input data
 Used for full_res and low_res pipelines
 """
 
-import importlib.util
 import logging
 import os
 
@@ -267,50 +266,6 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
-def get_usable_geometry_plugin(conf_geom_plugin=None):
-    """
-    Find a usable geometry plugin.
-    Default is OTB if installed
-
-    :return: plugin to use
-    :rtype: str
-    """
-
-    try:
-        from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
-            OTBGeometry,
-        )
-
-        otb_module_avail = True
-    except ModuleNotFoundError:
-        logging.info("OTBGeometry not available")
-        otb_module_avail = False
-
-    from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
-        SharelocGeometry,
-    )
-
-    if conf_geom_plugin is None:
-        # Make OTB the default geometry plugin if available
-        # 1/ Check otbApplication python module
-        otb_app = importlib.util.find_spec("otbApplication")
-        # 2/ Check remote modules
-        if otb_app is not None:
-            otb_geometry = (
-                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                    "OTBGeometry"
-                )
-            )
-            missing_remote = otb_geometry.check_otb_remote_modules()
-
-        if otb_app is None or len(missing_remote) > 0 or not otb_module_avail:
-            conf_geom_plugin = "SharelocGeometry"
-        else:
-            conf_geom_plugin = "OTBGeometry"
-
-    return conf_geom_plugin
-
-
 def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     """
     Check the geometry plugin with inputs
@@ -324,8 +279,6 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
              geometry plugin without dem
              geometry plugin with dem
     """
-
-    conf_geom_plugin = get_usable_geometry_plugin(conf_geom_plugin)
 
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (

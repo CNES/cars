@@ -24,4 +24,4 @@
 Init file of geometry module
 """
 
-from . import abstract_geometry
+from . import abstract_geometry, shareloc_geometry
