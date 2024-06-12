@@ -26,7 +26,6 @@ organized functionnally.
 TODO: add conftest.py general tests conf with tests refactor.
 """
 
-import importlib.util
 import json
 import logging
 
@@ -111,11 +110,14 @@ def generate_input_json(
     # Overload out_dir
     config["output"] = {"out_dir": os.path.join(out_dir, "output")}
 
-    # set installed (OTB or Shareloc) geometry plugin if not specified
+    # set installed (Shareloc) geometry plugin if not specified
     if geometry_plugin_name is None:
         geometry_plugin_name = get_geometry_plugin().plugin_name
 
     config["geometry_plugin"] = geometry_plugin_name
+
+    # Check inputs
+    config["inputs"]["check_inputs"] = True
 
     # overload pipeline
     config["pipeline"] = pipeline
@@ -157,58 +159,17 @@ def get_geoid_path():
     return os.path.join(cars_path(), "cars/conf/geoid/egm96.grd")
 
 
-def get_geometry_plugin(
-    geometry_plugin=None, dem=None, default_alt=None
-) -> AbstractGeometry:
+def get_geometry_plugin(dem=None, default_alt=None) -> AbstractGeometry:
     """
-    If no geometry_plugin is defined,
-    returns the default current possible geometry plugin for test,
-    OTB if available, otherwise shareloc
+    returns the default Shareloc geometry plugin for test
 
-    :param geometry_plugin: name of geometry plugin (optional)
     :param dem: if defined, dem to use in AbstractGeometry object returned
     :param default_alt: default alt optional used in Abstractgeometry returned
     :return: AbstractGeometry object to use in tests
     """
 
-    # Try to get OTBGeometry plugin
-    try:
-        from cars.core.geometry.otb_geometry import (  # noqa, pylint: disable-all
-            OTBGeometry,
-        )
-
-        otb_module_avail = True
-    except ModuleNotFoundError:
-        logging.info("OTBGeometry not available")
-        otb_module_avail = False
-
-    # Get SharelocGeometry plugin
-    from cars.core.geometry.shareloc_geometry import (  # noqa, pylint: disable-all
-        SharelocGeometry,
-    )
-
-    # Make OTB the default geometry plugin if available, otherwise Shareloc
-    if geometry_plugin is None:
-        # 1/ Check otbApplication python module
-        otb_app = importlib.util.find_spec("otbApplication")
-        # 2/ Check remote modules
-        if otb_app is not None:
-            otb_geometry = (
-                AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-                    "OTBGeometry"
-                )
-            )
-            missing_remote = otb_geometry.check_otb_remote_modules()
-
-        if otb_app is None or len(missing_remote) > 0 or not otb_module_avail:
-            # If not OTB and remote modules available -> Shareloc
-            geometry_plugin = "SharelocGeometry"
-        else:
-            # Otherwise OTB
-            geometry_plugin = "OTBGeometry"
-
     return AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-        geometry_plugin,
+        "SharelocGeometry",
         dem=dem,
         geoid=get_geoid_path(),
         default_alt=default_alt,
@@ -362,7 +323,7 @@ def assert_same_dataframes(actual, expected, rtol=0, atol=0):
     )
 
 
-def add_color(dataset, color_array, color_mask=None, margin=None):
+def add_color(dataset, color_array, margin=None):
     """ " Add color array to xarray dataset"""
 
     new_dataset = dataset.copy(deep=True)
@@ -399,7 +360,7 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
         # multiple bands
         if cst.BAND_IM not in new_dataset.dims:
             if cst.EPI_COLOR in new_dataset:
-                band_im = get_color_bands(new_dataset, cst.EPI_COLOR)
+                band_im = get_color_bands(new_dataset)
             else:
                 default_band = ["R", "G", "B", "N"]
                 band_im = default_band[:nb_band]
@@ -419,17 +380,6 @@ def add_color(dataset, color_array, color_mask=None, margin=None):
             ] = color_array
         new_dataset[cst.EPI_COLOR] = xr.DataArray(
             new_color_array,
-            dims=[cst.ROW, cst.COL],
-        )
-
-    if color_mask is not None:
-        new_color_mask = np.zeros([nb_row, nb_col])
-        new_color_mask[
-            margin[1] : nb_row - margin[3], margin[0] : nb_col - margin[2]
-        ] = color_mask
-
-        new_dataset[cst.EPI_COLOR_MSK] = xr.DataArray(
-            new_color_mask,
             dims=[cst.ROW, cst.COL],
         )
 

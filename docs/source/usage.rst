@@ -724,7 +724,7 @@ The structure follows this organisation:
     .. code-block:: json
 
         {
-            "geometry_plugin": "OTBGeometry"
+            "geometry_plugin": "SharelocGeometry"
         },
 
    .. tab:: Applications

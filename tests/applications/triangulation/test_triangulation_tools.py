@@ -72,7 +72,7 @@ def test_triangulation_ventoux_shareloc(
     ]
 
     point_cloud_dict = triangulation_tools.triangulate(
-        get_geometry_plugin("SharelocGeometry"),
+        get_geometry_plugin(),
         sensor1,
         sensor2,
         geomodel1,
@@ -121,7 +121,7 @@ def test_triangulate_matches_shareloc(
     ]
 
     llh = triangulation_tools.triangulate_matches(
-        get_geometry_plugin("SharelocGeometry"),
+        get_geometry_plugin(),
         sensor1,
         sensor2,
         geomodel1,
@@ -231,7 +231,7 @@ def test_triangulation_intervals_shareloc(
     ]
 
     point_cloud_dict = triangulation_tools.triangulate(
-        get_geometry_plugin("SharelocGeometry"),
+        get_geometry_plugin(),
         sensor1,
         sensor2,
         geomodel1,
@@ -242,7 +242,7 @@ def test_triangulation_intervals_shareloc(
     )
 
     point_cloud_dict_inf = triangulation_tools.triangulate(
-        get_geometry_plugin("SharelocGeometry"),
+        get_geometry_plugin(),
         sensor1,
         sensor2,
         geomodel1,
@@ -254,7 +254,7 @@ def test_triangulation_intervals_shareloc(
     )
 
     point_cloud_dict_sup = triangulation_tools.triangulate(
-        get_geometry_plugin("SharelocGeometry"),
+        get_geometry_plugin(),
         sensor1,
         sensor2,
         geomodel1,

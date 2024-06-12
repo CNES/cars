@@ -107,7 +107,7 @@ install-dev: install-deps ## install cars in dev editable mode (pip install -e .
 
 .PHONY: test
 test: ## run unit tests without SLURM cluster + coverage html
-	@${CARS_VENV}/bin/pytest -m "unit_tests and not pbs_cluster_tests" -k "not otb" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
+	@${CARS_VENV}/bin/pytest -m "unit_tests and not pbs_cluster_tests" -o log_cli=true -o log_cli_level=${LOGLEVEL} --cov-config=.coveragerc --cov-report html --cov
 
 .PHONY: test-ci
 test-ci: ## run unit and pbs tests + coverage for cars-ci

@@ -336,7 +336,7 @@ def geoid_offset(points, geoid):
     # deep copy the given point cloud that will be used as output
     out_pc = points.copy(deep=True)
 
-    # currently assumes that the OTB EGM96 geoid will be used with longitude
+    # currently assumes that the EGM96 geoid will be used with longitude
     # ranging from 0 to 360, so we must unwrap longitudes to this range.
     longitudes = np.copy(out_pc[cst.X].values)
     longitudes[longitudes < 0] += 360
