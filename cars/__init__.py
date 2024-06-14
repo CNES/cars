@@ -45,6 +45,9 @@ os.environ["NUMBA_NUM_THREADS"] = "1"
 os.environ["GDAL_NUM_THREADS"] = "1"
 os.environ["ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS"] = "1"
 
+# Limit GDAL cache per worker to 500MB
+os.environ["GDAL_CACHEMAX"] = "500"
+
 
 def import_plugins() -> None:
     """
