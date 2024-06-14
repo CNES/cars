@@ -179,6 +179,30 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
         return (descriptor.width, descriptor.height)
 
 
+def rasterio_get_pixel_points(raster_file: str, terrain_points) -> list:
+    """
+    Get pixel point coordinates of terrain points
+
+    :param raster_file: Image file
+    :param terrain_points: points in terrain
+    :return: pixel points
+    """
+
+    pixel_points = []
+
+    with rio.open(raster_file, "r") as descriptor:
+        for row in range(terrain_points.shape[0]):
+            pixel_points.append(
+                rio.transform.rowcol(
+                    descriptor.transform,
+                    terrain_points[row, 0],
+                    terrain_points[row, 1],
+                )
+            )
+
+    return np.array(pixel_points)
+
+
 def rasterio_get_bounds(
     raster_file: str, apply_resolution_sign=False
 ) -> Tuple[int, int]:
