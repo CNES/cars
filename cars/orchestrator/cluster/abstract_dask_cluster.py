@@ -41,6 +41,7 @@ from dask.delayed import Delayed
 from dask.distributed import as_completed
 from dask.sizeof import sizeof as dask_sizeof
 from distributed.diagnostics.plugin import WorkerPlugin
+from distributed.utils import CancelledError
 
 from cars.core import cars_logging
 
@@ -188,6 +189,9 @@ class DaskFutureIterator:
             self.prev.cancel()
             # store current future
             self.prev = fut
+
+        if isinstance(res, CancelledError):
+            raise RuntimeError("CancelError from worker {}".format(res))
         return res
 
 

@@ -51,6 +51,7 @@ from cars.applications.dense_matches_filling import fill_disp_tools
 from cars.applications.dense_matching import (
     dense_matching_constants as dense_match_cst,
 )
+from cars.conf import mask_cst as msk_cst
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 
@@ -232,6 +233,15 @@ def create_disp_dataset(  # noqa: C901
 
     :return: disparity dataset as used in cars
     """
+
+    # Crop disparity to ROI
+    ref_roi = [
+        int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
+        int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
+        int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
+        int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
+    ]
+
     # Retrieve disparity values
     disp_map = disp.disparity_map.values
 
@@ -242,6 +252,10 @@ def create_disp_dataset(  # noqa: C901
     epi_msk = None
     if cst.EPI_MSK in ref_dataset:
         epi_msk = ref_dataset[cst.EPI_MSK].values
+
+    epi_msk_right = None
+    if cst.EPI_MSK in secondary_dataset:
+        epi_msk_right = secondary_dataset[cst.EPI_MSK].values
 
     # Retrieve masks from pandora
     pandora_masks = get_masks_from_pandora(disp, compute_disparity_masks)
@@ -265,6 +279,15 @@ def create_disp_dataset(  # noqa: C901
         left_classif = ref_dataset[cst.EPI_CLASSIFICATION].values
         left_band_classif = ref_dataset.coords[cst.BAND_CLASSIF].values
 
+        # mask left classif outside right sensor
+        if epi_msk_right is not None:
+            left_classif = mask_left_classif_from_right_mask(
+                left_classif,
+                epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+                np.floor(disp_min_grid).astype(np.int16),
+                np.ceil(disp_max_grid).astype(np.int16),
+            )
+
     left_from_right_classif = None
     right_band_classif = None
     if cst.EPI_CLASSIFICATION in secondary_dataset:
@@ -278,6 +301,17 @@ def create_disp_dataset(  # noqa: C901
             int(np.floor(np.min(disp_min_grid))),
             int(np.ceil(np.max(disp_max_grid))),
         )
+        # mask outside left sensor
+        left_mask = (
+            ref_dataset[cst.EPI_MSK].values
+            == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION
+        )
+        left_mask_stacked = np.repeat(
+            np.expand_dims(left_mask, axis=0),
+            left_from_right_classif.shape[0],
+            axis=0,
+        )
+        left_from_right_classif[left_mask_stacked] = 0
 
     # Merge right classif
     classif, band_classif = merge_classif_left_right(
@@ -286,14 +320,6 @@ def create_disp_dataset(  # noqa: C901
         left_from_right_classif,
         right_band_classif,
     )
-
-    # Crop disparity to ROI
-    ref_roi = [
-        int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
-        int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
-        int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
-        int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
-    ]
 
     # Crop disparity map
     disp_map = disp_map[ref_roi[1] : ref_roi[3], ref_roi[0] : ref_roi[2]]
@@ -478,6 +504,45 @@ def estimate_right_classif_on_left(
                 left_from_right_classif[:, row, col] = classif_in_range
 
     return left_from_right_classif
+
+
+@njit
+def mask_left_classif_from_right_mask(
+    left_classif, right_mask, disp_min, disp_max
+):
+    """
+    Mask left classif with right mask.
+
+    :param left_classif: right classification
+    :type right_left_classifclassif: np ndarray
+    :param right_mask: right mask
+    :type right_mask: np ndarray
+    :param disp_min: disparity min
+    :type disp_min: np.array type int
+    :param disp_max: disparity max
+    :type disp_max: np.array type int
+
+    :return: masked left classif
+    :rtype: np nadarray
+    """
+
+    data_shape = left_classif.shape
+    for row in prange(data_shape[1]):  # pylint: disable=E1133
+        for col in prange(data_shape[2]):  # pylint: disable=E1133
+            # estimate with global range
+            all_masked = True
+            for col_classif in prange(  # pylint: disable=E1133
+                max(0, col + disp_min[row, col]),
+                min(data_shape[1], col + disp_max[row, col]),
+            ):
+                if not right_mask[row, col_classif]:
+                    all_masked = False
+
+            if all_masked:
+                # Remove classif
+                left_classif[:, row, col] = False
+
+    return left_classif
 
 
 def merge_classif_left_right(
