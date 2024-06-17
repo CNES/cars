@@ -95,10 +95,10 @@ html_title = "CARS Documentation"
 html_short_title = "CARS Documentation"
 
 # Logo
-html_logo = "images/picto_transparent_mini.png"
+html_logo = "images/picto_dark.png"
 
 # Favicon
-html_favicon = "images/favicon_noname.ico"
+html_favicon = "images/favicon.ico"
 
 # Theme options
 html_theme_options = {
