@@ -1,5 +1,17 @@
 <div align="center">
-  <a href="https://github.com/CNES/cars"><img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_transparent.png" alt="CARS" title="CARS"  width="20%"></a>
+<a target="_blank" href="https://github.com/CNES/cars">
+<picture>
+  <source
+    srcset="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_dark.png"
+    media="(prefers-color-scheme: dark)"
+  />
+  <img
+    src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/picto_light.png"
+    alt="CARS"
+    width="40%"
+  />
+</picture>
+</a>
 
 <h4>CARS, a satellite multi view stereo framework </h4>
 
@@ -21,7 +33,7 @@
 
 From stereo images  |  CARS produces a Digital Surface Model (DSM)
 :-------------------------:|:-------------------------:
-<img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/animation_sat.gif" alt="drawing" width="400"/> |  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/overview_dsm_3d.gif" alt="drawing" width="400"/>
+<img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/animation_sat.gif" alt="drawing" width="100%"/> |  <img src="https://raw.githubusercontent.com/CNES/cars/master/docs/source/images/overview_dsm_3d.gif" alt="drawing" width="100%"/>
 
 
 **CARS** is an open source 3D tool dedicated to produce **Digital Surface Models** from satellite imaging by photogrammetry.
