@@ -1450,10 +1450,10 @@ def test_end2end_ventoux_unique_split():
                                 epi_pc_path, "epi_pc_color.tif"
                             ),
                             "classification": os.path.join(
-                                epi_pc_path, "epi_classification.tif"
+                                epi_pc_path, "epi_pc_classification.tif"
                             ),
                             "filling": os.path.join(
-                                epi_pc_path, "epi_filling.tif"
+                                epi_pc_path, "epi_pc_filling.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
