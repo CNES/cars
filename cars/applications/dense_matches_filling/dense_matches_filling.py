@@ -238,12 +238,12 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder,
-                    "epi_filling_" + app_name + ".tif",
+                    "epi_disp_filling_" + app_name + ".tif",
                 ),
                 cst_disp.FILLING,
                 new_epipolar_disparity_map,
                 dtype=np.uint8,
-                cars_ds_name="epi_filling_" + app_name,
+                cars_ds_name="epi_disp_filling_" + app_name,
             )
 
         return new_epipolar_disparity_map

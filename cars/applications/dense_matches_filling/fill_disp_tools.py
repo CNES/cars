@@ -52,6 +52,7 @@ from skimage.segmentation import find_boundaries
 
 # Cars import
 from cars.applications.holes_detection import holes_detection_tools
+from cars.conf import mask_cst
 from cars.core import constants as cst
 
 
@@ -244,6 +245,13 @@ def fill_central_area_using_plane(  # noqa: C901
                     roi_msk, structure=struct, iterations=erosion_value
                 )
 
+                # Exclude pixels outside of epipolar footprint
+                central_area = np.logical_and(
+                    central_area,
+                    disp_map[cst.EPI_MSK].values
+                    != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+                )
+
                 variable_disp = calculate_disp_plane(
                     band_disp_values,
                     roi_msk_tmp,
@@ -252,6 +260,7 @@ def fill_central_area_using_plane(  # noqa: C901
 
                 disp_map["disp"].values[central_area] = variable_disp
                 disp_map["disp_msk"].values[central_area] = 255
+                disp_map[cst.EPI_MSK].values[central_area] = 0
                 update_filling(disp_map, central_area, "plane.hole_center")
 
                 # Retrieve borders that weren't filled yet
@@ -420,12 +429,20 @@ def fill_area_borders_using_interpolation(disp_map, masks_to_fill, options):
 
     # Interpolation step
     for mask_to_fill in masks_to_fill:
+        # Exclude pixels outside of epipolar footprint
+        mask_to_fill = np.logical_and(
+            mask_to_fill,
+            disp_map[cst.EPI_MSK].values
+            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+        )
+
         interpol_raster = make_raster_interpolation(
             raster, mask_to_fill, options
         )
         # Insertion of interpolated data into disparity map
         disp_map["disp"].values[mask_to_fill] = interpol_raster[mask_to_fill]
         disp_map["disp_msk"].values[mask_to_fill] = 255
+        disp_map[cst.EPI_MSK].values[mask_to_fill] = 0
         update_filling(disp_map, mask_to_fill, "plane.hole_border")
 
 
@@ -838,10 +855,17 @@ def fill_disp_using_zero_padding(
         stack_index = holes_detection_tools.classif_to_stacked_array(
             disp_map, class_index
         )
+        # Exclude pixels outside of epipolar footprint
+        stack_index = np.logical_and(
+            stack_index,
+            disp_map[cst.EPI_MSK].values
+            != mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+        )
         # set disparity value to zero where the class is
         # non zero value and masked region
         disp_map["disp"].values[stack_index] = 0
         disp_map["disp_msk"].values[stack_index] = 255
+        disp_map[cst.EPI_MSK].values[stack_index] = 0
         # Add a band to disparity dataset to memorize which pixels are filled
         update_filling(disp_map, stack_index, "zeros_padding")
 
