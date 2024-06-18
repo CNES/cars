@@ -240,7 +240,7 @@ def compute_vector_raster_and_stats(
     np.ndarray,
     np.ndarray,
     List[str],
-    Union[None, np.ndarray],
+    Union[None, np.ndarray, list, dict],
 ]:
     """
     Compute vectorized raster and its statistics.
@@ -367,8 +367,12 @@ def compute_vector_raster_and_stats(
             confidences_out[key] = confidences[..., k]
 
     interval_out = None
+    interval_stat_index = None
     if len(interval_indexes) > 0:
         interval_out = interval
+        interval_stat_index = [
+            values_bands.index(int_ind) for int_ind in interval_indexes
+        ]
 
     msk_out = None
     if len(msk_indexes) > 0:
@@ -399,6 +403,7 @@ def compute_vector_raster_and_stats(
         classif_indexes,
         confidences_out,
         interval_out,
+        interval_stat_index,
         source_pc_out,
         filling_out,
         filling_indexes,
@@ -427,6 +432,7 @@ def create_raster_dataset(
     band_classif: List[str] = None,
     confidences: np.ndarray = None,
     interval: np.ndarray = None,
+    interval_stat_index: List[int] = None,
     source_pc: np.ndarray = None,
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
@@ -452,7 +458,10 @@ def create_raster_dataset(
     :param n_in_cell: number of points which contribute to a cell
     :param msk: raster msk
     :param classif: raster classif
-    :param confidence_from_ambiguity: raster msk
+    :param confidences: raster containing the confidences
+    :param interval: raster containing intervals inf and sup
+    :param interval_stat_index: list containing index of
+        intervals in mean and stdev rasters
     :param source_pc: binary raster with source point cloud information
     :param source_pc_names: list of names of points cloud before merging :
         name of sensors pair or name of point cloud file
@@ -557,6 +566,30 @@ def create_raster_dataset(
         raster_out[cst.RASTER_HGT_SUP] = xr.DataArray(
             hgt_sup, coords=raster_coords, dims=raster_dims
         )
+        hgt_inf_mean = np.nan_to_num(
+            mean[..., interval_stat_index[0]], nan=hgt_no_data
+        )
+        raster_out[cst.RASTER_HGT_INF_MEAN] = xr.DataArray(
+            hgt_inf_mean, coords=raster_coords, dims=raster_dims
+        )
+        hgt_sup_mean = np.nan_to_num(
+            mean[..., interval_stat_index[1]], nan=hgt_no_data
+        )
+        raster_out[cst.RASTER_HGT_SUP_MEAN] = xr.DataArray(
+            hgt_sup_mean, coords=raster_coords, dims=raster_dims
+        )
+        hgt_inf_stdev = np.nan_to_num(
+            stdev[..., interval_stat_index[0]], nan=hgt_no_data
+        )
+        raster_out[cst.RASTER_HGT_INF_STD_DEV] = xr.DataArray(
+            hgt_inf_stdev, coords=raster_coords, dims=raster_dims
+        )
+        hgt_sup_stdev = np.nan_to_num(
+            stdev[..., interval_stat_index[1]], nan=hgt_no_data
+        )
+        raster_out[cst.RASTER_HGT_SUP_STD_DEV] = xr.DataArray(
+            hgt_sup_stdev, coords=raster_coords, dims=raster_dims
+        )
 
     if source_pc is not None and source_pc_names is not None:
         source_pc = np.nan_to_num(source_pc, nan=msk_no_data)
@@ -658,6 +691,7 @@ def rasterize(
         classif_indexes,
         confidences,
         interval,
+        interval_stat_index,
         source_pc,
         filling,
         filling_indexes,
@@ -734,6 +768,7 @@ def rasterize(
         classif_indexes,
         confidences,
         interval,
+        interval_stat_index,
         source_pc,
         source_pc_names,
         filling,

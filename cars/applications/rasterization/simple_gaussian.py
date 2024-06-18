@@ -523,12 +523,6 @@ class SimpleGaussian(
                 out_dsm_inf_std_file_name = os.path.join(
                     self.orchestrator.out_dir, "dsm_inf_std.tif"
                 )
-                out_dsm_inf_n_pts_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_n_pts.tif"
-                )
-                out_dsm_inf_points_in_cell_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_pts_in_cell.tif"
-                )
                 self.orchestrator.add_to_save_lists(
                     out_dsm_inf_mean_file_name,
                     cst.RASTER_HGT_INF_MEAN,
@@ -545,33 +539,11 @@ class SimpleGaussian(
                     nodata=self.dsm_no_data,
                     cars_ds_name="dsm_inf_std",
                 )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_inf_n_pts_file_name,
-                    cst.RASTER_NB_PTS,
-                    terrain_raster,
-                    dtype=np.uint16,
-                    nodata=0,
-                    cars_ds_name="dsm_inf_n_pts",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_inf_points_in_cell_file_name,
-                    cst.RASTER_NB_PTS_IN_CELL,
-                    terrain_raster,
-                    dtype=np.uint16,
-                    nodata=0,
-                    cars_ds_name="dsm_inf_pts_in_cells",
-                )
                 out_dsm_sup_mean_file_name = os.path.join(
                     self.orchestrator.out_dir, "dsm_sup_mean.tif"
                 )
                 out_dsm_sup_std_file_name = os.path.join(
                     self.orchestrator.out_dir, "dsm_sup_std.tif"
-                )
-                out_dsm_sup_n_pts_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_n_pts.tif"
-                )
-                out_dsm_sup_points_in_cell_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_pts_in_cell.tif"
                 )
                 self.orchestrator.add_to_save_lists(
                     out_dsm_sup_mean_file_name,
@@ -588,22 +560,6 @@ class SimpleGaussian(
                     dtype=np.float32,
                     nodata=self.dsm_no_data,
                     cars_ds_name="dsm_sup_std",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_sup_n_pts_file_name,
-                    cst.RASTER_NB_PTS,
-                    terrain_raster,
-                    dtype=np.uint16,
-                    nodata=0,
-                    cars_ds_name="dsm_sup_n_pts",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_sup_points_in_cell_file_name,
-                    cst.RASTER_NB_PTS_IN_CELL,
-                    terrain_raster,
-                    dtype=np.uint16,
-                    nodata=0,
-                    cars_ds_name="dsm_sup_pts_in_cells",
                 )
         if self.save_classif:
             out_classif_file_name = os.path.join(

@@ -670,11 +670,10 @@ class Sift(SparseMatching, short_name="sift"):
             <= epipolar_error_upper_bound
         ]
 
-        matches_discarded_message = "{} matches discarded \
-            because their epipolar error is greater \
-            than --epipolar_error_upper_bound = {} pix".format(
-            raw_nb_matches - matches.shape[0], epipolar_error_upper_bound
-        )
+        matches_discarded_message = (
+            "{} matches discarded because their epipolar error "
+            "is greater than --epipolar_error_upper_bound = {} pix"
+        ).format(raw_nb_matches - matches.shape[0], epipolar_error_upper_bound)
 
         if epipolar_error_maximum_bias != 0:
             matches_discarded_message += (
