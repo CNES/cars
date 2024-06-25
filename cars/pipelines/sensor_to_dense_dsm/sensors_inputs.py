@@ -279,6 +279,8 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
              geometry plugin without dem
              geometry plugin with dem
     """
+    if conf_geom_plugin is None:
+        conf_geom_plugin = "SharelocGeometry"
 
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
