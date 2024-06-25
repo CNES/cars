@@ -109,7 +109,7 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
         # get z list
         z_list = list(
             descriptor.sample(
-                [(new_y[row], new_x[row]) for row in range(new_x.shape[0])]
+                [(new_x[row], new_y[row]) for row in range(new_x.shape[0])]
             )
         )
         z_list = np.array(z_list)

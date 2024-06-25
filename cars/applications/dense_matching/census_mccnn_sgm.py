@@ -33,6 +33,7 @@ from typing import Dict, Tuple
 # Third party imports
 import affine
 import numpy as np
+import rasterio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
@@ -616,6 +617,7 @@ class CensusMccnnSgm(
 
             # Get associated alti mean / min / max values
             dem_median_shape = inputs.rasterio_get_size(dem_median)
+            dem_median_width, dem_median_height = dem_median_shape
 
             # get epsg
             terrain_epsg = inputs.rasterio_get_epsg(dem_median)
@@ -637,7 +639,7 @@ class CensusMccnnSgm(
             )
 
             # Transform points to terrain_epsg (dem min is in 4326)
-            roi_points_terrain = projection.points_cloud_conversion(
+            roi_points_terrain = points_cloud_conversion(
                 roi_points,
                 4326,
                 terrain_epsg,
@@ -647,34 +649,36 @@ class CensusMccnnSgm(
             pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
                 dem_median, roi_points_terrain
             )
+            roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
+            roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
+            roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
+            roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
 
-            min_row = int(max(0, np.floor(np.min(pixel_roi_dem_mean[:, 0]))))
+            min_row = int(max(0, roi_lower_row))
             max_row = int(
                 min(
-                    dem_median_shape[0],
-                    np.ceil(np.max(pixel_roi_dem_mean[:, 0])),
+                    dem_median_height,  # number of rows
+                    roi_upper_row,
                 )
             )
-            min_col = int(max(0, np.floor(np.min(pixel_roi_dem_mean[:, 1]))))
+            min_col = int(max(0, roi_lower_col))
             max_col = int(
                 min(
-                    dem_median_shape[1],
-                    np.ceil(np.max(pixel_roi_dem_mean[:, 1])),
+                    dem_median_width,  # number of columns
+                    roi_upper_col,
                 )
             )
 
             # compute terrain positions to use (all dem min and max)
             row_indexes = range(min_row, max_row)
             col_indexes = range(min_col, max_col)
+            transformer = rasterio.transform.AffineTransformer(transform)
 
             terrain_positions = []
             for row in row_indexes:
                 for col in col_indexes:
-
-                    col_geo, row_geo = transform * (row + 0.5, col + 0.5)
-
-                    terrain_positions.append((row_geo, col_geo))
-
+                    x_geo, y_geo = transformer.xy(row, col)
+                    terrain_positions.append((x_geo, y_geo))
             terrain_positions = np.array(terrain_positions)
 
             # dem mean in terrain_epsg
@@ -689,15 +693,15 @@ class CensusMccnnSgm(
             terrain_position_lon_lat = projection.points_cloud_conversion(
                 terrain_positions, terrain_epsg, 4326
             )
-            new_x = terrain_position_lon_lat[:, 0]
-            new_y = terrain_position_lon_lat[:, 1]
+            lon_mean = terrain_position_lon_lat[:, 0]
+            lat_mean = terrain_position_lon_lat[:, 1]
 
             # dem min and max are in 4326
             dem_min_list = inputs.rasterio_get_values(
-                dem_min, new_x, new_y, points_cloud_conversion
+                dem_min, lon_mean, lat_mean, points_cloud_conversion
             )
             dem_max_list = inputs.rasterio_get_values(
-                dem_max, new_x, new_y, points_cloud_conversion
+                dem_max, lon_mean, lat_mean, points_cloud_conversion
             )
 
             # sensors positions as index
@@ -708,8 +712,8 @@ class CensusMccnnSgm(
             ) = geom_plugin_with_dem_and_geoid.inverse_loc(
                 sensor_image_right["image"],
                 sensor_image_right["geomodel"],
-                new_x,
-                new_y,
+                lat_mean,
+                lon_mean,
                 z_coord=dem_median_list,
             )
 
