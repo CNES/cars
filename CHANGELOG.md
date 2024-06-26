@@ -1,6 +1,26 @@
 # Changelog
 
+## 0.8.0  Orfeo Toolbox dependency removal (June 2024)
 
+### Added
+
+ - Auto mode for orchestrator adapts to machine resources [#798]
+
+### Changed
+
+ - Orfeo Toolbox geometry plugin is no longer available [#805]
+ - Exogenous DEM is cropped before disparity grid generation to reduce time and memory consumption [#827]
+
+### Fixed
+
+ - Subpixellic shift during resampling is fixed [#799]
+ - Input mask can be saved as output of dense_point_clouds_to_dense_dsm pipeline [#816]
+ - Ambiguity is normalized globally and no longer by tiles [#810]
+ - Classified pixels outside of epipolar footprint are no longer filled [#814]
+ - Statistics on confidence intervals are added and warnings are removed [#817]
+ - Parameter check_inputs can be used with Shareloc geometry plugin [#820]
+ - Masked and filled pixels are no longer masked in final DSM [#836]
+ - Cache of GDAL is limited to 500Mb to avoid memory overload during resampling [#823]
 
 ## 0.7.6  Confidence intervals (April 2024)
 
