@@ -117,6 +117,19 @@ def test_simple_rasterization_synthetic_case():
         raster[cst.RASTER_NB_PTS].values, [[4, 6, 4], [4, 6, 4]]
     )
 
+    # Test with float radius = 1.6 and sigma = inf
+    raster = rasterization_tools.rasterize(
+        pd_cloud, 1, None, 0, 12, 3, 2, np.inf, 1.6
+    )
+    # radius 1.6 add to equation the 1.6 + 0.5 = 2.1 distance points, so
+    # all the points for current column
+    np.testing.assert_allclose(
+        raster[cst.RASTER_HGT].values[..., None],
+        [[[2.6], [2.5], [3]], [[2], [2.5], [2.4]]],
+        rtol=0.0000001,
+        atol=0.0000001,  # 10e-8 errors due to convertion
+    )
+
 
 @pytest.mark.unit_tests
 def test_simple_rasterization_single():

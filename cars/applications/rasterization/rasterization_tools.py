@@ -350,7 +350,7 @@ def compute_vector_raster_and_stats(
             x_size,
             y_size,
             resolution,
-            radius,
+            float(radius),
             sigma,
         )
     )
