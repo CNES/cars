@@ -33,7 +33,6 @@ from cars.applications.triangulation import triangulation_tools
 
 # CARS imports
 from cars.core import constants as cst
-from cars.core.geometry.abstract_geometry import read_geoid_file
 
 # CARS Tests imports
 from tests.helpers import (
@@ -163,11 +162,7 @@ def test_geoid_offset_from_xarray():
             cst.Z: ((cst.ROW, cst.COL), np.zeros_like(geoid_ref.z)),
         }
     )
-
-    # Set the geoid file from code source
-    geoid = read_geoid_file(get_geoid_path())
-
-    computed_geoid = triangulation_tools.geoid_offset(points, geoid)
+    computed_geoid = triangulation_tools.geoid_offset(points, get_geoid_path())
 
     assert np.allclose(
         geoid_ref.z.values, computed_geoid.z.values, atol=1e-3, rtol=1e-12
@@ -192,10 +187,7 @@ def test_geoid_offset_from_pandas():
     }
     points = pandas.DataFrame(data=data)
 
-    # Set the geoid file from code source
-    geoid = read_geoid_file(get_geoid_path())
-
-    computed_geoid = triangulation_tools.geoid_offset(points, geoid)
+    computed_geoid = triangulation_tools.geoid_offset(points, get_geoid_path())
 
     # Test outside border where it is nan
     assert np.allclose(

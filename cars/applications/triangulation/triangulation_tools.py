@@ -32,7 +32,9 @@ from typing import Dict
 import numpy as np
 import pandas
 import xarray as xr
-from scipy.interpolate import LinearNDInterpolator
+from scipy import interpolate
+from shareloc.image import Image
+from shareloc.proj_utils import transform_physical_point_to_index
 
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
@@ -320,80 +322,102 @@ def add_layer(dataset, layer_name, layer_coords, point_cloud):
     )
 
 
-def geoid_offset(points, geoid):
+def interpolate_geoid_height(
+    geoid_filename, positions, interpolation_method="linear"
+):
+    """
+    terrain to index conversion
+    retrieve geoid height above ellispoid
+    This is a modified version of the Shareloc interpolate_geoid_height
+    function that supports Nan positions (return Nan)
+
+    :param geoid_filename: geoid_filename
+    :type geoid_filename: str
+    :param positions: geodetic coordinates
+    :type positions: 2D numpy array: (number of points,[long coord, lat coord])
+    :param interpolation_method: default is 'linear' (interpn parameter)
+    :type interpolation_method: str
+    :return: geoid height
+    :rtype: 1 numpy array (number of points)
+    """
+
+    geoid_image = Image(geoid_filename, read_data=True)
+
+    # Check longitude overlap is not present, rounding to handle egm2008 with
+    # rounded pixel size
+    if geoid_image.nb_columns * geoid_image.pixel_size_col - 360 < 10**-8:
+        logging.debug("add one pixel overlap on longitudes")
+        geoid_image.nb_columns += 1
+        # Check if we can add a column
+        geoid_image.data = np.column_stack(
+            (geoid_image.data[:, :], geoid_image.data[:, 0])
+        )
+
+    # Prepare grid for interpolation
+    row_indexes = np.arange(0, geoid_image.nb_rows, 1)
+    col_indexes = np.arange(0, geoid_image.nb_columns, 1)
+    points = (row_indexes, col_indexes)
+
+    # add modulo lon/lat
+    min_lon = geoid_image.origin_col + geoid_image.pixel_size_col / 2
+    max_lon = (
+        geoid_image.origin_col
+        + geoid_image.nb_columns * geoid_image.pixel_size_col
+        - geoid_image.pixel_size_col / 2
+    )
+    positions[:, 0] += ((positions[:, 0] + min_lon) < 0) * 360.0
+    positions[:, 0] -= ((positions[:, 0] - max_lon) > 0) * 360.0
+    if np.any(np.abs(positions[:, 1]) > 90.0):
+        raise RuntimeError("Geoid cannot handle latitudes greater than 90 deg.")
+    indexes_geoid = transform_physical_point_to_index(
+        geoid_image.trans_inv, positions[:, 1], positions[:, 0]
+    )
+    return interpolate.interpn(
+        points,
+        geoid_image.data[:, :],
+        indexes_geoid,
+        bounds_error=False,
+        method=interpolation_method,
+    )
+
+
+def geoid_offset(points, geoid_path):
     """
     Compute the point cloud height offset from geoid.
 
     :param points: point cloud data in lat/lon/alt WGS84 (EPSG 4326)
         coordinates.
-    :type points: xarray.Dataset
-    :param geoid: geoid elevation data.
-    :type geoid: xarray.Dataset
+    :type points: xarray.Dataset or pandas.DataFrame
+    :param geoid_path: path to input geoid file on disk
+    :type geoid_path: string
     :return: the same point cloud but using geoid as altimetric reference.
-    :rtype: xarray.Dataset
+    :rtype: xarray.Dataset or pandas.DataFrame
     """
 
     # deep copy the given point cloud that will be used as output
     out_pc = points.copy(deep=True)
 
-    # currently assumes that the EGM96 geoid will be used with longitude
-    # ranging from 0 to 360, so we must unwrap longitudes to this range.
-    longitudes = np.copy(out_pc[cst.X].values)
-    longitudes[longitudes < 0] += 360
+    # interpolate data
+    if isinstance(out_pc, xr.Dataset):
+        # Convert the dataset to a np array as expected by Shareloc
+        pc_array = (
+            out_pc[[cst.X, cst.Y]]
+            .to_array()
+            .to_numpy()
+            .transpose((1, 2, 0))
+            .reshape((out_pc.sizes["row"] * out_pc.sizes["col"], 2))
+        )
+        geoid_height_array = interpolate_geoid_height(
+            geoid_path, pc_array
+        ).reshape((out_pc.sizes["row"], out_pc.sizes["col"]))
+    elif isinstance(out_pc, pandas.DataFrame):
+        geoid_height_array = interpolate_geoid_height(
+            geoid_path, out_pc[[cst.X, cst.Y]].to_numpy()
+        )
+    else:
+        raise RuntimeError("Invalid point cloud type")
 
-    # perform interpolation using point cloud coordinates.
-    if sum(longitudes.shape) != 0:
-        if (
-            not geoid.lat_min
-            <= out_pc[cst.Y].min()
-            <= out_pc[cst.Y].max()
-            <= geoid.lat_max
-            and geoid.lon_min
-            <= np.min(longitudes)
-            <= np.max(longitudes)
-            <= geoid.lat_max
-        ):
-            raise RuntimeError(
-                "Geoid does not fully cover the area spanned by"
-                " the point cloud."
-            )
-
-        out_pc[cst.Z] = points[cst.Z]
-
-        # interpolate data
-        if isinstance(out_pc, xr.Dataset):
-            ref_interp = geoid.interp(
-                {
-                    "lat": out_pc[cst.Y],
-                    "lon": xr.DataArray(longitudes, dims=(cst.ROW, cst.COL)),
-                }
-            )
-
-            ref_interp_hgt = ref_interp.hgt.values
-
-        else:
-            # one dimension is equal to 1, happens with matches tiangulation
-            lon_grid, lat_grid = np.meshgrid(
-                geoid.coords["lon"],
-                geoid.coords["lat"],
-            )
-            geoid_height_grid = geoid["hgt"].values
-
-            interp = LinearNDInterpolator(
-                (lon_grid.flatten(), lat_grid.flatten()),
-                geoid_height_grid.flatten(),
-            )
-
-            # interpolate
-            points = np.swapaxes(
-                np.array([out_pc[cst.X].values, out_pc[cst.Y].values]), 0, 1
-            )
-            # Nan if on the border of geoid
-            ref_interp_hgt = interp(points)
-            if np.any(np.isnan(ref_interp_hgt)):
-                logging.error("Geoid interpolation: nan on border")
-
-        # offset using geoid height
-        out_pc[cst.Z] -= ref_interp_hgt
+    # offset using geoid height
+    out_pc[cst.Z] -= geoid_height_array
 
     return out_pc
