@@ -36,6 +36,14 @@ except Exception:  # pylint: disable=broad-except
 __author__ = "CNES"
 __email__ = "cars@cnes.fr"
 
+# Force the use of CARS dask configuration
+dask_config_path = os.path.join(
+    os.path.dirname(__file__), "orchestrator", "cluster", "dask_config"
+)
+if not os.path.isdir(dask_config_path):
+    raise NotADirectoryError("Wrong dask config path")
+os.environ["DASK_CONFIG"] = str(dask_config_path)
+
 # Force monothread for child workers
 os.environ["PANDORA_NUMBA_PARALLEL"] = str(False)
 os.environ["SHARELOC_NUMBA_PARALLEL"] = str(False)

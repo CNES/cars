@@ -82,14 +82,6 @@ def main_cli(args, dry_run=False):  # noqa: C901
     # TODO : refactor in order to avoid a slow argparse
     # Don't move the local function imports for now
 
-    # Force the use of CARS dask configuration
-    dask_config_path = os.path.join(
-        os.path.dirname(__file__), "orchestrator", "cluster", "dask_config"
-    )
-    if not os.path.isdir(dask_config_path):
-        raise NotADirectoryError("Wrong dask config path")
-    os.environ["DASK_CONFIG"] = str(dask_config_path)
-
     # Main try/except to catch all program exceptions
     from cars.pipelines.pipeline import Pipeline
 
