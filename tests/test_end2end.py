@@ -3248,6 +3248,8 @@ def test_end2end_ventoux_egm96_geoid():
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
+        input_config_dense_dsm["output"]["geoid"] = True
+
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
@@ -3379,6 +3381,8 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["inputs"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+
+        input_config_dense_dsm["output"]["geoid"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
