@@ -1236,6 +1236,24 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     intervals = None
 
+                if isinstance(self.output[sens_cst.GEOID], str):
+                    output_geoid_path = self.output[sens_cst.GEOID]
+                elif (
+                    isinstance(self.output[sens_cst.GEOID], bool)
+                    and self.output[sens_cst.GEOID]
+                ):
+                    package_path = os.path.dirname(__file__)
+                    output_geoid_path = os.path.join(
+                        package_path,
+                        "..",
+                        "..",
+                        "conf",
+                        sensors_inputs.CARS_GEOID_PATH,
+                    )
+                else:
+                    # default case : stay on the ellipsoid
+                    output_geoid_path = None
+
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
                     pairs[pair_key]["sensor_image_left"],
@@ -1252,7 +1270,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
-                    geoid_path=self.inputs[sens_cst.GEOID],
+                    geoid_path=output_geoid_path,
                     cloud_id=cloud_id,
                     intervals=intervals,
                 )
