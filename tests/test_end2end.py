@@ -3218,10 +3218,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "use_geoid_alt": True,
-            },
+            "triangulation": {"method": "line_of_sight_intersection"},
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -3352,10 +3349,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "use_geoid_alt": True,
-            },
+            "triangulation": {"method": "line_of_sight_intersection"},
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,

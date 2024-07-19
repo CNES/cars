@@ -39,7 +39,6 @@ def test_check_full_conf():
     """
     conf = {
         "method": "line_of_sight_intersection",
-        "use_geoid_alt": False,
         "snap_to_img1": False,
         "save_points_cloud": False,
     }

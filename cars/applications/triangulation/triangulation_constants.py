@@ -31,7 +31,6 @@ TRIANGULATION_RUN_TAG = "triangulation_run"
 
 # PARAMS
 METHOD = "method"
-USE_GEOID_ALT = "use_geoid_alt"
 SNAP_TO_IMG1 = "snap_to_img1"
 GEOMETRY_PLUGIN = "geometry_plugin"
 
