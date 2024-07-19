@@ -574,6 +574,7 @@ def test_end2end_ventoux_unique():
                     "loop_testing": False,
                 },
                 "python": None,
+                "task_timeout": 600,
                 "use_memory_logger": False,
                 "config_name": "unknown",
             }
@@ -1860,6 +1861,7 @@ def test_end2end_use_epipolar_a_priori():
                     "loop_testing": False,
                 },
                 "python": None,
+                "task_timeout": 600,
                 "use_memory_logger": False,
                 "activate_dashboard": False,
                 "max_ram_per_worker": 1000,

@@ -49,7 +49,7 @@ def create_checker_schema(conf):
     overloaded_conf["mode"] = conf.get("mode", "unknowed_dask")
     overloaded_conf["use_memory_logger"] = conf.get("use_memory_logger", False)
     overloaded_conf["nb_workers"] = conf.get("nb_workers", 2)
-    overloaded_conf["task_timeout"] = conf.get("nb_workers", 600)
+    overloaded_conf["task_timeout"] = conf.get("task_timeout", 600)
     overloaded_conf["max_ram_per_worker"] = conf.get("max_ram_per_worker", 2000)
     overloaded_conf["walltime"] = conf.get("walltime", "00:59:00")
     overloaded_conf["config_name"] = conf.get("config_name", "unknown")
