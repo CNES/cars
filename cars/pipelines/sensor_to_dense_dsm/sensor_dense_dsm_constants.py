@@ -56,9 +56,3 @@ DISPARITY_RANGE = "disparity_range"
 DEM_MEDIAN = "dem_median"
 DEM_MIN = "dem_min"
 DEM_MAX = "dem_max"
-
-# Pipeline output
-OUT_DIR = "out_dir"
-DSM_BASENAME = "dsm_basename"
-CLR_BASENAME = "clr_basename"
-INFO_BASENAME = "info_basename"

@@ -33,6 +33,7 @@ import numpy as np
 from pyproj import CRS
 
 # CARS imports
+import cars.pipelines.output.output_constants
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.dem_generation import (
@@ -520,7 +521,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             orchestrator_conf=self.orchestrator_conf,
             out_dir=out_dir,
             out_json_path=os.path.join(
-                out_dir, self.output[sens_cst.INFO_BASENAME]
+                out_dir,
+                self.output[
+                    cars.pipelines.output.output_constants.INFO_BASENAME
+                ],
             ),
         ) as cars_orchestrator:
             # initialize out_json
@@ -1387,10 +1391,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     epsg,
                     orchestrator=cars_orchestrator,
                     dsm_file_name=os.path.join(
-                        out_dir, self.output[sens_cst.DSM_BASENAME]
+                        out_dir,
+                        self.output[
+                            cars.pipelines.output.output_constants.DSM_BASENAME
+                        ],
                     ),
                     color_file_name=os.path.join(
-                        out_dir, self.output[sens_cst.CLR_BASENAME]
+                        out_dir,
+                        self.output[
+                            cars.pipelines.output.output_constants.CLR_BASENAME
+                        ],
                     ),
                     color_dtype=list_epipolar_points_cloud[0].attributes[
                         "color_type"

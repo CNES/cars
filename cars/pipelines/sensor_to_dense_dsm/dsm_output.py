@@ -29,9 +29,7 @@ import os
 from json_checker import Checker
 
 # CARS imports
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sensors_cst,
-)
+import cars.pipelines.output.output_constants
 
 
 def dense_dsm_check_output(conf):
@@ -42,7 +40,7 @@ def dense_dsm_check_output(conf):
     :type conf: dict
     """
     overloaded_conf = conf.copy()
-    out_dir = conf[sensors_cst.OUT_DIR]
+    out_dir = conf[cars.pipelines.output.output_constants.OUT_DIR]
     out_dir = os.path.abspath(out_dir)
     # Ensure that outdir exists
     try:
@@ -54,23 +52,29 @@ def dense_dsm_check_output(conf):
             raise
 
     # Overload some parameters
-    overloaded_conf[sensors_cst.OUT_DIR] = out_dir
-    overloaded_conf[sensors_cst.DSM_BASENAME] = overloaded_conf.get(
-        sensors_cst.DSM_BASENAME, "dsm.tif"
+    overloaded_conf[cars.pipelines.output.output_constants.OUT_DIR] = out_dir
+    overloaded_conf[cars.pipelines.output.output_constants.DSM_BASENAME] = (
+        overloaded_conf.get(
+            cars.pipelines.output.output_constants.DSM_BASENAME, "dsm.tif"
+        )
     )
-    overloaded_conf[sensors_cst.CLR_BASENAME] = overloaded_conf.get(
-        sensors_cst.CLR_BASENAME, "clr.tif"
+    overloaded_conf[cars.pipelines.output.output_constants.CLR_BASENAME] = (
+        overloaded_conf.get(
+            cars.pipelines.output.output_constants.CLR_BASENAME, "clr.tif"
+        )
     )
-    overloaded_conf[sensors_cst.INFO_BASENAME] = overloaded_conf.get(
-        sensors_cst.INFO_BASENAME, "content.json"
+    overloaded_conf[cars.pipelines.output.output_constants.INFO_BASENAME] = (
+        overloaded_conf.get(
+            cars.pipelines.output.output_constants.INFO_BASENAME, "content.json"
+        )
     )
 
     # Check schema
     output_schema = {
-        sensors_cst.OUT_DIR: str,
-        sensors_cst.DSM_BASENAME: str,
-        sensors_cst.CLR_BASENAME: str,
-        sensors_cst.INFO_BASENAME: str,
+        cars.pipelines.output.output_constants.OUT_DIR: str,
+        cars.pipelines.output.output_constants.DSM_BASENAME: str,
+        cars.pipelines.output.output_constants.CLR_BASENAME: str,
+        cars.pipelines.output.output_constants.INFO_BASENAME: str,
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)

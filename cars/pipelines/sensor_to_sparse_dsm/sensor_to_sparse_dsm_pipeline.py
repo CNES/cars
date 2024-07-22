@@ -33,6 +33,7 @@ import os
 from pyproj import CRS
 
 # CARS imports
+import cars.pipelines.output.output_constants
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.dem_generation import (
@@ -321,7 +322,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             orchestrator_conf=self.orchestrator_conf,
             out_dir=out_dir,
             out_json_path=os.path.join(
-                out_dir, self.output[sens_cst.INFO_BASENAME]
+                out_dir,
+                self.output[
+                    cars.pipelines.output.output_constants.INFO_BASENAME
+                ],
             ),
         ) as cars_orchestrator:
             # initialize out_json

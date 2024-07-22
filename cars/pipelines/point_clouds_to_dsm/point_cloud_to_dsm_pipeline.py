@@ -32,6 +32,7 @@ import os
 from pyproj import CRS
 
 # CARS imports
+import cars.pipelines.output.output_constants
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.point_cloud_fusion import pc_tif_tools
@@ -290,7 +291,10 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             orchestrator_conf=self.orchestrator_conf,
             out_dir=out_dir,
             out_json_path=os.path.join(
-                out_dir, self.output[sens_cst.INFO_BASENAME]
+                out_dir,
+                self.output[
+                    cars.pipelines.output.output_constants.INFO_BASENAME
+                ],
             ),
         ) as cars_orchestrator:
             # initialize out_json
@@ -462,10 +466,16 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 epsg,
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
-                    out_dir, self.output[sens_cst.DSM_BASENAME]
+                    out_dir,
+                    self.output[
+                        cars.pipelines.output.output_constants.DSM_BASENAME
+                    ],
                 ),
                 color_file_name=os.path.join(
-                    out_dir, self.output[sens_cst.CLR_BASENAME]
+                    out_dir,
+                    self.output[
+                        cars.pipelines.output.output_constants.CLR_BASENAME
+                    ],
                 ),
                 color_dtype=color_type,
             )
