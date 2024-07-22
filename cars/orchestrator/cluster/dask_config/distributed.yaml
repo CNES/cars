@@ -16,7 +16,6 @@ distributed:
     blocked-handlers: []   # message operation list to block from scheduler to worker
     allowed-failures: 10     # number of retries before a task is considered bad
     bandwidth: 100000000    # 100 MB/s estimated worker-worker bandwidth
-    transition-log-length: 100000 # How long should we keep the transition log in memory (default length 100000 (bytes?))
     work-stealing: True     # workers should steal tasks from each other
 
   worker:
@@ -68,3 +67,4 @@ distributed:
       limit: 1s       # time allowed before triggering a warning
     log-format: '%(asctime)s :: %(name)s - %(levelname)s - %(message)s'
     pdb-on-err: False       # enter debug mode on scheduling error
+    low-level-log-length: 100000 # How long should we keep the transition log in memory (default length 100000 (bytes?))

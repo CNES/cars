@@ -238,8 +238,8 @@ def create_disp_dataset(  # noqa: C901
     ref_roi = [
         int(-ref_dataset.attrs[cst.EPI_MARGINS][0]),
         int(-ref_dataset.attrs[cst.EPI_MARGINS][1]),
-        int(ref_dataset.dims[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
-        int(ref_dataset.dims[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
+        int(ref_dataset.sizes[cst.COL] - ref_dataset.attrs[cst.EPI_MARGINS][2]),
+        int(ref_dataset.sizes[cst.ROW] - ref_dataset.attrs[cst.EPI_MARGINS][3]),
     ]
 
     # Retrieve disparity values
