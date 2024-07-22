@@ -342,6 +342,9 @@ class LineOfSightIntersection(
             "opt_epipolar_tile_size": epipolar_image.attributes["tile_width"],
         }
 
+        if geoid_path:
+            pc_attributes["geoid"] = (geoid_path,)
+
         if epipolar_disparity_map.dataset_type in ("arrays", "points"):
             # Create CarsDataset
             # Epipolar_point_cloud
