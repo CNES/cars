@@ -58,9 +58,6 @@ def sensors_check_inputs(  # noqa: C901
 
     # Overload some optional parameters
     overloaded_conf[sens_cst.EPSG] = conf.get(sens_cst.EPSG, None)
-    overloaded_conf[sens_cst.INITIAL_ELEVATION] = conf.get(
-        sens_cst.INITIAL_ELEVATION, {}
-    )
 
     overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
         sens_cst.USE_ENDOGENOUS_ELEVATION, False
@@ -84,8 +81,13 @@ def sensors_check_inputs(  # noqa: C901
         # Retrieve terrain_a_priori if it is provided
         overloaded_conf["terrain_a_priori"] = conf.get("terrain_a_priori", {})
 
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = conf.get(
+        sens_cst.INITIAL_ELEVATION, None
+    )
+    if overloaded_conf[sens_cst.INITIAL_ELEVATION] is None:
+        overloaded_conf[sens_cst.INITIAL_ELEVATION] = {}
     # If Initial elevation is given as a string, convert it to a dict
-    if isinstance(overloaded_conf[sens_cst.INITIAL_ELEVATION], str):
+    elif isinstance(overloaded_conf[sens_cst.INITIAL_ELEVATION], str):
         overloaded_conf[sens_cst.INITIAL_ELEVATION] = {
             sens_cst.DEM_PATH: overloaded_conf[sens_cst.INITIAL_ELEVATION]
         }

@@ -493,7 +493,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             dem = self.dem_generation_application.run(
                 triangulated_matches_list,
                 cars_orchestrator.out_dir,
-                self.inputs[sens_cst.GEOID],
+                self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
                 dem_roi_to_use=self.dem_generation_roi,
             )
             dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
