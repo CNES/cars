@@ -59,8 +59,9 @@ def sensors_check_inputs(  # noqa: C901
     # Overload some optional parameters
     overloaded_conf[sens_cst.EPSG] = conf.get(sens_cst.EPSG, None)
     overloaded_conf[sens_cst.INITIAL_ELEVATION] = conf.get(
-        sens_cst.INITIAL_ELEVATION, None
+        sens_cst.INITIAL_ELEVATION, {}
     )
+
     overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
         sens_cst.USE_ENDOGENOUS_ELEVATION, False
     )
@@ -83,7 +84,18 @@ def sensors_check_inputs(  # noqa: C901
         # Retrieve terrain_a_priori if it is provided
         overloaded_conf["terrain_a_priori"] = conf.get("terrain_a_priori", {})
 
-    if "geoid" not in overloaded_conf:
+    # If Initial elevation is given as a string, convert it to a dict
+    if isinstance(overloaded_conf[sens_cst.INITIAL_ELEVATION], str):
+        overloaded_conf[sens_cst.INITIAL_ELEVATION] = {
+            sens_cst.DEM_PATH: overloaded_conf[sens_cst.INITIAL_ELEVATION]
+        }
+
+    overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
+        overloaded_conf[sens_cst.INITIAL_ELEVATION].get(sens_cst.DEM_PATH, None)
+    )
+
+    # Add geoid path to the initial_elevation dict
+    if sens_cst.GEOID not in overloaded_conf[sens_cst.INITIAL_ELEVATION]:
         # use cars geoid
         logging.info("CARS will use its own internal file as geoid reference")
         # Get root package directory
@@ -91,22 +103,23 @@ def sensors_check_inputs(  # noqa: C901
         geoid_path = os.path.join(
             package_path, "..", "..", "conf", CARS_GEOID_PATH
         )
-        overloaded_conf[sens_cst.GEOID] = geoid_path
+        overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID] = geoid_path
     else:
-        overloaded_conf[sens_cst.GEOID] = conf.get(sens_cst.GEOID, None)
+        overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID] = conf[
+            sens_cst.INITIAL_ELEVATION
+        ].get(sens_cst.GEOID, None)
 
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: [[str]],
         sens_cst.EPSG: Or(int, None),  # move to rasterization
-        sens_cst.INITIAL_ELEVATION: Or(str, None),
+        sens_cst.INITIAL_ELEVATION: dict,
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.DEFAULT_ALT: int,
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.DEBUG_WITH_ROI: bool,
         sens_cst.CHECK_INPUTS: bool,
-        sens_cst.GEOID: Or(None, str),
     }
     if check_epipolar_a_priori:
         inputs_schema[sens_cst.USE_EPIPOLAR_A_PRIORI] = bool
@@ -261,7 +274,7 @@ def sensors_check_inputs(  # noqa: C901
             )
 
     # Check srtm dir
-    check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION])
+    check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH])
 
     return overloaded_conf
 
@@ -293,9 +306,9 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     if "use_epipolar_a_priori" in conf_inputs:
         if conf_inputs["use_epipolar_a_priori"]:
             if "dem_median" in conf_inputs["terrain_a_priori"]:
-                conf_inputs[sens_cst.INITIAL_ELEVATION] = conf_inputs[
-                    "terrain_a_priori"
-                ]["dem_median"]
+                conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
+                    conf_inputs["terrain_a_priori"]["dem_median"]
+                )
 
     # Check products consistency with this plugin
     overloaded_conf_inputs = conf_inputs.copy()
@@ -330,15 +343,18 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
             needed_dem_roi_poly, needed_dem_roi_epsg, 4326
         )
 
-        if conf_inputs[sens_cst.INITIAL_ELEVATION] is not None:
+        if (
+            conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+            is not None
+        ):
             # get dem total roi
             total_input_roi_poly = roi_tools.bounds_to_poly(
                 inputs.rasterio_get_bounds(
-                    conf_inputs[sens_cst.INITIAL_ELEVATION]
+                    conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                 )
             )
             total_input_roi_epsg = inputs.rasterio_get_epsg_code(
-                conf_inputs[sens_cst.INITIAL_ELEVATION]
+                conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
             )
             total_input_roi_poly = preprocessing.compute_roi_poly(
                 total_input_roi_poly, total_input_roi_epsg, 4326
@@ -382,9 +398,11 @@ def generate_geometry_plugin_with_dem(
     :return: geometry plugin object, with a dem
     """
 
-    dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION]
-    if dem is not None:
-        dem_path = dem
+    dem_path = (
+        dem
+        if dem is not None
+        else conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+    )
 
     if crop_dem:
         # Get image pairs for DEM intersection with ROI
@@ -405,7 +423,7 @@ def generate_geometry_plugin_with_dem(
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
             conf_geom_plugin,
             dem=dem_path,
-            geoid=conf_inputs[sens_cst.GEOID],
+            geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
             default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
             pairs_for_roi=pairs_for_roi,
         )
@@ -441,11 +459,22 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                     sensor_image[tag], config_json_dir
                 )
 
-    for tag in [sens_cst.INITIAL_ELEVATION, sens_cst.ROI, sens_cst.GEOID]:
-        if overloaded_conf[tag] is not None:
-            if isinstance(overloaded_conf[tag], str):
-                overloaded_conf[tag] = make_relative_path_absolute(
-                    overloaded_conf[tag], config_json_dir
+    if overloaded_conf[sens_cst.ROI] is not None:
+        if isinstance(overloaded_conf[sens_cst.ROI], str):
+            overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
+                overloaded_conf[sens_cst.ROI], config_json_dir
+            )
+
+    for tag in [sens_cst.DEM_PATH, sens_cst.GEOID]:
+        if overloaded_conf[sens_cst.INITIAL_ELEVATION][tag] is not None:
+            if isinstance(
+                overloaded_conf[sens_cst.INITIAL_ELEVATION][tag], str
+            ):
+                overloaded_conf[sens_cst.INITIAL_ELEVATION][tag] = (
+                    make_relative_path_absolute(
+                        overloaded_conf[sens_cst.INITIAL_ELEVATION][tag],
+                        config_json_dir,
+                    )
                 )
 
 

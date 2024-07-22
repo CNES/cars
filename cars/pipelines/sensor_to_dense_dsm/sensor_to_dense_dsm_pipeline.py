@@ -590,7 +590,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # If not provided, grid are generated without dem and a dem
                 # will be generated, to use later for a new grid generation**
 
-                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                if (
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is None
+                ):
                     geom_plugin = self.geom_plugin_without_dem_and_geoid
                 else:
                     geom_plugin = self.geom_plugin_with_dem_and_geoid
@@ -788,19 +791,27 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem = self.dem_generation_application.run(
                     triangulated_matches_list,
                     cars_orchestrator.out_dir,
-                    self.inputs[sens_cst.GEOID],
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
                     dem_roi_to_use=self.dem_generation_roi,
                 )
                 # Same geometry plugin if we use exogenous dem
                 # as initial elevation always used before if provided
                 dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
                 if (
-                    self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is not None
                     and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                 ):
-                    dem_median = self.inputs[sens_cst.INITIAL_ELEVATION]
+                    dem_median = self.inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ]
 
-                if dem_median != self.inputs[sens_cst.INITIAL_ELEVATION]:
+                if (
+                    dem_median
+                    != self.inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ]
+                ):
                     self.geom_plugin_with_dem_and_geoid = (
                         sensors_inputs.generate_geometry_plugin_with_dem(
                             self.used_conf[GEOMETRY_PLUGIN],
@@ -841,7 +852,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
 
                     if not (
-                        self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                        self.inputs[sens_cst.INITIAL_ELEVATION][
+                            sens_cst.DEM_PATH
+                        ]
+                        is not None
                         and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                     ):
                         # Generate grids with new MNT
