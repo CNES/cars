@@ -45,7 +45,6 @@ from cars.applications.triangulation.triangulation import Triangulation
 from cars.conf import mask_cst
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
-from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.sensor_to_dense_dsm import (
@@ -478,20 +477,6 @@ class LineOfSightIntersection(
         )
 
         # Generate Point clouds
-        # Broadcast geoid_data
-        geoid_data_futures = None
-        if self.use_geoid_alt:
-            if geoid_path is None:
-                logging.error(
-                    "use_geoid_alt option is activated but no geoid file "
-                    "has been defined in inputs"
-                )
-
-            geoid_data = read_geoid_file(geoid_path)
-            # Broadcast geoid data to all dask workers
-            geoid_data_futures = self.orchestrator.cluster.scatter(
-                geoid_data, broadcast=True
-            )
 
         # Determining if a lower disparity inf corresponds to a lower or higher
         # hgt. It depends on the image pairing and geometrical models.
@@ -528,7 +513,7 @@ class LineOfSightIntersection(
                         broadcasted_grid_right,
                         geometry_plugin,
                         epsg,
-                        geoid_data=geoid_data_futures,
+                        geoid_path=geoid_path if self.use_geoid_alt else None,
                         denoising_overload_fun=denoising_overload_fun,
                         cloud_id=cloud_id,
                         intervals=intervals,
@@ -548,7 +533,7 @@ def triangulation_wrapper(
     grid2,
     geometry_plugin,
     epsg,
-    geoid_data: xr.Dataset = None,
+    geoid_path=None,
     denoising_overload_fun=None,
     cloud_id=None,
     intervals=None,
@@ -576,9 +561,9 @@ def triangulation_wrapper(
     :type grid2: CarsDataset
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
-    :param geoid_data: Geoid used for altimetric reference. Defaults to None
+    :param geoid_path: Geoid used for altimetric reference. Defaults to None
         for using ellipsoid as altimetric reference.
-    :type geoid_data: str
+    :type geoid_path: str
     :param intervals: Either None or a List of 2 intervals indicators
         :type intervals: None or [str, str]
     :param denoising_overload_fun: function to overload dataset
@@ -666,9 +651,9 @@ def triangulation_wrapper(
             "Disp ref is neither xarray Dataset  nor pandas DataFrame"
         )
 
-    if geoid_data is not None:  # if user pass a geoid, use it as alt reference
+    if geoid_path is not None:  # if user pass a geoid, use it as alt reference
         for key, point in points.items():
-            points[key] = triangulation_tools.geoid_offset(point, geoid_data)
+            points[key] = triangulation_tools.geoid_offset(point, geoid_path)
 
     # Fill datasets
     pc_dataset = points[cst.STEREO_REF]

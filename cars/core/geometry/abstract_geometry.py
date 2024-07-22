@@ -23,7 +23,6 @@ this module contains the abstract geometry class to use in the
 geometry plugins
 """
 import logging
-import struct
 from abc import ABCMeta, abstractmethod
 from typing import Dict, List, Tuple, Union
 
@@ -645,49 +644,3 @@ class AbstractGeometry(metaclass=ABCMeta):
             outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
 
         return u_l, u_r, l_l, l_r
-
-
-def read_geoid_file(geoid_path: str) -> xr.Dataset:
-    """
-    Read geoid height from the given path
-    Geoid is defined in the static configuration.
-
-    Geoid is returned as an xarray.Dataset and height is stored in the `hgt`
-    variable, which is indexed by `lat` and `lon` coordinates. Dataset
-    attributes contain geoid bounds geodetic coordinates and
-    latitude/longitude step spacing.
-
-    :return: the geoid height array in meter.
-    """
-    with open(geoid_path, mode="rb") as in_grd:  # reading binary data
-        # first header part, 4 float of 4 bytes -> 16 bytes to read
-        # Endianness seems to be Big-Endian.
-        lat_min, lat_max, lon_min, lon_max = struct.unpack(
-            ">ffff", in_grd.read(16)
-        )
-        lat_step, lon_step = struct.unpack(">ff", in_grd.read(8))
-
-        n_lats = int(np.ceil((lat_max - lat_min)) / lat_step) + 1
-        n_lons = int(np.ceil((lon_max - lon_min)) / lon_step) + 1
-
-        # read height grid.
-        geoid_height = np.fromfile(in_grd, ">f4").reshape(n_lats, n_lons)
-
-        # create output Dataset
-        geoid = xr.Dataset(
-            {"hgt": (("lat", "lon"), geoid_height)},
-            coords={
-                "lat": np.linspace(lat_max, lat_min, n_lats),
-                "lon": np.linspace(lon_min, lon_max, n_lons),
-            },
-            attrs={
-                "lat_min": lat_min,
-                "lat_max": lat_max,
-                "lon_min": lon_min,
-                "lon_max": lon_max,
-                "d_lat": lat_step,
-                "d_lon": lon_step,
-            },
-        )
-
-        return geoid
