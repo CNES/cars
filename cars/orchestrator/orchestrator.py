@@ -125,13 +125,13 @@ class Orchestrator:
 
         self.orchestrator_conf = orchestrator_conf
 
-        self.task_timeout = 600  # seconds = 10 min
-
         # init cluster
         self.cluster = AbstractCluster(  # pylint: disable=E0110
             orchestrator_conf, self.out_dir, launch_worker=self.launch_worker
         )
         self.conf = self.cluster.get_conf()
+
+        self.task_timeout = self.conf.get("task_timeout", 600)
 
         # Init IdGenerator
         self.id_generator = id_gen.IdGenerator()
@@ -460,19 +460,24 @@ class Orchestrator:
 
             except TimeoutError:
                 logging.error("TimeOut")
-                self.reset_cluster()
-                del pbar
 
-                if only_remaining_delayed is None:
-                    logging.error("Retry failed tasks ...")
-                    self.compute_futures(
-                        only_remaining_delayed=(
-                            self.achievement_tracker.get_remaining_tiles()
-                        )
+            remaining_tiles = self.achievement_tracker.get_remaining_tiles()
+            if len(remaining_tiles) > 0:
+                # Some tiles have not been computed
+                logging.error(
+                    "{} tiles have not been computed".format(
+                        len(remaining_tiles)
                     )
-
+                )
+                if only_remaining_delayed is None:
+                    # First try
+                    logging.error("Retry failed tasks ...")
+                    self.reset_cluster()
+                    del pbar
+                    self.compute_futures(only_remaining_delayed=remaining_tiles)
                 else:
-                    # replace Delayed to be replaced by None
+                    # Second try
+                    logging.error("Pipeline will pursue without these tiles")
                     self.cars_ds_replacer_registry.replace_lasting_jobs(
                         self.cluster.get_delayed_type()
                     )
