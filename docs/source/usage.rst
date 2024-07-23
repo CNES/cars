@@ -108,16 +108,11 @@ The structure follows this organisation:
             |                            | when endogenous elevation is available                              |                       |                      |          |
             |                            | If no initial_elevation, endogenous elevation is always used        |                       |                      |          |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *default_alt*              | Default height above ellipsoid when there is no DEM available       | int                   | 0                    | No       |
-            |                            | no coverage for some points or pixels with no_data in the DEM tiles |                       |                      |          |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *roi*                      | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *debug_with_roi*           | Use ROI with the tiling of the entire image                         | Boolean               | False                | No       |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *check_inputs*             | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *geoid*                    | Geoid path                                                          | string                | Cars internal geoid  | No       |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *use_epipolar_a_priori*    | Active epipolar a priori                                            | bool                  | False                | Yes      |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -195,8 +190,54 @@ The structure follows this organisation:
                     }
                 }
 
+            **Initial elevation**
 
+            The attribute contains all informations about initial elevation: dem path, geoid and default altitude
             
+            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
+            | Name                  | Description                    | Type   | Default value        | Required                   |
+            +=======================+================================+========+======================+============================+
+            | *dem_path*            | Path to DEM tiles              | string | None                 | No                         |
+            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
+            | *geoid*               | Geoid path                     | string | Cars internal geoid  | No                         |
+            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
+            | *default_alt*         | Default altitude               | int    | 0                    | No                         |
+            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
+
+            If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96).
+
+            `default_alt` is the default height above ellipsoid when there is no DEM available (no coverage for some points or pixels with no_data in the DEM tiles)
+
+            Initial elevation can be provided as a dictionary with a field for each parameter, for example:
+
+
+            .. code-block:: json
+
+                {
+                "inputs": {
+                        "initial_elevation": {
+                            "dem_path": "/path/to/srtm.tif",
+                            "geoid": "/path/to/geoid.tif",
+                            "default_alt": 30,
+                        }
+                    }
+                }
+
+            Alternatively, it can be set as a string corresponding to the DEM path, in which case default values for the geoid and the default altitude are used.
+
+            .. code-block:: json
+
+                {
+                "inputs": {
+                        "initial_elevation": "/path/to/srtm.tif"
+                    }
+                }
+
+            Note that the geoid parameter in initial_elevation is not the geoid used for output products generated after the triangulation step
+            (see output parameters).
+
+            Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
+
             **Epipolar a priori**
 
             The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
@@ -1202,8 +1243,6 @@ The structure follows this organisation:
             +===================+====================================================================================================================+=========+======================================+==============================+==========+
             | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | use_geoid_alt     | Use geoid grid as altimetric reference.                                                                            | boolean |                                      | false                        | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
             +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
@@ -1500,19 +1539,21 @@ The structure follows this organisation:
 
    .. tab:: Outputs
 
-        +----------------+-------------------------------------------------------------+--------+----------------+----------+
-        | Name           | Description                                                 | Type   | Default value  | Required |
-        +================+=============================================================+========+================+==========+
-        | out_dir        | Output folder where results are stored                      | string | No             | No       |
-        +----------------+-------------------------------------------------------------+--------+----------------+----------+
-        | dsm_basename   | base name for dsm                                           | string | "dsm.tif"      | No       |
-        +----------------+-------------------------------------------------------------+--------+----------------+----------+
-        | color_basename | base name for  ortho-image                                  | string | "color.tif     | No       |
-        +----------------+-------------------------------------------------------------+--------+----------------+----------+
-        | info_basename  | base name for file containing information about computation | string | "content.json" | No       |
-        +----------------+-------------------------------------------------------------+--------+----------------+----------+
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+        | Name           | Description                                                 | Type           | Default value  | Required |
+        +================+=============================================================+================+================+==========+
+        | out_dir        | Output folder where results are stored                      | string         | No             | No       |
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+        | dsm_basename   | base name for dsm                                           | string         | "dsm.tif"      | No       |
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+        | geoid          | output geoid                                                | bool or string | False          | No       |
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+        | color_basename | base name for  ortho-image                                  | string         | "color.tif     | No       |
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+        | info_basename  | base name for file containing information about computation | string         | "content.json" | No       |
+        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
 
-        *Output contents*
+        **Output contents**
 
         The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
 
@@ -1521,6 +1562,11 @@ The structure follows this organisation:
         * information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
         * subfolder for each defined pair which can contains intermediate data
 
+        **Geoid**
+
+        This parameter refers to the vertical reference of the output product, used as an altitude offset during triangulation.
+        It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` cars default geoid is used,
+        if set to false no vertical offset is applied (ellipsoid reference).
 
 .. _plugins:
 
@@ -1562,7 +1608,9 @@ This section describes optional plugins possibilities of CARS.
                   }
                 },
                 "pairing": [["one", "two"]],
-                "initial_elevation": "path/to/srtm_file"
+                "initial_elevation": {
+                    "dem_path": "path/to/srtm_file.tif"
+                  },
               },
               "geometry_plugin": "SharelocGeometry",
               "output": {
