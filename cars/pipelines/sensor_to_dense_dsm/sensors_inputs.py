@@ -81,42 +81,16 @@ def sensors_check_inputs(  # noqa: C901
         # Retrieve terrain_a_priori if it is provided
         overloaded_conf["terrain_a_priori"] = conf.get("terrain_a_priori", {})
 
-    overloaded_conf[sens_cst.INITIAL_ELEVATION] = conf.get(
-        sens_cst.INITIAL_ELEVATION, None
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
+        conf.get(sens_cst.INITIAL_ELEVATION, None)
     )
-    if overloaded_conf[sens_cst.INITIAL_ELEVATION] is None:
-        overloaded_conf[sens_cst.INITIAL_ELEVATION] = {}
-    # If Initial elevation is given as a string, convert it to a dict
-    elif isinstance(overloaded_conf[sens_cst.INITIAL_ELEVATION], str):
-        overloaded_conf[sens_cst.INITIAL_ELEVATION] = {
-            sens_cst.DEM_PATH: overloaded_conf[sens_cst.INITIAL_ELEVATION]
-        }
-
-    overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
-        overloaded_conf[sens_cst.INITIAL_ELEVATION].get(sens_cst.DEM_PATH, None)
-    )
-
-    # Add geoid path to the initial_elevation dict
-    if sens_cst.GEOID not in overloaded_conf[sens_cst.INITIAL_ELEVATION]:
-        # use cars geoid
-        logging.info("CARS will use its own internal file as geoid reference")
-        # Get root package directory
-        package_path = os.path.dirname(__file__)
-        geoid_path = os.path.join(
-            package_path, "..", "..", "conf", CARS_GEOID_PATH
-        )
-        overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID] = geoid_path
-    else:
-        overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID] = conf[
-            sens_cst.INITIAL_ELEVATION
-        ].get(sens_cst.GEOID, None)
 
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: [[str]],
         sens_cst.EPSG: Or(int, None),  # move to rasterization
-        sens_cst.INITIAL_ELEVATION: dict,
+        sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.DEFAULT_ALT: int,
         sens_cst.ROI: Or(str, dict, None),
@@ -557,6 +531,38 @@ def check_input_data(image, color):
                 "{} seems to have an incoherent pixel size. "
                 "Input images has to be in sensor geometry.".format(image)
             )
+
+
+def get_initial_elevation(config):
+    """
+    Return initial elevation parameters (dem, geoid and default altitude)
+    from input configuration.
+
+    :param config: input initial elevation
+    :type config: str, dict or None
+    """
+
+    # Case 1 config is already a dict
+    if isinstance(config, dict):
+        updated_config = config
+    else:
+        updated_config = {}
+        updated_config[sens_cst.DEM_PATH] = (
+            config if isinstance(config, str) else None
+        )
+
+    # Add geoid path to the initial_elevation dict
+    if config is None or sens_cst.GEOID not in config:
+        # use cars geoid
+        logging.info("CARS will use its own internal file as geoid reference")
+        # Get root package directory
+        package_path = os.path.dirname(__file__)
+        geoid_path = os.path.join(
+            package_path, "..", "..", "conf", CARS_GEOID_PATH
+        )
+        updated_config[sens_cst.GEOID] = geoid_path
+
+    return updated_config
 
 
 def check_input_size(image, mask, color, classif):
