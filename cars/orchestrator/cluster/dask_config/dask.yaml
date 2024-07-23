@@ -1,7 +1,8 @@
 temporary-directory: null  # Directory for local disk like /tmp, /scratch, or /local. null -> local dask-worker-space directory.
 
 dataframe:
-  shuffle-compression: null  # compression for on disk-shuffling. Partd supports ZLib, BZ2, SNAPPY, BLOSC
+  shuffle:
+    compression: null  # compression for on disk-shuffling. Partd supports ZLib, BZ2, SNAPPY, BLOSC
 
 array:
   svg:
