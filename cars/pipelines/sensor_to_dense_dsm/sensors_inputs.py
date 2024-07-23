@@ -62,7 +62,6 @@ def sensors_check_inputs(  # noqa: C901
     overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
         sens_cst.USE_ENDOGENOUS_ELEVATION, False
     )
-    overloaded_conf[sens_cst.DEFAULT_ALT] = conf.get(sens_cst.DEFAULT_ALT, 0)
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
     overloaded_conf[sens_cst.DEBUG_WITH_ROI] = conf.get(
         sens_cst.DEBUG_WITH_ROI, False
@@ -92,7 +91,6 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
-        sens_cst.DEFAULT_ALT: int,
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.DEBUG_WITH_ROI: bool,
         sens_cst.CHECK_INPUTS: bool,
@@ -274,7 +272,10 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            conf_geom_plugin, default_alt=conf_inputs[sens_cst.DEFAULT_ALT]
+            conf_geom_plugin,
+            default_alt=conf_inputs[sens_cst.INITIAL_ELEVATION][
+                sens_cst.DEFAULT_ALT
+            ],
         )
     )
 
@@ -400,7 +401,9 @@ def generate_geometry_plugin_with_dem(
             conf_geom_plugin,
             dem=dem_path,
             geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
-            default_alt=conf_inputs[sens_cst.DEFAULT_ALT],
+            default_alt=conf_inputs[sens_cst.INITIAL_ELEVATION][
+                sens_cst.DEFAULT_ALT
+            ],
             pairs_for_roi=pairs_for_roi,
         )
     )
@@ -552,7 +555,7 @@ def get_initial_elevation(config):
         )
 
     # Add geoid path to the initial_elevation dict
-    if config is None or sens_cst.GEOID not in config:
+    if sens_cst.GEOID not in updated_config:
         # use cars geoid
         logging.info("CARS will use its own internal file as geoid reference")
         # Get root package directory
@@ -561,6 +564,10 @@ def get_initial_elevation(config):
             package_path, "..", "..", "conf", CARS_GEOID_PATH
         )
         updated_config[sens_cst.GEOID] = geoid_path
+
+    # Add default altitude
+    if sens_cst.DEFAULT_ALT not in updated_config:
+        updated_config[sens_cst.DEFAULT_ALT] = 0
 
     return updated_config
 
