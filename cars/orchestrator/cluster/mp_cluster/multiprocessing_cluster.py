@@ -31,6 +31,7 @@ import logging.handlers
 # Standard imports
 import multiprocessing as mp
 import os
+import platform
 import shutil
 import signal
 import threading
@@ -57,6 +58,9 @@ from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     MpJob,
 )
 from cars.orchestrator.cluster.mp_cluster.mp_tools import replace_data
+
+SYS_PLATFORM = platform.system().lower()
+IS_WIN = "windows" == SYS_PLATFORM
 
 RUN = 0
 TERMINATE = 1
@@ -106,7 +110,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.factorize_tasks = self.checked_conf_cluster["factorize_tasks"]
         # Set multiprocessing mode
         # forkserver is used, to allow OMP to be used in numba
-        mp_mode = "forkserver"
+        mp_mode = "spawn" if IS_WIN else "forkserver"
 
         self.launch_worker = launch_worker
 
