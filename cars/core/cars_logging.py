@@ -25,14 +25,40 @@ contains cars logging setup logger for main thread
 and workers
 """
 
-import fcntl
 import logging
 import logging.config
 import os
+import platform
 
 # Standard imports
 from datetime import datetime
 from functools import wraps
+
+SYS_PLATFORM = platform.system().lower()
+IS_WIN = "windows" == SYS_PLATFORM
+
+if IS_WIN:
+    import msvcrt  # pylint: disable=E0401
+
+    def lock(file):
+        msvcrt.locking(
+            file.fileno(), msvcrt.LK_LOCK, os.fstat(file.fileno()).st_size
+        )
+
+    def unlock(file):
+        msvcrt.locking(
+            file.fileno(), msvcrt.LK_UNLCK, os.fstat(file.fileno()).st_size
+        )
+
+else:
+    import fcntl
+
+    def lock(file):
+        fcntl.flock(file, fcntl.LOCK_EX)
+
+    def unlock(file):
+        fcntl.flock(file, fcntl.LOCK_UN)
+
 
 PROGRESS = 21
 logging.addLevelName(PROGRESS, "PROGRESS")
@@ -90,9 +116,9 @@ class LogSender:  # pylint: disable=R0903
         Write log
         """
         with open(self.log_file, "a", encoding="utf-8") as file:
-            fcntl.flock(file, fcntl.LOCK_EX)
+            lock(file)
             file.write(msg)
-            fcntl.flock(file, fcntl.LOCK_UN)
+            unlock(file)
 
 
 def setup_logging(
