@@ -42,15 +42,11 @@ if IS_WIN:
 
     def lock(file):
         """Lock file for safe writing (Windows version)"""
-        msvcrt.locking(
-            file.fileno(), msvcrt.LK_LOCK, os.fstat(file.fileno()).st_size
-        )
+        msvcrt.locking(file.fileno(), msvcrt.LK_LOCK, 0)
 
     def unlock(file):
         """Unlock file for safe writing (Windows version)"""
-        msvcrt.locking(
-            file.fileno(), msvcrt.LK_UNLCK, os.fstat(file.fileno()).st_size
-        )
+        msvcrt.locking(file.fileno(), msvcrt.LK_UNLCK, 0)
 
 else:
     import fcntl
