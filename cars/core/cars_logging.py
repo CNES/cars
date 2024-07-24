@@ -41,11 +41,13 @@ if IS_WIN:
     import msvcrt  # pylint: disable=E0401
 
     def lock(file):
+        """Lock file for safe writing (Windows version)"""
         msvcrt.locking(
             file.fileno(), msvcrt.LK_LOCK, os.fstat(file.fileno()).st_size
         )
 
     def unlock(file):
+        """Unlock file for safe writing (Windows version)"""
         msvcrt.locking(
             file.fileno(), msvcrt.LK_UNLCK, os.fstat(file.fileno()).st_size
         )
@@ -54,9 +56,11 @@ else:
     import fcntl
 
     def lock(file):
+        """Lock file for safe writing (Unix version)"""
         fcntl.flock(file, fcntl.LOCK_EX)
 
     def unlock(file):
+        """Unlock file for safe writing (Unix version)"""
         fcntl.flock(file, fcntl.LOCK_UN)
 
 
