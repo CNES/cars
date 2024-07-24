@@ -22,10 +22,13 @@
 this module contains the orchestrator class
 """
 
-# Standard imports
 import collections
 import logging
+
+# Standard imports
+import multiprocessing
 import os
+import platform
 import shutil
 import sys
 
@@ -50,6 +53,9 @@ from cars.orchestrator.registry import compute_registry
 from cars.orchestrator.registry import id_generator as id_gen
 from cars.orchestrator.registry import replacer_registry, saver_registry
 from cars.orchestrator.tiles_profiler import TileProfiler
+
+SYS_PLATFORM = platform.system().lower()
+IS_WIN = "windows" == SYS_PLATFORM
 
 
 class Orchestrator:
@@ -105,7 +111,11 @@ class Orchestrator:
                     "Auto mode is used for orchestator: "
                     "parameters set by user are ignored"
                 )
-            available_cpu = len(os.sched_getaffinity(0))
+            available_cpu = (
+                multiprocessing.cpu_count()
+                if IS_WIN
+                else len(os.sched_getaffinity(0))
+            )
             if available_cpu == 1:
                 logging.warning("Only one CPU detected.")
             nb_workers = max(1, available_cpu - 1)
