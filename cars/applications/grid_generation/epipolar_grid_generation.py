@@ -178,7 +178,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         logging.info(
             "Left satellite acquisition angles: "
             "Azimuth angle: {:.1f} degrees, "
-            "Elevation angle: {:.1f} degrees°".format(left_az, left_elev_angle)
+            "Elevation angle: {:.1f} degrees".format(left_az, left_elev_angle)
         )
 
         logging.info(
