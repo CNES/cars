@@ -117,7 +117,10 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         self.tmp_dir = None
 
         # affinity issues caused by numpy
-        os.system("taskset -p 0xffffffff %d  > /dev/null 2>&1" % os.getpid())
+        if IS_WIN is False:
+            os.system(
+                "taskset -p 0xffffffff %d  > /dev/null 2>&1" % os.getpid()
+            )
 
         if self.launch_worker:
             # Create wrapper object
