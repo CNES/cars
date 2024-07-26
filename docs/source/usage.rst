@@ -218,7 +218,7 @@ The structure follows this organisation:
                         "initial_elevation": {
                             "dem_path": "/path/to/srtm.tif",
                             "geoid": "/path/to/geoid.tif",
-                            "default_alt": 30,
+                            "default_alt": 30
                         }
                     }
                 }
