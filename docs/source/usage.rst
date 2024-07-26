@@ -1566,7 +1566,7 @@ The structure follows this organisation:
 
         This parameter refers to the vertical reference of the output product, used as an altitude offset during triangulation.
         It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` cars default geoid is used,
-        if set to false no vertical offset is applied (ellipsoid reference).
+        if set to `False` no vertical offset is applied (ellipsoid reference).
 
 .. _plugins:
 
