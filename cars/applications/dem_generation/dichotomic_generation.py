@@ -45,7 +45,6 @@ from cars.applications.triangulation import triangulation_tools
 # CARS imports
 from cars.core import constants as cst
 from cars.core import preprocessing, projection
-from cars.core.geometry.abstract_geometry import read_geoid_file
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 
@@ -263,10 +262,6 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             overlap,
         )
 
-        # Remove geoid
-        # add offset
-        geoid_data = read_geoid_file(geoid_path)
-
         # Generate dense dataset with z = 0
         alti_zeros_dataset = xr.Dataset(
             {
@@ -284,7 +279,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         projection.points_cloud_conversion_dataset(alti_zeros_dataset, 4326)
 
         geoid_offset = triangulation_tools.geoid_offset(
-            alti_zeros_dataset, geoid_data
+            alti_zeros_dataset, geoid_path
         )
 
         # fillnodata

@@ -49,7 +49,9 @@ from cars.core import cars_logging
 from cars.orchestrator.cluster import abstract_cluster
 
 
-class AbstractDaskCluster(abstract_cluster.AbstractCluster):
+class AbstractDaskCluster(
+    abstract_cluster.AbstractCluster
+):  # pylint: disable=R0902
     """
     AbstractDaskCluster
     """
@@ -66,6 +68,7 @@ class AbstractDaskCluster(abstract_cluster.AbstractCluster):
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
         # retrieve parameters
         self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.task_timeout = self.checked_conf_cluster["task_timeout"]
         self.walltime = self.checked_conf_cluster["walltime"]
         self.use_memory_logger = self.checked_conf_cluster["use_memory_logger"]
         self.config_name = self.checked_conf_cluster["config_name"]
