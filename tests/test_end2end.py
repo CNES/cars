@@ -327,7 +327,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -473,7 +473,7 @@ def test_end2end_ventoux_unique():
         out_dir = input_config_sparse_dsm["output"]["out_dir"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -1747,7 +1747,7 @@ def test_end2end_use_epipolar_a_priori():
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -2111,7 +2111,7 @@ def test_prepare_ventoux_bias():
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2196,8 +2196,8 @@ def test_end2end_ventoux_with_color():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2451,8 +2451,8 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["out_dir"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2976,8 +2976,8 @@ def test_end2end_quality_stats():
 
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -3256,8 +3256,8 @@ def test_end2end_ventoux_egm96_geoid():
 
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -3477,8 +3477,8 @@ def test_end2end_ventoux_egm96_geoid():
 
         out_dir = input_config_dense_dsm["output"]["out_dir"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:

@@ -1054,7 +1054,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
                 )
 
-                # TODO add in content.json max diff max - min
+                # TODO add in metadata.json max diff max - min
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
                 sensors_inputs.update_conf(

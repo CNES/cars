@@ -65,7 +65,8 @@ def dense_dsm_check_output(conf):
     )
     overloaded_conf[cars.pipelines.output.output_constants.INFO_BASENAME] = (
         overloaded_conf.get(
-            cars.pipelines.output.output_constants.INFO_BASENAME, "content.json"
+            cars.pipelines.output.output_constants.INFO_BASENAME,
+            "metadata.json",
         )
     )
     overloaded_conf[cars.pipelines.output.output_constants.OUT_GEOID] = (

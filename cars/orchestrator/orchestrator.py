@@ -167,7 +167,7 @@ class Orchestrator:
         # outjson
         self.out_json_path = out_json_path
         if self.out_json_path is None:
-            os.path.join(self.out_dir, "content.json")
+            os.path.join(self.out_dir, "metadata.json")
         self.out_json = {}
 
     def add_to_clean(self, tmp_dir):
@@ -493,7 +493,7 @@ class Orchestrator:
             self.cars_ds_savers_registry.cleanup()
         else:
             logging.debug(
-                "orchestrator launch_worker is False, no content.json saved"
+                "orchestrator launch_worker is False, no metadata.json saved"
             )
 
     def reset_cluster(self):
