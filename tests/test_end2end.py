@@ -3220,10 +3220,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "use_geoid_alt": True,
-            },
+            "triangulation": {"method": "line_of_sight_intersection"},
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -3249,6 +3246,8 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["inputs"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+
+        input_config_dense_dsm["output"]["geoid"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -3352,10 +3351,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "method": "census_sgm",
                 "use_global_disp_range": False,
             },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "use_geoid_alt": True,
-            },
+            "triangulation": {"method": "line_of_sight_intersection"},
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -3382,6 +3378,8 @@ def test_end2end_ventoux_egm96_geoid():
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
+        input_config_dense_dsm["output"]["geoid"] = True
+
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
@@ -3406,6 +3404,145 @@ def test_end2end_ventoux_egm96_geoid():
             atol=1.0e-6,
         )
         assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+
+    # Test with custom geoid
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_custom_geoid.json"
+        )
+
+        # Run sparse dsm pipeline
+        _, input_config_dense_dsm = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        resolution = 0.5
+        dense_dsm_applications = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "strip_height": 80},
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_matches": True,
+            },
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_global_disp_range": False,
+            },
+            "triangulation": {"method": "line_of_sight_intersection"},
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "resolution": resolution,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+                "save_stats": True,
+            },
+        }
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+
+        # update epsg
+        final_epsg = 32631
+        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        # use endogenous dem
+        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+
+        input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
+            "input/geoid/egm96_15_modified.tif"
+        )
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline.run()
+
+        out_dir = input_config_dense_dsm["output"]["out_dir"]
+
+        # Check content.json properties
+        out_json = os.path.join(out_dir, "content.json")
+        assert os.path.isfile(out_json)
+
+        with open(out_json, "r", encoding="utf-8") as out_json_file:
+            out_data = json.load(out_json_file)
+            out_grid = out_data["applications"]["left_right"][
+                "grid_generation_run"
+            ]
+            assert out_grid["epipolar_size_x"] == 612
+            assert out_grid["epipolar_size_y"] == 612
+            out_disp_compute = out_data["applications"]["left_right"][
+                "dense_matching_run"
+            ]
+            # global_disp_min   -21 shareloc
+            assert out_disp_compute["global_disp_min"] > -34
+            assert out_disp_compute["global_disp_min"] < -32
+            # global max: 86 shareloc
+            assert out_disp_compute["global_disp_max"] > 30
+            assert out_disp_compute["global_disp_max"] < 31
+
+            assert os.path.isfile(
+                out_data["applications"]["left_right"]["grid_correction"][
+                    "corrected_filtered_matches"
+                ]
+            )
+
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = "ref_output"
+
+        # Uncomment the 2 following instructions to update reference data
+        # copy2(
+        #     os.path.join(out_dir, "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(ref_output_dir,
+        #             "dsm_end2end_ventoux_egm96_custom_geoid.tif")
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "clr.tif"),
+        #     absolute_data_path(
+        #         os.path.join(ref_output_dir,
+        #             "clr_end2end_ventoux_egm96_custom_geoid.tif")
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end_ventoux_egm96_custom_geoid.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "clr.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "clr_end2end_ventoux_egm96_custom_geoid.tif"
+                )
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
 
 
 @pytest.mark.end2end_tests

@@ -26,7 +26,7 @@ Used for full_res and low_res pipelines
 import errno
 import os
 
-from json_checker import Checker
+from json_checker import Checker, Or
 
 # CARS imports
 import cars.pipelines.output.output_constants
@@ -68,6 +68,11 @@ def dense_dsm_check_output(conf):
             cars.pipelines.output.output_constants.INFO_BASENAME, "content.json"
         )
     )
+    overloaded_conf[cars.pipelines.output.output_constants.OUT_GEOID] = (
+        overloaded_conf.get(
+            cars.pipelines.output.output_constants.OUT_GEOID, False
+        )
+    )
 
     # Check schema
     output_schema = {
@@ -75,6 +80,7 @@ def dense_dsm_check_output(conf):
         cars.pipelines.output.output_constants.DSM_BASENAME: str,
         cars.pipelines.output.output_constants.CLR_BASENAME: str,
         cars.pipelines.output.output_constants.INFO_BASENAME: str,
+        cars.pipelines.output.output_constants.OUT_GEOID: Or(bool, str),
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)

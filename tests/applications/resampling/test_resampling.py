@@ -390,8 +390,10 @@ def test_check_tiles_in_sensor():
 
         # Generate grids
         geometry_plugin = get_geometry_plugin(
-            dem=inputs[sens_cst.INITIAL_ELEVATION],
-            default_alt=inputs[sens_cst.DEFAULT_ALT],
+            dem=inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH],
+            default_alt=inputs[sens_cst.INITIAL_ELEVATION][
+                sens_cst.DEFAULT_ALT
+            ],
         )
 
         with orchestrator.Orchestrator(

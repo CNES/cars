@@ -70,7 +70,6 @@ class LineOfSightIntersection(
         super().__init__(conf=conf)
         # check conf
         self.used_method = self.used_config["method"]
-        self.use_geoid_alt = self.used_config["use_geoid_alt"]
         self.snap_to_img1 = self.used_config["snap_to_img1"]
         # Saving files
         self.save_points_cloud = self.used_config["save_points_cloud"]
@@ -106,7 +105,6 @@ class LineOfSightIntersection(
         overloaded_conf["method"] = conf.get(
             "method", "line_of_sight_intersection"
         )
-        overloaded_conf["use_geoid_alt"] = conf.get("use_geoid_alt", False)
         overloaded_conf["snap_to_img1"] = conf.get("snap_to_img1", False)
 
         # Saving files
@@ -116,7 +114,6 @@ class LineOfSightIntersection(
 
         triangulation_schema = {
             "method": str,
-            "use_geoid_alt": bool,
             "snap_to_img1": bool,
             "save_points_cloud": bool,
         }
@@ -270,10 +267,8 @@ class LineOfSightIntersection(
                 )
 
         # Add log about geoid
-        alt_reference = None
-        if self.use_geoid_alt:
-            if geoid_path is not None:
-                alt_reference = "geoid"
+        if geoid_path is not None:
+            alt_reference = "geoid"
         else:
             alt_reference = "ellipsoid"
 
@@ -346,6 +341,9 @@ class LineOfSightIntersection(
             "color_type": epipolar_image.attributes["color_type"],
             "opt_epipolar_tile_size": epipolar_image.attributes["tile_width"],
         }
+
+        if geoid_path:
+            pc_attributes["geoid"] = (geoid_path,)
 
         if epipolar_disparity_map.dataset_type in ("arrays", "points"):
             # Create CarsDataset
@@ -513,7 +511,7 @@ class LineOfSightIntersection(
                         broadcasted_grid_right,
                         geometry_plugin,
                         epsg,
-                        geoid_path=geoid_path if self.use_geoid_alt else None,
+                        geoid_path=geoid_path,
                         denoising_overload_fun=denoising_overload_fun,
                         cloud_id=cloud_id,
                         intervals=intervals,
