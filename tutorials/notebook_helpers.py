@@ -22,6 +22,8 @@
 this module contains functions helpers used in notebooks.
 """
 
+import copy
+
 # Standard imports
 import logging
 import os
@@ -140,7 +142,7 @@ def mkdir(root_dir, name_dir):
     return full_path_name_dir
 
 
-def get_full_data(cars_ds, tag):
+def get_full_data(cars_ds, tag, nodata=-32768):
     """
     Get combined data of CarsDataset
 
@@ -188,6 +190,9 @@ def get_full_data(cars_ds, tag):
     if len(array.shape) == 3:
         array = np.rollaxis(array, 0, 3)
 
+    if np.issubdtype(array.dtype, np.floating):
+        array[array == nodata] = np.nan
+
     return array
 
 
@@ -230,6 +235,7 @@ def show_data(data, figsize=(11, 11), mode=None):
     """
 
     # squeeze data
+    data = copy.deepcopy(data)
     data = np.squeeze(data)
 
     # Replace Nan by 0 for visualisation
@@ -357,7 +363,6 @@ def overide_input_conf_with_a_priori(
     """
     # Get a priori in file
     a_priori_dict_full = load_dict(content_json_with_a_priori)
-    print(a_priori_dict_full)
     epipolar_a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
     terrain_a_priori = a_priori_dict_full["inputs"]["terrain_a_priori"]
 
