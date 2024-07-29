@@ -95,9 +95,8 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         super().__init__(conf_cluster, out_dir, launch_worker=launch_worker)
 
         # retrieve parameters
-        self.nb_workers = self.nb_workers = self.checked_conf_cluster[
-            "nb_workers"
-        ]
+        self.nb_workers = self.checked_conf_cluster["nb_workers"]
+        self.task_timeout = self.checked_conf_cluster["task_timeout"]
         self.max_tasks_per_worker = self.checked_conf_cluster[
             "max_tasks_per_worker"
         ]
@@ -200,6 +199,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
         overloaded_conf["mode"] = conf.get("mode", "mp")
         nb_workers = conf.get("nb_workers", 2)
         overloaded_conf["nb_workers"] = min(available_cpu, nb_workers)
+        overloaded_conf["task_timeout"] = conf.get("task_timeout", 600)
         overloaded_conf["max_ram_per_worker"] = conf.get(
             "max_ram_per_worker", 2000
         )
@@ -215,6 +215,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
             "mode": str,
             "dump_to_disk": bool,
             "nb_workers": And(int, lambda x: x > 0),
+            "task_timeout": And(int, lambda x: x > 0),
             "max_ram_per_worker": And(Or(float, int), lambda x: x > 0),
             "max_tasks_per_worker": And(int, lambda x: x > 0),
             "per_job_timeout": Or(float, int),

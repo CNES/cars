@@ -94,11 +94,23 @@ conf_slurm_dask = {
         conf_auto,
         conf_mp,
         conf_local_dask,
-        conf_pbs_dask,
-        conf_slurm_dask,
     ],
 )
 def test_check_full_conf(conf):
+    """
+    Test configuration check for orchestrator
+    """
+    _ = Orchestrator(conf)
+
+
+@pytest.mark.slurm_cluster_tests
+@pytest.mark.parametrize(
+    "conf",
+    [
+        conf_slurm_dask,
+    ],
+)
+def test_check_full_conf_slurm(conf):
     """
     Test configuration check for orchestrator
     """

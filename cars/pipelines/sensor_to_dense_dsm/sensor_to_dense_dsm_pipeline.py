@@ -1068,30 +1068,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     safe_save=True,
                 )
 
-                # if sequential mode, apply roi
-                epipolar_roi = None
-                if (
-                    cars_orchestrator.cluster.checked_conf_cluster["mode"]
-                    == "sequential"
-                    or "no_merging" in self.used_conf[PIPELINE]
-                ):
-                    # Generate roi
-                    epipolar_roi = preprocessing.compute_epipolar_roi(
-                        self.input_roi_poly,
-                        self.input_roi_epsg,
-                        self.geom_plugin_with_dem_and_geoid,
-                        pairs[pair_key]["sensor_image_left"],
-                        pairs[pair_key]["sensor_image_right"],
-                        pairs[pair_key]["corrected_grid_left"],
-                        pairs[pair_key]["corrected_grid_right"],
-                        pairs[pair_key]["pair_folder"],
-                        disp_min=np.min(
-                            disp_range_grid[0, 0]["disp_min_grid"].values
-                        ),  # TODO compute dmin dans dmax
-                        disp_max=np.max(
-                            disp_range_grid[0, 0]["disp_max_grid"].values
-                        ),
-                    )
+                # Generate roi
+                epipolar_roi = preprocessing.compute_epipolar_roi(
+                    self.input_roi_poly,
+                    self.input_roi_epsg,
+                    self.geom_plugin_with_dem_and_geoid,
+                    pairs[pair_key]["sensor_image_left"],
+                    pairs[pair_key]["sensor_image_right"],
+                    pairs[pair_key]["corrected_grid_left"],
+                    pairs[pair_key]["corrected_grid_right"],
+                    pairs[pair_key]["pair_folder"],
+                    disp_min=np.min(
+                        disp_range_grid[0, 0]["disp_min_grid"].values
+                    ),  # TODO compute dmin dans dmax
+                    disp_max=np.max(
+                        disp_range_grid[0, 0]["disp_max_grid"].values
+                    ),
+                )
 
                 # Generate new epipolar images
                 # Generated with corrected grids
