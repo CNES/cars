@@ -1,0 +1,29 @@
+{
+  "inputs": {
+    "sensors": {
+      "left": {
+        "image": "left_image.tif",
+        "color": "left_image.tif",
+        "geomodel": {
+          "path": "left_image.geom"
+        }
+      },
+      "right": {
+        "image": "right_image.tif",
+        "geomodel": {
+          "path": "right_image.geom"
+        }
+      }
+    },
+    "pairing": [
+      [
+        "left",
+        "right"
+      ]
+    ],
+    "initial_elevation": {
+      "dem_path": "srtm/N44E005.hgt",
+      "geoid": "../geoid/egm96_15.tif"
+    }
+  }
+}

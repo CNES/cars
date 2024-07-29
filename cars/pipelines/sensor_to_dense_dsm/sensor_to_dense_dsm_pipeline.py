@@ -590,7 +590,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # If not provided, grid are generated without dem and a dem
                 # will be generated, to use later for a new grid generation**
 
-                if self.inputs[sens_cst.INITIAL_ELEVATION] is None:
+                if (
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is None
+                ):
                     geom_plugin = self.geom_plugin_without_dem_and_geoid
                 else:
                     geom_plugin = self.geom_plugin_with_dem_and_geoid
@@ -788,19 +791,27 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem = self.dem_generation_application.run(
                     triangulated_matches_list,
                     cars_orchestrator.out_dir,
-                    self.inputs[sens_cst.GEOID],
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
                     dem_roi_to_use=self.dem_generation_roi,
                 )
                 # Same geometry plugin if we use exogenous dem
                 # as initial elevation always used before if provided
                 dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
                 if (
-                    self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                    self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+                    is not None
                     and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                 ):
-                    dem_median = self.inputs[sens_cst.INITIAL_ELEVATION]
+                    dem_median = self.inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ]
 
-                if dem_median != self.inputs[sens_cst.INITIAL_ELEVATION]:
+                if (
+                    dem_median
+                    != self.inputs[sens_cst.INITIAL_ELEVATION][
+                        sens_cst.DEM_PATH
+                    ]
+                ):
                     self.geom_plugin_with_dem_and_geoid = (
                         sensors_inputs.generate_geometry_plugin_with_dem(
                             self.used_conf[GEOMETRY_PLUGIN],
@@ -841,7 +852,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
 
                     if not (
-                        self.inputs[sens_cst.INITIAL_ELEVATION] is not None
+                        self.inputs[sens_cst.INITIAL_ELEVATION][
+                            sens_cst.DEM_PATH
+                        ]
+                        is not None
                         and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                     ):
                         # Generate grids with new MNT
@@ -1229,6 +1243,24 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     intervals = None
 
+                if isinstance(self.output[sens_cst.GEOID], str):
+                    output_geoid_path = self.output[sens_cst.GEOID]
+                elif (
+                    isinstance(self.output[sens_cst.GEOID], bool)
+                    and self.output[sens_cst.GEOID]
+                ):
+                    package_path = os.path.dirname(__file__)
+                    output_geoid_path = os.path.join(
+                        package_path,
+                        "..",
+                        "..",
+                        "conf",
+                        sensors_inputs.CARS_GEOID_PATH,
+                    )
+                else:
+                    # default case : stay on the ellipsoid
+                    output_geoid_path = None
+
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
                     pairs[pair_key]["sensor_image_left"],
@@ -1245,7 +1277,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pair_folder=pairs[pair_key]["pair_folder"],
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
-                    geoid_path=self.inputs[sens_cst.GEOID],
+                    geoid_path=output_geoid_path,
                     cloud_id=cloud_id,
                     intervals=intervals,
                 )
