@@ -235,11 +235,11 @@ def test_epipolar_rectify_images_1(
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
-    # with open(absolute_data_path("ref_output/data1_ref_clr"), "wb") as file:
+    # with open(absolute_data_path("ref_output/data1_ref_color"), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path("ref_output/data1_ref_clr"),
+        absolute_data_path("ref_output/data1_ref_color"),
         "rb",
     ) as file2:
         # load pickle data
@@ -342,12 +342,14 @@ def test_epipolar_rectify_images_3(
 
     # Uncomment to update baseline
     # with open(absolute_data_path(os.path.join(
-    #           "ref_output","data3_ref_clr_4bands"
+    #           "ref_output","data3_ref_color_4bands"
     #      )), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path(os.path.join("ref_output", "data3_ref_clr_4bands")),
+        absolute_data_path(
+            os.path.join("ref_output", "data3_ref_color_4bands")
+        ),
         "rb",
     ) as file2:
         # load pickle data

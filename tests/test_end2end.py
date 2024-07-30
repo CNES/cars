@@ -138,15 +138,15 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
@@ -167,17 +167,17 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+                os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+                os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -212,18 +212,18 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
+        #             ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
+        #             ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
         #         )
         #     ),
         # )
@@ -248,20 +248,20 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
+                    ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
+                    ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
                 )
             ),
             rtol=1.0e-7,
@@ -738,9 +738,9 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
@@ -923,14 +923,14 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the color1
     input_json = absolute_data_path(
@@ -1024,14 +1024,14 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test we have the same results with multiprocessing
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -1121,14 +1121,14 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -1236,10 +1236,10 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     os.path.join(out_dir_dsm, "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+            #             ref_output_dir, "color_end2end_ventoux_split_4326.tif"
             #         )
             #     ),
             # )
@@ -1264,10 +1264,10 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                        ref_output_dir, "color_end2end_ventoux_split_4326.tif"
                     )
                 ),
                 rtol=1.0e-7,
@@ -1309,10 +1309,10 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                        ref_output_dir, "color_end2end_ventoux_split_4326.tif"
                     )
                 ),
                 rtol=1.0e-7,
@@ -1446,7 +1446,9 @@ def test_end2end_ventoux_unique_split():
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
                             "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "mask": os.path.join(epi_pc_path, "epi_pc_msk.tif"),
+                            "mask": os.path.join(
+                                epi_pc_path, "epi_pc_mask.tif"
+                            ),
                             "color": os.path.join(
                                 epi_pc_path, "epi_pc_color.tif"
                             ),
@@ -1554,18 +1556,18 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     os.path.join(out_dir_dsm, "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "clr_end2end_ventoux_split.tif"
+            #             ref_output_dir, "color_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "msk.tif"),
+            #     os.path.join(out_dir_dsm, "mask.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "msk_end2end_ventoux_split.tif"
+            #             ref_output_dir, "mask_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
@@ -1625,20 +1627,20 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split.tif"
+                        ref_output_dir, "color_end2end_ventoux_split.tif"
                     )
                 ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "msk.tif"),
+                os.path.join(out_dir_dsm, "mask.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "msk_end2end_ventoux_split.tif"
+                        ref_output_dir, "mask_end2end_ventoux_split.tif"
                     )
                 ),
                 rtol=1.0e-7,
@@ -2021,10 +2023,10 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end" + "_ventoux_no_srtm.tif"
+        #             ref_output_dir, "color_end2end" + "_ventoux_no_srtm.tif"
         #         )
         #     ),
         # )
@@ -2046,9 +2048,11 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_no_srtm.tif")
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_no_srtm.tif"
+                )
             ),
             rtol=0.0002,
             atol=1.0e-6,
@@ -2064,7 +2068,7 @@ def test_end2end_use_epipolar_a_priori():
             atol=1.0e-7,
             rtol=1.0e-7,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -2362,10 +2366,10 @@ def test_end2end_ventoux_with_color():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_ventoux_with_color.tif"
+        #             ref_output_dir, "color_end2end_ventoux_with_color.tif"
         #         )
         #     ),
         # )
@@ -2381,10 +2385,10 @@ def test_end2end_ventoux_with_color():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_with_color.tif"
+                    ref_output_dir, "color_end2end_ventoux_with_color.tif"
                 )
             ),
             rtol=0.0002,
@@ -2732,10 +2736,10 @@ def test_compute_dsm_with_roi_ventoux():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end" + "_ventoux_with_roi.tif"
+        #             ref_output_dir, "color_end2end" + "_ventoux_with_roi.tif"
         #         )
         #     ),
         # )
@@ -2751,14 +2755,16 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_with_roi.tif")
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_with_roi.tif"
+                )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
         # check final bounding box
         # create reference
@@ -2873,11 +2879,11 @@ def test_compute_dsm_with_snap_to_img1():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "clr_end2end_ventoux_with_snap_to_img1.tif"
+        #             "color_end2end_ventoux_with_snap_to_img1.tif"
         #         )
         #     ),
         # )
@@ -2893,16 +2899,17 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_with_snap_to_img1.tif"
+                    ref_output_dir,
+                    "color_end2end_ventoux_with_snap_to_img1.tif",
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -3042,11 +3049,11 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "clr_end2end_ventoux_quality_stats.tif"
+        #             "color_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
@@ -3129,10 +3136,10 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_quality_stats.tif"
+                    ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
                 )
             ),
             rtol=0.0002,
@@ -3180,7 +3187,7 @@ def test_end2end_quality_stats():
             atol=0.0001,
             rtol=1e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -3294,9 +3301,9 @@ def test_end2end_ventoux_egm96_geoid():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+        #       os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
         #     ),
         # )
 
@@ -3309,14 +3316,14 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-    assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+    assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the color1
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -3396,14 +3403,14 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test with custom geoid
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -3516,10 +3523,10 @@ def test_end2end_ventoux_egm96_geoid():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
-        #             "clr_end2end_ventoux_egm96_custom_geoid.tif")
+        #             "color_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
 
@@ -3534,10 +3541,11 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_egm96_custom_geoid.tif"
+                    ref_output_dir,
+                    "color_end2end_ventoux_egm96_custom_geoid.tif",
                 )
             ),
             rtol=1.0e-7,
@@ -3633,15 +3641,15 @@ def test_end2end_paca_with_mask():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_paca.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
         #     ),
         # )
 
@@ -3654,17 +3662,17 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+                os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -3749,17 +3757,17 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+                os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -3773,7 +3781,7 @@ def test_end2end_disparity_filling():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+        input_json = absolute_data_path("input/phr_gizeh/input_mask_fill.json")
 
         # Run dense dsm pipeline
         _, input_config_dense_dsm = generate_input_json(
@@ -3845,15 +3853,15 @@ def test_end2end_disparity_filling():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_gizeh_fill.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_gizeh_fill.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
@@ -3873,17 +3881,17 @@ def test_end2end_disparity_filling():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_gizeh_fill.tif")
+                os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_gizeh_fill.tif")
+                os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -3906,7 +3914,7 @@ def test_end2end_disparity_filling_with_zeros():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+        input_json = absolute_data_path("input/phr_gizeh/input_mask_fill.json")
 
         # Run dense dsm pipeline
         _, input_config_dense_dsm = generate_input_json(
@@ -3975,18 +3983,18 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_gizeh_fill_with_zero.tif"
+        #             ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "msk_end2end_gizeh_fill_with_zero.tif"
+        #             ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
         #         )
         #     ),
         # )
@@ -4010,20 +4018,20 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_gizeh_fill_with_zero.tif"
+                    ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "mask.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "msk_end2end_gizeh_fill_with_zero.tif"
+                    ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
                 )
             ),
             rtol=1.0e-7,

@@ -459,7 +459,7 @@ class SimpleGaussian(
                 out_clr_file_name = color_file_name
             else:
                 out_clr_file_name = os.path.join(
-                    self.orchestrator.out_dir, "clr.tif"
+                    self.orchestrator.out_dir, "color.tif"
                 )
             if not self.color_dtype:
                 self.color_dtype = color_dtype
@@ -575,7 +575,7 @@ class SimpleGaussian(
             )
         if self.save_mask:
             out_msk_file_name = os.path.join(
-                self.orchestrator.out_dir, "msk.tif"
+                self.orchestrator.out_dir, "mask.tif"
             )
             self.orchestrator.add_to_save_lists(
                 out_msk_file_name,

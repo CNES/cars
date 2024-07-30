@@ -60,7 +60,7 @@ def dense_dsm_check_output(conf):
     )
     overloaded_conf[cars.pipelines.output.output_constants.CLR_BASENAME] = (
         overloaded_conf.get(
-            cars.pipelines.output.output_constants.CLR_BASENAME, "clr.tif"
+            cars.pipelines.output.output_constants.CLR_BASENAME, "color.tif"
         )
     )
     overloaded_conf[cars.pipelines.output.output_constants.INFO_BASENAME] = (

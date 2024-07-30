@@ -195,7 +195,7 @@ def test_simple_rasterization_dataset_1():
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
     cloud_id = 0
 
@@ -276,7 +276,7 @@ def test_simple_rasterization_dataset_1_intervals():
     cloud[cst.Z_SUP] = cloud[cst.Z] + 1
 
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
     cloud_id = 0
 
@@ -353,7 +353,7 @@ def test_simple_rasterization_dataset_2():
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
     cloud_id = 0
 
@@ -431,7 +431,7 @@ def test_simple_rasterization_dataset_():
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
     cloud_id = 0
 
@@ -507,7 +507,7 @@ def test_simple_rasterization_multiple_datasets():
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
 
     utm1 = cloud.isel(row=range(0, 60))
@@ -592,7 +592,7 @@ def test_simple_rasterization_multiple_datasets_with_source_map():
         absolute_data_path("input/rasterization_input/cloud1_ref_epsg_32630.nc")
     )
     color = xr.open_dataset(
-        absolute_data_path("input/intermediate_results/data1_ref_clr.nc")
+        absolute_data_path("input/intermediate_results/data1_ref_color.nc")
     )
 
     utm1 = cloud.isel(row=range(0, 60))
