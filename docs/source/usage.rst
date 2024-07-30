@@ -197,7 +197,7 @@ The structure follows this organisation:
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
             | Name                  | Description                    | Type   | Default value        | Required                   |
             +=======================+================================+========+======================+============================+
-            | *dem_path*            | Path to DEM tiles              | string | None                 | No                         |
+            | *dem*                 | Path to DEM tiles              | string | None                 | No                         |
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
             | *geoid*               | Geoid path                     | string | Cars internal geoid  | No                         |
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
@@ -216,7 +216,7 @@ The structure follows this organisation:
                 {
                 "inputs": {
                         "initial_elevation": {
-                            "dem_path": "/path/to/srtm.tif",
+                            "dem": "/path/to/srtm.tif",
                             "geoid": "/path/to/geoid.tif",
                             "default_alt": 30
                         }
@@ -1611,7 +1611,7 @@ This section describes optional plugins possibilities of CARS.
                 },
                 "pairing": [["one", "two"]],
                 "initial_elevation": {
-                    "dem_path": "path/to/srtm_file.tif"
+                    "dem": "path/to/srtm_file.tif"
                   },
               },
               "geometry_plugin": "SharelocGeometry",

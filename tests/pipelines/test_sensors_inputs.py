@@ -59,7 +59,7 @@ def test_check_full_conf():
         },
         "pairing": [["left", "right"]],
         "initial_elevation": {
-            "dem_path": "srtm/N44E005.hgt",
+            "dem": "srtm/N44E005.hgt",
             "default_alt": 0,
         },
         "epsg": 32631,
