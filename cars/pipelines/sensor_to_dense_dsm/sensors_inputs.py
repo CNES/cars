@@ -70,6 +70,8 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.CHECK_INPUTS, False
     )
 
+    overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
+
     if check_epipolar_a_priori:
         # Check conf use_epipolar_a_priori
         overloaded_conf["use_epipolar_a_priori"] = conf.get(
@@ -87,7 +89,7 @@ def sensors_check_inputs(  # noqa: C901
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
-        sens_cst.PAIRING: [[str]],
+        sens_cst.PAIRING: Or([[str]], None),
         sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
@@ -147,37 +149,49 @@ def sensors_check_inputs(  # noqa: C901
     checker_sensor = Checker(sensor_schema)
 
     for sensor_image_key in conf[sens_cst.SENSORS]:
+        # Case where the sensor is defined as a string refering to the input
+        # image instead of a dict
+        if isinstance(conf[sens_cst.SENSORS][sensor_image_key], str):
+            # initialize sensor dictionary
+            overloaded_conf[sens_cst.SENSORS][sensor_image_key] = {
+                sens_cst.INPUT_IMG: conf[sens_cst.SENSORS][sensor_image_key]
+            }
+
         # Overload optional parameters
-        geomodel = conf[sens_cst.SENSORS][sensor_image_key].get(
+        geomodel = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "geomodel",
-            conf[sens_cst.SENSORS][sensor_image_key][sens_cst.INPUT_IMG],
+            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+                sens_cst.INPUT_IMG
+            ],
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             "geomodel"
         ] = geomodel
 
-        color = conf[sens_cst.SENSORS][sensor_image_key].get(
+        color = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             "color",
-            conf[sens_cst.SENSORS][sensor_image_key][sens_cst.INPUT_IMG],
+            overloaded_conf[sens_cst.SENSORS][sensor_image_key][
+                sens_cst.INPUT_IMG
+            ],
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_COLOR
         ] = color
 
-        no_data = conf[sens_cst.SENSORS][sensor_image_key].get(
+        no_data = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_NODATA, 0
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_NODATA
         ] = no_data
 
-        mask = conf[sens_cst.SENSORS][sensor_image_key].get(
+        mask = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_MSK, None
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
             sens_cst.INPUT_MSK
         ] = mask
-        classif = conf[sens_cst.SENSORS][sensor_image_key].get(
+        classif = overloaded_conf[sens_cst.SENSORS][sensor_image_key].get(
             sens_cst.INPUT_CLASSIFICATION, None
         )
         overloaded_conf[sens_cst.SENSORS][sensor_image_key][
@@ -196,6 +210,21 @@ def sensors_check_inputs(  # noqa: C901
         validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar)
 
     # Validate pairs
+    # If there is two inputs with no associated pairing, consider that the first
+    # image is left and the second image is right
+    if (
+        overloaded_conf[sens_cst.PAIRING] is None
+        and len(overloaded_conf[sens_cst.SENSORS]) == 2
+    ):
+        sensor_keys = list(overloaded_conf[sens_cst.SENSORS].keys())
+        overloaded_conf[sens_cst.PAIRING] = [[sensor_keys[0], sensor_keys[1]]]
+        logging.info(
+            (
+                "Pairing is not defined, '{}' will be used as left sensor and "
+                + "'{}' will be used as right sensor"
+            ).format(sensor_keys[0], sensor_keys[1])
+        )
+
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         if key1 not in overloaded_conf[sens_cst.SENSORS]:
             logging.error("{} not in sensors images".format(key1))
