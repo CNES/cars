@@ -26,6 +26,7 @@ import json
 import os
 
 import pytest
+from json_checker.core.exceptions import MissKeyCheckerError
 
 # CARS imports
 from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
@@ -256,7 +257,7 @@ def test_input_dem_no_geoid_sensors():
 @pytest.mark.unit_tests
 def test_input_dem_no_geoid_squeezed_sensors():
     """
-    Test input with geoid
+    Test input with initial_elevation as string
     """
 
     input_json = absolute_data_path(
@@ -288,7 +289,7 @@ def test_input_dem_no_geoid_squeezed_sensors():
 @pytest.mark.unit_tests
 def test_input_dem_epsg_exit_sensors():
     """
-    Test input with geoid
+    Invalid configuration : epsg in inputs
     """
 
     input_json = absolute_data_path(
@@ -312,9 +313,8 @@ def test_input_dem_epsg_exit_sensors():
         "epsg": 4326,
     }
 
-    with pytest.raises(SystemExit) as exit_error:
+    # epsg should not be defined in inputs
+    with pytest.raises(MissKeyCheckerError):
         sensors_inputs.sensors_check_inputs(
             input_test, config_json_dir=os.path.dirname(input_json)
         )
-    assert exit_error.type == SystemExit
-    assert exit_error.value.code == 1

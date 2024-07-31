@@ -135,7 +135,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         )
         self.used_conf[APPLICATIONS] = application_conf
 
-        self.check_inputs_with_applications(self.inputs, application_conf)
+        self.check_outputs_with_applications(self.output, application_conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -243,18 +243,18 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         return used_conf
 
     @staticmethod
-    def check_inputs_with_applications(inputs_conf, application_conf):
+    def check_outputs_with_applications(outputs_conf, application_conf):
         """
-        Check for each application the input configuration consistency
+        Check for each application the output configuration consistency
 
-        :param inputs_conf: inputs checked configuration
-        :type inputs_conf: dict
+        :param outputs_conf: inputs checked configuration
+        :type outputs_conf: dict
         :param application_conf: application checked configuration
         :type application_conf: dict
         """
 
-        if "epsg" in inputs_conf and inputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
+        if "epsg" in outputs_conf and outputs_conf["epsg"]:
+            spatial_ref = CRS.from_epsg(outputs_conf["epsg"])
             if spatial_ref.is_geographic:
                 if (
                     "point_cloud_rasterization" in application_conf
@@ -309,7 +309,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             # Run applications
 
             # get epsg
-            epsg = self.inputs[sens_cst.EPSG]
+            epsg = self.output[cars.pipelines.output.output_constants.EPSG]
             # compute epsg
             epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
                 self.inputs["point_clouds"]

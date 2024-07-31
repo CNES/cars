@@ -172,8 +172,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
 
         # Check conf application vs inputs application
-        self.application_conf = self.check_inputs_with_applications(
-            self.inputs, self.application_conf
+        self.application_conf = self.check_applications_with_inputs_and_outputs(
+            self.inputs, self.output, self.application_conf
         )
 
         self.used_conf[APPLICATIONS] = self.application_conf
@@ -400,18 +400,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    def check_inputs_with_applications(self, inputs_conf, application_conf):
+    def check_applications_with_inputs_and_outputs(
+        self, inputs_conf, outputs_conf, application_conf
+    ):
         """
-        Check for each application the input configuration consistency
+        Check for each application the input and output configuration
+        consistency
 
         :param inputs_conf: inputs checked configuration
         :type inputs_conf: dict
+        :param outputs_conf: outputs checked configuration
+        :type outputs_conf: dict
         :param application_conf: application checked configuration
         :type application_conf: dict
         """
 
-        if "epsg" in inputs_conf and inputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
+        if "epsg" in outputs_conf and outputs_conf["epsg"]:
+            spatial_ref = CRS.from_epsg(outputs_conf["epsg"])
             if spatial_ref.is_geographic:
                 if (
                     "point_cloud_rasterization" in application_conf
@@ -539,9 +544,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Run applications
 
             # Initialize epsg for terrain tiles
-            epsg = self.inputs[sens_cst.EPSG]
+            epsg = self.output[cars.pipelines.output.output_constants.EPSG]
             if epsg is not None:
-                # Compute roi polygon, in input EPSG
+                # Compute roi polygon, in output EPSG
                 roi_poly = preprocessing.compute_roi_poly(
                     self.input_roi_poly, self.input_roi_epsg, epsg
                 )

@@ -74,6 +74,9 @@ def dense_dsm_check_output(conf):
             cars.pipelines.output.output_constants.OUT_GEOID, False
         )
     )
+    overloaded_conf[cars.pipelines.output.output_constants.EPSG] = (
+        overloaded_conf.get(cars.pipelines.output.output_constants.EPSG, None)
+    )
 
     # Check schema
     output_schema = {
@@ -82,6 +85,7 @@ def dense_dsm_check_output(conf):
         cars.pipelines.output.output_constants.CLR_BASENAME: str,
         cars.pipelines.output.output_constants.INFO_BASENAME: str,
         cars.pipelines.output.output_constants.OUT_GEOID: Or(bool, str),
+        cars.pipelines.output.output_constants.EPSG: Or(int, None),
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)

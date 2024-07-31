@@ -57,8 +57,6 @@ def sensors_check_inputs(  # noqa: C901
     overloaded_conf = conf.copy()
 
     # Overload some optional parameters
-    overloaded_conf[sens_cst.EPSG] = conf.get(sens_cst.EPSG, None)
-
     overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
         sens_cst.USE_ENDOGENOUS_ELEVATION, False
     )
@@ -90,7 +88,6 @@ def sensors_check_inputs(  # noqa: C901
     inputs_schema = {
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: Or([[str]], None),
-        sens_cst.EPSG: Or(int, None),  # move to rasterization
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.ROI: Or(str, dict, None),

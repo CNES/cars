@@ -54,14 +54,12 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
     overloaded_conf = {}
 
     # Overload some optional parameters
-    overloaded_conf[sens_cst.EPSG] = conf.get(sens_cst.EPSG, None)
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
     overloaded_conf[pc_cst.POINT_CLOUDS] = {}
 
     # Validate inputs
     inputs_schema = {
         pc_cst.POINT_CLOUDS: dict,
-        sens_cst.EPSG: Or(int, None),
         sens_cst.ROI: Or(str, dict, None),
     }
 

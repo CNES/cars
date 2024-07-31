@@ -28,7 +28,6 @@ this module contains the constants used in sensor_to_full_resolution
 SENSORS = "sensors"
 PAIRING = "pairing"
 
-EPSG = "epsg"
 INITIAL_ELEVATION = "initial_elevation"
 USE_ENDOGENOUS_ELEVATION = "use_endogenous_elevation"
 

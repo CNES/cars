@@ -62,7 +62,6 @@ def test_check_full_conf():
             "dem": "srtm/N44E005.hgt",
             "default_alt": 0,
         },
-        "epsg": 32631,
         "use_endogenous_elevation": True,
         "roi": {
             "type": "FeatureCollection",

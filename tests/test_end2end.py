@@ -115,7 +115,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # update epsg
         final_epsg = 32631
-        input_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_dense_dsm["output"]["epsg"] = final_epsg
 
         # use endogenous dem
         input_dense_dsm["inputs"]["use_endogenous_elevation"] = False
@@ -195,7 +195,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # launch no mergin pipeline
         input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
-        input_dense_dsm["output"] = {"out_dir": out_dir + "no_merging"}
+        input_dense_dsm["output"]["out_dir"] = out_dir + "no_merging"
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_dense_dsm
@@ -690,7 +690,7 @@ def test_end2end_ventoux_unique():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
@@ -1002,7 +1002,7 @@ def test_end2end_ventoux_unique():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         # use endogenous dem
@@ -1099,7 +1099,7 @@ def test_end2end_ventoux_unique():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         # use endogenous dem
@@ -1140,7 +1140,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_ventoux/input_4326.json")
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
         # Run sensors_to_dense_point_clouds pipeline
         _, input_config_pc = generate_input_json(
             input_json,
@@ -1158,6 +1158,8 @@ def test_end2end_ventoux_unique_split_epsg_4326():
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
+
+        input_config_pc["inputs"]["output"] = {"epsg": 4326}
 
         pc_pipeline.run()
 
@@ -1181,7 +1183,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                             ),
                         }
                     },
-                    "epsg": 4326,
                     "roi": {
                         "type": "FeatureCollection",
                         "features": [
@@ -1205,7 +1206,10 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     },
                 },
                 "geometry_plugin": geometry_plugin_name,
-                "output": {"out_dir": output_path},
+                "output": {
+                    "out_dir": output_path,
+                    "epsg": 4326,
+                },
                 "pipeline": "dense_point_clouds_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
@@ -1289,7 +1293,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             input_dsm_config["pipeline"] = (
                 "dense_point_clouds_to_dense_dsm_no_merging"
             )
-            input_dsm_config["output"] = {"out_dir": output_path + "no_merging"}
+            input_dsm_config["output"]["out_dir"] = output_path + "no_merging"
 
             dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
                 input_dsm_config
@@ -1972,7 +1976,7 @@ def test_end2end_use_epipolar_a_priori():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
         # Update outdir, write new dir
@@ -2270,7 +2274,7 @@ def test_end2end_ventoux_with_color():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -2523,7 +2527,7 @@ def test_end2end_ventoux_with_classif():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -2688,7 +2692,7 @@ def test_compute_dsm_with_roi_ventoux():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
 
         # Update roi
         roi_geo_json = {
@@ -2854,7 +2858,7 @@ def test_compute_dsm_with_snap_to_img1():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -2972,7 +2976,7 @@ def test_end2end_quality_stats():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3250,7 +3254,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3381,7 +3385,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3469,7 +3473,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3619,7 +3623,7 @@ def test_end2end_paca_with_mask():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3736,7 +3740,7 @@ def test_end2end_paca_with_mask():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3831,7 +3835,7 @@ def test_end2end_disparity_filling():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3959,7 +3963,7 @@ def test_end2end_disparity_filling_with_zeros():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
