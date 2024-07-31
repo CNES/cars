@@ -32,7 +32,6 @@ import os
 from pyproj import CRS
 
 # CARS imports
-import cars.pipelines.output.output_constants
 from cars import __version__
 from cars.applications.application import Application
 from cars.applications.point_cloud_fusion import pc_tif_tools
@@ -40,6 +39,7 @@ from cars.core import preprocessing, roi_tools
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines.parameters import output_constants
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
@@ -292,9 +292,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             out_dir=out_dir,
             out_json_path=os.path.join(
                 out_dir,
-                self.output[
-                    cars.pipelines.output.output_constants.INFO_BASENAME
-                ],
+                self.output[output_constants.INFO_BASENAME],
             ),
         ) as cars_orchestrator:
             # initialize out_json
@@ -309,7 +307,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             # Run applications
 
             # get epsg
-            epsg = self.output[cars.pipelines.output.output_constants.EPSG]
+            epsg = self.output[output_constants.EPSG]
             # compute epsg
             epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
                 self.inputs["point_clouds"]
@@ -467,15 +465,11 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
                     out_dir,
-                    self.output[
-                        cars.pipelines.output.output_constants.DSM_BASENAME
-                    ],
+                    self.output[output_constants.DSM_BASENAME],
                 ),
                 color_file_name=os.path.join(
                     out_dir,
-                    self.output[
-                        cars.pipelines.output.output_constants.CLR_BASENAME
-                    ],
+                    self.output[output_constants.CLR_BASENAME],
                 ),
                 color_dtype=color_type,
             )

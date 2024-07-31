@@ -29,7 +29,7 @@ import os
 from json_checker import Checker, Or
 
 # CARS imports
-import cars.pipelines.output.output_constants
+from cars.pipelines.parameters import output_constants
 
 
 def dense_dsm_check_output(conf):
@@ -40,7 +40,7 @@ def dense_dsm_check_output(conf):
     :type conf: dict
     """
     overloaded_conf = conf.copy()
-    out_dir = conf[cars.pipelines.output.output_constants.OUT_DIR]
+    out_dir = conf[output_constants.OUT_DIR]
     out_dir = os.path.abspath(out_dir)
     # Ensure that outdir exists
     try:
@@ -52,40 +52,32 @@ def dense_dsm_check_output(conf):
             raise
 
     # Overload some parameters
-    overloaded_conf[cars.pipelines.output.output_constants.OUT_DIR] = out_dir
-    overloaded_conf[cars.pipelines.output.output_constants.DSM_BASENAME] = (
-        overloaded_conf.get(
-            cars.pipelines.output.output_constants.DSM_BASENAME, "dsm.tif"
-        )
+    overloaded_conf[output_constants.OUT_DIR] = out_dir
+    overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
+        output_constants.DSM_BASENAME, "dsm.tif"
     )
-    overloaded_conf[cars.pipelines.output.output_constants.CLR_BASENAME] = (
-        overloaded_conf.get(
-            cars.pipelines.output.output_constants.CLR_BASENAME, "color.tif"
-        )
+    overloaded_conf[output_constants.CLR_BASENAME] = overloaded_conf.get(
+        output_constants.CLR_BASENAME, "color.tif"
     )
-    overloaded_conf[cars.pipelines.output.output_constants.INFO_BASENAME] = (
-        overloaded_conf.get(
-            cars.pipelines.output.output_constants.INFO_BASENAME,
-            "metadata.json",
-        )
+    overloaded_conf[output_constants.INFO_BASENAME] = overloaded_conf.get(
+        output_constants.INFO_BASENAME,
+        "metadata.json",
     )
-    overloaded_conf[cars.pipelines.output.output_constants.OUT_GEOID] = (
-        overloaded_conf.get(
-            cars.pipelines.output.output_constants.OUT_GEOID, False
-        )
+    overloaded_conf[output_constants.OUT_GEOID] = overloaded_conf.get(
+        output_constants.OUT_GEOID, False
     )
-    overloaded_conf[cars.pipelines.output.output_constants.EPSG] = (
-        overloaded_conf.get(cars.pipelines.output.output_constants.EPSG, None)
+    overloaded_conf[output_constants.EPSG] = overloaded_conf.get(
+        output_constants.EPSG, None
     )
 
     # Check schema
     output_schema = {
-        cars.pipelines.output.output_constants.OUT_DIR: str,
-        cars.pipelines.output.output_constants.DSM_BASENAME: str,
-        cars.pipelines.output.output_constants.CLR_BASENAME: str,
-        cars.pipelines.output.output_constants.INFO_BASENAME: str,
-        cars.pipelines.output.output_constants.OUT_GEOID: Or(bool, str),
-        cars.pipelines.output.output_constants.EPSG: Or(int, None),
+        output_constants.OUT_DIR: str,
+        output_constants.DSM_BASENAME: str,
+        output_constants.CLR_BASENAME: str,
+        output_constants.INFO_BASENAME: str,
+        output_constants.OUT_GEOID: Or(bool, str),
+        output_constants.EPSG: Or(int, None),
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)
