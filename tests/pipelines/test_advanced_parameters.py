@@ -51,9 +51,9 @@ def test_advanced_parameters_full_config():
             }
         },
         "terrain_a_priori": {
-            "dem_median": "/tmp/cars/output/dem_median.tif",
-            "dem_min": "/tmp/cars/output/dem_min.tif",
-            "dem_max": "/tmp/cars/output/dem_max.tif",
+            "dem_median": "dem_median.tif",
+            "dem_min": "dem_min.tif",
+            "dem_max": "dem_max.tif",
         },
     }
 
@@ -72,13 +72,39 @@ def test_advanced_parameters_minimal():
 
 
 @pytest.mark.unit_tests
-def test_advanced_parameters_no_epipolar():
+def test_advanced_parameters_update_conf():
     """
     Test configuration check for advanced parameters
     """
 
     config = {"debug_with_roi": True}
 
-    advanced_parameters.check_advanced_parameters(
+    # First config check without epipolar a priori
+    updated_config = advanced_parameters.check_advanced_parameters(
         config, check_epipolar_a_priori=False
+    )
+
+    # TODO: maybe move this inside update conf
+    updated_config["epipolar_a_priori"] = {}
+    updated_config["terrain_a_priori"] = {}
+    updated_config["use_epipolar_a_priori"] = True
+
+    # Cars level conf
+    full_config = {"advanced": updated_config}
+
+    # Update config
+    advanced_parameters.update_conf(
+        full_config,
+        grid_correction_coef=[1, 2, 3, 4, 5, 6],
+        dmin=-10,
+        dmax=10,
+        pair_key="pair_key",
+        dem_median="dem_median.tif",
+        dem_min="dem_min.tif",
+        dem_max="dem_max.tif",
+    )
+
+    # First config check without epipolar a priori
+    updated_config = advanced_parameters.check_advanced_parameters(
+        full_config["advanced"], check_epipolar_a_priori=True
     )
