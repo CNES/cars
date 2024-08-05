@@ -84,22 +84,6 @@ def test_check_full_conf():
                 }
             ],
         },
-        "debug_with_roi": False,
         "check_inputs": False,
-        "use_epipolar_a_priori": False,
-        "epipolar_a_priori": {
-            "left_right": {
-                "grid_correction": [
-                    4.288258198116454,
-                    -5.126994797702842e-05,
-                    -0.0001868504592756687,
-                    0.7633338209640763,
-                    0.00017551039816977951,
-                    7.416961236000769e-05,
-                ],
-                "disparity_range": [-26.157764557028997, 26.277429517242638],
-            }
-        },
-        "terrain_a_priori": {},
     }
     _ = sensors_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)

@@ -65,6 +65,10 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
 
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
 
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
+        conf.get(sens_cst.INITIAL_ELEVATION, None)
+    )
+
     # Validate inputs
     inputs_schema = {
         sens_cst.SENSORS: dict,
@@ -166,10 +170,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         if key2 not in overloaded_conf["sensors"]:
             logging.error("{} not in sensors images".format(key2))
             raise RuntimeError("{} not in sensors images".format(key2))
-
-    overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
-        conf.get(sens_cst.INITIAL_ELEVATION, None)
-    )
 
     # Modify to absolute path
     if config_json_dir is not None:
