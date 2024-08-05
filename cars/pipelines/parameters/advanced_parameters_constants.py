@@ -20,5 +20,21 @@
 #
 
 """
-CARS module containing functions to check advanced parameters configuration
+This module contains the advanced parameter definitions
 """
+
+DEBUG_WITH_ROI = "debug_with_roi"
+
+USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
+EPIPOLAR_A_PRIORI = "epipolar_a_priori"
+
+
+# inner epipolar a priori constants
+GRID_CORRECTION = "grid_correction"
+DISPARITY_RANGE = "disparity_range"
+
+TERRAIN_A_PRIORI = "terrain_a_priori"
+
+DEM_MEDIAN = "dem_median"
+DEM_MIN = "dem_min"
+DEM_MAX = "dem_max"

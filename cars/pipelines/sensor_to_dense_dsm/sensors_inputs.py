@@ -26,7 +26,6 @@ Used for full_res and low_res pipelines
 import logging
 import os
 
-import numpy as np
 import rasterio as rio
 from json_checker import Checker, Or
 
@@ -34,7 +33,7 @@ from json_checker import Checker, Or
 from cars.core import inputs, preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
-from cars.pipelines.pipeline_constants import INPUTS
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
@@ -42,9 +41,7 @@ from cars.pipelines.sensor_to_dense_dsm import (
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 
 
-def sensors_check_inputs(  # noqa: C901
-    conf, config_json_dir=None, check_epipolar_a_priori=True
-):
+def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     """
     Check the inputs given
 
@@ -61,28 +58,12 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.USE_ENDOGENOUS_ELEVATION, False
     )
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
-    overloaded_conf[sens_cst.DEBUG_WITH_ROI] = conf.get(
-        sens_cst.DEBUG_WITH_ROI, False
-    )
+
     overloaded_conf[sens_cst.CHECK_INPUTS] = conf.get(
         sens_cst.CHECK_INPUTS, False
     )
 
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
-
-    if check_epipolar_a_priori:
-        # Check conf use_epipolar_a_priori
-        overloaded_conf["use_epipolar_a_priori"] = conf.get(
-            "use_epipolar_a_priori", False
-        )
-        # Retrieve epipolar_a_priori if it is provided
-        overloaded_conf["epipolar_a_priori"] = conf.get("epipolar_a_priori", {})
-        # Retrieve terrain_a_priori if it is provided
-        overloaded_conf["terrain_a_priori"] = conf.get("terrain_a_priori", {})
-
-    overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
-        conf.get(sens_cst.INITIAL_ELEVATION, None)
-    )
 
     # Validate inputs
     inputs_schema = {
@@ -91,48 +72,11 @@ def sensors_check_inputs(  # noqa: C901
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.ROI: Or(str, dict, None),
-        sens_cst.DEBUG_WITH_ROI: bool,
         sens_cst.CHECK_INPUTS: bool,
     }
-    if check_epipolar_a_priori:
-        inputs_schema[sens_cst.USE_EPIPOLAR_A_PRIORI] = bool
-        inputs_schema[sens_cst.EPIPOLAR_A_PRIORI] = dict
-        inputs_schema[sens_cst.TERRAIN_A_PRIORI] = dict
 
     checker_inputs = Checker(inputs_schema)
     checker_inputs.validate(overloaded_conf)
-
-    # Validate epipolar schema
-    epipolar_schema = {
-        sens_cst.GRID_CORRECTION: Or(list, None),
-        sens_cst.DISPARITY_RANGE: list,
-    }
-    checker_epipolar = Checker(epipolar_schema)
-
-    # Check terrain a priori
-    if check_epipolar_a_priori and overloaded_conf[sens_cst.TERRAIN_A_PRIORI]:
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MEDIAN] = (
-            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-                sens_cst.DEM_MEDIAN, None
-            )
-        )
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MIN] = (
-            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-                sens_cst.DEM_MIN, None
-            )
-        )
-        overloaded_conf[sens_cst.TERRAIN_A_PRIORI][sens_cst.DEM_MAX] = (
-            overloaded_conf[sens_cst.TERRAIN_A_PRIORI].get(
-                sens_cst.DEM_MAX, None
-            )
-        )
-        terrain_a_priori_schema = {
-            sens_cst.DEM_MEDIAN: str,
-            sens_cst.DEM_MIN: Or(str, None),  # TODO mandatory with local disp
-            sens_cst.DEM_MAX: Or(str, None),
-        }
-        checker_terrain = Checker(terrain_a_priori_schema)
-        checker_terrain.validate(overloaded_conf[sens_cst.TERRAIN_A_PRIORI])
 
     # Validate each sensor image
     sensor_schema = {
@@ -199,13 +143,6 @@ def sensors_check_inputs(  # noqa: C901
             overloaded_conf[sens_cst.SENSORS][sensor_image_key]
         )
 
-    # check epipolar a priori for each image pair
-    if (
-        check_epipolar_a_priori
-        and overloaded_conf[sens_cst.USE_EPIPOLAR_A_PRIORI]
-    ):
-        validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar)
-
     # Validate pairs
     # If there is two inputs with no associated pairing, consider that the first
     # image is left and the second image is right
@@ -229,6 +166,10 @@ def sensors_check_inputs(  # noqa: C901
         if key2 not in overloaded_conf["sensors"]:
             logging.error("{} not in sensors images".format(key2))
             raise RuntimeError("{} not in sensors images".format(key2))
+
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
+        conf.get(sens_cst.INITIAL_ELEVATION, None)
+    )
 
     # Modify to absolute path
     if config_json_dir is not None:
@@ -279,14 +220,16 @@ def sensors_check_inputs(  # noqa: C901
     return overloaded_conf
 
 
-def check_geometry_plugin(conf_inputs, conf_geom_plugin):
+def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
     """
     Check the geometry plugin with inputs
-    :param conf_geom_plugin: name of geometry plugin
-    :type conf_geom_plugin: str
+
     :param conf_inputs: checked configuration of inputs
     :type conf_inputs: type
-
+    :param cond_advanced: checked configuration of advanced
+    :type conf_advanced: type
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
     :return: overload inputs conf
              overloaded geometry plugin conf
              geometry plugin without dem
@@ -306,11 +249,11 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     )
 
     # If use a priori, overide initial elevation with dem_median
-    if "use_epipolar_a_priori" in conf_inputs:
-        if conf_inputs["use_epipolar_a_priori"]:
-            if "dem_median" in conf_inputs["terrain_a_priori"]:
+    if adv_cst.USE_EPIPOLAR_A_PRIORI in conf_advanced:
+        if conf_advanced[adv_cst.USE_EPIPOLAR_A_PRIORI]:
+            if adv_cst.DEM_MEDIAN in conf_advanced[adv_cst.TERRAIN_A_PRIORI]:
                 conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] = (
-                    conf_inputs["terrain_a_priori"]["dem_median"]
+                    conf_advanced[adv_cst.TERRAIN_A_PRIORI][adv_cst.DEM_MEDIAN]
                 )
 
     # Check products consistency with this plugin
@@ -446,6 +389,7 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
     :param overloaded_conf: overloaded configuration json
     :dict overloaded_conf: dict
     """
+
     for sensor_image_key in overloaded_conf[sens_cst.SENSORS]:
         sensor_image = overloaded_conf[sens_cst.SENSORS][sensor_image_key]
         for tag in [
@@ -481,28 +425,6 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
                         config_json_dir,
                     )
                 )
-
-
-def validate_epipolar_a_priori(
-    conf,
-    overloaded_conf,
-    checker_epipolar,
-):
-    """
-    Validate inner epipolar configuration
-
-    :param conf : input configuration json
-    :type conf: dict
-    :param overloaded_conf : overloaded configuration json
-    :type overloaded_conf: dict
-    :param checker_epipolar : json checker
-    :type checker_epipolar: Checker
-    """
-
-    for key_image_pair in conf[sens_cst.EPIPOLAR_A_PRIORI]:
-        checker_epipolar.validate(
-            overloaded_conf[sens_cst.EPIPOLAR_A_PRIORI][key_image_pair]
-        )
 
 
 def check_srtm(srtm_dir):
@@ -734,60 +656,3 @@ def generate_inputs(conf, geometry_plugin):
         list_sensor_pairs.append((merged_key, sensor1, sensor2))
 
     return list_sensor_pairs
-
-
-def update_conf(
-    conf,
-    grid_correction_coef=None,
-    dmin=None,
-    dmax=None,
-    pair_key=None,
-    dem_median=None,
-    dem_min=None,
-    dem_max=None,
-):
-    """
-    Update the conf with grid correction and disparity range
-    :param grid_correction_coef: grid correction coefficient
-    :type grid_correction_coef: list
-    :param dmin: disparity range minimum
-    :type dmin: float
-    :param dmax: disparity range maximum
-    :type dmax: float
-    :param pair_key: name of the inputs key pair
-    :type pair_key: str
-    """
-
-    if pair_key is not None:
-        if pair_key not in conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI]:
-            conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key] = {}
-        if grid_correction_coef is not None:
-            if len(grid_correction_coef) == 2:
-                conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
-                    "grid_correction"
-                ] = (
-                    np.concatenate(grid_correction_coef[0], axis=0).tolist()[
-                        :-1
-                    ]
-                    + np.concatenate(grid_correction_coef[1], axis=0).tolist()[
-                        :-1
-                    ]
-                )
-            else:
-                conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
-                    "grid_correction"
-                ] = list(grid_correction_coef)
-        if None not in (dmin, dmax):
-            conf[INPUTS][sens_cst.EPIPOLAR_A_PRIORI][pair_key][
-                "disparity_range"
-            ] = [
-                dmin,
-                dmax,
-            ]
-
-    if dem_median is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_median"] = dem_median
-    if dem_min is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_min"] = dem_min
-    if dem_max is not None:
-        conf[INPUTS][sens_cst.TERRAIN_A_PRIORI]["dem_max"] = dem_max

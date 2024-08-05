@@ -128,14 +128,9 @@ def generate_input_json(
 
     # transform paths
     new_config = config.copy()
-    check_epipolar_a_priori = True
 
-    if pipeline == "sensors_to_sparse_dsm":
-        check_epipolar_a_priori = False
     new_config["inputs"] = sensors_inputs.sensors_check_inputs(
-        new_config["inputs"],
-        config_json_dir=json_dir_path,
-        check_epipolar_a_priori=check_epipolar_a_priori,
+        new_config["inputs"], config_json_dir=json_dir_path
     )
 
     # dump json

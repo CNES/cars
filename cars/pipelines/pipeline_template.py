@@ -71,6 +71,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             OptionalKey(pipeline_constants.GEOMETRY_PLUGIN): str,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.PIPELINE): str,
+            OptionalKey(pipeline_constants.ADVANCED): dict,
         }
 
         checker_inputs = Checker(global_schema)

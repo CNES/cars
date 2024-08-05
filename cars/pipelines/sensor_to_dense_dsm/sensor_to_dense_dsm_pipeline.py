@@ -51,9 +51,12 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
+    ADVANCED,
     APPLICATIONS,
     GEOMETRY_PLUGIN,
     INPUTS,
@@ -138,6 +141,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
 
+        # Check advanced parameters
+        # TODO static method in the base class
+        self.advanced = advanced_parameters.check_advanced_parameters(
+            self.conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        )
+        self.used_conf[ADVANCED] = self.advanced
+
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
             self.inputs,
@@ -146,7 +156,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
         ) = sensors_inputs.check_geometry_plugin(
-            self.inputs, self.conf.get(GEOMETRY_PLUGIN, None)
+            self.inputs, self.advanced, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
 
@@ -158,7 +168,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.used_conf[INPUTS][sens_cst.ROI]
         )
 
-        self.debug_with_roi = self.used_conf[INPUTS][sens_cst.DEBUG_WITH_ROI]
+        self.debug_with_roi = self.used_conf[ADVANCED][adv_cst.DEBUG_WITH_ROI]
 
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
@@ -644,9 +654,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 pairs[pair_key]["holes_bbox_left"] = []
                 pairs[pair_key]["holes_bbox_right"] = []
 
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False or (
-                    len(pairs[pair_key]["holes_classif"]) > 0
-                ):
+                if self.used_conf[ADVANCED][
+                    adv_cst.USE_EPIPOLAR_A_PRIORI
+                ] is False or (len(pairs[pair_key]["holes_classif"]) > 0):
                     # Run resampling only if needed:
                     # no a priori or needs to detect holes
 
@@ -684,7 +694,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_key=pair_key,
                     )
 
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
                     # Run epipolar sparse_matching application
                     (
                         pairs[pair_key]["epipolar_matches_left"],
@@ -707,7 +720,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 save_corrected_grid = (
                     self.epipolar_grid_generation_application.save_grids
                 )
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
                     # Estimate grid correction if no epipolar a priori
                     # Filter and save matches
                     pairs[pair_key]["matches_array"] = (
@@ -784,13 +800,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["filtered_triangulated_matches"]
                     )
 
-            if self.used_conf[INPUTS]["use_epipolar_a_priori"]:
+            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]:
                 # Use a priori
-                dem_median = self.used_conf[INPUTS]["terrain_a_priori"][
-                    "dem_median"
+                dem_median = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MEDIAN
                 ]
-                dem_min = self.used_conf[INPUTS]["terrain_a_priori"]["dem_min"]
-                dem_max = self.used_conf[INPUTS]["terrain_a_priori"]["dem_max"]
+                dem_min = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MIN
+                ]
+                dem_max = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MAX
+                ]
 
             else:
                 # Use initial elevation if provided, and generate dems
@@ -832,7 +852,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
             # update used configuration with terrain a priori
-            sensors_inputs.update_conf(
+            advanced_parameters.update_conf(
                 self.used_conf,
                 dem_median=dem_median,
                 dem_min=dem_min,
@@ -856,7 +876,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             for cloud_id, (pair_key, _, _) in enumerate(list_sensor_pairs):
                 # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
 
                     if not (
                         self.inputs[sens_cst.INITIAL_ELEVATION][
@@ -973,13 +996,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     # Use epipolar a priori
                     # load the disparity range
-                    [dmin, dmax] = self.used_conf[INPUTS]["epipolar_a_priori"][
-                        pair_key
-                    ]["disparity_range"]
+                    [dmin, dmax] = self.used_conf[ADVANCED][
+                        adv_cst.EPIPOLAR_A_PRIORI
+                    ][pair_key][adv_cst.DISPARITY_RANGE]
                     # load the grid correction coefficient
                     pairs[pair_key]["grid_correction_coef"] = self.used_conf[
-                        INPUTS
-                    ]["epipolar_a_priori"][pair_key]["grid_correction"]
+                        ADVANCED
+                    ][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
+                        adv_cst.GRID_CORRECTION
+                    ]
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "grid_left"
                     ]
@@ -1003,7 +1028,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
-                sensors_inputs.update_conf(
+                advanced_parameters.update_conf(
                     self.used_conf,
                     grid_correction_coef=pairs[pair_key][
                         "grid_correction_coef"
@@ -1060,7 +1085,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # TODO add in metadata.json max diff max - min
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
-                sensors_inputs.update_conf(
+                advanced_parameters.update_conf(
                     self.used_conf,
                     dmin=np.min(
                         disp_range_grid[0, 0]["disp_min_grid"].values

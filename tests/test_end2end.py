@@ -1917,34 +1917,38 @@ def test_end2end_use_epipolar_a_priori():
                 == "sensors_to_dense_dsm"
             )
             # check refined_config_dense_dsm_json sparse_matching configuration
+            assert "advanced" in refined_config_dense_dsm_json
             assert (
                 "use_epipolar_a_priori"
-                in refined_config_dense_dsm_json["inputs"]
+                in refined_config_dense_dsm_json["advanced"]
             )
+
             assert (
-                refined_config_dense_dsm_json["inputs"]["use_epipolar_a_priori"]
+                refined_config_dense_dsm_json["advanced"][
+                    "use_epipolar_a_priori"
+                ]
                 is True
             )
             assert (
-                "epipolar_a_priori" in refined_config_dense_dsm_json["inputs"]
+                "epipolar_a_priori" in refined_config_dense_dsm_json["advanced"]
             )
             assert (
                 "grid_correction"
-                in refined_config_dense_dsm_json["inputs"]["epipolar_a_priori"][
-                    "left_right"
-                ]
+                in refined_config_dense_dsm_json["advanced"][
+                    "epipolar_a_priori"
+                ]["left_right"]
             )
             assert (
                 "dem_median"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
             assert (
                 "dem_min"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
             assert (
                 "dem_max"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
 
             # check if orchestrator conf is the same as gt

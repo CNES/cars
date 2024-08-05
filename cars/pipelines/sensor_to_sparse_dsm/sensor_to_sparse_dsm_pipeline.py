@@ -47,9 +47,12 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
+    ADVANCED,
     APPLICATIONS,
     GEOMETRY_PLUGIN,
     INPUTS,
@@ -126,6 +129,13 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
 
+        # Check advanced parameters
+        # TODO static method in the base class
+        self.advanced = advanced_parameters.check_advanced_parameters(
+            self.conf.get(ADVANCED, {}), check_epipolar_a_priori=False
+        )
+        self.used_conf[ADVANCED] = self.advanced
+
         # Check geometry plugin
         (
             self.inputs,
@@ -134,7 +144,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
         ) = sensors_inputs.check_geometry_plugin(
-            self.inputs, self.conf.get(GEOMETRY_PLUGIN, None)
+            self.inputs, self.advanced, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
 
@@ -159,9 +169,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         self.config_full_res = copy.deepcopy(self.used_conf)
         self.config_full_res[PIPELINE] = "sensors_to_dense_dsm"
         self.config_full_res.__delitem__("applications")
-        self.config_full_res[INPUTS][sens_cst.EPIPOLAR_A_PRIORI] = {}
-        self.config_full_res[INPUTS][sens_cst.TERRAIN_A_PRIORI] = {}
-        self.config_full_res[INPUTS]["use_epipolar_a_priori"] = True
+        self.config_full_res[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
+        self.config_full_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
+        self.config_full_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
 
         # Check conf application vs inputs application
         self.check_inputs_with_applications(self.inputs, application_conf)
@@ -180,7 +190,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
         return sensors_inputs.sensors_check_inputs(
-            conf, config_json_dir=config_json_dir, check_epipolar_a_priori=False
+            conf, config_json_dir=config_json_dir
         )
 
     def check_output(self, conf):
@@ -519,7 +529,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 )
             )
 
-            sensors_inputs.update_conf(
+            advanced_parameters.update_conf(
                 self.config_full_res,
                 dem_median=dem_median,
                 dem_min=dem_min,
@@ -626,7 +636,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
                 # Update full res pipeline configuration
                 # with grid correction and disparity range
-                sensors_inputs.update_conf(
+                advanced_parameters.update_conf(
                     self.config_full_res,
                     grid_correction_coef=pairs[pair_key][
                         "grid_correction_coef"
