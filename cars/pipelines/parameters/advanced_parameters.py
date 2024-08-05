@@ -106,13 +106,12 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         check_epipolar_a_priori
         and overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI]
     ):
-        validate_epipolar_a_priori(conf, overloaded_conf, checker_epipolar)
+        validate_epipolar_a_priori(overloaded_conf, checker_epipolar)
 
     return overloaded_conf
 
 
 def validate_epipolar_a_priori(
-    conf,
     overloaded_conf,
     checker_epipolar,
 ):
@@ -127,7 +126,7 @@ def validate_epipolar_a_priori(
     :type checker_epipolar: Checker
     """
 
-    for key_image_pair in conf[adv_cst.EPIPOLAR_A_PRIORI]:
+    for key_image_pair in overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI]:
         checker_epipolar.validate(
             overloaded_conf[adv_cst.EPIPOLAR_A_PRIORI][key_image_pair]
         )
