@@ -19,14 +19,14 @@
 # limitations under the License.
 #
 """
-Test module for cars/pipelines/sensors_inputs.py
+Test module for cars/pipelines/parameters/sensor_inputs.py
 """
 
 import os
 
 import pytest
 
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
+from cars.pipelines.parameters import sensor_inputs
 
 from ..helpers import absolute_data_path
 
@@ -86,4 +86,4 @@ def test_check_full_conf():
         },
         "check_inputs": False,
     }
-    _ = sensors_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)

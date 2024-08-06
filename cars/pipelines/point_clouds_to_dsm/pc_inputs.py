@@ -32,9 +32,7 @@ import cars.pipelines.point_clouds_to_dsm.pc_constants as pc_cst
 from cars.core import constants as cst
 from cars.core import inputs
 from cars.core.utils import make_relative_path_absolute
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 def check_point_clouds_inputs(conf, config_json_dir=None):

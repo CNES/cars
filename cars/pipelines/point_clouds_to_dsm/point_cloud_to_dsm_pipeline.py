@@ -40,6 +40,7 @@ from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import output_constants
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     APPLICATIONS,
@@ -51,9 +52,6 @@ from cars.pipelines.pipeline_constants import (
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.point_clouds_to_dsm import pc_inputs
 from cars.pipelines.sensor_to_dense_dsm import dsm_output
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
 
 
 @Pipeline.register(

@@ -34,9 +34,7 @@ from cars.core import inputs, preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
 

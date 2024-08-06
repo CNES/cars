@@ -56,7 +56,7 @@ from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core.datasets import get_color_bands
 from cars.core.geometry.abstract_geometry import AbstractGeometry
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
+from cars.pipelines.parameters import sensor_inputs
 
 # Specific values
 # 0 = valid pixels
@@ -129,7 +129,7 @@ def generate_input_json(
     # transform paths
     new_config = config.copy()
 
-    new_config["inputs"] = sensors_inputs.sensors_check_inputs(
+    new_config["inputs"] = sensor_inputs.sensors_check_inputs(
         new_config["inputs"], config_json_dir=json_dir_path
     )
 

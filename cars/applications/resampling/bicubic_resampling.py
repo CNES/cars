@@ -48,9 +48,7 @@ from cars.core.datasets import get_color_bands
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 class BicubicResampling(Resampling, short_name="bicubic"):

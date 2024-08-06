@@ -29,7 +29,7 @@ import pytest
 from json_checker.core.exceptions import MissKeyCheckerError
 
 # CARS imports
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
+from cars.pipelines.parameters import sensor_inputs
 
 # CARS Tests imports
 from .helpers import absolute_data_path
@@ -89,7 +89,7 @@ def test_input_full_sensors():
         "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif",
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -123,7 +123,7 @@ def test_input_geom_squeezed_sensors():
         "pairing": [["one", "two"]],
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -157,7 +157,7 @@ def test_input_geom_squezed_sensors():
         "pairing": [["one", "two"]],
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -182,7 +182,7 @@ def test_input_minimal_sensors():
     # squeezed on two levels
     input_test = {"sensors": {"one": "img1_crop.tif", "two": "img2_crop.tif"}}
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -217,7 +217,7 @@ def test_input_dem_with_geoid_sensors():
         },
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -249,7 +249,7 @@ def test_input_dem_no_geoid_sensors():
         "initial_elevation": {"dem": "srtm_dir/N29E031_KHEOPS.tif"},
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -281,7 +281,7 @@ def test_input_dem_no_geoid_squeezed_sensors():
         "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif",
     }
 
-    sensors_inputs.sensors_check_inputs(
+    sensor_inputs.sensors_check_inputs(
         input_test, config_json_dir=os.path.dirname(input_json)
     )
 
@@ -315,6 +315,6 @@ def test_input_dem_epsg_exit_sensors():
 
     # epsg should not be defined in inputs
     with pytest.raises(MissKeyCheckerError):
-        sensors_inputs.sensors_check_inputs(
+        sensor_inputs.sensors_check_inputs(
             input_test, config_json_dir=os.path.dirname(input_json)
         )

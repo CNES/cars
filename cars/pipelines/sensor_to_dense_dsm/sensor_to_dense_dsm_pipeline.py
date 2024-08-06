@@ -53,7 +53,8 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import output_constants
+from cars.pipelines.parameters import output_constants, sensor_inputs
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -66,10 +67,6 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_dense_dsm import dsm_output
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 
 @Pipeline.register(
@@ -155,7 +152,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
-        ) = sensors_inputs.check_geometry_plugin(
+        ) = sensor_inputs.check_geometry_plugin(
             self.inputs, self.advanced, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
@@ -202,7 +199,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return sensors_inputs.sensors_check_inputs(
+        return sensor_inputs.sensors_check_inputs(
             conf, config_json_dir=config_json_dir
         )
 
@@ -565,7 +562,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             # initialise lists of points
             list_epipolar_points_cloud = []
-            list_sensor_pairs = sensors_inputs.generate_inputs(
+            list_sensor_pairs = sensor_inputs.generate_inputs(
                 self.inputs, self.geom_plugin_without_dem_and_geoid
             )
             logging.info(
@@ -840,7 +837,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     ]
                 ):
                     self.geom_plugin_with_dem_and_geoid = (
-                        sensors_inputs.generate_geometry_plugin_with_dem(
+                        sensor_inputs.generate_geometry_plugin_with_dem(
                             self.used_conf[GEOMETRY_PLUGIN],
                             self.inputs,
                             dem=dem_median,
@@ -1287,7 +1284,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         "..",
                         "..",
                         "conf",
-                        sensors_inputs.CARS_GEOID_PATH,
+                        sensor_inputs.CARS_GEOID_PATH,
                     )
                 else:
                     # default case : stay on the ellipsoid

@@ -49,7 +49,8 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import output_constants
+from cars.pipelines.parameters import output_constants, sensor_inputs
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
     ADVANCED,
@@ -62,10 +63,6 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.sensor_to_dense_dsm import dsm_output
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # Path in cars package (pkg)
 CARS_GEOID_PATH = "geoid/egm96.grd"
@@ -143,7 +140,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
-        ) = sensors_inputs.check_geometry_plugin(
+        ) = sensor_inputs.check_geometry_plugin(
             self.inputs, self.advanced, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
@@ -189,7 +186,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return sensors_inputs.sensors_check_inputs(
+        return sensor_inputs.sensors_check_inputs(
             conf, config_json_dir=config_json_dir
         )
 
@@ -346,7 +343,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             )
 
             # Run applications
-            list_sensor_pairs = sensors_inputs.generate_inputs(
+            list_sensor_pairs = sensor_inputs.generate_inputs(
                 self.inputs, self.geom_plugin_without_dem_and_geoid
             )
             logging.info(
@@ -511,7 +508,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             dem_median = dem.attributes[dem_gen_cst.DEM_MEDIAN_PATH]
             # Generate geometry loader with dem and geoid
             self.geom_plugin_with_dem_and_geoid = (
-                sensors_inputs.generate_geometry_plugin_with_dem(
+                sensor_inputs.generate_geometry_plugin_with_dem(
                     self.used_conf[GEOMETRY_PLUGIN],
                     self.inputs,
                     dem=dem_median,
@@ -522,7 +519,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
             # Generate geometry loader with dem and geoid
             self.geom_plugin_with_dem_and_geoid = (
-                sensors_inputs.generate_geometry_plugin_with_dem(
+                sensor_inputs.generate_geometry_plugin_with_dem(
                     self.used_conf[GEOMETRY_PLUGIN],
                     self.inputs,
                     dem=dem_median,

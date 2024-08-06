@@ -47,9 +47,7 @@ from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 class LineOfSightIntersection(

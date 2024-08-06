@@ -41,9 +41,7 @@ from cars.applications.grid_generation import grids
 # CARS imports
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 PREPROCESSING_TAG = "pair_preprocessing"
 LEFT_ENVELOPE_TAG = "left_envelope"

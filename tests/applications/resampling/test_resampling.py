@@ -40,10 +40,10 @@ from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import tiling
 from cars.orchestrator import orchestrator
+from cars.pipelines.parameters import sensor_inputs
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_dense_dsm_constants as sens_cst,
 )
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 # CARS Tests imports
 from ...helpers import (
@@ -382,7 +382,7 @@ def test_check_tiles_in_sensor():
         )
 
         inputs = input_data["inputs"]
-        list_sensor_pairs = sensors_inputs.generate_inputs(
+        list_sensor_pairs = sensor_inputs.generate_inputs(
             inputs, get_geometry_plugin()
         )
 
