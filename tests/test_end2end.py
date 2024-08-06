@@ -1717,7 +1717,6 @@ def test_end2end_use_epipolar_a_priori():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        directory = "/tmp/cars"
         input_json = absolute_data_path("input/phr_ventoux/input.json")
         # Run sparse dsm pipeline
         _, input_config_sparse_res = generate_input_json(
