@@ -111,7 +111,7 @@ class Sift(SparseMatching, short_name="sift"):
         ]
 
         # Saving files
-        self.save_matches = self.used_config["save_matches"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -191,8 +191,10 @@ class Sift(SparseMatching, short_name="sift"):
         )
 
         # Saving files
-        overloaded_conf["save_matches"] = conf.get("save_matches", False)
-        self.save_matches = overloaded_conf["save_matches"]
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
+        self.save_intermediate_data = overloaded_conf["save_intermediate_data"]
 
         sparse_matching_schema = {
             "method": str,
@@ -215,7 +217,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_back_matching": bool,
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
-            "save_matches": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -249,7 +251,7 @@ class Sift(SparseMatching, short_name="sift"):
         :rtype: bool
         """
 
-        return self.save_matches
+        return self.save_intermediate_data
 
     def get_disparity_margin(self):
         """
@@ -460,7 +462,7 @@ class Sift(SparseMatching, short_name="sift"):
                 self.sift_peak_threshold = tmp_sift_peak_threshold
 
             # Save disparity maps
-            if self.save_matches:
+            if self.save_intermediate_data:
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_matches_left"),
                     None,

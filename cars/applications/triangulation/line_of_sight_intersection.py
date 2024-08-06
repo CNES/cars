@@ -72,7 +72,7 @@ class LineOfSightIntersection(
         self.used_method = self.used_config["method"]
         self.snap_to_img1 = self.used_config["snap_to_img1"]
         # Saving files
-        self.save_points_cloud = self.used_config["save_points_cloud"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # global value for left image to check if snap_to_img1 can
         # be applied : Need than same application object is run
@@ -108,14 +108,14 @@ class LineOfSightIntersection(
         overloaded_conf["snap_to_img1"] = conf.get("snap_to_img1", False)
 
         # Saving files
-        overloaded_conf["save_points_cloud"] = conf.get(
-            "save_points_cloud", False
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
         )
 
         triangulation_schema = {
             "method": str,
             "snap_to_img1": bool,
-            "save_points_cloud": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -359,7 +359,7 @@ class LineOfSightIntersection(
             epipolar_points_cloud.attributes.update(pc_attributes)
 
             # Save objects
-            if self.save_points_cloud:
+            if self.save_intermediate_data:
                 # if isinstance(epipolar_points_cloud, xr.DataArray):
                 if epipolar_disparity_map.dataset_type == "arrays":
                     # Propagate color type in output file

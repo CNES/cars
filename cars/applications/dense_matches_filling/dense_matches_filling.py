@@ -158,7 +158,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
     def __register_dataset__(
         self,
         epipolar_disparity_map,
-        save_disparity_map,
+        save_intermediate_data,
         pair_folder,
         pair_key,
         app_name=None,
@@ -168,8 +168,8 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         :param epipolar_disparity_map:  left disparity
         :type epipolar_disparity_map: CarsDataset
-        :param save_disparity_map: true if save disparity map
-        :type save_disparity_map: bool
+        :param save_intermediate_data: true to save disparity map
+        :type save_intermediate_data: bool
         :param pair_folder: path to folder
         :type pair_folder: str
         :param pair_key: pair id
@@ -193,8 +193,8 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
             epipolar_disparity_map.attributes
         )
 
-        # Save disparity maps
-        if save_disparity_map:
+        # Save intermediate data (disparity maps)
+        if save_intermediate_data:
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder, "epi_disp_" + app_name + "_filled.tif"

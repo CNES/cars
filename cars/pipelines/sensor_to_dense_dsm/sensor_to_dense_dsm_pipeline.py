@@ -718,7 +718,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Run grid correction application
                 save_corrected_grid = (
-                    self.epipolar_grid_generation_application.save_grids
+                    self.epipolar_grid_generation_application.get_save_grids()
                 )
                 if (
                     self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]

@@ -329,7 +329,7 @@ The structure follows this organisation:
 
             .. note::
 
-                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_disparity_map` of `dense_matching` application must be activated in sensors_to_dense_point_clouds pipeline. The output performance map is `epi_confidence_performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_point_clouds_to_dense_dsm pipeline to save the performance map.
+                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_intermediate_data` of `dense_matching` application must be activated in sensors_to_dense_point_clouds pipeline. The output performance map is `epi_confidence_performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_point_clouds_to_dense_dsm pipeline to save the performance map.
 
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | Name             | Description                                                       | Type           | Default value | Required |
@@ -804,15 +804,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name            | Description                                   | Type    |     Available values              | Default value | Required |
-            +=================+===============================================+=========+===================================+===============+==========+
-            | method          | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | epi_step        | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_grids      | Save the generated grids                      | boolean |                                   | false         | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | Name                    | Description                                   | Type    |     Available values              | Default value | Required |
+            +=========================+===============================================+=========+===================================+===============+==========+
+            | method                  | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | epi_step                | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_intermediate_data  | Save the generated grids                      | boolean |                                   | false         | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             **Example**
 
@@ -907,7 +907,7 @@ The structure follows this organisation:
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | save_matches                         | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
+            | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -1092,7 +1092,7 @@ The structure follows this organisation:
                   - 
                   - 0.6
                   - No
-                * - save_disparity_map
+                * - save_intermediate_data
                   - Save disparity map and disparity confidence
                   - boolean
                   - 
@@ -1135,7 +1135,7 @@ The structure follows this organisation:
 
                 * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                 * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
-                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
+                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_intermediate_data parameter should be activated.
 
         
         .. tab:: Dense matches filling
@@ -1154,7 +1154,7 @@ The structure follows this organisation:
             +=====================================+=================================+=========+=========================+====================+==========+
             | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | save_disparity_map                  | Save disparity map              | boolean |                         | False              | No       |
+            | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
 
 
@@ -1220,12 +1220,12 @@ The structure follows this organisation:
                         "dense_matches_filling.1": {
                             "method": "plane",
                             "classification": ["water"],
-                            "save_disparity_map": true
+                            "save_intermediate_data": true
                         },
                         "dense_matches_filling.2": {
                             "method": "zero_padding",
                             "classification": ["cloud", "snow"],
-                            "save_disparity_map": true
+                            "save_intermediate_data": true
                         }
                     },
 
@@ -1240,15 +1240,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | Name              | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
-            +===================+====================================================================================================================+=========+======================================+==============================+==========+
-            | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | Name                   | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
+            +========================+====================================================================================================================+=========+======================================+==============================+==========+
+            | method                 | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | save_intermediate_data | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
 
             **Example**
 

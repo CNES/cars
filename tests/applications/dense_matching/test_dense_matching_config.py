@@ -57,7 +57,7 @@ def test_check_full_conf_pandora_conf_as_dict():
         "use_global_disp_range": False,
         "local_disp_grid_step": 30,
         "disp_range_propagation_filter_size": 300,
-        "save_disparity_map": False,
+        "save_intermediate_data": False,
         "loader": "pandora",
         "loader_conf": {
             "input": {},
@@ -120,7 +120,7 @@ def test_check_full_conf_pandora_conf_as_file():
         "use_global_disp_range": False,
         "local_disp_grid_step": 30,
         "disp_range_propagation_filter_size": 300,
-        "save_disparity_map": False,
+        "save_intermediate_data": False,
         "loader": "pandora",
         "loader_conf": census_loader_conf_path,
     }

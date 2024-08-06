@@ -64,8 +64,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         self.used_method = self.used_config["method"]
         self.epi_step = self.used_config["epi_step"]
         # Saving files
-        # TODO not implemented, future work
-        self.save_grids = self.used_config["save_grids"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -92,12 +91,14 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
-        overloaded_conf["save_grids"] = conf.get("save_grids", False)
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
 
         grid_generation_schema = {
             "method": str,
             "epi_step": And(int, lambda x: x > 0),
-            "save_grids": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -105,6 +106,16 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         checker.validate(overloaded_conf)
 
         return overloaded_conf
+
+    def get_save_grids(self):
+        """
+        Get save_matches parameter
+
+        :return: true is save_matches activated
+        :rtype: bool
+        """
+
+        return self.save_intermediate_data
 
     @cars_profile(name="Epi Grid Generation")
     def run(
@@ -247,7 +258,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         grid_origin = grid_left.attributes["grid_origin"]
         grid_spacing = grid_left.attributes["grid_spacing"]
 
-        if self.save_grids:
+        if self.save_intermediate_data:
             left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
         else:

@@ -139,7 +139,7 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     grid_origin = grid.attributes["grid_origin"]
     grid_spacing = grid.attributes["grid_spacing"]
 
-    # Get save folder (permanent or temporay according to save_grids parameter)
+    # Get save folder (permanent or temporay according to save_grid parameter)
     if None in (pair_folder, save_grid):
         # Set path to None
         corrected_grid_right.attributes["path"] = None

@@ -95,6 +95,15 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
+    def get_save_grids(self):
+        """
+        Get wether the grid will be saved
+
+        :return: true is grid saving is activated
+        :rtype: bool
+        """
+
+    @abstractmethod
     def run(
         self,
         image_left,

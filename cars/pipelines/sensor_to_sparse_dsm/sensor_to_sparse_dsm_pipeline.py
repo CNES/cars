@@ -463,7 +463,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     grid_correction.correct_grid(
                         pairs[pair_key]["grid_right"],
                         pairs[pair_key]["grid_correction_coef"],
-                        self.epipolar_grid_generation_app.save_grids,
+                        self.epipolar_grid_generation_app.get_save_grids(),
                         pairs[pair_key]["pair_folder"],
                     )
                 )
@@ -586,7 +586,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     grid_correction.correct_grid(
                         pairs[pair_key]["new_grid_right"],
                         pairs[pair_key]["grid_correction_coef"],
-                        self.epipolar_grid_generation_app.save_grids,
+                        self.epipolar_grid_generation_app.get_save_grids(),
                         pairs[pair_key]["pair_folder"],
                     )
                 )

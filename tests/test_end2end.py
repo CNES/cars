@@ -313,7 +313,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
-                "save_matches": False,
+                "save_intermediate_data": False,
             },
         }
 
@@ -450,11 +450,11 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
@@ -959,7 +959,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -1056,7 +1056,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -1368,12 +1368,12 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": False,
+                "save_intermediate_data": False,
             },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
@@ -1422,7 +1422,7 @@ def test_end2end_ventoux_unique_split():
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -1740,7 +1740,7 @@ def test_end2end_use_epipolar_a_priori():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -2109,7 +2109,7 @@ def test_prepare_ventoux_bias():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 120.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -2185,11 +2185,11 @@ def test_end2end_ventoux_with_color():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
@@ -2253,7 +2253,7 @@ def test_end2end_ventoux_with_color():
             "dense_matching": {
                 "method": "census_sgm",
                 "loader": "pandora",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_fusion": {
@@ -2441,11 +2441,11 @@ def test_end2end_ventoux_with_classif():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
@@ -2508,7 +2508,7 @@ def test_end2end_ventoux_with_classif():
             "dense_matching": {
                 "method": "census_sgm",
                 "loader": "pandora",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_fusion": {
@@ -2681,7 +2681,7 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_lower_bound": -1000,  # -20.0,
                 "elevation_delta_upper_bound": 1000,  # 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -2831,7 +2831,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2952,7 +2952,7 @@ def test_end2end_quality_stats():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3229,7 +3229,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3360,7 +3360,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3448,7 +3448,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3593,7 +3593,7 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
                 "minimum_nb_matches": 10,
             },
             "dense_matching": {
@@ -3711,7 +3711,7 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3807,12 +3807,12 @@ def test_end2end_disparity_filling():
             "dense_matching": {
                 "method": "census_sgm",
                 "min_epi_tile_size": 100,
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
             "dense_matches_filling.1": {
                 "method": "plane",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "classification": ["shadow"],
             },
             "point_cloud_outliers_removing.1": {
@@ -3935,12 +3935,12 @@ def test_end2end_disparity_filling_with_zeros():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": True,
             },
             "dense_matches_filling.2": {
                 "method": "zero_padding",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "classification": ["bat"],
             },
             "point_cloud_outliers_removing.1": {
@@ -4081,7 +4081,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         applications = {
             "triangulation": {
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             }
         }
 

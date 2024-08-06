@@ -79,10 +79,10 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
             # check loader
 
             # Saving files
-            if "save_disparity_map" in conf_matching:
-                self.save_disparity_map = conf_matching["save_disparity_map"]
+            if "save_intermediate_data" in conf_matching:
+                self.save_intermediate_data = conf_matching["save_intermediate_data"]
             else:
-                self.save_disparity_map = False
+                self.save_intermediate_data = False
 
             #
 
@@ -139,7 +139,7 @@ To instantiate, need the *orchestrator* and a configuration file that contains a
 .. sourcecode:: python
 
             # Save disparity maps
-            if self.save_disparity_map:
+            if self.save_intermediate_data:
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp.tif"),
                     cst_disp.MAP,
