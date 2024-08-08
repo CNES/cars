@@ -97,7 +97,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-        out_dir = config["output"]["out_dir"]
+        out_dir = config["output"]["directory"]
         cars_logging.setup_logging(
             loglevel, out_dir=out_dir, pipeline=pipeline_name
         )

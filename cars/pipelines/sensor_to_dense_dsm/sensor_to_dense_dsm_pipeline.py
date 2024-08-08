@@ -519,7 +519,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         """
 
-        out_dir = self.output["out_dir"]
+        out_dir = self.output[output_constants.OUT_DIRECTORY]
 
         # Save used conf
         cars_dataset.save_dict(

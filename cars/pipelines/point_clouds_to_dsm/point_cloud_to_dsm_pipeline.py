@@ -274,10 +274,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
         """
 
-        out_dir = self.output["out_dir"]
+        out_dir = self.output[output_constants.OUT_DIRECTORY]
 
         # Save used conf
-        out_dir = self.output["out_dir"]
         cars_dataset.save_dict(
             self.used_conf,
             os.path.join(out_dir, "used_conf.json"),

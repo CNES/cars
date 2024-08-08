@@ -40,7 +40,7 @@ def dense_dsm_check_output(conf):
     :type conf: dict
     """
     overloaded_conf = conf.copy()
-    out_dir = conf[output_constants.OUT_DIR]
+    out_dir = conf[output_constants.OUT_DIRECTORY]
     out_dir = os.path.abspath(out_dir)
     # Ensure that outdir exists
     try:
@@ -52,7 +52,7 @@ def dense_dsm_check_output(conf):
             raise
 
     # Overload some parameters
-    overloaded_conf[output_constants.OUT_DIR] = out_dir
+    overloaded_conf[output_constants.OUT_DIRECTORY] = out_dir
     overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
         output_constants.DSM_BASENAME, "dsm.tif"
     )
@@ -72,7 +72,7 @@ def dense_dsm_check_output(conf):
 
     # Check schema
     output_schema = {
-        output_constants.OUT_DIR: str,
+        output_constants.OUT_DIRECTORY: str,
         output_constants.DSM_BASENAME: str,
         output_constants.CLR_BASENAME: str,
         output_constants.INFO_BASENAME: str,

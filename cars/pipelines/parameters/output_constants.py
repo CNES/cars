@@ -24,7 +24,7 @@ This module contains the output  constants
 """
 
 # Pipeline output
-OUT_DIR = "out_dir"
+OUT_DIRECTORY = "directory"
 DSM_BASENAME = "dsm_basename"
 CLR_BASENAME = "clr_basename"
 INFO_BASENAME = "info_basename"

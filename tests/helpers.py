@@ -74,21 +74,21 @@ def cars_path():
 
 def generate_input_json(
     input_json,
-    out_dir,
+    output_directory,
     pipeline,
     orchestrator_mode,
     orchestrator_parameters=None,
     geometry_plugin_name=None,
 ):
     """
-    Load a partially filled input.json, fill it with out_dir
+    Load a partially filled input.json, fill it with output directory
     and orchestrator mode, and transform relative path to
-     absolute paths. Generates a new json dumped in out_dir
+     absolute paths. Generates a new json dumped in output directory
 
     :param input_json: input json
     :type input_json: str
-    :param out_dir: absolute path out directory
-    :type out_dir: str
+    :param output_directory: absolute path out directory
+    :type output_directory: str
     :param pipeline: pipeline to run
     :type pipeline: str
     :param orchestrator_mode: orchestrator mode
@@ -107,8 +107,8 @@ def generate_input_json(
     config["orchestrator"] = {"mode": orchestrator_mode}
     if orchestrator_parameters is not None:
         config["orchestrator"].update(orchestrator_parameters)
-    # Overload out_dir
-    config["output"] = {"out_dir": os.path.join(out_dir, "output")}
+    # Overload output directory
+    config["output"] = {"directory": os.path.join(output_directory, "output")}
 
     # set installed (Shareloc) geometry plugin if not specified
     if geometry_plugin_name is None:
@@ -134,7 +134,7 @@ def generate_input_json(
     )
 
     # dump json
-    new_json_path = os.path.join(out_dir, "new_input.json")
+    new_json_path = os.path.join(output_directory, "new_input.json")
     with open(new_json_path, "w", encoding="utf8") as fstream:
         json.dump(new_config, fstream, indent=2)
 
