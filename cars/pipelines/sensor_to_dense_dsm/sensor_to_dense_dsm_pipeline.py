@@ -810,11 +810,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ]
 
             else:
+                dem_generation_output_dir = os.path.join(
+                    cars_orchestrator.out_dir, "dump_dir", "dem_generation"
+                )
+                safe_makedirs(dem_generation_output_dir)
                 # Use initial elevation if provided, and generate dems
                 # Generate MNT from matches
                 dem = self.dem_generation_application.run(
                     triangulated_matches_list,
-                    cars_orchestrator.out_dir,
+                    dem_generation_output_dir,
                     self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
                     dem_roi_to_use=self.dem_generation_roi,
                 )
