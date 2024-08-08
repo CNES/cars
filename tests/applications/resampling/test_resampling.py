@@ -41,9 +41,7 @@ from cars.core import constants as cst
 from cars.core import tiling
 from cars.orchestrator import orchestrator
 from cars.pipelines.parameters import sensor_inputs
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 # CARS Tests imports
 from ...helpers import (
