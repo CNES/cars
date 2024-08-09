@@ -53,6 +53,7 @@ from cars.applications.rasterization.point_cloud_rasterization import (
 )
 from cars.core import constants as cst
 from cars.core import projection, tiling
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 
 # R0903  temporary disabled for error "Too few public methods"
@@ -261,6 +262,7 @@ class SimpleGaussian(
         mask_file_name=None,
         classif_file_name=None,
         color_dtype=None,
+        dump_dir=None,
     ):
         """
         Run PointsCloudRasterisation application.
@@ -305,6 +307,8 @@ class SimpleGaussian(
         :type classif_file_name: str
         :param color_dtype: output color image type
         :type color_dtype: str (numpy type)
+        :param dump_dir: directory used for outputs with no associated filename
+        :type dump_dir: str
 
         :return: raster DSM. CarsDataset contains:
 
@@ -330,6 +334,13 @@ class SimpleGaussian(
             )
         else:
             self.orchestrator = orchestrator
+
+        # Setup dump directory
+        if dump_dir is not None:
+            out_dump_dir = dump_dir
+            safe_makedirs(dump_dir)
+        else:
+            dump_dir = self.orchestrator.out_dir
 
         # Check if input data is supported
         data_valid = True
@@ -425,7 +436,7 @@ class SimpleGaussian(
 
         out_dsm_file_name = dsm_file_name
         if dsm_file_name is None and save_dsm:
-            out_dsm_file_name = self.orchestrator.out_dir, "dsm.tif"
+            out_dsm_file_name = os.path.join(out_dump_dir, "dsm.tif")
         if dsm_file_name is not None:
             self.orchestrator.add_to_save_lists(
                 out_dsm_file_name,
@@ -435,9 +446,7 @@ class SimpleGaussian(
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm",
             )
-            out_weights_file_name = os.path.join(
-                self.orchestrator.out_dir, "weights.tif"
-            )
+            out_weights_file_name = os.path.join(out_dump_dir, "weights.tif")
             self.orchestrator.add_to_save_lists(
                 out_weights_file_name,
                 cst.RASTER_WEIGHTS_SUM,
@@ -449,7 +458,7 @@ class SimpleGaussian(
 
         out_clr_file_name = color_file_name
         if color_file_name is None and save_color:
-            out_clr_file_name = self.orchestrator.out_dir, "color.tif"
+            out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
         if color_file_name is not None:
             if not self.color_dtype:
                 self.color_dtype = color_dtype
@@ -464,7 +473,7 @@ class SimpleGaussian(
 
         out_classif_file_name = classif_file_name
         if classif_file_name is None and save_classif:
-            out_classif_file_name = self.orchestrator.out_dir, "classif.tif"
+            out_classif_file_name = os.path.join(out_dump_dir, "classif.tif")
         if out_classif_file_name is not None:
             self.orchestrator.add_to_save_lists(
                 out_classif_file_name,
@@ -477,7 +486,7 @@ class SimpleGaussian(
 
         out_msk_file_name = mask_file_name
         if mask_file_name is None and save_mask:
-            out_msk_file_name = self.orchestrator.out_dir, "mask.tif"
+            out_msk_file_name = os.path.join(out_dump_dir, "mask.tif")
         if out_msk_file_name is not None:
             self.orchestrator.add_to_save_lists(
                 out_msk_file_name,
@@ -490,9 +499,7 @@ class SimpleGaussian(
 
         # TODO Check that intervals indeed exist!
         if save_intervals:
-            out_dsm_inf_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_inf.tif"
-            )
+            out_dsm_inf_file_name = os.path.join(out_dump_dir, "dsm_inf.tif")
             self.orchestrator.add_to_save_lists(
                 out_dsm_inf_file_name,
                 cst.RASTER_HGT_INF,
@@ -501,9 +508,7 @@ class SimpleGaussian(
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_inf",
             )
-            out_dsm_sup_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_sup.tif"
-            )
+            out_dsm_sup_file_name = os.path.join(out_dump_dir, "dsm_sup.tif")
             self.orchestrator.add_to_save_lists(
                 out_dsm_sup_file_name,
                 cst.RASTER_HGT_SUP,
@@ -514,17 +519,13 @@ class SimpleGaussian(
             )
 
         if save_stats:
-            out_dsm_mean_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_mean.tif"
-            )
-            out_dsm_std_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_std.tif"
-            )
+            out_dsm_mean_file_name = os.path.join(out_dump_dir, "dsm_mean.tif")
+            out_dsm_std_file_name = os.path.join(out_dump_dir, "dsm_std.tif")
             out_dsm_n_pts_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_n_pts.tif"
+                out_dump_dir, "dsm_n_pts.tif"
             )
             out_dsm_points_in_cell_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_pts_in_cell.tif"
+                out_dump_dir, "dsm_pts_in_cell.tif"
             )
             self.orchestrator.add_to_save_lists(
                 out_dsm_mean_file_name,
@@ -560,10 +561,10 @@ class SimpleGaussian(
             )
             if save_intervals:
                 out_dsm_inf_mean_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_mean.tif"
+                    out_dump_dir, "dsm_inf_mean.tif"
                 )
                 out_dsm_inf_std_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_std.tif"
+                    out_dump_dir, "dsm_inf_std.tif"
                 )
                 self.orchestrator.add_to_save_lists(
                     out_dsm_inf_mean_file_name,
@@ -582,10 +583,10 @@ class SimpleGaussian(
                     cars_ds_name="dsm_inf_std",
                 )
                 out_dsm_sup_mean_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_mean.tif"
+                    out_dump_dir, "dsm_sup_mean.tif"
                 )
                 out_dsm_sup_std_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_std.tif"
+                    out_dump_dir, "dsm_sup_std.tif"
                 )
                 self.orchestrator.add_to_save_lists(
                     out_dsm_sup_mean_file_name,
@@ -605,9 +606,7 @@ class SimpleGaussian(
                 )
 
         if save_confidence:
-            out_confidence = os.path.join(
-                self.orchestrator.out_dir, "confidence.tif"
-            )
+            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
             self.orchestrator.add_to_save_lists(
                 out_confidence,
                 cst.RASTER_CONFIDENCE,
@@ -618,9 +617,7 @@ class SimpleGaussian(
             )
 
         if save_source_pc:
-            out_source_pc = os.path.join(
-                self.orchestrator.out_dir, "source_pc.tif"
-            )
+            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
             self.orchestrator.add_to_save_lists(
                 out_source_pc,
                 cst.RASTER_SOURCE_PC,
@@ -631,7 +628,7 @@ class SimpleGaussian(
             )
 
         if save_filling:
-            out_filling = os.path.join(self.orchestrator.out_dir, "filling.tif")
+            out_filling = os.path.join(out_dump_dir, "filling.tif")
             self.orchestrator.add_to_save_lists(
                 out_filling,
                 cst.RASTER_FILLING,

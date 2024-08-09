@@ -1442,6 +1442,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Rasterize merged and filtered point cloud
                     point_cloud_to_rasterize = denoised_merged_points_clouds
 
+                rasterization_dump_dir = os.path.join(
+                    cars_orchestrator.out_dir, "dump_dir", "rasterization"
+                )
+
                 # rasterize point cloud
                 _ = self.rasterization_application.run(
                     point_cloud_to_rasterize,
@@ -1460,4 +1464,5 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     color_dtype=list_epipolar_points_cloud[0].attributes[
                         "color_type"
                     ],
+                    dump_dir=rasterization_dump_dir,
                 )

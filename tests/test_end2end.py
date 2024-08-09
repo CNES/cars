@@ -144,13 +144,14 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "mask.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_performance_map.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization",
+        #                            "confidence_performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
@@ -175,7 +176,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
             ),
@@ -183,7 +184,12 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_performance_map.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
@@ -220,7 +226,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "mask.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
@@ -228,7 +234,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_performance_map.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                        "confidence_performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -258,7 +265,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
@@ -268,7 +275,12 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_performance_map.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -754,7 +766,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                   "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -764,7 +777,8 @@ def test_end2end_ventoux_unique():
         # )
         # copy2(
         #     os.path.join(
-        #         out_dir, "confidence_from_intensity_std_std_intensity.tif"
+        #         out_dir,  "dump_dir", "rasterization",
+        #                   "confidence_from_intensity_std_std_intensity.tif"
         #     ),
         #     absolute_data_path(
         #         os.path.join(
@@ -774,7 +788,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                             "confidence_from_risk_min_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -783,7 +798,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                               "confidence_from_risk_max_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -792,7 +808,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                           "confidence_from_ambiguity_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -802,7 +819,7 @@ def test_end2end_ventoux_unique():
         # )
         # copy2(
         #     os.path.join(
-        #         out_dir,
+        #         out_dir, "dump_dir", "rasterization",
         #         "confidence_from_intensity_std_std_intensity_before.tif",
         #     ),
         #     absolute_data_path(
@@ -814,7 +831,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_min_risk_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                      "confidence_from_risk_min_risk_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -823,7 +841,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_max_risk_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                         "confidence_from_risk_max_risk_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -840,7 +859,12 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -852,7 +876,10 @@ def test_end2end_ventoux_unique():
         )
         assert_same_images(
             os.path.join(
-                out_dir, "confidence_from_intensity_std_std_intensity.tif"
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_intensity_std_std_intensity.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -864,7 +891,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_min_risk.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -875,7 +907,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_max_risk.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -886,7 +923,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -899,6 +941,8 @@ def test_end2end_ventoux_unique():
         assert_same_images(
             os.path.join(
                 out_dir,
+                "dump_dir",
+                "rasterization",
                 "confidence_from_intensity_std_std_intensity_before.tif",
             ),
             absolute_data_path(
@@ -911,7 +955,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_min_risk_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_min_risk_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -922,7 +971,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_max_risk_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_max_risk_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -1258,7 +1312,8 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                 "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1288,7 +1343,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1333,7 +1390,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1573,7 +1632,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "mask.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                   "mask.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "mask_end2end_ventoux_split.tif"
@@ -1581,7 +1641,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "classif.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                 "classif.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "classif_end2end_ventoux_split.tif"
@@ -1589,7 +1650,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                 "filling.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "filling_end2end_ventoux_split.tif"
@@ -1597,7 +1659,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                               "confidence_from_ambiguity1.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1607,7 +1670,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                               "confidence_from_ambiguity2.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1617,7 +1681,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "source_pc_end2end_ventoux_split.tif"
@@ -1646,7 +1711,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "mask.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "mask.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "mask_end2end_ventoux_split.tif"
@@ -1656,7 +1723,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "classif.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "classif.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "classif_end2end_ventoux_split.tif"
@@ -1666,7 +1735,9 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "filling.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "filling.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "filling_end2end_ventoux_split.tif"
@@ -1677,7 +1748,12 @@ def test_end2end_ventoux_unique_split():
             )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity1.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1689,7 +1765,12 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity2.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1701,7 +1782,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -2053,7 +2136,8 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                   "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2629,7 +2713,8 @@ def test_end2end_ventoux_with_classif():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "classif.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                     "classif.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
@@ -2648,7 +2733,7 @@ def test_end2end_ventoux_with_classif():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "classif.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "classif.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
@@ -3083,7 +3168,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_mean.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                   "dsm_mean.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3092,7 +3178,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_std.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                     "dsm_std.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3101,7 +3188,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_n_pts.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                 "dsm_n_pts.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3110,7 +3198,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_pts_in_cell.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                           "dsm_pts_in_cell.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3173,7 +3262,7 @@ def test_end2end_quality_stats():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_mean.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_mean.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_mean_end2end_ventoux_quality_stats.tif"
@@ -3183,7 +3272,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_std.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_std.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_std_end2end_ventoux_quality_stats.tif"
@@ -3193,7 +3282,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_n_pts.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_n_pts.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3674,7 +3763,7 @@ def test_end2end_paca_with_mask():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "mask.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
         #     ),
@@ -3697,7 +3786,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
@@ -3792,7 +3881,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
@@ -3886,13 +3975,13 @@ def test_end2end_disparity_filling():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "mask.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "filling.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "filling_end2end_gizeh_fill.tif")
@@ -3916,7 +4005,7 @@ def test_end2end_disparity_filling():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
             ),
@@ -3924,7 +4013,7 @@ def test_end2end_disparity_filling():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "filling.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "filling_end2end_gizeh_fill.tif")
             ),
@@ -4018,7 +4107,7 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "mask.tif"),
+        #     os.path.join(out_dir, "dump_dir", "rasterization",  "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
@@ -4026,7 +4115,8 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "filling.tif"),
+        #     os.path.join(out_dir, "dump_dir",
+        #                                 "rasterization",  "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"
@@ -4055,7 +4145,7 @@ def test_end2end_disparity_filling_with_zeros():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "mask.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
@@ -4065,7 +4155,7 @@ def test_end2end_disparity_filling_with_zeros():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "filling.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"

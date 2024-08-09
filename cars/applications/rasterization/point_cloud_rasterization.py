@@ -140,6 +140,10 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
+        mask_file_name=None,
+        classif_file_name=None,
+        color_dtype=None,
+        dump_dir=None,
     ):
         """
         Run PointsCloudRasterisation application.
@@ -155,6 +159,14 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type dsm_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
+        :param mask_file_name: path of color
+        :type mask_file_name: str
+        :param classif_file_name: path of color
+        :type classif_file_name: str
+        :param color_dtype: output color image type
+        :type color_dtype: str (numpy type)
+        :param dump_dir: directory used for outputs with no associated filename
+        :type dump_dir: str
 
         :return: raster DSM
         :rtype: CarsDataset filled with xr.Dataset

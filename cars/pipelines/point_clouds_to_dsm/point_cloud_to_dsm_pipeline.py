@@ -454,6 +454,10 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     "color_type", None
                 )
 
+            rasterization_dump_dir = os.path.join(
+                cars_orchestrator.out_dir, "dump_dir", "rasterization"
+            )
+
             # rasterize point cloud
             _ = self.rasterization_application.run(
                 point_cloud_to_rasterize,
@@ -470,4 +474,5 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     self.output[output_constants.CLR_BASENAME],
                 ),
                 color_dtype=color_type,
+                dump_dir=rasterization_dump_dir,
             )
