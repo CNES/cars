@@ -2164,7 +2164,12 @@ def test_end2end_use_epipolar_a_priori():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2392,7 +2397,12 @@ def test_end2end_ventoux_with_color():
 
         assert (
             os.path.exists(
-                os.path.join(out_dir, "confidence_from_ambiguity.tif")
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity.tif",
+                )
             )
             is True
         )
@@ -3293,7 +3303,9 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_pts_in_cell.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "rasterization", "dsm_pts_in_cell.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,

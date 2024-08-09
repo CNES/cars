@@ -47,6 +47,11 @@ def check_output_parameters(conf):
 
     # Overload some parameters
     overloaded_conf[output_constants.OUT_DIRECTORY] = out_dir
+
+    overloaded_conf[output_constants.PRODUCT_LEVEL] = overloaded_conf.get(
+        output_constants.PRODUCT_LEVEL, "dsm"
+    )
+
     overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
         output_constants.DSM_BASENAME, "dsm.tif"
     )
@@ -64,16 +69,72 @@ def check_output_parameters(conf):
         output_constants.EPSG, None
     )
 
+    overloaded_conf[output_constants.RESOLUTION] = overloaded_conf.get(
+        output_constants.RESOLUTION, "auto"
+    )
+
+    overloaded_conf[output_constants.SAVE_BY_PAIR] = overloaded_conf.get(
+        output_constants.SAVE_BY_PAIR, False
+    )
+
+    # Load auxiliary and subfields
+    overloaded_conf[output_constants.AUXILIARY] = overloaded_conf.get(
+        output_constants.AUXILIARY, {}
+    )
+
+    # Load auxiliary and subfields
+    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_COLOR] = (
+        overloaded_conf[output_constants.AUXILIARY].get(
+            output_constants.AUX_COLOR, True
+        )
+    )
+    overloaded_conf[output_constants.AUXILIARY][output_constants.AUX_MASK] = (
+        overloaded_conf[output_constants.AUXILIARY].get(
+            output_constants.AUX_MASK, False
+        )
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_CLASSIFICATION
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_CLASSIFICATION, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_CONFIDENCE
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_CONFIDENCE, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_CONTRIBUTING_PAIR
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_CONTRIBUTING_PAIR, False
+    )
+
     # Check schema
     output_schema = {
         output_constants.OUT_DIRECTORY: str,
+        output_constants.PRODUCT_LEVEL: str,
         output_constants.DSM_BASENAME: str,
         output_constants.CLR_BASENAME: str,
         output_constants.INFO_BASENAME: str,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: Or(int, None),
+        output_constants.RESOLUTION: str,
+        output_constants.SAVE_BY_PAIR: bool,
+        output_constants.AUXILIARY: dict,
     }
     checker_output = Checker(output_schema)
     checker_output.validate(overloaded_conf)
+
+    # check auxiliary keys
+    auxiliary_schema = {
+        output_constants.AUX_COLOR: bool,
+        output_constants.AUX_MASK: bool,
+        output_constants.AUX_CLASSIFICATION: bool,
+        output_constants.AUX_CONFIDENCE: bool,
+        output_constants.AUX_CONTRIBUTING_PAIR: bool,
+    }
+
+    checker_auxiliary = Checker(auxiliary_schema)
+    checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
 
     return overloaded_conf
