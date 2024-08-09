@@ -53,7 +53,11 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import output_constants, sensor_inputs
+from cars.pipelines.parameters import (
+    output_constants,
+    output_parameters,
+    sensor_inputs,
+)
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -66,7 +70,6 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_dense_dsm import dsm_output
 
 
 @Pipeline.register(
@@ -214,7 +217,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return dsm_output.dense_dsm_check_output(conf)
+        return output_parameters.check_output_parameters(conf)
 
     def check_applications(
         self, conf, generate_terrain_products, no_merging=False
@@ -1446,10 +1449,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     dsm_file_name=os.path.join(
                         out_dir,
+                        output_constants.DSM_DIRECTORY,
                         self.output[output_constants.DSM_BASENAME],
                     ),
                     color_file_name=os.path.join(
                         out_dir,
+                        output_constants.DSM_DIRECTORY,
                         self.output[output_constants.CLR_BASENAME],
                     ),
                     color_dtype=list_epipolar_points_cloud[0].attributes[

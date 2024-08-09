@@ -49,7 +49,11 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import output_constants, sensor_inputs
+from cars.pipelines.parameters import (
+    output_constants,
+    output_parameters,
+    sensor_inputs,
+)
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -62,7 +66,6 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_dense_dsm import dsm_output
 
 # Path in cars package (pkg)
 CARS_GEOID_PATH = "geoid/egm96.grd"
@@ -200,7 +203,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         :return: overloader output
         :rtype: dict
         """
-        return dsm_output.dense_dsm_check_output(conf)
+        return output_parameters.check_output_parameters(conf)
 
     @staticmethod
     def check_inputs_with_applications(inputs_conf, application_conf):

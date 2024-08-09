@@ -39,7 +39,7 @@ from cars.core import preprocessing, roi_tools
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.parameters import output_constants
+from cars.pipelines.parameters import output_constants, output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -51,7 +51,6 @@ from cars.pipelines.pipeline_constants import (
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 from cars.pipelines.point_clouds_to_dsm import pc_inputs
-from cars.pipelines.sensor_to_dense_dsm import dsm_output
 
 
 @Pipeline.register(
@@ -165,7 +164,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return dsm_output.dense_dsm_check_output(conf)
+        return output_parameters.check_output_parameters(conf)
 
     def check_applications(self, conf, no_merging=False):
         """
@@ -462,10 +461,12 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
                     out_dir,
+                    output_constants.DSM_DIRECTORY,
                     self.output[output_constants.DSM_BASENAME],
                 ),
                 color_file_name=os.path.join(
                     out_dir,
+                    output_constants.DSM_DIRECTORY,
                     self.output[output_constants.CLR_BASENAME],
                 ),
                 color_dtype=color_type,

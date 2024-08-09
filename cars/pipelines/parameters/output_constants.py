@@ -23,10 +23,13 @@
 This module contains the output  constants
 """
 
-# Pipeline output
+# Pipeline output keys
 OUT_DIRECTORY = "directory"
 DSM_BASENAME = "dsm_basename"
 CLR_BASENAME = "clr_basename"
 INFO_BASENAME = "info_basename"
 OUT_GEOID = "geoid"
 EPSG = "epsg"
+
+# Output tree constants
+DSM_DIRECTORY = "dsm"

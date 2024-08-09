@@ -132,13 +132,13 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
         #     ),
@@ -159,7 +159,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
             ),
@@ -167,7 +167,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
             ),
@@ -204,7 +204,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         out_dir = input_dense_dsm["output"]["directory"]
 
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
@@ -212,7 +212,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
@@ -238,7 +238,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
@@ -248,7 +248,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
@@ -368,7 +368,8 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                    "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -376,14 +377,16 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "dem_generation",
+        #                    "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "dem_min_end2end_ventoux_8bit.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                               "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "dem_max_end2end_ventoux_8bit.tif")
@@ -391,7 +394,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -401,7 +406,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
             ),
@@ -409,7 +414,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
@@ -517,26 +522,31 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                             "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                  "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                     "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
             ),
@@ -544,7 +554,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
             ),
@@ -552,7 +562,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
             ),
@@ -732,13 +742,13 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
         #     ),
@@ -822,7 +832,7 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -923,7 +933,7 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1016,7 +1026,7 @@ def test_end2end_ventoux_unique():
         out_dir = input_config_sparse_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -1024,7 +1034,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1113,7 +1123,7 @@ def test_end2end_ventoux_unique():
         out_dir = input_config_sparse_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -1121,7 +1131,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
@@ -1232,7 +1242,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1240,7 +1250,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "color.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "color_end2end_ventoux_split_4326.tif"
@@ -1258,7 +1268,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             # )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1268,7 +1278,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "color_end2end_ventoux_split_4326.tif"
@@ -1303,7 +1313,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             out_dir_dsm = input_dsm_config["output"]["directory"]
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1313,7 +1323,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "color_end2end_ventoux_split_4326.tif"
@@ -1520,12 +1530,7 @@ def test_end2end_ventoux_unique_split():
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
-                        "save_classif": True,
-                        "save_filling": True,
-                        "save_mask": True,
-                        "save_confidence": True,
-                        "save_color": True,
-                        "save_source_pc": True,
+                        "save_intermediate_data": True,
                     },
                 },
             }
@@ -1552,7 +1557,7 @@ def test_end2end_ventoux_unique_split():
             )
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "dsm_end2end_ventoux_split.tif"
@@ -1560,7 +1565,7 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "color.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "color_end2end_ventoux_split.tif"
@@ -1621,7 +1626,7 @@ def test_end2end_ventoux_unique_split():
             # )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split.tif"
@@ -1631,7 +1636,7 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "color.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "color_end2end_ventoux_split.tif"
@@ -1797,7 +1802,8 @@ def test_end2end_use_epipolar_a_priori():
 
             # Uncomment the 2 following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir, "dem_median.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                      "dem_median.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1806,7 +1812,8 @@ def test_end2end_use_epipolar_a_priori():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir, "dem_min.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                                "dem_min.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1815,7 +1822,8 @@ def test_end2end_use_epipolar_a_priori():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir, "dem_max.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                              "dem_max.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1825,7 +1833,9 @@ def test_end2end_use_epipolar_a_priori():
             # )
 
             assert_same_images(
-                os.path.join(out_dir, "dem_median.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_median_end2end_ventoux_no_srtm.tif"
@@ -1835,7 +1845,9 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dem_min.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
@@ -1845,7 +1857,9 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dem_max.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
@@ -2023,7 +2037,7 @@ def test_end2end_use_epipolar_a_priori():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end" + "_ventoux_no_srtm.tif"
@@ -2031,7 +2045,7 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end" + "_ventoux_no_srtm.tif"
@@ -2048,7 +2062,7 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_no_srtm.tif")
             ),
@@ -2056,7 +2070,7 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_no_srtm.tif"
@@ -2366,7 +2380,7 @@ def test_end2end_ventoux_with_color():
         ref_output_dir = "ref_output"
         # Uncomment the following instruction to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
@@ -2374,7 +2388,7 @@ def test_end2end_ventoux_with_color():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end_ventoux_with_color.tif"
@@ -2383,7 +2397,7 @@ def test_end2end_ventoux_with_color():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
@@ -2393,7 +2407,7 @@ def test_end2end_ventoux_with_color():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_color.tif"
@@ -2607,7 +2621,7 @@ def test_end2end_ventoux_with_classif():
 
         # Uncomment the following instruction to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_ventoux_with_classif.tif"
@@ -2624,7 +2638,7 @@ def test_end2end_ventoux_with_classif():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_classif.tif"
@@ -2736,7 +2750,7 @@ def test_compute_dsm_with_roi_ventoux():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end" + "_ventoux_with_roi.tif"
@@ -2744,7 +2758,7 @@ def test_compute_dsm_with_roi_ventoux():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end" + "_ventoux_with_roi.tif"
@@ -2753,7 +2767,7 @@ def test_compute_dsm_with_roi_ventoux():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end" + "_ventoux_with_roi.tif"
@@ -2763,7 +2777,7 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_with_roi.tif"
@@ -2788,7 +2802,7 @@ def test_compute_dsm_with_roi_ventoux():
         [ref_xmin, ref_ymin, ref_xmax, ref_ymax] = ref_roi_poly.bounds
 
         # retrieve bounding box of computed dsm
-        data = rasterio.open(os.path.join(out_dir, "dsm.tif"))
+        data = rasterio.open(os.path.join(out_dir, "dsm", "dsm.tif"))
         xmin = min(data.bounds.left, data.bounds.right)
         ymin = min(data.bounds.bottom, data.bounds.top)
         xmax = max(data.bounds.left, data.bounds.right)
@@ -2878,7 +2892,7 @@ def test_compute_dsm_with_snap_to_img1():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2887,7 +2901,7 @@ def test_compute_dsm_with_snap_to_img1():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2897,7 +2911,7 @@ def test_compute_dsm_with_snap_to_img1():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_snap_to_img1.tif"
@@ -2907,7 +2921,7 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3021,7 +3035,8 @@ def test_end2end_quality_stats():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3030,7 +3045,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                    "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3039,7 +3055,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                     "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3048,7 +3065,7 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3057,7 +3074,7 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3103,7 +3120,9 @@ def test_end2end_quality_stats():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3114,7 +3133,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_min_end2end_ventoux_quality_stats.tif"
@@ -3124,7 +3143,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_max_end2end_ventoux_quality_stats.tif"
@@ -3134,7 +3153,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_quality_stats.tif"
@@ -3144,7 +3163,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
@@ -3303,20 +3322,20 @@ def test_end2end_ventoux_egm96_geoid():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #       os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
             ),
@@ -3324,7 +3343,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
@@ -3403,7 +3422,7 @@ def test_end2end_ventoux_egm96_geoid():
         out_dir = input_config_dense_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
             ),
@@ -3411,7 +3430,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
@@ -3524,14 +3543,14 @@ def test_end2end_ventoux_egm96_geoid():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #             "dsm_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #             "color_end2end_ventoux_egm96_custom_geoid.tif")
@@ -3539,7 +3558,7 @@ def test_end2end_ventoux_egm96_geoid():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_egm96_custom_geoid.tif"
@@ -3549,7 +3568,7 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3643,13 +3662,13 @@ def test_end2end_paca_with_mask():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "color_end2end_paca.tif")
         #     ),
@@ -3662,7 +3681,7 @@ def test_end2end_paca_with_mask():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
             ),
@@ -3670,7 +3689,7 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
@@ -3757,7 +3776,7 @@ def test_end2end_paca_with_mask():
 
         # Uncomment the above instructions of first run to update reference data
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
             ),
@@ -3765,7 +3784,7 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
@@ -3855,13 +3874,13 @@ def test_end2end_disparity_filling():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
         #     ),
@@ -3881,7 +3900,7 @@ def test_end2end_disparity_filling():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_gizeh_fill.tif")
             ),
@@ -3889,7 +3908,7 @@ def test_end2end_disparity_filling():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
             ),
@@ -3983,7 +4002,7 @@ def test_end2end_disparity_filling_with_zeros():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_gizeh_fill_with_zero.tif"
@@ -3991,7 +4010,7 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "color.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
@@ -4016,7 +4035,7 @@ def test_end2end_disparity_filling_with_zeros():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_gizeh_fill_with_zero.tif"
@@ -4026,7 +4045,7 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "color.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
@@ -4117,8 +4136,8 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         ]
 
         assert_same_images(
-            os.path.join(sensors_out_dir_first_run, "dsm.tif"),
-            os.path.join(sensors_out_dir_second_run, "dsm.tif"),
+            os.path.join(sensors_out_dir_first_run, "dsm", "dsm.tif"),
+            os.path.join(sensors_out_dir_second_run, "dsm", "dsm.tif"),
             atol=0.0001,
             rtol=1e-6,
         )
@@ -4168,8 +4187,8 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             ]
 
             assert_same_images(
-                os.path.join(pc_out_dir_first_run, "dsm.tif"),
-                os.path.join(pc_out_dir_second_run, "dsm.tif"),
+                os.path.join(pc_out_dir_first_run, "dsm", "dsm.tif"),
+                os.path.join(pc_out_dir_second_run, "dsm", "dsm.tif"),
                 atol=0.0001,
                 rtol=1e-6,
             )
