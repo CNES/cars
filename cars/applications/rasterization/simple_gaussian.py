@@ -340,7 +340,7 @@ class SimpleGaussian(
             out_dump_dir = dump_dir
             safe_makedirs(dump_dir)
         else:
-            dump_dir = self.orchestrator.out_dir
+            out_dump_dir = self.orchestrator.out_dir
 
         # Check if input data is supported
         data_valid = True
