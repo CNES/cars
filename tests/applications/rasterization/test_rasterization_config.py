@@ -56,7 +56,7 @@ def test_check_full_conf():
         "save_confidence": False,
         "save_source_pc": False,
         "save_filling": False,
-        "compute_all": False,
+        "save_intermediate_data": False,
     }
     _ = SimpleGaussian(conf)
 
