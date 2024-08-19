@@ -567,6 +567,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 }
             )
 
+            # Application dump directory
+            dump_dir = os.path.join(cars_orchestrator.out_dir, "dump_dir")
+
             # Run applications
 
             # Initialize epsg for terrain tiles
@@ -605,16 +608,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 sensor_image_left,
                 sensor_image_right,
             ) in list_sensor_pairs:
-                # Create Pair folder
-                pair_folder = os.path.join(out_dir, pair_key)
-                safe_makedirs(pair_folder)
-                tmp_dir = os.path.join(pair_folder, "tmp")
-                safe_makedirs(tmp_dir)
-                cars_orchestrator.add_to_clean(tmp_dir)
-
                 # initialize pairs for current pair
                 pairs[pair_key] = {}
-                pairs[pair_key]["pair_folder"] = pair_folder
                 pairs[pair_key]["sensor_image_left"] = sensor_image_left
                 pairs[pair_key]["sensor_image_right"] = sensor_image_right
 
@@ -642,7 +637,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     geom_plugin,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir,
+                        "epipolar_grid_generation",
+                        "initial",
+                        pair_key,
+                    ),
                     pair_key=pair_key,
                 )
 
@@ -688,7 +688,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["grid_left"],
                         pairs[pair_key]["grid_right"],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "resampling", "initial", pair_key
+                        ),
                         pair_key=pair_key,
                         margins_fun=self.sparse_mtch_app.get_margins_fun(),
                         tile_width=None,
@@ -708,7 +710,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         classification=pairs[pair_key]["holes_classif"],
                         margin=pairs[pair_key]["holes_poly_margin"],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "hole_detection", pair_key
+                        ),
                         pair_key=pair_key,
                     )
 
@@ -727,7 +731,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             "disp_to_alt_ratio"
                         ],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "sparse_matching", pair_key
+                        ),
                         pair_key=pair_key,
                     )
 
@@ -751,7 +757,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["grid_right"],
                             orchestrator=cars_orchestrator,
                             pair_key=pair_key,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "sparse_matching", pair_key
+                            ),
                             save_matches=(
                                 self.sparse_mtch_app.get_save_matches()
                             ),
@@ -768,7 +776,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["matches_array"],
                         pairs[pair_key]["grid_right"],
                         save_matches=self.sparse_mtch_app.get_save_matches(),
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "grid_correction", "initial", pair_key
+                        ),
                         pair_key=pair_key,
                         orchestrator=cars_orchestrator,
                     )
@@ -779,7 +789,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["grid_right"],
                             pairs[pair_key]["grid_correction_coef"],
                             save_corrected_grid,
-                            pairs[pair_key]["pair_folder"],
+                            os.path.join(
+                                dump_dir, "grid_correction", "initial", pair_key
+                            ),
                         )
                     )
 
@@ -832,7 +844,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             else:
                 dem_generation_output_dir = os.path.join(
-                    cars_orchestrator.out_dir, "dump_dir", "dem_generation"
+                    dump_dir, "dem_generation"
                 )
                 safe_makedirs(dem_generation_output_dir)
                 # Use initial elevation if provided, and generate dems
@@ -919,7 +931,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["sensor_image_right"],
                             geom_plugin,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir,
+                                "epipolar_grid_generation",
+                                "new_mnt",
+                                pair_key,
+                            ),
                             pair_key=pair_key,
                         )
 
@@ -948,7 +965,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             save_matches=(
                                 self.sparse_mtch_app.get_save_matches()
                             ),
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "grid_correction", "new", pair_key
+                            ),
                             pair_key=pair_key,
                             orchestrator=cars_orchestrator,
                         )
@@ -960,7 +979,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 pairs[pair_key]["new_grid_right"],
                                 pairs[pair_key]["grid_correction_coef"],
                                 save_corrected_grid,
-                                pairs[pair_key]["pair_folder"],
+                                os.path.join(
+                                    dump_dir, "grid_correction", "new", pair_key
+                                ),
                             )
                         )
 
@@ -1042,7 +1063,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 pairs[pair_key]["grid_right"],
                                 pairs[pair_key]["grid_correction_coef"],
                                 save_corrected_grid,
-                                pair_folder,
+                                os.path.join(
+                                    dump_dir, "grid_correction", pair_key
+                                ),
                             )
                         )
 
@@ -1067,7 +1090,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Generate min and max disp grids
                 # Global disparity min and max will be computed from
                 # these grids
-                # fmt: off
+                dense_matching_pair_folder = os.path.join(
+                    dump_dir, "dense_matching", pair_key
+                )
                 if use_global_disp_range:
                     # Generate min and max disp grids from constants
                     # sensor image is not used here
@@ -1079,7 +1104,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             self.geom_plugin_with_dem_and_geoid,
                             dmin=dmin,
                             dmax=dmax,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=dense_matching_pair_folder,
                         )
                     )
                 else:
@@ -1092,10 +1117,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             dem_min=dem_min,
                             dem_max=dem_max,
                             dem_median=dem_median,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=dense_matching_pair_folder,
                         )
                     )
-                # fmt: on
 
                 # Get margins used in dense matching,
                 dense_matching_margins_fun = (
@@ -1131,7 +1155,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     pairs[pair_key]["corrected_grid_left"],
                     pairs[pair_key]["corrected_grid_right"],
-                    pairs[pair_key]["pair_folder"],
+                    os.path.join(dump_dir, "compute_epipolar_roi", pair_key),
                     disp_min=np.min(
                         disp_range_grid[0, 0]["disp_min_grid"].values
                     ),  # TODO compute dmin dans dmax
@@ -1163,7 +1187,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["corrected_grid_left"],
                     pairs[pair_key]["corrected_grid_right"],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "resampling", "corrected_grid", pair_key
+                    ),
                     pair_key=pair_key,
                     margins_fun=dense_matching_margins_fun,
                     tile_width=optimum_tile_size,
@@ -1178,7 +1204,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     new_epipolar_image_right,
                     local_tile_optimal_size_fun,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "dense_matching", pair_key
+                    ),
                     pair_key=pair_key,
                     disp_range_grid=disp_range_grid,
                     compute_disparity_masks=False,
@@ -1202,7 +1230,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 disp_range_grid[0, 0]["disp_max_grid"].values
                             ),
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_1", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1212,7 +1242,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matches_filling_1.run(
                             epipolar_disparity_map,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_1", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1231,7 +1263,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 disp_range_grid[0, 0]["disp_max_grid"].values
                             ),
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_2", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1241,7 +1275,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matches_filling_2.run(
                             filled_with_1_epipolar_disparity_map,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_2", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1328,7 +1364,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     denoising_overload_fun=denoising_overload_fun,
                     source_pc_names=pairs_names,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "triangulation", pair_key
+                    ),
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=output_geoid_path,
@@ -1341,7 +1379,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_denoising_application.run(
                             epipolar_points_cloud,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "denoising", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1372,7 +1412,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             ),
                             orchestrator=cars_orchestrator,
                             pair_key=pair_key,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "terrain_bbox", pair_key
+                            ),
                             check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
                         )
                     )
@@ -1460,9 +1502,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Rasterize merged and filtered point cloud
                     point_cloud_to_rasterize = denoised_merged_points_clouds
 
-                rasterization_dump_dir = os.path.join(
-                    cars_orchestrator.out_dir, "dump_dir", "rasterization"
-                )
+                rasterization_dump_dir = os.path.join(dump_dir, "rasterization")
 
                 # rasterize point cloud
                 _ = self.rasterization_application.run(

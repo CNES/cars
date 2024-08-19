@@ -259,6 +259,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         if self.save_intermediate_data:
             left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
+            safe_makedirs(pair_folder)
         else:
             if pair_folder is None:
                 tmp_folder = os.path.join(self.orchestrator.out_dir, "tmp")

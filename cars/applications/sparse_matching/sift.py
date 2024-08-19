@@ -426,7 +426,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
+        safe_makedirs(pair_folder)
 
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
@@ -608,7 +608,7 @@ class Sift(SparseMatching, short_name="sift"):
 
         if pair_folder is None:
             pair_folder = os.path.join(cars_orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
+        safe_makedirs(pair_folder)
 
         epipolar_error_upper_bound = self.epipolar_error_upper_bound
         epipolar_error_maximum_bias = self.epipolar_error_maximum_bias

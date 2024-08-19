@@ -145,6 +145,7 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
         corrected_grid_right.attributes["path"] = None
     else:
         if save_grid:
+            safe_makedirs(pair_folder)
             save_folder = os.path.join(
                 pair_folder, "corrected_right_epi_grid.tif"
             )
@@ -464,6 +465,7 @@ def estimate_right_grid_correction(
         if pair_folder is None:
             logging.error("Pair folder not provided")
         else:
+            safe_makedirs(pair_folder)
             current_out_dir = pair_folder
         matches_array_path = os.path.join(
             current_out_dir, "corrected_filtered_matches.npy"

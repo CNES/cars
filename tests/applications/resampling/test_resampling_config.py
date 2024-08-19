@@ -39,7 +39,6 @@ def test_check_full_conf():
         "method": "bicubic",
         "strip_height": 60,
         "step": 500,
-        "save_epipolar_image": False,
-        "save_epipolar_color": False,
+        "save_intermediate_data": False,
     }
     _ = BicubicResampling(conf)

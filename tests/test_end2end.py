@@ -2279,8 +2279,7 @@ def test_end2end_ventoux_with_color():
             "resampling": {
                 "method": "bicubic",
                 "strip_height": 80,
-                "save_epipolar_image": True,
-                "save_epipolar_color": False,
+                "save_intermediate_data": True,
             },
             "sparse_matching": {
                 "method": "sift",
@@ -2540,8 +2539,7 @@ def test_end2end_ventoux_with_classif():
             "resampling": {
                 "method": "bicubic",
                 "strip_height": 80,
-                "save_epipolar_image": True,
-                "save_epipolar_color": False,
+                "save_intermediate_data": True,
             },
             "sparse_matching": {
                 "method": "sift",

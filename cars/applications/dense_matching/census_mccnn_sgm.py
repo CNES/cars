@@ -582,6 +582,7 @@ class CensusMccnnSgm(
         # saving infos
         # disp grids
         if self.save_intermediate_data:
+            safe_makedirs(pair_folder)
             grid_min_path = os.path.join(pair_folder, "disp_min_grid.tif")
             grid_orchestrator.add_to_save_lists(
                 grid_min_path,
@@ -995,7 +996,7 @@ class CensusMccnnSgm(
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
+        safe_makedirs(pair_folder)
 
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset

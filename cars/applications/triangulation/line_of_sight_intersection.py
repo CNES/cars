@@ -247,7 +247,7 @@ class LineOfSightIntersection(
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
+        safe_makedirs(pair_folder)
 
         # Get local conf left image for this in_json iteration
         conf_left_img = sensor_image_left[sens_cst.INPUT_IMG]

@@ -34,7 +34,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import And, Checker, OptionalKey, Or
+from json_checker import And, Checker, Or
 from shapely.geometry import Polygon
 
 # CARS imports
@@ -73,8 +73,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.step = self.used_config["step"]
 
         # Saving bools
-        self.save_epipolar_image = self.used_config["save_epipolar_image"]
-        self.save_epipolar_color = self.used_config["save_epipolar_color"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -105,20 +104,15 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         overloaded_conf["strip_height"] = conf.get("strip_height", 60)
         overloaded_conf["step"] = conf.get("step", 500)
         # Saving bools
-        overloaded_conf["save_epipolar_image"] = conf.get(
-            "save_epipolar_image", False
-        )
-        overloaded_conf["save_epipolar_color"] = conf.get(
-            "save_epipolar_color", False
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
         )
 
         rectification_schema = {
             "method": str,
             "strip_height": And(int, lambda x: x > 0),
             "step": Or(None, int),
-            "save_epipolar_image": bool,
-            "save_epipolar_color": bool,
-            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -294,7 +288,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
+        safe_makedirs(pair_folder)
 
         # Create zeros margins if not provided
         if margins_fun is None:
@@ -398,7 +392,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         epipolar_images_right.attributes.update(epipolar_images_attributes)
 
         # Save objects
-        if self.save_epipolar_image:
+        if self.save_intermediate_data:
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_img_left.tif"),
                 cst.EPI_IMAGE,
@@ -446,7 +440,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                 optional_data=True,
             )
 
-        if self.save_epipolar_color and add_color:
+        if self.save_intermediate_data and add_color:
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_color.tif"),
                 cst.EPI_COLOR,

@@ -205,6 +205,7 @@ class PlaneFill(
         :rtype: CarsDataset
 
         """
+
         if holes_bbox_left is None or holes_bbox_right is None:
             raise RuntimeError("Disparity holes bbox are inconsistent.")
 

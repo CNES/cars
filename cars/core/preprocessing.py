@@ -160,7 +160,7 @@ def compute_terrain_bbox(  # noqa: 751
 
     if pair_folder is None:
         pair_folder = os.path.join(orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
+    safe_makedirs(pair_folder)
 
     out_dir = pair_folder
 

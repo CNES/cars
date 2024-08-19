@@ -32,6 +32,7 @@ from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
@@ -195,6 +196,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         # Save intermediate data (disparity maps)
         if save_intermediate_data:
+            safe_makedirs(pair_folder)
             self.orchestrator.add_to_save_lists(
                 os.path.join(
                     pair_folder, "epi_disp_" + app_name + "_filled.tif"
