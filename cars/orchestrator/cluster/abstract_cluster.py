@@ -109,7 +109,7 @@ class AbstractCluster(metaclass=ABCMeta):
         """
         self.out_dir = out_dir
 
-        self.worker_log_dir = os.path.join(out_dir, "workers_log")
+        self.worker_log_dir = os.path.join(out_dir, "logs", "workers_log")
         if not os.path.exists(self.worker_log_dir):
             os.makedirs(self.worker_log_dir)
 
