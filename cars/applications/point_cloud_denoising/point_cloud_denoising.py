@@ -25,8 +25,9 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-from json_checker import Checker
+from json_checker import Checker, OptionalKey
 
+from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 
@@ -51,7 +52,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         denoising_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "PC denoising_method method not specified, "
                 "default {} is used".format(denoising_method)
@@ -239,6 +240,7 @@ class NonePCDenoising(PCDenoising, short_name="none"):
 
         pc_denoising_schema = {
             "method": str,
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

@@ -49,7 +49,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         matching_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Dense Matching method not specified, "
                 "default {} is used".format(matching_method)

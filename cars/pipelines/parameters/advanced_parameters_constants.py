@@ -23,6 +23,8 @@
 This module contains the advanced parameter definitions
 """
 
+SAVE_INTERMEDIATE_DATA = "save_intermediate_data"
+
 DEBUG_WITH_ROI = "debug_with_roi"
 
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"

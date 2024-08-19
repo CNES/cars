@@ -179,6 +179,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.conf.get(APPLICATIONS, {}),
             self.generate_terrain_products,
             no_merging="no_merging" in self.used_conf[PIPELINE],
+            save_all_intermediate_data=self.used_conf[ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ],
         )
 
         # Check conf application vs inputs application
@@ -220,7 +223,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         return output_parameters.check_output_parameters(conf)
 
     def check_applications(
-        self, conf, generate_terrain_products, no_merging=False
+        self,
+        conf,
+        generate_terrain_products,
+        no_merging=False,
+        save_all_intermediate_data=False,
     ):
         """
         Check the given configuration for applications,
@@ -233,6 +240,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :type generate_terrain_products: bool
         :param no_merging: True if skip PC fusion and PC removing
         :type no_merging: bool
+        :param save_all_intermediate_data: True to save intermediate data in all
+            applications
+        :type save_all_intermediate_data: bool
         """
 
         # Check if all specified applications are used
@@ -267,8 +277,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             if no_merging:
                 pipeline_name += "_no_merging"
 
-        # Initialize used config
-        used_conf = {}
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -282,9 +290,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
                 )
 
+        # Initialize used config
+        used_conf = {}
+        for app_key in needed_applications:
+            used_conf[app_key] = conf.get(app_key, {})
+            used_conf[app_key]["save_intermediate_data"] = used_conf[
+                app_key
+            ].get("save_intermediate_data", save_all_intermediate_data)
+
         # Epipolar grid generation
         self.epipolar_grid_generation_application = Application(
-            "grid_generation", cfg=conf.get("grid_generation", {})
+            "grid_generation", cfg=used_conf.get("grid_generation", {})
         )
         used_conf["grid_generation"] = (
             self.epipolar_grid_generation_application.get_conf()
@@ -292,20 +308,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # image resampling
         self.resampling_application = Application(
-            "resampling", cfg=conf.get("resampling", {})
+            "resampling", cfg=used_conf.get("resampling", {})
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
 
         # holes detection
         self.holes_detection_app = Application(
-            "holes_detection", cfg=conf.get("holes_detection", {})
+            "holes_detection", cfg=used_conf.get("holes_detection", {})
         )
         used_conf["holes_detection"] = self.holes_detection_app.get_conf()
 
         # disparity filling 1 plane
         self.dense_matches_filling_1 = Application(
             "dense_matches_filling",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "dense_matches_filling.1",
                 {"method": "plane"},
             ),
@@ -317,7 +333,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         # disparity filling 2
         self.dense_matches_filling_2 = Application(
             "dense_matches_filling",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "dense_matches_filling.2",
                 {"method": "zero_padding"},
             ),
@@ -328,36 +344,38 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Sparse Matching
         self.sparse_mtch_app = Application(
-            "sparse_matching", cfg=conf.get("sparse_matching", {})
+            "sparse_matching", cfg=used_conf.get("sparse_matching", {})
         )
         used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # Matching
         self.dense_matching_app = Application(
-            "dense_matching", cfg=conf.get("dense_matching", {})
+            "dense_matching", cfg=used_conf.get("dense_matching", {})
         )
         used_conf["dense_matching"] = self.dense_matching_app.get_conf()
 
         # Triangulation
         self.triangulation_application = Application(
-            "triangulation", cfg=conf.get("triangulation", {})
+            "triangulation", cfg=used_conf.get("triangulation", {})
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
 
         self.pc_denoising_application = Application(
-            "pc_denoising", cfg=conf.get("pc_denoising", {"method": "none"})
+            "pc_denoising",
+            cfg=used_conf.get("pc_denoising", {"method": "none"}),
         )
 
         # MNT generation
         self.dem_generation_application = Application(
-            "dem_generation", cfg=conf.get("dem_generation", {})
+            "dem_generation", cfg=used_conf.get("dem_generation", {})
         )
         used_conf["dem_generation"] = self.dem_generation_application.get_conf()
 
         if generate_terrain_products:
             # Points cloud fusion
             self.pc_fusion_application = Application(
-                "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
+                "point_cloud_fusion",
+                cfg=used_conf.get("point_cloud_fusion", {}),
             )
             if not no_merging:
                 used_conf["point_cloud_fusion"] = (
@@ -367,7 +385,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Points cloud outlier removing small components
             self.pc_outliers_removing_1_app = Application(
                 "point_cloud_outliers_removing",
-                cfg=conf.get(
+                cfg=used_conf.get(
                     "point_cloud_outliers_removing.1",
                     {"method": "small_components"},
                 ),
@@ -380,7 +398,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Points cloud outlier removing statistical
             self.pc_outliers_removing_2_app = Application(
                 "point_cloud_outliers_removing",
-                cfg=conf.get(
+                cfg=used_conf.get(
                     "point_cloud_outliers_removing.2",
                     {"method": "statistical"},
                 ),
@@ -393,7 +411,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Rasterization
             self.rasterization_application = Application(
                 "point_cloud_rasterization",
-                cfg=conf.get("point_cloud_rasterization", {}),
+                cfg=used_conf.get("point_cloud_rasterization", {}),
             )
             used_conf["point_cloud_rasterization"] = (
                 self.rasterization_application.get_conf()

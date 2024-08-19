@@ -162,7 +162,10 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
         # Check conf application
         application_conf = self.check_applications(
-            self.conf.get(APPLICATIONS, {})
+            self.conf.get(APPLICATIONS, {}),
+            save_all_intermediate_data=self.used_conf[ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ],
         )
         self.used_conf[APPLICATIONS] = application_conf
 
@@ -232,12 +235,15 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         + "fixed according to the epsg"
                     )
 
-    def check_applications(self, conf):
+    def check_applications(self, conf, save_all_intermediate_data=False):
         """
         Check the given configuration for applications
 
         :param conf: configuration of applications
         :type conf: dict
+        :param save_all_intermediate_data: True to save intermediate data in all
+            applications
+        :type save_all_intermediate_data: bool
         """
 
         # Check if all specified applications are used
@@ -251,9 +257,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "point_cloud_rasterization",
         ]
 
-        # Initialize used config
-        used_conf = {}
-
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -263,9 +266,17 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     "No {} application used in pipeline".format(app_key)
                 )
 
+        # Initialize used config
+        used_conf = {}
+        for app_key in needed_applications:
+            used_conf[app_key] = conf.get(app_key, {})
+            used_conf[app_key]["save_intermediate_data"] = used_conf[
+                app_key
+            ].get("save_intermediate_data", save_all_intermediate_data)
+
         # Epipolar grid generation
         self.epipolar_grid_generation_app = Application(
-            "grid_generation", cfg=conf.get("grid_generation", {})
+            "grid_generation", cfg=used_conf.get("grid_generation", {})
         )
         used_conf["grid_generation"] = (
             self.epipolar_grid_generation_app.get_conf()
@@ -273,38 +284,38 @@ class SensorSparseDsmPipeline(PipelineTemplate):
 
         # Sparse Matching
         self.sparse_matching_app = Application(
-            "sparse_matching", cfg=conf.get("sparse_matching", {})
+            "sparse_matching", cfg=used_conf.get("sparse_matching", {})
         )
         used_conf["sparse_matching"] = self.sparse_matching_app.get_conf()
 
         # image resampling
         self.resampling_application = Application(
-            "resampling", cfg=conf.get("resampling", {})
+            "resampling", cfg=used_conf.get("resampling", {})
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
 
         # Triangulation
         self.triangulation_application = Application(
-            "triangulation", cfg=conf.get("triangulation", {})
+            "triangulation", cfg=used_conf.get("triangulation", {})
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
 
         # MNT generation
         self.dem_generation_application = Application(
-            "dem_generation", cfg=conf.get("dem_generation", {})
+            "dem_generation", cfg=used_conf.get("dem_generation", {})
         )
         used_conf["dem_generation"] = self.dem_generation_application.get_conf()
 
         # Points cloud fusion
         self.pc_fusion_application = Application(
-            "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
+            "point_cloud_fusion", cfg=used_conf.get("point_cloud_fusion", {})
         )
         used_conf["point_cloud_fusion"] = self.pc_fusion_application.get_conf()
 
         # Rasterization
         self.rasterization_application = Application(
             "point_cloud_rasterization",
-            cfg=conf.get("point_cloud_rasterization", {}),
+            cfg=used_conf.get("point_cloud_rasterization", {}),
         )
         used_conf["point_cloud_rasterization"] = (
             self.rasterization_application.get_conf()

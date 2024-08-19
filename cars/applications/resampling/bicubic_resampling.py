@@ -34,7 +34,7 @@ from typing import Dict, Tuple
 # Third party imports
 import numpy as np
 import xarray as xr
-from json_checker import And, Checker, Or
+from json_checker import And, Checker, OptionalKey, Or
 from shapely.geometry import Polygon
 
 # CARS imports
@@ -118,6 +118,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             "step": Or(None, int),
             "save_epipolar_image": bool,
             "save_epipolar_color": bool,
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

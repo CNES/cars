@@ -49,7 +49,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         triangulation_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" in conf:
             logging.info(
                 "Triangulation method not specified, default "
                 " {} is used".format(triangulation_method)

@@ -32,7 +32,7 @@ import time
 
 # Third party imports
 import numpy as np
-from json_checker import And, Checker, Or
+from json_checker import And, Checker, OptionalKey, Or
 from pyproj import CRS
 
 # CARS imports
@@ -167,6 +167,7 @@ class SmallComponents(
             "connection_distance": And(float, lambda x: x > 0),
             "nb_points_threshold": And(int, lambda x: x > 0),
             "clusters_distance_threshold": Or(None, float),
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

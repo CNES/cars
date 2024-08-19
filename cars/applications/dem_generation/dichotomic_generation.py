@@ -33,9 +33,10 @@ import numpy as np
 import pandas
 import rasterio
 import xarray as xr
-from json_checker import And, Checker, Or
+from json_checker import And, Checker, OptionalKey, Or
 
 import cars.orchestrator.orchestrator as ocht
+from cars.applications import application_constants
 from cars.applications.dem_generation import (
     dem_generation_constants as dem_gen_cst,
 )
@@ -129,6 +130,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

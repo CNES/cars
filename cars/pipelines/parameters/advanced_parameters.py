@@ -45,6 +45,10 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
 
     overloaded_conf = conf.copy()
 
+    overloaded_conf[adv_cst.SAVE_INTERMEDIATE_DATA] = conf.get(
+        adv_cst.SAVE_INTERMEDIATE_DATA, False
+    )
+
     overloaded_conf[adv_cst.DEBUG_WITH_ROI] = conf.get(
         adv_cst.DEBUG_WITH_ROI, False
     )
@@ -64,7 +68,10 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         )
 
     # Validate inputs
-    schema = {adv_cst.DEBUG_WITH_ROI: bool}
+    schema = {
+        adv_cst.DEBUG_WITH_ROI: bool,
+        adv_cst.SAVE_INTERMEDIATE_DATA: bool,
+    }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
         schema[adv_cst.EPIPOLAR_A_PRIORI] = dict

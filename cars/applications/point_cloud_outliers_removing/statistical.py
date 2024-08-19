@@ -33,7 +33,7 @@ import time
 import numpy as np
 
 # Third party imports
-from json_checker import And, Checker
+from json_checker import And, Checker, OptionalKey
 from pyproj import CRS
 
 # CARS imports
@@ -143,6 +143,7 @@ class Statistical(
             "activated": bool,
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

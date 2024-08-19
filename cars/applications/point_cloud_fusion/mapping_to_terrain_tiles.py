@@ -30,7 +30,7 @@ from collections import Counter
 
 # Third party imports
 import numpy as np
-from json_checker import Checker
+from json_checker import Checker, OptionalKey
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -121,6 +121,7 @@ class MappingToTerrainTiles(
             "save_points_cloud_as_laz": bool,
             "save_points_cloud_as_csv": bool,
             "save_points_cloud_by_pair": bool,
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

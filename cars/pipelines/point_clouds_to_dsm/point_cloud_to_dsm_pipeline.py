@@ -166,7 +166,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         """
         return output_parameters.check_output_parameters(conf)
 
-    def check_applications(self, conf, no_merging=False):
+    def check_applications(
+        self, conf, no_merging=False, save_all_intermediate_data=False
+    ):
         """
         Check the given configuration for applications
 
@@ -174,6 +176,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :type conf: dict
         :param no_merging: True if skip PC fusion and PC removing
         :type no_merging: bool
+        :param save_all_intermediate_data: True to save intermediate data in all
+            applications
+        :type save_all_intermediate_data: bool
         """
 
         # Check if all specified applications are used
@@ -186,9 +191,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             needed_applications.append("point_cloud_outliers_removing.1")
             needed_applications.append("point_cloud_outliers_removing.2")
 
-        # Initialize used config
-        used_conf = {}
-
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -198,16 +200,24 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     "No {} application used in pipeline".format(app_key)
                 )
 
+        # Initialize used config
+        used_conf = {}
+        for app_key in needed_applications:
+            used_conf[app_key] = conf.get(app_key, {})
+            used_conf[app_key]["save_intermediate_data"] = used_conf[
+                app_key
+            ].get("save_intermediate_data", save_all_intermediate_data)
+
         # Points cloud fusion
         self.pc_fusion_application = Application(
-            "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
+            "point_cloud_fusion", cfg=used_conf.get("point_cloud_fusion", {})
         )
         used_conf["point_cloud_fusion"] = self.pc_fusion_application.get_conf()
 
         # Points cloud outlier removing small components
         self.pc_outliers_removing_1_app = Application(
             "point_cloud_outliers_removing",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "point_cloud_outliers_removing.1",
                 {"method": "small_components"},
             ),
@@ -219,7 +229,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         # Points cloud outlier removing statistical
         self.pc_outliers_removing_2_app = Application(
             "point_cloud_outliers_removing",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "point_cloud_outliers_removing.2",
                 {"method": "statistical"},
             ),
@@ -231,7 +241,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         # Rasterization
         self.rasterization_application = Application(
             "point_cloud_rasterization",
-            cfg=conf.get("point_cloud_rasterization", {}),
+            cfg=used_conf.get("point_cloud_rasterization", {}),
         )
         used_conf["point_cloud_rasterization"] = (
             self.rasterization_application.get_conf()

@@ -53,7 +53,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         points_removing_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Points removing method not specified, "
                 "default {} is used".format(points_removing_method)
