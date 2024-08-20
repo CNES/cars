@@ -4251,7 +4251,12 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
             # Run pc pipeline with simple config
-            epi_pc_path = os.path.join(sensors_out_dir_first_run, "one_two")
+            epi_pc_path = os.path.join(
+                sensors_out_dir_first_run,
+                "dump_dir",
+                "triangulation",
+                "one_two",
+            )
             pc_input_config_first_run = {
                 "inputs": {
                     "point_clouds": {
