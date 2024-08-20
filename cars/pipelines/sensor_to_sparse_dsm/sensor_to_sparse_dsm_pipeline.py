@@ -30,8 +30,6 @@ import json
 import logging
 import os
 
-from pyproj import CRS
-
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -176,9 +174,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         self.config_full_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
         self.config_full_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
 
-        # Check conf application vs inputs application
-        self.check_inputs_with_applications(self.inputs, application_conf)
-
     def check_inputs(self, conf, config_json_dir=None):
         """
         Check the inputs given
@@ -208,33 +203,6 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         """
         return output_parameters.check_output_parameters(conf)
 
-    @staticmethod
-    def check_inputs_with_applications(inputs_conf, application_conf):
-        """
-        Check for each application the input configuration consistency
-
-        :param inputs_conf: inputs checked configuration
-        :type inputs_conf: dict
-        :param application_conf: application checked configuration
-        :type application_conf: dict
-        """
-
-        if "epsg" in inputs_conf and inputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
-            if spatial_ref.is_geographic:
-                if (
-                    "point_cloud_rasterization" in application_conf
-                    and application_conf["point_cloud_rasterization"][
-                        "resolution"
-                    ]
-                    > 10e-3
-                ):
-                    logging.warning(
-                        "The resolution of the "
-                        + "point_cloud_rasterization should be "
-                        + "fixed according to the epsg"
-                    )
-
     def check_applications(self, conf, save_all_intermediate_data=False):
         """
         Check the given configuration for applications
@@ -251,10 +219,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             "grid_generation",
             "sparse_matching",
             "resampling",
-            "triangulation",
             "dem_generation",
-            "point_cloud_fusion",
-            "point_cloud_rasterization",
         ]
 
         for app_key in conf.keys():
@@ -294,32 +259,11 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
 
-        # Triangulation
-        self.triangulation_application = Application(
-            "triangulation", cfg=used_conf.get("triangulation", {})
-        )
-        used_conf["triangulation"] = self.triangulation_application.get_conf()
-
         # MNT generation
         self.dem_generation_application = Application(
             "dem_generation", cfg=used_conf.get("dem_generation", {})
         )
         used_conf["dem_generation"] = self.dem_generation_application.get_conf()
-
-        # Points cloud fusion
-        self.pc_fusion_application = Application(
-            "point_cloud_fusion", cfg=used_conf.get("point_cloud_fusion", {})
-        )
-        used_conf["point_cloud_fusion"] = self.pc_fusion_application.get_conf()
-
-        # Rasterization
-        self.rasterization_application = Application(
-            "point_cloud_rasterization",
-            cfg=used_conf.get("point_cloud_rasterization", {}),
-        )
-        used_conf["point_cloud_rasterization"] = (
-            self.rasterization_application.get_conf()
-        )
 
         return used_conf
 
