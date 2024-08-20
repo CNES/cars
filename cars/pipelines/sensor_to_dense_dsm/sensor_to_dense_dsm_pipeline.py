@@ -985,6 +985,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             )
                         )
 
+                        # Use the new grid as uncorrected grid
+                        pairs[pair_key]["grid_right"] = pairs[pair_key][
+                            "new_grid_right"
+                        ]
+
                         pairs[pair_key]["corrected_grid_left"] = pairs[
                             pair_key
                         ]["new_grid_left"]
