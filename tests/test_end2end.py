@@ -1232,7 +1232,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "left_right")
+            epi_pc_path = os.path.join(
+                out_dir, "dump_dir", "triangulation", "left_right"
+            )
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
@@ -1509,7 +1511,12 @@ def test_end2end_ventoux_unique_split():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "left_right")
+            epi_pc_path = os.path.join(
+                out_dir, "dump_dir", "triangulation", "left_right"
+            )
+            dense_matching_path = os.path.join(
+                out_dir, "dump_dir", "dense_matching", "left_right"
+            )
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
@@ -1533,11 +1540,11 @@ def test_end2end_ventoux_unique_split():
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
-                                    epi_pc_path,
+                                    dense_matching_path,
                                     "epi_confidence_from" + "_ambiguity.tif",
                                 ),
                                 "confidence_from_ambiguity1": os.path.join(
-                                    epi_pc_path,
+                                    dense_matching_path,
                                     "epi_confidence_from"
                                     + "_ambiguity_before.tif",
                                 ),
