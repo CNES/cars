@@ -161,13 +161,6 @@ class CensusMccnnSgm(
             "disp_max_threshold", None
         )
 
-        # Permormance map parameters
-        overloaded_conf["generate_performance_map"] = conf.get(
-            "generate_performance_map", False
-        )
-        overloaded_conf["generate_confidence_intervals"] = conf.get(
-            "generate_confidence_intervals", False
-        )
         overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
             "perf_eta_max_ambiguity", 0.99
         )
@@ -192,6 +185,16 @@ class CensusMccnnSgm(
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
+        )
+
+        # Permormance map parameters
+        overloaded_conf["generate_performance_map"] = conf.get(
+            "generate_performance_map",
+            overloaded_conf["save_intermediate_data"],
+        )
+        overloaded_conf["generate_confidence_intervals"] = conf.get(
+            "generate_confidence_intervals",
+            overloaded_conf["save_intermediate_data"],
         )
 
         # check loader
