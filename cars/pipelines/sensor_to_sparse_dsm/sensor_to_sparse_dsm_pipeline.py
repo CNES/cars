@@ -300,6 +300,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 }
             )
 
+            # Application dump directory
+            dump_dir = os.path.join(cars_orchestrator.out_dir, "dump_dir")
+
             # Run applications
             list_sensor_pairs = sensor_inputs.generate_inputs(
                 self.inputs, self.geom_plugin_without_dem_and_geoid
@@ -318,13 +321,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                 sensor_image_left,
                 sensor_image_right,
             ) in list_sensor_pairs:
-                # Create Pair folder
-                pair_folder = os.path.join(out_dir, pair_key)
-                safe_makedirs(pair_folder)
-                safe_makedirs(os.path.join(pair_folder, "tmp"))
-
                 pairs[pair_key] = {}
-                pairs[pair_key]["pair_folder"] = pair_folder
                 pairs[pair_key]["sensor_image_left"] = sensor_image_left
                 pairs[pair_key]["sensor_image_right"] = sensor_image_right
 
@@ -344,7 +341,12 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     geom_plugin,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir,
+                        "epipolar_grid_generation",
+                        "initial",
+                        pair_key,
+                    ),
                     pair_key=pair_key,
                 )
 
@@ -358,7 +360,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["grid_left"],
                     pairs[pair_key]["grid_right"],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(dump_dir, "resampling", pair_key),
                     pair_key=pair_key,
                     margins_fun=self.sparse_matching_app.get_margins_fun(),
                     tile_width=None,
@@ -377,7 +379,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         "disp_to_alt_ratio"
                     ],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "sparse_matching", pair_key
+                    ),
                     pair_key=pair_key,
                 )
 
@@ -393,7 +397,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["grid_right"],
                     orchestrator=cars_orchestrator,
                     pair_key=pair_key,
-                    pair_folder=pair_folder,
+                    pair_folder=os.path.join(
+                        dump_dir, "sparse_matching", pair_key
+                    ),
                     save_matches=self.sparse_matching_app.get_save_matches(),
                 )
                 # Estimate grid correction
@@ -408,7 +414,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["grid_right"],
                     initial_cars_ds=pairs[pair_key]["epipolar_matches_left"],
                     save_matches=self.sparse_matching_app.get_save_matches(),
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "grid_correction", "initial", pair_key
+                    ),
                     pair_key=pair_key,
                     orchestrator=cars_orchestrator,
                 )
@@ -419,7 +427,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["grid_right"],
                         pairs[pair_key]["grid_correction_coef"],
                         self.epipolar_grid_generation_app.get_save_grids(),
-                        pairs[pair_key]["pair_folder"],
+                        os.path.join(
+                            dump_dir, "grid_correction", "initial", pair_key
+                        ),
                     )
                 )
 
@@ -507,7 +517,12 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     geom_plugin,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir,
+                        "epipolar_grid_generation",
+                        "new_mnt",
+                        pair_key,
+                    ),
                     pair_key=pair_key,
                 )
 
@@ -536,7 +551,11 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["new_grid_right"],
                     initial_cars_ds=pairs[pair_key]["epipolar_matches_left"],
                     save_matches=(self.sparse_matching_app.get_save_matches()),
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir,
+                        "grid_correction",
+                        pair_key,
+                    ),
                     pair_key=pair_key,
                     orchestrator=cars_orchestrator,
                 )
@@ -547,7 +566,11 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["new_grid_right"],
                         pairs[pair_key]["grid_correction_coef"],
                         self.epipolar_grid_generation_app.get_save_grids(),
-                        pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir,
+                            "grid_correction",
+                            pair_key,
+                        ),
                     )
                 )
                 pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
