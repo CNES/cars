@@ -176,19 +176,20 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         )
 
         logging.info(
-            "Left satellite acquisition angles: Azimuth angle: {:.1f}°, "
-            "Elevation angle: {:.1f}°".format(left_az, left_elev_angle)
+            "Left satellite acquisition angles: "
+            "Azimuth angle: {:.1f} degrees, "
+            "Elevation angle: {:.1f} degrees".format(left_az, left_elev_angle)
         )
 
         logging.info(
-            "Right satellite acquisition angles: Azimuth angle: {:.1f}°, "
-            "Elevation angle: {:.1f}°".format(right_az, right_elev_angle)
+            "Right satellite acquisition angles: "
+            "Azimuth angle: {:.1f} degrees, "
+            "Elevation angle: {:.1f} degrees".format(right_az, right_elev_angle)
         )
 
         logging.info(
-            "Stereo satellite convergence angle from ground: {:.1f}°".format(
-                convergence_angle
-            )
+            "Stereo satellite convergence angle from ground: "
+            "{:.1f} degrees".format(convergence_angle)
         )
 
         # Generate rectification grids
