@@ -1765,11 +1765,11 @@ def test_end2end_use_epipolar_a_priori():
                 == 612
             )
             assert (
-                -28
+                -27
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -26
+                < -25
             )
             assert (
                 23
@@ -2124,8 +2124,8 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -29
-            assert out_disp_compute["minimum_disparity"] < -27
+            assert out_disp_compute["minimum_disparity"] > -28
+            assert out_disp_compute["minimum_disparity"] < -26
             assert out_disp_compute["maximum_disparity"] > 24
             assert out_disp_compute["maximum_disparity"] < 29
 

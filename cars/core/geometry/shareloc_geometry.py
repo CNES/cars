@@ -25,7 +25,7 @@ Shareloc geometry sub class : CARS geometry wrappers functions to shareloc ones
 import logging
 from typing import List, Tuple, Union
 
-import bindings_cpp
+import bindings_cpp  # pylint: disable=E0401
 import numpy as np
 import rasterio as rio
 import shareloc.geofunctions.rectification as rectif
@@ -373,7 +373,6 @@ class SharelocGeometry(AbstractGeometry):
             grid2,
             [epipolar_size_y, epipolar_size_x],
             alt_to_disp_ratio,
-            _,
         ) = rectif.compute_stereorectification_epipolar_grids(
             image1,
             shareloc_model1,
@@ -388,21 +387,20 @@ class SharelocGeometry(AbstractGeometry):
         grid1 = grid1[:, :, 0:2][:, :, ::-1]
         grid2 = grid2[:, :, 0:2][:, :, ::-1]
 
-        # compute associated characteristics
+        epipolar_size_x = int(np.floor(epipolar_size_x))
+        epipolar_size_y = int(np.floor(epipolar_size_y))
+
+        origin = [0.0, 0.0]
+        spacing = [float(epipolar_step), float(epipolar_step)]
+
+        # alt_to_disp_ratio does not consider image resolution
         with rio.open(sensor1, "r") as rio_dst:
             pixel_size_x, pixel_size_y = (
                 rio_dst.transform[0],
                 rio_dst.transform[4],
             )
-
         mean_size = (abs(pixel_size_x) + abs(pixel_size_y)) / 2
-        epipolar_size_x = int(np.floor(epipolar_size_x * mean_size))
-        epipolar_size_y = int(np.floor(epipolar_size_y * mean_size))
-
-        origin = [0.0, 0.0]
-        spacing = [float(epipolar_step), float(epipolar_step)]
-
-        disp_to_alt_ratio = 1 / alt_to_disp_ratio
+        disp_to_alt_ratio = mean_size / alt_to_disp_ratio
 
         return (
             grid1,

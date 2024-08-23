@@ -76,6 +76,9 @@ def test_resample_image():
         nodata=nodata,
     )
 
+    # Uncomment to update baseline
+    # test_dataset.to_netcdf(absolute_data_path("ref_output/data1_ref_left.nc"))
+
     # For convenience we use same reference as test_epipolar_rectify_images_1
     ref_dataset = xr.open_dataset(
         absolute_data_path("ref_output/data1_ref_left.nc")
@@ -87,7 +90,7 @@ def test_resample_image():
     ref_dataset.attrs.pop(cst.EPI_MARGINS, None)
     ref_dataset.attrs.pop(cst.EPI_DISP_MIN, None)
     ref_dataset.attrs.pop(cst.EPI_DISP_MAX, None)
-    ref_dataset.attrs["region"] = ref_dataset.attrs[cst.ROI_WITH_MARGINS]
+    ref_dataset.attrs.pop(cst.ROI_WITH_MARGINS, None)
     ref_dataset.attrs.pop(cst.ROI_WITH_MARGINS, None)
 
     assert_same_datasets(test_dataset, ref_dataset)

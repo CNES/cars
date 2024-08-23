@@ -704,7 +704,7 @@ class CensusMccnnSgm(
                 dem_max, lon_mean, lat_mean, points_cloud_conversion
             )
 
-            # sensors positions as index
+            # sensors physical positions
             (
                 ind_cols_sensor,
                 ind_rows_sensor,

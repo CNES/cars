@@ -32,6 +32,7 @@ import xarray as xr
 from scipy import interpolate
 from scipy.interpolate import LinearNDInterpolator
 from shapely.geometry import Polygon
+from shareloc import proj_utils
 
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
@@ -363,11 +364,8 @@ class AbstractGeometry(metaclass=ABCMeta):
 
         # create regular grid points positions
         points = (cols, rows)
-        grid_row, grid_col = np.mgrid[
-            ori_row:last_row:step_row, ori_col:last_col:step_col
-        ]
-        sensor_row_positions = row_dep + grid_row
-        sensor_col_positions = col_dep + grid_col
+        sensor_row_positions = row_dep
+        sensor_col_positions = col_dep
 
         # interpolate sensor positions
         interp_row = interpolate.interpn(
@@ -644,3 +642,75 @@ class AbstractGeometry(metaclass=ABCMeta):
             outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
 
         return u_l, u_r, l_l, l_r
+
+
+def min_max_to_physical_min_max(xmin, xmax, ymin, ymax, transform):
+    """
+    Transform min max index to position min max
+
+    :param xmin: xmin
+    :type xmin: int
+    :param xmax: xmax
+    :type xmax: int
+    :param ymin: ymin
+    :type ymin: int
+    :param ymax: ymax
+    :type ymax: int
+    :param transform: transform
+    :type transform: Affine
+
+    :return: xmin, xmax, ymin, ymax
+    :rtype: list(int)
+    """
+
+    cols_ind = np.array([xmin, xmin, xmax, xmax])
+    rows_ind = np.array([ymin, ymax, ymin, ymax])
+
+    rows_pos, cols_pos = proj_utils.transform_index_to_physical_point(
+        transform,
+        rows_ind,
+        cols_ind,
+    )
+
+    return (
+        np.min(cols_pos),
+        np.max(cols_pos),
+        np.min(rows_pos),
+        np.max(rows_pos),
+    )
+
+
+def min_max_to_index_min_max(xmin, xmax, ymin, ymax, transform):
+    """
+    Transform min max position to index min max
+
+    :param xmin: xmin
+    :type xmin: int
+    :param xmax: xmax
+    :type xmax: int
+    :param ymin: ymin
+    :type ymin: int
+    :param ymax: ymax
+    :type ymax: int
+    :param transform: transform
+    :type transform: Affine
+
+    :return: xmin, xmax, ymin, ymax
+    :rtype: list(int)
+    """
+
+    cols_ind = np.array([xmin, xmin, xmax, xmax])
+    rows_ind = np.array([ymin, ymax, ymin, ymax])
+
+    rows_pos, cols_pos = proj_utils.transform_physical_point_to_index(
+        ~transform,
+        rows_ind,
+        cols_ind,
+    )
+
+    return (
+        np.min(cols_pos),
+        np.max(cols_pos),
+        np.min(rows_pos),
+        np.max(rows_pos),
+    )
