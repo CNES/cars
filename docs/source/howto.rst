@@ -207,6 +207,46 @@ Any OTB application can be ran in docker
     docker run  --entrypoint=/bin/bash  cnes/cars otbcli_BandMath -help
 
 
+.. _resample_image:
+
+Resample an image
+========================
+
+If you want to upscale or downscale the resolution of you input data, use rasterio:
+
+.. code-block:: python
+
+    import rasterio
+    from rasterio.enums import Resampling
+    # Get data
+    upscale_factor = 0.5
+    with rasterio.open("example.tif") as dataset:
+        # resample data to target shape
+        data = dataset.read(
+            out_shape=(
+                dataset.count,
+                int(dataset.height * upscale_factor),
+                int(dataset.width * upscale_factor)
+            ),
+            resampling=Resampling.bilinear
+        )
+        # scale image transform
+        transform = dataset.transform * dataset.transform.scale(
+            (dataset.width / data.shape[-1]),
+            (dataset.height / data.shape[-2])
+        )
+        profile = dataset.profile
+        # Save data
+        profile.update(
+            width=data.shape[-1],
+            height=data.shape[-2],
+            transform=transform
+        )
+        with rasterio.open('resampled_example.tif', 'w', **profile) as dst:
+            dst.write(data)
+
+
+
 Use CARS with Pleiades images ...
 ========================================
 
