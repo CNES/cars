@@ -221,6 +221,9 @@ class SimpleGaussian(
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
+        confidence_file_name=None,
+        contributing_pair_file_name=None,
+        filling_file_name=None,
         color_dtype=None,
         dump_dir=None,
     ):
@@ -264,7 +267,13 @@ class SimpleGaussian(
         :param mask_file_name: path of color
         :type mask_file_name: str
         :param classif_file_name: path of color
-        :type classif_file_name: str
+        :type confidence_file_name: str
+        :param confidence_file_name: path of confidence file
+        :type confidence_file_name: str
+        :param contributing_pair_file_name: path of contributing pair file
+        :type contributing_pair_file_name: str
+        :param filling_file_name: path of filling file
+        :type filling_file_name: str
         :param color_dtype: output color image type
         :type color_dtype: str (numpy type)
         :param dump_dir: directory used for outputs with no associated filename
@@ -429,7 +438,9 @@ class SimpleGaussian(
 
         out_classif_file_name = classif_file_name
         if classif_file_name is None and save_intermediate_data:
-            out_classif_file_name = os.path.join(out_dump_dir, "classif.tif")
+            out_classif_file_name = os.path.join(
+                out_dump_dir, "classification.tif"
+            )
         if out_classif_file_name is not None:
             list_computed_layers += ["classif"]
             self.orchestrator.add_to_save_lists(
@@ -453,6 +464,48 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="dsm_mask",
+            )
+
+        out_confidence = confidence_file_name
+        if confidence_file_name is None and save_intermediate_data:
+            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
+        if out_confidence:
+            list_computed_layers += ["confidence"]
+            self.orchestrator.add_to_save_lists(
+                out_confidence,
+                cst.RASTER_CONFIDENCE,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.msk_no_data,
+                cars_ds_name="confidence",
+            )
+
+        out_source_pc = contributing_pair_file_name
+        if contributing_pair_file_name is None and save_intermediate_data:
+            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
+        if out_source_pc:
+            list_computed_layers += ["source_pc"]
+            self.orchestrator.add_to_save_lists(
+                out_source_pc,
+                cst.RASTER_SOURCE_PC,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="source_pc",
+            )
+
+        out_filling = filling_file_name
+        if out_filling is None and save_intermediate_data:
+            out_filling = os.path.join(out_dump_dir, "filling.tif")
+        if out_filling:
+            list_computed_layers += ["filling"]
+            self.orchestrator.add_to_save_lists(
+                out_filling,
+                cst.RASTER_FILLING,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="filling",
             )
 
         # TODO Check that intervals indeed exist!
@@ -561,40 +614,6 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_sup_std",
-            )
-
-        if save_intermediate_data:
-            list_computed_layers += ["confidence"]
-            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
-            self.orchestrator.add_to_save_lists(
-                out_confidence,
-                cst.RASTER_CONFIDENCE,
-                terrain_raster,
-                dtype=np.float32,
-                nodata=self.msk_no_data,
-                cars_ds_name="confidence",
-            )
-
-            list_computed_layers += ["source_pc"]
-            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
-            self.orchestrator.add_to_save_lists(
-                out_source_pc,
-                cst.RASTER_SOURCE_PC,
-                terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="source_pc",
-            )
-
-            list_computed_layers += ["filling"]
-            out_filling = os.path.join(out_dump_dir, "filling.tif")
-            self.orchestrator.add_to_save_lists(
-                out_filling,
-                cst.RASTER_FILLING,
-                terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="filling",
             )
 
         # Get saving infos in order to save tiles when they are computed

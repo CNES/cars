@@ -142,6 +142,9 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
+        confidence_file_name=None,
+        contributing_pair_file_name=None,
+        filling_file_name=None,
         color_dtype=None,
         dump_dir=None,
     ):
@@ -163,6 +166,12 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type mask_file_name: str
         :param classif_file_name: path of color
         :type classif_file_name: str
+        :param confidence_file_name: path of confidence file
+        :type confidence_file_name: str
+        :param contributing_pair_file_name: path of contributing pair file
+        :type contributing_pair_file_name: str
+        :param filling_file_name: path of filling file
+        :type filling_file_name: str
         :param color_dtype: output color image type
         :type color_dtype: str (numpy type)
         :param dump_dir: directory used for outputs with no associated filename

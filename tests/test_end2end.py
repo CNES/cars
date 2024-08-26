@@ -107,8 +107,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
@@ -641,7 +640,7 @@ def test_end2end_ventoux_unique():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1281,7 +1280,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "resolution": 0.000005,
-                        "save_source_pc": True,
+                        "save_intermediate_data": True,
                     }
                 },
             }
@@ -1652,7 +1651,8 @@ def test_end2end_ventoux_unique_split():
             #                                                 "classif.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "classif_end2end_ventoux_split.tif"
+            #             ref_output_dir,
+            #             "classification_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
@@ -1735,7 +1735,8 @@ def test_end2end_ventoux_unique_split():
                 ),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "classif_end2end_ventoux_split.tif"
+                        ref_output_dir,
+                        "classification_end2end_ventoux_split.tif",
                     )
                 ),
                 atol=0.0001,
@@ -2075,7 +2076,7 @@ def test_end2end_use_epipolar_a_priori():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2347,7 +2348,7 @@ def test_end2end_ventoux_with_color():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2601,7 +2602,6 @@ def test_end2end_ventoux_with_classif():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_classif": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2634,6 +2634,9 @@ def test_end2end_ventoux_with_classif():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+
+        # Save classif
+        input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -2717,11 +2720,11 @@ def test_end2end_ventoux_with_classif():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dump_dir", "rasterization",
-        #                                                     "classif.tif"),
+        #     os.path.join(out_dir,  "dsm", "classification.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
+        #             ref_output_dir,
+        #             "classification_end2end_ventoux_with_classif.tif"
         #         )
         #     ),
         # )
@@ -2737,10 +2740,11 @@ def test_end2end_ventoux_with_classif():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "classif.tif"),
+            os.path.join(out_dir, "dsm", "classification.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
+                    ref_output_dir,
+                    "classification_end2end_ventoux_with_classif.tif",
                 )
             ),
             rtol=1.0e-7,
@@ -3055,7 +3059,6 @@ def test_end2end_quality_stats():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
-                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3076,7 +3079,6 @@ def test_end2end_quality_stats():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3084,6 +3086,10 @@ def test_end2end_quality_stats():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # Save all intermediate data
+        input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
+
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3365,7 +3371,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3496,7 +3501,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3584,7 +3588,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3734,7 +3737,6 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3742,6 +3744,7 @@ def test_end2end_paca_with_mask():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3769,7 +3772,7 @@ def test_end2end_paca_with_mask():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dump_dir", "rasterization", "mask.tif"),
+        #     os.path.join(out_dir,  "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
         #     ),
@@ -3792,7 +3795,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
@@ -3851,7 +3854,6 @@ def test_end2end_paca_with_mask():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3859,6 +3861,7 @@ def test_end2end_paca_with_mask():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3945,8 +3948,6 @@ def test_end2end_disparity_filling():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
-                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3954,6 +3955,12 @@ def test_end2end_disparity_filling():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # Save mask and filling
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "filling": True,
+            "mask": True,
+        }
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
@@ -3981,13 +3988,13 @@ def test_end2end_disparity_filling():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "filling_end2end_gizeh_fill.tif")
@@ -4011,7 +4018,7 @@ def test_end2end_disparity_filling():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
             ),
@@ -4019,7 +4026,7 @@ def test_end2end_disparity_filling():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
+            os.path.join(out_dir, "dsm", "filling.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "filling_end2end_gizeh_fill.tif")
             ),
@@ -4073,8 +4080,6 @@ def test_end2end_disparity_filling_with_zeros():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
-                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -4084,6 +4089,12 @@ def test_end2end_disparity_filling_with_zeros():
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         # use endogenous dem
         input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+
+        # Save mask and filling
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "filling": True,
+            "mask": True,
+        }
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4151,7 +4162,7 @@ def test_end2end_disparity_filling_with_zeros():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
@@ -4161,7 +4172,7 @@ def test_end2end_disparity_filling_with_zeros():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "filling.tif"),
+            os.path.join(out_dir, "dsm", "filling.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"

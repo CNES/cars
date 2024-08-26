@@ -52,11 +52,32 @@ def check_output_parameters(conf):
         output_constants.PRODUCT_LEVEL, "dsm"
     )
 
+    overloaded_conf[output_constants.MASK_BASENAME] = overloaded_conf.get(
+        output_constants.DSM_BASENAME, "mask.tif"
+    )
     overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
         output_constants.DSM_BASENAME, "dsm.tif"
     )
     overloaded_conf[output_constants.CLR_BASENAME] = overloaded_conf.get(
         output_constants.CLR_BASENAME, "color.tif"
+    )
+    overloaded_conf[output_constants.CLASSIFICATION_BASENAME] = (
+        overloaded_conf.get(
+            output_constants.CLASSIFICATION_BASENAME, "classification.tif"
+        )
+    )
+    overloaded_conf[output_constants.PERFORMANCE_MAP_BASENAME] = (
+        overloaded_conf.get(
+            output_constants.PERFORMANCE_MAP_BASENAME, "confidence.tif"
+        )
+    )
+    overloaded_conf[output_constants.CONTRIBUTING_PAIR_BASENAME] = (
+        overloaded_conf.get(
+            output_constants.CONTRIBUTING_PAIR_BASENAME, "contributing_pair.tif"
+        )
+    )
+    overloaded_conf[output_constants.FILLING_BASENAME] = overloaded_conf.get(
+        output_constants.FILLING_BASENAME, "filling.tif"
     )
     overloaded_conf[output_constants.INFO_BASENAME] = overloaded_conf.get(
         output_constants.INFO_BASENAME,
@@ -99,14 +120,19 @@ def check_output_parameters(conf):
         output_constants.AUX_CLASSIFICATION, False
     )
     overloaded_conf[output_constants.AUXILIARY][
-        output_constants.AUX_CONFIDENCE
+        output_constants.AUX_PERFORMANCE_MAP
     ] = overloaded_conf[output_constants.AUXILIARY].get(
-        output_constants.AUX_CONFIDENCE, False
+        output_constants.AUX_PERFORMANCE_MAP, False
     )
     overloaded_conf[output_constants.AUXILIARY][
         output_constants.AUX_CONTRIBUTING_PAIR
     ] = overloaded_conf[output_constants.AUXILIARY].get(
         output_constants.AUX_CONTRIBUTING_PAIR, False
+    )
+    overloaded_conf[output_constants.AUXILIARY][
+        output_constants.AUX_FILLING
+    ] = overloaded_conf[output_constants.AUXILIARY].get(
+        output_constants.AUX_FILLING, False
     )
 
     # Check schema
@@ -116,6 +142,11 @@ def check_output_parameters(conf):
         output_constants.DSM_BASENAME: str,
         output_constants.CLR_BASENAME: str,
         output_constants.INFO_BASENAME: str,
+        output_constants.MASK_BASENAME: str,
+        output_constants.CLASSIFICATION_BASENAME: str,
+        output_constants.PERFORMANCE_MAP_BASENAME: str,
+        output_constants.CONTRIBUTING_PAIR_BASENAME: str,
+        output_constants.FILLING_BASENAME: str,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: Or(int, None),
         output_constants.RESOLUTION: str,
@@ -130,8 +161,9 @@ def check_output_parameters(conf):
         output_constants.AUX_COLOR: bool,
         output_constants.AUX_MASK: bool,
         output_constants.AUX_CLASSIFICATION: bool,
-        output_constants.AUX_CONFIDENCE: bool,
+        output_constants.AUX_PERFORMANCE_MAP: bool,
         output_constants.AUX_CONTRIBUTING_PAIR: bool,
+        output_constants.AUX_FILLING: bool,
     }
 
     checker_auxiliary = Checker(auxiliary_schema)

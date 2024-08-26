@@ -1509,6 +1509,68 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 rasterization_dump_dir = os.path.join(dump_dir, "rasterization")
 
+                confidence_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.PERFORMANCE_MAP_BASENAME],
+                    )
+                    if self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_PERFORMANCE_MAP
+                    ]
+                    else None
+                )
+
+                classif_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.CLASSIFICATION_BASENAME],
+                    )
+                    if self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_CLASSIFICATION
+                    ]
+                    else None
+                )
+
+                mask_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.MASK_BASENAME],
+                    )
+                    if self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_MASK
+                    ]
+                    else None
+                )
+
+                contributing_pair_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[
+                            output_constants.CONTRIBUTING_PAIR_BASENAME
+                        ],
+                    )
+                    if self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_CONTRIBUTING_PAIR
+                    ]
+                    else None
+                )
+
+                filling_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.FILLING_BASENAME],
+                    )
+                    if self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_FILLING
+                    ]
+                    else None
+                )
+
                 # rasterize point cloud
                 _ = self.rasterization_application.run(
                     point_cloud_to_rasterize,
@@ -1524,6 +1586,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         output_constants.DSM_DIRECTORY,
                         self.output[output_constants.CLR_BASENAME],
                     ),
+                    classif_file_name=classif_file_name,
+                    confidence_file_name=confidence_file_name,
+                    mask_file_name=mask_file_name,
+                    contributing_pair_file_name=contributing_pair_file_name,
+                    filling_file_name=filling_file_name,
                     color_dtype=list_epipolar_points_cloud[0].attributes[
                         "color_type"
                     ],
