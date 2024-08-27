@@ -47,15 +47,6 @@ def test_check_full_conf():
         "color_no_data": 0,
         "color_dtype": None,
         "msk_no_data": 255,
-        "save_color": True,
-        "save_stats": False,
-        "save_mask": False,
-        "save_classif": False,
-        "save_dsm": True,
-        "save_intervals": False,
-        "save_confidence": False,
-        "save_source_pc": False,
-        "save_filling": False,
         "save_intermediate_data": False,
     }
     _ = SimpleGaussian(conf)

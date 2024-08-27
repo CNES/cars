@@ -43,7 +43,7 @@ def test_output_full():
             "directory": os.path.join(directory, "outdir"),
             "product_level": "dsm",
             "auxiliary": {
-                "confidence": False,
+                "performance_map": False,
                 "mask": False,
                 "color": True,
                 "classification": False,
