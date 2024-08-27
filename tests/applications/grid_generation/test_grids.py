@@ -54,6 +54,30 @@ from tests.helpers import (
 )
 
 
+def generate_grid_xr_dataset(grid_np):
+    """
+    Transform numpy grid to dataset grid
+    """
+    rows = np.arange(0, grid_np.shape[0])
+    cols = np.arange(0, grid_np.shape[1])
+    dataset_grid = xr.Dataset(
+        {
+            "x": xr.DataArray(
+                data=grid_np[:, :, 0],
+                dims=["row", "col"],
+                coords={"row": rows, "col": cols},
+            ),
+            "y": xr.DataArray(
+                data=grid_np[:, :, 1],
+                dims=["row", "col"],
+                coords={"row": rows, "col": cols},
+            ),
+        }
+    )
+
+    return dataset_grid
+
+
 @pytest.mark.unit_tests
 def test_correct_right_grid():
     """
@@ -105,7 +129,7 @@ def test_correct_right_grid():
 
         # Uncomment to update ref
         # np.save(absolute_data_path("ref_output/corrected_right_grid.npy"),
-        # corrected_grid)
+        #  corrected_grid)
         corrected_grid_ref = np.load(
             absolute_data_path("ref_output/corrected_right_grid.npy")
         )
@@ -196,8 +220,8 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
     np.testing.assert_almost_equal(baseline, 1.420566289522033, decimal=10)
 
     # Uncomment to update baseline
-    # left_grid.to_netcdf(absolute_data_path(
-    # "ref_output/left_grid_default_alt.nc"))
+    # generate_grid_xr_dataset(left_grid).to_netcdf(absolute_data_path(
+    #  "ref_output/left_grid_default_alt.nc"))
 
     left_grid_ref = xr.open_dataset(
         absolute_data_path("ref_output/left_grid_default_alt.nc")
@@ -206,7 +230,7 @@ def test_generate_epipolar_grids_default_alt_shareloc(images_and_grids_conf):
     assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
 
     # Uncomment to update baseline
-    # right_grid.to_netcdf(absolute_data_path(
+    # generate_grid_xr_dataset(right_grid).to_netcdf(absolute_data_path(
     # "ref_output/right_grid_default_alt.nc"))
 
     right_grid_ref = xr.open_dataset(
@@ -255,7 +279,8 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     np.testing.assert_almost_equal(baseline, 1.4205717708948564, decimal=10)
 
     # Uncomment to update baseline
-    # left_grid.to_netcdf(absolute_data_path("ref_output/left_grid.nc"))
+    # generate_grid_xr_dataset(left_grid).to_netcdf(
+    # absolute_data_path("ref_output/left_grid.nc"))
 
     left_grid_ref = xr.open_dataset(
         absolute_data_path("ref_output/left_grid.nc")
@@ -264,7 +289,8 @@ def test_generate_epipolar_grids_shareloc(images_and_grids_conf):
     assert np.allclose(left_grid_ref["y"].values, left_grid[:, :, 1])
 
     # Uncomment to update baseline
-    # right_grid.to_netcdf(absolute_data_path("ref_output/right_grid.nc"))
+    # generate_grid_xr_dataset(right_grid).to_netcdf(
+    # absolute_data_path("ref_output/right_grid.nc"))
 
     right_grid_ref = xr.open_dataset(
         absolute_data_path("ref_output/right_grid.nc")

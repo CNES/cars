@@ -23,8 +23,6 @@ Resampling module:
 contains functions used for epipolar resampling
 """
 
-import logging
-
 # Standard imports
 import math
 
@@ -32,13 +30,14 @@ import math
 import numpy as np
 import rasterio as rio
 import resample as cresample
-from rasterio.windows import Window, bounds, from_bounds
+from rasterio.windows import Window, bounds
 
 from cars.conf import mask_cst as msk_cst
 
 # CARS imports
 from cars.core import constants as cst
 from cars.core import datasets, inputs, tiling
+from cars.core.geometry import abstract_geometry
 from cars.data_structures import cars_dataset
 
 
@@ -261,6 +260,7 @@ def resample_image(
     # Localize blocks of the tile to resample
     if step is None:
         step = region[2] - region[0]
+
     xmin_of_blocks = np.arange(region[0], region[2], step)
     xmax_of_blocks = np.append(
         np.arange(region[0] + step, region[2], step), region[2]
@@ -300,23 +300,18 @@ def resample_image(
             grid_as_array = grid_as_array.astype(np.float32)
             grid_as_array = grid_as_array.astype(np.float64)
 
-            # deformation to localization
-            grid_as_array[0, ...] += np.arange(
-                oversampling * grid_region[0],
-                oversampling * (grid_region[2] + 1),
-                step=oversampling,
-            )
-            grid_as_array[1, ...] += np.arange(
-                oversampling * grid_region[1],
-                oversampling * (grid_region[3] + 1),
-                step=oversampling,
-            ).T[..., np.newaxis]
-
             # get needed source bounding box
             left = math.floor(np.amin(grid_as_array[0, ...]))
             right = math.ceil(np.amax(grid_as_array[0, ...]))
             top = math.floor(np.amin(grid_as_array[1, ...]))
             bottom = math.ceil(np.amax(grid_as_array[1, ...]))
+
+            # transform xmin and xmax positions to index
+            (top, bottom, left, right) = (
+                abstract_geometry.min_max_to_index_min_max(
+                    left, right, top, bottom, img_reader.transform
+                )
+            )
 
             # filter margin for bicubic = 2
             filter_margin = 2
@@ -325,32 +320,13 @@ def resample_image(
             left -= filter_margin
             right += filter_margin
 
-            # extract src according to grid values
-            transform = img_reader.transform
-            res_x = int(transform[0] / abs(transform[0]))
-            res_y = int(transform[4] / abs(transform[4]))
+            left, right = list(np.clip([left, right], 0, img_reader.shape[0]))
+            top, bottom = list(np.clip([top, bottom], 0, img_reader.shape[1]))
 
-            (full_left, full_bottom, full_right, full_top) = img_reader.bounds
+            img_window = Window.from_slices([left, right], [top, bottom])
 
-            left, right, top, bottom = (
-                res_x * left,
-                res_x * right,
-                res_y * top,
-                res_y * bottom,
-            )
-
-            full_bounds_window = from_bounds(
-                full_left, full_bottom, full_right, full_top, transform
-            )
-            img_window = from_bounds(left, bottom, right, top, transform)
-
-            # Crop window to be in image
             in_sensor = True
-            try:
-                img_window = img_window.intersection(full_bounds_window)
-            except rio.errors.WindowError:
-                # Window not in sensor image
-                logging.debug("Window not in sensor image")
+            if right - left == 0 or bottom - top == 0:
                 in_sensor = False
 
             # round window
@@ -358,16 +334,14 @@ def resample_image(
             img_window = img_window.round_lengths()
 
             # Compute offset
-            tile_bounds = bounds(img_window, transform)
-            tile_bounds_with_res = [
-                res_x * tile_bounds[0],
-                res_y * tile_bounds[1],
-                res_x * tile_bounds[2],
-                res_y * tile_bounds[3],
-            ]
+            transform = img_reader.transform
 
-            x_offset = min(tile_bounds_with_res[0], tile_bounds_with_res[2])
-            y_offset = min(tile_bounds_with_res[1], tile_bounds_with_res[3])
+            res_x = float(abs(transform[0]))
+            res_y = float(abs(transform[4]))
+            tile_bounds = list(bounds(img_window, transform))
+
+            x_offset = min(tile_bounds[0], tile_bounds[2])
+            y_offset = min(tile_bounds[1], tile_bounds[3])
 
             if in_sensor:
                 # Get sensor data
@@ -376,6 +350,10 @@ def resample_image(
                 # shift grid regarding the img extraction
                 grid_as_array[0, ...] -= x_offset
                 grid_as_array[1, ...] -= y_offset
+
+                # apply input resolution
+                grid_as_array[0, ...] /= res_x
+                grid_as_array[1, ...] /= res_y
 
                 block_resamp = cresample.grid(
                     img_as_array,

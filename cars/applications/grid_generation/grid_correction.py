@@ -219,23 +219,21 @@ def estimate_right_grid_correction(
     spacing = grid_right.attributes["grid_spacing"]
 
     # Form 3D array with grid positions
-    x_values_1d = np.linspace(
+    x_values_1d = np.arange(
         origin[0],
         origin[0] + right_grid.shape[0] * spacing[0],
-        right_grid.shape[0],
+        spacing[0],
     )
-    y_values_1d = np.linspace(
+    y_values_1d = np.arange(
         origin[1],
         origin[1] + right_grid.shape[1] * spacing[1],
-        right_grid.shape[1],
+        spacing[1],
     )
     x_values_2d, y_values_2d = np.meshgrid(y_values_1d, x_values_1d)
 
     # Compute corresponding point in sensor geometry (grid encodes (x_sensor -
     # x_epi,y_sensor - y__epi)
     source_points = right_grid
-    source_points[:, :, 0] += x_values_2d
-    source_points[:, :, 1] += y_values_2d
 
     # Extract matches for convenience
     matches_y1 = matches[:, 1]

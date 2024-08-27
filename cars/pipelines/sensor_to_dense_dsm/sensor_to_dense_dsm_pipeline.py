@@ -782,7 +782,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pair_key=pair_key,
                         orchestrator=cars_orchestrator,
                     )
-
                     # Correct grid right
                     pairs[pair_key]["corrected_grid_right"] = (
                         grid_correction.correct_grid(
