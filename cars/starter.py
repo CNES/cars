@@ -78,10 +78,68 @@ def pairdirname_to_pc(pairdirname):
 
     return sensor
 
-
-def main():
+def cars_starter(cli_params : dict = None, **kwargs) -> None:
     """
-    Main cars-starter entrypoint
+    Main fonction. Expects a dictionary from the CLI (cli_params) 
+    or directly the input parameters.
+    """
+    if cli_params and isinstance(cli_params, dict):
+        config = cli_params
+    else:
+        params_name = set(kwargs.keys())
+        required_params = set(["il","out"])
+        missing_params = (required_params - params_name)
+        if len(missing_params) > 0 :
+            raise ValueError("The following parameters are required: {}"
+                             .format(", ".join(list(missing_params))))
+        config = kwargs
+    
+     # check first input in list to determine pipeline
+    if os.path.isfile(config["il"][0]):
+        cars_config = {"inputs": {"sensors": {}}, "output": {}}
+        pipeline_name = "sensors_to_dense_dsm"
+
+        for idx, inputfilename in enumerate(config["il"]):
+            cars_config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
+                inputfilename
+            )
+
+        # pairing with first image as reference
+        pairing = list(
+            zip(  # noqa: B905
+                ["0"] * (len(config["il"]) - 1), map(str, range(1, len(config["il"])))
+            )
+        )
+
+        cars_config["inputs"]["pairing"] = pairing
+
+    else:
+        cars_config = {"inputs": {"point_clouds": {}}, "output": {}}
+        pipeline_name = "dense_point_clouds_to_dense_dsm"
+
+        for idx, pairdirname in enumerate(config["il"]):
+            cars_config["inputs"]["point_clouds"][str(idx)] = pairdirname_to_pc(
+                pairdirname
+            )
+
+    cars_config["output"]["out_dir"] = config["out"]
+
+    check = config["check"] if "check" in config.keys() else False
+    full = config["full"] if "full" in config.keys() else False
+
+    if check or full:
+        # cars imports
+        from cars.pipelines.pipeline import Pipeline
+
+        used_pipeline = Pipeline(pipeline_name, cars_config, None)
+        if full:
+            cars_config = used_pipeline.used_conf
+
+    print(json.dumps(cars_config, indent=4))
+
+def cli():
+    """
+    Main cars-starter entrypoint (Command Line Interface)
     """
     parser = argparse.ArgumentParser(
         "cars-starter", description="Helper to create configuration file"
@@ -110,47 +168,7 @@ def main():
     parser.add_argument("--check", action="store_true", help="Check inputs")
 
     args = parser.parse_args()
-
-    # check first input in list to determine pipeline
-    if os.path.isfile(args.il[0]):
-        config = {"inputs": {"sensors": {}}, "output": {}}
-        pipeline_name = "sensors_to_dense_dsm"
-
-        for idx, inputfilename in enumerate(args.il):
-            config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
-                inputfilename
-            )
-
-        # pairing with first image as reference
-        pairing = list(
-            zip(  # noqa: B905
-                ["0"] * (len(args.il) - 1), map(str, range(1, len(args.il)))
-            )
-        )
-
-        config["inputs"]["pairing"] = pairing
-
-    else:
-        config = {"inputs": {"point_clouds": {}}, "output": {}}
-        pipeline_name = "dense_point_clouds_to_dense_dsm"
-
-        for idx, pairdirname in enumerate(args.il):
-            config["inputs"]["point_clouds"][str(idx)] = pairdirname_to_pc(
-                pairdirname
-            )
-
-    config["output"]["out_dir"] = args.out
-
-    if args.check or args.full:
-        # cars imports
-        from cars.pipelines.pipeline import Pipeline
-
-        used_pipeline = Pipeline(pipeline_name, config, None)
-        if args.full:
-            config = used_pipeline.used_conf
-
-    print(json.dumps(config, indent=4))
-
-
+    cars_starter(vars(args))
+   
 if __name__ == "__main__":
-    main()
+    cli()
