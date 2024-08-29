@@ -32,7 +32,6 @@ INITIAL_ELEVATION = "initial_elevation"
 USE_ENDOGENOUS_ELEVATION = "use_endogenous_elevation"
 
 CHECK_INPUTS = "check_inputs"
-DEFAULT_ALT = "default_alt"
 ROI = "roi"
 GEOID = "geoid"
 DEM_PATH = "dem"
@@ -45,3 +44,5 @@ INPUT_GEO_MODEL_TYPE = "geomodel_type"
 INPUT_GEO_MODEL_FILTER = "geomodel_filters"
 INPUT_NODATA = "no_data"
 INPUT_COLOR = "color"
+
+CARS_DEFAULT_ALT = 0  # Default altitude used in cars pipelines

@@ -62,7 +62,6 @@ def test_check_full_conf():
         "pairing": [["left", "right"]],
         "initial_elevation": {
             "dem": "srtm/N44E005.hgt",
-            "default_alt": 0,
         },
         "use_endogenous_elevation": True,
         "roi": {

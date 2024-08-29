@@ -239,10 +239,7 @@ def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
     # Initialize the desired geometry plugin without elevation information
     geom_plugin_without_dem_and_geoid = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
-            conf_geom_plugin,
-            default_alt=conf_inputs[sens_cst.INITIAL_ELEVATION][
-                sens_cst.DEFAULT_ALT
-            ],
+            conf_geom_plugin, default_alt=sens_cst.CARS_DEFAULT_ALT
         )
     )
 
@@ -368,9 +365,7 @@ def generate_geometry_plugin_with_dem(
             conf_geom_plugin,
             dem=dem_path,
             geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
-            default_alt=conf_inputs[sens_cst.INITIAL_ELEVATION][
-                sens_cst.DEFAULT_ALT
-            ],
+            default_alt=sens_cst.CARS_DEFAULT_ALT,
             pairs_for_roi=pairs_for_roi,
         )
     )
@@ -484,7 +479,7 @@ def check_input_data(image, color):
 
 def get_initial_elevation(config):
     """
-    Return initial elevation parameters (dem, geoid and default altitude)
+    Return initial elevation parameters (dem and geoid paths)
     from input configuration.
 
     :param config: input initial elevation
@@ -510,10 +505,6 @@ def get_initial_elevation(config):
             package_path, "..", "..", "conf", CARS_GEOID_PATH
         )
         updated_config[sens_cst.GEOID] = geoid_path
-
-    # Add default altitude
-    if sens_cst.DEFAULT_ALT not in updated_config:
-        updated_config[sens_cst.DEFAULT_ALT] = 0
 
     return updated_config
 
