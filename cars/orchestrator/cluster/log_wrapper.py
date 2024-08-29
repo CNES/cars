@@ -686,27 +686,37 @@ def generate_summary(out_dir, used_conf):
     (name_task_main, summary_main) = filter_lists(
         summary_names,
         summary_total_time,
-        lambda name: "wrapper" not in name and "pipeline" not in name,
+        lambda name: "wrapper" not in name
+        and "pipeline" not in name
+        and "Compute futures" not in name,
     )
 
     (_, [pipeline_time]) = filter_lists(
         summary_names, summary_total_time, lambda name: "pipeline" in name
     )
 
-    total_time_workers = nb_workers * pipeline_time
+    (_, [multiprocessing_time]) = filter_lists(
+        summary_names,
+        summary_total_time,
+        lambda name: "Compute futures" in name,
+    )
+
+    sequential_time = pipeline_time - multiprocessing_time
+
+    total_time_workers = nb_workers * multiprocessing_time
     generate_pie_chart(
         axs.flat[6],
         name_task_workers,
         100 * np.array(summary_workers) / total_time_workers,
         "Total time in workers ({} workers) lives "
-        "(not always with tasks)".format(nb_workers),
+        "(only during multiprocessing time)".format(nb_workers),
     )
 
     generate_pie_chart(
         axs.flat[7],
         name_task_main,
-        100 * np.array(summary_main) / pipeline_time,
-        "Total time in main (with waiting for workers)",
+        100 * np.array(summary_main) / sequential_time,
+        "Total time in main (except time waiting for workers)",
     )
 
     # file_name

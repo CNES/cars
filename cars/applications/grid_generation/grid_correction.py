@@ -41,6 +41,7 @@ from cars.core.utils import safe_makedirs
 
 # CARS imports
 from cars.data_structures import cars_dataset
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 
 
 def correct_grid_from_1d(
@@ -163,6 +164,7 @@ def correct_grid(grid, grid_correction, save_grid=None, pair_folder=None):
     return corrected_grid_right
 
 
+@cars_profile(name="Grid correction estimation")
 def estimate_right_grid_correction(
     matches,
     grid_right,
