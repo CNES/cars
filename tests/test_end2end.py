@@ -1444,6 +1444,7 @@ def test_end2end_ventoux_unique_split():
                 "method": "census_sgm",
                 "use_global_disp_range": False,
                 "save_intermediate_data": True,
+                "generate_confidence_intervals": False,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
@@ -1648,7 +1649,7 @@ def test_end2end_ventoux_unique_split():
             # )
             # copy2(
             #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
-            #                                                 "classif.tif"),
+            #                         "classification.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1731,7 +1732,10 @@ def test_end2end_ventoux_unique_split():
             )
             assert_same_images(
                 os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "classif.tif"
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "classification.tif",
                 ),
                 absolute_data_path(
                     os.path.join(
@@ -2355,6 +2359,8 @@ def test_end2end_ventoux_with_color():
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
+                "generate_performance_map": False,
+                "generate_confidence_intervals": False,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
@@ -3890,7 +3896,7 @@ def test_end2end_paca_with_mask():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
