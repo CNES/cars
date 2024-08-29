@@ -405,9 +405,8 @@ def compute_vector_raster_and_stats(
     if len(filling_indexes) > 0:
         filling_out = np.ceil(filling)
 
-    # performance_map_out = None
-    # if len(performance_map_indexes) > 0:
-    #     performance_map_out = np.ceil(performance_map)
+    if len(performance_map_indexes) == 0:
+        performance_map = None
 
     return (
         out,
