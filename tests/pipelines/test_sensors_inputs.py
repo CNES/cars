@@ -85,7 +85,6 @@ def test_check_full_conf():
                 }
             ],
         },
-        "check_inputs": False,
     }
     _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
 

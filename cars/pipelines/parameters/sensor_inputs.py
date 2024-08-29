@@ -57,10 +57,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
     )
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
-    overloaded_conf[sens_cst.CHECK_INPUTS] = conf.get(
-        sens_cst.CHECK_INPUTS, False
-    )
-
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
 
     overloaded_conf[sens_cst.INITIAL_ELEVATION] = get_initial_elevation(
@@ -74,7 +70,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.ROI: Or(str, dict, None),
-        sens_cst.CHECK_INPUTS: bool,
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -179,12 +174,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
             "relative path are not transformed to absolute paths"
         )
 
-    if not overloaded_conf[sens_cst.CHECK_INPUTS]:
-        logging.info(
-            "The inputs consistency will not be checked. "
-            "To enable the inputs checking, add check_inputs: True "
-            "to your input configuration"
-        )
     # check datat type of pairs images
     for key1, key2 in overloaded_conf[sens_cst.PAIRING]:
         compare_image_type(
@@ -206,11 +195,10 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
             sensor_image[sens_cst.INPUT_CLASSIFICATION],
         )
         # check image and color data consistency
-        if overloaded_conf[sens_cst.CHECK_INPUTS]:
-            check_input_data(
-                sensor_image[sens_cst.INPUT_IMG],
-                sensor_image[sens_cst.INPUT_COLOR],
-            )
+        check_input_data(
+            sensor_image[sens_cst.INPUT_IMG],
+            sensor_image[sens_cst.INPUT_COLOR],
+        )
 
     # Check srtm dir
     check_srtm(overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH])

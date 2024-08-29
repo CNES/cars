@@ -1426,7 +1426,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pair_folder=os.path.join(
                                 dump_dir, "terrain_bbox", pair_key
                             ),
-                            check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
+                            check_inputs=True,
                         )
                     )
                     list_terrain_roi.append(current_terrain_roi_bbox)

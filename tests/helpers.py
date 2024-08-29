@@ -116,9 +116,6 @@ def generate_input_json(
 
     config["geometry_plugin"] = geometry_plugin_name
 
-    # Check inputs
-    config["inputs"]["check_inputs"] = True
-
     # overload pipeline
     config["pipeline"] = pipeline
 
