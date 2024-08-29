@@ -221,7 +221,7 @@ class SimpleGaussian(
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
-        confidence_file_name=None,
+        performance_map_file_name=None,
         contributing_pair_file_name=None,
         filling_file_name=None,
         color_dtype=None,
@@ -267,8 +267,8 @@ class SimpleGaussian(
         :param mask_file_name: path of color
         :type mask_file_name: str
         :param classif_file_name: path of color
-        :type confidence_file_name: str
-        :param confidence_file_name: path of confidence file
+        :type performance_map_file_name: str
+        :param performance_map_file_name: path of performance map file
         :type confidence_file_name: str
         :param contributing_pair_file_name: path of contributing pair file
         :type contributing_pair_file_name: str
@@ -384,6 +384,7 @@ class SimpleGaussian(
         out_clr_file_name = None
         out_msk_file_name = None
         out_confidence = None
+        out_performance_map = None
         out_dsm_mean_file_name = None
         out_dsm_std_file_name = None
         out_dsm_n_pts_file_name = None
@@ -466,18 +467,20 @@ class SimpleGaussian(
                 cars_ds_name="dsm_mask",
             )
 
-        out_confidence = confidence_file_name
-        if confidence_file_name is None and save_intermediate_data:
-            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
-        if out_confidence:
-            list_computed_layers += ["confidence"]
+        out_performance_map = performance_map_file_name
+        if performance_map_file_name is None and save_intermediate_data:
+            out_performance_map = os.path.join(
+                out_dump_dir, "performance_map.tif"
+            )
+        if out_performance_map:
+            list_computed_layers += ["performance_map"]
             self.orchestrator.add_to_save_lists(
-                out_confidence,
-                cst.RASTER_CONFIDENCE,
+                out_performance_map,
+                cst.RASTER_PERFORMANCE_MAP,
                 terrain_raster,
                 dtype=np.float32,
                 nodata=self.msk_no_data,
-                cars_ds_name="confidence",
+                cars_ds_name="performance_map",
             )
 
         out_source_pc = contributing_pair_file_name
@@ -510,6 +513,17 @@ class SimpleGaussian(
 
         # TODO Check that intervals indeed exist!
         if save_intermediate_data:
+            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
+            list_computed_layers += ["confidence"]
+            self.orchestrator.add_to_save_lists(
+                out_confidence,
+                cst.RASTER_CONFIDENCE,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.msk_no_data,
+                cars_ds_name="confidence",
+            )
+
             list_computed_layers += ["intervals", "stats"]
             out_dsm_inf_file_name = os.path.join(out_dump_dir, "dsm_inf.tif")
             self.orchestrator.add_to_save_lists(
@@ -665,6 +679,7 @@ class SimpleGaussian(
                     raster_cst.COLOR_TAG: out_clr_file_name,
                     raster_cst.MSK_TAG: out_msk_file_name,
                     raster_cst.CONFIDENCE_TAG: out_confidence,
+                    raster_cst.PERFORMANCE_MAP_TAG: out_confidence,
                     raster_cst.DSM_MEAN_TAG: out_dsm_mean_file_name,
                     raster_cst.DSM_STD_TAG: out_dsm_std_file_name,
                     raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,

@@ -700,7 +700,7 @@ def add_performance_map(
     performance_map = w_ambi * risk_max_map * disp_to_alt_ratio
 
     # Set performance map in dataset
-    performance_map_key = cst_disp.CONFIDENCE + "_performance_map"
+    performance_map_key = cst.EPI_PERFORMANCE_MAP
 
     output_dataset[performance_map_key] = xr.DataArray(
         performance_map,

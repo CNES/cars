@@ -169,7 +169,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
 
         self.debug_with_roi = self.used_conf[ADVANCED][adv_cst.DEBUG_WITH_ROI]
-
         # Check conf output
         self.output = self.check_output(self.conf[OUTPUT])
         self.used_conf[OUTPUT] = self.output
@@ -349,8 +348,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # Matching
+        generate_performance_map = (
+            self.used_conf[OUTPUT]
+            .get(output_constants.AUXILIARY, {})
+            .get(output_constants.AUX_PERFORMANCE_MAP, False)
+        )
+        dense_matching_config = used_conf.get("dense_matching", {})
+        if generate_performance_map is True:
+            dense_matching_config["generate_performance_map"] = True
         self.dense_matching_app = Application(
-            "dense_matching", cfg=used_conf.get("dense_matching", {})
+            "dense_matching", cfg=dense_matching_config
         )
         used_conf["dense_matching"] = self.dense_matching_app.get_conf()
 
@@ -1508,7 +1515,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 rasterization_dump_dir = os.path.join(dump_dir, "rasterization")
 
-                confidence_file_name = (
+                performance_map_file_name = (
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
@@ -1586,7 +1593,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.output[output_constants.CLR_BASENAME],
                     ),
                     classif_file_name=classif_file_name,
-                    confidence_file_name=confidence_file_name,
+                    performance_map_file_name=performance_map_file_name,
                     mask_file_name=mask_file_name,
                     contributing_pair_file_name=contributing_pair_file_name,
                     filling_file_name=filling_file_name,

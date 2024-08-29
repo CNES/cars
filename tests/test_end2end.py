@@ -96,7 +96,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "dense_matching": {
                 "method": "census_sgm",
-                "generate_performance_map": True,
                 "use_global_disp_range": True,
             },
             "point_cloud_rasterization": {
@@ -107,7 +106,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_intermediate_data": True,
             },
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
@@ -115,6 +113,10 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # update epsg
         final_epsg = 32631
         input_dense_dsm["output"]["epsg"] = final_epsg
+        input_dense_dsm["output"]["auxiliary"] = {
+            "mask": True,
+            "performance_map": True,
+        }
 
         # use endogenous dem
         input_dense_dsm["inputs"]["use_endogenous_elevation"] = False
@@ -150,7 +152,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # )
         # copy2(
         #     os.path.join(out_dir, "dump_dir", "rasterization",
-        #                            "confidence_performance_map.tif"),
+        #                            "performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
@@ -175,7 +177,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
             ),
@@ -185,9 +187,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         assert_same_images(
             os.path.join(
                 out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_performance_map.tif",
+                "dsm",
+                "performance_map.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -264,7 +265,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
@@ -276,9 +277,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         assert_same_images(
             os.path.join(
                 out_dir,
-                "dump_dir",
-                "rasterization",
-                "confidence_performance_map.tif",
+                "dsm",
+                "performance_map.tif",
             ),
             absolute_data_path(
                 os.path.join(

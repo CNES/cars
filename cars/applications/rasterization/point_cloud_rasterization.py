@@ -142,7 +142,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         color_file_name=None,
         mask_file_name=None,
         classif_file_name=None,
-        confidence_file_name=None,
+        performance_map_file_name=None,
         contributing_pair_file_name=None,
         filling_file_name=None,
         color_dtype=None,
@@ -166,8 +166,8 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type mask_file_name: str
         :param classif_file_name: path of color
         :type classif_file_name: str
-        :param confidence_file_name: path of confidence file
-        :type confidence_file_name: str
+        :param performance_map_file_name: path of confidence file
+        :type performance_map_file_name: str
         :param contributing_pair_file_name: path of contributing pair file
         :type contributing_pair_file_name: str
         :param filling_file_name: path of filling file

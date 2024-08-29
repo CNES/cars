@@ -68,7 +68,7 @@ def check_output_parameters(conf):
     )
     overloaded_conf[output_constants.PERFORMANCE_MAP_BASENAME] = (
         overloaded_conf.get(
-            output_constants.PERFORMANCE_MAP_BASENAME, "confidence.tif"
+            output_constants.PERFORMANCE_MAP_BASENAME, "performance_map.tif"
         )
     )
     overloaded_conf[output_constants.CONTRIBUTING_PAIR_BASENAME] = (
