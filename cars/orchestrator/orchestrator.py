@@ -162,7 +162,9 @@ class Orchestrator:
         self.achievement_tracker = achievement_tracker.AchievementTracker()
 
         # init tile profiler
-        self.dir_tile_profiling = os.path.join(self.out_dir, "tile_processing")
+        self.dir_tile_profiling = os.path.join(
+            self.out_dir, "dump_dir", "tile_processing"
+        )
         if not os.path.exists(self.dir_tile_profiling):
             os.makedirs(self.dir_tile_profiling)
         self.tile_profiler = TileProfiler(
