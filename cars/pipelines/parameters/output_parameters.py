@@ -49,8 +49,12 @@ def check_output_parameters(conf):
     overloaded_conf[output_constants.OUT_DIRECTORY] = out_dir
 
     overloaded_conf[output_constants.PRODUCT_LEVEL] = overloaded_conf.get(
-        output_constants.PRODUCT_LEVEL, "dsm"
+        output_constants.PRODUCT_LEVEL, ["dsm"]
     )
+    if isinstance(overloaded_conf[output_constants.PRODUCT_LEVEL], str):
+        overloaded_conf[output_constants.PRODUCT_LEVEL] = [
+            overloaded_conf[output_constants.PRODUCT_LEVEL]
+        ]
 
     overloaded_conf[output_constants.MASK_BASENAME] = overloaded_conf.get(
         output_constants.DSM_BASENAME, "mask.tif"
@@ -58,8 +62,8 @@ def check_output_parameters(conf):
     overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
         output_constants.DSM_BASENAME, "dsm.tif"
     )
-    overloaded_conf[output_constants.CLR_BASENAME] = overloaded_conf.get(
-        output_constants.CLR_BASENAME, "color.tif"
+    overloaded_conf[output_constants.COLOR_BASENAME] = overloaded_conf.get(
+        output_constants.COLOR_BASENAME, "color.tif"
     )
     overloaded_conf[output_constants.CLASSIFICATION_BASENAME] = (
         overloaded_conf.get(
@@ -138,9 +142,9 @@ def check_output_parameters(conf):
     # Check schema
     output_schema = {
         output_constants.OUT_DIRECTORY: str,
-        output_constants.PRODUCT_LEVEL: str,
+        output_constants.PRODUCT_LEVEL: list,
         output_constants.DSM_BASENAME: str,
-        output_constants.CLR_BASENAME: str,
+        output_constants.COLOR_BASENAME: str,
         output_constants.INFO_BASENAME: str,
         output_constants.MASK_BASENAME: str,
         output_constants.CLASSIFICATION_BASENAME: str,

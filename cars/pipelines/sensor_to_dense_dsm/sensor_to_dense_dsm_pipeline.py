@@ -173,6 +173,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         self.output = self.check_output(self.conf[OUTPUT])
         self.used_conf[OUTPUT] = self.output
 
+        self.save_output_dsm = (
+            "dsm" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+        self.save_output_depth_map = (
+            "depth_map" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+        self.save_output_point_cloud = (
+            "point_cloud" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+
         # Check conf application
         self.application_conf = self.check_applications(
             self.conf.get(APPLICATIONS, {}),
@@ -1515,13 +1525,37 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 rasterization_dump_dir = os.path.join(dump_dir, "rasterization")
 
+                dsm_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.DSM_BASENAME],
+                    )
+                    if self.save_output_dsm
+                    else None
+                )
+
+                color_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        self.output[output_constants.COLOR_BASENAME],
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_COLOR
+                    ]
+                    else None
+                )
+
                 performance_map_file_name = (
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
                         self.output[output_constants.PERFORMANCE_MAP_BASENAME],
                     )
-                    if self.output[output_constants.AUXILIARY][
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
                         output_constants.AUX_PERFORMANCE_MAP
                     ]
                     else None
@@ -1533,7 +1567,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         output_constants.DSM_DIRECTORY,
                         self.output[output_constants.CLASSIFICATION_BASENAME],
                     )
-                    if self.output[output_constants.AUXILIARY][
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
                         output_constants.AUX_CLASSIFICATION
                     ]
                     else None
@@ -1545,7 +1580,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         output_constants.DSM_DIRECTORY,
                         self.output[output_constants.MASK_BASENAME],
                     )
-                    if self.output[output_constants.AUXILIARY][
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
                         output_constants.AUX_MASK
                     ]
                     else None
@@ -1559,7 +1595,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             output_constants.CONTRIBUTING_PAIR_BASENAME
                         ],
                     )
-                    if self.output[output_constants.AUXILIARY][
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
                         output_constants.AUX_CONTRIBUTING_PAIR
                     ]
                     else None
@@ -1571,7 +1608,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         output_constants.DSM_DIRECTORY,
                         self.output[output_constants.FILLING_BASENAME],
                     )
-                    if self.output[output_constants.AUXILIARY][
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
                         output_constants.AUX_FILLING
                     ]
                     else None
@@ -1582,16 +1620,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     point_cloud_to_rasterize,
                     epsg,
                     orchestrator=cars_orchestrator,
-                    dsm_file_name=os.path.join(
-                        out_dir,
-                        output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.DSM_BASENAME],
-                    ),
-                    color_file_name=os.path.join(
-                        out_dir,
-                        output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.CLR_BASENAME],
-                    ),
+                    dsm_file_name=dsm_file_name,
+                    color_file_name=color_file_name,
                     classif_file_name=classif_file_name,
                     performance_map_file_name=performance_map_file_name,
                     mask_file_name=mask_file_name,
