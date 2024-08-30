@@ -25,6 +25,7 @@ Contains functions for wrapper logs
 
 import copy
 import cProfile
+import datetime
 import gc
 import io
 import logging
@@ -704,19 +705,24 @@ def generate_summary(out_dir, used_conf):
     sequential_time = pipeline_time - multiprocessing_time
 
     total_time_workers = nb_workers * multiprocessing_time
+
     generate_pie_chart(
         axs.flat[6],
         name_task_workers,
         100 * np.array(summary_workers) / total_time_workers,
-        "Total time in workers ({} workers) lives "
-        "(only during multiprocessing time)".format(nb_workers),
+        "Total time in parallel tasks ({} workers) : {}".format(
+            nb_workers,
+            str(datetime.timedelta(seconds=int(multiprocessing_time))),
+        ),
     )
 
     generate_pie_chart(
         axs.flat[7],
         name_task_main,
         100 * np.array(summary_main) / sequential_time,
-        "Total time in main (except time waiting for workers)",
+        "Total time in sequential tasks : {}".format(
+            str(datetime.timedelta(seconds=int(sequential_time)))
+        ),
     )
 
     # file_name
