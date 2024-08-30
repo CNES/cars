@@ -677,11 +677,14 @@ def add_performance_map(
     ambi_idx = list(disp.confidence_measure.indicator).index(
         ambiguity_indicator
     )
-    ambiguity_map = disp.confidence_measure.data[
-        ref_roi[1] : ref_roi[3],
-        ref_roi[0] : ref_roi[2],
-        ambi_idx,
-    ]
+    ambiguity_map = (
+        1
+        - disp.confidence_measure.data[
+            ref_roi[1] : ref_roi[3],
+            ref_roi[0] : ref_roi[2],
+            ambi_idx,
+        ]
+    )
 
     risk_max_idx = list(disp.confidence_measure.indicator).index(
         risk_mask_indicator
