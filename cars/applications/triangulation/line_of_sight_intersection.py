@@ -122,6 +122,159 @@ class LineOfSightIntersection(
 
         return overloaded_conf
 
+    def save_triangulation_output(
+        self,
+        epipolar_points_cloud,
+        sensor_image_left,
+        output_dir,
+        dump_dir=None,
+        intervals=None,
+        save_output_color=True,
+        save_output_classification=False,
+        save_output_mask=False,
+        save_output_filling=False,
+    ):
+        """
+        Save the triangulation output. The different TIFs composing the depth
+        map are written to the output directory. Auxiliary products can be
+        requested or not using the parameters. A dump directory can also be
+        provided to write any additionnal files that have not been written
+        to the output directory (because they are not part of the depth map
+        definition, or because they have not been requested)
+
+        :param epipolar_points_cloud: tiled epipolar left image
+        :type epipolar_points_cloud: CarsDataset
+        :param sensor_image_left: tiled sensor left image
+            Dict Must contain keys : "image", "color", "geomodel",
+            "no_data", "mask". Paths must be absolutes
+        :type sensor_image_left: CarsDataset
+        :param output_dir: directory to write triangulation output depth
+                map.
+        :type output_dir: None or str
+        :param dump_dir: folder used as dump directory for current pair, None to
+                deactivate intermediate data writing
+        :type dump_dir: str
+        :param intervals: Either None or a List of 2 intervals indicators
+        :type intervals: None or [str, str]
+        :param save_output_color: Save color depth map in output_dir
+        :type save_output_color: bool
+        :param save_output_classification: Save classification depth map in
+                output_dir
+        :type save_output_classification: bool
+        :param save_output_mask: Save mask depth map in output_dir
+        :type save_output_mask: bool
+        :param save_output_filling: Save filling depth map in output_dir
+        :type save_output_filling: bool
+        """
+
+        # Propagate color type in output file
+        color_type = None
+        if sens_cst.INPUT_COLOR in sensor_image_left:
+            color_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_COLOR]
+            )
+        else:
+            color_type = inputs.rasterio_get_image_type(
+                sensor_image_left[sens_cst.INPUT_IMG]
+            )
+
+        if output_dir is None:
+            output_dir = dump_dir
+        if output_dir:
+            self.orchestrator.add_to_save_lists(
+                os.path.join(output_dir, "epi_pc_X.tif"),
+                cst.X,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_x",
+                dtype=np.float64,
+            )
+
+            self.orchestrator.add_to_save_lists(
+                os.path.join(output_dir, "epi_pc_Y.tif"),
+                cst.Y,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_y",
+                dtype=np.float64,
+            )
+
+            self.orchestrator.add_to_save_lists(
+                os.path.join(output_dir, "epi_pc_Z.tif"),
+                cst.Z,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_z",
+                dtype=np.float64,
+            )
+
+        if save_output_color or dump_dir:
+            color_output_dir = output_dir if save_output_color else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(color_output_dir, "epi_pc_color.tif"),
+                cst.EPI_COLOR,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_color",
+                dtype=color_type,
+            )
+
+        if save_output_mask or dump_dir:
+            mask_output_dir = output_dir if save_output_mask else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(mask_output_dir, "epi_pc_mask.tif"),
+                cst.EPI_MSK,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_msk",
+                nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
+                optional_data=True,
+                dtype=np.uint8,
+            )
+
+        if save_output_classification or dump_dir:
+            classif_output_dir = (
+                output_dir if save_output_classification else dump_dir
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(classif_output_dir, "epi_pc_classification.tif"),
+                cst.EPI_CLASSIFICATION,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_classification",
+                optional_data=True,
+                dtype=np.uint8,
+            )
+
+        if save_output_filling or dump_dir:
+            filling_output_dir = output_dir if save_output_filling else dump_dir
+            self.orchestrator.add_to_save_lists(
+                os.path.join(filling_output_dir, "epi_pc_filling.tif"),
+                cst.EPI_FILLING,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_filling",
+                optional_data=True,
+                dtype=np.uint8,
+                nodata=255,
+            )
+
+        if dump_dir and intervals is not None:
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, "epi_pc_Z_inf.tif"),
+                cst.Z_INF,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_z_inf",
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, "epi_pc_Z_sup.tif"),
+                cst.Z_SUP,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_z_sup",
+            )
+
+        if dump_dir:
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, "epi_pc_corr_mask.tif"),
+                cst.POINTS_CLOUD_CORR_MSK,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_corr_msk",
+                optional_data=True,
+            )
+
     def run(  # noqa: C901
         self,
         sensor_image_left,
@@ -360,155 +513,45 @@ class LineOfSightIntersection(
         if geoid_path:
             pc_attributes["geoid"] = (geoid_path,)
 
-        if epipolar_disparity_map.dataset_type in ("arrays", "points"):
-            # Create CarsDataset
-            # Epipolar_point_cloud
-            epipolar_points_cloud = cars_dataset.CarsDataset(
-                epipolar_disparity_map.dataset_type,
-                name="triangulation_" + pair_key,
+        if epipolar_disparity_map.dataset_type not in ("arrays", "points"):
+            raise RuntimeError(
+                "Triangulation application doesn't support this input "
+                "data format"
             )
-            epipolar_points_cloud.create_empty_copy(epipolar_image)
-            epipolar_points_cloud.overlaps *= 0  # Margins removed
 
-            # Update attributes to get epipolar info
-            epipolar_points_cloud.attributes.update(pc_attributes)
+        # Create CarsDataset
+        # Epipolar_point_cloud
+        epipolar_points_cloud = cars_dataset.CarsDataset(
+            epipolar_disparity_map.dataset_type,
+            name="triangulation_" + pair_key,
+        )
+        epipolar_points_cloud.create_empty_copy(epipolar_image)
+        epipolar_points_cloud.overlaps *= 0  # Margins removed
 
-            # Save objects
-            # if isinstance(epipolar_points_cloud, xr.DataArray):
-            if epipolar_disparity_map.dataset_type == "arrays":
+        # Update attributes to get epipolar info
+        epipolar_points_cloud.attributes.update(pc_attributes)
 
-                # Propagate color type in output file
-                color_type = None
-                if sens_cst.INPUT_COLOR in sensor_image_left:
-                    color_type = inputs.rasterio_get_image_type(
-                        sensor_image_left[sens_cst.INPUT_COLOR]
-                    )
-                else:
-                    color_type = inputs.rasterio_get_image_type(
-                        sensor_image_left[sens_cst.INPUT_IMG]
-                    )
-
-                if pair_output_dir is None and self.save_intermediate_data:
-                    pair_output_dir = pair_dump_dir
-                if pair_output_dir:
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_output_dir, "epi_pc_X.tif"),
-                        cst.X,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_x",
-                        dtype=np.float64,
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_output_dir, "epi_pc_Y.tif"),
-                        cst.Y,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_y",
-                        dtype=np.float64,
-                    )
-
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_output_dir, "epi_pc_Z.tif"),
-                        cst.Z,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_z",
-                        dtype=np.float64,
-                    )
-
-                if save_output_color or self.save_intermediate_data:
-                    color_output_dir = (
-                        pair_output_dir if save_output_color else pair_dump_dir
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(color_output_dir, "epi_pc_color.tif"),
-                        cst.EPI_COLOR,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_color",
-                        dtype=color_type,
-                    )
-
-                if save_output_mask or self.save_intermediate_data:
-                    mask_output_dir = (
-                        pair_output_dir if save_output_mask else pair_dump_dir
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(mask_output_dir, "epi_pc_mask.tif"),
-                        cst.EPI_MSK,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_msk",
-                        nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-                        optional_data=True,
-                        dtype=np.uint8,
-                    )
-
-                if save_output_classification or self.save_intermediate_data:
-                    classif_output_dir = (
-                        pair_output_dir
-                        if save_output_classification
-                        else pair_dump_dir
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(
-                            classif_output_dir, "epi_pc_classification.tif"
-                        ),
-                        cst.EPI_CLASSIFICATION,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_classification",
-                        optional_data=True,
-                        dtype=np.uint8,
-                    )
-
-                if save_output_filling or self.save_intermediate_data:
-                    filling_output_dir = (
-                        pair_output_dir
-                        if save_output_filling
-                        else pair_dump_dir
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(filling_output_dir, "epi_pc_filling.tif"),
-                        cst.EPI_FILLING,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_filling",
-                        optional_data=True,
-                        dtype=np.uint8,
-                        nodata=255,
-                    )
-
-                if self.save_intermediate_data and intervals is not None:
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_dump_dir, "epi_pc_Z_inf.tif"),
-                        cst.Z_INF,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_z_inf",
-                    )
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_dump_dir, "epi_pc_Z_sup.tif"),
-                        cst.Z_SUP,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_z_sup",
-                    )
-
-                if self.save_intermediate_data:
-                    self.orchestrator.add_to_save_lists(
-                        os.path.join(pair_dump_dir, "epi_pc_corr_mask.tif"),
-                        cst.POINTS_CLOUD_CORR_MSK,
-                        epipolar_points_cloud,
-                        cars_ds_name="epi_pc_corr_msk",
-                        optional_data=True,
-                    )
-
-            else:
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(pair_dump_dir, "epi_pc"),
-                    cst.POINTS_CLOUD_MATCHES,
-                    epipolar_points_cloud,
-                    cars_ds_name="epi_pc_x",
-                )
+        # Save objects
+        # if isinstance(epipolar_points_cloud, xr.DataArray):
+        if epipolar_disparity_map.dataset_type == "arrays":
+            self.save_triangulation_output(
+                epipolar_points_cloud,
+                sensor_image_left,
+                pair_output_dir,
+                pair_dump_dir if self.save_intermediate_data else None,
+                intervals,
+                save_output_color,
+                save_output_classification,
+                save_output_mask,
+                save_output_filling,
+            )
 
         else:
-            logging.error(
-                "Triangulation application doesn't "
-                "support this input data format"
+            self.orchestrator.add_to_save_lists(
+                os.path.join(pair_dump_dir, "epi_pc"),
+                cst.POINTS_CLOUD_MATCHES,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_x",
             )
 
         # Get saving infos in order to save tiles when they are computed
