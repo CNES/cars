@@ -558,6 +558,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         """
 
         out_dir = self.output[output_constants.OUT_DIRECTORY]
+        auxiliary = self.output[output_constants.AUXILIARY]
 
         # Save used conf
         cars_dataset.save_dict(
@@ -1372,6 +1373,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # default case : stay on the ellipsoid
                     output_geoid_path = None
 
+                depth_map_dir = None
+                if self.save_output_depth_map:
+                    depth_map_dir = os.path.join(out_dir, "depth_map", pair_key)
+                    safe_makedirs(depth_map_dir)
+
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
                     pairs[pair_key]["sensor_image_left"],
@@ -1385,7 +1391,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     denoising_overload_fun=denoising_overload_fun,
                     source_pc_names=pairs_names,
                     orchestrator=cars_orchestrator,
-                    pair_folder=os.path.join(
+                    pair_dump_dir=os.path.join(
                         dump_dir, "triangulation", pair_key
                     ),
                     pair_key=pair_key,
@@ -1393,6 +1399,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     geoid_path=output_geoid_path,
                     cloud_id=cloud_id,
                     intervals=intervals,
+                    pair_output_dir=depth_map_dir,
+                    save_output_color=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_COLOR],
+                    save_output_classification=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_CLASSIFICATION],
+                    save_output_filling=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_FILLING],
+                    save_output_mask=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_MASK],
                 )
 
                 if "no_merging" in self.used_conf[PIPELINE]:

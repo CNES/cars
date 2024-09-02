@@ -481,7 +481,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 color_file_name=os.path.join(
                     out_dir,
                     output_constants.DSM_DIRECTORY,
-                    self.output[output_constants.CLR_BASENAME],
+                    self.output[output_constants.COLOR_BASENAME],
                 ),
                 color_dtype=color_type,
                 dump_dir=rasterization_dump_dir,
