@@ -547,7 +547,7 @@ def read_image_full(band_path, window=None, squeeze=False):
     return data
 
 
-def generate_pc_wrapper(
+def generate_pc_wrapper(  # noqa: C901
     cloud, window, color_type=None, cloud_id=None, list_cloud_ids=None
 ):
     """
@@ -600,7 +600,7 @@ def generate_pc_wrapper(
 
         elif key == cst.EPI_CLASSIFICATION:
             data = read_image_full(cloud[key], window=window, squeeze=False)
-            descriptions = inputs.get_descriptions_bands(cloud[key])
+            descriptions = list(inputs.get_descriptions_bands(cloud[key]))
             values[cst.EPI_CLASSIFICATION] = (
                 [cst.BAND_CLASSIF, cst.ROW, cst.COL],
                 data,
@@ -617,9 +617,16 @@ def generate_pc_wrapper(
             if cst.EPI_COLOR not in coords:
                 coords[cst.BAND_IM] = descriptions
 
+        elif key == cst.EPI_CONFIDENCE_KEY_ROOT:
+            for sub_key in cloud[key].keys():
+                data = read_image_full(
+                    cloud[key][sub_key], window=window, squeeze=True
+                )
+                values[sub_key] = ([cst.ROW, cst.COL], data)
+
         elif key == cst.EPI_FILLING:
             data = read_image_full(cloud[key], window=window, squeeze=False)
-            descriptions = inputs.get_descriptions_bands(cloud[key])
+            descriptions = list(inputs.get_descriptions_bands(cloud[key]))
             values[cst.EPI_FILLING] = (
                 [cst.BAND_FILLING, cst.ROW, cst.COL],
                 data,
