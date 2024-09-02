@@ -53,11 +53,12 @@ def generate_test_inputs():
             path_pc, "epi_pc_color.tif"
         ),
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
-            path_pc, "epi_classification.tif"
+            path_pc, "epi_pc_classification.tif"
         ),
         cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: {
-            "confidence1": os.path.join(path_pc, "epi_confidence1.tif"),
-            "confidence2": os.path.join(path_pc, "epi_confidence2.tif"),
+            "confidence1": os.path.join(
+                path_pc, "epi_confidence_performance_map.tif"
+            )
         },
         cst.POINTS_CLOUD_MSK: None,
         cst.PC_EPSG: 4326,
@@ -94,6 +95,24 @@ def test_compute_epsg_from_point_cloud():
 
 
 @pytest.mark.unit_tests
+def test_generate_point_clouds():
+    """
+    test compute_epsg_from_point_cloud
+    """
+
+    data_tif = generate_test_inputs()
+
+    list_epi_pc = {"pc_0": data_tif}
+
+    with orchestrator.Orchestrator(
+        orchestrator_conf={"mode": "sequential"}
+    ) as cars_orchestrator:
+        pc_tif_tools.generate_point_clouds(
+            list_epi_pc, cars_orchestrator, tile_size=1000
+        )
+
+
+@pytest.mark.unit_tests
 def test_get_min_max_band():
     """
     test get_min_max_band
@@ -112,10 +131,10 @@ def test_get_min_max_band():
     assert np.allclose(
         x_y_min_max,
         [
-            319922.73987110204,
-            320000.461985868,
-            3317814.1553263,
-            3317873.37849824,
+            319922.5918467394,
+            320001.11206965527,
+            3317814.25094218,
+            3317873.400102443,
         ],
     )
 
@@ -147,10 +166,10 @@ def test_transform_input_pc_and_metrics():
         )
 
     assert terrain_bbox == [
-        319796.7957302701,
-        3317678.622369081,
-        320316.8316215427,
-        3318157.288182468,
+        319796.54507901485,
+        3317678.368442808,
+        320316.9220161168,
+        3318157.187469204,
     ]
 
     assert len(list_epipolar_points_cloud_by_tiles) == 2
@@ -228,4 +247,4 @@ def test_transform_input_pc_and_correspondance():
     assert len(corresponding_tiles[0, 0]["required_point_clouds"]) == 8
     assert len(corresponding_tiles[1, 0]["required_point_clouds"]) == 14
     assert len(corresponding_tiles[2, 2]["required_point_clouds"]) == 8
-    assert len(corresponding_tiles[1, 2]["required_point_clouds"]) == 10
+    assert len(corresponding_tiles[1, 2]["required_point_clouds"]) == 12

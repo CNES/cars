@@ -1446,7 +1446,6 @@ def test_end2end_ventoux_unique_split():
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
                             "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "mask": os.path.join(epi_pc_path, "epi_pc_msk.tif"),
                             "color": os.path.join(
                                 epi_pc_path, "epi_pc_color.tif"
                             ),
@@ -1695,6 +1694,197 @@ def test_end2end_ventoux_unique_split():
                     os.path.join(
                         ref_output_dir,
                         "source_pc_end2end_ventoux_split.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+
+            # Run no merging pipeline
+
+            input_dsm_config["output"]["out_dir"] = (
+                input_dsm_config["output"]["out_dir"] + "_no_merging"
+            )
+            del input_dsm_config["applications"][
+                "point_cloud_outliers_removing.1"
+            ]
+            del input_dsm_config["applications"][
+                "point_cloud_outliers_removing.2"
+            ]
+            input_dsm_config["pipeline"] = (
+                "dense_point_clouds_to_dense_dsm_no_merging"
+            )
+
+            # launch
+            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
+                input_dsm_config
+            )
+            dsm_pipeline.run()
+
+            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+
+            # Uncomment the following instructions to update reference data
+            # copy2(
+            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "dsm_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "clr_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "msk.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "msk_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "classif.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "classif_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "filling_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "confidence_from_ambiguity1"
+            #             + "_end2end_ventoux_split_no_merging.tif",
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "confidence_from_ambiguity2"
+            #             + "_end2end_ventoux_split_no_merging.tif",
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "source_pc_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "dsm.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "dsm_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "clr.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "clr_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "msk.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "msk_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "classif.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "classif_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                atol=0.0001,
+                rtol=1e-6,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "filling.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "filling_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                atol=1.0e-7,
+                rtol=1.0e-7,
+            )
+
+            assert_same_images(
+                os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "confidence_from"
+                        + "_ambiguity1_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "confidence_from"
+                        + "_ambiguity2_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(out_dir_dsm, "source_pc.tif"),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "source_pc_end2end_ventoux_split_no_merging.tif",
                     )
                 ),
                 rtol=1.0e-7,

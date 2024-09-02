@@ -711,6 +711,30 @@ def add_performance_map(
     )
 
 
+def to_safe_disp_grid(grid_disp_min, grid_disp_max):
+    """
+    Generate safe grids, with min < max for each point
+
+    :param grid_disp_min: min disp grid
+    :param grid_disp_max: max disp grid
+
+    :return: grid_disp_min, grid_disp_max
+    """
+
+    stacked_disp_range = np.dstack([grid_disp_min, grid_disp_max])
+    grid_disp_min = np.nanmin(stacked_disp_range, axis=2)
+    grid_disp_max = np.nanmax(stacked_disp_range, axis=2)
+
+    # convert nan
+    grid_disp_min[np.isnan(grid_disp_min)] = 0
+    grid_disp_max[np.isnan(grid_disp_max)] = 0
+
+    if (grid_disp_min > grid_disp_max).any():
+        raise RuntimeError("grid min > max")
+
+    return grid_disp_min, grid_disp_max
+
+
 def compute_disparity_grid(disp_range_grid, left_image_object):
     """
     Compute dense disparity grids min and max for pandora
@@ -750,6 +774,11 @@ def compute_disparity_grid(disp_range_grid, left_image_object):
 
     disp_min_grid = interp_min((row_grid, col_grid)).astype("float32")
     disp_max_grid = interp_max((row_grid, col_grid)).astype("float32")
+
+    # Interpolation might create min > max
+    disp_min_grid, disp_max_grid = to_safe_disp_grid(
+        disp_min_grid, disp_max_grid
+    )
 
     return disp_min_grid, disp_max_grid
 
@@ -842,6 +871,10 @@ def compute_disparity(
 
     (disp_min_right_grid, disp_max_right_grid) = estimate_right_grid_disp(
         disp_min_grid, disp_max_grid
+    )
+    # estimation might create max < min
+    disp_min_right_grid, disp_max_right_grid = to_safe_disp_grid(
+        disp_min_right_grid, disp_max_right_grid
     )
 
     right_disparity = xr.DataArray(
