@@ -78,6 +78,11 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         self.save_epipolar_image = self.used_config["save_epipolar_image"]
         self.save_epipolar_color = self.used_config["save_epipolar_color"]
 
+        self.interpolator_image = self.used_config["interpolator_image"]
+        self.interpolator_classif = self.used_config["interpolator_classif"]
+        self.interpolator_color = self.used_config["interpolator_color"]
+        self.interpolator_mask = self.used_config["interpolator_mask"]
+
         # Init orchestrator
         self.orchestrator = None
 
@@ -105,7 +110,20 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # get rasterization parameter
         overloaded_conf["method"] = conf.get("method", "bicubic")
         overloaded_conf["strip_height"] = conf.get("strip_height", 60)
+        overloaded_conf["interpolator_image"] = conf.get(
+            "interpolator_image", "bicubic"
+        )
+        overloaded_conf["interpolator_color"] = conf.get(
+            "interpolator_color", "bicubic"
+        )
+        overloaded_conf["interpolator_classif"] = conf.get(
+            "interpolator_classif", "nearest"
+        )
+        overloaded_conf["interpolator_mask"] = conf.get(
+            "interpolator_mask", "nearest"
+        )
         overloaded_conf["step"] = conf.get("step", 500)
+
         # Saving bools
         overloaded_conf["save_epipolar_image"] = conf.get(
             "save_epipolar_image", False
@@ -117,6 +135,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         rectification_schema = {
             "method": str,
             "strip_height": And(int, lambda x: x > 0),
+            "interpolator_image": str,
+            "interpolator_color": str,
+            "interpolator_classif": str,
+            "interpolator_mask": str,
             "step": Or(None, int),
             "save_epipolar_image": bool,
             "save_epipolar_color": bool,
@@ -586,6 +608,10 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         img2,
                         broadcasted_grid1,
                         broadcasted_grid2,
+                        self.interpolator_image,
+                        self.interpolator_color,
+                        self.interpolator_classif,
+                        self.interpolator_mask,
                         self.step,
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
@@ -619,6 +645,10 @@ def generate_epipolar_images_wrapper(
     img2,
     grid1,
     grid2,
+    interpolator_image,
+    interpolator_color,
+    interpolator_classif,
+    interpolator_mask,
     step=None,
     used_disp_min=None,
     used_disp_max=None,
@@ -682,6 +712,10 @@ def generate_epipolar_images_wrapper(
         margins,
         epipolar_size_x,
         epipolar_size_y,
+        interpolator_image,
+        interpolator_color,
+        interpolator_classif,
+        interpolator_mask,
         step=step,
         color1=color1,
         mask1=mask1,
