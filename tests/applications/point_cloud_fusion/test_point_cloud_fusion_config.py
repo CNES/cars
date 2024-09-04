@@ -37,8 +37,7 @@ def test_check_full_conf():
     """
     conf = {
         "method": "mapping_to_terrain_tiles",
-        "save_points_cloud_as_laz": False,
-        "save_points_cloud_as_csv": False,
+        "save_intermediate_data": False,
         "save_points_cloud_by_pair": False,
     }
     _ = MappingToTerrainTiles(conf)
