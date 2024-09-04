@@ -1496,6 +1496,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             )
                         )
                     )
+
                     merged_points_clouds = self.pc_fusion_application.run(
                         list_epipolar_points_cloud,
                         terrain_bounds,
@@ -1509,6 +1510,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         ),
                         optimal_terrain_tile_width=optimal_terrain_tile_width,
                         roi=(roi_poly if self.debug_with_roi else None),
+                        save_laz_output=self.save_output_point_cloud,
                     )
 
                     # Remove outliers with small components method

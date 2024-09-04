@@ -30,7 +30,7 @@ from collections import Counter
 
 # Third party imports
 import numpy as np
-from json_checker import Checker, OptionalKey
+from json_checker import Checker
 from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
@@ -68,17 +68,6 @@ class MappingToTerrainTiles(
         # Cloud fusion
         self.used_method = self.used_config["method"]
 
-        # Saving files
-        self.save_points_cloud_as_laz = self.used_config.get(
-            "save_points_cloud_as_laz", False
-        )
-        self.save_points_cloud_as_csv = self.used_config.get(
-            "save_points_cloud_as_csv", False
-        )
-        self.save_points_cloud_by_pair = self.used_config.get(
-            "save_points_cloud_by_pair", False
-        )
-
         # Init orchestrator
         self.orchestrator = None
 
@@ -106,22 +95,17 @@ class MappingToTerrainTiles(
             "method", "mapping_to_terrain_tiles"
         )
 
-        overloaded_conf["save_points_cloud_as_laz"] = conf.get(
-            "save_points_cloud_as_laz", False
-        )
-        overloaded_conf["save_points_cloud_as_csv"] = conf.get(
-            "save_points_cloud_as_csv", False
-        )
         overloaded_conf["save_points_cloud_by_pair"] = conf.get(
             "save_points_cloud_by_pair", False
         )
 
+        overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
+            conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
+        )
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_as_laz": bool,
-            "save_points_cloud_as_csv": bool,
             "save_points_cloud_by_pair": bool,
-            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
+            application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
@@ -140,6 +124,7 @@ class MappingToTerrainTiles(
         margins=0,
         optimal_terrain_tile_width=500,
         roi=None,
+        save_laz_output=False,
     ):
         """
         Run EpipolarCloudFusion application.
@@ -172,6 +157,9 @@ class MappingToTerrainTiles(
         :type margins: float
         :param optimal_terrain_tile_width: optimal terrain tile width
         :type optimal_terrain_tile_width: int
+        :param save_laz_output: save output point cloud as laz
+        :type save_laz_output: bool
+
 
         :return: Merged points clouds
 
@@ -200,6 +188,16 @@ class MappingToTerrainTiles(
             )
         else:
             self.orchestrator = orchestrator
+
+        save_point_cloud_as_csv = self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA, False
+        )
+        save_point_cloud_as_laz = self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA, False
+        )
+        save_points_cloud_by_pair = self.used_config.get(
+            "save_points_cloud_by_pair", False
+        )
 
         if source_pc_names is None:
             source_pc_names = ["PAIR_0"]
@@ -323,15 +321,37 @@ class MappingToTerrainTiles(
                     merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
-            pc_file_name = None
-            if self.save_points_cloud_as_csv or self.save_points_cloud_as_laz:
-                # Points cloud file name
-                # TODO in input conf file
-                pc_file_name = os.path.join(
-                    self.orchestrator.out_dir, "points_cloud"
+            csv_pc_file_name = None
+            if save_point_cloud_as_csv:
+                # Point cloud file name
+                csv_pc_file_name = os.path.join(
+                    self.orchestrator.out_dir,
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "point_cloud_csv",
                 )
-                safe_makedirs(pc_file_name)
-                pc_file_name = os.path.join(pc_file_name, "pc")
+                safe_makedirs(csv_pc_file_name)
+                csv_pc_file_name = os.path.join(csv_pc_file_name, "pc")
+                self.orchestrator.add_to_compute_lists(
+                    merged_point_cloud, cars_ds_name="merged_points_cloud_csv"
+                )
+
+            laz_pc_file_name = None
+            if save_point_cloud_as_laz:
+                # Point cloud file name
+                if save_laz_output:
+                    laz_pc_file_name = os.path.join(
+                        self.orchestrator.out_dir, "point_cloud"
+                    )
+                else:
+                    laz_pc_file_name = os.path.join(
+                        self.orchestrator.out_dir,
+                        "dump_dir",
+                        "point_cloud_fusion",
+                        "point_cloud_laz",
+                    )
+                safe_makedirs(laz_pc_file_name)
+                laz_pc_file_name = os.path.join(laz_pc_file_name, "pc")
                 self.orchestrator.add_to_compute_lists(
                     merged_point_cloud, cars_ds_name="merged_points_cloud"
                 )
@@ -413,16 +433,9 @@ class MappingToTerrainTiles(
                             xmax=terrain_region[2],
                             ymax=terrain_region[3],
                             margins=margins,
-                            save_points_cloud_as_laz=(
-                                self.save_points_cloud_as_laz
-                            ),
-                            save_points_cloud_as_csv=(
-                                self.save_points_cloud_as_csv
-                            ),
-                            save_points_cloud_by_pair=(
-                                self.save_points_cloud_by_pair
-                            ),
-                            point_cloud_file_name=pc_file_name,
+                            save_points_cloud_by_pair=save_points_cloud_by_pair,
+                            point_cloud_csv_file_name=csv_pc_file_name,
+                            point_cloud_laz_file_name=laz_pc_file_name,
                             saving_info=full_saving_info,
                             source_pc_names=source_pc_names,
                         )
@@ -487,10 +500,9 @@ def compute_point_cloud_wrapper(
     xmax: float = None,
     ymax: float = None,
     margins: float = 0,
-    save_points_cloud_as_laz: bool = False,
-    save_points_cloud_as_csv: bool = False,
     save_points_cloud_by_pair: bool = False,
-    point_cloud_file_name=None,
+    point_cloud_csv_file_name=None,
+    point_cloud_laz_file_name=None,
     saving_info=None,
     source_pc_names=None,
 ):
@@ -518,14 +530,13 @@ def compute_point_cloud_wrapper(
         (if None, will be estimated by the function)
     :param margins: margins needed for tiles, meter or degree
     :type margins: float
-    :param save_points_cloud_as_laz: save point cloud as laz
-    :type save_points_cloud_as_laz: bool
-    :param save_points_cloud_as_csv: save point cloud as csv
-    :type save_points_cloud_as_csv: bool
     :param save_points_cloud_by_pair: save point cloud as pair
     :type save_points_cloud_by_pair: bool
-    :param point_cloud_file_name: point cloud filename
+    :param point_cloud_csv_file_name: write point cloud as CSV in filename
+        (if None, the point cloud is not written as csv)
     :type point_cloud_file_name: str
+    :param point_cloud_csv_file_name: write point cloud as CSV in filename
+        (if None, the point cloud is not written as csv)
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
     :param source_pc_names: source point cloud name (correspond to pair_key)
@@ -596,8 +607,6 @@ def compute_point_cloud_wrapper(
         "ymin": ymin,
         "ymax": ymax,
         "color_type": color_type,
-        "save_points_cloud_as_laz": save_points_cloud_as_laz,
-        "save_points_cloud_as_csv": save_points_cloud_as_csv,
         "source_pc_names": source_pc_names,
         "number_of_pc": len(source_pc_names),
     }
@@ -606,12 +615,21 @@ def compute_point_cloud_wrapper(
     )
 
     # save point cloud in worker
-    if save_points_cloud_as_laz or save_points_cloud_as_csv:
+    if point_cloud_csv_file_name:
         cars_dataset.run_save_points(
             pc_pandas,
-            point_cloud_file_name,
+            point_cloud_csv_file_name,
             save_points_cloud_by_pair=save_points_cloud_by_pair,
             overwrite=True,
+            point_cloud_format="csv",
+        )
+    if point_cloud_laz_file_name:
+        cars_dataset.run_save_points(
+            pc_pandas,
+            point_cloud_laz_file_name,
+            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            overwrite=True,
+            point_cloud_format="laz",
         )
 
     return pc_pandas

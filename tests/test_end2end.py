@@ -705,8 +705,7 @@ def test_end2end_ventoux_unique():
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": False,
+                "save_intermediate_data": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -2578,8 +2577,7 @@ def test_end2end_ventoux_with_color():
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
                 "save_points_cloud_by_pair": True,
             },
             "point_cloud_outliers_removing.1": {
@@ -2831,8 +2829,7 @@ def test_end2end_ventoux_with_classif():
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
