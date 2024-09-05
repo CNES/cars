@@ -896,7 +896,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if (
                     self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                     is not None
-                    and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                 ):
                     dem_median = self.inputs[sens_cst.INITIAL_ELEVATION][
                         sens_cst.DEM_PATH
@@ -955,7 +954,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             sens_cst.DEM_PATH
                         ]
                         is not None
-                        and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                     ):
                         # Generate grids with new MNT
                         (

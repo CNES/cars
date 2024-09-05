@@ -714,9 +714,6 @@ def test_end2end_ventoux_unique():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
-
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
@@ -2600,8 +2597,6 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
@@ -2625,12 +2620,8 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
-            pc1 = "675436.5_4897170.5"
-            pc2 = "675248.0_4897170.5"
-        else:
-            pc1 = "675437.0_4897170.0"
-            pc2 = "675248.5_4897170.0"
+        pc1 = "675248.0_4897173.0"
+        pc2 = "675374.0_4897173.0"
 
         assert (
             os.path.exists(
@@ -2864,7 +2855,7 @@ def test_end2end_ventoux_with_classif():
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
         # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = False
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
