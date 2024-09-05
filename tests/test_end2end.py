@@ -1576,14 +1576,13 @@ def test_end2end_ventoux_unique_split():
                     "point_cloud_outliers_removing.1": {
                         "method": "small_components",
                         "activated": True,
-                        "save_points_cloud_as_laz": True,
+                        "save_intermediate_data": True,
                         "save_points_cloud_by_pair": True,
                     },
                     "point_cloud_outliers_removing.2": {
                         "method": "statistical",
                         "activated": True,
-                        "save_points_cloud_as_laz": True,
-                        "save_points_cloud_by_pair": True,
+                        "save_intermediate_data": True,
                     },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -1611,7 +1610,9 @@ def test_end2end_ventoux_unique_split():
                 os.path.exists(
                     os.path.join(
                         out_dir_dsm,
-                        "points_cloud_post_small_components_removing",
+                        "dump_dir",
+                        "small_components",
+                        "laz",
                         "675292.3110543193_4897140.457149682_one.laz",
                     )
                 )
@@ -2583,15 +2584,13 @@ def test_end2end_ventoux_with_color():
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
                 "save_points_cloud_by_pair": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -2626,7 +2625,6 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
         if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
             pc1 = "675436.5_4897170.5"
             pc2 = "675248.0_4897170.5"
@@ -2636,22 +2634,11 @@ def test_end2end_ventoux_with_color():
 
         assert (
             os.path.exists(
-                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
-            )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.csv")
-            )
-            is True
-        )
-
-        assert (
-            os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "laz",
                     pc1 + "_left_right.laz",
                 )
             )
@@ -2661,7 +2648,9 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "csv",
                     pc1 + "_left_right.csv",
                 )
             )
@@ -2672,8 +2661,10 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc2 + ".laz",
+                    "dump_dir",
+                    "small_components",
+                    "laz",
+                    pc2 + "_left_right.laz",
                 )
             )
             is True
@@ -2682,8 +2673,28 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc2 + ".csv",
+                    "dump_dir",
+                    "small_components",
+                    "csv",
+                    pc2 + "_left_right.csv",
+                )
+            )
+            is True
+        )
+
+        # Output is not saved by pair here
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
                 )
             )
             is True
@@ -2834,14 +2845,12 @@ def test_end2end_ventoux_with_classif():
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -2867,26 +2876,18 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["directory"]
 
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
         if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
             pc1 = "675436.5_4897170.5"
         else:
             pc1 = "675437.0_4897170.0"
 
         assert (
-            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
-            is True
-        )
-        assert (
-            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".csv"))
-            is True
-        )
-
-        assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "laz",
                     pc1 + ".laz",
                 )
             )
@@ -2896,7 +2897,9 @@ def test_end2end_ventoux_with_classif():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "csv",
                     pc1 + ".csv",
                 )
             )
@@ -2906,9 +2909,7 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc1 + ".laz",
+                    out_dir, "dump_dir", "small_components", "laz", pc1 + ".laz"
                 )
             )
             is True
@@ -2916,9 +2917,24 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc1 + ".csv",
+                    out_dir, "dump_dir", "small_components", "csv", pc1 + ".csv"
+                )
+            )
+            is True
+        )
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
                 )
             )
             is True

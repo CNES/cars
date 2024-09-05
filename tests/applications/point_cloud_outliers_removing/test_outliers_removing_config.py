@@ -45,8 +45,7 @@ def test_check_full_conf_small_components():
     """
     conf = {
         "method": "small_components",
-        "save_points_cloud_as_laz": False,
-        "save_points_cloud_as_csv": False,
+        "save_intermediate_data": False,
         "save_points_cloud_by_pair": False,
         "activated": False,
         "on_ground_margin": 11,
@@ -64,8 +63,7 @@ def test_check_full_conf_statistical():
     """
     conf = {
         "method": "statistical",
-        "save_points_cloud_as_laz": False,
-        "save_points_cloud_as_csv": False,
+        "save_intermediate_data": False,
         "save_points_cloud_by_pair": False,
         "activated": False,
         "k": 50,

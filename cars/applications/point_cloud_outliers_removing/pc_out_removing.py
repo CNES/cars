@@ -27,6 +27,7 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
+from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 from cars.core.utils import safe_makedirs
@@ -143,19 +144,20 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
     def __register_dataset__(
         self,
         merged_points_cloud,
-        save_points_cloud_as_laz,
-        save_points_cloud_as_csv,
+        save_laz_output=False,
         app_name=None,
     ):
         """
-        Create dataset and registered the output in the orchestrator
+        Create dataset and registered the output in the orchestrator. The
+        point cloud dataset can be saved as laz using the save_laz_output
+        option. Alternatively, the point cloud will be saved as laz and csv
+        in the dump directory if the application save_intermediate data
+        configuration parameter is set.
 
         :param merged_points_cloud:  Merged point cloud
         :type merged_points_cloud: CarsDataset
-        :param save_points_cloud_as_laz: true if save as laz
-        :type save_points_cloud_as_laz: bool
-        :param save_points_cloud_as_csv: true if save as csv
-        :type save_points_cloud_as_csv: bool
+        :param save_laz_output: true if save to laz as official product
+        :type save_laz_output: bool
         :param app_name: application name for file names
         :type app_name: str
 
@@ -165,6 +167,15 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         """
         if app_name is None:
             app_name = ""
+
+        save_point_cloud_as_csv = self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA, False
+        )
+        # Save laz point cloud if save_intermediate_date is activated (dump_dir)
+        # or if save_laz_output is activated (official product)
+        save_point_cloud_as_laz = save_laz_output or self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA, False
+        )
 
         # Create CarsDataset
         filtered_point_cloud = cars_dataset.CarsDataset(
@@ -177,28 +188,42 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
 
         # Save objects
-        pc_file_name = None
-        if save_points_cloud_as_laz or save_points_cloud_as_csv:
+        pc_laz_file_name = None
+        if save_point_cloud_as_laz:
             # Points cloud file name
-            # TODO in input conf file
-            pc_file_name = os.path.join(
-                self.orchestrator.out_dir,
-                "points_cloud_post_" + app_name + "_removing",
-            )
-            safe_makedirs(pc_file_name)
-            pc_file_name = os.path.join(pc_file_name, "pc")
+            if save_laz_output:
+                pc_laz_file_name = os.path.join(
+                    self.orchestrator.out_dir, "point_cloud"
+                )
+            else:
+                pc_laz_file_name = os.path.join(
+                    self.orchestrator.out_dir, "dump_dir", app_name, "laz"
+                )
+            safe_makedirs(pc_laz_file_name)
+            pc_laz_file_name = os.path.join(pc_laz_file_name, "pc")
             self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
-                cars_ds_name="filtered_merged_pc_" + app_name,
+                cars_ds_name="filtered_merged_pc_laz_" + app_name,
             )
 
-        return filtered_point_cloud, pc_file_name
+        pc_csv_file_name = None
+        if save_point_cloud_as_csv:
+            # Points cloud file name
+            pc_csv_file_name = os.path.join(
+                self.orchestrator.out_dir, "dump_dir", app_name, "csv"
+            )
+            safe_makedirs(pc_csv_file_name)
+            pc_csv_file_name = os.path.join(pc_csv_file_name, "pc")
+            self.orchestrator.add_to_compute_lists(
+                filtered_point_cloud,
+                cars_ds_name="filtered_merged_pc_csv_" + app_name,
+            )
+
+        return filtered_point_cloud, pc_laz_file_name, pc_csv_file_name
 
     @abstractmethod
     def run(
-        self,
-        merged_points_cloud,
-        orchestrator=None,
+        self, merged_points_cloud, orchestrator=None, save_laz_output=False
     ):
         """
         Run PointCloudOutliersRemoving application.
@@ -208,6 +233,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :param merged_points_cloud: merged point cloud
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
+        :param save_laz_output: save output point cloud as laz
+        :type save_laz_output: bool
 
         :return: filtered merged points cloud
         :rtype: CarsDataset filled with xr.Dataset

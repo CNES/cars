@@ -192,8 +192,11 @@ class MappingToTerrainTiles(
         save_point_cloud_as_csv = self.used_config.get(
             application_constants.SAVE_INTERMEDIATE_DATA, False
         )
-        save_point_cloud_as_laz = self.used_config.get(
-            application_constants.SAVE_INTERMEDIATE_DATA, False
+        save_point_cloud_as_laz = (
+            self.used_config.get(
+                application_constants.SAVE_INTERMEDIATE_DATA, False
+            )
+            or save_laz_output
         )
         save_points_cloud_by_pair = self.used_config.get(
             "save_points_cloud_by_pair", False
@@ -328,7 +331,7 @@ class MappingToTerrainTiles(
                     self.orchestrator.out_dir,
                     "dump_dir",
                     "point_cloud_fusion",
-                    "point_cloud_csv",
+                    "csv",
                 )
                 safe_makedirs(csv_pc_file_name)
                 csv_pc_file_name = os.path.join(csv_pc_file_name, "pc")
@@ -348,7 +351,7 @@ class MappingToTerrainTiles(
                         self.orchestrator.out_dir,
                         "dump_dir",
                         "point_cloud_fusion",
-                        "point_cloud_laz",
+                        "laz",
                     )
                 safe_makedirs(laz_pc_file_name)
                 laz_pc_file_name = os.path.join(laz_pc_file_name, "pc")
@@ -534,9 +537,10 @@ def compute_point_cloud_wrapper(
     :type save_points_cloud_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
         (if None, the point cloud is not written as csv)
-    :type point_cloud_file_name: str
-    :param point_cloud_csv_file_name: write point cloud as CSV in filename
-        (if None, the point cloud is not written as csv)
+    :type point_cloud_csv_file_name: str
+    :param point_cloud_laz_file_name: write point cloud as laz in filename
+        (if None, the point cloud is not written as laz)
+    :type point_cloud_laz_file_name: str
     :param saving_info: informations about CarsDataset ID.
     :type saving_info: dict
     :param source_pc_names: source point cloud name (correspond to pair_key)

@@ -142,6 +142,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_key="default",
         pair_folder=None,
+        save_laz_output=False,
     ):
         """
         Run denoising
@@ -150,6 +151,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator
         :param pair_key: pair_key
         :param pair_folder: pair_folder
+        :param save_laz_output: save output point cloud as laz
 
         :return: denoised point cloud
         """
@@ -236,7 +238,7 @@ class NonePCDenoising(PCDenoising, short_name="none"):
         # Overload conf
 
         # get rasterization parameter
-        overloaded_conf["method"] = conf.get("method", "bilateral")
+        overloaded_conf["method"] = conf.get("method", "none")
 
         pc_denoising_schema = {
             "method": str,
@@ -255,6 +257,7 @@ class NonePCDenoising(PCDenoising, short_name="none"):
         orchestrator=None,
         pair_key="default",
         pair_folder=None,
+        save_laz_output=False,
     ):
         """
         Run Denoising

@@ -1497,6 +1497,33 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     )
 
+                    # find which application produce the final version of the
+                    # point cloud. The last generated point cloud will be saved
+                    # as official point cloud product if save_output_point_cloud
+                    # is True.
+
+                    last_pc_application = None
+                    # denoising application will produce a point cloud, unless
+                    # it uses the 'none' method.
+                    if self.pc_denoising_application.used_method != "none":
+                        last_pc_application = "denoising"
+                    elif (
+                        self.pc_outliers_removing_2_app.used_config.get(
+                            "activated", False
+                        )
+                        is True
+                    ):
+                        last_pc_application = "pc_outliers_removing_2"
+                    elif (
+                        self.pc_outliers_removing_1_app.used_config.get(
+                            "activated", False
+                        )
+                        is True
+                    ):
+                        last_pc_application = "pc_outliers_removing_1"
+                    else:
+                        last_pc_application = "fusion"
+
                     merged_points_clouds = self.pc_fusion_application.run(
                         list_epipolar_points_cloud,
                         terrain_bounds,
@@ -1510,7 +1537,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         ),
                         optimal_terrain_tile_width=optimal_terrain_tile_width,
                         roi=(roi_poly if self.debug_with_roi else None),
-                        save_laz_output=self.save_output_point_cloud,
+                        save_laz_output=self.save_output_point_cloud
+                        and last_pc_application == "fusion",
                     )
 
                     # Remove outliers with small components method
@@ -1518,6 +1546,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_outliers_removing_1_app.run(
                             merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "pc_outliers_removing_1",
                         )
                     )
 
@@ -1526,6 +1556,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_outliers_removing_2_app.run(
                             filtered_1_merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "pc_outliers_removing_2",
                         )
                     )
 
@@ -1534,6 +1566,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_denoising_application.run(
                             filtered_2_merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "denoising",
                         )
                     )
 

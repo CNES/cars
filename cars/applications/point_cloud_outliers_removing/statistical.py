@@ -33,7 +33,7 @@ import time
 import numpy as np
 
 # Third party imports
-from json_checker import And, Checker, OptionalKey
+from json_checker import And, Checker
 from pyproj import CRS
 
 # CARS imports
@@ -82,12 +82,6 @@ class Statistical(
         self.std_dev_factor = self.used_config["std_dev_factor"]
 
         # Saving files
-        self.save_points_cloud_as_laz = self.used_config.get(
-            "save_points_cloud_as_laz", False
-        )
-        self.save_points_cloud_as_csv = self.used_config.get(
-            "save_points_cloud_as_csv", False
-        )
         self.save_points_cloud_by_pair = self.used_config.get(
             "save_points_cloud_by_pair", False
         )
@@ -115,11 +109,9 @@ class Statistical(
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "statistical")
-        overloaded_conf["save_points_cloud_as_laz"] = conf.get(
-            "save_points_cloud_as_laz", False
-        )
-        overloaded_conf["save_points_cloud_as_csv"] = conf.get(
-            "save_points_cloud_as_csv", False
+
+        overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
+            conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         overloaded_conf["save_points_cloud_by_pair"] = conf.get(
             "save_points_cloud_by_pair", False
@@ -137,13 +129,11 @@ class Statistical(
 
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_as_laz": bool,
-            "save_points_cloud_as_csv": bool,
             "save_points_cloud_by_pair": bool,
             "activated": bool,
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),
-            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
+            application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
@@ -218,6 +208,7 @@ class Statistical(
         self,
         merged_points_cloud,
         orchestrator=None,
+        save_laz_output=False,
     ):
         """
         Run PointCloudOutliersRemoving application.
@@ -237,6 +228,8 @@ class Statistical(
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
+        :param save_laz_output: save output point cloud as laz
+        :type save_laz_output: bool
 
         :return: filtered merged points cloud. CarsDataset contains:
 
@@ -267,10 +260,13 @@ class Statistical(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-            (filtered_point_cloud, pc_file_name) = self.__register_dataset__(
+            (
+                filtered_point_cloud,
+                point_cloud_laz_file_name,
+                point_cloud_csv_file_name,
+            ) = self.__register_dataset__(
                 merged_points_cloud,
-                self.save_points_cloud_as_laz,
-                self.save_points_cloud_as_csv,
+                save_laz_output,
                 app_name="statistical",
             )
 
@@ -310,12 +306,11 @@ class Statistical(
                             merged_points_cloud[row, col],
                             self.k,
                             self.std_dev_factor,
-                            self.save_points_cloud_as_laz,
-                            self.save_points_cloud_as_csv,
                             save_points_cloud_by_pair=(
                                 self.save_points_cloud_by_pair
                             ),
-                            point_cloud_file_name=pc_file_name,
+                            point_cloud_csv_file_name=point_cloud_csv_file_name,
+                            point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
                         )
 
@@ -333,10 +328,9 @@ def statistical_removing_wrapper(
     cloud,
     statistical_k,
     std_dev_factor,
-    save_points_cloud_as_laz,
-    save_points_cloud_as_csv,
     save_points_cloud_by_pair: bool = False,
-    point_cloud_file_name=None,
+    point_cloud_csv_file_name=None,
+    point_cloud_laz_file_name=None,
     saving_info=None,
 ):
     """
@@ -348,14 +342,14 @@ def statistical_removing_wrapper(
     :type statistical_k: float
     :param std_dev_factor: std factor
     :type std_dev_factor: float
-    :param save_points_cloud_as_laz: activation of point cloud saving to laz
-    :type save_points_cloud_as_laz: bool
-    :param save_points_cloud_as_csv: activation of point cloud saving to csv
-    :type save_points_cloud_as_csv: bool
     :param save_points_cloud_by_pair: save point cloud as pair
     :type save_points_cloud_by_pair: bool
-    :param point_cloud_file_name: point cloud filename
-    :type point_cloud_file_name: str
+    :param point_cloud_csv_file_name: write point cloud as CSV in filename
+        (if None, the point cloud is not written as csv)
+    :type point_cloud_csv_file_name: str
+    :param point_cloud_laz_file_name: write point cloud as laz in filename
+        (if None, the point cloud is not written as laz)
+    :type point_cloud_laz_file_name: str
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -405,20 +399,27 @@ def statistical_removing_wrapper(
     )
     # Update attributes
     cloud_attributes["epsg"] = current_epsg
-    cloud_attributes["save_points_cloud_as_laz"] = save_points_cloud_as_laz
-    cloud_attributes["save_points_cloud_as_csv"] = save_points_cloud_as_csv
 
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )
 
     # save point cloud in worker
-    if save_points_cloud_as_laz or save_points_cloud_as_csv:
+    if point_cloud_csv_file_name:
         cars_dataset.run_save_points(
             new_cloud,
-            point_cloud_file_name,
+            point_cloud_csv_file_name,
             save_points_cloud_by_pair=save_points_cloud_by_pair,
             overwrite=True,
+            point_cloud_format="csv",
+        )
+    if point_cloud_laz_file_name:
+        cars_dataset.run_save_points(
+            new_cloud,
+            point_cloud_laz_file_name,
+            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            overwrite=True,
+            point_cloud_format="laz",
         )
 
     return new_cloud
