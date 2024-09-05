@@ -242,6 +242,7 @@ class NonePCDenoising(PCDenoising, short_name="none"):
 
         pc_denoising_schema = {
             "method": str,
+            OptionalKey("save_by_pair"): bool,
             OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 

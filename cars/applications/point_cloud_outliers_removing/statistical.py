@@ -82,9 +82,7 @@ class Statistical(
         self.std_dev_factor = self.used_config["std_dev_factor"]
 
         # Saving files
-        self.save_points_cloud_by_pair = self.used_config.get(
-            "save_points_cloud_by_pair", False
-        )
+        self.save_by_pair = self.used_config.get("save_by_pair", False)
         # Init orchestrator
         self.orchestrator = None
 
@@ -113,9 +111,7 @@ class Statistical(
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
-            "save_points_cloud_by_pair", False
-        )
+        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(
@@ -129,7 +125,7 @@ class Statistical(
 
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_by_pair": bool,
+            "save_by_pair": bool,
             "activated": bool,
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),
@@ -306,9 +302,7 @@ class Statistical(
                             merged_points_cloud[row, col],
                             self.k,
                             self.std_dev_factor,
-                            save_points_cloud_by_pair=(
-                                self.save_points_cloud_by_pair
-                            ),
+                            save_by_pair=(self.save_by_pair),
                             point_cloud_csv_file_name=point_cloud_csv_file_name,
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
@@ -328,7 +322,7 @@ def statistical_removing_wrapper(
     cloud,
     statistical_k,
     std_dev_factor,
-    save_points_cloud_by_pair: bool = False,
+    save_by_pair: bool = False,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info=None,
@@ -342,8 +336,8 @@ def statistical_removing_wrapper(
     :type statistical_k: float
     :param std_dev_factor: std factor
     :type std_dev_factor: float
-    :param save_points_cloud_by_pair: save point cloud as pair
-    :type save_points_cloud_by_pair: bool
+    :param save_by_pair: save point cloud as pair
+    :type save_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
         (if None, the point cloud is not written as csv)
     :type point_cloud_csv_file_name: str
@@ -409,7 +403,7 @@ def statistical_removing_wrapper(
         cars_dataset.run_save_points(
             new_cloud,
             point_cloud_csv_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="csv",
         )
@@ -417,7 +411,7 @@ def statistical_removing_wrapper(
         cars_dataset.run_save_points(
             new_cloud,
             point_cloud_laz_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="laz",
         )

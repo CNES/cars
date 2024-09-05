@@ -46,7 +46,7 @@ def test_check_full_conf_small_components():
     conf = {
         "method": "small_components",
         "save_intermediate_data": False,
-        "save_points_cloud_by_pair": False,
+        "save_by_pair": False,
         "activated": False,
         "on_ground_margin": 11,
         "connection_distance": 3.0,
@@ -64,7 +64,7 @@ def test_check_full_conf_statistical():
     conf = {
         "method": "statistical",
         "save_intermediate_data": False,
-        "save_points_cloud_by_pair": False,
+        "save_by_pair": False,
         "activated": False,
         "k": 50,
         "std_dev_factor": 5.0,

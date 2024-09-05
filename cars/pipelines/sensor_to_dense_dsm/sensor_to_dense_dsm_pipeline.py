@@ -191,6 +191,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             save_all_intermediate_data=self.used_conf[ADVANCED][
                 adv_cst.SAVE_INTERMEDIATE_DATA
             ],
+            save_all_point_clouds_by_pair=self.used_conf[OUTPUT].get(
+                output_constants.SAVE_BY_PAIR, False
+            ),
         )
 
         # Check conf application vs inputs application
@@ -237,6 +240,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         generate_terrain_products,
         no_merging=False,
         save_all_intermediate_data=False,
+        save_all_point_clouds_by_pair=False,
     ):
         """
         Check the given configuration for applications,
@@ -252,6 +256,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :param save_all_intermediate_data: True to save intermediate data in all
             applications
         :type save_all_intermediate_data: bool
+        :param save_all_point_clouds_by_pair: save point clouds by pair in all
+            relevant applications
+        :type save_all_point_clouds_by_pair: bool
         """
 
         # Check if all specified applications are used
@@ -306,6 +313,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             used_conf[app_key]["save_intermediate_data"] = used_conf[
                 app_key
             ].get("save_intermediate_data", save_all_intermediate_data)
+
+        for app_key in [
+            "point_cloud_fusion",
+            "point_cloud_outliers_removing.1",
+            "point_cloud_outliers_removing.2",
+            "pc_denoising",
+        ]:
+            if app_key in needed_applications:
+                used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
+                    "save_by_pair", save_all_point_clouds_by_pair
+                )
 
         # Epipolar grid generation
         self.epipolar_grid_generation_application = Application(

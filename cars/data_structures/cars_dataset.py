@@ -582,7 +582,7 @@ def run_save_points(
     future_result,
     file_name,
     overwrite=False,
-    save_points_cloud_by_pair=False,
+    save_by_pair=False,
     point_cloud_format="csv",
 ):
     """
@@ -603,7 +603,7 @@ def run_save_points(
     save_all_dataframe(
         future_result,
         file_name,
-        save_points_cloud_by_pair=save_points_cloud_by_pair,
+        save_by_pair=save_by_pair,
         overwrite=overwrite,
         point_cloud_format=point_cloud_format,
     )
@@ -932,14 +932,14 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
 def save_all_dataframe(
     dataframe,
     file_name,
-    save_points_cloud_by_pair=False,
+    save_by_pair=False,
     overwrite=True,
     point_cloud_format="csv",
 ):
     """
     Save DataFrame to csv and laz format. The content of dataframe is merged to
     the content of existing saved Dataframe, if overwrite==False
-    The option save_points_cloud_by_pair separate the dataframe
+    The option save_by_pair separate the dataframe
     by pair
     :param file_name: file name to save data to
     :type file_name: str
@@ -973,7 +973,7 @@ def save_all_dataframe(
                 + str(dataframe.attrs["saving_info"]["cars_ds_row"])
             ),
         )
-    if not save_points_cloud_by_pair:
+    if not save_by_pair:
         save_dataframe(dataframe, file_name, overwrite, point_cloud_format)
     else:
         pairing_indexes = set(np.array(dataframe["global_id"]).flat)

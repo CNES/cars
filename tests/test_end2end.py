@@ -1577,7 +1577,7 @@ def test_end2end_ventoux_unique_split():
                         "method": "small_components",
                         "activated": True,
                         "save_intermediate_data": True,
-                        "save_points_cloud_by_pair": True,
+                        "save_by_pair": True,
                     },
                     "point_cloud_outliers_removing.2": {
                         "method": "statistical",
@@ -2579,13 +2579,13 @@ def test_end2end_ventoux_with_color():
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
                 "save_intermediate_data": True,
-                "save_points_cloud_by_pair": True,
+                "save_by_pair": True,
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
                 "save_intermediate_data": True,
-                "save_points_cloud_by_pair": True,
+                "save_by_pair": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",

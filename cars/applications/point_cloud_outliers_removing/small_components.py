@@ -82,9 +82,7 @@ class SmallComponents(
         ]
 
         # Saving files
-        self.save_points_cloud_by_pair = self.used_config.get(
-            "save_points_cloud_by_pair", False
-        )
+        self.save_by_pair = self.used_config.get("save_by_pair", False)
 
         # Init orchestrator
         self.orchestrator = None
@@ -113,9 +111,7 @@ class SmallComponents(
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
-            "save_points_cloud_by_pair", False
-        )
+        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         # small components
         overloaded_conf["activated"] = conf.get(
@@ -150,7 +146,7 @@ class SmallComponents(
 
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_by_pair": bool,
+            "save_by_pair": bool,
             "activated": bool,
             "on_ground_margin": int,
             "connection_distance": And(float, lambda x: x > 0),
@@ -326,9 +322,7 @@ class SmallComponents(
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
-                            save_points_cloud_by_pair=(
-                                self.save_points_cloud_by_pair
-                            ),
+                            save_by_pair=(self.save_by_pair),
                             point_cloud_csv_file_name=point_cloud_csv_file_name,
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
@@ -349,7 +343,7 @@ def small_components_removing_wrapper(
     connection_distance,
     nb_points_threshold,
     clusters_distance_threshold,
-    save_points_cloud_by_pair: bool = False,
+    save_by_pair: bool = False,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info=None,
@@ -365,8 +359,8 @@ def small_components_removing_wrapper(
     :type nb_points_threshold: int
     :param clusters_distance_threshold:
     :type clusters_distance_threshold: float
-    :param save_points_cloud_by_pair: save point cloud as pair
-    :type save_points_cloud_by_pair: bool
+    :param save_by_pair: save point cloud as pair
+    :type save_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
         (if None, the point cloud is not written as csv)
     :type point_cloud_csv_file_name: str
@@ -438,7 +432,7 @@ def small_components_removing_wrapper(
         cars_dataset.run_save_points(
             new_cloud,
             point_cloud_csv_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="csv",
         )
@@ -446,7 +440,7 @@ def small_components_removing_wrapper(
         cars_dataset.run_save_points(
             new_cloud,
             point_cloud_laz_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="laz",
         )

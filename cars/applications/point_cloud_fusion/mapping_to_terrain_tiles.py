@@ -95,16 +95,14 @@ class MappingToTerrainTiles(
             "method", "mapping_to_terrain_tiles"
         )
 
-        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
-            "save_points_cloud_by_pair", False
-        )
+        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_by_pair": bool,
+            "save_by_pair": bool,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -198,9 +196,7 @@ class MappingToTerrainTiles(
             )
             or save_laz_output
         )
-        save_points_cloud_by_pair = self.used_config.get(
-            "save_points_cloud_by_pair", False
-        )
+        save_by_pair = self.used_config.get("save_by_pair", False)
 
         if source_pc_names is None:
             source_pc_names = ["PAIR_0"]
@@ -436,7 +432,7 @@ class MappingToTerrainTiles(
                             xmax=terrain_region[2],
                             ymax=terrain_region[3],
                             margins=margins,
-                            save_points_cloud_by_pair=save_points_cloud_by_pair,
+                            save_by_pair=save_by_pair,
                             point_cloud_csv_file_name=csv_pc_file_name,
                             point_cloud_laz_file_name=laz_pc_file_name,
                             saving_info=full_saving_info,
@@ -503,7 +499,7 @@ def compute_point_cloud_wrapper(
     xmax: float = None,
     ymax: float = None,
     margins: float = 0,
-    save_points_cloud_by_pair: bool = False,
+    save_by_pair: bool = False,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info=None,
@@ -533,8 +529,8 @@ def compute_point_cloud_wrapper(
         (if None, will be estimated by the function)
     :param margins: margins needed for tiles, meter or degree
     :type margins: float
-    :param save_points_cloud_by_pair: save point cloud as pair
-    :type save_points_cloud_by_pair: bool
+    :param save_by_pair: save point cloud as pair
+    :type save_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
         (if None, the point cloud is not written as csv)
     :type point_cloud_csv_file_name: str
@@ -623,7 +619,7 @@ def compute_point_cloud_wrapper(
         cars_dataset.run_save_points(
             pc_pandas,
             point_cloud_csv_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="csv",
         )
@@ -631,7 +627,7 @@ def compute_point_cloud_wrapper(
         cars_dataset.run_save_points(
             pc_pandas,
             point_cloud_laz_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="laz",
         )

@@ -166,7 +166,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         dtype=None,
         nodata=None,
         optional_data=False,
-        save_points_cloud_by_pair=False,
+        save_by_pair=False,
     ):
         """
         Add file corresponding to cars_dataset to registered_cars_datasets
@@ -183,8 +183,8 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
         :type nodata: float
         :param optional_data: True if the data is optionnal
         :type optional_data: bool
-        :param save_points_cloud_by_pair:
-        :type save_points_cloud_by_pair: bool
+        :param save_by_pair:
+        :type save_by_pair: bool
         """
 
         if not self.cars_dataset_in_registry(cars_ds)[0]:
@@ -206,7 +206,7 @@ class CarsDatasetsRegistrySaver(AbstractCarsDatasetRegistry):
             dtype=dtype,
             nodata=nodata,
             optional_data=optional_data,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
         )
 
     def cleanup(self):
@@ -254,7 +254,7 @@ class SingleCarsDatasetSaver:
         dtype=None,
         nodata=None,
         optional_data=False,
-        save_points_cloud_by_pair=False,
+        save_by_pair=False,
     ):
         """
         Add file to current CarsDatasetSaver
@@ -276,7 +276,7 @@ class SingleCarsDatasetSaver:
         self.dtypes.append(dtype)
         self.nodatas.append(nodata)
         self.optional_data_list.append(optional_data)
-        self.save_pc_by_pair_list.append(save_points_cloud_by_pair)
+        self.save_pc_by_pair_list.append(save_by_pair)
 
     def save(self, future_result):
         """
@@ -338,7 +338,7 @@ class SingleCarsDatasetSaver:
                     future_result,
                     os.path.join(self.folder_name, repr(self.count)),
                     overwrite=not self.already_seen,
-                    save_points_cloud_by_pair=self.save_pc_by_pair_list[0],
+                    save_by_pair=self.save_pc_by_pair_list[0],
                 )
                 self.count += 1
 

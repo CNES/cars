@@ -203,7 +203,7 @@ class Orchestrator:
         nodata=0,
         cars_ds_name=None,
         optional_data=False,
-        save_points_cloud_by_pair=False,
+        save_by_pair=False,
     ):
         """
         Save file to list in order to be saved later
@@ -215,8 +215,8 @@ class Orchestrator:
           for information during logging
         :param optional_data: True if the data is optionnal
         :type optional_data: bool
-        :param save_points_cloud_by_pair: True if data by pair
-        :type save_points_cloud_by_pair: bool
+        :param save_by_pair: True if data by pair
+        :type save_by_pair: bool
         """
 
         self.cars_ds_savers_registry.add_file_to_save(
@@ -226,7 +226,7 @@ class Orchestrator:
             dtype=dtype,
             nodata=nodata,
             optional_data=optional_data,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
         )
 
         # add name if exists
