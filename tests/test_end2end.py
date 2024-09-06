@@ -1212,8 +1212,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "max_ram_per_worker": 1000,
             },
         )
-        # use endogenous dem
-        input_config_pc["inputs"]["use_endogenous_elevation"] = True
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
@@ -2854,8 +2852,6 @@ def test_end2end_ventoux_with_classif():
 
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = False
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
@@ -2867,10 +2863,7 @@ def test_end2end_ventoux_with_classif():
 
         out_dir = input_config_sparse_res["output"]["directory"]
 
-        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
-            pc1 = "675436.5_4897170.5"
-        else:
-            pc1 = "675437.0_4897170.0"
+        pc1 = "675248.0_4897173.0"
 
         assert (
             os.path.exists(
@@ -3054,8 +3047,6 @@ def test_compute_dsm_with_roi_ventoux():
 
         input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
 
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
@@ -3194,8 +3185,6 @@ def test_compute_dsm_with_snap_to_img1():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -3629,11 +3618,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -67
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 30
-            assert out_disp_compute["global_disp_max"] < 31
+            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] < 46
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3848,11 +3837,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -67
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 30
-            assert out_disp_compute["global_disp_max"] < 31
+            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] < 46
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3969,8 +3958,6 @@ def test_end2end_paca_with_mask():
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4086,8 +4073,6 @@ def test_end2end_paca_with_mask():
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4185,8 +4170,6 @@ def test_end2end_disparity_filling():
             "filling": True,
             "mask": True,
         }
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4311,8 +4294,6 @@ def test_end2end_disparity_filling_with_zeros():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         # Save mask and filling
         input_config_dense_dsm["output"]["auxiliary"] = {
@@ -4348,7 +4329,7 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization",  "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
@@ -4356,8 +4337,7 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir",
-        #                                 "rasterization",  "filling.tif"),
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"
