@@ -654,7 +654,7 @@ def create_points_cloud_index(cloud_sample):
         band_filling = list(cloud_sample.coords[cst.BAND_FILLING].to_numpy())
         for band in band_filling:
             band_index = "{}_{}".format(cst.POINTS_CLOUD_FILLING_KEY_ROOT, band)
-            cloud_indexes_with_types[band_index] = "boolean"
+            cloud_indexes_with_types[band_index] = "uint8"
 
     # Add performance_map indexes
     if cst.EPI_PERFORMANCE_MAP in cloud_sample:

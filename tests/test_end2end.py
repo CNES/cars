@@ -1492,8 +1492,6 @@ def test_end2end_ventoux_unique_split():
         }
 
         input_config_pc["applications"].update(application_config)
-        # use endogenous dem
-        input_config_pc["inputs"]["use_endogenous_elevation"] = True
 
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
@@ -1894,7 +1892,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,

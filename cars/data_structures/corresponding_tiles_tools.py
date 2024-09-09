@@ -46,10 +46,15 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
     :rtype: xr.Dataset, int, int
 
     """
-    if tiles[0][2] is None:
+
+    first_valid_tile = next(
+        (tile for tile in tiles if tile[2] is not None), None
+    )
+
+    if first_valid_tile is None:
         return None, None, None
 
-    list_tags = list(tiles[0][2].keys())
+    list_tags = list(first_valid_tile[2].keys())
 
     row_min, row_max, col_min, col_max = window
     ol_row_min, ol_row_max, ol_col_min, ol_col_max = overlap
@@ -72,7 +77,7 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
     nb_cols = int(col_max + ol_col_max - (col_min - ol_col_min))
 
     new_coords = {}
-    for key in tiles[0][2].coords.keys():
+    for key in first_valid_tile[2].coords.keys():
         if key == "row":
             new_coords["row"] = range(
                 int(row_min - ol_row_min), int(row_max + ol_row_max)
@@ -94,17 +99,17 @@ def reconstruct_data(tiles, window, overlap):  # noqa: C901
                 int(col_min - ol_col_min), int(col_max + ol_col_max)
             )
         else:
-            new_coords[key] = tiles[0][2].coords[key]
+            new_coords[key] = first_valid_tile[2].coords[key]
 
     new_dataset = xr.Dataset(data_vars={}, coords=new_coords)
 
     for tag in list_tags:
         # reconstruct data
-        data_type = tiles[0][2][tag].dtype
+        data_type = first_valid_tile[2][tag].dtype
         data_shape = (nb_rows, nb_cols)
-        dims = tiles[0][2][tag].dims
+        dims = first_valid_tile[2][tag].dims
         if len(dims) == 3:
-            nb_bands = tiles[0][2][tag].values.shape[0]
+            nb_bands = first_valid_tile[2][tag].values.shape[0]
             data_shape = (nb_bands, nb_rows, nb_cols)
         data = np.nan * np.zeros(data_shape)
 
