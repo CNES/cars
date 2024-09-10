@@ -123,6 +123,9 @@ def generate_input_json(
     if "applications" not in config:
         config["applications"] = {}
 
+    if "advanced" not in config:
+        config["advanced"] = {}
+
     # transform paths
     new_config = config.copy()
 

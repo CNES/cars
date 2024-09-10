@@ -51,10 +51,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
 
     overloaded_conf = conf.copy()
 
-    # Overload some optional parameters
-    overloaded_conf[sens_cst.USE_ENDOGENOUS_ELEVATION] = conf.get(
-        sens_cst.USE_ENDOGENOUS_ELEVATION, False
-    )
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
     overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
@@ -68,7 +64,6 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.SENSORS: dict,
         sens_cst.PAIRING: Or([[str]], None),
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
-        sens_cst.USE_ENDOGENOUS_ELEVATION: bool,
         sens_cst.ROI: Or(str, dict, None),
     }
 

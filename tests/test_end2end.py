@@ -2473,6 +2473,354 @@ def test_prepare_ventoux_bias():
 
 
 @pytest.mark.end2end_tests
+def test_end2end_ventoux_full_output_no_elevation():
+    """
+    End to end processing with all outputs activated, and no input elevation
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # No pairing defined in this input file
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_no_elevation.json"
+        )
+
+        # Run sensors_to_dense_point_clouds pipeline
+        _, input_config = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {
+                "method": "bicubic",
+                "strip_height": 80,
+                "save_intermediate_data": True,
+            },
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": 400.0,
+                "elevation_delta_upper_bound": 700.0,
+                "disparity_margin": 0.25,
+                "save_intermediate_data": True,
+            },
+        }
+        advanced_config = {"save_intermediate_data": True}
+
+        out_dir = os.path.join(directory, "output_dsm")
+        output_config = {
+            "directory": out_dir,
+            "product_level": ["depth_map", "point_cloud", "dsm"],
+            "auxiliary": {
+                "color": True,
+                "filling": True,
+                "mask": True,
+                "classification": True,
+                "contributing_pair": True,
+            },
+        }
+
+        input_config["applications"].update(application_config)
+        input_config["advanced"].update(advanced_config)
+        input_config["output"].update(output_config)
+
+        pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(input_config)
+
+        pipeline.run()
+
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = "ref_output"
+
+        # Uncomment the following instruction to update reference data
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #        os.path.join(
+        #            ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
+        #        )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #               ref_output_dir,
+        #               "classification_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "filling_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "contributing_pair_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_color.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_color_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_classification.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_classification_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_filling.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_filling_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_mask.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_mask_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_X.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_X_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_Y.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Y_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "epi_pc_Z.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Z_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+
+        # DSM
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classification_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "filling_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "contributing_pair_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+
+        # Depth map
+        depth_map_dir = os.path.join(
+            out_dir,
+            "depth_map",
+            "left_right",
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_X.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_X_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_Y.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_Y_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_Z.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_Z_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_mask_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_filling_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_color_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "epi_pc_classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_classification_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+
+        pc_name = "675248.5_4897170.0"
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "point_cloud",
+                    pc_name + ".laz",
+                )
+            )
+            is True
+        )
+
+
+@pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
     """
     End to end processing with color
@@ -4258,7 +4606,6 @@ def test_end2end_disparity_filling_with_zeros():
             "sensors_to_dense_dsm",
             "local_dask",
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
@@ -4277,15 +4624,6 @@ def test_end2end_disparity_filling_with_zeros():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "resolution": resolution,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "color_no_data": 0,
-                "msk_no_data": 254,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)

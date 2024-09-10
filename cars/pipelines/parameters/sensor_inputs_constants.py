@@ -29,7 +29,6 @@ SENSORS = "sensors"
 PAIRING = "pairing"
 
 INITIAL_ELEVATION = "initial_elevation"
-USE_ENDOGENOUS_ELEVATION = "use_endogenous_elevation"
 
 CHECK_INPUTS = "check_inputs"
 ROI = "roi"
