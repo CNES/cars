@@ -69,9 +69,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
     Test pipeline with a non square epipolar image, and the generation
     of the performance map
-
-    Test defaut conf use_endogenous_elevation :
-        use srtm for prepare, and compute
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -117,9 +114,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "mask": True,
             "performance_map": True,
         }
-
-        # use endogenous dem
-        input_dense_dsm["inputs"]["use_endogenous_elevation"] = False
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_dense_dsm
@@ -1064,8 +1058,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -1161,8 +1153,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["epsg"] = 32631
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -2298,8 +2288,6 @@ def test_end2end_use_epipolar_a_priori():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
@@ -3650,9 +3638,6 @@ def test_end2end_quality_stats():
         # Save all intermediate data
         input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
 
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
-
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
@@ -3938,8 +3923,6 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -4068,8 +4051,6 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -4155,8 +4136,6 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
             "input/geoid/egm96_15_modified.tif"
