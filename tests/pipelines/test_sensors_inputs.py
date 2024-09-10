@@ -63,7 +63,6 @@ def test_check_full_conf():
         "initial_elevation": {
             "dem": "srtm/N44E005.hgt",
         },
-        "use_endogenous_elevation": True,
         "roi": {
             "type": "FeatureCollection",
             "features": [
