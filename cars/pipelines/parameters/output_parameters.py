@@ -43,7 +43,6 @@ def check_output_parameters(conf):
     out_dir = os.path.abspath(out_dir)
     # Ensure that output directory and its subdirectories exist
     safe_makedirs(out_dir)
-    safe_makedirs(os.path.join(out_dir, output_constants.DSM_DIRECTORY))
 
     # Overload some parameters
     overloaded_conf[output_constants.OUT_DIRECTORY] = out_dir

@@ -398,6 +398,9 @@ class SimpleGaussian(
         out_dsm_sup_n_pts_file_name = None
         out_dsm_sup_points_in_cell_file_name = None
 
+        if dsm_file_name is not None:
+            safe_makedirs(os.path.dirname(dsm_file_name))
+
         out_dsm_file_name = dsm_file_name
         if dsm_file_name is None and save_intermediate_data:
             out_dsm_file_name = os.path.join(out_dump_dir, "dsm.tif")
