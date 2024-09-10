@@ -97,29 +97,15 @@ The structure follows this organisation:
             +============================+=====================================================================+=======================+======================+==========+
             | *sensor*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                     | EPSG code                                                           | int, should be > 0    | None                 | No       |
+            | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *initial_elevation*        | Path to SRTM tiles (see :ref:`plugins` section for details)         | string                | None                 | No       |
             |                            | If not provided, internal dem is generated with sparse matches      |                       |                      |          |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *use_endogenous_elevation* | Use endogenous eleveation intead of provided initial_elevation      | bool                  | False                | No       |
-            |                            | when endogenous elevation is available                              |                       |                      |          |
-            |                            | If no initial_elevation, endogenous elevation is always used        |                       |                      |          |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *roi*                      | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *debug_with_roi*           | Use ROI with the tiling of the entire image                         | Boolean               | False                | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *check_inputs*             | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *use_epipolar_a_priori*    | Active epipolar a priori                                            | bool                  | False                | Yes      |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epipolar_a_priori*        | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *terrain_a_priori*         | Provide terrain a priori information (see section below)            | dict                  |                      | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+            (*) `pairing` is required If there are more than two sensors (see pairing section below)
 
             **Sensor**
 
@@ -190,6 +176,8 @@ The structure follows this organisation:
                     }
                 }
 
+            This attribute is required when there are more than two input sensor images. If only two images ares provided, the pairing can be deduced by cars, considering the first image defined as the left image and second image as right image.
+
             **Initial elevation**
 
             The attribute contains all informations about initial elevation: dem path, geoid and default altitude
@@ -201,12 +189,10 @@ The structure follows this organisation:
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
             | *geoid*               | Geoid path                     | string | Cars internal geoid  | No                         |
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
-            | *default_alt*         | Default altitude               | int    | 0                    | No                         |
-            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
 
             If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96).
 
-            `default_alt` is the default height above ellipsoid when there is no DEM available (no coverage for some points or pixels with no_data in the DEM tiles)
+            When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
 
             Initial elevation can be provided as a dictionary with a field for each parameter, for example:
 
@@ -217,8 +203,7 @@ The structure follows this organisation:
                 "inputs": {
                         "initial_elevation": {
                             "dem": "/path/to/srtm.tif",
-                            "geoid": "/path/to/geoid.tif",
-                            "default_alt": 30
+                            "geoid": "/path/to/geoid.tif"
                         }
                     }
                 }
@@ -237,65 +222,6 @@ The structure follows this organisation:
             (see output parameters).
 
             Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
-
-            **Epipolar a priori**
-
-            The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
-            particularly for the sensor_to_full_resolution_dsm pipeline.
-            The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
-            However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
-            So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
-            that contains the epipolar_a_priori information for each sensor image pairs.
-            The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
-
-            For each sensor images, the epipolar a priori are filled as following:
-
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | Name                  | Description                                                 | Type   | Default value  | Required                         |
-            +=======================+=============================================================+========+================+==================================+
-            | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-
-            .. note::
-
-                The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
-                The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
-
-
-            **Terrain a priori**
-
-            The terrain a priori is used at the same time that epipolar a priori.
-            If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
-            The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
-
-            The terrain a priori is initially populated with DEM information.
-
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | Name           | Description                                                 | Type   | Default value  | Required                         |
-            +================+=============================================================+========+================+==================================+
-            | *dem_median*   | DEM generated with median function                          | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            
-
-        .. tab:: Point Clouds inputs
-
-
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | Name                    | Description                                                         | Type                  | Default value        | Required |
-            +=========================+=====================================================================+=======================+======================+==========+
-            | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
 
             **Point Clouds**
 
@@ -1539,30 +1465,165 @@ The structure follows this organisation:
                         }
                     },
 
+   .. tab:: Advanced parameters
+
+
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | Name                       | Description                                                             | Type                  | Default value        | Required |
+        +============================+=========================================================================+=======================+======================+==========+
+        | *save_intermediate data*   | Save intermediate data for all applications                             | bool                  | False                | Yes      |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *use_epipolar_a_priori*    | Active epipolar a priori                                                | bool                  | False                | Yes      |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *epipolar_a_priori*        | Provide epipolar a priori information (see section below)               | dict                  |                      | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *terrain_a_priori*         | Provide terrain a priori information (see section below)                | dict                  |                      | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *debug_with_roi*           | Use input ROI with the tiling of the entire image (see Inputs section)  | Boolean               | False                | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+        **Save intermediate data**
+
+        The `save_intermediate_data` flag can be used to activate and deactivate the saving of the possible output of applications.
+
+        It is set in the `advanced` category and can be overloaded in each application separately. It default to false, meaning that no intermediate product in saved). Intermediate data are saved in the `dump_dir` folder found in cars output directory, with a subfolder corresponding to each application.
+
+        For exemple setting `save_intermediate_data` to `true` in `advanced` and to `false` in `application/point_cloud_rasterization` will activate product saving in all applications excepting `point_cloud_rasterization`. Conversely, setting it to `false` in `advanced` and to `true` in `application/point_cloud_rasterization`  will only save rasterization outputs.
+
+        Intermediate data refers to all files that are not part of an output product. Files that compose an output product will not be found in the application dump directory. For exemple if `dsm` is requested as output product, the `dsm.tif` files and all activated dsm auxiliary files will not be found in `rasterization` dump directory. This directory will still contain the files generated by the `rasterization` application that are not part of the `dsm` product.
+
+
+        **Epipolar a priori**
+
+        The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+        particularly for the sensor_to_full_resolution_dsm pipeline.
+        The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
+        However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
+        So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
+        that contains the epipolar_a_priori information for each sensor image pairs.
+        The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
+
+        For each sensor images, the epipolar a priori are filled as following:
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | Name                  | Description                                                 | Type   | Default value  | Required                         |
+        +=======================+=============================================================+========+================+==================================+
+        | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+        .. note::
+
+            The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+            The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
+
+
+        **Terrain a priori**
+
+        The terrain a priori is used at the same time that epipolar a priori.
+        If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
+        The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
+
+        The terrain a priori is initially populated with DEM information.
+
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | Name           | Description                                                 | Type   | Default value  | Required                         |
+        +================+=============================================================+========+================+==================================+
+        | *dem_median*   | DEM generated with median function                          | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        
+
+    .. tab:: Point Clouds inputs
+
+
+        +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | Name                    | Description                                                         | Type                  | Default value        | Required |
+        +=========================+=====================================================================+=======================+======================+==========+
+        | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
+        +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
+        +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
+        +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+
+        **Example**
+
+        .. code-block:: json
+
+            "advanced": {
+                "save_intermediate_data": true
+                }
+            },
+
    .. tab:: Outputs
 
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
-        | Name           | Description                                                 | Type           | Default value   | Required |
-        +================+=============================================================+================+=================+==========+
-        | out_dir        | Output folder where results are stored                      | string         | No              | No       |
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
-        | dsm_basename   | base name for dsm                                           | string         | "dsm.tif"       | No       |
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
-        | geoid          | output geoid                                                | bool or string | False           | No       |
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
-        | color_basename | base name for  ortho-image                                  | string         | "color.tif      | No       |
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
-        | info_basename  | base name for file containing information about computation | string         | "metadata.json" | No       |
-        +----------------+-------------------------------------------------------------+----------------+-----------------+----------+
+
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | Name             | Description                                                 | Type               | Default value        | Required |
+        +==================+=============================================================+====================+======================+==========+
+        | *directory*      | Output folder where results are stored                      | string             | No                   | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *product_level*  | output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *auxiliary*      | selection of additional files in products                   | dict               | See below            | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *epsg*           | EPSG code                                                   | int, should be > 0 | None                 | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *geoid*          | output geoid                                                | bool or string     | False                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *save_by_pair*   | save output point clouds by pair                            | bool               | False                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *dsm_basename*   | base name for dsm                                           | string             | "dsm.tif"            | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *color_basename* | base name for  ortho-image                                  | string             | "color.tif           | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *info_basename*  | base name for file containing information about computation | string             | "metadata.json"      | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
 
         **Output contents**
 
         The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
 
-        * the dsm
-        * color image (if *color image* has been given)
-        * information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
-        * subfolder for each defined pair which can contains intermediate data
+        * the required products (`depth_map`, `dsm` and/or `point_cloud`)
+        * The dump directory (`dump_dir`) containing intermediate data for all applications
+        * metadata json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
+        * logs folder containing Cars log and profiling information
+
+
+        **Output products**
+
+        The `product_level` attribute defines which product should be produced by cars. There are three available product type: `depth_map`, `point_cloud` and `dsm`. A single product can be requested by setting the parameter as string, several products can be requested by providing a list. For `depth_map` and `dsm`, additional auxiliary files can be produced with the product by setting the `auxiliary` dictionary attribute, it contains the following attributes:
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | Name                  | Description                                                 | Type   | Default value  | Required  |
+        +=======================+=============================================================+========+================+===========+
+        | *color*               | Save output color (dsm/depth_map)                           | bool   | True           | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *mask*                | Save output mask (dsm/depth map)                            | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *classification*      | Save output classification (dsm/depth_map)                  | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *performance_map*     | Save output performance map (dsm)                           | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *contributing_pair*   | Save output contributing pair (dsm)                         | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *filling*             | Save output filling (dsm)                                   | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+
+
+        **Point cloud output**
+
+        The point cloud output product consists of a collection of laz files, each containing a tile of the point cloud. If the `save_by_pair` option is set, laz will be produced for each sensor pair defined in input pairing.
+
+        The point cloud found in the product the highest level point cloud produced by cars. For exemple, if outlier removing and point cloud denoising are deactivated, the point cloud will correspond to the output of point cloud fusion. If only the first application of outlier removing is activated, this will be the output point cloud.
 
         **Geoid**
 
