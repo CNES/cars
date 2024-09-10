@@ -50,6 +50,10 @@ def epipolar_rectify_images(
     margins,
     epipolar_size_x,
     epipolar_size_y,
+    interpolator_image="bicubic",
+    interpolator_color="bicubic",
+    interpolator_classif="nearest",
+    interpolator_mask="nearest",
     step=None,
     color1=None,
     mask1=None,
@@ -113,6 +117,8 @@ def epipolar_rectify_images(
         region=left_region,
         nodata=nodata1,
         mask=mask1,
+        interpolator_img=interpolator_image,
+        interpolator_mask=interpolator_mask,
     )
 
     # Update attributes
@@ -135,6 +141,8 @@ def epipolar_rectify_images(
         region=right_region,
         nodata=nodata2,
         mask=mask2,
+        interpolator_img=interpolator_image,
+        interpolator_mask=interpolator_mask,
     )
 
     # Update attributes
@@ -161,6 +169,8 @@ def epipolar_rectify_images(
                 [epipolar_size_x, epipolar_size_y],
                 region=left_region,
                 band_coords=cst.BAND_IM,
+                interpolator_img=interpolator_color,
+                interpolator_mask=interpolator_mask,
             )
         else:
             raise RuntimeError(
@@ -181,7 +191,8 @@ def epipolar_rectify_images(
             [epipolar_size_x, epipolar_size_y],
             region=left_region,
             band_coords=cst.BAND_CLASSIF,
-            interpolator="nearest",
+            interpolator_img=interpolator_classif,
+            interpolator_mask=interpolator_mask,
         )
 
     right_classif_dataset = None
@@ -192,7 +203,8 @@ def epipolar_rectify_images(
             [epipolar_size_x, epipolar_size_y],
             region=right_region,
             band_coords=cst.BAND_CLASSIF,
-            interpolator="nearest",
+            interpolator_img=interpolator_classif,
+            interpolator_mask=interpolator_mask,
         )
 
     return (
@@ -213,7 +225,8 @@ def resample_image(
     nodata=None,
     mask=None,
     band_coords=False,
-    interpolator="bicubic",
+    interpolator_img="bicubic",
+    interpolator_mask="nearest",
 ):
     """
     Resample image according to grid and largest size.
@@ -359,9 +372,19 @@ def resample_image(
                     img_as_array,
                     grid_as_array,
                     oversampling,
-                    interpolator=interpolator,
+                    interpolator=interpolator_img,
                     nodata=0,
                 ).astype(np.float32)
+
+                if (
+                    interpolator_img == "bicubic"
+                    and band_coords == cst.BAND_CLASSIF
+                ):
+                    block_resamp = np.where(
+                        block_resamp >= 0.5,
+                        1,
+                        np.where(block_resamp < 0.5, 0, block_resamp),
+                    ).astype(int)
 
                 # extract exact region
                 out_region = oversampling * np.array(grid_region)
@@ -402,9 +425,16 @@ def resample_image(
                         msk_as_array,
                         grid_as_array,
                         oversampling,
-                        interpolator="nearest",
+                        interpolator=interpolator_mask,
                         nodata=nodata_msk,
                     )
+
+                    if interpolator_mask == "bicubic":
+                        block_msk = np.where(
+                            block_msk >= 0.5,
+                            1,
+                            np.where(block_msk < 0.5, 0, block_msk),
+                        ).astype(int)
 
                     block_msk = block_msk[
                         ...,
