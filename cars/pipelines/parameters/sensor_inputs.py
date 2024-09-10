@@ -150,7 +150,8 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
                 + "'{}' will be used as right sensor"
             ).format(sensor_keys[0], sensor_keys[1])
         )
-    else:
+
+    if overloaded_conf[sens_cst.PAIRING] is None:
         raise RuntimeError(
             "Pairing is not defined and cannot be determined "
             + "because there are more than two inputs products"
