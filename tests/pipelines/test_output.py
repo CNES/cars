@@ -50,7 +50,7 @@ def test_output_full():
                 "contributing_pair": False,
             },
             "epsg": 4326,
-            "resolution": "auto",
+            "resolution": 0.5,
             "geoid": "path/to/geoid",
             "save_by_pair": False,
         }

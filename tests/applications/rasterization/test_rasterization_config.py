@@ -22,8 +22,6 @@
 Test module for config of cars/applications/rasterization/simple_gaussian.py
 """
 
-import json_checker
-
 # Third party imports
 import pytest
 
@@ -49,17 +47,3 @@ def test_check_full_conf():
         "save_intermediate_data": False,
     }
     _ = SimpleGaussian(conf)
-
-
-@pytest.mark.unit_tests
-def test_check_conf_with_error():
-    """
-    Test configuration check for rasterization application
-    with forbidden value for parameter resolution
-    """
-    conf = {
-        "method": "simple_gaussian",
-        "resolution": 0,  # should be > 0
-    }
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = SimpleGaussian(conf)
