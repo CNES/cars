@@ -23,9 +23,11 @@
 This module contains the output definition
 """
 
+import logging
 import os
 
 from json_checker import Checker, Or
+from pyproj import CRS
 
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
@@ -94,7 +96,7 @@ def check_output_parameters(conf):
     )
 
     overloaded_conf[output_constants.RESOLUTION] = overloaded_conf.get(
-        output_constants.RESOLUTION, "auto"
+        output_constants.RESOLUTION, 0.5
     )
 
     overloaded_conf[output_constants.SAVE_BY_PAIR] = overloaded_conf.get(
@@ -152,7 +154,7 @@ def check_output_parameters(conf):
         output_constants.FILLING_BASENAME: str,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: Or(int, None),
-        output_constants.RESOLUTION: str,
+        output_constants.RESOLUTION: Or(int, float),
         output_constants.SAVE_BY_PAIR: bool,
         output_constants.AUXILIARY: dict,
     }
@@ -171,5 +173,15 @@ def check_output_parameters(conf):
 
     checker_auxiliary = Checker(auxiliary_schema)
     checker_auxiliary.validate(overloaded_conf[output_constants.AUXILIARY])
+
+    if "epsg" in overloaded_conf and overloaded_conf["epsg"]:
+        spatial_ref = CRS.from_epsg(overloaded_conf["epsg"])
+        if spatial_ref.is_geographic:
+            if overloaded_conf[output_constants.RESOLUTION] > 10e-3:
+                logging.warning(
+                    "The resolution of the "
+                    + "point_cloud_rasterization should be "
+                    + "fixed according to the epsg"
+                )
 
     return overloaded_conf

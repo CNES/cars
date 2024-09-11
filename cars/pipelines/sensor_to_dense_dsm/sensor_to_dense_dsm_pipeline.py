@@ -30,7 +30,6 @@ import logging
 import os
 
 import numpy as np
-from pyproj import CRS
 
 # CARS imports
 from cars import __version__
@@ -197,8 +196,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
 
         # Check conf application vs inputs application
-        self.application_conf = self.check_applications_with_inputs_and_outputs(
-            self.inputs, self.output, self.application_conf
+        self.application_conf = self.check_applications_with_inputs(
+            self.inputs, self.application_conf
         )
 
         self.used_conf[APPLICATIONS] = self.application_conf
@@ -463,36 +462,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    def check_applications_with_inputs_and_outputs(
-        self, inputs_conf, outputs_conf, application_conf
-    ):
+    def check_applications_with_inputs(self, inputs_conf, application_conf):
         """
         Check for each application the input and output configuration
         consistency
 
         :param inputs_conf: inputs checked configuration
         :type inputs_conf: dict
-        :param outputs_conf: outputs checked configuration
-        :type outputs_conf: dict
         :param application_conf: application checked configuration
         :type application_conf: dict
         """
-
-        if "epsg" in outputs_conf and outputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(outputs_conf["epsg"])
-            if spatial_ref.is_geographic:
-                if (
-                    "point_cloud_rasterization" in application_conf
-                    and application_conf["point_cloud_rasterization"][
-                        "resolution"
-                    ]
-                    > 10e-3
-                ) or "point_cloud_rasterization" not in application_conf:
-                    logging.warning(
-                        "The resolution of the "
-                        + "point_cloud_rasterization should be "
-                        + "fixed according to the epsg"
-                    )
 
         initial_elevation = self.inputs["initial_elevation"] is not None
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
@@ -615,6 +594,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 roi_poly = preprocessing.compute_roi_poly(
                     self.input_roi_poly, self.input_roi_epsg, epsg
                 )
+
+            resolution = self.output[output_constants.RESOLUTION]
 
             # List of terrain roi corresponding to each epipolar pair
             # Used to generate final terrain roi
@@ -1450,9 +1431,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["corrected_grid_right"],
                             epsg,
                             self.geom_plugin_with_dem_and_geoid,
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            ),
+                            resolution=resolution,
                             disp_min=np.min(
                                 disp_range_grid[0, 0]["disp_min_grid"].values
                             ),
@@ -1488,7 +1467,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ) = preprocessing.compute_terrain_bounds(
                     list_terrain_roi,
                     roi_poly=(None if self.debug_with_roi else roi_poly),
-                    resolution=self.rasterization_application.get_resolution(),
+                    resolution=resolution,
                 )
 
                 if "no_merging" in self.used_conf[PIPELINE]:
@@ -1500,16 +1479,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Merge point clouds
                     pc_outliers_removing_1_margins = (
                         self.pc_outliers_removing_1_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
                     )
                     pc_outliers_removing_2_margins = (
                         self.pc_outliers_removing_2_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
                     )
 
@@ -1549,7 +1524,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         margins=(
                             pc_outliers_removing_1_margins
                             + pc_outliers_removing_2_margins
-                            + self.rasterization_application.get_margins()
+                            + self.rasterization_application.get_margins(
+                                resolution
+                            )
                         ),
                         optimal_terrain_tile_width=optimal_terrain_tile_width,
                         roi=(roi_poly if self.debug_with_roi else None),
@@ -1686,6 +1663,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 _ = self.rasterization_application.run(
                     point_cloud_to_rasterize,
                     epsg,
+                    resolution=resolution,
                     orchestrator=cars_orchestrator,
                     dsm_file_name=dsm_file_name,
                     color_file_name=color_file_name,

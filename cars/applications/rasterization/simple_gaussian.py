@@ -88,7 +88,6 @@ class SimpleGaussian(
         self.grid_points_division_factor = self.used_config[
             "grid_points_division_factor"
         ]
-        self.resolution = self.used_config["resolution"]
         # get nodata values
         self.dsm_no_data = self.used_config["dsm_no_data"]
         self.color_no_data = self.used_config["color_no_data"]
@@ -126,7 +125,6 @@ class SimpleGaussian(
         overloaded_conf["grid_points_division_factor"] = conf.get(
             "grid_points_division_factor", None
         )
-        overloaded_conf["resolution"] = conf.get("resolution", 0.5)
 
         # get nodata values
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
@@ -140,7 +138,6 @@ class SimpleGaussian(
 
         rasterization_schema = {
             "method": str,
-            "resolution": float,
             "dsm_radius": Or(float, int),
             "sigma": Or(float, None),
             "grid_points_division_factor": Or(None, int),
@@ -157,24 +154,17 @@ class SimpleGaussian(
 
         return overloaded_conf
 
-    def get_resolution(self):
-        """
-        Get the resolution used by rasterization application
-
-        :return: resolution in meters or degrees
-
-        """
-
-        return self.resolution
-
-    def get_margins(self):
+    def get_margins(self, resolution):
         """
         Get the margin to use for terrain tiles
+
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
 
         :return: margin in meters or degrees
         """
 
-        margins = self.dsm_radius * self.resolution
+        margins = self.dsm_radius * resolution
         return margins
 
     def get_optimal_tile_size(
@@ -216,6 +206,7 @@ class SimpleGaussian(
         self,
         points_clouds,
         epsg,
+        resolution,
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
@@ -259,6 +250,8 @@ class SimpleGaussian(
         :type points_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
@@ -345,7 +338,7 @@ class SimpleGaussian(
             # Get tiling grid
             terrain_raster.tiling_grid = (
                 format_transformation.terrain_coords_to_pix(
-                    points_clouds, self.resolution
+                    points_clouds, resolution
                 )
             )
             bounds = points_clouds.attributes["bounds"]
@@ -363,7 +356,7 @@ class SimpleGaussian(
         terrain_raster.generate_none_tiles()
 
         # Derive output image files parameters to pass to rasterio
-        xsize, ysize = tiling.roi_to_start_and_size(bounds, self.resolution)[2:]
+        xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)[2:]
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
         if isinstance(points_clouds, tuple):
@@ -639,11 +632,11 @@ class SimpleGaussian(
         # Generate profile
         geotransform = (
             bounds[0],
-            self.resolution,
+            resolution,
             0.0,
             bounds[3],
             0.0,
-            -self.resolution,
+            -resolution,
         )
 
         transform = Affine.from_gdal(*geotransform)
@@ -748,7 +741,7 @@ class SimpleGaussian(
                             rasterization_wrapper
                         )(
                             points_clouds[pc_row, pc_col],
-                            self.resolution,
+                            resolution,
                             epsg,
                             raster_profile,
                             window=window,
@@ -783,7 +776,7 @@ class SimpleGaussian(
                                 rasterization_wrapper
                             )(
                                 point_cloud[row_pc, col_pc],
-                                self.resolution,
+                                resolution,
                                 epsg,
                                 raster_profile,
                                 window=None,

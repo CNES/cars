@@ -29,8 +29,6 @@ import json
 import logging
 import os
 
-from pyproj import CRS
-
 # CARS imports
 from cars import __version__
 from cars.applications.application import Application
@@ -131,8 +129,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             no_merging="no_merging" in self.used_conf[PIPELINE],
         )
         self.used_conf[APPLICATIONS] = application_conf
-
-        self.check_outputs_with_applications(self.output, application_conf)
 
     def check_inputs(self, conf, config_json_dir=None):
         """
@@ -249,33 +245,6 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    @staticmethod
-    def check_outputs_with_applications(outputs_conf, application_conf):
-        """
-        Check for each application the output configuration consistency
-
-        :param outputs_conf: inputs checked configuration
-        :type outputs_conf: dict
-        :param application_conf: application checked configuration
-        :type application_conf: dict
-        """
-
-        if "epsg" in outputs_conf and outputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(outputs_conf["epsg"])
-            if spatial_ref.is_geographic:
-                if (
-                    "point_cloud_rasterization" in application_conf
-                    and application_conf["point_cloud_rasterization"][
-                        "resolution"
-                    ]
-                    > 10e-3
-                ) or "point_cloud_rasterization" not in application_conf:
-                    logging.warning(
-                        "The resolution of the "
-                        + "point_cloud_rasterization should be "
-                        + "fixed according to the epsg"
-                    )
-
     @cars_profile(name="run_pc_pipeline", interval=0.5)
     def run(self):
         """
@@ -320,6 +289,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             )
             if epsg is None:
                 epsg = epsg_cloud
+
+            resolution = self.output[output_constants.RESOLUTION]
 
             # Compute roi polygon, in input EPSG
             roi_poly = preprocessing.compute_roi_poly(
@@ -422,16 +393,12 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     orchestrator=cars_orchestrator,
                     margins=(
                         self.pc_outliers_removing_1_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
                         + self.pc_outliers_removing_2_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
-                        + self.rasterization_application.get_margins()
+                        + self.rasterization_application.get_margins(resolution)
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
                 )
@@ -472,6 +439,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             _ = self.rasterization_application.run(
                 point_cloud_to_rasterize,
                 epsg,
+                resolution=resolution,
                 orchestrator=cars_orchestrator,
                 dsm_file_name=os.path.join(
                     out_dir,

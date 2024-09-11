@@ -88,7 +88,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "max_ram_per_worker": 500,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "dense_matching": {
@@ -98,7 +97,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -110,6 +108,8 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # update epsg
         final_epsg = 32631
         input_dense_dsm["output"]["epsg"] = final_epsg
+        resolution = 0.5
+        input_dense_dsm["output"]["resolution"] = resolution
         input_dense_dsm["output"]["auxiliary"] = {
             "mask": True,
             "performance_map": True,
@@ -630,7 +630,6 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -705,6 +704,8 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
@@ -1047,7 +1048,6 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -1056,6 +1056,8 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
@@ -1142,7 +1144,6 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -1151,6 +1152,8 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
@@ -1257,13 +1260,13 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "geometry_plugin": geometry_plugin_name,
                 "output": {
                     "directory": output_path,
+                    "resolution": 0.000005,
                     "epsg": 4326,
                 },
                 "pipeline": "dense_point_clouds_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
-                        "resolution": 0.000005,
                         "save_intermediate_data": True,
                     }
                 },
@@ -1553,7 +1556,7 @@ def test_end2end_ventoux_unique_split():
                     },
                 },
                 "geometry_plugin": geometry_plugin_name,
-                "output": {"directory": output_path},
+                "output": {"directory": output_path, "resolution": 0.5},
                 "pipeline": "dense_point_clouds_to_dense_dsm",
                 "applications": {
                     "point_cloud_outliers_removing.1": {
@@ -1570,7 +1573,6 @@ def test_end2end_ventoux_unique_split():
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "dsm_radius": 3,
-                        "resolution": 0.5,
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
@@ -2274,7 +2276,6 @@ def test_end2end_use_epipolar_a_priori():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -2288,6 +2289,8 @@ def test_end2end_use_epipolar_a_priori():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
@@ -2892,7 +2895,6 @@ def test_end2end_ventoux_with_color():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -2930,6 +2932,9 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
@@ -3151,7 +3156,6 @@ def test_end2end_ventoux_with_classif():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3184,6 +3188,9 @@ def test_end2end_ventoux_with_classif():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+
+        # update epsg
+        input_config_dense_dsm["output"]["resolution"] = 0.5
 
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
@@ -3326,7 +3333,6 @@ def test_compute_dsm_with_roi_ventoux():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3345,7 +3351,6 @@ def test_compute_dsm_with_roi_ventoux():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3356,6 +3361,10 @@ def test_compute_dsm_with_roi_ventoux():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         # Update roi
         roi_geo_json = {
@@ -3478,7 +3487,6 @@ def test_compute_dsm_with_snap_to_img1():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3509,7 +3517,6 @@ def test_compute_dsm_with_snap_to_img1():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3520,6 +3527,10 @@ def test_compute_dsm_with_snap_to_img1():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -3599,7 +3610,6 @@ def test_end2end_quality_stats():
 
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3623,7 +3633,6 @@ def test_end2end_quality_stats():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3634,6 +3643,10 @@ def test_end2end_quality_stats():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         # Save all intermediate data
         input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
@@ -3884,7 +3897,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3912,7 +3924,6 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3923,6 +3934,9 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -4012,7 +4026,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -4040,7 +4053,6 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -4051,6 +4063,10 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -4097,7 +4113,6 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -4125,7 +4140,6 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -4136,6 +4150,9 @@ def test_end2end_ventoux_egm96_geoid():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
             "input/geoid/egm96_15_modified.tif"
@@ -4239,7 +4256,6 @@ def test_end2end_paca_with_mask():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -4271,7 +4287,6 @@ def test_end2end_paca_with_mask():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -4284,6 +4299,8 @@ def test_end2end_paca_with_mask():
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4355,7 +4372,6 @@ def test_end2end_paca_with_mask():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -4386,7 +4402,6 @@ def test_end2end_paca_with_mask():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -4399,6 +4414,9 @@ def test_end2end_paca_with_mask():
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
@@ -4454,7 +4472,6 @@ def test_end2end_disparity_filling():
                 "max_ram_per_worker": 300,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
@@ -4478,7 +4495,6 @@ def test_end2end_disparity_filling():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -4490,6 +4506,9 @@ def test_end2end_disparity_filling():
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         # Save mask and filling
         input_config_dense_dsm["output"]["auxiliary"] = {

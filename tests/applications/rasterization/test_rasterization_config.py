@@ -42,7 +42,6 @@ def test_check_full_conf():
         "dsm_radius": 1,
         "sigma": None,
         "grid_points_division_factor": None,
-        "resolution": 0.5,
         "dsm_no_data": -32768,
         "color_no_data": 0,
         "color_dtype": None,

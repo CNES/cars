@@ -94,18 +94,12 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def get_resolution(self):
-        """
-        Get the resolution used by rasterization application
-
-        :return: resolution in meters or degrees
-
-        """
-
-    @abstractmethod
-    def get_margins(self):
+    def get_margins(self, resolution):
         """
         Get the margin to use for terrain tiles
+
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
 
         :return: margin in meters or degrees
         """
@@ -137,6 +131,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         self,
         points_clouds,
         epsg,
+        resolution,
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
@@ -157,6 +152,8 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type points_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
