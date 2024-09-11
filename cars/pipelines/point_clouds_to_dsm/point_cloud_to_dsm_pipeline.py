@@ -37,10 +37,13 @@ from cars.core import preprocessing, roi_tools
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import output_constants, output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
+    ADVANCED,
     APPLICATIONS,
     INPUTS,
     ORCHESTRATOR,
@@ -59,6 +62,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
     """
     PointCloudsToDsmPipeline
     """
+
+    # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf, config_json_dir=None):
         """
@@ -111,6 +116,13 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         )
         self.used_conf[INPUTS] = self.inputs
 
+        # Check advanced parameters
+        # TODO static method in the base class
+        self.advanced = advanced_parameters.check_advanced_parameters(
+            self.conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        )
+        self.used_conf[ADVANCED] = self.advanced
+
         # Get ROI
         (
             self.input_roi_poly,
@@ -123,10 +135,24 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         self.output = self.check_output(self.conf[OUTPUT])
         self.used_conf[OUTPUT] = self.output
 
+        self.save_output_dsm = (
+            "dsm" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+
+        self.save_output_point_cloud = (
+            "point_cloud" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+
         # Check conf application
         application_conf = self.check_applications(
             self.conf.get(APPLICATIONS, {}),
             no_merging="no_merging" in self.used_conf[PIPELINE],
+            save_all_intermediate_data=self.used_conf[ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ],
+            save_all_point_clouds_by_pair=self.used_conf[OUTPUT].get(
+                output_constants.SAVE_BY_PAIR, False
+            ),
         )
         self.used_conf[APPLICATIONS] = application_conf
 
@@ -163,7 +189,11 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         return output_parameters.check_output_parameters(conf)
 
     def check_applications(
-        self, conf, no_merging=False, save_all_intermediate_data=False
+        self,
+        conf,
+        no_merging=False,
+        save_all_intermediate_data=False,
+        save_all_point_clouds_by_pair=False,
     ):
         """
         Check the given configuration for applications
@@ -175,6 +205,9 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :param save_all_intermediate_data: True to save intermediate data in all
             applications
         :type save_all_intermediate_data: bool
+        :param save_all_point_clouds_by_pair: save point clouds by pair in all
+            relevant applications
+        :type save_all_point_clouds_by_pair: bool
         """
 
         # Check if all specified applications are used
@@ -203,6 +236,16 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             used_conf[app_key]["save_intermediate_data"] = used_conf[
                 app_key
             ].get("save_intermediate_data", save_all_intermediate_data)
+
+        for app_key in [
+            "point_cloud_fusion",
+            "point_cloud_outliers_removing.1",
+            "point_cloud_outliers_removing.2",
+        ]:
+            if app_key in needed_applications:
+                used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
+                    "save_by_pair", save_all_point_clouds_by_pair
+                )
 
         # Points cloud fusion
         self.pc_fusion_application = Application(
@@ -385,6 +428,29 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     )
                 )
 
+                # find which application produce the final version of the
+                # point cloud. The last generated point cloud will be saved
+                # as official point cloud product if save_output_point_cloud
+                # is True.
+
+                last_pc_application = None
+                if (
+                    self.pc_outliers_removing_2_app.used_config.get(
+                        "activated", False
+                    )
+                    is True
+                ):
+                    last_pc_application = "pc_outliers_removing_2"
+                elif (
+                    self.pc_outliers_removing_1_app.used_config.get(
+                        "activated", False
+                    )
+                    is True
+                ):
+                    last_pc_application = "pc_outliers_removing_1"
+                else:
+                    last_pc_application = "fusion"
+
                 # Merge point clouds
                 merged_points_clouds = self.pc_fusion_application.run(
                     list_epipolar_points_cloud_by_tiles,
@@ -401,6 +467,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                         + self.rasterization_application.get_margins(resolution)
                     ),
                     optimal_terrain_tile_width=optimal_terrain_tile_width,
+                    save_laz_output=self.save_output_point_cloud
+                    and last_pc_application == "fusion",
                 )
 
                 # Add file names to retrieve source file of each point
@@ -414,6 +482,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     self.pc_outliers_removing_1_app.run(
                         merged_points_clouds,
                         orchestrator=cars_orchestrator,
+                        save_laz_output=self.save_output_point_cloud
+                        and last_pc_application == "pc_outliers_removing_1",
                     )
                 )
 
@@ -422,6 +492,8 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     self.pc_outliers_removing_2_app.run(
                         filtered_1_merged_points_clouds,
                         orchestrator=cars_orchestrator,
+                        save_laz_output=self.save_output_point_cloud
+                        and last_pc_application == "pc_outliers_removing_2",
                     )
                 )
 
@@ -435,22 +507,107 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 cars_orchestrator.out_dir, "dump_dir", "rasterization"
             )
 
+            dsm_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.DSM_BASENAME],
+                )
+                if self.save_output_dsm
+                else None
+            )
+
+            color_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.COLOR_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_COLOR
+                ]
+                else None
+            )
+
+            performance_map_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.PERFORMANCE_MAP_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_PERFORMANCE_MAP
+                ]
+                else None
+            )
+
+            classif_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.CLASSIFICATION_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_CLASSIFICATION
+                ]
+                else None
+            )
+
+            mask_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.MASK_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_MASK
+                ]
+                else None
+            )
+
+            contributing_pair_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.CONTRIBUTING_PAIR_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_CONTRIBUTING_PAIR
+                ]
+                else None
+            )
+
+            filling_file_name = (
+                os.path.join(
+                    out_dir,
+                    output_constants.DSM_DIRECTORY,
+                    self.output[output_constants.FILLING_BASENAME],
+                )
+                if self.save_output_dsm
+                and self.output[output_constants.AUXILIARY][
+                    output_constants.AUX_FILLING
+                ]
+                else None
+            )
+
             # rasterize point cloud
             _ = self.rasterization_application.run(
                 point_cloud_to_rasterize,
                 epsg,
                 resolution=resolution,
                 orchestrator=cars_orchestrator,
-                dsm_file_name=os.path.join(
-                    out_dir,
-                    output_constants.DSM_DIRECTORY,
-                    self.output[output_constants.DSM_BASENAME],
-                ),
-                color_file_name=os.path.join(
-                    out_dir,
-                    output_constants.DSM_DIRECTORY,
-                    self.output[output_constants.COLOR_BASENAME],
-                ),
+                dsm_file_name=dsm_file_name,
+                color_file_name=color_file_name,
+                classif_file_name=classif_file_name,
+                performance_map_file_name=performance_map_file_name,
+                mask_file_name=mask_file_name,
+                contributing_pair_file_name=contributing_pair_file_name,
+                filling_file_name=filling_file_name,
                 color_dtype=color_type,
                 dump_dir=rasterization_dump_dir,
             )
