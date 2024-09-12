@@ -169,7 +169,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         self.debug_with_roi = self.used_conf[ADVANCED][adv_cst.DEBUG_WITH_ROI]
         # Check conf output
-        self.output = self.check_output(self.conf[OUTPUT])
+        self.output = self.check_output(
+            self.conf[OUTPUT], self.used_conf[PIPELINE]
+        )
         self.used_conf[OUTPUT] = self.output
 
         self.save_output_dsm = (
@@ -221,17 +223,19 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         )
 
     @staticmethod
-    def check_output(conf):
+    def check_output(conf, pipeline):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
+        :param pipeline: name of corresponding pipeline
+        :type pipeline_name: str
 
         :return overloader output
         :rtype : dict
         """
-        return output_parameters.check_output_parameters(conf)
+        return output_parameters.check_output_parameters(conf, pipeline)
 
     def check_applications(
         self,

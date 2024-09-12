@@ -155,7 +155,9 @@ class SensorSparseDsmPipeline(PipelineTemplate):
         )
 
         # Check conf output
-        self.output = self.check_output(self.conf[OUTPUT])
+        self.output = self.check_output(
+            self.conf[OUTPUT], self.used_conf[PIPELINE]
+        )
         self.used_conf[OUTPUT] = self.output
 
         # Check conf application
@@ -191,17 +193,19 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             conf, config_json_dir=config_json_dir
         )
 
-    def check_output(self, conf):
+    def check_output(self, conf, pipeline):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
+        :param pipeline: name of corresponding pipeline
+        :type pipeline_name: str
 
         :return: overloader output
         :rtype: dict
         """
-        return output_parameters.check_output_parameters(conf)
+        return output_parameters.check_output_parameters(conf, pipeline)
 
     def check_applications(self, conf, save_all_intermediate_data=False):
         """

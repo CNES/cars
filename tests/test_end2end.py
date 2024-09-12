@@ -1218,9 +1218,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(
-                out_dir, "dump_dir", "triangulation", "left_right"
-            )
+            epi_pc_path = os.path.join(out_dir, "depth_map", "left_right")
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
@@ -1486,6 +1484,12 @@ def test_end2end_ventoux_unique_split():
 
         input_config_pc["applications"].update(application_config)
 
+        input_config_pc["output"]["auxiliary"] = {
+            "classification": True,
+            "filling": True,
+            "color": True,
+        }
+
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
@@ -1496,9 +1500,7 @@ def test_end2end_ventoux_unique_split():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(
-                out_dir, "dump_dir", "triangulation", "left_right"
-            )
+            epi_pc_path = os.path.join(out_dir, "depth_map", "left_right")
             dense_matching_path = os.path.join(
                 out_dir, "dump_dir", "dense_matching", "left_right"
             )
@@ -2475,7 +2477,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             "input/phr_ventoux/input_no_elevation.json"
         )
 
-        # Run sensors_to_dense_point_clouds pipeline
+        # Run sensors_to_dense_dsm pipeline
         _, input_config = generate_input_json(
             input_json,
             directory,
