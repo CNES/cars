@@ -90,6 +90,17 @@ def main_cli(args, dry_run=False):  # noqa: C901
         with open(args.conf, "r", encoding="utf8") as fstream:
             config = json.load(fstream)
 
+        # Cars 0.9.0 API change, check if the configfile seems to use the old
+        # API by looking for the removed out_dir key
+        # TODO this check can be removed after cars 0.10.0
+        if config.get("output", {}).get("out_dir"):
+            raise RuntimeError(
+                "'out_dir' key found in configuration. It seems "
+                + "that Cars old configuration is still used. "
+                + "Please upgrade the configuration using the "
+                + "new API."
+            )
+
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
         pipeline_name = config.get(
             "pipeline", "sensors_to_dense_dsm_no_merging"
