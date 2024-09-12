@@ -2289,6 +2289,8 @@ def test_end2end_use_epipolar_a_priori():
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        # product level
+        input_config_dense_dsm["output"]["product_level"] = ["dsm"]
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
