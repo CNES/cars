@@ -316,7 +316,7 @@ The structure follows this organisation:
             }
         }
 
-    If the *debug_with_roi* parameter is enabled, the tiling of the entire image is kept but only the tiles intersecting 
+    If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting 
     the ROI are computed.
 
     MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
@@ -370,7 +370,10 @@ The structure follows this organisation:
                         }
                     }
                 },
-                 "debug_with_roi": true,
+            }
+            "advanced":
+            {
+                "debug_with_roi": true
             }
         }
 
@@ -761,19 +764,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | Name                | Description                                            | Type    | Available value | Default value | Required |
-            +=====================+========================================================+=========+=================+===============+==========+
-            | method              | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | strip_height        | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | step                | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | save_epipolar_image | Save the generated images in output folder             | boolean |                 | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | save_epipolar_color | Save the generated images (only if color is available) | boolean |                 | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | Name                   | Description                                            | Type    | Available value | Default value | Required |
+            +========================+========================================================+=========+=================+===============+==========+
+            | method                 | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | strip_height           | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | step                   | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | save_intermediate_data | Save epipolar images and color                         | boolean |                 | false         | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
 
             **Example**
 
@@ -873,6 +874,8 @@ The structure follows this organisation:
             * median
             * min
             * max
+
+            The DEMs are generated in the application dump directory
 
             **Configuration**
 
@@ -1204,11 +1207,8 @@ The structure follows this organisation:
             +==============================+=========================================+=========+============================+============================+==========+
             | method                       | Method for fusion                       | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
             +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_laz     | Save points clouds as laz format        | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_csv     | Save points clouds as csv format        | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_by_pair    | Enable points cloud saving by pair      | boolean |                            | false                      | No       |
+            | save_intermediate_data       | Save points clouds as laz and csvformat | boolean |                            | false                      | No       |+------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_by_pair                 | Enable points cloud saving by pair      | boolean |                            | false                      | No       |
             +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
 
             **Example**
@@ -1219,9 +1219,8 @@ The structure follows this organisation:
                     "applications": {
                         "point_cloud_fusion": {
                             "method": "mapping_to_terrain_tiles",
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_as_csv": true,
-                            "save_points_cloud_by_pair": true,
+                            "save_intermediate_data": true,
+                            "save_by_pair": true,
                         }
                     },
 
@@ -1245,11 +1244,9 @@ The structure follows this organisation:
             +==============================+==========================================+=========+===================================+===============+==========+
             | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_laz     | Save points clouds as laz format         | boolean |                                   | false         | No       |
+            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_csv     | Save points clouds as csv format         | boolean |                                   | false         | No       |
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_by_pair    | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
+            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             If method is *statistical*:
@@ -1301,14 +1298,13 @@ The structure follows this organisation:
                         "point_cloud_outliers_removing.1": {
                             "method": "small_components",
                             "on_ground_margin": 10,
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_as_csv": false
+                            "save_intermediate_data": true
                         },
                         "point_cloud_outliers_removing.2": {
                             "method": "statistical",
                             "k": 10,
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_by_pair": true,
+                            "save_intermediate_data": true,
+                            "save_by_pair": true,
                         }
                     },
 
