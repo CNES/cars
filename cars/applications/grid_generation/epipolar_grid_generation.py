@@ -107,9 +107,9 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
 
     def get_save_grids(self):
         """
-        Get save_matches parameter
+        Get whether the grid will be saved
 
-        :return: true is save_matches activated
+        :return: true is grid saving is activated
         :rtype: bool
         """
 
