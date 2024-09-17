@@ -206,8 +206,8 @@ def get_default_product_level(pipeline_name):
     # sensor_to_sparse_dsm does not produce any official product
     if pipeline_name == "sensors_to_sparse_dsm":
         ret = []
-    # sensors_to_dense_point_clouds produce a depth map
-    elif pipeline_name == "sensors_to_dense_point_clouds":
+    # sensors_to_dense_depth_maps produce a depth map
+    elif pipeline_name == "sensors_to_dense_depth_maps":
         ret = ["depth_map"]
     # other pipeline produce a dsm
     else:
@@ -232,10 +232,10 @@ def check_product_levels(product_levels, pipeline_name):
     for level in product_levels:
         if (
             level in ["dsm", "point_cloud"]
-            and pipeline_name == "sensors_to_dense_point_clouds"
+            and pipeline_name == "sensors_to_dense_depth_maps"
         ):
             raise RuntimeError(
-                "sensors_to_dense_point_clouds only supports"
+                "sensors_to_dense_depth_maps only supports"
                 + " 'depth map' output level"
             )
         if level not in ["dsm", "depth_map", "point_cloud"]:

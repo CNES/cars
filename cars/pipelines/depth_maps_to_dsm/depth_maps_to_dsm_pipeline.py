@@ -58,12 +58,12 @@ from cars.pipelines.pipeline_template import PipelineTemplate
 
 
 @Pipeline.register(
-    "dense_point_clouds_to_dense_dsm_no_merging",
-    "dense_point_clouds_to_dense_dsm",
+    "dense_depth_maps_to_dense_dsm_no_merging",
+    "dense_depth_maps_to_dense_dsm",
 )
-class PointCloudsToDsmPipeline(PipelineTemplate):
+class DepthMapsToDsmPipeline(PipelineTemplate):
     """
-    PointCloudsToDsmPipeline
+    DepthMapsToDsmPipeline
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -88,7 +88,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             package_path,
             "..",
             "conf_pipeline",
-            "point_clouds_to_dsm.json",
+            "depth_maps_to_dsm.json",
         )
 
         with open(json_file, "r", encoding="utf8") as fstream:
@@ -104,7 +104,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
 
         # Pipeline
         self.used_conf[PIPELINE] = conf.get(
-            PIPELINE, "dense_point_clouds_to_dense_dsm"
+            PIPELINE, "dense_depth_maps_to_dense_dsm"
         )
 
         # Check conf orchestrator
@@ -324,7 +324,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             cars_orchestrator.update_out_info(
                 {
                     "version": __version__,
-                    "pipeline": "point_clouds_to_dsm",
+                    "pipeline": "depth_maps_to_dsm",
                     "inputs": self.inputs,
                 }
             )

@@ -43,8 +43,8 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import roi_tools
-from cars.pipelines.point_clouds_to_dsm import (
-    point_cloud_to_dsm_pipeline as pipeline_dsm,
+from cars.pipelines.depth_maps_to_dsm import (
+    depth_maps_to_dsm_pipeline as pipeline_dsm,
 )
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
@@ -1193,11 +1193,11 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
         input_json = absolute_data_path("input/phr_ventoux/input.json")
-        # Run sensors_to_dense_point_clouds pipeline
+        # Run sensors_to_dense_depth_maps pipeline
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_point_clouds",
+            "sensors_to_dense_depth_maps",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1261,7 +1261,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     "resolution": 0.000005,
                     "epsg": 4326,
                 },
-                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -1270,9 +1270,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1344,13 +1342,11 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             # launch with no merging pipeline
             input_dsm_config["pipeline"] = (
-                "dense_point_clouds_to_dense_dsm_no_merging"
+                "dense_depth_maps_to_dense_dsm_no_merging"
             )
             input_dsm_config["output"]["directory"] = output_path + "no_merging"
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1402,11 +1398,11 @@ def test_end2end_ventoux_unique_split():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_classif_and_mask.json"
         )
-        # Run sensors_to_dense_point_clouds pipeline
+        # Run sensors_to_dense_depth_maps pipeline
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_point_clouds",
+            "sensors_to_dense_depth_maps",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1559,7 +1555,7 @@ def test_end2end_ventoux_unique_split():
                 },
                 "geometry_plugin": geometry_plugin_name,
                 "output": {"directory": output_path, "resolution": 0.5},
-                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_outliers_removing.1": {
                         "method": "small_components",
@@ -1583,9 +1579,7 @@ def test_end2end_ventoux_unique_split():
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1803,13 +1797,11 @@ def test_end2end_ventoux_unique_split():
                 "point_cloud_outliers_removing.2"
             ]
             input_dsm_config["pipeline"] = (
-                "dense_point_clouds_to_dense_dsm_no_merging"
+                "dense_depth_maps_to_dense_dsm_no_merging"
             )
 
             # launch
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -4816,7 +4808,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "output": {"directory": directory2},
             }
 
-            pc_pipeline_first_run = pipeline_dsm.PointCloudsToDsmPipeline(
+            pc_pipeline_first_run = pipeline_dsm.DepthMapsToDsmPipeline(
                 pc_input_config_first_run
             )
             pc_pipeline_first_run.run()
@@ -4833,7 +4825,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "directory"
             ] += "_from_used_conf"
 
-            pc_pipeline_second_run = pipeline_dsm.PointCloudsToDsmPipeline(
+            pc_pipeline_second_run = pipeline_dsm.DepthMapsToDsmPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()

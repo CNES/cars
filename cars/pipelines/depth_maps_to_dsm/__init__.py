@@ -23,6 +23,6 @@ CARS sensor_to_dense_dsm pipeline module init file
 """
 
 # Cars imports
-from cars.pipelines.point_clouds_to_dsm import (  # noqa: F401
-    point_cloud_to_dsm_pipeline,
+from cars.pipelines.depth_maps_to_dsm import (  # noqa: F401
+    depth_maps_to_dsm_pipeline,
 )

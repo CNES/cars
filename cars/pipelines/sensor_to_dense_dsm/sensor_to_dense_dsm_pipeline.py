@@ -74,7 +74,7 @@ from cars.pipelines.pipeline_template import PipelineTemplate
 @Pipeline.register(
     "sensors_to_dense_dsm",
     "sensors_to_dense_dsm_no_merging",
-    "sensors_to_dense_point_clouds",
+    "sensors_to_dense_depth_maps",
 )
 class SensorToDenseDsmPipeline(PipelineTemplate):
     """
@@ -266,7 +266,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Check if all specified applications are used
         # Application in terrain_application are note used in
-        # the sensors_to_dense_point_clouds pipeline
+        # the sensors_to_dense_depth_maps pipeline
         needed_applications = [
             "grid_generation",
             "resampling",
@@ -289,7 +289,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             terrain_applications.append("point_cloud_outliers_removing.1")
             terrain_applications.append("point_cloud_outliers_removing.2")
 
-        pipeline_name = "sensors_to_dense_point_clouds"
+        pipeline_name = "sensors_to_dense_depth_maps"
         if generate_terrain_products:
             needed_applications += terrain_applications
             pipeline_name = "sensors_to_dense_dsm"
