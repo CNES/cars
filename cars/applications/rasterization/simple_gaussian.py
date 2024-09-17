@@ -397,7 +397,7 @@ class SimpleGaussian(
         out_dsm_file_name = dsm_file_name
         if dsm_file_name is None and save_intermediate_data:
             out_dsm_file_name = os.path.join(out_dump_dir, "dsm.tif")
-        if dsm_file_name is not None:
+        if out_dsm_file_name is not None:
             list_computed_layers += ["dsm"]
             self.orchestrator.add_to_save_lists(
                 out_dsm_file_name,
@@ -420,7 +420,7 @@ class SimpleGaussian(
         out_clr_file_name = color_file_name
         if color_file_name is None and save_intermediate_data:
             out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
-        if color_file_name is not None:
+        if out_clr_file_name is not None:
             list_computed_layers += ["color"]
             if not self.color_dtype:
                 self.color_dtype = color_dtype
