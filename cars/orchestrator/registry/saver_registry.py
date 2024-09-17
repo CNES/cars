@@ -386,6 +386,7 @@ class SingleCarsDatasetSaver:
                 self.dtypes.pop(index)
                 self.nodatas.pop(index)
                 self.file_names.pop(index)
+                self.optional_data_list.pop(index)
 
                 for item in confidence_tags:
                     self.tags.append(item)

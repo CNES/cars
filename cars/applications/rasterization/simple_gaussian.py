@@ -447,6 +447,7 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="dsm_classif",
+                optional_data=True,
             )
 
         out_msk_file_name = mask_file_name
@@ -461,6 +462,7 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="dsm_mask",
+                optional_data=True,
             )
 
         out_performance_map = performance_map_file_name
@@ -477,6 +479,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.msk_no_data,
                 cars_ds_name="performance_map",
+                optional_data=True,
             )
 
         out_source_pc = contributing_pair_file_name
@@ -491,6 +494,7 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="source_pc",
+                optional_data=True,
             )
 
         out_filling = filling_file_name
@@ -505,6 +509,7 @@ class SimpleGaussian(
                 dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="filling",
+                optional_data=True,
             )
 
         # TODO Check that intervals indeed exist!
@@ -518,6 +523,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.msk_no_data,
                 cars_ds_name="confidence",
+                optional_data=True,
             )
 
             list_computed_layers += ["intervals", "stats"]
@@ -529,6 +535,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_inf",
+                optional_data=True,
             )
             out_dsm_sup_file_name = os.path.join(out_dump_dir, "dsm_sup.tif")
             self.orchestrator.add_to_save_lists(
@@ -538,6 +545,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_sup",
+                optional_data=True,
             )
 
             out_dsm_mean_file_name = os.path.join(out_dump_dir, "dsm_mean.tif")
@@ -587,6 +595,7 @@ class SimpleGaussian(
             out_dsm_inf_std_file_name = os.path.join(
                 out_dump_dir, "dsm_inf_std.tif"
             )
+
             self.orchestrator.add_to_save_lists(
                 out_dsm_inf_mean_file_name,
                 cst.RASTER_HGT_INF_MEAN,
@@ -594,7 +603,9 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_inf_mean",
+                optional_data=True,
             )
+
             self.orchestrator.add_to_save_lists(
                 out_dsm_inf_std_file_name,
                 cst.RASTER_HGT_INF_STD_DEV,
@@ -602,7 +613,9 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_inf_std",
+                optional_data=True,
             )
+
             out_dsm_sup_mean_file_name = os.path.join(
                 out_dump_dir, "dsm_sup_mean.tif"
             )
@@ -616,6 +629,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_sup_mean",
+                optional_data=True,
             )
             self.orchestrator.add_to_save_lists(
                 out_dsm_sup_std_file_name,
@@ -624,6 +638,7 @@ class SimpleGaussian(
                 dtype=np.float32,
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm_sup_std",
+                optional_data=True,
             )
 
         # Get saving infos in order to save tiles when they are computed
