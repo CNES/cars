@@ -26,7 +26,7 @@ import logging
 
 from json_checker import Checker, Or
 
-import cars.pipelines.point_clouds_to_dsm.pc_constants as pc_cst
+import cars.pipelines.parameters.depth_map_inputs_constants as depth_map_cst
 
 # CARS imports
 from cars.core import constants as cst
@@ -53,11 +53,11 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
 
     # Overload some optional parameters
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
-    overloaded_conf[pc_cst.POINT_CLOUDS] = {}
+    overloaded_conf[depth_map_cst.POINT_CLOUDS] = {}
 
     # Validate inputs
     inputs_schema = {
-        pc_cst.POINT_CLOUDS: dict,
+        depth_map_cst.POINT_CLOUDS: dict,
         sens_cst.ROI: Or(str, dict, None),
     }
 
@@ -79,37 +79,39 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
     }
     checker_pc = Checker(pc_schema)
     confidence_conf_ref = None
-    for point_cloud_key in conf[pc_cst.POINT_CLOUDS]:
+    for point_cloud_key in conf[depth_map_cst.POINT_CLOUDS]:
         # Get point clouds with default
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key] = {}
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.X] = conf[
-            pc_cst.POINT_CLOUDS
-        ][point_cloud_key].get("x", None)
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Y] = conf[
-            pc_cst.POINT_CLOUDS
-        ][point_cloud_key].get("y", None)
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Z] = conf[
-            pc_cst.POINT_CLOUDS
-        ][point_cloud_key].get("z", None)
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key] = {}
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.X] = (
+            conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("x", None)
+        )
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.Y] = (
+            conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("y", None)
+        )
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.Z] = (
+            conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("z", None)
+        )
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
             cst.POINTS_CLOUD_CLR_KEY_ROOT
-        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("color", None)
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+        ] = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("color", None)
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
             cst.POINTS_CLOUD_MSK
-        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("mask", None)
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+        ] = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("mask", None)
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
-        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
+        ] = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get(
             "classification", None
         )
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
             cst.POINTS_CLOUD_FILLING_KEY_ROOT
-        ] = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("filling", None)
-        confidence_conf = conf[pc_cst.POINT_CLOUDS][point_cloud_key].get(
+        ] = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get(
+            "filling", None
+        )
+        confidence_conf = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get(
             "confidence", None
         )
         if confidence_conf:
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ] = {}
             if (
@@ -135,19 +137,19 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
                         + "_"
                         + output_confidence_name
                     )
-                overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+                overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                     cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
                 ][output_confidence_name] = confidence_conf[confidence_name]
         else:
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ] = None
-        overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.PC_EPSG] = (
-            conf[pc_cst.POINT_CLOUDS][point_cloud_key].get("epsg", 4326)
-        )
+        overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
+            cst.PC_EPSG
+        ] = conf[depth_map_cst.POINT_CLOUDS][point_cloud_key].get("epsg", 4326)
         # validate
         checker_pc.validate(
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key]
         )
 
     # Modify to absolute path
@@ -159,25 +161,25 @@ def check_point_clouds_inputs(conf, config_json_dir=None):
             "relative path are not transformed to absolute paths"
         )
 
-    for point_cloud_key in conf[pc_cst.POINT_CLOUDS]:
+    for point_cloud_key in conf[depth_map_cst.POINT_CLOUDS]:
         # check sizes
         check_input_size(
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.X],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Y],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][cst.Z],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.X],
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.Y],
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][cst.Z],
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_MSK
             ],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CLR_KEY_ROOT
             ],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
             ],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_FILLING_KEY_ROOT
             ],
-            overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key][
+            overloaded_conf[depth_map_cst.POINT_CLOUDS][point_cloud_key][
                 cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
             ],
         )
@@ -246,8 +248,10 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
     :param overloaded_conf: overloaded configuration json
     :dict overloaded_conf: dict
     """
-    for point_cloud_key in overloaded_conf[pc_cst.POINT_CLOUDS]:
-        point_cloud = overloaded_conf[pc_cst.POINT_CLOUDS][point_cloud_key]
+    for point_cloud_key in overloaded_conf[depth_map_cst.POINT_CLOUDS]:
+        point_cloud = overloaded_conf[depth_map_cst.POINT_CLOUDS][
+            point_cloud_key
+        ]
         for tag in [
             cst.X,
             cst.Y,

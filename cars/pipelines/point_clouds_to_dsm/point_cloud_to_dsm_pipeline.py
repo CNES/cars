@@ -39,7 +39,11 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
-from cars.pipelines.parameters import output_constants, output_parameters
+from cars.pipelines.parameters import (
+    depth_map_inputs,
+    output_constants,
+    output_parameters,
+)
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -51,7 +55,6 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.point_clouds_to_dsm import pc_inputs
 
 
 @Pipeline.register(
@@ -172,7 +175,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
 
-        overloaded_conf = pc_inputs.check_point_clouds_inputs(
+        overloaded_conf = depth_map_inputs.check_point_clouds_inputs(
             conf, config_json_dir=config_json_dir
         )
 
