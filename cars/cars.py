@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import sys
+import warnings
 
 # CARS imports
 from cars import __version__
@@ -91,15 +92,22 @@ def main_cli(args, dry_run=False):  # noqa: C901
             config = json.load(fstream)
 
         # Cars 0.9.0 API change, check if the configfile seems to use the old
-        # API by looking for the removed out_dir key
+        # API by looking for the deprecated out_dir key
         # TODO this check can be removed after cars 0.10.0
         if config.get("output", {}).get("out_dir"):
-            raise RuntimeError(
-                "'out_dir' key found in configuration. It seems "
-                + "that Cars old configuration is still used. "
-                + "Please upgrade the configuration using the "
-                + "new API."
+
+            # throw an exception if both out_dir and directory are defined
+            if "directory" in config["output"]:
+                raise RuntimeError("both directory and out_dir keys defined")
+            # stacklevel -> main_cli()
+            warnings.warn(
+                "Deprecated key 'out_dir' found in output configuration. "
+                "Replacing it with key 'directory'",
+                FutureWarning,
+                stacklevel=2,
             )
+            config["output"]["directory"] = config["output"]["out_dir"]
+            del config["output"]["out_dir"]
 
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
         pipeline_name = config.get(
