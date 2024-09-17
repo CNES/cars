@@ -1223,7 +1223,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             input_dsm_config = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
@@ -1508,7 +1508,7 @@ def test_end2end_ventoux_unique_split():
 
             input_dsm_config = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
@@ -4802,7 +4802,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             )
             pc_input_config_first_run = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
                             "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
                             "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),

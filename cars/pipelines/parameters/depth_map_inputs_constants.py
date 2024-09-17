@@ -22,4 +22,4 @@
 CARS point cloud to full resolution dsm pipeline constants file
 """
 
-POINT_CLOUDS = "point_clouds"
+DEPTH_MAPS = "depth_maps"

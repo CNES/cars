@@ -39,11 +39,11 @@ from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import depth_map_inputs
 from cars.pipelines.parameters import (
-    depth_map_inputs,
-    output_constants,
-    output_parameters,
+    depth_map_inputs_constants as depth_map_cst,
 )
+from cars.pipelines.parameters import output_constants, output_parameters
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
@@ -175,7 +175,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
         :rtype: dict
         """
 
-        overloaded_conf = depth_map_inputs.check_point_clouds_inputs(
+        overloaded_conf = depth_map_inputs.check_depth_maps_inputs(
             conf, config_json_dir=config_json_dir
         )
 
@@ -335,7 +335,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             epsg = self.output[output_constants.EPSG]
             # compute epsg
             epsg_cloud = pc_tif_tools.compute_epsg_from_point_cloud(
-                self.inputs["point_clouds"]
+                self.inputs[depth_map_cst.DEPTH_MAPS]
             )
             if epsg is None:
                 epsg = epsg_cloud
@@ -350,13 +350,13 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
             if "no_merging" in self.used_conf[PIPELINE]:
                 # compute bounds
                 terrain_bounds = pc_tif_tools.get_bounds(
-                    self.inputs["point_clouds"],
+                    self.inputs[depth_map_cst.DEPTH_MAPS],
                     epsg,
                     roi_poly=roi_poly,
                 )
 
                 list_epipolar_points_cloud = pc_tif_tools.generate_point_clouds(
-                    self.inputs["point_clouds"],
+                    self.inputs[depth_map_cst.DEPTH_MAPS],
                     cars_orchestrator,
                     tile_size=1000,
                 )
@@ -376,7 +376,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                     terrain_bounds,
                     list_epipolar_points_cloud_by_tiles,
                 ) = pc_tif_tools.transform_input_pc(
-                    self.inputs["point_clouds"],
+                    self.inputs[depth_map_cst.DEPTH_MAPS],
                     epsg,
                     roi_poly=roi_poly,
                     epipolar_tile_size=1000,  # TODO change it
@@ -479,7 +479,7 @@ class PointCloudsToDsmPipeline(PipelineTemplate):
                 )
 
                 # Add file names to retrieve source file of each point
-                pc_file_names = list(self.inputs["point_clouds"])
+                pc_file_names = list(self.inputs[depth_map_cst.DEPTH_MAPS])
                 merged_points_clouds.attributes["source_pc_names"] = (
                     pc_file_names
                 )
