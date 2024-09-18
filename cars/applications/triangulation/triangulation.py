@@ -118,6 +118,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         save_output_classification=False,
         save_output_mask=False,
         save_output_filling=False,
+        save_output_performance_map=False,
     ):
         """
         Run Triangulation application.
@@ -204,6 +205,9 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in pair_output_dir
         :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in
+                pair_output_dir
+        :type save_output_performance_map: bool
 
         :return: points cloud \
                 The CarsDataset contains:
