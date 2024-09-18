@@ -186,46 +186,46 @@ class LineOfSightIntersection(
             output_dir = dump_dir
         if output_dir:
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "epi_pc_X.tif"),
+                os.path.join(output_dir, "X.tif"),
                 cst.X,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_x",
+                cars_ds_name="depth_map_x",
                 dtype=np.float64,
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "epi_pc_Y.tif"),
+                os.path.join(output_dir, "Y.tif"),
                 cst.Y,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_y",
+                cars_ds_name="depth_map_y",
                 dtype=np.float64,
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "epi_pc_Z.tif"),
+                os.path.join(output_dir, "Z.tif"),
                 cst.Z,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_z",
+                cars_ds_name="depth_map_z",
                 dtype=np.float64,
             )
 
         if save_output_color or dump_dir:
             color_output_dir = output_dir if save_output_color else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(color_output_dir, "epi_pc_color.tif"),
+                os.path.join(color_output_dir, "color.tif"),
                 cst.EPI_COLOR,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_color",
+                cars_ds_name="depth_map_color",
                 dtype=color_type,
             )
 
         if save_output_mask or dump_dir:
             mask_output_dir = output_dir if save_output_mask else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(mask_output_dir, "epi_pc_mask.tif"),
+                os.path.join(mask_output_dir, "mask.tif"),
                 cst.EPI_MSK,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_msk",
+                cars_ds_name="depth_map_msk",
                 nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 optional_data=True,
                 dtype=np.uint8,
@@ -236,10 +236,10 @@ class LineOfSightIntersection(
                 output_dir if save_output_performance_map else dump_dir
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(map_output_dir, "epi_pc_performance_map.tif"),
+                os.path.join(map_output_dir, "performance_map.tif"),
                 cst.EPI_PERFORMANCE_MAP,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_performance_map",
+                cars_ds_name="depth_map_performance_map",
                 optional_data=True,
                 dtype=np.float64,
             )
@@ -249,10 +249,10 @@ class LineOfSightIntersection(
                 output_dir if save_output_classification else dump_dir
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(classif_output_dir, "epi_pc_classification.tif"),
+                os.path.join(classif_output_dir, "classification.tif"),
                 cst.EPI_CLASSIFICATION,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_classification",
+                cars_ds_name="depth_map_classification",
                 optional_data=True,
                 dtype=np.uint8,
             )
@@ -260,10 +260,10 @@ class LineOfSightIntersection(
         if save_output_filling or dump_dir:
             filling_output_dir = output_dir if save_output_filling else dump_dir
             self.orchestrator.add_to_save_lists(
-                os.path.join(filling_output_dir, "epi_pc_filling.tif"),
+                os.path.join(filling_output_dir, "filling.tif"),
                 cst.EPI_FILLING,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_filling",
+                cars_ds_name="depth_map_filling",
                 optional_data=True,
                 dtype=np.uint8,
                 nodata=255,
@@ -271,24 +271,24 @@ class LineOfSightIntersection(
 
         if dump_dir and intervals is not None:
             self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, "epi_pc_Z_inf.tif"),
+                os.path.join(dump_dir, "Z_inf.tif"),
                 cst.Z_INF,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_z_inf",
+                cars_ds_name="depth_map_z_inf",
             )
             self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, "epi_pc_Z_sup.tif"),
+                os.path.join(dump_dir, "Z_sup.tif"),
                 cst.Z_SUP,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_z_sup",
+                cars_ds_name="depth_map_z_sup",
             )
 
         if dump_dir:
             self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, "epi_pc_corr_mask.tif"),
+                os.path.join(dump_dir, "corr_mask.tif"),
                 cst.POINTS_CLOUD_CORR_MSK,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_corr_msk",
+                cars_ds_name="depth_map_corr_msk",
                 optional_data=True,
             )
 
@@ -570,10 +570,10 @@ class LineOfSightIntersection(
 
         else:
             self.orchestrator.add_to_save_lists(
-                os.path.join(pair_dump_dir, "epi_pc"),
+                os.path.join(pair_dump_dir, "depth_map"),
                 cst.POINTS_CLOUD_MATCHES,
                 epipolar_points_cloud,
-                cars_ds_name="epi_pc_x",
+                cars_ds_name="depth_map_x",
             )
 
         # Get saving infos in order to save tiles when they are computed

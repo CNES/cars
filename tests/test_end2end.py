@@ -1218,19 +1218,17 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "depth_map", "left_right")
+            depth_map_path = os.path.join(out_dir, "depth_map", "left_right")
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
                 "inputs": {
                     "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                         }
                     },
                     "roi": {
@@ -1497,7 +1495,7 @@ def test_end2end_ventoux_unique_split():
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "depth_map", "left_right")
+            depth_map_path = os.path.join(out_dir, "depth_map", "left_right")
             dense_matching_path = os.path.join(
                 out_dir, "dump_dir", "dense_matching", "left_right"
             )
@@ -1507,30 +1505,27 @@ def test_end2end_ventoux_unique_split():
                 "inputs": {
                     "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                             "classification": os.path.join(
-                                epi_pc_path, "epi_pc_classification.tif"
+                                depth_map_path, "classification.tif"
                             ),
                             "filling": os.path.join(
-                                epi_pc_path, "epi_pc_filling.tif"
+                                depth_map_path, "filling.tif"
                             ),
                             "performance_map": os.path.join(
-                                epi_pc_path, "epi_pc_performance_map.tif"
+                                depth_map_path, "performance_map.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
                                     dense_matching_path,
-                                    "epi_confidence_from" + "_ambiguity.tif",
+                                    "confidence_from" + "_ambiguity.tif",
                                 ),
                                 "confidence_from_ambiguity1": os.path.join(
                                     dense_matching_path,
-                                    "epi_confidence_from"
-                                    + "_ambiguity_before.tif",
+                                    "confidence_from" + "_ambiguity_before.tif",
                                 ),
                             },
                         }
@@ -2635,7 +2630,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_color.tif"),
+        #                         "color.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2645,7 +2640,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_classification.tif"),
+        #                         "classification.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2655,7 +2650,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_filling.tif"),
+        #                         "filling.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2665,7 +2660,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_mask.tif"),
+        #                         "mask.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2675,7 +2670,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_X.tif"),
+        #                         "X.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2685,7 +2680,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_Y.tif"),
+        #                         "Y.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2695,7 +2690,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "epi_pc_Z.tif"),
+        #                         "Z.tif"),
         #     absolute_data_path(
         #     os.path.join(
         #             ref_output_dir,
@@ -2775,7 +2770,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             "left_right",
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_X.tif"),
+            os.path.join(depth_map_dir, "X.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "epi_pc_X_end2end_ventoux_no_elevation.tif"
@@ -2785,7 +2780,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_Y.tif"),
+            os.path.join(depth_map_dir, "Y.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "epi_pc_Y_end2end_ventoux_no_elevation.tif"
@@ -2795,7 +2790,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_Z.tif"),
+            os.path.join(depth_map_dir, "Z.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "epi_pc_Z_end2end_ventoux_no_elevation.tif"
@@ -2805,7 +2800,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_mask.tif"),
+            os.path.join(depth_map_dir, "mask.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2816,7 +2811,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_filling.tif"),
+            os.path.join(depth_map_dir, "filling.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2827,7 +2822,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_color.tif"),
+            os.path.join(depth_map_dir, "color.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2838,7 +2833,7 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(depth_map_dir, "epi_pc_classification.tif"),
+            os.path.join(depth_map_dir, "classification.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -4842,7 +4837,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
             # Run pc pipeline with simple config
-            epi_pc_path = os.path.join(
+            depth_map_path = os.path.join(
                 sensors_out_dir_first_run,
                 "dump_dir",
                 "triangulation",
@@ -4852,12 +4847,10 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "inputs": {
                     "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                         }
                     }
                 },
