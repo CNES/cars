@@ -1484,6 +1484,7 @@ def test_end2end_ventoux_unique_split():
             "classification": True,
             "filling": True,
             "color": True,
+            "performance_map": True,
         }
 
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
@@ -1517,6 +1518,9 @@ def test_end2end_ventoux_unique_split():
                             ),
                             "filling": os.path.join(
                                 epi_pc_path, "epi_pc_filling.tif"
+                            ),
+                            "performance_map": os.path.join(
+                                epi_pc_path, "epi_pc_performance_map.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
@@ -1637,6 +1641,16 @@ def test_end2end_ventoux_unique_split():
             # )
             # copy2(
             #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                         "performance_map.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "performance_map_end2end_ventoux_split.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
             #                                                 "filling.tif"),
             #     absolute_data_path(
             #         os.path.join(
@@ -1731,6 +1745,22 @@ def test_end2end_ventoux_unique_split():
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "filling_end2end_ventoux_split.tif"
+                    )
+                ),
+                atol=1.0e-7,
+                rtol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "performance_map.tif",
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "performance_map_end2end_ventoux_split.tif",
                     )
                 ),
                 atol=1.0e-7,
@@ -1847,6 +1877,16 @@ def test_end2end_ventoux_unique_split():
             # )
             # copy2(
             #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "performance_map.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "performance_map_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
             #                      "filling.tif"),
             #     absolute_data_path(
             #         os.path.join(
@@ -1918,6 +1958,22 @@ def test_end2end_ventoux_unique_split():
                     os.path.join(
                         ref_output_dir,
                         "msk_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "performance_map.tif",
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "performance_map_end2end_ventoux_split_no_merging.tif",
                     )
                 ),
                 rtol=1.0e-7,

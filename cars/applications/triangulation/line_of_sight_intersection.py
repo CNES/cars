@@ -18,8 +18,9 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
+# pylint: disable=too-many-lines
 """
-this module contains the dense_matching application class.
+this module contains the LineOfSightIntersection application class.
 """
 
 # Standard imports
@@ -133,6 +134,7 @@ class LineOfSightIntersection(
         save_output_classification=False,
         save_output_mask=False,
         save_output_filling=False,
+        save_output_performance_map=False,
     ):
         """
         Save the triangulation output. The different TIFs composing the depth
@@ -165,6 +167,8 @@ class LineOfSightIntersection(
         :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in output_dir
         :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in output_dir
+        :type save_output_performance_map: bool
         """
 
         # Propagate color type in output file
@@ -225,6 +229,19 @@ class LineOfSightIntersection(
                 nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 optional_data=True,
                 dtype=np.uint8,
+            )
+
+        if save_output_performance_map or dump_dir:
+            map_output_dir = (
+                output_dir if save_output_performance_map else dump_dir
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(map_output_dir, "epi_pc_performance_map.tif"),
+                cst.EPI_PERFORMANCE_MAP,
+                epipolar_points_cloud,
+                cars_ds_name="epi_pc_performance_map",
+                optional_data=True,
+                dtype=np.float64,
             )
 
         if save_output_classification or dump_dir:
@@ -299,6 +316,7 @@ class LineOfSightIntersection(
         save_output_classification=False,
         save_output_mask=False,
         save_output_filling=False,
+        save_output_performance_map=False,
     ):
         """
         Run Triangulation application.
@@ -385,6 +403,9 @@ class LineOfSightIntersection(
         :type save_output_mask: bool
         :param save_output_filling: Save filling depth map in pair_output_dir
         :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in
+                pair_output_dir
+        :type save_output_performance_map: bool
 
         :return: points cloud \
                 The CarsDataset contains:
@@ -544,6 +565,7 @@ class LineOfSightIntersection(
                 save_output_classification,
                 save_output_mask,
                 save_output_filling,
+                save_output_performance_map,
             )
 
         else:

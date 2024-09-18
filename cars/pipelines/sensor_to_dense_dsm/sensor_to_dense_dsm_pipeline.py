@@ -1409,6 +1409,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     and auxiliary[output_constants.AUX_FILLING],
                     save_output_mask=bool(depth_map_dir)
                     and auxiliary[output_constants.AUX_MASK],
+                    save_output_performance_map=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_PERFORMANCE_MAP],
                 )
 
                 if "no_merging" in self.used_conf[PIPELINE]:

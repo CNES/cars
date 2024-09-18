@@ -75,6 +75,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         cst.POINTS_CLOUD_CLR_KEY_ROOT: str,
         cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_MSK: Or(str, None),
+        cst.POINTS_CLOUD_PERFORMANCE_MAP: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
@@ -91,20 +92,30 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Z] = conf[
             depth_map_cst.DEPTH_MAPS
         ][depth_map_key].get("z", None)
+
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINTS_CLOUD_CLR_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("color", None)
+
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINTS_CLOUD_MSK
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("mask", None)
+
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
             "classification", None
         )
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
+            cst.POINTS_CLOUD_PERFORMANCE_MAP
+        ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
+            "performance_map", None
+        )
+
+        overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINTS_CLOUD_FILLING_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("filling", None)
+
         confidence_conf = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
             "confidence", None
         )
