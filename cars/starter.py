@@ -78,36 +78,41 @@ def pairdirname_to_pc(pairdirname):
 
     return sensor
 
-def cars_starter(cli_params : dict = None, **kwargs) -> None:
+
+def cars_starter(cli_params: dict = None, **kwargs) -> None:
     """
-    Main fonction. Expects a dictionary from the CLI (cli_params) 
+    Main fonction. Expects a dictionary from the CLI (cli_params)
     or directly the input parameters.
     """
     if cli_params and isinstance(cli_params, dict):
         config = cli_params
     else:
         params_name = set(kwargs.keys())
-        required_params = set(["il","out"])
-        missing_params = (required_params - params_name)
-        if len(missing_params) > 0 :
-            raise ValueError("The following parameters are required: {}"
-                             .format(", ".join(list(missing_params))))
+        required_params = {"il", "out"}
+        missing_params = required_params - params_name
+        if len(missing_params) > 0:
+            raise ValueError(
+                "The following parameters are required: {}".format(
+                    ", ".join(list(missing_params))
+                )
+            )
         config = kwargs
-    
-     # check first input in list to determine pipeline
+
+    # check first input in list to determine pipeline
     if os.path.isfile(config["il"][0]):
         cars_config = {"inputs": {"sensors": {}}, "output": {}}
         pipeline_name = "sensors_to_dense_dsm"
 
         for idx, inputfilename in enumerate(config["il"]):
-            cars_config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
-                inputfilename
+            cars_config["inputs"]["sensors"][str(idx)] = (
+                inputfilename_to_sensor(inputfilename)
             )
 
         # pairing with first image as reference
         pairing = list(
             zip(  # noqa: B905
-                ["0"] * (len(config["il"]) - 1), map(str, range(1, len(config["il"])))
+                ["0"] * (len(config["il"]) - 1),
+                map(str, range(1, len(config["il"]))),
             )
         )
 
@@ -136,6 +141,7 @@ def cars_starter(cli_params : dict = None, **kwargs) -> None:
             cars_config = used_pipeline.used_conf
 
     print(json.dumps(cars_config, indent=4))
+
 
 def cli():
     """
@@ -169,6 +175,7 @@ def cli():
 
     args = parser.parse_args()
     cars_starter(vars(args))
-   
+
+
 if __name__ == "__main__":
     cli()
