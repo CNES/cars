@@ -1568,22 +1568,19 @@ The structure follows this organisation:
         +==================+=============================================================+====================+======================+==========+
         | *directory*      | Output folder where results are stored                      | string             | No                   | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *product_level*  | output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                | No       |
+        | *product_level*  | Output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *auxiliary*      | selection of additional files in products                   | dict               | See below            | No       |
+        | *resolution*     | Output DSM grid strp (only for dsm product level)           | float              | 0.5                  | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *auxiliary*      | Selection of additional files in products                   | dict               | See below            | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | *epsg*           | EPSG code                                                   | int, should be > 0 | None                 | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *geoid*          | output geoid                                                | bool or string     | False                | No       |
+        | *geoid*          | Output geoid                                                | bool or string     | False                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | *save_by_pair*   | save output point clouds by pair                            | bool               | False                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *dsm_basename*   | base name for dsm                                           | string             | "dsm.tif"            | No       |
-        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *color_basename* | base name for  ortho-image                                  | string             | "color.tif           | No       |
-        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *info_basename*  | base name for file containing information about computation | string             | "metadata.json"      | No       |
-        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+
 
         **Output contents**
 
