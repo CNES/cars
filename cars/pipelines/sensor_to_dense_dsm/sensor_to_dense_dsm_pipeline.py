@@ -574,7 +574,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             out_dir=out_dir,
             out_json_path=os.path.join(
                 out_dir,
-                self.output[output_constants.INFO_BASENAME],
+                output_constants.INFO_FILENAME,
             ),
         ) as cars_orchestrator:
             # initialize out_json
@@ -1579,7 +1579,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.DSM_BASENAME],
+                        "dsm.tif",
                     )
                     if self.save_output_dsm
                     else None
@@ -1589,7 +1589,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.COLOR_BASENAME],
+                        "color.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][
@@ -1602,7 +1602,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.PERFORMANCE_MAP_BASENAME],
+                        "performance_map.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][
@@ -1615,7 +1615,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.CLASSIFICATION_BASENAME],
+                        "classification.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][
@@ -1628,7 +1628,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.MASK_BASENAME],
+                        "mask.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][
@@ -1641,9 +1641,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[
-                            output_constants.CONTRIBUTING_PAIR_BASENAME
-                        ],
+                        "contributing_pair.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][
@@ -1656,7 +1654,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     os.path.join(
                         out_dir,
                         output_constants.DSM_DIRECTORY,
-                        self.output[output_constants.FILLING_BASENAME],
+                        "filling.tif",
                     )
                     if self.save_output_dsm
                     and self.output[output_constants.AUXILIARY][

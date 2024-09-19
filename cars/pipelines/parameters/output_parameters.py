@@ -65,37 +65,6 @@ def check_output_parameters(
         overloaded_conf[output_constants.PRODUCT_LEVEL], pipeline_name
     )
 
-    overloaded_conf[output_constants.MASK_BASENAME] = overloaded_conf.get(
-        output_constants.DSM_BASENAME, "mask.tif"
-    )
-    overloaded_conf[output_constants.DSM_BASENAME] = overloaded_conf.get(
-        output_constants.DSM_BASENAME, "dsm.tif"
-    )
-    overloaded_conf[output_constants.COLOR_BASENAME] = overloaded_conf.get(
-        output_constants.COLOR_BASENAME, "color.tif"
-    )
-    overloaded_conf[output_constants.CLASSIFICATION_BASENAME] = (
-        overloaded_conf.get(
-            output_constants.CLASSIFICATION_BASENAME, "classification.tif"
-        )
-    )
-    overloaded_conf[output_constants.PERFORMANCE_MAP_BASENAME] = (
-        overloaded_conf.get(
-            output_constants.PERFORMANCE_MAP_BASENAME, "performance_map.tif"
-        )
-    )
-    overloaded_conf[output_constants.CONTRIBUTING_PAIR_BASENAME] = (
-        overloaded_conf.get(
-            output_constants.CONTRIBUTING_PAIR_BASENAME, "contributing_pair.tif"
-        )
-    )
-    overloaded_conf[output_constants.FILLING_BASENAME] = overloaded_conf.get(
-        output_constants.FILLING_BASENAME, "filling.tif"
-    )
-    overloaded_conf[output_constants.INFO_BASENAME] = overloaded_conf.get(
-        output_constants.INFO_BASENAME,
-        "metadata.json",
-    )
     overloaded_conf[output_constants.OUT_GEOID] = overloaded_conf.get(
         output_constants.OUT_GEOID, False
     )
@@ -152,14 +121,6 @@ def check_output_parameters(
     output_schema = {
         output_constants.OUT_DIRECTORY: str,
         output_constants.PRODUCT_LEVEL: list,
-        output_constants.DSM_BASENAME: str,
-        output_constants.COLOR_BASENAME: str,
-        output_constants.INFO_BASENAME: str,
-        output_constants.MASK_BASENAME: str,
-        output_constants.CLASSIFICATION_BASENAME: str,
-        output_constants.PERFORMANCE_MAP_BASENAME: str,
-        output_constants.CONTRIBUTING_PAIR_BASENAME: str,
-        output_constants.FILLING_BASENAME: str,
         output_constants.OUT_GEOID: Or(bool, str),
         output_constants.EPSG: Or(int, None),
         output_constants.RESOLUTION: Or(int, float),

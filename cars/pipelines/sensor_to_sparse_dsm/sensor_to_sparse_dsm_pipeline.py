@@ -292,7 +292,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
             out_dir=out_dir,
             out_json_path=os.path.join(
                 out_dir,
-                self.output[output_constants.INFO_BASENAME],
+                output_constants.INFO_FILENAME,
             ),
         ) as cars_orchestrator:
             # initialize out_json
