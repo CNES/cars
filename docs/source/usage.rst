@@ -669,7 +669,7 @@ The structure follows this organisation:
                 8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
 
 
-        .. tab:: Dense Point Clouds to Dense DSM
+        .. tab:: Dense Dense Depth Maps to Dense DSM
 
             **Name**: "dense_depth_maps_to_dense_dsm"
 
@@ -1191,7 +1191,7 @@ The structure follows this organisation:
             +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
             | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
             +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | save_intermediate_data | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
+            | save_intermediate_data | Save depth map                                                                                                     | boolean |                                      | false                        | No       |
             +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
 
             **Example**
@@ -1201,7 +1201,7 @@ The structure follows this organisation:
                 "applications": {
                     "triangulation": {
                         "method": "line_of_sight_intersection",
-                        "use_geoid_alt": true
+                        "snap_to_img1": true
                     }
                 },
 
@@ -1587,7 +1587,7 @@ The structure follows this organisation:
         The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
 
         * the required products (`depth_map`, `dsm` and/or `point_cloud`)
-        * The dump directory (`dump_dir`) containing intermediate data for all applications
+        * the dump directory (`dump_dir`) containing intermediate data for all applications
         * metadata json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
         * logs folder containing Cars log and profiling information
 
