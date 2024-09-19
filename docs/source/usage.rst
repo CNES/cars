@@ -80,10 +80,10 @@ The structure follows this organisation:
 
    .. tab:: Inputs
 
-    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Point Clouds:
+    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Depth Maps:
 
-    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds" pipelines.
-    * Point Clouds: used in  "dense_point_clouds_to_dense_dsm" pipeline.
+    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps" pipelines.
+    * Depth Maps: used in  "dense_depth_maps_to_dense_dsm" pipeline.
 
 
     .. tabs::
@@ -223,13 +223,13 @@ The structure follows this organisation:
 
             Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
 
-      .. tab:: Point Clouds inputs
+      .. tab:: Depth Maps inputs
 
 
           +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
           | Name                    | Description                                                         | Type                  | Default value        | Required |
           +=========================+=====================================================================+=======================+======================+==========+
-          | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
+          | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
           +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
           | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
           +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -238,15 +238,15 @@ The structure follows this organisation:
 
 
 
-            **Point Clouds**
+            **Depth Maps**
 
-            For each point cloud, give a particular name (what you want):
+            For each depth map, give a particular name (what you want):
 
             .. code-block:: json
 
                 {
-                    "point_clouds": {
-                        "my_name_for_this_point_cloud":
+                    "depth_maps": {
+                        "my_name_for_this_depth_map":
                         {
                             "x" : "path_to_x.tif",
                             "y" : "path_to_y.tif",
@@ -258,40 +258,40 @@ The structure follows this organisation:
                             "confidence": {
                                 "confidence_name1": "path_to_confidence1.tif",
                                 "confidence_name2": "path_to_confidence2.tif",
-                                "confidence_parformance_map": "path_to_performance_map.tif",
-                            }
-                            "epsg": "point_cloud_epsg"
+                            },
+                            "performance_map": "path_to_performance_map.tif",
+                            "epsg": "depth_map_epsg"
                         }
                     },
                     "epsg": 32644
                 }
 
-            These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
+            These input files can be generated with the `sensors_to_dense_depth_maps` pipeline, or `sensors_to_dense_dsm` pipeline activating the saving of depth_map using `save_intermediate_data` in the `triangulation` application.
 
             .. note::
 
-                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_intermediate_data` of `dense_matching` application must be activated in sensors_to_dense_point_clouds pipeline. The output performance map is `epi_confidence_performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_point_clouds_to_dense_dsm pipeline to save the performance map.
+                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_intermediate_data` of `dense_matching` application must be activated in `sensors_to_dense_depth_maps` pipeline. The output performance map is `performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_depth_maps_to_dense_dsm pipeline to save the performance map.
 
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | Name             | Description                                                       | Type           | Default value | Required |
             +==================+===================================================================+================+===============+==========+
-            | *x*              | Path to the x coordinates of point cloud                          | string         |               | Yes      |
+            | *x*              | Path to the x coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *y*              | Path to the y coordinates of point cloud                          | string         |               | Yes      |
+            | *y*              | Path to the y coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *z*              | Path to the z coordinates of point cloud                          | string         |               | Yes      |
+            | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *color*          | Color of point cloud                                              | string         |               | Yes      |
+            | *color*          | Color of depth map                                                | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *mask*           | Validity mask of point cloud : 0 values are considered valid data | string         |               | No       |
+            | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *classification* | Classification of point cloud                                     | string         |               | No       |
+            | *classification* | Classification of depth map                                       | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *filling*        | Filling map of point cloud                                        | string         |               | No       |
+            | *filling*        | Filling map of depth map                                          | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *confidence*     | Dict of paths to the confidences of point cloud                   | dict           |               | No       |
+            | *confidence*     | Dict of paths to the confidences of depth map                     | dict           |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *epsg*           | Epsg code of point cloud                                          | int            | 4326          | No       |
+            | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
 
     **Region Of Interest (ROI)**
@@ -556,7 +556,7 @@ The structure follows this organisation:
     +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
     | Name           | Description           | Type   | Default value                      | Available values                                                                                                                                                                                     | Required |
     +================+=======================+========+====================================+======================================================================================================================================================================================================+==========+
-    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm_no_merging"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds", "dense_point_clouds_to_dense_dsm", "sensors_to_dense_dsm_no_merging", "dense_point_clouds_to_dense_dsm_no_merging" | False    |
+    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm_no_merging"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps", "dense_depth_maps_to_dense_dsm", "sensors_to_dense_dsm_no_merging", "dense_depth_maps_to_dense_dsm_no_merging"       | False    |
     +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
 
 
@@ -647,9 +647,9 @@ The structure follows this organisation:
                 8. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
 
-        .. tab:: Sensor to Dense Point Clouds
+        .. tab:: Sensor to Dense Depth Maps
 
-            **Name**: "sensors_to_dense_point_clouds"
+            **Name**: "sensors_to_dense_depth_maps"
 
             **Description**
 
@@ -671,7 +671,7 @@ The structure follows this organisation:
 
         .. tab:: Dense Point Clouds to Dense DSM
 
-            **Name**: "dense_point_clouds_to_dense_dsm"
+            **Name**: "dense_depth_maps_to_dense_dsm"
 
             **Description**
 
@@ -680,13 +680,13 @@ The structure follows this organisation:
                 :align: center
 
 
-            1. Merge points clouds coming from each stereo pairs.
+            1. Merge depth maps coming from each stereo pairs.
             2. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
             3. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
-        .. tab:: Dense Point Clouds to Dense DSM no merging
+        .. tab:: Dense Depth Maps to Dense DSM no merging
 
-            **Name**: "dense_point_clouds_to_dense_dsm_no_merging"
+            **Name**: "dense_depth_maps_to_dense_dsm_no_merging"
 
             **Description**
 
@@ -1217,15 +1217,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                         | Description                             | Type    | Available value            | Default value              | Required |
-            +==============================+=========================================+=========+============================+============================+==========+
-            | method                       | Method for fusion                       | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_intermediate_data       | Save points clouds as laz and csvformat | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_by_pair                 | Enable points cloud saving by pair      | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | Name                         | Description                              | Type    | Available value            | Default value              | Required |
+            +==============================+==========================================+=========+============================+============================+==========+
+            | method                       | Method for fusion                        | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                            | false                      | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                            | false                      | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
 
             **Example**
 
@@ -1241,9 +1241,9 @@ The structure follows this organisation:
                     },
 
             .. note::
-                When `save_points_cloud_as_laz` is activated, multiple Laz files are saved, corresponding to each processed terrain tiles.
+                When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
                 Please, see the section :ref:`merge_laz_files` to merge them into one single file.
-                `save_points_cloud_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
+                `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
 
         .. tab:: Point Cloud outliers removing
 
