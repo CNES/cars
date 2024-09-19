@@ -237,7 +237,9 @@ class MemrayWrapper(AbstractLogWrapper):
 
     def __init__(self, conf_profiling, out_dir):
         self.out_dir = out_dir
-        profiling_memory_dir = os.path.join(out_dir, "profiling", "memray")
+        profiling_memory_dir = os.path.join(
+            out_dir, "logs", "profiling", "memray"
+        )
         safe_makedirs(profiling_memory_dir, cleanup=True)
         # call parent init
         super().__init__(conf_profiling, out_dir)
@@ -503,11 +505,14 @@ def generate_summary(out_dir, used_conf):
 
     log_file_main = os.path.join(
         out_dir,
+        "logs",
         "workers_log",
         "profiling.log",
     )
 
-    out_profiling_main = os.path.join(out_dir, "profiling", "profiling.log")
+    out_profiling_main = os.path.join(
+        out_dir, "logs", "profiling", "profiling.log"
+    )
 
     log_files = [log_file_main, out_profiling_main]
 
@@ -712,6 +717,7 @@ def generate_summary(out_dir, used_conf):
     # file_name
     profiling_plot = os.path.join(
         out_dir,
+        "logs",
         "profiling",
         "profiling_plots.pdf",
     )
