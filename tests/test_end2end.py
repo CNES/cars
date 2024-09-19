@@ -220,7 +220,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
@@ -228,8 +228,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dump_dir", "rasterization",
-        #                        "confidence_performance_map.tif"),
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -1521,11 +1520,11 @@ def test_end2end_ventoux_unique_split():
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
                                     dense_matching_path,
-                                    "confidence_from" + "_ambiguity.tif",
+                                    "epi_confidence_from_ambiguity.tif",
                                 ),
                                 "confidence_from_ambiguity1": os.path.join(
                                     dense_matching_path,
-                                    "confidence_from" + "_ambiguity_before.tif",
+                                    "epi_confidence_from_ambiguity_before.tif",
                                 ),
                             },
                         }
