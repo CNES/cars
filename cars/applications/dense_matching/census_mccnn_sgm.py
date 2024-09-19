@@ -999,7 +999,6 @@ class CensusMccnnSgm(
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
 
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset

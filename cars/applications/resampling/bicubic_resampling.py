@@ -288,7 +288,6 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
 
         # Create zeros margins if not provided
         if margins_fun is None:
@@ -393,6 +392,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
 
         # Save objects
         if self.save_intermediate_data:
+            safe_makedirs(pair_folder)
+
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_img_left.tif"),
                 cst.EPI_IMAGE,

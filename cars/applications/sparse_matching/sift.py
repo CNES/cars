@@ -426,7 +426,6 @@ class Sift(SparseMatching, short_name="sift"):
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
 
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
@@ -463,6 +462,8 @@ class Sift(SparseMatching, short_name="sift"):
 
             # Save disparity maps
             if self.save_intermediate_data:
+                safe_makedirs(pair_folder)
+
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_matches_left"),
                     None,
@@ -608,7 +609,6 @@ class Sift(SparseMatching, short_name="sift"):
 
         if pair_folder is None:
             pair_folder = os.path.join(cars_orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_folder)
 
         epipolar_error_upper_bound = self.epipolar_error_upper_bound
         epipolar_error_maximum_bias = self.epipolar_error_maximum_bias
@@ -651,6 +651,8 @@ class Sift(SparseMatching, short_name="sift"):
         # Export matches
         raw_matches_array_path = None
         if save_matches:
+            safe_makedirs(pair_folder)
+
             logging.info("Writing raw matches file")
             raw_matches_array_path = os.path.join(
                 pair_folder, "raw_matches.npy"

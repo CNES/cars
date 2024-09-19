@@ -815,6 +815,14 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         )
                     )
 
+                    # Clean grid at the end of processing if required
+                    if not save_corrected_grid:
+                        cars_orchestrator.add_to_clean(
+                            os.path.join(
+                                dump_dir, "grid_correction", "initial", pair_key
+                            )
+                        )
+
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "grid_left"
                     ]
@@ -1002,6 +1010,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 ),
                             )
                         )
+
+                        if not save_corrected_grid:
+                            cars_orchestrator.add_to_clean(
+                                os.path.join(
+                                    dump_dir, "grid_correction", "new", pair_key
+                                )
+                            )
 
                         # Use the new grid as uncorrected grid
                         pairs[pair_key]["grid_right"] = pairs[pair_key][
@@ -1680,4 +1695,18 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         "color_type"
                     ],
                     dump_dir=rasterization_dump_dir,
+                )
+
+                # Cleaning: don't keep terrain bbox if save_intermediate_data
+                # is not activated
+                if not self.advanced[adv_cst.SAVE_INTERMEDIATE_DATA]:
+                    cars_orchestrator.add_to_clean(
+                        os.path.join(dump_dir, "terrain_bbox")
+                    )
+
+            # Cleaning: delete everything in tile_processing if
+            # save_intermediate_data is not activated
+            if not self.advanced[adv_cst.SAVE_INTERMEDIATE_DATA]:
+                cars_orchestrator.add_to_clean(
+                    os.path.join(dump_dir, "tile_processing")
                 )

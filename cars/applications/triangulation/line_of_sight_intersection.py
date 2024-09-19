@@ -171,6 +171,9 @@ class LineOfSightIntersection(
         :type save_output_performance_map: bool
         """
 
+        if dump_dir:
+            safe_makedirs(dump_dir)
+
         # Propagate color type in output file
         color_type = None
         if sens_cst.INPUT_COLOR in sensor_image_left:
@@ -438,7 +441,6 @@ class LineOfSightIntersection(
 
         if pair_dump_dir is None:
             pair_dump_dir = os.path.join(self.orchestrator.out_dir, "tmp")
-        safe_makedirs(pair_dump_dir)
 
         # Get local conf left image for this in_json iteration
         conf_left_img = sensor_image_left[sens_cst.INPUT_IMG]
@@ -569,6 +571,8 @@ class LineOfSightIntersection(
             )
 
         else:
+            safe_makedirs(pair_dump_dir)
+
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_dump_dir, "depth_map"),
                 cst.POINTS_CLOUD_MATCHES,
