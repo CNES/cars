@@ -618,3 +618,12 @@ class DepthMapsToDsmPipeline(PipelineTemplate):
                 color_dtype=color_type,
                 dump_dir=rasterization_dump_dir,
             )
+
+            # Cleaning: delete everything in tile_processing if
+            # save_intermediate_data is not activated
+            if not self.advanced[adv_cst.SAVE_INTERMEDIATE_DATA]:
+                cars_orchestrator.add_to_clean(
+                    os.path.join(
+                        cars_orchestrator.out_dir, "dump_dir", "tile_processing"
+                    )
+                )
