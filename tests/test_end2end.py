@@ -3944,7 +3944,11 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -4073,7 +4077,11 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -4160,7 +4168,11 @@ def test_end2end_ventoux_egm96_geoid():
             },
         )
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
