@@ -231,8 +231,6 @@ The structure follows this organisation:
           +=========================+=====================================================================+=======================+======================+==========+
           | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
           +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-          | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
-          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
           | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
           +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
@@ -262,8 +260,7 @@ The structure follows this organisation:
                             "performance_map": "path_to_performance_map.tif",
                             "epsg": "depth_map_epsg"
                         }
-                    },
-                    "epsg": 32644
+                    }
                 }
 
             These input files can be generated with the `sensors_to_dense_depth_maps` pipeline, or `sensors_to_dense_dsm` pipeline activating the saving of depth_map using `save_intermediate_data` in the `triangulation` application.
