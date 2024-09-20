@@ -1368,12 +1368,6 @@ The structure follows this organisation:
                   - 
                   - None
                   - No
-                * - resolution
-                  - Altitude grid step (dsm)
-                  - float
-                  - should be > 0
-                  - 0.5
-                  - No
                 * - dsm_no_data
                   - 
                   - int
@@ -1400,67 +1394,8 @@ The structure follows this organisation:
                   - 
                   - 255
                   - 
-                * - save_color
-                  - Save color ortho-image
-                  - boolean
-                  - 
-                  - true
-                  - No
-                * - save_stats
-                  - 
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_mask
-                  - Save mask raster
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_classif
-                  - Save classification mask raster
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_dsm
-                  - Save dsm
-                  - boolean
-                  - 
-                  - true
-                  - No
-                * - save_confidence
-                  - Save all the disparity confidence
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_intervals
-                  - | Save the propagated height confidence intervals
-                    | Confidence disparity intervals must have been
-                    | computed during the dense matching step.
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_source_pc
-                  - Save mask with data source
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_filling
-                  - Save mask with filling information
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - compute_all
-                  - | Compute all layers even
-                    | if one or more layers
-                    | are not saved (color
-                    | , dsm, msk..)
+                * - save_intermediate_data
+                  - Save all layers from input point cloud in application `dump_dir`
                   - boolean
                   - 
                   - false
@@ -1586,7 +1521,7 @@ The structure follows this organisation:
 
         The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
 
-        * the required products (`depth_map`, `dsm` and/or `point_cloud`)
+        * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
         * the dump directory (`dump_dir`) containing intermediate data for all applications
         * metadata json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
         * logs folder containing Cars log and profiling information
@@ -1612,6 +1547,7 @@ The structure follows this organisation:
         | *filling*             | Save output filling (dsm)                                   | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
 
+        Note that not all rasters associated to the DSM that cars can produce are available in the output product auxiliary data. For exemple, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `generate_confidence_intervals` is activated in the `dense_matching` application (to compute the confidence) and `save_intermediate_data` is activated in the `rasterization` application configuration (to write it on disk).
 
         **Point cloud output**
 
