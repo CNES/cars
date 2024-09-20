@@ -139,14 +139,13 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization",
-        #                            "performance_map.tif"),
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
