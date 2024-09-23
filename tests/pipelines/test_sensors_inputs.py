@@ -19,14 +19,16 @@
 # limitations under the License.
 #
 """
-Test module for cars/pipelines/sensors_inputs.py
+Test module for cars/pipelines/parameters/sensor_inputs.py
 """
 
+import json
 import os
 
 import pytest
+from json_checker.core.exceptions import MissKeyCheckerError
 
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
+from cars.pipelines.parameters import sensor_inputs
 
 from ..helpers import absolute_data_path
 
@@ -59,11 +61,8 @@ def test_check_full_conf():
         },
         "pairing": [["left", "right"]],
         "initial_elevation": {
-            "dem_path": "srtm/N44E005.hgt",
-            "default_alt": 0,
+            "dem": "srtm/N44E005.hgt",
         },
-        "epsg": 32631,
-        "use_endogenous_elevation": True,
         "roi": {
             "type": "FeatureCollection",
             "features": [
@@ -85,22 +84,290 @@ def test_check_full_conf():
                 }
             ],
         },
-        "debug_with_roi": False,
-        "check_inputs": False,
-        "use_epipolar_a_priori": False,
-        "epipolar_a_priori": {
-            "left_right": {
-                "grid_correction": [
-                    4.288258198116454,
-                    -5.126994797702842e-05,
-                    -0.0001868504592756687,
-                    0.7633338209640763,
-                    0.00017551039816977951,
-                    7.416961236000769e-05,
-                ],
-                "disparity_range": [-26.157764557028997, 26.277429517242638],
-            }
-        },
-        "terrain_a_priori": {},
     }
-    _ = sensors_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+    _ = sensor_inputs.sensors_check_inputs(conf, config_json_dir=json_dir_path)
+
+
+@pytest.mark.unit_tests
+def test_input_full_sensors():
+    """
+    Test with full input
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # Basic
+    input_test = {
+        "sensors": {
+            "one": {
+                "image": "img1_crop.tif",
+                "geomodel": {"path": "img1_crop.geom"},
+            },
+            "two": {
+                "image": "img2_crop.tif",
+                "geomodel": {"path": "img2_crop.geom"},
+            },
+        },
+        "pairing": [["one", "two"]],
+        "roi": {
+            "type": "FeatureCollection",
+            "features": [
+                {
+                    "type": "Feature",
+                    "properties": {},
+                    "geometry": {
+                        "coordinates": [
+                            [
+                                [5.194, 44.2064],
+                                [5.194, 44.2059],
+                                [5.195, 44.2059],
+                                [5.195, 44.2064],
+                                [5.194, 44.2064],
+                            ]
+                        ],
+                        "type": "Polygon",
+                    },
+                }
+            ],
+        },
+        "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif",
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_geom_squeezed_sensors():
+    """
+    Test with 2 levels squeezed goemodel:
+
+    - path on top level
+    - no geomodel
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_geom_squezed_sensors():
+    """
+    Test with 2 levels squeezed goemodel:
+
+    - path on top level
+    - no geomodel
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif", "geomodel": "img1_crop.geom"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_minimal_sensors():
+    """
+    Test minimal config
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {"sensors": {"one": "img1_crop.tif", "two": "img2_crop.tif"}}
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_dem_with_geoid_sensors():
+    """
+    Test input with geoid
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+        "initial_elevation": {
+            "dem": "srtm_dir/N29E031_KHEOPS.tif",
+            "geoid": absolute_data_path("../../cars/conf/geoid/egm96.grd.hrd"),
+        },
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_dem_no_geoid_sensors():
+    """
+    Test input with geoid
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+        "initial_elevation": {"dem": "srtm_dir/N29E031_KHEOPS.tif"},
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_dem_no_geoid_squeezed_sensors():
+    """
+    Test input with initial_elevation as string
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+        "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif",
+    }
+
+    sensor_inputs.sensors_check_inputs(
+        input_test, config_json_dir=os.path.dirname(input_json)
+    )
+
+
+@pytest.mark.unit_tests
+def test_input_dem_epsg_exit_sensors():
+    """
+    Invalid configuration : epsg in inputs
+    """
+
+    input_json = absolute_data_path(
+        "input/data_gizeh_crop/configfile_crop.json"
+    )
+
+    with open(input_json, encoding="utf-8") as dsc:
+        input_dict = json.load(dsc)
+
+    print(input_dict)
+
+    # Generate new inputs
+
+    # squeezed on two levels
+    input_test = {
+        "sensors": {
+            "one": {"image": "img1_crop.tif"},
+            "two": {"image": "img2_crop.tif"},
+        },
+        "pairing": [["one", "two"]],
+        "epsg": 4326,
+    }
+
+    # epsg should not be defined in inputs
+    with pytest.raises(MissKeyCheckerError):
+        sensor_inputs.sensors_check_inputs(
+            input_test, config_json_dir=os.path.dirname(input_json)
+        )

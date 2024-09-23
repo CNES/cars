@@ -39,7 +39,11 @@ def test_check_full_conf():
     """
     Test configuration check for grid generation application
     """
-    conf = {"method": "epipolar", "epi_step": 30, "save_grids": False}
+    conf = {
+        "method": "epipolar",
+        "epi_step": 30,
+        "save_intermediate_data": False,
+    }
     _ = EpipolarGridGeneration(conf)
 
 

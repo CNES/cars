@@ -118,10 +118,7 @@ def generate_epipolar_grids(
     :param geomodel2: path and attributes for right geomodel
     :param geometry_plugin: geometry plugin to use
     :type geometry_plugin: AbstractGeometry
-    :param dem: path to the dem folder
-    :param default_alt: default altitude to use in the missing dem regions
     :param epipolar_step: step to use to construct the epipolar grids
-    :param geoid: path to the geoid file
     :return: Tuple composed of :
 
         - the left epipolar grid as a numpy array

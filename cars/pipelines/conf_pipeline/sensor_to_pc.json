@@ -2,7 +2,7 @@
     "applications": {
         "triangulation": {
             "method": "line_of_sight_intersection",
-            "save_points_cloud": true
+            "save_intermediate_data": true
         }
     }
 }

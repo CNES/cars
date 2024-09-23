@@ -53,7 +53,7 @@ def test_check_full_conf():
         "sift_back_matching": True,
         "matches_filter_knn": 25,
         "matches_filter_dev_factor": 3.0,
-        "save_matches": False,
+        "save_intermediate_data": False,
     }
     _ = Sift(conf)
 

@@ -31,9 +31,7 @@ from cars.applications.triangulation import triangulation_tools
 # CARS imports
 from cars.core import constants as cst
 from cars.core import preprocessing, projection
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 def triangulate_sparse_matches(

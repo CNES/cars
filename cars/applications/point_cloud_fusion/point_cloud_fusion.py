@@ -49,7 +49,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         fusion_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Fusion method not specified, "
                 "default {} is used".format(fusion_method)

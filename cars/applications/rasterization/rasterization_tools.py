@@ -300,6 +300,7 @@ def compute_vector_raster_and_stats(
     classif_indexes = find_indexes_in_point_cloud(
         cloud, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, list_computed_layers
     )
+
     values_bands.extend(classif_indexes)
     split_indexes.append(len(classif_indexes))
 
@@ -333,6 +334,13 @@ def compute_vector_raster_and_stats(
         cloud, cst.POINTS_CLOUD_FILLING_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(filling_indexes)
+    split_indexes.append(len(filling_indexes))
+
+    # 8. Performance map
+    performance_map_indexes = find_indexes_in_point_cloud(
+        cloud, cst.POINTS_CLOUD_PERFORMANCE_MAP, list_computed_layers
+    )
+    values_bands.extend(performance_map_indexes)
 
     values = (
         cloud.loc[:, values_bands].values.T
@@ -356,9 +364,16 @@ def compute_vector_raster_and_stats(
     )
 
     # pylint: disable=unbalanced-tuple-unpacking
-    out, confidences, interval, msk, classif, source_pc, filling = np.split(
-        out, np.cumsum(split_indexes), axis=-1
-    )
+    (
+        out,
+        confidences,
+        interval,
+        msk,
+        classif,
+        source_pc,
+        filling,
+        performance_map,
+    ) = np.split(out, np.cumsum(split_indexes), axis=-1)
 
     confidences_out = None
     if len(confidences_indexes) > 0:
@@ -390,6 +405,9 @@ def compute_vector_raster_and_stats(
     if len(filling_indexes) > 0:
         filling_out = np.ceil(filling)
 
+    if len(performance_map_indexes) == 0:
+        performance_map = None
+
     return (
         out,
         weights_sum,
@@ -407,6 +425,7 @@ def compute_vector_raster_and_stats(
         source_pc_out,
         filling_out,
         filling_indexes,
+        performance_map,
     )
 
 
@@ -437,6 +456,7 @@ def create_raster_dataset(
     source_pc_names: List[str] = None,
     filling: np.ndarray = None,
     band_filling: List[str] = None,
+    performance_map: np.ndarray = None,
 ) -> xr.Dataset:
     """
     Create final raster xarray dataset
@@ -465,6 +485,7 @@ def create_raster_dataset(
     :param source_pc: binary raster with source point cloud information
     :param source_pc_names: list of names of points cloud before merging :
         name of sensors pair or name of point cloud file
+    :param performance_map: raster containing the performance map
     :return: the raster xarray dataset
     """
     raster_dims = (cst.Y, cst.X)
@@ -623,6 +644,12 @@ def create_raster_dataset(
         # update raster output with filling information
         raster_out = xr.merge((raster_out, filling_out))
 
+    if performance_map is not None:
+        performance_map = np.nan_to_num(performance_map, nan=msk_no_data)
+        raster_out[cst.RASTER_PERFORMANCE_MAP] = xr.DataArray(
+            performance_map, dims=raster_dims
+        )
+
     return raster_out
 
 
@@ -695,6 +722,7 @@ def rasterize(
         source_pc,
         filling,
         filling_indexes,
+        performance_map,
     ) = compute_vector_raster_and_stats(
         cloud,
         x_start,
@@ -745,6 +773,9 @@ def rasterize(
         filling = filling.reshape(shape_out + (-1,))
         filling = np.moveaxis(filling, 2, 0)
 
+    if performance_map is not None:
+        performance_map = performance_map.reshape(shape_out)
+
     # build output dataset
     raster_out = create_raster_dataset(
         out,
@@ -773,6 +804,7 @@ def rasterize(
         source_pc_names,
         filling,
         filling_indexes,
+        performance_map,
     )
 
     return raster_out

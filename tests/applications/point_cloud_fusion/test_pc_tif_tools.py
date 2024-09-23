@@ -43,22 +43,18 @@ def generate_test_inputs():
     Helper function for generating input
     """
 
-    path_pc = absolute_data_path("input/epi_pc_gizeh")
+    path_pc = absolute_data_path("input/depth_map_gizeh")
 
     data = {
-        cst.X: os.path.join(path_pc, "epi_pc_X.tif"),
-        cst.Y: os.path.join(path_pc, "epi_pc_Y.tif"),
-        cst.Z: os.path.join(path_pc, "epi_pc_Z.tif"),
-        cst.POINTS_CLOUD_CLR_KEY_ROOT: os.path.join(
-            path_pc, "epi_pc_color.tif"
-        ),
+        cst.X: os.path.join(path_pc, "X.tif"),
+        cst.Y: os.path.join(path_pc, "Y.tif"),
+        cst.Z: os.path.join(path_pc, "Z.tif"),
+        cst.POINTS_CLOUD_CLR_KEY_ROOT: os.path.join(path_pc, "color.tif"),
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
-            path_pc, "epi_pc_classification.tif"
+            path_pc, "classification.tif"
         ),
         cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: {
-            "confidence1": os.path.join(
-                path_pc, "epi_confidence_performance_map.tif"
-            )
+            "confidence1": os.path.join(path_pc, "performance_map.tif")
         },
         cst.POINTS_CLOUD_MSK: None,
         cst.PC_EPSG: 4326,

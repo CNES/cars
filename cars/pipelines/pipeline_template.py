@@ -71,6 +71,7 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
             OptionalKey(pipeline_constants.GEOMETRY_PLUGIN): str,
             OptionalKey(pipeline_constants.ORCHESTRATOR): dict,
             OptionalKey(pipeline_constants.PIPELINE): str,
+            OptionalKey(pipeline_constants.ADVANCED): dict,
         }
 
         checker_inputs = Checker(global_schema)
@@ -112,12 +113,14 @@ class PipelineTemplate(metaclass=ABCMeta):  # pylint: disable=R0903
         """
 
     @abstractmethod
-    def check_output(self, conf):
+    def check_output(self, conf, pipeline):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
+        :param pipeline: name of corresponding pipeline
+        :type pipeline_name: str
 
         :return overloader output
         :rtype : dict

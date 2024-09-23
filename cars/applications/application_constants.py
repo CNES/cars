@@ -24,3 +24,6 @@ application_constants contains constants used in application module
 
 
 APPLICATION_TAG = "applications"
+
+# common parameters
+SAVE_INTERMEDIATE_DATA = "save_intermediate_data"

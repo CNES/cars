@@ -22,7 +22,7 @@
       ]
     ],
     "initial_elevation": {
-      "dem_path": "srtm/N44E005.hgt",
+      "dem": "srtm/N44E005.hgt",
       "geoid": "../geoid/egm96_15.tif"
     }
   }

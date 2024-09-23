@@ -50,7 +50,7 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
 
         grid_method = cls.default_application
 
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Grid generation method not specified, default "
                 " {} is used".format(grid_method)
@@ -93,6 +93,15 @@ class GridGeneration(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         super().__init__(conf=conf)
+
+    @abstractmethod
+    def get_save_grids(self):
+        """
+        Get whether the grid will be saved
+
+        :return: true is grid saving is activated
+        :rtype: bool
+        """
 
     @abstractmethod
     def run(

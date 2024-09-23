@@ -274,11 +274,11 @@ def test_compute_disparity_1_msk_ref():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc")
+    #     absolute_data_path("ref_output/disp1_ref_pandora_mask_ref.nc")
     # )
 
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/disp1_ref_pandora_msk_ref.nc")
+        absolute_data_path("ref_output/disp1_ref_pandora_mask_ref.nc")
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
 
@@ -322,11 +322,11 @@ def test_compute_disparity_1_msk_sec():
 
     # Uncomment to update baseline
     # output.to_netcdf(
-    #     absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
+    #     absolute_data_path("ref_output/disp1_ref_pandora_mask_sec.nc")
     # )
 
     ref = xr.open_dataset(
-        absolute_data_path("ref_output/disp1_ref_pandora_msk_sec.nc")
+        absolute_data_path("ref_output/disp1_ref_pandora_mask_sec.nc")
     )
     assert_same_datasets(output, ref, atol=5.0e-6)
 

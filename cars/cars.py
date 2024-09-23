@@ -31,6 +31,7 @@ import json
 import logging
 import os
 import sys
+import warnings
 
 # CARS imports
 from cars import __version__
@@ -90,6 +91,24 @@ def main_cli(args, dry_run=False):  # noqa: C901
         with open(args.conf, "r", encoding="utf8") as fstream:
             config = json.load(fstream)
 
+        # Cars 0.9.0 API change, check if the configfile seems to use the old
+        # API by looking for the deprecated out_dir key
+        # TODO this check can be removed after cars 0.10.0
+        if config.get("output", {}).get("out_dir"):
+
+            # throw an exception if both out_dir and directory are defined
+            if "directory" in config["output"]:
+                raise RuntimeError("both directory and out_dir keys defined")
+            # stacklevel -> main_cli()
+            warnings.warn(
+                "Deprecated key 'out_dir' found in output configuration. "
+                "Replacing it with key 'directory'",
+                FutureWarning,
+                stacklevel=2,
+            )
+            config["output"]["directory"] = config["output"]["out_dir"]
+            del config["output"]["out_dir"]
+
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
         pipeline_name = config.get(
             "pipeline", "sensors_to_dense_dsm_no_merging"
@@ -97,9 +116,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()
-        out_dir = config["output"]["out_dir"]
+        out_dir = config["output"]["directory"]
         cars_logging.setup_logging(
-            loglevel, out_dir=out_dir, pipeline=pipeline_name
+            loglevel,
+            out_dir=os.path.join(out_dir, "logs"),
+            pipeline=pipeline_name,
         )
         logging.debug("Show argparse arguments: {}".format(args))
 

@@ -53,6 +53,7 @@ from cars.applications.rasterization.point_cloud_rasterization import (
 )
 from cars.core import constants as cst
 from cars.core import projection, tiling
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset, format_transformation
 
 # R0903  temporary disabled for error "Too few public methods"
@@ -87,22 +88,11 @@ class SimpleGaussian(
         self.grid_points_division_factor = self.used_config[
             "grid_points_division_factor"
         ]
-        self.resolution = self.used_config["resolution"]
         # get nodata values
         self.dsm_no_data = self.used_config["dsm_no_data"]
         self.color_no_data = self.used_config["color_no_data"]
         self.color_dtype = self.used_config["color_dtype"]
         self.msk_no_data = self.used_config["msk_no_data"]
-        # Get if color, mask and stats are saved
-        self.save_color = self.used_config["save_color"]
-        self.save_stats = self.used_config["save_stats"]
-        self.save_mask = self.used_config["save_mask"]
-        self.save_classif = self.used_config["save_classif"]
-        self.save_dsm = self.used_config["save_dsm"]
-        self.save_intervals = self.used_config["save_intervals"]
-        self.save_confidence = self.used_config["save_confidence"]
-        self.save_source_pc = self.used_config["save_source_pc"]
-        self.save_filling = self.used_config["save_filling"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -135,7 +125,6 @@ class SimpleGaussian(
         overloaded_conf["grid_points_division_factor"] = conf.get(
             "grid_points_division_factor", None
         )
-        overloaded_conf["resolution"] = conf.get("resolution", 0.5)
 
         # get nodata values
         overloaded_conf["dsm_no_data"] = conf.get("dsm_no_data", -32768)
@@ -143,31 +132,12 @@ class SimpleGaussian(
         overloaded_conf["color_dtype"] = conf.get("color_dtype", None)
         overloaded_conf["msk_no_data"] = conf.get("msk_no_data", 255)
 
-        # Get if color, mask and stats are saved
-        overloaded_conf["save_color"] = conf.get("save_color", True)
-        overloaded_conf["save_stats"] = conf.get("save_stats", False)
-        overloaded_conf["save_mask"] = conf.get("save_mask", False)
-        overloaded_conf["save_classif"] = conf.get("save_classif", False)
-        overloaded_conf["save_dsm"] = conf.get("save_dsm", True)
-        overloaded_conf["save_intervals"] = conf.get("save_intervals", False)
-        overloaded_conf["save_confidence"] = conf.get("save_confidence", False)
-        overloaded_conf["save_source_pc"] = conf.get("save_source_pc", False)
-        overloaded_conf["save_filling"] = conf.get("save_filling", False)
-
-        overloaded_conf["compute_all"] = conf.get("compute_all", False)
-        if overloaded_conf["compute_all"]:
-            # all the layers will computed
-            self.list_computed_layers = None
-        else:
-            # only the saved layers will be saved
-            self.list_computed_layers = []
-            for key in overloaded_conf.keys():
-                if "save_" in key and overloaded_conf[key]:
-                    self.list_computed_layers.append(key.split("save_")[1])
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
 
         rasterization_schema = {
             "method": str,
-            "resolution": float,
             "dsm_radius": Or(float, int),
             "sigma": Or(float, None),
             "grid_points_division_factor": Or(None, int),
@@ -175,16 +145,7 @@ class SimpleGaussian(
             "msk_no_data": int,
             "color_no_data": int,
             "color_dtype": Or(None, str),
-            "save_color": bool,
-            "save_mask": bool,
-            "save_classif": bool,
-            "save_stats": bool,
-            "save_dsm": bool,
-            "save_intervals": bool,
-            "save_confidence": bool,
-            "save_source_pc": bool,
-            "save_filling": bool,
-            "compute_all": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -193,24 +154,17 @@ class SimpleGaussian(
 
         return overloaded_conf
 
-    def get_resolution(self):
-        """
-        Get the resolution used by rasterization application
-
-        :return: resolution in meters or degrees
-
-        """
-
-        return self.resolution
-
-    def get_margins(self):
+    def get_margins(self, resolution):
         """
         Get the margin to use for terrain tiles
+
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
 
         :return: margin in meters or degrees
         """
 
-        margins = self.dsm_radius * self.resolution
+        margins = self.dsm_radius * resolution
         return margins
 
     def get_optimal_tile_size(
@@ -252,10 +206,17 @@ class SimpleGaussian(
         self,
         points_clouds,
         epsg,
+        resolution,
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
+        mask_file_name=None,
+        classif_file_name=None,
+        performance_map_file_name=None,
+        contributing_pair_file_name=None,
+        filling_file_name=None,
         color_dtype=None,
+        dump_dir=None,
     ):
         """
         Run PointsCloudRasterisation application.
@@ -289,13 +250,27 @@ class SimpleGaussian(
         :type points_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
+        :param mask_file_name: path of color
+        :type mask_file_name: str
+        :param classif_file_name: path of color
+        :type performance_map_file_name: str
+        :param performance_map_file_name: path of performance map file
+        :type confidence_file_name: str
+        :param contributing_pair_file_name: path of contributing pair file
+        :type contributing_pair_file_name: str
+        :param filling_file_name: path of filling file
+        :type filling_file_name: str
         :param color_dtype: output color image type
         :type color_dtype: str (numpy type)
+        :param dump_dir: directory used for outputs with no associated filename
+        :type dump_dir: str
 
         :return: raster DSM. CarsDataset contains:
 
@@ -311,6 +286,9 @@ class SimpleGaussian(
         :rtype : CarsDataset filled with xr.Dataset
         """
 
+        # only the saved layers will be saved
+        list_computed_layers = []
+
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -321,6 +299,13 @@ class SimpleGaussian(
             )
         else:
             self.orchestrator = orchestrator
+
+        # Setup dump directory
+        if dump_dir is not None:
+            out_dump_dir = dump_dir
+            safe_makedirs(dump_dir)
+        else:
+            out_dump_dir = self.orchestrator.out_dir
 
         # Check if input data is supported
         data_valid = True
@@ -353,7 +338,7 @@ class SimpleGaussian(
             # Get tiling grid
             terrain_raster.tiling_grid = (
                 format_transformation.terrain_coords_to_pix(
-                    points_clouds, self.resolution
+                    points_clouds, resolution
                 )
             )
             bounds = points_clouds.attributes["bounds"]
@@ -371,13 +356,16 @@ class SimpleGaussian(
         terrain_raster.generate_none_tiles()
 
         # Derive output image files parameters to pass to rasterio
-        xsize, ysize = tiling.roi_to_start_and_size(bounds, self.resolution)[2:]
+        xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)[2:]
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
         if isinstance(points_clouds, tuple):
             source_pc_names = points_clouds[0][0].attributes["source_pc_names"]
         else:
             source_pc_names = points_clouds.attributes["source_pc_names"]
+
+        # Get if color, mask and stats are saved
+        save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Save objects
         # Initialize files names
@@ -389,6 +377,7 @@ class SimpleGaussian(
         out_clr_file_name = None
         out_msk_file_name = None
         out_confidence = None
+        out_performance_map = None
         out_dsm_mean_file_name = None
         out_dsm_std_file_name = None
         out_dsm_n_pts_file_name = None
@@ -402,13 +391,14 @@ class SimpleGaussian(
         out_dsm_sup_n_pts_file_name = None
         out_dsm_sup_points_in_cell_file_name = None
 
-        if self.save_dsm:
-            if dsm_file_name is not None:
-                out_dsm_file_name = dsm_file_name
-            else:
-                out_dsm_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm.tif"
-                )
+        if dsm_file_name is not None:
+            safe_makedirs(os.path.dirname(dsm_file_name))
+
+        out_dsm_file_name = dsm_file_name
+        if dsm_file_name is None and save_intermediate_data:
+            out_dsm_file_name = os.path.join(out_dump_dir, "dsm.tif")
+        if out_dsm_file_name is not None:
+            list_computed_layers += ["dsm"]
             self.orchestrator.add_to_save_lists(
                 out_dsm_file_name,
                 cst.RASTER_HGT,
@@ -417,9 +407,7 @@ class SimpleGaussian(
                 nodata=self.dsm_no_data,
                 cars_ds_name="dsm",
             )
-            out_weights_file_name = os.path.join(
-                self.orchestrator.out_dir, "weights.tif"
-            )
+            out_weights_file_name = os.path.join(out_dump_dir, "weights.tif")
             self.orchestrator.add_to_save_lists(
                 out_weights_file_name,
                 cst.RASTER_WEIGHTS_SUM,
@@ -429,38 +417,11 @@ class SimpleGaussian(
                 cars_ds_name="dsm_weights",
             )
 
-        # TODO Check that intervals indeed exist!
-        if self.save_intervals:
-            out_dsm_inf_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_inf.tif"
-            )
-            self.orchestrator.add_to_save_lists(
-                out_dsm_inf_file_name,
-                cst.RASTER_HGT_INF,
-                terrain_raster,
-                dtype=np.float32,
-                nodata=self.dsm_no_data,
-                cars_ds_name="dsm_inf",
-            )
-            out_dsm_sup_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_sup.tif"
-            )
-            self.orchestrator.add_to_save_lists(
-                out_dsm_sup_file_name,
-                cst.RASTER_HGT_SUP,
-                terrain_raster,
-                dtype=np.float32,
-                nodata=self.dsm_no_data,
-                cars_ds_name="dsm_sup",
-            )
-
-        if self.save_color:
-            if color_file_name is not None:
-                out_clr_file_name = color_file_name
-            else:
-                out_clr_file_name = os.path.join(
-                    self.orchestrator.out_dir, "clr.tif"
-                )
+        out_clr_file_name = color_file_name
+        if color_file_name is None and save_intermediate_data:
+            out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
+        if out_clr_file_name is not None:
+            list_computed_layers += ["color"]
             if not self.color_dtype:
                 self.color_dtype = color_dtype
             self.orchestrator.add_to_save_lists(
@@ -471,18 +432,129 @@ class SimpleGaussian(
                 nodata=self.color_no_data,
                 cars_ds_name="color",
             )
-        if self.save_stats:
-            out_dsm_mean_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_mean.tif"
+
+        out_classif_file_name = classif_file_name
+        if classif_file_name is None and save_intermediate_data:
+            out_classif_file_name = os.path.join(
+                out_dump_dir, "classification.tif"
             )
-            out_dsm_std_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_std.tif"
+        if out_classif_file_name is not None:
+            list_computed_layers += ["classif"]
+            self.orchestrator.add_to_save_lists(
+                out_classif_file_name,
+                cst.RASTER_CLASSIF,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="dsm_classif",
+                optional_data=True,
             )
+
+        out_msk_file_name = mask_file_name
+        if mask_file_name is None and save_intermediate_data:
+            out_msk_file_name = os.path.join(out_dump_dir, "mask.tif")
+        if out_msk_file_name is not None:
+            list_computed_layers += ["mask"]
+            self.orchestrator.add_to_save_lists(
+                out_msk_file_name,
+                cst.RASTER_MSK,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="dsm_mask",
+                optional_data=True,
+            )
+
+        out_performance_map = performance_map_file_name
+        if performance_map_file_name is None and save_intermediate_data:
+            out_performance_map = os.path.join(
+                out_dump_dir, "performance_map.tif"
+            )
+        if out_performance_map:
+            list_computed_layers += ["performance_map"]
+            self.orchestrator.add_to_save_lists(
+                out_performance_map,
+                cst.RASTER_PERFORMANCE_MAP,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.msk_no_data,
+                cars_ds_name="performance_map",
+                optional_data=True,
+            )
+
+        out_source_pc = contributing_pair_file_name
+        if contributing_pair_file_name is None and save_intermediate_data:
+            out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
+        if out_source_pc:
+            list_computed_layers += ["source_pc"]
+            self.orchestrator.add_to_save_lists(
+                out_source_pc,
+                cst.RASTER_SOURCE_PC,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="source_pc",
+                optional_data=True,
+            )
+
+        out_filling = filling_file_name
+        if out_filling is None and save_intermediate_data:
+            out_filling = os.path.join(out_dump_dir, "filling.tif")
+        if out_filling:
+            list_computed_layers += ["filling"]
+            self.orchestrator.add_to_save_lists(
+                out_filling,
+                cst.RASTER_FILLING,
+                terrain_raster,
+                dtype=np.uint8,
+                nodata=self.msk_no_data,
+                cars_ds_name="filling",
+                optional_data=True,
+            )
+
+        # TODO Check that intervals indeed exist!
+        if save_intermediate_data:
+            out_confidence = os.path.join(out_dump_dir, "confidence.tif")
+            list_computed_layers += ["confidence"]
+            self.orchestrator.add_to_save_lists(
+                out_confidence,
+                cst.RASTER_CONFIDENCE,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.msk_no_data,
+                cars_ds_name="confidence",
+                optional_data=True,
+            )
+
+            list_computed_layers += ["intervals", "stats"]
+            out_dsm_inf_file_name = os.path.join(out_dump_dir, "dsm_inf.tif")
+            self.orchestrator.add_to_save_lists(
+                out_dsm_inf_file_name,
+                cst.RASTER_HGT_INF,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_inf",
+                optional_data=True,
+            )
+            out_dsm_sup_file_name = os.path.join(out_dump_dir, "dsm_sup.tif")
+            self.orchestrator.add_to_save_lists(
+                out_dsm_sup_file_name,
+                cst.RASTER_HGT_SUP,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_sup",
+                optional_data=True,
+            )
+
+            out_dsm_mean_file_name = os.path.join(out_dump_dir, "dsm_mean.tif")
+            out_dsm_std_file_name = os.path.join(out_dump_dir, "dsm_std.tif")
             out_dsm_n_pts_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_n_pts.tif"
+                out_dump_dir, "dsm_n_pts.tif"
             )
             out_dsm_points_in_cell_file_name = os.path.join(
-                self.orchestrator.out_dir, "dsm_pts_in_cell.tif"
+                out_dump_dir, "dsm_pts_in_cell.tif"
             )
             self.orchestrator.add_to_save_lists(
                 out_dsm_mean_file_name,
@@ -516,111 +588,57 @@ class SimpleGaussian(
                 nodata=0,
                 cars_ds_name="dsm_pts_in_cells",
             )
-            if self.save_intervals:
-                out_dsm_inf_mean_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_mean.tif"
-                )
-                out_dsm_inf_std_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_inf_std.tif"
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_inf_mean_file_name,
-                    cst.RASTER_HGT_INF_MEAN,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.dsm_no_data,
-                    cars_ds_name="dsm_inf_mean",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_inf_std_file_name,
-                    cst.RASTER_HGT_INF_STD_DEV,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.dsm_no_data,
-                    cars_ds_name="dsm_inf_std",
-                )
-                out_dsm_sup_mean_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_mean.tif"
-                )
-                out_dsm_sup_std_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dsm_sup_std.tif"
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_sup_mean_file_name,
-                    cst.RASTER_HGT_SUP_MEAN,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.dsm_no_data,
-                    cars_ds_name="dsm_sup_mean",
-                )
-                self.orchestrator.add_to_save_lists(
-                    out_dsm_sup_std_file_name,
-                    cst.RASTER_HGT_SUP_STD_DEV,
-                    terrain_raster,
-                    dtype=np.float32,
-                    nodata=self.dsm_no_data,
-                    cars_ds_name="dsm_sup_std",
-                )
-        if self.save_classif:
-            out_classif_file_name = os.path.join(
-                self.orchestrator.out_dir, "classif.tif"
+
+            out_dsm_inf_mean_file_name = os.path.join(
+                out_dump_dir, "dsm_inf_mean.tif"
             )
-            self.orchestrator.add_to_save_lists(
-                out_classif_file_name,
-                cst.RASTER_CLASSIF,
-                terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="dsm_classif",
-            )
-        if self.save_mask:
-            out_msk_file_name = os.path.join(
-                self.orchestrator.out_dir, "msk.tif"
-            )
-            self.orchestrator.add_to_save_lists(
-                out_msk_file_name,
-                cst.RASTER_MSK,
-                terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="dsm_mask",
+            out_dsm_inf_std_file_name = os.path.join(
+                out_dump_dir, "dsm_inf_std.tif"
             )
 
-        if self.save_confidence:
-            out_confidence = os.path.join(
-                self.orchestrator.out_dir, "confidence.tif"
-            )
             self.orchestrator.add_to_save_lists(
-                out_confidence,
-                cst.RASTER_CONFIDENCE,
+                out_dsm_inf_mean_file_name,
+                cst.RASTER_HGT_INF_MEAN,
                 terrain_raster,
                 dtype=np.float32,
-                nodata=self.msk_no_data,
-                cars_ds_name="confidence",
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_inf_mean",
+                optional_data=True,
             )
 
-        if self.save_source_pc:
-            out_source_pc = os.path.join(
-                self.orchestrator.out_dir, "source_pc.tif"
-            )
             self.orchestrator.add_to_save_lists(
-                out_source_pc,
-                cst.RASTER_SOURCE_PC,
+                out_dsm_inf_std_file_name,
+                cst.RASTER_HGT_INF_STD_DEV,
                 terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="source_pc",
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_inf_std",
+                optional_data=True,
             )
 
-        if self.save_filling:
-            out_filling = os.path.join(self.orchestrator.out_dir, "filling.tif")
+            out_dsm_sup_mean_file_name = os.path.join(
+                out_dump_dir, "dsm_sup_mean.tif"
+            )
+            out_dsm_sup_std_file_name = os.path.join(
+                out_dump_dir, "dsm_sup_std.tif"
+            )
             self.orchestrator.add_to_save_lists(
-                out_filling,
-                cst.RASTER_FILLING,
+                out_dsm_sup_mean_file_name,
+                cst.RASTER_HGT_SUP_MEAN,
                 terrain_raster,
-                dtype=np.uint8,
-                nodata=self.msk_no_data,
-                cars_ds_name="filling",
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_sup_mean",
+                optional_data=True,
+            )
+            self.orchestrator.add_to_save_lists(
+                out_dsm_sup_std_file_name,
+                cst.RASTER_HGT_SUP_STD_DEV,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.dsm_no_data,
+                cars_ds_name="dsm_sup_std",
+                optional_data=True,
             )
 
         # Get saving infos in order to save tiles when they are computed
@@ -629,11 +647,11 @@ class SimpleGaussian(
         # Generate profile
         geotransform = (
             bounds[0],
-            self.resolution,
+            resolution,
             0.0,
             bounds[3],
             0.0,
-            -self.resolution,
+            -resolution,
         )
 
         transform = Affine.from_gdal(*geotransform)
@@ -672,6 +690,7 @@ class SimpleGaussian(
                     raster_cst.COLOR_TAG: out_clr_file_name,
                     raster_cst.MSK_TAG: out_msk_file_name,
                     raster_cst.CONFIDENCE_TAG: out_confidence,
+                    raster_cst.PERFORMANCE_MAP_TAG: out_confidence,
                     raster_cst.DSM_MEAN_TAG: out_dsm_mean_file_name,
                     raster_cst.DSM_STD_TAG: out_dsm_std_file_name,
                     raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,
@@ -737,12 +756,12 @@ class SimpleGaussian(
                             rasterization_wrapper
                         )(
                             points_clouds[pc_row, pc_col],
-                            self.resolution,
+                            resolution,
                             epsg,
                             raster_profile,
                             window=window,
                             terrain_region=terrain_region,
-                            list_computed_layers=self.list_computed_layers,
+                            list_computed_layers=list_computed_layers,
                             saving_info=full_saving_info,
                             radius=self.dsm_radius,
                             sigma=self.sigma,
@@ -772,13 +791,13 @@ class SimpleGaussian(
                                 rasterization_wrapper
                             )(
                                 point_cloud[row_pc, col_pc],
-                                self.resolution,
+                                resolution,
                                 epsg,
                                 raster_profile,
                                 window=None,
                                 terrain_region=None,
                                 terrain_full_roi=bounds,
-                                list_computed_layers=self.list_computed_layers,
+                                list_computed_layers=list_computed_layers,
                                 saving_info=full_saving_info,
                                 radius=self.dsm_radius,
                                 sigma=self.sigma,

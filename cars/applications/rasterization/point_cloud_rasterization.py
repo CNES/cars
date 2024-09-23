@@ -49,7 +49,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         rasterization_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Rasterisation method not specified, "
                 "default {} is used".format(rasterization_method)
@@ -94,18 +94,12 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         super().__init__(conf=conf)
 
     @abstractmethod
-    def get_resolution(self):
-        """
-        Get the resolution used by rasterization application
-
-        :return: resolution in meters or degrees
-
-        """
-
-    @abstractmethod
-    def get_margins(self):
+    def get_margins(self, resolution):
         """
         Get the margin to use for terrain tiles
+
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
 
         :return: margin in meters or degrees
         """
@@ -137,9 +131,17 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         self,
         points_clouds,
         epsg,
+        resolution,
         orchestrator=None,
         dsm_file_name=None,
         color_file_name=None,
+        mask_file_name=None,
+        classif_file_name=None,
+        performance_map_file_name=None,
+        contributing_pair_file_name=None,
+        filling_file_name=None,
+        color_dtype=None,
+        dump_dir=None,
     ):
         """
         Run PointsCloudRasterisation application.
@@ -150,11 +152,27 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         :type points_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
+        :param resolution: resolution of raster data (in target CRS unit)
+        :type epsg: float
         :param orchestrator: orchestrator used
         :param dsm_file_name: path of dsm
         :type dsm_file_name: str
         :param color_file_name: path of color
         :type color_file_name: str
+        :param mask_file_name: path of color
+        :type mask_file_name: str
+        :param classif_file_name: path of color
+        :type classif_file_name: str
+        :param performance_map_file_name: path of confidence file
+        :type performance_map_file_name: str
+        :param contributing_pair_file_name: path of contributing pair file
+        :type contributing_pair_file_name: str
+        :param filling_file_name: path of filling file
+        :type filling_file_name: str
+        :param color_dtype: output color image type
+        :type color_dtype: str (numpy type)
+        :param dump_dir: directory used for outputs with no associated filename
+        :type dump_dir: str
 
         :return: raster DSM
         :rtype: CarsDataset filled with xr.Dataset

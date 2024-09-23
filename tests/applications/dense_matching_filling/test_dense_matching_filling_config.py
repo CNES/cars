@@ -40,7 +40,7 @@ def test_check_full_conf_zero_padding():
     conf = {
         "method": "zero_padding",
         "classification": ["water", "building"],
-        "save_disparity_map": False,
+        "save_intermediate_data": False,
     }
     _ = ZerosPadding(conf)
 
@@ -62,7 +62,7 @@ def test_check_full_conf_plane():
         "nb_pix": 20,
         "percent_to_erode": 0.2,
         "classification": ["water", "building"],
-        "save_disparity_map": False,
+        "save_intermediate_data": False,
     }
     _ = PlaneFill(conf)
 

@@ -1,10 +1,2 @@
 {
-    "applications": {
-        "point_cloud_rasterization": {
-            "method": "simple_gaussian",
-            "resolution": 15.0,
-            "save_color": false,
-            "save_confidence": false
-        }
-    }
 }

@@ -40,6 +40,6 @@ def test_check_full_conf():
     conf = {
         "method": "line_of_sight_intersection",
         "snap_to_img1": False,
-        "save_points_cloud": False,
+        "save_intermediate_data": False,
     }
     _ = LineOfSightIntersection(conf)

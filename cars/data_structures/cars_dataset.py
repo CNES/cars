@@ -579,7 +579,11 @@ def run_save_arrays(future_result, file_name, tag=None, descriptor=None):
 
 
 def run_save_points(
-    future_result, file_name, overwrite=False, save_points_cloud_by_pair=False
+    future_result,
+    file_name,
+    overwrite=False,
+    save_by_pair=False,
+    point_cloud_format="csv",
 ):
     """
     Save future result when arrived
@@ -590,6 +594,8 @@ def run_save_points(
     :type file_name: str
     :param overwrite: overwrite file
     :type overwrite: bool
+    :param point_cloud_format: output point cloud format
+    :type point_cloud_format: str
 
     """
 
@@ -597,8 +603,9 @@ def run_save_points(
     save_all_dataframe(
         future_result,
         file_name,
-        save_points_cloud_by_pair=save_points_cloud_by_pair,
+        save_by_pair=save_by_pair,
         overwrite=overwrite,
+        point_cloud_format=point_cloud_format,
     )
 
 
@@ -923,17 +930,23 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
 
 
 def save_all_dataframe(
-    dataframe, file_name, save_points_cloud_by_pair=False, overwrite=True
+    dataframe,
+    file_name,
+    save_by_pair=False,
+    overwrite=True,
+    point_cloud_format="csv",
 ):
     """
     Save DataFrame to csv and laz format. The content of dataframe is merged to
     the content of existing saved Dataframe, if overwrite==False
-    The option save_points_cloud_by_pair separate the dataframe
+    The option save_by_pair separate the dataframe
     by pair
     :param file_name: file name to save data to
     :type file_name: str
     :param overwrite: overwrite file if exists
     :type overwrite: bool
+    :param point_cloud_format: point cloud format (csv or laz)
+    :type point_cloud_format: str
 
     """
     # generate filename if attributes have xstart and ystart settings
@@ -960,8 +973,8 @@ def save_all_dataframe(
                 + str(dataframe.attrs["saving_info"]["cars_ds_row"])
             ),
         )
-    if not save_points_cloud_by_pair:
-        save_dataframe(dataframe, file_name, overwrite)
+    if not save_by_pair:
+        save_dataframe(dataframe, file_name, overwrite, point_cloud_format)
     else:
         pairing_indexes = set(np.array(dataframe["global_id"]).flat)
         source_pc_names = dataframe.attrs["attributes"]["source_pc_names"]
@@ -975,10 +988,13 @@ def save_all_dataframe(
                 dataframe.loc[points_indexes],
                 file_name_by_pair,
                 overwrite,
+                point_cloud_format,
             )
 
 
-def save_dataframe(dataframe, file_name, overwrite=True):
+def save_dataframe(
+    dataframe, file_name, overwrite=True, point_cloud_format="csv"
+):
     """
     Save dataframe (csv, laz, attr file)
     """
@@ -987,24 +1003,11 @@ def save_dataframe(dataframe, file_name, overwrite=True):
     save_dict(dataframe.attrs, attributes_file_name, safe_save=True)
 
     # Save point cloud to laz format
-    if (
-        "attributes" in dataframe.attrs
-        and "save_points_cloud_as_laz" in dataframe.attrs["attributes"]
-    ):
-        if dataframe.attrs["attributes"]["save_points_cloud_as_laz"]:
-            las_file_name = file_name + ".laz"
-            dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
 
-    # Save panda dataframe to csv
-    if (
-        (
-            "attributes" in dataframe.attrs
-            and "save_points_cloud_as_csv" in dataframe.attrs["attributes"]
-            and dataframe.attrs["attributes"]["save_points_cloud_as_csv"]
-        )
-        or "attributes" not in dataframe.attrs
-        or "save_points_cloud_as_csv" not in dataframe.attrs["attributes"]
-    ):
+    if point_cloud_format == "laz":
+        las_file_name = file_name + ".laz"
+        dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
+    elif point_cloud_format == "csv":
         _, extension = os.path.splitext(file_name)
         if "csv" not in extension:
             file_name = file_name + ".csv"
@@ -1022,6 +1025,10 @@ def save_dataframe(dataframe, file_name, overwrite=True):
                 merged_dataframe.to_csv(file_name, index=False)
             else:
                 dataframe.to_csv(file_name, index=False)
+    else:
+        raise RuntimeError(
+            "Invalid point cloud format {0}".format(point_cloud_format)
+        )
 
 
 def save_dataset(

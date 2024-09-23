@@ -349,22 +349,23 @@ def show_epipolar_images(
     fig.tight_layout()
 
 
-def overide_input_conf_with_a_priori(
-    inputs_conf, content_json_with_a_priori, input_dir_path
+def update_advanced_conf_with_a_priori(
+    advanced_conf, content_json_with_a_priori, input_dir_path
 ):
     """
-    Overide given input dict with a priori in .json file
+    Update given advanced parameter dict with a priori in .json file
 
-    :param inputs_conf: dict to overide
-    :type inputs_conf: dict
+    :param advanced_conf: dict to overide
+    :type advanced_conf: dict
     :param content_json_with_a_priori: json file to get a priori from
     :type content_json_with_a_priori: str
 
     """
     # Get a priori in file
     a_priori_dict_full = load_dict(content_json_with_a_priori)
-    epipolar_a_priori = a_priori_dict_full["inputs"]["epipolar_a_priori"]
-    terrain_a_priori = a_priori_dict_full["inputs"]["terrain_a_priori"]
+
+    epipolar_a_priori = a_priori_dict_full["advanced"]["epipolar_a_priori"]
+    terrain_a_priori = a_priori_dict_full["advanced"]["terrain_a_priori"]
 
     # Overide paths
     for key in ["dem_median", "dem_min", "dem_max"]:
@@ -375,9 +376,9 @@ def overide_input_conf_with_a_priori(
             )
 
     # set in conf
-    inputs_conf["epipolar_a_priori"] = epipolar_a_priori
-    inputs_conf["terrain_a_priori"] = terrain_a_priori
-    inputs_conf["use_epipolar_a_priori"] = True
+    advanced_conf["epipolar_a_priori"] = epipolar_a_priori
+    advanced_conf["terrain_a_priori"] = terrain_a_priori
+    advanced_conf["use_epipolar_a_priori"] = True
 
 
 def extract_a_priori_from_config(conf):

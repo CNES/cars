@@ -633,6 +633,17 @@ def generate_pc_wrapper(  # noqa: C901
             )
             if cst.BAND_FILLING not in coords:
                 coords[cst.BAND_FILLING] = descriptions
+
+        elif key == cst.EPI_PERFORMANCE_MAP:
+            data = read_image_full(cloud[key], window=window, squeeze=True)
+            descriptions = list(inputs.get_descriptions_bands(cloud[key]))
+            values[cst.EPI_PERFORMANCE_MAP] = (
+                [cst.ROW, cst.COL],
+                data,
+            )
+            if cst.BAND_PERFORMANCE_MAP not in coords:
+                coords[cst.BAND_PERFORMANCE_MAP] = descriptions
+
         else:
             data = read_image_full(cloud[key], window=window, squeeze=True)
             if data.shape == 2:
@@ -995,6 +1006,10 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
     if cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT in items:
         data_dict[cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT] = items[
             cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+        ]
+    if cst.POINTS_CLOUD_PERFORMANCE_MAP in items:
+        data_dict[cst.POINTS_CLOUD_PERFORMANCE_MAP] = items[
+            cst.POINTS_CLOUD_PERFORMANCE_MAP
         ]
 
     # create dict

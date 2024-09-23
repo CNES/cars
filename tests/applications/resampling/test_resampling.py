@@ -40,10 +40,8 @@ from cars.conf import input_parameters as in_params
 from cars.core import constants as cst
 from cars.core import tiling
 from cars.orchestrator import orchestrator
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
+from cars.pipelines.parameters import sensor_inputs
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 # CARS Tests imports
 from ...helpers import (
@@ -238,11 +236,11 @@ def test_epipolar_rectify_images_1(
     assert_same_datasets(right, right_ref)
 
     # Uncomment to update baseline
-    # with open(absolute_data_path("ref_output/data1_ref_clr"), "wb") as file:
+    # with open(absolute_data_path("ref_output/data1_ref_color"), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path("ref_output/data1_ref_clr"),
+        absolute_data_path("ref_output/data1_ref_color"),
         "rb",
     ) as file2:
         # load pickle data
@@ -345,12 +343,14 @@ def test_epipolar_rectify_images_3(
 
     # Uncomment to update baseline
     # with open(absolute_data_path(os.path.join(
-    #           "ref_output","data3_ref_clr_4bands"
+    #           "ref_output","data3_ref_color_4bands"
     #      )), "wb") as file:
     #     pickle.dump(clr, file)
 
     with open(
-        absolute_data_path(os.path.join("ref_output", "data3_ref_clr_4bands")),
+        absolute_data_path(
+            os.path.join("ref_output", "data3_ref_color_4bands")
+        ),
         "rb",
     ) as file2:
         # load pickle data
@@ -383,7 +383,7 @@ def test_check_tiles_in_sensor():
         )
 
         inputs = input_data["inputs"]
-        list_sensor_pairs = sensors_inputs.generate_inputs(
+        list_sensor_pairs = sensor_inputs.generate_inputs(
             inputs, get_geometry_plugin()
         )
 
@@ -394,9 +394,7 @@ def test_check_tiles_in_sensor():
         # Generate grids
         geometry_plugin = get_geometry_plugin(
             dem=inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH],
-            default_alt=inputs[sens_cst.INITIAL_ELEVATION][
-                sens_cst.DEFAULT_ALT
-            ],
+            default_alt=sens_cst.CARS_DEFAULT_ALT,
         )
 
         with orchestrator.Orchestrator(

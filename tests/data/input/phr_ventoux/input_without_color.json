@@ -15,6 +15,6 @@
             }   
         },
         "pairing": [["left", "right"]],
-        "initial_elevation": {"dem_path": "srtm/N44E005.hgt"}
+        "initial_elevation": {"dem": "srtm/N44E005.hgt"}
     }
 }

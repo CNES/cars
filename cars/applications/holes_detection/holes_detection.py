@@ -50,7 +50,7 @@ class HolesDetection(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         holes_detection_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Holes Detection method not specified, "
                 "default {} is used".format(holes_detection_method)

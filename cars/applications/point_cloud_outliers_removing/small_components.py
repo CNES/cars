@@ -82,15 +82,7 @@ class SmallComponents(
         ]
 
         # Saving files
-        self.save_points_cloud_as_laz = self.used_config.get(
-            "save_points_cloud_as_laz", False
-        )
-        self.save_points_cloud_as_csv = self.used_config.get(
-            "save_points_cloud_as_csv", False
-        )
-        self.save_points_cloud_by_pair = self.used_config.get(
-            "save_points_cloud_by_pair", False
-        )
+        self.save_by_pair = self.used_config.get("save_by_pair", False)
 
         # Init orchestrator
         self.orchestrator = None
@@ -116,15 +108,10 @@ class SmallComponents(
 
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "small_components")
-        overloaded_conf["save_points_cloud_as_laz"] = conf.get(
-            "save_points_cloud_as_laz", False
+        overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
+            conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        overloaded_conf["save_points_cloud_as_csv"] = conf.get(
-            "save_points_cloud_as_csv", False
-        )
-        overloaded_conf["save_points_cloud_by_pair"] = conf.get(
-            "save_points_cloud_by_pair", False
-        )
+        overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
         # small components
         overloaded_conf["activated"] = conf.get(
@@ -159,14 +146,13 @@ class SmallComponents(
 
         points_cloud_fusion_schema = {
             "method": str,
-            "save_points_cloud_as_laz": bool,
-            "save_points_cloud_as_csv": bool,
-            "save_points_cloud_by_pair": bool,
+            "save_by_pair": bool,
             "activated": bool,
             "on_ground_margin": int,
             "connection_distance": And(float, lambda x: x > 0),
             "nb_points_threshold": And(int, lambda x: x > 0),
             "clusters_distance_threshold": Or(None, float),
+            application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
@@ -243,9 +229,7 @@ class SmallComponents(
         return on_ground_margin
 
     def run(
-        self,
-        merged_points_cloud,
-        orchestrator=None,
+        self, merged_points_cloud, orchestrator=None, save_laz_output=False
     ):
         """
         Run PointCloudOutliersRemoving application.
@@ -265,6 +249,8 @@ class SmallComponents(
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
+        :param save_laz_output: save output point cloud as laz
+        :type save_laz_output: bool
 
         :return: filtered merged points cloud. CarsDataset contains:
 
@@ -295,10 +281,13 @@ class SmallComponents(
             self.orchestrator = orchestrator
 
         if merged_points_cloud.dataset_type == "points":
-            (filtered_point_cloud, pc_file_name) = self.__register_dataset__(
+            (
+                filtered_point_cloud,
+                point_cloud_laz_file_name,
+                point_cloud_csv_file_name,
+            ) = self.__register_dataset__(
                 merged_points_cloud,
-                self.save_points_cloud_as_laz,
-                self.save_points_cloud_as_csv,
+                save_laz_output,
                 app_name="small_components",
             )
 
@@ -333,12 +322,9 @@ class SmallComponents(
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
-                            self.save_points_cloud_as_laz,
-                            self.save_points_cloud_as_csv,
-                            save_points_cloud_by_pair=(
-                                self.save_points_cloud_by_pair
-                            ),
-                            point_cloud_file_name=pc_file_name,
+                            save_by_pair=(self.save_by_pair),
+                            point_cloud_csv_file_name=point_cloud_csv_file_name,
+                            point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
                         )
 
@@ -357,10 +343,9 @@ def small_components_removing_wrapper(
     connection_distance,
     nb_points_threshold,
     clusters_distance_threshold,
-    save_points_cloud_as_laz,
-    save_points_cloud_as_csv,
-    save_points_cloud_by_pair: bool = False,
-    point_cloud_file_name=None,
+    save_by_pair: bool = False,
+    point_cloud_csv_file_name=None,
+    point_cloud_laz_file_name=None,
     saving_info=None,
 ):
     """
@@ -374,14 +359,14 @@ def small_components_removing_wrapper(
     :type nb_points_threshold: int
     :param clusters_distance_threshold:
     :type clusters_distance_threshold: float
-    :param save_points_cloud_as_laz: activation of point cloud saving to laz
-    :type save_points_cloud_as_laz: bool
-    :param save_points_cloud_as_csv: activation of point cloud saving to csv
-    :type save_points_cloud_as_csv: bool
-    :param save_points_cloud_by_pair: save point cloud as pair
-    :type save_points_cloud_by_pair: bool
-    :param point_cloud_file_name: point cloud filename
-    :type point_cloud_file_name: str
+    :param save_by_pair: save point cloud as pair
+    :type save_by_pair: bool
+    :param point_cloud_csv_file_name: write point cloud as CSV in filename
+        (if None, the point cloud is not written as csv)
+    :type point_cloud_csv_file_name: str
+    :param point_cloud_laz_file_name: write point cloud as laz in filename
+        (if None, the point cloud is not written as laz)
+    :type point_cloud_laz_file_name: str
     :param saving_info: saving infos
     :type saving_info: dict
 
@@ -438,19 +423,26 @@ def small_components_removing_wrapper(
     )
     # Update attributes
     cloud_attributes["epsg"] = current_epsg
-    cloud_attributes["save_points_cloud_as_laz"] = save_points_cloud_as_laz
-    cloud_attributes["save_points_cloud_as_csv"] = save_points_cloud_as_csv
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )
 
     # save point cloud in worker
-    if save_points_cloud_as_laz or save_points_cloud_as_csv:
+    if point_cloud_csv_file_name:
         cars_dataset.run_save_points(
             new_cloud,
-            point_cloud_file_name,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            point_cloud_csv_file_name,
+            save_by_pair=save_by_pair,
             overwrite=True,
+            point_cloud_format="csv",
+        )
+    if point_cloud_laz_file_name:
+        cars_dataset.run_save_points(
+            new_cloud,
+            point_cloud_laz_file_name,
+            save_by_pair=save_by_pair,
+            overwrite=True,
+            point_cloud_format="laz",
         )
 
     return new_cloud

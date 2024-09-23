@@ -109,7 +109,7 @@ class CensusMccnnSgm(
             "disp_range_propagation_filter_size"
         ]
         # Saving files
-        self.save_disparity_map = self.used_config["save_disparity_map"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # init orchestrator
         self.orchestrator = None
@@ -161,13 +161,6 @@ class CensusMccnnSgm(
             "disp_max_threshold", None
         )
 
-        # Permormance map parameters
-        overloaded_conf["generate_performance_map"] = conf.get(
-            "generate_performance_map", False
-        )
-        overloaded_conf["generate_confidence_intervals"] = conf.get(
-            "generate_confidence_intervals", False
-        )
         overloaded_conf["perf_eta_max_ambiguity"] = conf.get(
             "perf_eta_max_ambiguity", 0.99
         )
@@ -190,8 +183,18 @@ class CensusMccnnSgm(
         )
 
         # Saving files
-        overloaded_conf["save_disparity_map"] = conf.get(
-            "save_disparity_map", False
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
+
+        # Permormance map parameters
+        overloaded_conf["generate_performance_map"] = conf.get(
+            "generate_performance_map",
+            overloaded_conf["save_intermediate_data"],
+        )
+        overloaded_conf["generate_confidence_intervals"] = conf.get(
+            "generate_confidence_intervals",
+            overloaded_conf["save_intermediate_data"],
         )
 
         # check loader
@@ -227,7 +230,7 @@ class CensusMccnnSgm(
             "max_elevation_offset": Or(None, int),
             "disp_min_threshold": Or(None, int),
             "disp_max_threshold": Or(None, int),
-            "save_disparity_map": bool,
+            "save_intermediate_data": bool,
             "generate_performance_map": bool,
             "generate_confidence_intervals": bool,
             "perf_eta_max_ambiguity": float,
@@ -581,7 +584,8 @@ class CensusMccnnSgm(
 
         # saving infos
         # disp grids
-        if self.save_disparity_map:
+        if self.save_intermediate_data:
+            safe_makedirs(pair_folder)
             grid_min_path = os.path.join(pair_folder, "disp_min_grid.tif")
             grid_orchestrator.add_to_save_lists(
                 grid_min_path,
@@ -896,7 +900,7 @@ class CensusMccnnSgm(
         )
         grid_disp_range[0, 0] = disp_range_tile
 
-        if self.save_disparity_map:
+        if self.save_intermediate_data:
             grid_orchestrator.breakpoint()
 
         if np.any(diff < 0):
@@ -995,7 +999,6 @@ class CensusMccnnSgm(
 
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
-            safe_makedirs(pair_folder)
 
         if epipolar_images_left.dataset_type == "arrays":
             # Create CarsDataset
@@ -1012,7 +1015,7 @@ class CensusMccnnSgm(
             )
 
             # Save disparity maps
-            if self.save_disparity_map:
+            if self.save_intermediate_data:
                 self.orchestrator.add_to_save_lists(
                     os.path.join(pair_folder, "epi_disp.tif"),
                     cst_disp.MAP,

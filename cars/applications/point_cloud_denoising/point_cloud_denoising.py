@@ -25,8 +25,9 @@ import logging
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
-from json_checker import Checker
+from json_checker import Checker, OptionalKey
 
+from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 
@@ -51,7 +52,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         denoising_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" not in conf:
             logging.info(
                 "PC denoising_method method not specified, "
                 "default {} is used".format(denoising_method)
@@ -141,6 +142,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         orchestrator=None,
         pair_key="default",
         pair_folder=None,
+        save_laz_output=False,
     ):
         """
         Run denoising
@@ -149,6 +151,7 @@ class PCDenoising(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator
         :param pair_key: pair_key
         :param pair_folder: pair_folder
+        :param save_laz_output: save output point cloud as laz
 
         :return: denoised point cloud
         """
@@ -235,10 +238,12 @@ class NonePCDenoising(PCDenoising, short_name="none"):
         # Overload conf
 
         # get rasterization parameter
-        overloaded_conf["method"] = conf.get("method", "bilateral")
+        overloaded_conf["method"] = conf.get("method", "none")
 
         pc_denoising_schema = {
             "method": str,
+            OptionalKey("save_by_pair"): bool,
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf
@@ -253,6 +258,7 @@ class NonePCDenoising(PCDenoising, short_name="none"):
         orchestrator=None,
         pair_key="default",
         pair_folder=None,
+        save_laz_output=False,
     ):
         """
         Run Denoising

@@ -40,9 +40,7 @@ from cars.core import projection
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
 class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
@@ -64,8 +62,7 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         self.used_method = self.used_config["method"]
         self.epi_step = self.used_config["epi_step"]
         # Saving files
-        # TODO not implemented, future work
-        self.save_grids = self.used_config["save_grids"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -92,12 +89,14 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "epipolar")
         overloaded_conf["epi_step"] = conf.get("epi_step", 30)
-        overloaded_conf["save_grids"] = conf.get("save_grids", False)
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
 
         grid_generation_schema = {
             "method": str,
             "epi_step": And(int, lambda x: x > 0),
-            "save_grids": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -105,6 +104,16 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         checker.validate(overloaded_conf)
 
         return overloaded_conf
+
+    def get_save_grids(self):
+        """
+        Get whether the grid will be saved
+
+        :return: true is grid saving is activated
+        :rtype: bool
+        """
+
+        return self.save_intermediate_data
 
     @cars_profile(name="Epi Grid Generation")
     def run(
@@ -248,15 +257,17 @@ class EpipolarGridGeneration(GridGeneration, short_name="epipolar"):
         grid_origin = grid_left.attributes["grid_origin"]
         grid_spacing = grid_left.attributes["grid_spacing"]
 
-        if self.save_grids:
+        if self.save_intermediate_data:
             left_grid_path = os.path.join(pair_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(pair_folder, "right_epi_grid.tif")
+            safe_makedirs(pair_folder)
         else:
             if pair_folder is None:
                 tmp_folder = os.path.join(self.orchestrator.out_dir, "tmp")
             else:
                 tmp_folder = os.path.join(pair_folder, "tmp")
             safe_makedirs(tmp_folder)
+            self.orchestrator.add_to_clean(tmp_folder)
             left_grid_path = os.path.join(tmp_folder, "left_epi_grid.tif")
             right_grid_path = os.path.join(tmp_folder, "right_epi_grid.tif")
 

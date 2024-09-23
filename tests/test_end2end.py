@@ -43,8 +43,8 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import roi_tools
-from cars.pipelines.point_clouds_to_dsm import (
-    point_cloud_to_dsm_pipeline as pipeline_dsm,
+from cars.pipelines.depth_maps_to_dsm import (
+    depth_maps_to_dsm_pipeline as pipeline_dsm,
 )
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
@@ -69,9 +69,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
     Test pipeline with a non square epipolar image, and the generation
     of the performance map
-
-    Test defaut conf use_endogenous_elevation :
-        use srtm for prepare, and compute
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -91,66 +88,64 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "max_ram_per_worker": 500,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "dense_matching": {
                 "method": "census_sgm",
-                "generate_performance_map": True,
                 "use_global_disp_range": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
-                "save_confidence": True,
             },
         }
         input_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_dense_dsm["inputs"]["epsg"] = final_epsg
-
-        # use endogenous dem
-        input_dense_dsm["inputs"]["use_endogenous_elevation"] = False
+        input_dense_dsm["output"]["epsg"] = final_epsg
+        resolution = 0.5
+        input_dense_dsm["output"]["resolution"] = resolution
+        input_dense_dsm["output"]["auxiliary"] = {
+            "mask": True,
+            "performance_map": True,
+        }
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_dense_dsm["output"]["out_dir"]
+        out_dir = input_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_performance_map.tif"),
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
@@ -159,7 +154,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
             ),
@@ -167,23 +162,27 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_gizeh_crop.tif")
+                os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_gizeh_crop.tif")
+                os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
+            os.path.join(
+                out_dir,
+                "dsm",
+                "performance_map.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
@@ -195,16 +194,16 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # launch no mergin pipeline
         input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
-        input_dense_dsm["output"] = {"out_dir": out_dir + "no_merging"}
+        input_dense_dsm["output"]["directory"] = out_dir + "no_merging"
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_dense_dsm
         )
         dense_dsm_pipeline.run()
-        out_dir = input_dense_dsm["output"]["out_dir"]
+        out_dir = input_dense_dsm["output"]["directory"]
 
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
@@ -212,23 +211,23 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
+        #             ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
+        #             ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_performance_map.tif"),
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -238,7 +237,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
@@ -248,27 +247,31 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_gizeh_crop_no_merging.tif"
+                    ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "msk_end2end_gizeh_crop_no_merging.tif"
+                    ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
                 )
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_performance_map.tif"),
+            os.path.join(
+                out_dir,
+                "dsm",
+                "performance_map.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -313,7 +316,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
-                "save_matches": False,
+                "save_intermediate_data": False,
             },
         }
 
@@ -324,10 +327,10 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -368,7 +371,8 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                    "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -376,14 +380,16 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "dem_generation",
+        #                    "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "dem_min_end2end_ventoux_8bit.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                               "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "dem_max_end2end_ventoux_8bit.tif")
@@ -391,7 +397,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
@@ -401,7 +409,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
             ),
@@ -409,7 +417,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
             ),
@@ -450,16 +458,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
-            },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": False,
+                "save_intermediate_data": True,
             },
         }
 
@@ -470,10 +469,10 @@ def test_end2end_ventoux_unique():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -517,26 +516,31 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                             "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                  "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                     "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
             ),
@@ -544,7 +548,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
             ),
@@ -552,7 +556,7 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
             ),
@@ -624,11 +628,10 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -687,22 +690,29 @@ def test_end2end_ventoux_unique():
                     },
                 },
             },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_intermediate_data": True,
+            },
+            "point_cloud_fusion": {
+                "method": "mapping_to_terrain_tiles",
+                "save_intermediate_data": True,
+            },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         # Check used_conf for dense dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -732,19 +742,20 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                   "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -754,7 +765,8 @@ def test_end2end_ventoux_unique():
         # )
         # copy2(
         #     os.path.join(
-        #         out_dir, "confidence_from_intensity_std_std_intensity.tif"
+        #         out_dir,  "dump_dir", "rasterization",
+        #                   "confidence_from_intensity_std_std_intensity.tif"
         #     ),
         #     absolute_data_path(
         #         os.path.join(
@@ -764,7 +776,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                             "confidence_from_risk_min_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -773,7 +786,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                               "confidence_from_risk_max_risk.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -782,7 +796,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                           "confidence_from_ambiguity_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -792,7 +807,7 @@ def test_end2end_ventoux_unique():
         # )
         # copy2(
         #     os.path.join(
-        #         out_dir,
+        #         out_dir, "dump_dir", "rasterization",
         #         "confidence_from_intensity_std_std_intensity_before.tif",
         #     ),
         #     absolute_data_path(
@@ -804,7 +819,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_min_risk_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                      "confidence_from_risk_min_risk_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -813,7 +829,8 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_risk_max_risk_before.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                         "confidence_from_risk_max_risk_before.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -822,7 +839,7 @@ def test_end2end_ventoux_unique():
         #     ),
         # )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -830,7 +847,12 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -842,7 +864,10 @@ def test_end2end_ventoux_unique():
         )
         assert_same_images(
             os.path.join(
-                out_dir, "confidence_from_intensity_std_std_intensity.tif"
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_intensity_std_std_intensity.tif",
             ),
             absolute_data_path(
                 os.path.join(
@@ -854,7 +879,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_min_risk.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_min_risk.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -865,7 +895,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_max_risk.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_max_risk.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -876,7 +911,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -889,6 +929,8 @@ def test_end2end_ventoux_unique():
         assert_same_images(
             os.path.join(
                 out_dir,
+                "dump_dir",
+                "rasterization",
                 "confidence_from_intensity_std_std_intensity_before.tif",
             ),
             absolute_data_path(
@@ -901,7 +943,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_min_risk_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_min_risk_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -912,7 +959,12 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_risk_max_risk_before.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_risk_max_risk_before.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -923,14 +975,14 @@ def test_end2end_ventoux_unique():
             rtol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the color1
     input_json = absolute_data_path(
@@ -959,7 +1011,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -970,7 +1022,7 @@ def test_end2end_ventoux_unique():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -994,7 +1046,6 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -1002,21 +1053,21 @@ def test_end2end_ventoux_unique():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -1024,14 +1075,14 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test we have the same results with multiprocessing
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -1056,7 +1107,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -1067,7 +1118,7 @@ def test_end2end_ventoux_unique():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -1091,7 +1142,6 @@ def test_end2end_ventoux_unique():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -1099,21 +1149,21 @@ def test_end2end_ventoux_unique():
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
+        input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_dsm["output"]["out_dir"]
+        out_dir = input_config_sparse_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
             ),
@@ -1121,14 +1171,14 @@ def test_end2end_ventoux_unique():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -1140,12 +1190,12 @@ def test_end2end_ventoux_unique_split_epsg_4326():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_ventoux/input_4326.json")
-        # Run sensors_to_dense_point_clouds pipeline
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        # Run sensors_to_dense_depth_maps pipeline
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_point_clouds",
+            "sensors_to_dense_depth_maps",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1153,35 +1203,32 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "max_ram_per_worker": 1000,
             },
         )
-        # use endogenous dem
-        input_config_pc["inputs"]["use_endogenous_elevation"] = True
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
 
+        input_config_pc["output"]["epsg"] = 4326
+
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["out_dir"]
+        out_dir = input_config_pc["output"]["directory"]
         geometry_plugin_name = input_config_pc["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "left_right")
+            depth_map_path = os.path.join(out_dir, "depth_map", "left_right")
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                         }
                     },
-                    "epsg": 4326,
                     "roi": {
                         "type": "FeatureCollection",
                         "features": [
@@ -1205,30 +1252,31 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     },
                 },
                 "geometry_plugin": geometry_plugin_name,
-                "output": {"out_dir": output_path},
-                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "output": {
+                    "directory": output_path,
+                    "resolution": 0.000005,
+                    "epsg": 4326,
+                },
+                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
-                        "resolution": 0.000005,
-                        "save_source_pc": True,
+                        "save_intermediate_data": True,
                     }
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+            out_dir_dsm = input_dsm_config["output"]["directory"]
 
             # Ref output dir dependent from geometry plugin chosen
             ref_output_dir = "ref_output"
 
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1236,15 +1284,16 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+            #             ref_output_dir, "color_end2end_ventoux_split_4326.tif"
             #         )
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                 "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1254,7 +1303,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             # )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1264,17 +1313,19 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                        ref_output_dir, "color_end2end_ventoux_split_4326.tif"
                     )
                 ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1287,19 +1338,17 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             # launch with no merging pipeline
             input_dsm_config["pipeline"] = (
-                "dense_point_clouds_to_dense_dsm_no_merging"
+                "dense_depth_maps_to_dense_dsm_no_merging"
             )
-            input_dsm_config["output"] = {"out_dir": output_path + "no_merging"}
+            input_dsm_config["output"]["directory"] = output_path + "no_merging"
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+            out_dir_dsm = input_dsm_config["output"]["directory"]
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
@@ -1309,17 +1358,19 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split_4326.tif"
+                        ref_output_dir, "color_end2end_ventoux_split_4326.tif"
                     )
                 ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1343,11 +1394,11 @@ def test_end2end_ventoux_unique_split():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_classif_and_mask.json"
         )
-        # Run sensors_to_dense_point_clouds pipeline
+        # Run sensors_to_dense_depth_maps pipeline
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_point_clouds",
+            "sensors_to_dense_depth_maps",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",
@@ -1364,12 +1415,13 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": False,
+                "save_intermediate_data": False,
             },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
+                "generate_confidence_intervals": False,
                 "loader_conf": {
                     "input": {},
                     "pipeline": {
@@ -1418,52 +1470,60 @@ def test_end2end_ventoux_unique_split():
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             },
         }
 
         input_config_pc["applications"].update(application_config)
-        # use endogenous dem
-        input_config_pc["inputs"]["use_endogenous_elevation"] = True
+
+        input_config_pc["output"]["auxiliary"] = {
+            "classification": True,
+            "filling": True,
+            "color": True,
+            "performance_map": True,
+        }
 
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
         pc_pipeline.run()
 
-        out_dir = input_config_pc["output"]["out_dir"]
+        out_dir = input_config_pc["output"]["directory"]
         geometry_plugin_name = input_config_pc["geometry_plugin"]
 
         # Create input json for pc to dsm pipeline
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
-            epi_pc_path = os.path.join(out_dir, "left_right")
+            depth_map_path = os.path.join(out_dir, "depth_map", "left_right")
+            dense_matching_path = os.path.join(
+                out_dir, "dump_dir", "dense_matching", "left_right"
+            )
             output_path = os.path.join(directory2, "outresults_dsm_from_pc")
 
             input_dsm_config = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                             "classification": os.path.join(
-                                epi_pc_path, "epi_pc_classification.tif"
+                                depth_map_path, "classification.tif"
                             ),
                             "filling": os.path.join(
-                                epi_pc_path, "epi_pc_filling.tif"
+                                depth_map_path, "filling.tif"
+                            ),
+                            "performance_map": os.path.join(
+                                depth_map_path, "performance_map.tif"
                             ),
                             "confidence": {
                                 "confidence_from_ambiguity2": os.path.join(
-                                    epi_pc_path,
-                                    "epi_confidence_from" + "_ambiguity.tif",
+                                    dense_matching_path,
+                                    "epi_confidence_from_ambiguity.tif",
                                 ),
                                 "confidence_from_ambiguity1": os.path.join(
-                                    epi_pc_path,
-                                    "epi_confidence_from"
-                                    + "_ambiguity_before.tif",
+                                    dense_matching_path,
+                                    "epi_confidence_from_ambiguity_before.tif",
                                 ),
                             },
                         }
@@ -1491,44 +1551,35 @@ def test_end2end_ventoux_unique_split():
                     },
                 },
                 "geometry_plugin": geometry_plugin_name,
-                "output": {"out_dir": output_path},
-                "pipeline": "dense_point_clouds_to_dense_dsm",
+                "output": {"directory": output_path, "resolution": 0.5},
+                "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
                     "point_cloud_outliers_removing.1": {
                         "method": "small_components",
                         "activated": True,
-                        "save_points_cloud_as_laz": True,
-                        "save_points_cloud_by_pair": True,
+                        "save_intermediate_data": True,
+                        "save_by_pair": True,
                     },
                     "point_cloud_outliers_removing.2": {
                         "method": "statistical",
                         "activated": True,
-                        "save_points_cloud_as_laz": True,
-                        "save_points_cloud_by_pair": True,
+                        "save_intermediate_data": True,
                     },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "dsm_radius": 3,
-                        "resolution": 0.5,
                         "sigma": 0.3,
                         "dsm_no_data": -999,
                         "color_no_data": 0,
-                        "save_classif": True,
-                        "save_filling": True,
-                        "save_mask": True,
-                        "save_confidence": True,
-                        "save_color": True,
-                        "save_source_pc": True,
+                        "save_intermediate_data": True,
                     },
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+            out_dir_dsm = input_dsm_config["output"]["directory"]
 
             # Ref output dir dependent from geometry plugin chosen
             ref_output_dir = "ref_output"
@@ -1537,7 +1588,9 @@ def test_end2end_ventoux_unique_split():
                 os.path.exists(
                     os.path.join(
                         out_dir_dsm,
-                        "points_cloud_post_small_components_removing",
+                        "dump_dir",
+                        "small_components",
+                        "laz",
                         "675292.3110543193_4897140.457149682_one.laz",
                     )
                 )
@@ -1545,7 +1598,7 @@ def test_end2end_ventoux_unique_split():
             )
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "dsm_end2end_ventoux_split.tif"
@@ -1553,31 +1606,45 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "clr_end2end_ventoux_split.tif"
+            #             ref_output_dir, "color_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "msk.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                   "mask.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "msk_end2end_ventoux_split.tif"
+            #             ref_output_dir, "mask_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "classif.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                         "classification.tif"),
             #     absolute_data_path(
             #         os.path.join(
-            #             ref_output_dir, "classif_end2end_ventoux_split.tif"
+            #             ref_output_dir,
+            #             "classification_end2end_ventoux_split.tif"
             #         )
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                         "performance_map.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "performance_map_end2end_ventoux_split.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                 "filling.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "filling_end2end_ventoux_split.tif"
@@ -1585,7 +1652,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                               "confidence_from_ambiguity1.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1595,7 +1663,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                               "confidence_from_ambiguity2.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1605,7 +1674,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir, "source_pc_end2end_ventoux_split.tif"
@@ -1614,7 +1684,7 @@ def test_end2end_ventoux_unique_split():
             # )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dsm_end2end_ventoux_split.tif"
@@ -1624,37 +1694,47 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "clr_end2end_ventoux_split.tif"
+                        ref_output_dir, "color_end2end_ventoux_split.tif"
                     )
                 ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "msk.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "mask.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "msk_end2end_ventoux_split.tif"
+                        ref_output_dir, "mask_end2end_ventoux_split.tif"
                     )
                 ),
                 rtol=1.0e-7,
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "classif.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "classification.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
-                        ref_output_dir, "classif_end2end_ventoux_split.tif"
+                        ref_output_dir,
+                        "classification_end2end_ventoux_split.tif",
                     )
                 ),
                 atol=0.0001,
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "filling.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "filling.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "filling_end2end_ventoux_split.tif"
@@ -1663,9 +1743,30 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
                 rtol=1.0e-7,
             )
+            assert_same_images(
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "performance_map.tif",
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "performance_map_end2end_ventoux_split.tif",
+                    )
+                ),
+                atol=1.0e-7,
+                rtol=1.0e-7,
+            )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity1.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1677,7 +1778,12 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity2.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1689,7 +1795,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1702,8 +1810,8 @@ def test_end2end_ventoux_unique_split():
 
             # Run no merging pipeline
 
-            input_dsm_config["output"]["out_dir"] = (
-                input_dsm_config["output"]["out_dir"] + "_no_merging"
+            input_dsm_config["output"]["directory"] = (
+                input_dsm_config["output"]["directory"] + "_no_merging"
             )
             del input_dsm_config["applications"][
                 "point_cloud_outliers_removing.1"
@@ -1712,20 +1820,18 @@ def test_end2end_ventoux_unique_split():
                 "point_cloud_outliers_removing.2"
             ]
             input_dsm_config["pipeline"] = (
-                "dense_point_clouds_to_dense_dsm_no_merging"
+                "dense_depth_maps_to_dense_dsm_no_merging"
             )
 
             # launch
-            dsm_pipeline = pipeline_dsm.PointCloudsToDsmPipeline(
-                input_dsm_config
-            )
+            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
             dsm_pipeline.run()
 
-            out_dir_dsm = input_dsm_config["output"]["out_dir"]
+            out_dir_dsm = input_dsm_config["output"]["directory"]
 
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1734,7 +1840,7 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "clr.tif"),
+            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1743,7 +1849,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "msk.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                   "mask.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1752,7 +1859,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "classif.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "classification.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1761,7 +1869,18 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "filling.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "performance_map.tif"),
+            #     absolute_data_path(
+            #         os.path.join(
+            #             ref_output_dir,
+            #             "performance_map_end2end_ventoux_split_no_merging.tif"
+            #         )
+            #     ),
+            # )
+            # copy2(
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                      "filling.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1770,7 +1889,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                     "confidence_from_ambiguity1.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1780,7 +1900,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                              "confidence_from_ambiguity2.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1790,7 +1911,8 @@ def test_end2end_ventoux_unique_split():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "source_pc.tif"),
+            #     os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "source_pc.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1800,7 +1922,7 @@ def test_end2end_ventoux_unique_split():
             # )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "dsm.tif"),
+                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1811,7 +1933,7 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "clr.tif"),
+                os.path.join(out_dir_dsm, "dsm", "color.tif"),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1822,7 +1944,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "msk.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "mask.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1833,7 +1957,28 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "classif.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "performance_map.tif",
+                ),
+                absolute_data_path(
+                    os.path.join(
+                        ref_output_dir,
+                        "performance_map_end2end_ventoux_split_no_merging.tif",
+                    )
+                ),
+                rtol=1.0e-7,
+                atol=1.0e-7,
+            )
+            assert_same_images(
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "classification.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1844,7 +1989,9 @@ def test_end2end_ventoux_unique_split():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "filling.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "filling.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1856,7 +2003,12 @@ def test_end2end_ventoux_unique_split():
             )
 
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity1.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity1.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1868,7 +2020,12 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "confidence_from_ambiguity2.tif"),
+                os.path.join(
+                    out_dir_dsm,
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity2.tif",
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1880,7 +2037,9 @@ def test_end2end_ventoux_unique_split():
                 atol=1.0e-7,
             )
             assert_same_images(
-                os.path.join(out_dir_dsm, "source_pc.tif"),
+                os.path.join(
+                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir,
@@ -1924,7 +2083,7 @@ def test_end2end_use_epipolar_a_priori():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -1934,10 +2093,10 @@ def test_end2end_use_epipolar_a_priori():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["directory"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as json_file:
@@ -1981,7 +2140,8 @@ def test_end2end_use_epipolar_a_priori():
 
             # Uncomment the 2 following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir, "dem_median.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                      "dem_median.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1990,7 +2150,8 @@ def test_end2end_use_epipolar_a_priori():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir, "dem_min.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                                "dem_min.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -1999,7 +2160,8 @@ def test_end2end_use_epipolar_a_priori():
             #     ),
             # )
             # copy2(
-            #     os.path.join(out_dir, "dem_max.tif"),
+            #     os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                              "dem_max.tif"),
             #     absolute_data_path(
             #         os.path.join(
             #             ref_output_dir,
@@ -2009,7 +2171,9 @@ def test_end2end_use_epipolar_a_priori():
             # )
 
             assert_same_images(
-                os.path.join(out_dir, "dem_median.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_median_end2end_ventoux_no_srtm.tif"
@@ -2019,7 +2183,9 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dem_min.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_min.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
@@ -2029,7 +2195,9 @@ def test_end2end_use_epipolar_a_priori():
                 rtol=1e-6,
             )
             assert_same_images(
-                os.path.join(out_dir, "dem_max.tif"),
+                os.path.join(
+                    out_dir, "dump_dir", "dem_generation", "dem_max.tif"
+                ),
                 absolute_data_path(
                     os.path.join(
                         ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
@@ -2101,34 +2269,38 @@ def test_end2end_use_epipolar_a_priori():
                 == "sensors_to_dense_dsm"
             )
             # check refined_config_dense_dsm_json sparse_matching configuration
+            assert "advanced" in refined_config_dense_dsm_json
             assert (
                 "use_epipolar_a_priori"
-                in refined_config_dense_dsm_json["inputs"]
+                in refined_config_dense_dsm_json["advanced"]
             )
+
             assert (
-                refined_config_dense_dsm_json["inputs"]["use_epipolar_a_priori"]
+                refined_config_dense_dsm_json["advanced"][
+                    "use_epipolar_a_priori"
+                ]
                 is True
             )
             assert (
-                "epipolar_a_priori" in refined_config_dense_dsm_json["inputs"]
+                "epipolar_a_priori" in refined_config_dense_dsm_json["advanced"]
             )
             assert (
                 "grid_correction"
-                in refined_config_dense_dsm_json["inputs"]["epipolar_a_priori"][
-                    "left_right"
-                ]
+                in refined_config_dense_dsm_json["advanced"][
+                    "epipolar_a_priori"
+                ]["left_right"]
             )
             assert (
                 "dem_median"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
             assert (
                 "dem_min"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
             assert (
                 "dem_max"
-                in refined_config_dense_dsm_json["inputs"]["terrain_a_priori"]
+                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
             )
 
             # check if orchestrator conf is the same as gt
@@ -2147,11 +2319,10 @@ def test_end2end_use_epipolar_a_priori():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2159,19 +2330,21 @@ def test_end2end_use_epipolar_a_priori():
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        # product level
+        input_config_dense_dsm["output"]["product_level"] = ["dsm"]
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
         # Update outdir, write new dir
-        input_config_dense_dsm["output"]["out_dir"] += "dense"
+        input_config_dense_dsm["output"]["directory"] += "dense"
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
 
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Check used_conf for dense_dsm
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -2203,7 +2376,7 @@ def test_end2end_use_epipolar_a_priori():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end" + "_ventoux_no_srtm.tif"
@@ -2211,15 +2384,16 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end" + "_ventoux_no_srtm.tif"
+        #             ref_output_dir, "color_end2end" + "_ventoux_no_srtm.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                   "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2228,7 +2402,7 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_no_srtm.tif")
             ),
@@ -2236,15 +2410,22 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_no_srtm.tif")
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_no_srtm.tif"
+                )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "confidence_from_ambiguity.tif"),
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "rasterization",
+                "confidence_from_ambiguity.tif",
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -2254,7 +2435,7 @@ def test_end2end_use_epipolar_a_priori():
             atol=1.0e-7,
             rtol=1.0e-7,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -2287,7 +2468,7 @@ def test_prepare_ventoux_bias():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 120.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -2298,10 +2479,10 @@ def test_prepare_ventoux_bias():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["directory"]
 
         # Check preproc properties
-        out_json = os.path.join(out_dir, "content.json")
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2325,6 +2506,354 @@ def test_prepare_ventoux_bias():
                     "corrected_filtered_matches"
                 ]
             )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_ventoux_full_output_no_elevation():
+    """
+    End to end processing with all outputs activated, and no input elevation
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        # No pairing defined in this input file
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_no_elevation.json"
+        )
+
+        # Run sensors_to_dense_dsm pipeline
+        _, input_config = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_dense_dsm",
+            "local_dask",
+            orchestrator_parameters={
+                "walltime": "00:10:00",
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {
+                "method": "bicubic",
+                "strip_height": 80,
+                "save_intermediate_data": True,
+            },
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": 400.0,
+                "elevation_delta_upper_bound": 700.0,
+                "disparity_margin": 0.25,
+                "save_intermediate_data": True,
+            },
+        }
+        advanced_config = {"save_intermediate_data": True}
+
+        out_dir = os.path.join(directory, "output_dsm")
+        output_config = {
+            "directory": out_dir,
+            "product_level": ["depth_map", "point_cloud", "dsm"],
+            "auxiliary": {
+                "color": True,
+                "filling": True,
+                "mask": True,
+                "classification": True,
+                "contributing_pair": True,
+            },
+        }
+
+        input_config["applications"].update(application_config)
+        input_config["advanced"].update(advanced_config)
+        input_config["output"].update(output_config)
+
+        pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(input_config)
+
+        pipeline.run()
+
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = "ref_output"
+
+        # Uncomment the following instruction to update reference data
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #        os.path.join(
+        #            ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
+        #        )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #               ref_output_dir,
+        #               "classification_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir, "filling_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "contributing_pair_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "color.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_color_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "classification.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_classification_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "filling.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_filling_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "mask.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_mask_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "X.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_X_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "Y.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Y_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "Z.tif"),
+        #     absolute_data_path(
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Z_end2end_ventoux_no_elevation.tif"
+        #         )
+        #    ),
+        # )
+
+        # DSM
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classification_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "filling_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "contributing_pair.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "contributing_pair_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+
+        # Depth map
+        depth_map_dir = os.path.join(
+            out_dir,
+            "depth_map",
+            "left_right",
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "X.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_X_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "Y.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_Y_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "Z.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "epi_pc_Z_end2end_ventoux_no_elevation.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_mask_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "filling.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_filling_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_color_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(depth_map_dir, "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "epi_pc_classification_end2end_ventoux_no_elevation.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+
+        pc_name = "675248.5_4897170.0"
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "point_cloud",
+                    pc_name + ".laz",
+                )
+            )
+            is True
+        )
 
 
 @pytest.mark.end2end_tests
@@ -2354,8 +2883,7 @@ def test_end2end_ventoux_with_color():
             "resampling": {
                 "method": "bicubic",
                 "strip_height": 80,
-                "save_epipolar_image": True,
-                "save_epipolar_color": False,
+                "save_intermediate_data": True,
             },
             "sparse_matching": {
                 "method": "sift",
@@ -2363,17 +2891,7 @@ def test_end2end_ventoux_with_color():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
-            },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
-                "save_points_cloud_by_pair": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -2384,10 +2902,10 @@ def test_end2end_ventoux_with_color():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["directory"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2422,43 +2940,46 @@ def test_end2end_ventoux_with_color():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_confidence": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
                 "loader": "pandora",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
+                "generate_performance_map": False,
+                "generate_confidence_intervals": False,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
-                "save_points_cloud_by_pair": True,
+                "save_intermediate_data": True,
+                "save_by_pair": True,
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
-                "save_points_cloud_by_pair": True,
+                "save_intermediate_data": True,
+                "save_by_pair": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
+            },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_intermediate_data": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = 32631
+
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
@@ -2468,41 +2989,30 @@ def test_end2end_ventoux_with_color():
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
-
-        assert (
-            os.path.exists(
-                os.path.join(out_dir, "confidence_from_ambiguity.tif")
-            )
-            is True
-        )
-
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
-        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
-            pc1 = "675436.5_4897170.5"
-            pc2 = "675248.0_4897170.5"
-        else:
-            pc1 = "675437.0_4897170.0"
-            pc2 = "675248.5_4897170.0"
-
-        assert (
-            os.path.exists(
-                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.laz")
-            )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(out_dir, "points_cloud", pc1 + "_left_right.csv")
-            )
-            is True
-        )
+        out_dir = input_config_sparse_res["output"]["directory"]
 
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "rasterization",
+                    "confidence_from_ambiguity.tif",
+                )
+            )
+            is True
+        )
+
+        pc1 = "675248.0_4897173.0"
+        pc2 = "675374.0_4897173.0"
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "laz",
                     pc1 + "_left_right.laz",
                 )
             )
@@ -2512,7 +3022,9 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "csv",
                     pc1 + "_left_right.csv",
                 )
             )
@@ -2523,8 +3035,10 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc2 + ".laz",
+                    "dump_dir",
+                    "small_components",
+                    "laz",
+                    pc2 + "_left_right.laz",
                 )
             )
             is True
@@ -2533,8 +3047,28 @@ def test_end2end_ventoux_with_color():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc2 + ".csv",
+                    "dump_dir",
+                    "small_components",
+                    "csv",
+                    pc2 + "_left_right.csv",
+                )
+            )
+            is True
+        )
+
+        # Output is not saved by pair here
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
                 )
             )
             is True
@@ -2544,7 +3078,7 @@ def test_end2end_ventoux_with_color():
         ref_output_dir = "ref_output"
         # Uncomment the following instruction to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
@@ -2552,16 +3086,16 @@ def test_end2end_ventoux_with_color():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_ventoux_with_color.tif"
+        #             ref_output_dir, "color_end2end_ventoux_with_color.tif"
         #         )
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_color.tif"
@@ -2571,10 +3105,10 @@ def test_end2end_ventoux_with_color():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_with_color.tif"
+                    ref_output_dir, "color_end2end_ventoux_with_color.tif"
                 )
             ),
             rtol=0.0002,
@@ -2610,8 +3144,7 @@ def test_end2end_ventoux_with_classif():
             "resampling": {
                 "method": "bicubic",
                 "strip_height": 80,
-                "save_epipolar_image": True,
-                "save_epipolar_color": False,
+                "save_intermediate_data": True,
             },
             "sparse_matching": {
                 "method": "sift",
@@ -2619,16 +3152,7 @@ def test_end2end_ventoux_with_classif():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_points_cloud": True,
-            },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
         }
 
@@ -2639,10 +3163,10 @@ def test_end2end_ventoux_with_classif():
         )
         sparse_res_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["directory"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -2677,41 +3201,44 @@ def test_end2end_ventoux_with_classif():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": 0.5,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_classif": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
                 "loader": "pandora",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_fusion": {
                 "method": "mapping_to_terrain_tiles",
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
-                "save_points_cloud_as_laz": True,
-                "save_points_cloud_as_csv": True,
+                "save_intermediate_data": True,
+            },
+            "triangulation": {
+                "method": "line_of_sight_intersection",
+                "save_intermediate_data": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
-        input_config_dense_dsm["inputs"]["epsg"] = 32631
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = 32631
+
+        # update epsg
+        input_config_dense_dsm["output"]["resolution"] = 0.5
+
+        # Save classif
+        input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
@@ -2721,28 +3248,17 @@ def test_end2end_ventoux_with_classif():
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["out_dir"]
+        out_dir = input_config_sparse_res["output"]["directory"]
 
-        print(os.listdir(os.path.join(out_dir, "points_cloud")))
-        if input_config_dense_dsm["geometry_plugin"] == "OTBGeometry":
-            pc1 = "675436.5_4897170.5"
-        else:
-            pc1 = "675437.0_4897170.0"
-
-        assert (
-            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".laz"))
-            is True
-        )
-        assert (
-            os.path.exists(os.path.join(out_dir, "points_cloud", pc1 + ".csv"))
-            is True
-        )
+        pc1 = "675248.0_4897173.0"
 
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "laz",
                     pc1 + ".laz",
                 )
             )
@@ -2752,7 +3268,9 @@ def test_end2end_ventoux_with_classif():
             os.path.exists(
                 os.path.join(
                     out_dir,
-                    "points_cloud_post_small_components_removing",
+                    "dump_dir",
+                    "point_cloud_fusion",
+                    "csv",
                     pc1 + ".csv",
                 )
             )
@@ -2762,9 +3280,7 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc1 + ".laz",
+                    out_dir, "dump_dir", "small_components", "laz", pc1 + ".laz"
                 )
             )
             is True
@@ -2772,9 +3288,24 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir,
-                    "points_cloud_post_statistical_removing",
-                    pc1 + ".csv",
+                    out_dir, "dump_dir", "small_components", "csv", pc1 + ".csv"
+                )
+            )
+            is True
+        )
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
                 )
             )
             is True
@@ -2785,7 +3316,7 @@ def test_end2end_ventoux_with_classif():
 
         # Uncomment the following instruction to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_ventoux_with_classif.tif"
@@ -2793,16 +3324,17 @@ def test_end2end_ventoux_with_classif():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "classif.tif"),
+        #     os.path.join(out_dir,  "dsm", "classification.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
+        #             ref_output_dir,
+        #             "classification_end2end_ventoux_with_classif.tif"
         #         )
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_classif.tif"
@@ -2812,10 +3344,11 @@ def test_end2end_ventoux_with_classif():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "classif.tif"),
+            os.path.join(out_dir, "dsm", "classification.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "classif_end2end_ventoux_with_classif.tif"
+                    ref_output_dir,
+                    "classification_end2end_ventoux_with_classif.tif",
                 )
             ),
             rtol=1.0e-7,
@@ -2845,7 +3378,6 @@ def test_compute_dsm_with_roi_ventoux():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -2859,12 +3391,11 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_lower_bound": -1000,  # -20.0,
                 "elevation_delta_upper_bound": 1000,  # 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -2874,7 +3405,11 @@ def test_compute_dsm_with_roi_ventoux():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         # Update roi
         roi_geo_json = {
@@ -2901,20 +3436,18 @@ def test_compute_dsm_with_roi_ventoux():
 
         input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
 
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end" + "_ventoux_with_roi.tif"
@@ -2922,16 +3455,16 @@ def test_compute_dsm_with_roi_ventoux():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end" + "_ventoux_with_roi.tif"
+        #             ref_output_dir, "color_end2end" + "_ventoux_with_roi.tif"
         #         )
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end" + "_ventoux_with_roi.tif"
@@ -2941,14 +3474,16 @@ def test_compute_dsm_with_roi_ventoux():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_with_roi.tif")
+                os.path.join(
+                    ref_output_dir, "color_end2end_ventoux_with_roi.tif"
+                )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
         # check final bounding box
         # create reference
@@ -2964,7 +3499,7 @@ def test_compute_dsm_with_roi_ventoux():
         [ref_xmin, ref_ymin, ref_xmax, ref_ymax] = ref_roi_poly.bounds
 
         # retrieve bounding box of computed dsm
-        data = rasterio.open(os.path.join(out_dir, "dsm.tif"))
+        data = rasterio.open(os.path.join(out_dir, "dsm", "dsm.tif"))
         xmin = min(data.bounds.left, data.bounds.right)
         ymin = min(data.bounds.bottom, data.bounds.top)
         xmax = max(data.bounds.left, data.bounds.right)
@@ -2997,7 +3532,6 @@ def test_compute_dsm_with_snap_to_img1():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3007,7 +3541,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3028,7 +3562,6 @@ def test_compute_dsm_with_snap_to_img1():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
@@ -3038,23 +3571,25 @@ def test_compute_dsm_with_snap_to_img1():
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3063,17 +3598,17 @@ def test_compute_dsm_with_snap_to_img1():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "clr_end2end_ventoux_with_snap_to_img1.tif"
+        #             "color_end2end_ventoux_with_snap_to_img1.tif"
         #         )
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_with_snap_to_img1.tif"
@@ -3083,16 +3618,17 @@ def test_compute_dsm_with_snap_to_img1():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_with_snap_to_img1.tif"
+                    ref_output_dir,
+                    "color_end2end_ventoux_with_snap_to_img1.tif",
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -3119,7 +3655,6 @@ def test_end2end_quality_stats():
 
         # no srtm
         input_config_dense_dsm["inputs"]["initial_elevation"] = None
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3127,7 +3662,6 @@ def test_end2end_quality_stats():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3144,30 +3678,33 @@ def test_end2end_quality_stats():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
+
+        # Save all intermediate data
+        input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -3196,7 +3733,8 @@ def test_end2end_quality_stats():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dem_median.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3205,7 +3743,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_min.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                    "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3214,7 +3753,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                     "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3223,7 +3763,7 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3232,16 +3772,17 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "clr_end2end_ventoux_quality_stats.tif"
+        #             "color_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_mean.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                   "dsm_mean.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3250,7 +3791,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_std.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                     "dsm_std.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3259,7 +3801,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_n_pts.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                 "dsm_n_pts.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3268,7 +3811,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm_pts_in_cell.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                           "dsm_pts_in_cell.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3278,7 +3822,9 @@ def test_end2end_quality_stats():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dem_median.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "dem_generation", "dem_median.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3289,7 +3835,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_min.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_min_end2end_ventoux_quality_stats.tif"
@@ -3299,7 +3845,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dem_max.tif"),
+            os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dem_max_end2end_ventoux_quality_stats.tif"
@@ -3309,7 +3855,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_quality_stats.tif"
@@ -3319,17 +3865,17 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_quality_stats.tif"
+                    ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_mean.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_mean.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_mean_end2end_ventoux_quality_stats.tif"
@@ -3339,7 +3885,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_std.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_std.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_std_end2end_ventoux_quality_stats.tif"
@@ -3349,7 +3895,7 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_n_pts.tif"),
+            os.path.join(out_dir, "dump_dir", "rasterization", "dsm_n_pts.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3360,7 +3906,9 @@ def test_end2end_quality_stats():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm_pts_in_cell.tif"),
+            os.path.join(
+                out_dir, "dump_dir", "rasterization", "dsm_pts_in_cell.tif"
+            ),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir,
@@ -3370,7 +3918,7 @@ def test_end2end_quality_stats():
             atol=0.0001,
             rtol=1e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
 
 @pytest.mark.end2end_tests
@@ -3394,9 +3942,12 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -3404,7 +3955,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3422,20 +3973,19 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -3444,10 +3994,10 @@ def test_end2end_ventoux_egm96_geoid():
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -3461,11 +4011,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -67
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 30
-            assert out_disp_compute["global_disp_max"] < 31
+            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] < 46
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3478,20 +4028,20 @@ def test_end2end_ventoux_egm96_geoid():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+        #       os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
             ),
@@ -3499,14 +4049,14 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-    assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+    assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test that we have the same results without setting the color1
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -3525,9 +4075,12 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -3535,7 +4088,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3553,20 +4106,20 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # resolution
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
 
@@ -3575,10 +4128,10 @@ def test_end2end_ventoux_egm96_geoid():
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_ventoux_egm96.tif")
             ),
@@ -3586,14 +4139,14 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_ventoux_egm96.tif")
+                os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
-        assert os.path.exists(os.path.join(out_dir, "msk.tif")) is False
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
     # Test with custom geoid
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -3613,9 +4166,12 @@ def test_end2end_ventoux_egm96_geoid():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar",
+                "epi_step": 30,
+                "save_intermediate_data": True,
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -3623,7 +4179,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3641,20 +4197,19 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
-                "save_stats": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
             "input/geoid/egm96_15_modified.tif"
@@ -3665,10 +4220,10 @@ def test_end2end_ventoux_egm96_geoid():
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
-        # Check content.json properties
-        out_json = os.path.join(out_dir, "content.json")
+        # Check metadata.json properties
+        out_json = os.path.join(out_dir, "metadata.json")
         assert os.path.isfile(out_json)
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
@@ -3682,11 +4237,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -34
-            assert out_disp_compute["global_disp_min"] < -32
+            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] < -67
             # global max: 86 shareloc
-            assert out_disp_compute["global_disp_max"] > 30
-            assert out_disp_compute["global_disp_max"] < 31
+            assert out_disp_compute["global_disp_max"] > 45
+            assert out_disp_compute["global_disp_max"] < 46
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3699,22 +4254,22 @@ def test_end2end_ventoux_egm96_geoid():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #             "dsm_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
-        #             "clr_end2end_ventoux_egm96_custom_geoid.tif")
+        #             "color_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_ventoux_egm96_custom_geoid.tif"
@@ -3724,10 +4279,11 @@ def test_end2end_ventoux_egm96_geoid():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_ventoux_egm96_custom_geoid.tif"
+                    ref_output_dir,
+                    "color_end2end_ventoux_egm96_custom_geoid.tif",
                 )
             ),
             rtol=1.0e-7,
@@ -3757,7 +4313,6 @@ def test_end2end_paca_with_mask():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3767,7 +4322,7 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
                 "minimum_nb_matches": 10,
             },
             "dense_matching": {
@@ -3789,54 +4344,53 @@ def test_end2end_paca_with_mask():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_paca.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir,  "dsm", "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
         #     ),
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
             ),
@@ -3844,17 +4398,17 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+                os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -3875,7 +4429,6 @@ def test_end2end_paca_with_mask():
                 "max_ram_per_worker": 1000,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
@@ -3885,7 +4438,7 @@ def test_end2end_paca_with_mask():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
-                "save_matches": True,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3906,32 +4459,32 @@ def test_end2end_paca_with_mask():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Uncomment the above instructions of first run to update reference data
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
             ),
@@ -3939,17 +4492,17 @@ def test_end2end_paca_with_mask():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_paca.tif")
+                os.path.join(ref_output_dir, "color_end2end_paca.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_paca.tif")
+                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
@@ -3963,7 +4516,7 @@ def test_end2end_disparity_filling():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+        input_json = absolute_data_path("input/phr_gizeh/input_mask_fill.json")
 
         # Run dense dsm pipeline
         _, input_config_dense_dsm = generate_input_json(
@@ -3976,17 +4529,16 @@ def test_end2end_disparity_filling():
                 "max_ram_per_worker": 300,
             },
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
                 "min_epi_tile_size": 100,
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
             "dense_matches_filling.1": {
                 "method": "plane",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "classification": ["shadow"],
             },
             "point_cloud_outliers_removing.1": {
@@ -4000,54 +4552,58 @@ def test_end2end_disparity_filling():
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
-                "resolution": resolution,
                 "sigma": 0.3,
                 "dsm_no_data": -999,
                 "color_no_data": 0,
                 "msk_no_data": 254,
-                "save_mask": True,
-                "save_filling": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        resolution = 0.5
+        input_config_dense_dsm["output"]["resolution"] = resolution
+
+        # Save mask and filling
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "filling": True,
+            "mask": True,
+        }
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "clr_end2end_gizeh_fill.tif")
+        #         os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "msk_end2end_gizeh_fill.tif")
+        #         os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "filling.tif"),
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir,
         #         "filling_end2end_gizeh_fill.tif")
@@ -4055,7 +4611,7 @@ def test_end2end_disparity_filling():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_end2end_gizeh_fill.tif")
             ),
@@ -4063,23 +4619,23 @@ def test_end2end_disparity_filling():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "clr_end2end_gizeh_fill.tif")
+                os.path.join(ref_output_dir, "color_end2end_gizeh_fill.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "msk_end2end_gizeh_fill.tif")
+                os.path.join(ref_output_dir, "mask_end2end_gizeh_fill.tif")
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "filling.tif"),
+            os.path.join(out_dir, "dsm", "filling.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "filling_end2end_gizeh_fill.tif")
             ),
@@ -4096,7 +4652,7 @@ def test_end2end_disparity_filling_with_zeros():
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_gizeh/input_msk_fill.json")
+        input_json = absolute_data_path("input/phr_gizeh/input_mask_fill.json")
 
         # Run dense dsm pipeline
         _, input_config_dense_dsm = generate_input_json(
@@ -4105,16 +4661,15 @@ def test_end2end_disparity_filling_with_zeros():
             "sensors_to_dense_dsm",
             "local_dask",
         )
-        resolution = 0.5
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "use_global_disp_range": True,
             },
             "dense_matches_filling.2": {
                 "method": "zero_padding",
-                "save_disparity_map": True,
+                "save_intermediate_data": True,
                 "classification": ["bat"],
             },
             "point_cloud_outliers_removing.1": {
@@ -4125,39 +4680,32 @@ def test_end2end_disparity_filling_with_zeros():
                 "method": "statistical",
                 "activated": True,
             },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "resolution": resolution,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "color_no_data": 0,
-                "msk_no_data": 254,
-                "save_mask": True,
-                "save_filling": True,
-            },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
-        input_config_dense_dsm["inputs"]["epsg"] = final_epsg
-        # use endogenous dem
-        input_config_dense_dsm["inputs"]["use_endogenous_elevation"] = True
+        input_config_dense_dsm["output"]["epsg"] = final_epsg
+
+        # Save mask and filling
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "filling": True,
+            "mask": True,
+        }
 
         dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_dense_dsm["output"]["out_dir"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "dsm_end2end_gizeh_fill_with_zero.tif"
@@ -4165,23 +4713,23 @@ def test_end2end_disparity_filling_with_zeros():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "clr.tif"),
+        #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "clr_end2end_gizeh_fill_with_zero.tif"
+        #             ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "msk.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "msk_end2end_gizeh_fill_with_zero.tif"
+        #             ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "filling.tif"),
+        #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"
@@ -4190,7 +4738,7 @@ def test_end2end_disparity_filling_with_zeros():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "dsm_end2end_gizeh_fill_with_zero.tif"
@@ -4200,27 +4748,27 @@ def test_end2end_disparity_filling_with_zeros():
             rtol=1e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "clr.tif"),
+            os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "clr_end2end_gizeh_fill_with_zero.tif"
+                    ref_output_dir, "color_end2end_gizeh_fill_with_zero.tif"
                 )
             ),
             rtol=0.0002,
             atol=1.0e-6,
         )
         assert_same_images(
-            os.path.join(out_dir, "msk.tif"),
+            os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(
-                    ref_output_dir, "msk_end2end_gizeh_fill_with_zero.tif"
+                    ref_output_dir, "mask_end2end_gizeh_fill_with_zero.tif"
                 )
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "filling.tif"),
+            os.path.join(out_dir, "dsm", "filling.tif"),
             absolute_data_path(
                 os.path.join(
                     ref_output_dir, "filling_end2end_gizeh_fill_with_zero.tif"
@@ -4255,7 +4803,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         applications = {
             "triangulation": {
-                "save_points_cloud": True,
+                "save_intermediate_data": True,
             }
         }
 
@@ -4268,7 +4816,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         )
         sensors_pipeline_first_run.run()
         sensors_out_dir_first_run = sensors_input_config_first_run["output"][
-            "out_dir"
+            "directory"
         ]
 
         # Run sensors pipeline with generated config
@@ -4277,7 +4825,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             sensors_input_config_second_run = json.load(fstream)
 
         sensors_input_config_second_run["output"][
-            "out_dir"
+            "directory"
         ] += "_from_used_conf"
 
         sensors_pipeline_second_run = (
@@ -4287,41 +4835,44 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         )
         sensors_pipeline_second_run.run()
         sensors_out_dir_second_run = sensors_input_config_second_run["output"][
-            "out_dir"
+            "directory"
         ]
 
         assert_same_images(
-            os.path.join(sensors_out_dir_first_run, "dsm.tif"),
-            os.path.join(sensors_out_dir_second_run, "dsm.tif"),
+            os.path.join(sensors_out_dir_first_run, "dsm", "dsm.tif"),
+            os.path.join(sensors_out_dir_second_run, "dsm", "dsm.tif"),
             atol=0.0001,
             rtol=1e-6,
         )
 
         with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory2:
             # Run pc pipeline with simple config
-            epi_pc_path = os.path.join(sensors_out_dir_first_run, "one_two")
+            depth_map_path = os.path.join(
+                sensors_out_dir_first_run,
+                "dump_dir",
+                "triangulation",
+                "one_two",
+            )
             pc_input_config_first_run = {
                 "inputs": {
-                    "point_clouds": {
+                    "depth_maps": {
                         "one": {
-                            "x": os.path.join(epi_pc_path, "epi_pc_X.tif"),
-                            "y": os.path.join(epi_pc_path, "epi_pc_Y.tif"),
-                            "z": os.path.join(epi_pc_path, "epi_pc_Z.tif"),
-                            "color": os.path.join(
-                                epi_pc_path, "epi_pc_color.tif"
-                            ),
+                            "x": os.path.join(depth_map_path, "X.tif"),
+                            "y": os.path.join(depth_map_path, "Y.tif"),
+                            "z": os.path.join(depth_map_path, "Z.tif"),
+                            "color": os.path.join(depth_map_path, "color.tif"),
                         }
                     }
                 },
-                "output": {"out_dir": directory2},
+                "output": {"directory": directory2},
             }
 
-            pc_pipeline_first_run = pipeline_dsm.PointCloudsToDsmPipeline(
+            pc_pipeline_first_run = pipeline_dsm.DepthMapsToDsmPipeline(
                 pc_input_config_first_run
             )
             pc_pipeline_first_run.run()
             pc_out_dir_first_run = pc_input_config_first_run["output"][
-                "out_dir"
+                "directory"
             ]
 
             # Run pc pipeline with generated config
@@ -4329,19 +4880,21 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             with open(used_conf, "r", encoding="utf8") as fstream:
                 pc_input_config_second_run = json.load(fstream)
 
-            pc_input_config_second_run["output"]["out_dir"] += "_from_used_conf"
+            pc_input_config_second_run["output"][
+                "directory"
+            ] += "_from_used_conf"
 
-            pc_pipeline_second_run = pipeline_dsm.PointCloudsToDsmPipeline(
+            pc_pipeline_second_run = pipeline_dsm.DepthMapsToDsmPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()
             pc_out_dir_second_run = pc_input_config_second_run["output"][
-                "out_dir"
+                "directory"
             ]
 
             assert_same_images(
-                os.path.join(pc_out_dir_first_run, "dsm.tif"),
-                os.path.join(pc_out_dir_second_run, "dsm.tif"),
+                os.path.join(pc_out_dir_first_run, "dsm", "dsm.tif"),
+                os.path.join(pc_out_dir_second_run, "dsm", "dsm.tif"),
                 atol=0.0001,
                 rtol=1e-6,
             )

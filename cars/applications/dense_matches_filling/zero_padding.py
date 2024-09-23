@@ -67,7 +67,7 @@ class ZerosPadding(
         self.classification = self.used_config["classification"]
 
         # Saving files
-        self.save_disparity_map = self.used_config["save_disparity_map"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
     def check_conf(self, conf):
         """
@@ -92,13 +92,13 @@ class ZerosPadding(
 
         overloaded_conf["classification"] = conf.get("classification", None)
         # Saving files
-        overloaded_conf["save_disparity_map"] = conf.get(
-            "save_disparity_map", False
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
         )
 
         application_schema = {
             "method": str,
-            "save_disparity_map": bool,
+            "save_intermediate_data": bool,
             "classification": Or(None, [str]),
         }
 
@@ -173,7 +173,7 @@ class ZerosPadding(
                 # Save Disparity map
                 (new_epipolar_disparity_map) = self.__register_dataset__(
                     epipolar_disparity_map,
-                    self.save_disparity_map,
+                    self.save_intermediate_data,
                     pair_folder,
                     pair_key,
                     app_name="zero_padding",

@@ -22,8 +22,6 @@
 Test module for config of cars/applications/rasterization/simple_gaussian.py
 """
 
-import json_checker
-
 # Third party imports
 import pytest
 
@@ -42,34 +40,10 @@ def test_check_full_conf():
         "dsm_radius": 1,
         "sigma": None,
         "grid_points_division_factor": None,
-        "resolution": 0.5,
         "dsm_no_data": -32768,
         "color_no_data": 0,
         "color_dtype": None,
         "msk_no_data": 255,
-        "save_color": True,
-        "save_stats": False,
-        "save_mask": False,
-        "save_classif": False,
-        "save_dsm": True,
-        "save_intervals": False,
-        "save_confidence": False,
-        "save_source_pc": False,
-        "save_filling": False,
-        "compute_all": False,
+        "save_intermediate_data": False,
     }
     _ = SimpleGaussian(conf)
-
-
-@pytest.mark.unit_tests
-def test_check_conf_with_error():
-    """
-    Test configuration check for rasterization application
-    with forbidden value for parameter resolution
-    """
-    conf = {
-        "method": "simple_gaussian",
-        "resolution": 0,  # should be > 0
-    }
-    with pytest.raises(json_checker.core.exceptions.DictCheckerError):
-        _ = SimpleGaussian(conf)

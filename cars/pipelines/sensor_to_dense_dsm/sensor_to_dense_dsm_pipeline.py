@@ -30,7 +30,6 @@ import logging
 import os
 
 import numpy as np
-from pyproj import CRS
 
 # CARS imports
 from cars import __version__
@@ -51,8 +50,17 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
 from cars.orchestrator.cluster.log_wrapper import cars_profile
+from cars.pipelines.parameters import advanced_parameters
+from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import (
+    output_constants,
+    output_parameters,
+    sensor_inputs,
+)
+from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 from cars.pipelines.pipeline import Pipeline
 from cars.pipelines.pipeline_constants import (
+    ADVANCED,
     APPLICATIONS,
     GEOMETRY_PLUGIN,
     INPUTS,
@@ -61,17 +69,12 @@ from cars.pipelines.pipeline_constants import (
     PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
-from cars.pipelines.sensor_to_dense_dsm import dsm_output
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_dense_dsm_constants as sens_cst,
-)
-from cars.pipelines.sensor_to_dense_dsm import sensors_inputs
 
 
 @Pipeline.register(
     "sensors_to_dense_dsm",
     "sensors_to_dense_dsm_no_merging",
-    "sensors_to_dense_point_clouds",
+    "sensors_to_dense_depth_maps",
 )
 class SensorToDenseDsmPipeline(PipelineTemplate):
     """
@@ -137,6 +140,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.conf[INPUTS], config_json_dir=config_json_dir
         )
 
+        # Check advanced parameters
+        # TODO static method in the base class
+        self.advanced = advanced_parameters.check_advanced_parameters(
+            self.conf.get(ADVANCED, {}), check_epipolar_a_priori=True
+        )
+        self.used_conf[ADVANCED] = self.advanced
+
         # Check geometry plugin and overwrite geomodel in conf inputs
         (
             self.inputs,
@@ -144,8 +154,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.geom_plugin_without_dem_and_geoid,
             self.geom_plugin_with_dem_and_geoid,
             self.dem_generation_roi,
-        ) = sensors_inputs.check_geometry_plugin(
-            self.inputs, self.conf.get(GEOMETRY_PLUGIN, None)
+        ) = sensor_inputs.check_geometry_plugin(
+            self.inputs, self.advanced, self.conf.get(GEOMETRY_PLUGIN, None)
         )
         self.used_conf[INPUTS] = self.inputs
 
@@ -157,21 +167,38 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             self.used_conf[INPUTS][sens_cst.ROI]
         )
 
-        self.debug_with_roi = self.used_conf[INPUTS][sens_cst.DEBUG_WITH_ROI]
-
+        self.debug_with_roi = self.used_conf[ADVANCED][adv_cst.DEBUG_WITH_ROI]
         # Check conf output
-        self.output = self.check_output(self.conf[OUTPUT])
+        self.output = self.check_output(
+            self.conf[OUTPUT], self.used_conf[PIPELINE]
+        )
         self.used_conf[OUTPUT] = self.output
+
+        self.save_output_dsm = (
+            "dsm" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+        self.save_output_depth_map = (
+            "depth_map" in self.output[output_constants.PRODUCT_LEVEL]
+        )
+        self.save_output_point_cloud = (
+            "point_cloud" in self.output[output_constants.PRODUCT_LEVEL]
+        )
 
         # Check conf application
         self.application_conf = self.check_applications(
             self.conf.get(APPLICATIONS, {}),
             self.generate_terrain_products,
             no_merging="no_merging" in self.used_conf[PIPELINE],
+            save_all_intermediate_data=self.used_conf[ADVANCED][
+                adv_cst.SAVE_INTERMEDIATE_DATA
+            ],
+            save_all_point_clouds_by_pair=self.used_conf[OUTPUT].get(
+                output_constants.SAVE_BY_PAIR, False
+            ),
         )
 
         # Check conf application vs inputs application
-        self.application_conf = self.check_inputs_with_applications(
+        self.application_conf = self.check_applications_with_inputs(
             self.inputs, self.application_conf
         )
 
@@ -191,25 +218,32 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :return: overloader inputs
         :rtype: dict
         """
-        return sensors_inputs.sensors_check_inputs(
+        return sensor_inputs.sensors_check_inputs(
             conf, config_json_dir=config_json_dir
         )
 
     @staticmethod
-    def check_output(conf):
+    def check_output(conf, pipeline):
         """
         Check the output given
 
         :param conf: configuration of output
         :type conf: dict
+        :param pipeline: name of corresponding pipeline
+        :type pipeline_name: str
 
         :return overloader output
         :rtype : dict
         """
-        return dsm_output.dense_dsm_check_output(conf)
+        return output_parameters.check_output_parameters(conf, pipeline)
 
     def check_applications(
-        self, conf, generate_terrain_products, no_merging=False
+        self,
+        conf,
+        generate_terrain_products,
+        no_merging=False,
+        save_all_intermediate_data=False,
+        save_all_point_clouds_by_pair=False,
     ):
         """
         Check the given configuration for applications,
@@ -222,11 +256,17 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :type generate_terrain_products: bool
         :param no_merging: True if skip PC fusion and PC removing
         :type no_merging: bool
+        :param save_all_intermediate_data: True to save intermediate data in all
+            applications
+        :type save_all_intermediate_data: bool
+        :param save_all_point_clouds_by_pair: save point clouds by pair in all
+            relevant applications
+        :type save_all_point_clouds_by_pair: bool
         """
 
         # Check if all specified applications are used
         # Application in terrain_application are note used in
-        # the sensors_to_dense_point_clouds pipeline
+        # the sensors_to_dense_depth_maps pipeline
         needed_applications = [
             "grid_generation",
             "resampling",
@@ -249,15 +289,13 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             terrain_applications.append("point_cloud_outliers_removing.1")
             terrain_applications.append("point_cloud_outliers_removing.2")
 
-        pipeline_name = "sensors_to_dense_point_clouds"
+        pipeline_name = "sensors_to_dense_depth_maps"
         if generate_terrain_products:
             needed_applications += terrain_applications
             pipeline_name = "sensors_to_dense_dsm"
             if no_merging:
                 pipeline_name += "_no_merging"
 
-        # Initialize used config
-        used_conf = {}
         for app_key in conf.keys():
             if app_key not in needed_applications:
                 logging.error(
@@ -271,9 +309,28 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
                 )
 
+        # Initialize used config
+        used_conf = {}
+        for app_key in needed_applications:
+            used_conf[app_key] = conf.get(app_key, {})
+            used_conf[app_key]["save_intermediate_data"] = used_conf[
+                app_key
+            ].get("save_intermediate_data", save_all_intermediate_data)
+
+        for app_key in [
+            "point_cloud_fusion",
+            "point_cloud_outliers_removing.1",
+            "point_cloud_outliers_removing.2",
+            "pc_denoising",
+        ]:
+            if app_key in needed_applications:
+                used_conf[app_key]["save_by_pair"] = used_conf[app_key].get(
+                    "save_by_pair", save_all_point_clouds_by_pair
+                )
+
         # Epipolar grid generation
         self.epipolar_grid_generation_application = Application(
-            "grid_generation", cfg=conf.get("grid_generation", {})
+            "grid_generation", cfg=used_conf.get("grid_generation", {})
         )
         used_conf["grid_generation"] = (
             self.epipolar_grid_generation_application.get_conf()
@@ -281,20 +338,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # image resampling
         self.resampling_application = Application(
-            "resampling", cfg=conf.get("resampling", {})
+            "resampling", cfg=used_conf.get("resampling", {})
         )
         used_conf["resampling"] = self.resampling_application.get_conf()
 
         # holes detection
         self.holes_detection_app = Application(
-            "holes_detection", cfg=conf.get("holes_detection", {})
+            "holes_detection", cfg=used_conf.get("holes_detection", {})
         )
         used_conf["holes_detection"] = self.holes_detection_app.get_conf()
 
         # disparity filling 1 plane
         self.dense_matches_filling_1 = Application(
             "dense_matches_filling",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "dense_matches_filling.1",
                 {"method": "plane"},
             ),
@@ -306,7 +363,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         # disparity filling 2
         self.dense_matches_filling_2 = Application(
             "dense_matches_filling",
-            cfg=conf.get(
+            cfg=used_conf.get(
                 "dense_matches_filling.2",
                 {"method": "zero_padding"},
             ),
@@ -317,36 +374,46 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         # Sparse Matching
         self.sparse_mtch_app = Application(
-            "sparse_matching", cfg=conf.get("sparse_matching", {})
+            "sparse_matching", cfg=used_conf.get("sparse_matching", {})
         )
         used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
 
         # Matching
+        generate_performance_map = (
+            self.used_conf[OUTPUT]
+            .get(output_constants.AUXILIARY, {})
+            .get(output_constants.AUX_PERFORMANCE_MAP, False)
+        )
+        dense_matching_config = used_conf.get("dense_matching", {})
+        if generate_performance_map is True:
+            dense_matching_config["generate_performance_map"] = True
         self.dense_matching_app = Application(
-            "dense_matching", cfg=conf.get("dense_matching", {})
+            "dense_matching", cfg=dense_matching_config
         )
         used_conf["dense_matching"] = self.dense_matching_app.get_conf()
 
         # Triangulation
         self.triangulation_application = Application(
-            "triangulation", cfg=conf.get("triangulation", {})
+            "triangulation", cfg=used_conf.get("triangulation", {})
         )
         used_conf["triangulation"] = self.triangulation_application.get_conf()
 
         self.pc_denoising_application = Application(
-            "pc_denoising", cfg=conf.get("pc_denoising", {"method": "none"})
+            "pc_denoising",
+            cfg=used_conf.get("pc_denoising", {"method": "none"}),
         )
 
         # MNT generation
         self.dem_generation_application = Application(
-            "dem_generation", cfg=conf.get("dem_generation", {})
+            "dem_generation", cfg=used_conf.get("dem_generation", {})
         )
         used_conf["dem_generation"] = self.dem_generation_application.get_conf()
 
         if generate_terrain_products:
             # Points cloud fusion
             self.pc_fusion_application = Application(
-                "point_cloud_fusion", cfg=conf.get("point_cloud_fusion", {})
+                "point_cloud_fusion",
+                cfg=used_conf.get("point_cloud_fusion", {}),
             )
             if not no_merging:
                 used_conf["point_cloud_fusion"] = (
@@ -356,7 +423,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Points cloud outlier removing small components
             self.pc_outliers_removing_1_app = Application(
                 "point_cloud_outliers_removing",
-                cfg=conf.get(
+                cfg=used_conf.get(
                     "point_cloud_outliers_removing.1",
                     {"method": "small_components"},
                 ),
@@ -369,7 +436,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Points cloud outlier removing statistical
             self.pc_outliers_removing_2_app = Application(
                 "point_cloud_outliers_removing",
-                cfg=conf.get(
+                cfg=used_conf.get(
                     "point_cloud_outliers_removing.2",
                     {"method": "statistical"},
                 ),
@@ -382,7 +449,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             # Rasterization
             self.rasterization_application = Application(
                 "point_cloud_rasterization",
-                cfg=conf.get("point_cloud_rasterization", {}),
+                cfg=used_conf.get("point_cloud_rasterization", {}),
             )
             used_conf["point_cloud_rasterization"] = (
                 self.rasterization_application.get_conf()
@@ -399,31 +466,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         return used_conf
 
-    def check_inputs_with_applications(self, inputs_conf, application_conf):
+    def check_applications_with_inputs(self, inputs_conf, application_conf):
         """
-        Check for each application the input configuration consistency
+        Check for each application the input and output configuration
+        consistency
 
         :param inputs_conf: inputs checked configuration
         :type inputs_conf: dict
         :param application_conf: application checked configuration
         :type application_conf: dict
         """
-
-        if "epsg" in inputs_conf and inputs_conf["epsg"]:
-            spatial_ref = CRS.from_epsg(inputs_conf["epsg"])
-            if spatial_ref.is_geographic:
-                if (
-                    "point_cloud_rasterization" in application_conf
-                    and application_conf["point_cloud_rasterization"][
-                        "resolution"
-                    ]
-                    > 10e-3
-                ) or "point_cloud_rasterization" not in application_conf:
-                    logging.warning(
-                        "The resolution of the "
-                        + "point_cloud_rasterization should be "
-                        + "fixed according to the epsg"
-                    )
 
         initial_elevation = self.inputs["initial_elevation"] is not None
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
@@ -506,7 +558,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
         """
 
-        out_dir = self.output["out_dir"]
+        out_dir = self.output[output_constants.OUT_DIRECTORY]
+        auxiliary = self.output[output_constants.AUXILIARY]
 
         # Save used conf
         cars_dataset.save_dict(
@@ -520,7 +573,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             orchestrator_conf=self.orchestrator_conf,
             out_dir=out_dir,
             out_json_path=os.path.join(
-                out_dir, self.output[sens_cst.INFO_BASENAME]
+                out_dir,
+                output_constants.INFO_FILENAME,
             ),
         ) as cars_orchestrator:
             # initialize out_json
@@ -532,15 +586,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 }
             )
 
+            # Application dump directory
+            dump_dir = os.path.join(cars_orchestrator.out_dir, "dump_dir")
+
             # Run applications
 
             # Initialize epsg for terrain tiles
-            epsg = self.inputs[sens_cst.EPSG]
+            epsg = self.output[output_constants.EPSG]
             if epsg is not None:
-                # Compute roi polygon, in input EPSG
+                # Compute roi polygon, in output EPSG
                 roi_poly = preprocessing.compute_roi_poly(
                     self.input_roi_poly, self.input_roi_epsg, epsg
                 )
+
+            resolution = self.output[output_constants.RESOLUTION]
 
             # List of terrain roi corresponding to each epipolar pair
             # Used to generate final terrain roi
@@ -548,7 +607,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
             # initialise lists of points
             list_epipolar_points_cloud = []
-            list_sensor_pairs = sensors_inputs.generate_inputs(
+            list_sensor_pairs = sensor_inputs.generate_inputs(
                 self.inputs, self.geom_plugin_without_dem_and_geoid
             )
             logging.info(
@@ -570,16 +629,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 sensor_image_left,
                 sensor_image_right,
             ) in list_sensor_pairs:
-                # Create Pair folder
-                pair_folder = os.path.join(out_dir, pair_key)
-                safe_makedirs(pair_folder)
-                tmp_dir = os.path.join(pair_folder, "tmp")
-                safe_makedirs(tmp_dir)
-                cars_orchestrator.add_to_clean(tmp_dir)
-
                 # initialize pairs for current pair
                 pairs[pair_key] = {}
-                pairs[pair_key]["pair_folder"] = pair_folder
                 pairs[pair_key]["sensor_image_left"] = sensor_image_left
                 pairs[pair_key]["sensor_image_right"] = sensor_image_right
 
@@ -607,7 +658,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     geom_plugin,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir,
+                        "epipolar_grid_generation",
+                        "initial",
+                        pair_key,
+                    ),
                     pair_key=pair_key,
                 )
 
@@ -637,9 +693,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 pairs[pair_key]["holes_bbox_left"] = []
                 pairs[pair_key]["holes_bbox_right"] = []
 
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False or (
-                    len(pairs[pair_key]["holes_classif"]) > 0
-                ):
+                if self.used_conf[ADVANCED][
+                    adv_cst.USE_EPIPOLAR_A_PRIORI
+                ] is False or (len(pairs[pair_key]["holes_classif"]) > 0):
                     # Run resampling only if needed:
                     # no a priori or needs to detect holes
 
@@ -653,7 +709,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["grid_left"],
                         pairs[pair_key]["grid_right"],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "resampling", "initial", pair_key
+                        ),
                         pair_key=pair_key,
                         margins_fun=self.sparse_mtch_app.get_margins_fun(),
                         tile_width=None,
@@ -673,11 +731,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         classification=pairs[pair_key]["holes_classif"],
                         margin=pairs[pair_key]["holes_poly_margin"],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "hole_detection", pair_key
+                        ),
                         pair_key=pair_key,
                     )
 
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
                     # Run epipolar sparse_matching application
                     (
                         pairs[pair_key]["epipolar_matches_left"],
@@ -689,7 +752,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             "disp_to_alt_ratio"
                         ],
                         orchestrator=cars_orchestrator,
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "sparse_matching", pair_key
+                        ),
                         pair_key=pair_key,
                     )
 
@@ -698,9 +763,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Run grid correction application
                 save_corrected_grid = (
-                    self.epipolar_grid_generation_application.save_grids
+                    self.epipolar_grid_generation_application.get_save_grids()
                 )
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
                     # Estimate grid correction if no epipolar a priori
                     # Filter and save matches
                     pairs[pair_key]["matches_array"] = (
@@ -710,7 +778,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["grid_right"],
                             orchestrator=cars_orchestrator,
                             pair_key=pair_key,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "sparse_matching", pair_key
+                            ),
                             save_matches=(
                                 self.sparse_mtch_app.get_save_matches()
                             ),
@@ -727,7 +797,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["matches_array"],
                         pairs[pair_key]["grid_right"],
                         save_matches=self.sparse_mtch_app.get_save_matches(),
-                        pair_folder=pairs[pair_key]["pair_folder"],
+                        pair_folder=os.path.join(
+                            dump_dir, "grid_correction", "initial", pair_key
+                        ),
                         pair_key=pair_key,
                         orchestrator=cars_orchestrator,
                     )
@@ -737,9 +809,19 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["grid_right"],
                             pairs[pair_key]["grid_correction_coef"],
                             save_corrected_grid,
-                            pairs[pair_key]["pair_folder"],
+                            os.path.join(
+                                dump_dir, "grid_correction", "initial", pair_key
+                            ),
                         )
                     )
+
+                    # Clean grid at the end of processing if required
+                    if not save_corrected_grid:
+                        cars_orchestrator.add_to_clean(
+                            os.path.join(
+                                dump_dir, "grid_correction", "initial", pair_key
+                            )
+                        )
 
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "grid_left"
@@ -776,20 +858,28 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["filtered_triangulated_matches"]
                     )
 
-            if self.used_conf[INPUTS]["use_epipolar_a_priori"]:
+            if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]:
                 # Use a priori
-                dem_median = self.used_conf[INPUTS]["terrain_a_priori"][
-                    "dem_median"
+                dem_median = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MEDIAN
                 ]
-                dem_min = self.used_conf[INPUTS]["terrain_a_priori"]["dem_min"]
-                dem_max = self.used_conf[INPUTS]["terrain_a_priori"]["dem_max"]
+                dem_min = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MIN
+                ]
+                dem_max = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
+                    adv_cst.DEM_MAX
+                ]
 
             else:
+                dem_generation_output_dir = os.path.join(
+                    dump_dir, "dem_generation"
+                )
+                safe_makedirs(dem_generation_output_dir)
                 # Use initial elevation if provided, and generate dems
                 # Generate MNT from matches
                 dem = self.dem_generation_application.run(
                     triangulated_matches_list,
-                    cars_orchestrator.out_dir,
+                    dem_generation_output_dir,
                     self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
                     dem_roi_to_use=self.dem_generation_roi,
                 )
@@ -799,7 +889,6 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 if (
                     self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                     is not None
-                    and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                 ):
                     dem_median = self.inputs[sens_cst.INITIAL_ELEVATION][
                         sens_cst.DEM_PATH
@@ -812,7 +901,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     ]
                 ):
                     self.geom_plugin_with_dem_and_geoid = (
-                        sensors_inputs.generate_geometry_plugin_with_dem(
+                        sensor_inputs.generate_geometry_plugin_with_dem(
                             self.used_conf[GEOMETRY_PLUGIN],
                             self.inputs,
                             dem=dem_median,
@@ -824,7 +913,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
             # update used configuration with terrain a priori
-            sensors_inputs.update_conf(
+            advanced_parameters.update_conf(
                 self.used_conf,
                 dem_median=dem_median,
                 dem_min=dem_min,
@@ -848,14 +937,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
             for cloud_id, (pair_key, _, _) in enumerate(list_sensor_pairs):
                 # Geometry plugin with dem will be used for the grid generation
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
-                if self.used_conf[INPUTS]["use_epipolar_a_priori"] is False:
+                if (
+                    self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]
+                    is False
+                ):
 
                     if not (
                         self.inputs[sens_cst.INITIAL_ELEVATION][
                             sens_cst.DEM_PATH
                         ]
                         is not None
-                        and not self.inputs[sens_cst.USE_ENDOGENOUS_ELEVATION]
                     ):
                         # Generate grids with new MNT
                         (
@@ -866,7 +957,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["sensor_image_right"],
                             geom_plugin,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir,
+                                "epipolar_grid_generation",
+                                "new_mnt",
+                                pair_key,
+                            ),
                             pair_key=pair_key,
                         )
 
@@ -895,7 +991,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             save_matches=(
                                 self.sparse_mtch_app.get_save_matches()
                             ),
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "grid_correction", "new", pair_key
+                            ),
                             pair_key=pair_key,
                             orchestrator=cars_orchestrator,
                         )
@@ -907,9 +1005,23 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 pairs[pair_key]["new_grid_right"],
                                 pairs[pair_key]["grid_correction_coef"],
                                 save_corrected_grid,
-                                pairs[pair_key]["pair_folder"],
+                                os.path.join(
+                                    dump_dir, "grid_correction", "new", pair_key
+                                ),
                             )
                         )
+
+                        if not save_corrected_grid:
+                            cars_orchestrator.add_to_clean(
+                                os.path.join(
+                                    dump_dir, "grid_correction", "new", pair_key
+                                )
+                            )
+
+                        # Use the new grid as uncorrected grid
+                        pairs[pair_key]["grid_right"] = pairs[pair_key][
+                            "new_grid_right"
+                        ]
 
                         pairs[pair_key]["corrected_grid_left"] = pairs[
                             pair_key
@@ -965,13 +1077,15 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 else:
                     # Use epipolar a priori
                     # load the disparity range
-                    [dmin, dmax] = self.used_conf[INPUTS]["epipolar_a_priori"][
-                        pair_key
-                    ]["disparity_range"]
+                    [dmin, dmax] = self.used_conf[ADVANCED][
+                        adv_cst.EPIPOLAR_A_PRIORI
+                    ][pair_key][adv_cst.DISPARITY_RANGE]
                     # load the grid correction coefficient
                     pairs[pair_key]["grid_correction_coef"] = self.used_conf[
-                        INPUTS
-                    ]["epipolar_a_priori"][pair_key]["grid_correction"]
+                        ADVANCED
+                    ][adv_cst.EPIPOLAR_A_PRIORI][pair_key][
+                        adv_cst.GRID_CORRECTION
+                    ]
                     pairs[pair_key]["corrected_grid_left"] = pairs[pair_key][
                         "grid_left"
                     ]
@@ -987,7 +1101,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 pairs[pair_key]["grid_right"],
                                 pairs[pair_key]["grid_correction_coef"],
                                 save_corrected_grid,
-                                pair_folder,
+                                os.path.join(
+                                    dump_dir, "grid_correction", pair_key
+                                ),
                             )
                         )
 
@@ -995,7 +1111,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
 
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
-                sensors_inputs.update_conf(
+                advanced_parameters.update_conf(
                     self.used_conf,
                     grid_correction_coef=pairs[pair_key][
                         "grid_correction_coef"
@@ -1012,7 +1128,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # Generate min and max disp grids
                 # Global disparity min and max will be computed from
                 # these grids
-                # fmt: off
+                dense_matching_pair_folder = os.path.join(
+                    dump_dir, "dense_matching", pair_key
+                )
                 if use_global_disp_range:
                     # Generate min and max disp grids from constants
                     # sensor image is not used here
@@ -1024,7 +1142,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             self.geom_plugin_with_dem_and_geoid,
                             dmin=dmin,
                             dmax=dmax,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=dense_matching_pair_folder,
                         )
                     )
                 else:
@@ -1037,10 +1155,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             dem_min=dem_min,
                             dem_max=dem_max,
                             dem_median=dem_median,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=dense_matching_pair_folder,
                         )
                     )
-                # fmt: on
 
                 # Get margins used in dense matching,
                 dense_matching_margins_fun = (
@@ -1049,10 +1166,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     )
                 )
 
-                # TODO add in content.json max diff max - min
+                # TODO add in metadata.json max diff max - min
                 # Update used_conf configuration with epipolar a priori
                 # Add global min and max computed with grids
-                sensors_inputs.update_conf(
+                advanced_parameters.update_conf(
                     self.used_conf,
                     dmin=np.min(
                         disp_range_grid[0, 0]["disp_min_grid"].values
@@ -1076,7 +1193,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["sensor_image_right"],
                     pairs[pair_key]["corrected_grid_left"],
                     pairs[pair_key]["corrected_grid_right"],
-                    pairs[pair_key]["pair_folder"],
+                    os.path.join(dump_dir, "compute_epipolar_roi", pair_key),
                     disp_min=np.min(
                         disp_range_grid[0, 0]["disp_min_grid"].values
                     ),  # TODO compute dmin dans dmax
@@ -1108,7 +1225,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     pairs[pair_key]["corrected_grid_left"],
                     pairs[pair_key]["corrected_grid_right"],
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "resampling", "corrected_grid", pair_key
+                    ),
                     pair_key=pair_key,
                     margins_fun=dense_matching_margins_fun,
                     tile_width=optimum_tile_size,
@@ -1123,7 +1242,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     new_epipolar_image_right,
                     local_tile_optimal_size_fun,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_folder=os.path.join(
+                        dump_dir, "dense_matching", pair_key
+                    ),
                     pair_key=pair_key,
                     disp_range_grid=disp_range_grid,
                     compute_disparity_masks=False,
@@ -1147,7 +1268,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 disp_range_grid[0, 0]["disp_max_grid"].values
                             ),
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_1", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1157,7 +1280,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matches_filling_1.run(
                             epipolar_disparity_map,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_1", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1176,7 +1301,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                                 disp_range_grid[0, 0]["disp_max_grid"].values
                             ),
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_2", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1186,7 +1313,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.dense_matches_filling_2.run(
                             filled_with_1_epipolar_disparity_map,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "dense_matches_filling_2", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1254,11 +1383,16 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         "..",
                         "..",
                         "conf",
-                        sensors_inputs.CARS_GEOID_PATH,
+                        sensor_inputs.CARS_GEOID_PATH,
                     )
                 else:
                     # default case : stay on the ellipsoid
                     output_geoid_path = None
+
+                depth_map_dir = None
+                if self.save_output_depth_map:
+                    depth_map_dir = os.path.join(out_dir, "depth_map", pair_key)
+                    safe_makedirs(depth_map_dir)
 
                 # Run epipolar triangulation application
                 epipolar_points_cloud = self.triangulation_application.run(
@@ -1273,12 +1407,25 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     denoising_overload_fun=denoising_overload_fun,
                     source_pc_names=pairs_names,
                     orchestrator=cars_orchestrator,
-                    pair_folder=pairs[pair_key]["pair_folder"],
+                    pair_dump_dir=os.path.join(
+                        dump_dir, "triangulation", pair_key
+                    ),
                     pair_key=pair_key,
                     uncorrected_grid_right=pairs[pair_key]["grid_right"],
                     geoid_path=output_geoid_path,
                     cloud_id=cloud_id,
                     intervals=intervals,
+                    pair_output_dir=depth_map_dir,
+                    save_output_color=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_COLOR],
+                    save_output_classification=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_CLASSIFICATION],
+                    save_output_filling=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_FILLING],
+                    save_output_mask=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_MASK],
+                    save_output_performance_map=bool(depth_map_dir)
+                    and auxiliary[output_constants.AUX_PERFORMANCE_MAP],
                 )
 
                 if "no_merging" in self.used_conf[PIPELINE]:
@@ -1286,7 +1433,9 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_denoising_application.run(
                             epipolar_points_cloud,
                             orchestrator=cars_orchestrator,
-                            pair_folder=pairs[pair_key]["pair_folder"],
+                            pair_folder=os.path.join(
+                                dump_dir, "denoising", pair_key
+                            ),
                             pair_key=pair_key,
                         )
                     )
@@ -1303,9 +1452,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pairs[pair_key]["corrected_grid_right"],
                             epsg,
                             self.geom_plugin_with_dem_and_geoid,
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            ),
+                            resolution=resolution,
                             disp_min=np.min(
                                 disp_range_grid[0, 0]["disp_min_grid"].values
                             ),
@@ -1317,8 +1464,10 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             ),
                             orchestrator=cars_orchestrator,
                             pair_key=pair_key,
-                            pair_folder=pairs[pair_key]["pair_folder"],
-                            check_inputs=self.inputs[sens_cst.CHECK_INPUTS],
+                            pair_folder=os.path.join(
+                                dump_dir, "terrain_bbox", pair_key
+                            ),
+                            check_inputs=True,
                         )
                     )
                     list_terrain_roi.append(current_terrain_roi_bbox)
@@ -1339,7 +1488,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 ) = preprocessing.compute_terrain_bounds(
                     list_terrain_roi,
                     roi_poly=(None if self.debug_with_roi else roi_poly),
-                    resolution=self.rasterization_application.get_resolution(),
+                    resolution=resolution,
                 )
 
                 if "no_merging" in self.used_conf[PIPELINE]:
@@ -1351,18 +1500,42 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     # Merge point clouds
                     pc_outliers_removing_1_margins = (
                         self.pc_outliers_removing_1_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
                     )
                     pc_outliers_removing_2_margins = (
                         self.pc_outliers_removing_2_app.get_on_ground_margin(
-                            resolution=(
-                                self.rasterization_application.get_resolution()
-                            )
+                            resolution=resolution
                         )
                     )
+
+                    # find which application produce the final version of the
+                    # point cloud. The last generated point cloud will be saved
+                    # as official point cloud product if save_output_point_cloud
+                    # is True.
+
+                    last_pc_application = None
+                    # denoising application will produce a point cloud, unless
+                    # it uses the 'none' method.
+                    if self.pc_denoising_application.used_method != "none":
+                        last_pc_application = "denoising"
+                    elif (
+                        self.pc_outliers_removing_2_app.used_config.get(
+                            "activated", False
+                        )
+                        is True
+                    ):
+                        last_pc_application = "pc_outliers_removing_2"
+                    elif (
+                        self.pc_outliers_removing_1_app.used_config.get(
+                            "activated", False
+                        )
+                        is True
+                    ):
+                        last_pc_application = "pc_outliers_removing_1"
+                    else:
+                        last_pc_application = "fusion"
+
                     merged_points_clouds = self.pc_fusion_application.run(
                         list_epipolar_points_cloud,
                         terrain_bounds,
@@ -1372,10 +1545,14 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         margins=(
                             pc_outliers_removing_1_margins
                             + pc_outliers_removing_2_margins
-                            + self.rasterization_application.get_margins()
+                            + self.rasterization_application.get_margins(
+                                resolution
+                            )
                         ),
                         optimal_terrain_tile_width=optimal_terrain_tile_width,
                         roi=(roi_poly if self.debug_with_roi else None),
+                        save_laz_output=self.save_output_point_cloud
+                        and last_pc_application == "fusion",
                     )
 
                     # Remove outliers with small components method
@@ -1383,6 +1560,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_outliers_removing_1_app.run(
                             merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "pc_outliers_removing_1",
                         )
                     )
 
@@ -1391,6 +1570,8 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_outliers_removing_2_app.run(
                             filtered_1_merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "pc_outliers_removing_2",
                         )
                     )
 
@@ -1399,24 +1580,133 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         self.pc_denoising_application.run(
                             filtered_2_merged_points_clouds,
                             orchestrator=cars_orchestrator,
+                            save_laz_output=self.save_output_point_cloud
+                            and last_pc_application == "denoising",
                         )
                     )
 
                     # Rasterize merged and filtered point cloud
                     point_cloud_to_rasterize = denoised_merged_points_clouds
 
+                rasterization_dump_dir = os.path.join(dump_dir, "rasterization")
+
+                dsm_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "dsm.tif",
+                    )
+                    if self.save_output_dsm
+                    else None
+                )
+
+                color_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "color.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_COLOR
+                    ]
+                    else None
+                )
+
+                performance_map_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "performance_map.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_PERFORMANCE_MAP
+                    ]
+                    else None
+                )
+
+                classif_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "classification.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_CLASSIFICATION
+                    ]
+                    else None
+                )
+
+                mask_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "mask.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_MASK
+                    ]
+                    else None
+                )
+
+                contributing_pair_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "contributing_pair.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_CONTRIBUTING_PAIR
+                    ]
+                    else None
+                )
+
+                filling_file_name = (
+                    os.path.join(
+                        out_dir,
+                        output_constants.DSM_DIRECTORY,
+                        "filling.tif",
+                    )
+                    if self.save_output_dsm
+                    and self.output[output_constants.AUXILIARY][
+                        output_constants.AUX_FILLING
+                    ]
+                    else None
+                )
+
                 # rasterize point cloud
                 _ = self.rasterization_application.run(
                     point_cloud_to_rasterize,
                     epsg,
+                    resolution=resolution,
                     orchestrator=cars_orchestrator,
-                    dsm_file_name=os.path.join(
-                        out_dir, self.output[sens_cst.DSM_BASENAME]
-                    ),
-                    color_file_name=os.path.join(
-                        out_dir, self.output[sens_cst.CLR_BASENAME]
-                    ),
+                    dsm_file_name=dsm_file_name,
+                    color_file_name=color_file_name,
+                    classif_file_name=classif_file_name,
+                    performance_map_file_name=performance_map_file_name,
+                    mask_file_name=mask_file_name,
+                    contributing_pair_file_name=contributing_pair_file_name,
+                    filling_file_name=filling_file_name,
                     color_dtype=list_epipolar_points_cloud[0].attributes[
                         "color_type"
                     ],
+                    dump_dir=rasterization_dump_dir,
+                )
+
+                # Cleaning: don't keep terrain bbox if save_intermediate_data
+                # is not activated
+                if not self.advanced[adv_cst.SAVE_INTERMEDIATE_DATA]:
+                    cars_orchestrator.add_to_clean(
+                        os.path.join(dump_dir, "terrain_bbox")
+                    )
+
+            # Cleaning: delete everything in tile_processing if
+            # save_intermediate_data is not activated
+            if not self.advanced[adv_cst.SAVE_INTERMEDIATE_DATA]:
+                cars_orchestrator.add_to_clean(
+                    os.path.join(dump_dir, "tile_processing")
                 )

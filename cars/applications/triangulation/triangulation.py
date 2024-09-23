@@ -49,7 +49,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         """
 
         triangulation_method = cls.default_application
-        if bool(conf) is False:
+        if bool(conf) is False or "method" in conf:
             logging.info(
                 "Triangulation method not specified, default "
                 " {} is used".format(triangulation_method)
@@ -107,12 +107,18 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         denoising_overload_fun=None,
         source_pc_names=None,
         orchestrator=None,
-        pair_folder=None,
+        pair_dump_dir=None,
         pair_key="PAIR_0",
         uncorrected_grid_right=None,
         geoid_path=None,
         cloud_id=None,
         intervals=None,
+        pair_output_dir=None,
+        save_output_color=False,
+        save_output_classification=False,
+        save_output_mask=False,
+        save_output_filling=False,
+        save_output_performance_map=False,
     ):
         """
         Run Triangulation application.
@@ -176,8 +182,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param source_pc_names: source pc names
         :type source_pc_names: list[str]
         :param orchestrator: orchestrator used
-        :param pair_folder: folder used for current pair
-        :type pair_folder: str
+        :param pair_dump_dir: folder used for current pair
+        :type pair_dump_dir: str
         :param pair_key: pair key id
         :type pair_key: str
         :param uncorrected_grid_right: not corrected right epipolar grid
@@ -187,6 +193,21 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :type geoid_path: str
         :param intervals: Either None or a List of 2 intervals indicators
         :type intervals: None or [str, str]
+        :param pair_output_dir: directory to write triangulation output depth
+                map.
+        :type pair_output_dir: None or str
+        :param save_output_color: Save color depth map in pair_output_dir
+        :type save_output_color: bool
+        :param save_output_classification: Save classification depth map in
+                pair_output_dir
+        :type save_output_classification: bool
+        :param save_output_mask: Save mask depth map in pair_output_dir
+        :type save_output_mask: bool
+        :param save_output_filling: Save filling depth map in pair_output_dir
+        :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in
+                pair_output_dir
+        :type save_output_performance_map: bool
 
         :return: points cloud \
                 The CarsDataset contains:

@@ -28,7 +28,7 @@ import logging
 import os
 
 # Third party imports
-from json_checker import Checker
+from json_checker import Checker, OptionalKey
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -93,6 +93,7 @@ class CloudToBbox(
 
         holes_detection_schema = {
             "method": str,
+            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf

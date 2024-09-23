@@ -28,13 +28,13 @@
     },
     "dense_matching": {
       "method": "census_sgm",
-      "save_disparity_map": true,
+      "save_intermediate_data": true,
       "min_epi_tile_size": 103,
       "max_epi_tile_size": 103
     },
     "triangulation": {
       "method": "line_of_sight_intersection",
-      "save_points_cloud": true
+      "save_intermediate_data": true
     },
     "point_cloud_fusion": {
       "method": "mapping_to_terrain_tiles",

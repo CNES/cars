@@ -245,7 +245,7 @@ def main():
         Update figures
         """
 
-        tiles_folder = os.path.join(cars_output, "tile_processing")
+        tiles_folder = os.path.join(cars_output, "dump_dir", "tile_processing")
         if not os.path.exists(tiles_folder):
             return None
         seen_paths = []

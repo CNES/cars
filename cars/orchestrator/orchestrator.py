@@ -162,7 +162,9 @@ class Orchestrator:
         self.achievement_tracker = achievement_tracker.AchievementTracker()
 
         # init tile profiler
-        self.dir_tile_profiling = os.path.join(self.out_dir, "tile_processing")
+        self.dir_tile_profiling = os.path.join(
+            self.out_dir, "dump_dir", "tile_processing"
+        )
         if not os.path.exists(self.dir_tile_profiling):
             os.makedirs(self.dir_tile_profiling)
         self.tile_profiler = TileProfiler(
@@ -177,7 +179,7 @@ class Orchestrator:
         # outjson
         self.out_json_path = out_json_path
         if self.out_json_path is None:
-            os.path.join(self.out_dir, "content.json")
+            os.path.join(self.out_dir, "metadata.json")
         self.out_json = {}
 
     def add_to_clean(self, tmp_dir):
@@ -201,7 +203,7 @@ class Orchestrator:
         nodata=0,
         cars_ds_name=None,
         optional_data=False,
-        save_points_cloud_by_pair=False,
+        save_by_pair=False,
     ):
         """
         Save file to list in order to be saved later
@@ -213,8 +215,8 @@ class Orchestrator:
           for information during logging
         :param optional_data: True if the data is optionnal
         :type optional_data: bool
-        :param save_points_cloud_by_pair: True if data by pair
-        :type save_points_cloud_by_pair: bool
+        :param save_by_pair: True if data by pair
+        :type save_by_pair: bool
         """
 
         self.cars_ds_savers_registry.add_file_to_save(
@@ -224,7 +226,7 @@ class Orchestrator:
             dtype=dtype,
             nodata=nodata,
             optional_data=optional_data,
-            save_points_cloud_by_pair=save_points_cloud_by_pair,
+            save_by_pair=save_by_pair,
         )
 
         # add name if exists
@@ -503,7 +505,7 @@ class Orchestrator:
             self.cars_ds_savers_registry.cleanup()
         else:
             logging.debug(
-                "orchestrator launch_worker is False, no content.json saved"
+                "orchestrator launch_worker is False, no metadata.json saved"
             )
 
     def reset_cluster(self):
