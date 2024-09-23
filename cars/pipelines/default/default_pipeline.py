@@ -266,6 +266,7 @@ class DefaultPipeline(PipelineTemplate):
         depth_to_dsm_apps = {
             "pc_denoising": 15,
             "point_cloud_rasterization": 16,
+            "dsm_filling": 17
         }
 
         self.app_values = {}
@@ -445,7 +446,10 @@ class DefaultPipeline(PipelineTemplate):
             needed_applications += ["pc_denoising"]
 
             if self.save_output_dsm:
-                needed_applications += ["point_cloud_rasterization"]
+                needed_applications += [
+                    "point_cloud_rasterization",
+                    "dsm_filling"
+                ]
 
             if self.merging:  # we have to merge point clouds, add merging apps
                 needed_applications += [
@@ -497,6 +501,7 @@ class DefaultPipeline(PipelineTemplate):
         self.pc_outliers_removing_2_app = None
         self.rasterization_application = None
         self.pc_fusion_application = None
+        self.dsm_filling_application = None
 
         if self.sensors_in_inputs:
             # Epipolar grid generation
@@ -597,6 +602,13 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
+                )
+                # DSM filling
+                self.dsm_filling_application = Application(
+                    "dsm_filling", cfg=conf.get("dsm_filling", {})
+                )
+                used_conf["dsm_filling"] = (
+                    self.dsm_filling_application.get_conf()
                 )
 
             if self.merging:
@@ -1870,6 +1882,20 @@ class DefaultPipeline(PipelineTemplate):
             self.cars_orchestrator.add_to_clean(
                 os.path.join(self.dump_dir, "terrain_bbox")
             )
+
+        # dsm needs to be saved before filling
+        cars_orchestrator.breakpoint()
+
+        _ = self.dsm_filling_application.run(
+            # path to initial elevation file
+            self.geom_plugin_with_dem_and_geoid,
+            # path to the DSM to fill
+            os.path.join(out_dir, self.output[sens_cst.DSM_BASENAME]),
+            # all sensor pairs, to get the ROI polys
+            list_sensor_pairs,
+            self.output[sens_cst.OUT_GEOID],
+            out_dir,
+        )
 
         return self.quit_on_app("point_cloud_rasterization")
 
