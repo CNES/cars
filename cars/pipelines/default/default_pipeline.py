@@ -759,6 +759,10 @@ class DefaultPipeline(PipelineTemplate):
         # Used to generate final terrain roi
         self.list_terrain_roi = []
 
+        # Polygons representing the intersection of each pair of images
+        # Used to fill the final DSM only inside of those Polygons
+        self.list_intersection_poly = []
+
         # initialize lists of points
         self.list_epipolar_points_cloud = []
         self.list_sensor_pairs = sensor_inputs.generate_inputs(
@@ -1716,7 +1720,10 @@ class DefaultPipeline(PipelineTemplate):
             if self.save_output_dsm or self.save_output_point_cloud:
                 # Compute terrain bounding box /roi related to
                 # current images
-                (current_terrain_roi_bbox) = preprocessing.compute_terrain_bbox(
+                (
+                    current_terrain_roi_bbox,
+                    intersection_poly
+                ) = preprocessing.compute_terrain_bbox(
                     self.pairs[pair_key]["sensor_image_left"],
                     self.pairs[pair_key]["sensor_image_right"],
                     new_epipolar_image_left,
@@ -1740,6 +1747,7 @@ class DefaultPipeline(PipelineTemplate):
                     check_inputs=True,
                 )
                 self.list_terrain_roi.append(current_terrain_roi_bbox)
+                self.list_intersection_poly.append(intersection_poly)
 
                 # compute terrain bounds for later use
                 (
@@ -1883,21 +1891,24 @@ class DefaultPipeline(PipelineTemplate):
                 os.path.join(self.dump_dir, "terrain_bbox")
             )
 
+        if self.quit_on_app("point_cloud_rasterization"):
+            return True
+        
         # dsm needs to be saved before filling
         cars_orchestrator.breakpoint()
 
         _ = self.dsm_filling_application.run(
-            # path to initial elevation file
-            self.geom_plugin_with_dem_and_geoid,
-            # path to the DSM to fill
-            os.path.join(out_dir, self.output[sens_cst.DSM_BASENAME]),
-            # all sensor pairs, to get the ROI polys
-            list_sensor_pairs,
-            self.output[sens_cst.OUT_GEOID],
-            out_dir,
+            # path to initial elevation file via geom plugin
+            initial_elevation=self.geom_plugin_with_dem_and_geoid,
+            dsm_path=dsm_file_name,
+            roi_polys=self.list_intersection_poly,
+            roi_epsg=self.epsg,
+            output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
+            dump_dir=self.dump_dir,
+            out_dir=self.out_dir,
         )
 
-        return self.quit_on_app("point_cloud_rasterization")
+        return self.quit_on_app("dsm_filling")
 
     def preprocess_depth_maps(self):
         """

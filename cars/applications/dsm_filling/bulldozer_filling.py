@@ -22,7 +22,9 @@
 this module contains the bulldozer dsm filling application class.
 """
 
+import logging
 import os
+import shutil
 
 import numpy as np
 import rasterio as rio
@@ -34,7 +36,8 @@ from rasterio.windows import Window
 from shapely import Polygon
 from shareloc.dtm_reader import interpolate_geoid_height
 
-from cars.core import inputs, projection
+from cars.core import projection
+from cars.pipelines.parameters import output_constants
 
 from . import dsm_filling_tools as dft
 from .dsm_filling import DsmFilling
@@ -57,6 +60,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # check conf
         self.used_method = self.used_config["method"]
         self.activated = self.used_config["activated"]
+        self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -73,10 +77,14 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         # Overload conf
         overloaded_conf["method"] = conf.get("method", "bulldozer")
         overloaded_conf["activated"] = conf.get("activated", False)
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
 
         rectification_schema = {
             "method": str,
             "activated": bool,
+            "save_intermediate_data": bool,
         }
 
         # Check conf
@@ -85,20 +93,21 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         return overloaded_conf
 
-    def run(
+    def run(  # noqa C901
         self,
         initial_elevation,
         dsm_path,
-        list_sensor_pairs_or_roi_poly,
+        roi_polys,
+        roi_epsg,
         output_geoid,
+        dump_dir,
         out_dir,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
         Outputs the filled dsm in a new file, and the filling mask
 
-        list_sensor_pairs_or_roi_poly can any of these objects :
-            - a list of pairs of input images
+        roi_poly can any of these objects :
             - a list of Shapely Polygons
             - a Shapely Polygon
         """
@@ -106,9 +115,22 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         if not self.activated:
             return
 
-        temp_dsm_path = os.path.join(out_dir, "temp_dsm.tif")
-        final_dsm_path = os.path.join(out_dir, "dsm_filled.tif")
-        filling_path = os.path.join(out_dir, "filling_bulldozer.tif")
+        if initial_elevation is None:
+            logging.error("No DEM was provided, dsm_filling will not run.")
+            return
+
+        dump_dir = os.path.join(dump_dir, "dsm_filling")
+
+        if not os.path.exists(dump_dir):
+            os.makedirs(dump_dir)
+
+        temp_dsm_path = os.path.join(dump_dir, "temp_dsm.tif")
+        final_dsm_path = os.path.join(
+            out_dir, output_constants.DSM_DIRECTORY, "dsm_filled.tif"
+        )
+        filling_path = os.path.join(
+            out_dir, output_constants.DSM_DIRECTORY, "filling_bulldozer.tif"
+        )
 
         # create the config for the bulldozer execution
         bull_conf_path = os.path.join(
@@ -118,8 +140,8 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             bull_conf = yaml.safe_load(bull_conf_file)
 
         bull_conf["dsm_path"] = temp_dsm_path
-        bull_conf["output_dir"] = os.path.join(out_dir, "bulldozer")
-        bull_conf_path = os.path.join(out_dir, "bulldozer_config.yaml")
+        bull_conf["output_dir"] = os.path.join(dump_dir, "bulldozer")
+        bull_conf_path = os.path.join(dump_dir, "bulldozer_config.yaml")
         with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
             yaml.dump(bull_conf, bull_conf_file)
 
@@ -141,27 +163,18 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             dsm_meta = in_dsm.meta
 
         roi_raster = np.ones(dsm[0].shape)
-        polys = []
-        if list_sensor_pairs_or_roi_poly.isinstance(list):
-            for obj in list_sensor_pairs_or_roi_poly:
-                if obj.isinstance(Polygon):
-                    polys.append(obj)
-                else:
-                    (pair_key, _, _) = obj
-                    pair_folder = os.path.join(out_dir, pair_key)
-                    pair_poly, epsg = inputs.read_vector(
-                        os.path.join(pair_folder, "envelopes_intersection.gpkg")
-                    )
-                    pair_poly = projection.polygon_projection(
-                        pair_poly, epsg, dsm_crs.to_epsg()
-                    )
-                    polys.append(pair_poly)
-        elif list_sensor_pairs_or_roi_poly.isinstance(Polygon):
-            polys.append(list_sensor_pairs_or_roi_poly)
 
-        if len(polys) > 0:
+        if isinstance(roi_polys, list):
+            roi_polys_outepsg = []
+            for poly in roi_polys:
+                if isinstance(poly, Polygon):
+                    roi_poly_outepsg = projection.polygon_projection(
+                        poly, roi_epsg, dsm_crs.to_epsg()
+                    )
+                    roi_polys_outepsg.append(roi_poly_outepsg)
+
             roi_raster = rio.features.rasterize(
-                polys, out_shape=roi_raster.shape, transform=dsm_tr
+                roi_polys_outepsg, out_shape=roi_raster.shape, transform=dsm_tr
             )
 
         # get the initial elevation
@@ -220,12 +233,12 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 to_fill_xys, dsm_crs.to_epsg(), 4326
             )
 
-            if output_geoid.isinstance(bool) and output_geoid is False:
+            if isinstance(output_geoid, bool) and output_geoid is False:
                 # out geoid is ellipsoid: add geoid-ellipsoid distance
                 applied_offset += interpolate_geoid_height(
                     initial_elevation.geoid, pts_to_project_on_geoid
                 )
-            elif output_geoid.isinstance(str):
+            elif isinstance(output_geoid, str):
                 # out geoid is a new geoid whose path is in output_geoid:
                 # add carsgeoid-ellipsoid distance then add ellipsoid-outgeoid
                 applied_offset += interpolate_geoid_height(
@@ -242,19 +255,43 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         with rio.open(temp_dsm_path, "w", **dsm_meta) as out_dsm:
             out_dsm.write(temp_filled_dsm)
 
-        dsm_to_dtm(bull_conf_path)
+        try:
+            try:
+                dsm_to_dtm(bull_conf_path)
+            except Exception:
+                logging.info(
+                    "Bulldozer failed on its first execution. Retrying"
+                )
+                dsm_to_dtm(bull_conf_path)
+        except Exception:
+            logging.error(
+                "Bulldozer failed on its second execution."
+                + " The DSM could not be filled."
+            )
+        else:
 
-        with rio.open(dtm_path) as in_dtm:
-            dtm = in_dtm.read()
+            with rio.open(dtm_path) as in_dtm:
+                dtm = in_dtm.read()
 
-        filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
-        dsm[filling_mask] = dtm[filling_mask]
+            filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
+            dsm[filling_mask] = dtm[filling_mask]
 
-        with rio.open(final_dsm_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(dsm)
+            with rio.open(final_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm)
 
-        with rio.open(filling_path, "w", **dsm_meta) as out_dsm:
-            out_dsm.write(filling_mask)
+            with rio.open(filling_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(filling_mask)
 
-        # remove the temporary DSM used to run Bulldozer
-        os.remove(temp_dsm_path)
+            # indent: do not remove intermediate files if
+            # bulldozer failed twice (for the logs)
+            if not self.save_intermediate_data:
+                # remove intermediary files if not needed
+                try:
+                    shutil.rmtree(dump_dir)
+                except Exception as exception_rmtree:
+                    logging_msg = (
+                        "dsm_filling's intermediary data"
+                        + " could not be deleted,"
+                        + f" an error occured: {exception_rmtree}."
+                    )
+                    logging.info(logging_msg)
