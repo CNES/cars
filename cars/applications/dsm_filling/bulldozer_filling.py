@@ -176,6 +176,13 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             roi_raster = rio.features.rasterize(
                 roi_polys_outepsg, out_shape=roi_raster.shape, transform=dsm_tr
             )
+        elif isinstance(roi_polys, Polygon):
+            roi_poly_outepsg = projection.polygon_projection(
+                roi_polys, roi_epsg, dsm_crs.to_epsg()
+            )
+            roi_raster = rio.features.rasterize(
+                [roi_poly_outepsg], out_shape=roi_raster.shape, transform=dsm_tr
+            )
 
         # get the initial elevation
         with rio.open(initial_elevation.dem) as in_elev:

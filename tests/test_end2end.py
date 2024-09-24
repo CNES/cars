@@ -4449,6 +4449,7 @@ def test_end2end_paca_with_mask():
                 "color_no_data": 0,
                 "msk_no_data": 254,
             },
+            "dsm_filling": {"activated": True},
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
@@ -4508,6 +4509,24 @@ def test_end2end_paca_with_mask():
             os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "mask_end2end_paca.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm_filled.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_filled_end2end_paca.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "filling_bulldozer.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "filling_bulldozer_end2end_paca.tif"
+                )
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
