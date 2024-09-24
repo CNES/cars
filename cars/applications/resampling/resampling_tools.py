@@ -319,10 +319,11 @@ def resample_image(
             top = math.floor(np.amin(grid_as_array[1, ...]))
             bottom = math.ceil(np.amax(grid_as_array[1, ...]))
 
+            transform = rio.Affine(*np.abs(img_reader.transform))
             # transform xmin and xmax positions to index
             (top, bottom, left, right) = (
                 abstract_geometry.min_max_to_index_min_max(
-                    left, right, top, bottom, img_reader.transform
+                    left, right, top, bottom, transform
                 )
             )
 
@@ -347,8 +348,6 @@ def resample_image(
             img_window = img_window.round_lengths()
 
             # Compute offset
-            transform = img_reader.transform
-
             res_x = float(abs(transform[0]))
             res_y = float(abs(transform[4]))
             tile_bounds = list(bounds(img_window, transform))
