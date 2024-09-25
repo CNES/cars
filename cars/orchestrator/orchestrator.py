@@ -44,6 +44,7 @@ from cars.core.cars_logging import add_progress_message
 from cars.data_structures import cars_dataset
 from cars.orchestrator import achievement_tracker
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.orchestrator.orchestrator_constants import (
     CARS_DATASET_KEY,
     CARS_DS_COL,
@@ -387,6 +388,7 @@ class Orchestrator:
 
         return data, nodata
 
+    @cars_profile(name="Compute futures")
     def compute_futures(self, only_remaining_delayed=None):
         """
         Compute all futures from regitries

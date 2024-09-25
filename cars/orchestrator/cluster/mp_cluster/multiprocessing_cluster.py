@@ -48,6 +48,7 @@ from cars.core import cars_logging
 
 # CARS imports
 from cars.orchestrator.cluster import abstract_cluster
+from cars.orchestrator.cluster.log_wrapper import cars_profile
 from cars.orchestrator.cluster.mp_cluster import mp_factorizer, mp_wrapper
 from cars.orchestrator.cluster.mp_cluster.mp_objects import (
     FactorizedObject,
@@ -78,6 +79,7 @@ class MultiprocessingCluster(abstract_cluster.AbstractCluster):
     """
 
     # pylint: disable=too-many-instance-attributes
+    @cars_profile(name="Multiprocessing orchestrator initialization")
     def __init__(self, conf_cluster, out_dir, launch_worker=True):
         """
         Init function of MultiprocessingCluster

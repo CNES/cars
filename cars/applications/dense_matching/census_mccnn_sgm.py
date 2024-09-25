@@ -407,6 +407,7 @@ class CensusMccnnSgm(
 
         return margins_wrapper
 
+    @cars_profile(name="Optimal size estimation")
     def get_optimal_tile_size(self, disp_range_grid, max_ram_per_worker):
         """
         Get the optimal tile size to use during dense matching.
