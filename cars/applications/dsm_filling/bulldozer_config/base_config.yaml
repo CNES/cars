@@ -1,5 +1,5 @@
-# both paths will be overwritten in the filling application 
-dsm_path : "path/to/dsm"
-output_dir : "path/to/output"
+# both paths will be overwritten in the filling application
+dsm_path: "path/to/dsm"
+output_dir: "path/to/output"
 
 # everything else will be used directly as-is
