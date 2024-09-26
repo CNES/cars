@@ -46,6 +46,21 @@ Particularly, it uses the following pip editable install:
 
 With this pip install mode, source code modifications directly impacts ``cars`` command line.
 
+
+Setting up a development environment with docker
+================================================
+
+To setup a development environment with docker, run the following command:
+
+.. code-block:: console
+
+    docker build -t cars-dev -f Dockerfile.local .
+    docker run -it -v "$(pwd)":/app/cars -w /app/cars cars-dev /bin/bash
+
+You're ready to use CARS, all files in the current directory are mounted in the container.
+
+
+
 Coding guide
 ============
 
