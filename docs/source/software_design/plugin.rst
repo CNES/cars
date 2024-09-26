@@ -6,7 +6,7 @@ Plugin
 Geometry plugin
 ^^^^^^^^^^^^^^^^^
 
-Geometry plugins aim to enable the use of different geometry libraries, typically libGEO or Shareloc to perform CARS geometric operations which require the interpretation of the geometric models of the pairs to process.
+Geometry plugins aim to enable the use of different geometry libraries, typically `libGEO <https://github.com/OSGeo/libgeotiff>`_ or `Shareloc <https://github.com/CNES/shareloc>`_ to perform CARS geometric operations which require the interpretation of the geometric models of the pairs to process.
 Those operation are:
 
 * The epipolar grids computation
@@ -44,10 +44,10 @@ For example, if the AbstractGeometry object is defined in file `cars_geometry_pl
     )
 
 Mandatory methods
-
+++++++++++++++++++
 Currently, the `AbstractGeometry` class requires the implementation of the following mandatory methods and properties:
 
-* `conf_schema` which specify the user inputs json schema required by the geometric library
+* `conf_schema` which specify the user inputs json schema required by the geometric library.
 
 .. code-block:: python
 
@@ -104,7 +104,7 @@ Currently, the `AbstractGeometry` class requires the implementation of the follo
         :return: the long/lat/height numpy array in output of the triangulation
         """
 
-* `generate_epipolar_grids` which generates the left and right epipolar grids from the images of the pair and their geometrical models
+* `generate_epipolar_grids` which generates the left and right epipolar grids from the images of the pair and their geometrical models.
 
 .. code-block:: python
 
@@ -137,7 +137,7 @@ Currently, the `AbstractGeometry` class requires the implementation of the follo
             - the disparity to altitude ratio as a float
         """
 
-* `direct_loc` which performs direct localization operations
+* `direct_loc` which performs direct localization operations.
 
 .. code-block:: python
 

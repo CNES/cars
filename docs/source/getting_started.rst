@@ -14,6 +14,18 @@ Getting Started
 
     pip install cars
 
+* Alternatively, you can use the provided Dockerfile to build a Docker image for CARS:
+
+.. code-block:: console
+
+    # Clone the CARS repository
+    git clone https://github.com/CNES/cars.git
+    cd cars
+
+    # Build the Docker image
+    docker build -t cars:latest .
+
+
 * Get and extract data samples from CARS repository:
 
 .. code-block:: console
@@ -61,19 +73,19 @@ Getting Started
 
 * Go to the ``data_gizeh/outresults/`` output directory to get a :term:`DSM` and color image associated.
 
-Open the ``dsm.tif`` DSM and ``color.tif`` color image in `QGIS`_ software.
+Open the ``dsm.tif`` DSM and ``clr.tif`` color image in `QGIS`_ software.
 
 .. |dsm| image:: images/dsm.png
   :width: 100%
-.. |color| image:: images/clr.png
+.. |clr| image:: images/clr.png
   :width: 100%
-.. |dsmcolor| image:: images/dsm_clr.png
+.. |dsmclr| image:: images/dsm_clr.png
   :width: 100%
 
-+--------------+-----------------+---------------+
-|   dsm.tif    |   color.tif     | `QGIS`_ Mix   |
-+--------------+-----------------+---------------+
-| |dsm|        | |color|         |  |dsmcolor|   |
-+--------------+-----------------+---------------+
++--------------+-------------+-------------+
+|   dsm.tif    |   clr.tif   | `QGIS`_ Mix |
++--------------+-------------+-------------+
+| |dsm|        | |clr|       |  |dsmclr|   |
++--------------+-------------+-------------+
 
 .. _`QGIS`: https://www.qgis.org/
