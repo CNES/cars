@@ -4488,6 +4488,21 @@ def test_end2end_paca_with_mask():
         #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
         #     ),
         # )
+        # copy2(
+        #     os.path.join(out_dir,  "dsm", "dsm_filled.tif"),
+        #     absolute_data_path(
+        #         os.path.join(ref_output_dir, "dsm_filled_end2end_paca.tif")
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,  "dsm", "filling_bulldozer.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "filling_bulldozer_end2end_paca.tif"
+        #         )
+        #     ),
+        # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
