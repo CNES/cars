@@ -21,7 +21,9 @@ This file keeps track of authors contributions.
 ## Contributors
 
 * Julien Michel <julien.michel@cnes.fr>
+* Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
 * Aurélie Emilien <aurelie.emilien@csgroup.eu>
+* Florian Douziech <florian.douziech@csgroup.eu>
 * Loïc Dumas <loic.dumas@csgroup.eu>
 * Marina Bertolino <marina.bertolino@csgroup.eu>
 * Guillaume Pasero <guillaume.pasero@csgroup.eu>
