@@ -14,10 +14,9 @@ This file keeps track of authors contributions.
 
 * David Youssefi <david.youssefi@cnes.fr>
 * Emmanuel Dubois <emmanuel.dubois@cnes.fr>
-* Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
 * Yoann Steux <yoann.steux@csgroup.eu>
-* Florian Douziech <florian.douziech@csgroup.eu>
 * Mathis Roux <mathis.roux@csgroup.eu>
+* Cedric Traizet <cedric.traizet@csgroup.eu>
 
 ## Contributors
 
@@ -32,6 +31,10 @@ This file keeps track of authors contributions.
 * Teo Bouvard <teo.bouvard@thalesgroup.com>
 * Fabien Servoz <fabien.servoz@thalesgroup.com>
 * Natalia Jimenez Diaz <natalia.jimenez-diaz@csgroup.eu>
+* Roman Malinowski <roman.malinowski@cnes.fr>
+* Alice de Bardonneche-Richard <alice.de-bardonneche-richard@csgroup.eu>
+* Tommy Calendini <tommy.calendini@cs-soprasteria.com>
+* Dimitri Lallement <dimitri.lallement@cnes.fr>
 
 Update here with new contributors.
 
