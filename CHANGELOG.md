@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.9.0 Output interfaces (September 2024)
+
+### Added
+
+- Usage of up/down sampled sensor images [#797]
+- Pleiades usage tutorial [#792]
+
+### Changed
+
+- Refactoring of input and output configuration [#824]
+- Choose interpolation mode used in resampling [#831]
+- Displacement grids changed to localisation grids [#828]
+- Cars-resample and Cars-rasterize optimisation [#803]
+- Dsm radius parameter can now be used as a float [#792]
+- Refactoring of geoid usage [#830]
+
+### Fixed
+
+- Artefacts in performance map [#846]
+- Performance map modified [#898]
+- DSM clipping removed in notebook [#853]
+- Dask / pandas future warning removed [#759]
+- Crash avoided when temporary files lost [#847]
+- Blue pixels in orthorectified image [#812]
+
+
 ## 0.8.0  Orfeo Toolbox dependency removal (June 2024)
 
 ### Added
