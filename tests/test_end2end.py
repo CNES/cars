@@ -61,6 +61,8 @@ from .helpers import (
     temporary_dir,
 )
 
+NB_WORKERS = 2
+
 
 @pytest.mark.end2end_tests
 def test_end2end_gizeh_rectangle_epi_image_performance_map():
@@ -81,10 +83,9 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 500,
             },
         )
@@ -298,10 +299,9 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -442,10 +442,9 @@ def test_end2end_ventoux_unique():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -565,22 +564,20 @@ def test_end2end_ventoux_unique():
         )
 
         # Check used_conf for sparse res
-
         gt_used_conf_orchestrator = {
             "orchestrator": {
-                "mode": "local_dask",
-                "walltime": "00:10:00",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-                "activate_dashboard": False,
+                "mode": "multiprocessing",
+                "nb_workers": NB_WORKERS,
                 "profiling": {
                     "mode": "cars_profiling",
                     "loop_testing": False,
                 },
-                "python": None,
+                "max_ram_per_worker": 1000,
                 "task_timeout": 600,
-                "use_memory_logger": False,
-                "config_name": "unknown",
+                "max_tasks_per_worker": 10,
+                "dump_to_disk": True,
+                "per_job_timeout": 600,
+                "factorize_tasks": True,
             }
         }
 
@@ -995,106 +992,9 @@ def test_end2end_ventoux_unique():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-        )
-        application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-            },
-        }
-
-        input_config_sparse_dsm["applications"].update(application_config)
-
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
-            input_config_sparse_dsm
-        )
-        sparse_res_pipeline.run()
-
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
-        # clean outdir
-        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
-
-        # dense dsm pipeline
-        input_config_dense_dsm = input_config_sparse_dsm.copy()
-        # update applications
-        dense_dsm_applications = {
-            "dense_matching": {
-                "method": "census_sgm",
-                "use_global_disp_range": False,
-            },
-            "point_cloud_outliers_removing.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outliers_removing.2": {
-                "method": "statistical",
-                "activated": True,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "color_no_data": 0,
-            },
-        }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
-        # update epsg
-        input_config_dense_dsm["output"]["epsg"] = 32631
-        # resolution
-        input_config_dense_dsm["output"]["resolution"] = 0.5
-        # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_config_dense_dsm
-        )
-        dense_dsm_pipeline.run()
-
-        out_dir = input_config_sparse_dsm["output"]["directory"]
-
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
-            ),
-            atol=0.0001,
-            rtol=1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
-
-    # Test we have the same results with multiprocessing
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_ventoux/input.json")
-        # Run sparse dsm pipeline
-        _, input_config_sparse_dsm = generate_input_json(
-            input_json,
-            directory,
-            "sensors_to_sparse_dsm",
-            "mp",
-            orchestrator_parameters={
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -1196,10 +1096,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             input_json,
             directory,
             "sensors_to_dense_depth_maps",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -1399,10 +1298,9 @@ def test_end2end_ventoux_unique_split():
             input_json,
             directory,
             "sensors_to_dense_depth_maps",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -2066,10 +1964,9 @@ def test_end2end_use_epipolar_a_priori():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -2211,19 +2108,18 @@ def test_end2end_use_epipolar_a_priori():
 
         gt_used_conf_orchestrator = {
             "orchestrator": {
-                "mode": "local_dask",
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "mode": "multiprocessing",
+                "nb_workers": NB_WORKERS,
                 "profiling": {
                     "mode": "cars_profiling",
                     "loop_testing": False,
                 },
-                "python": None,
-                "task_timeout": 600,
-                "use_memory_logger": False,
-                "activate_dashboard": False,
                 "max_ram_per_worker": 1000,
-                "config_name": "unknown",
+                "task_timeout": 600,
+                "max_tasks_per_worker": 10,
+                "dump_to_disk": True,
+                "per_job_timeout": 600,
+                "factorize_tasks": True,
             }
         }
 
@@ -2451,10 +2347,9 @@ def test_prepare_ventoux_bias():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 2000,
             },
         )
@@ -2525,10 +2420,9 @@ def test_end2end_ventoux_full_output_no_elevation():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -2871,10 +2765,9 @@ def test_end2end_ventoux_with_color():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -3132,10 +3025,9 @@ def test_end2end_ventoux_with_classif():
             input_json,
             directory,
             "sensors_to_sparse_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -3371,10 +3263,9 @@ def test_compute_dsm_with_roi_ventoux():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -3525,10 +3416,9 @@ def test_compute_dsm_with_snap_to_img1():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -3645,10 +3535,9 @@ def test_end2end_quality_stats():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -3935,10 +3824,9 @@ def test_end2end_ventoux_egm96_geoid():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -4068,10 +3956,9 @@ def test_end2end_ventoux_egm96_geoid():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -4159,10 +4046,9 @@ def test_end2end_ventoux_egm96_geoid():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -4306,10 +4192,9 @@ def test_end2end_paca_with_mask():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
             orchestrator_parameters={
-                "walltime": "00:10:00",
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 1000,
             },
         )
@@ -4414,100 +4299,6 @@ def test_end2end_paca_with_mask():
             atol=1.0e-7,
         )
 
-    # Test we have the same results with multiprocessing
-    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        input_json = absolute_data_path("input/phr_paca/input.json")
-
-        # Run sparse dsm pipeline
-        _, input_config_dense_dsm = generate_input_json(
-            input_json,
-            directory,
-            "sensors_to_dense_dsm",
-            "mp",
-            orchestrator_parameters={
-                "nb_workers": 4,
-                "max_ram_per_worker": 1000,
-            },
-        )
-        dense_dsm_applications = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
-                "method": "sift",
-                "epipolar_error_upper_bound": 43.0,
-                "elevation_delta_lower_bound": -20.0,
-                "elevation_delta_upper_bound": 20.0,
-                "disparity_margin": 0.25,
-                "save_intermediate_data": True,
-            },
-            "dense_matching": {
-                "method": "census_sgm",
-                "use_global_disp_range": False,
-            },
-            "dense_matches_filling.2": {
-                "method": "zero_padding",
-                "classification": ["water", "road"],
-            },
-            "point_cloud_outliers_removing.1": {
-                "method": "small_components",
-                "activated": True,
-            },
-            "point_cloud_outliers_removing.2": {
-                "method": "statistical",
-                "activated": True,
-            },
-            "point_cloud_rasterization": {
-                "method": "simple_gaussian",
-                "dsm_radius": 3,
-                "sigma": 0.3,
-                "dsm_no_data": -999,
-                "color_no_data": 0,
-                "msk_no_data": 254,
-            },
-        }
-        input_config_dense_dsm["applications"].update(dense_dsm_applications)
-
-        # update epsg
-        final_epsg = 32631
-        input_config_dense_dsm["output"]["epsg"] = final_epsg
-        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
-
-        resolution = 0.5
-        input_config_dense_dsm["output"]["resolution"] = resolution
-
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_config_dense_dsm
-        )
-        dense_dsm_pipeline.run()
-
-        out_dir = input_config_dense_dsm["output"]["directory"]
-
-        # Uncomment the above instructions of first run to update reference data
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
-            ),
-            atol=0.0001,
-            rtol=1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "color_end2end_paca.tif")
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
-        )
-
 
 @pytest.mark.end2end_tests
 def test_end2end_disparity_filling():
@@ -4523,9 +4314,9 @@ def test_end2end_disparity_filling():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "mp",
+            "multiprocessing",
             orchestrator_parameters={
-                "nb_workers": 4,
+                "nb_workers": NB_WORKERS,
                 "max_ram_per_worker": 300,
             },
         )
@@ -4659,7 +4450,7 @@ def test_end2end_disparity_filling_with_zeros():
             input_json,
             directory,
             "sensors_to_dense_dsm",
-            "local_dask",
+            "multiprocessing",
         )
         dense_dsm_applications = {
             "dense_matching": {
