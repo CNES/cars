@@ -717,6 +717,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         tile_width=None,
                         tile_height=None,
                         add_color=False,
+                        add_classif=False,
                     )
 
                     # Generate the holes polygons in epipolar images
@@ -1233,6 +1234,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     tile_width=optimum_tile_size,
                     tile_height=optimum_tile_size,
                     add_color=True,
+                    add_classif=True,
                     epipolar_roi=epipolar_roi,
                 )
 

@@ -109,6 +109,7 @@ class Resampling(ApplicationTemplate, metaclass=ABCMeta):
         tile_height=None,
         step=None,
         add_color=True,
+        add_classif=True,
         epipolar_roi=None,
     ):  # noqa: C901
         """
