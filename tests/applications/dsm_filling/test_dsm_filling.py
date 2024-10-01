@@ -23,6 +23,7 @@ Cars tests/bulldozer_filling  file
 """
 
 import os
+import shutil
 import tempfile
 
 # Third party imports
@@ -57,8 +58,9 @@ def test_fill_dsm():
             "input/data_gizeh_crop/configfile_crop.json"
         )
 
-        input_dsm = absolute_data_path("ref_output/dsm_end2end_gizeh_crop.tif")
-
+        input_dsm_base = absolute_data_path(
+            "ref_output/dsm_end2end_gizeh_crop.tif"
+        )
         input_app_conf = {"activated": True}
 
         _, input_data = generate_input_json(
@@ -76,6 +78,15 @@ def test_fill_dsm():
             os.path.join(save_dir_noroi, output_constants.DSM_DIRECTORY)
         )
         os.makedirs(os.path.join(save_dir_roi, output_constants.DSM_DIRECTORY))
+
+        input_dsm_noroi = os.path.join(
+            save_dir_noroi, output_constants.DSM_DIRECTORY, "dsm.tif"
+        )
+        input_dsm_roi = os.path.join(
+            save_dir_roi, output_constants.DSM_DIRECTORY, "dsm.tif"
+        )
+        shutil.copyfile(input_dsm_base, input_dsm_noroi)
+        shutil.copyfile(input_dsm_base, input_dsm_roi)
 
         inputs = input_data["inputs"]
 
@@ -99,47 +110,35 @@ def test_fill_dsm():
         # first test with no roi (fill everything)
         _ = dsm_filling_application.run(
             initial_elevation=geometry_plugin,
-            dsm_path=input_dsm,
+            dsm_path=input_dsm_noroi,
             roi_polys=None,
             roi_epsg=None,
             output_geoid=False,
+            filling_file_name=None,
             dump_dir=dump_dir,
-            out_dir=save_dir_noroi,
         )
 
         assert_same_images(
-            os.path.join(save_dir_noroi, "dsm", "dsm_filled.tif"),
+            input_dsm_noroi,
             absolute_data_path(
                 "ref_output/dsm_filling_dsm_filled_gizeh_crop_no_roi.tif"
-            ),
-        )
-        assert_same_images(
-            os.path.join(save_dir_noroi, "dsm", "filling_bulldozer.tif"),
-            absolute_data_path(
-                "ref_output/dsm_filling_filling_bulldozer_gizeh_crop_no_roi.tif"
             ),
         )
 
         # second test with an roi
         _ = dsm_filling_application.run(
             initial_elevation=geometry_plugin,
-            dsm_path=input_dsm,
+            dsm_path=input_dsm_roi,
             roi_polys=roi_poly,
             roi_epsg=roi_epsg,
             output_geoid=False,
+            filling_file_name=None,
             dump_dir=dump_dir,
-            out_dir=save_dir_roi,
         )
 
         assert_same_images(
-            os.path.join(save_dir_roi, "dsm", "dsm_filled.tif"),
+            input_dsm_roi,
             absolute_data_path(
                 "ref_output/dsm_filling_dsm_filled_gizeh_crop_roi.tif"
-            ),
-        )
-        assert_same_images(
-            os.path.join(save_dir_roi, "dsm", "filling_bulldozer.tif"),
-            absolute_data_path(
-                "ref_output/dsm_filling_filling_bulldozer_gizeh_crop_roi.tif"
             ),
         )

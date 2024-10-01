@@ -4505,14 +4505,6 @@ def test_end2end_paca_with_mask():
         # )
 
         assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
-            ),
-            atol=0.0001,
-            rtol=1e-6,
-        )
-        assert_same_images(
             os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_paca.tif")
@@ -4529,19 +4521,9 @@ def test_end2end_paca_with_mask():
             atol=1.0e-7,
         )
         assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm_filled.tif"),
+            os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
                 os.path.join(ref_output_dir, "dsm_filled_end2end_paca.tif")
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "filling_bulldozer.tif"),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "filling_bulldozer_end2end_paca.tif"
-                )
             ),
             rtol=1.0e-7,
             atol=1.0e-7,
