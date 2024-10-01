@@ -37,7 +37,6 @@ from shapely import Polygon
 from shareloc.dtm_reader import interpolate_geoid_height
 
 from cars.core import projection
-from cars.pipelines.parameters import output_constants
 
 from . import dsm_filling_tools as dft
 from .dsm_filling import DsmFilling
@@ -100,12 +99,14 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         roi_polys,
         roi_epsg,
         output_geoid,
+        filling_file_name,
         dump_dir,
-        out_dir,
     ):
         """
         Run dsm filling using initial elevation and the current dsm
-        Outputs the filled dsm in a new file, and the filling mask
+        Replaces dsm.tif by the filled dsm. Adds a new band
+        to filling.tif if it exists.
+        The old dsm is saved in dump_dir.
 
         roi_poly can any of these objects :
             - a list of Shapely Polygons
@@ -124,13 +125,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
+        old_dsm_path = os.path.join(dump_dir, "old_dsm.tif")
         temp_dsm_path = os.path.join(dump_dir, "temp_dsm.tif")
-        final_dsm_path = os.path.join(
-            out_dir, output_constants.DSM_DIRECTORY, "dsm_filled.tif"
-        )
-        filling_path = os.path.join(
-            out_dir, output_constants.DSM_DIRECTORY, "filling_bulldozer.tif"
-        )
+        final_dsm_path = dsm_path
 
         # create the config for the bulldozer execution
         bull_conf_path = os.path.join(
@@ -280,25 +277,42 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             with rio.open(dtm_path) as in_dtm:
                 dtm = in_dtm.read()
 
+            with rio.open(old_dsm_path, "w", **dsm_meta) as out_dsm:
+                out_dsm.write(dsm)
+
             filling_mask = np.logical_and(dsm_msk == 0, roi_raster > 0)
             dsm[filling_mask] = dtm[filling_mask]
 
             with rio.open(final_dsm_path, "w", **dsm_meta) as out_dsm:
                 out_dsm.write(dsm)
 
-            with rio.open(filling_path, "w", **dsm_meta) as out_dsm:
-                out_dsm.write(filling_mask)
+            if filling_file_name is not None:
 
-            # indent: do not remove intermediate files if
-            # bulldozer failed twice (for the logs)
+                with rio.open(filling_file_name, "r") as src:
+                    fill_meta = src.meta
+                    bands = [src.read(i + 1) for i in range(src.count)]
+                    bands_desc = [src.descriptions[i] for i in range(src.count)]
+
+                fill_meta["count"] += 1
+
+                bands.append(filling_mask[0].astype(np.uint8))
+                bands_desc.append("filling_bulldozer")
+
+                with rio.open(filling_file_name, "w", **fill_meta) as out:
+                    for i, band in enumerate(bands):
+                        out.write(band, i + 1)
+                        out.set_band_description(i + 1, bands_desc[i])
+
+            # reason for this to be indented: don't remove intermediate
+            # files if bulldozer failed twice (for the logs)
             if not self.save_intermediate_data:
                 # remove intermediary files if not needed
                 try:
                     shutil.rmtree(dump_dir)
                 except Exception as exception_rmtree:
                     logging_msg = (
-                        "dsm_filling's intermediary data"
-                        + " could not be deleted,"
-                        + f" an error occured: {exception_rmtree}."
+                        "dsm_filling's intermediary data "
+                        + "could not be deleted, "
+                        + f"an error occured: {exception_rmtree}."
                     )
                     logging.info(logging_msg)

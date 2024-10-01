@@ -1904,8 +1904,8 @@ class DefaultPipeline(PipelineTemplate):
             roi_polys=self.list_intersection_poly,
             roi_epsg=self.epsg,
             output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
+            filling_file_name=filling_file_name,
             dump_dir=self.dump_dir,
-            out_dir=self.out_dir,
         )
 
         return self.quit_on_app("dsm_filling")
