@@ -58,6 +58,7 @@ disable=logging-format-interpolation,
 	consider-using-dict-comprehension,
 	cell-var-from-loop,
 	consider-using-f-string
+      attribute-defined-outside-init
 
 
 # Enable the message, report, category or checker with the given id(s). You can
