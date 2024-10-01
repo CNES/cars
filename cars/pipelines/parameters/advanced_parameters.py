@@ -53,6 +53,8 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.DEBUG_WITH_ROI, False
     )
 
+    overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, True)
+
     if check_epipolar_a_priori:
         # Check conf use_epipolar_a_priori
         overloaded_conf[adv_cst.USE_EPIPOLAR_A_PRIORI] = conf.get(
@@ -70,6 +72,7 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
     # Validate inputs
     schema = {
         adv_cst.DEBUG_WITH_ROI: bool,
+        adv_cst.MERGING: bool,
         adv_cst.SAVE_INTERMEDIATE_DATA: bool,
     }
     if check_epipolar_a_priori:

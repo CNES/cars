@@ -193,7 +193,7 @@ class DepthMapsToDsmPipeline(PipelineTemplate):
         :return overloader output
         :rtype : dict
         """
-        return output_parameters.check_output_parameters(conf, pipeline)
+        return output_parameters.check_output_parameters(conf)
 
     def check_applications(
         self,
