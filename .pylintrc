@@ -57,7 +57,7 @@ disable=logging-format-interpolation,
 	function-redefined,
 	consider-using-dict-comprehension,
 	cell-var-from-loop,
-	consider-using-f-string
+	consider-using-f-string,
       attribute-defined-outside-init
 
 
