@@ -117,9 +117,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "performance_map": True,
         }
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_dense_dsm
-        )
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_dense_dsm["output"]["directory"]
@@ -198,9 +196,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
         input_dense_dsm["output"]["directory"] = out_dir + "no_merging"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_dense_dsm
-        )
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
         out_dir = input_dense_dsm["output"]["directory"]
 
@@ -706,7 +702,7 @@ def test_end2end_ventoux_unique():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -737,7 +733,7 @@ def test_end2end_ventoux_unique():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -1031,6 +1027,102 @@ def test_end2end_ventoux_unique():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
+                "use_global_disp_range": False,
+            },
+            "point_cloud_outliers_removing.1": {
+                "method": "small_components",
+                "activated": True,
+            },
+            "point_cloud_outliers_removing.2": {
+                "method": "statistical",
+                "activated": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+            },
+        }
+        input_config_dense_dsm["applications"].update(dense_dsm_applications)
+        # update epsg
+        input_config_dense_dsm["output"]["epsg"] = 32631
+        # resolution
+        input_config_dense_dsm["output"]["resolution"] = 0.5
+        # update pipeline
+        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline.run()
+
+        out_dir = input_config_sparse_dsm["output"]["directory"]
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+
+    # Test we have the same results with multiprocessing
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path("input/phr_ventoux/input.json")
+        # Run sparse dsm pipeline
+        _, input_config_sparse_dsm = generate_input_json(
+            input_json,
+            directory,
+            "sensors_to_sparse_dsm",
+            "mp",
+            orchestrator_parameters={
+                "nb_workers": 4,
+                "max_ram_per_worker": 1000,
+            },
+        )
+        application_config = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "resampling": {"method": "bicubic", "strip_height": 80},
+            "sparse_matching": {
+                "method": "sift",
+                "epipolar_error_upper_bound": 43.0,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+                "disparity_margin": 0.25,
+                "save_intermediate_data": True,
+            },
+        }
+
+        input_config_sparse_dsm["applications"].update(application_config)
+
+        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+            input_config_sparse_dsm
+        )
+        sparse_res_pipeline.run()
+
+        out_dir = input_config_sparse_dsm["output"]["directory"]
+
+        # clean outdir
+        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
+
+        # dense dsm pipeline
+        input_config_dense_dsm = input_config_sparse_dsm.copy()
+        # update applications
+        dense_dsm_applications = {
+            "dense_matching": {
+                "method": "census_sgm",
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
@@ -1058,7 +1150,7 @@ def test_end2end_ventoux_unique():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -1111,9 +1203,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "use_cross_validation": True,
             },
         }
-        pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_config_pc
-        )
+        pc_pipeline = sensor_to_dense_dsm.CarsPipeline(input_config_pc)
 
         input_config_pc["output"]["epsg"] = 4326
 
@@ -1391,9 +1481,7 @@ def test_end2end_ventoux_unique_split():
             "performance_map": True,
         }
 
-        pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-            input_config_pc
-        )
+        pc_pipeline = sensor_to_dense_dsm.CarsPipeline(input_config_pc)
         pc_pipeline.run()
 
         out_dir = input_config_pc["output"]["directory"]
@@ -2245,7 +2333,7 @@ def test_end2end_use_epipolar_a_priori():
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
 
@@ -2277,7 +2365,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.SensorToDenseDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -2477,7 +2565,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         input_config["advanced"].update(advanced_config)
         input_config["output"].update(output_config)
 
-        pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(input_config)
+        pipeline = sensor_to_dense_dsm.CarsPipeline(input_config)
 
         pipeline.run()
 
@@ -2893,7 +2981,7 @@ def test_end2end_ventoux_with_color():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -3152,7 +3240,7 @@ def test_end2end_ventoux_with_classif():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -3345,7 +3433,7 @@ def test_compute_dsm_with_roi_ventoux():
 
         input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -3486,7 +3574,7 @@ def test_compute_dsm_with_snap_to_img1():
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -3605,7 +3693,7 @@ def test_end2end_quality_stats():
         # Save all intermediate data
         input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -3898,7 +3986,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         input_config_dense_dsm["output"]["geoid"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4032,7 +4120,7 @@ def test_end2end_ventoux_egm96_geoid():
 
         input_config_dense_dsm["output"]["geoid"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4124,7 +4212,7 @@ def test_end2end_ventoux_egm96_geoid():
             "input/geoid/egm96_15_modified.tif"
         )
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4268,7 +4356,7 @@ def test_end2end_paca_with_mask():
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4389,7 +4477,7 @@ def test_end2end_disparity_filling():
             "mask": True,
         }
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4510,7 +4598,7 @@ def test_end2end_disparity_filling_with_zeros():
             "mask": True,
         }
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
+        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
@@ -4626,10 +4714,8 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         sensors_input_config_first_run["applications"].update(applications)
 
-        sensors_pipeline_first_run = (
-            sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-                sensors_input_config_first_run
-            )
+        sensors_pipeline_first_run = sensor_to_dense_dsm.CarsPipeline(
+            sensors_input_config_first_run
         )
         sensors_pipeline_first_run.run()
         sensors_out_dir_first_run = sensors_input_config_first_run["output"][
@@ -4645,10 +4731,8 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             "directory"
         ] += "_from_used_conf"
 
-        sensors_pipeline_second_run = (
-            sensor_to_dense_dsm.SensorToDenseDsmPipeline(
-                sensors_input_config_second_run
-            )
+        sensors_pipeline_second_run = sensor_to_dense_dsm.CarsPipeline(
+            sensors_input_config_second_run
         )
         sensors_pipeline_second_run.run()
         sensors_out_dir_second_run = sensors_input_config_second_run["output"][
