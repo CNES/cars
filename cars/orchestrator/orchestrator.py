@@ -388,7 +388,6 @@ class Orchestrator:
 
         return data, nodata
 
-    @cars_profile(name="Compute futures")
     def compute_futures(self, only_remaining_delayed=None):
         """
         Compute all futures from regitries
@@ -555,6 +554,7 @@ class Orchestrator:
         # reset cars_ds names infos
         self.cars_ds_names_info = []
 
+    @cars_profile(name="Compute futures")
     def breakpoint(self):
         """
         Breakpoint : compute all delayed, save and replace data
