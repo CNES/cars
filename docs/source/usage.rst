@@ -1056,6 +1056,12 @@ The structure follows this organisation:
                   - should be > 0
                   - 300
                   - No
+                * - use_cross_validation
+                  - Add cross validation step
+                  - bool
+                  -
+                  - false
+                  - No
 
             See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
 
