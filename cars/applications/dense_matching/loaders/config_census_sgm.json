@@ -26,10 +26,6 @@
         "filter": {
             "filter_method": "median",
             "filter_size": 3
-        },
-        "validation": {
-            "validation_method": "cross_checking_accurate",
-            "cross_checking_threshold": 1.0
         }
     }
 }

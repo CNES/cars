@@ -93,6 +93,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": True,
             },
             "point_cloud_rasterization": {
@@ -632,6 +633,7 @@ def test_end2end_ventoux_unique():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
                 "loader_conf": {
                     "input": {},
@@ -1029,6 +1031,7 @@ def test_end2end_ventoux_unique():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_outliers_removing.1": {
@@ -1102,6 +1105,12 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "max_ram_per_worker": 1000,
             },
         )
+        input_config_pc["applications"] = {
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_cross_validation": True,
+            },
+        }
         pc_pipeline = sensor_to_dense_dsm.SensorToDenseDsmPipeline(
             input_config_pc
         )
@@ -1317,6 +1326,7 @@ def test_end2end_ventoux_unique_split():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
                 "save_intermediate_data": True,
                 "generate_confidence_intervals": False,
@@ -2222,6 +2232,7 @@ def test_end2end_use_epipolar_a_priori():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
         }
@@ -2441,6 +2452,10 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "elevation_delta_upper_bound": 700.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_cross_validation": True,
             },
         }
         advanced_config = {"save_intermediate_data": True}
@@ -2840,6 +2855,7 @@ def test_end2end_ventoux_with_color():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
@@ -3099,6 +3115,7 @@ def test_end2end_ventoux_with_classif():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "loader": "pandora",
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
@@ -3274,6 +3291,7 @@ def test_compute_dsm_with_roi_ventoux():
             "resampling": {"method": "bicubic", "strip_height": 80},
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "sparse_matching": {
@@ -3435,6 +3453,7 @@ def test_compute_dsm_with_snap_to_img1():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "triangulation": {
@@ -3554,6 +3573,7 @@ def test_end2end_quality_stats():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "point_cloud_outliers_removing.1": {
@@ -3847,6 +3867,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
@@ -3979,6 +4000,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
@@ -4069,6 +4091,7 @@ def test_end2end_ventoux_egm96_geoid():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
@@ -4212,6 +4235,7 @@ def test_end2end_paca_with_mask():
             },
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
             "dense_matches_filling.2": {
@@ -4323,6 +4347,7 @@ def test_end2end_disparity_filling():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "min_epi_tile_size": 100,
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
@@ -4455,6 +4480,7 @@ def test_end2end_disparity_filling_with_zeros():
         dense_dsm_applications = {
             "dense_matching": {
                 "method": "census_sgm",
+                "use_cross_validation": True,
                 "save_intermediate_data": True,
                 "use_global_disp_range": True,
             },
