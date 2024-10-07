@@ -97,7 +97,6 @@ def test_low_res_dsm_args():
         filled_absolute_path_input, _ = generate_input_json(
             absolute_data_path("input/phr_ventoux/input.json"),
             directory,
-            "sensors_to_sparse_dsm",
             "sequential",
         )
         args.conf = filled_absolute_path_input
@@ -128,7 +127,6 @@ def test_full_res_dsm_args():
         filled_absolute_path_input, _ = generate_input_json(
             absolute_data_path("input/phr_ventoux/input.json"),
             directory,
-            "sensors_to_dense_dsm",
             "sequential",
         )
         args.conf = filled_absolute_path_input

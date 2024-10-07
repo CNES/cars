@@ -27,6 +27,7 @@ from __future__ import print_function
 
 import logging
 import os
+import copy
 
 import numpy as np
 
@@ -207,6 +208,12 @@ class CarsPipeline(PipelineTemplate):
             )
 
         self.used_conf[APPLICATIONS] = application_conf
+
+        self.config_full_res = copy.deepcopy(self.used_conf)
+        self.config_full_res.__delitem__("applications")
+        self.config_full_res[ADVANCED][adv_cst.EPIPOLAR_A_PRIORI] = {}
+        self.config_full_res[ADVANCED][adv_cst.TERRAIN_A_PRIORI] = {}
+        self.config_full_res[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] = True
 
     def quit_on_app(self, app_name):
         """
@@ -936,16 +943,20 @@ class CarsPipeline(PipelineTemplate):
                     )
                 )
                 # Compute grid correction
+                save_matches = self.sparse_mtch_app.get_save_matches()
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
                     self.pairs[pair_key]["corrected_matches_array"],
-                    _,
+                    self.pairs[pair_key]["corrected_matches_cars_ds"],
                     _,
                     _,
                 ) = grid_correction.estimate_right_grid_correction(
                     self.pairs[pair_key]["matches_array"],
                     self.pairs[pair_key]["grid_right"],
-                    save_matches=self.sparse_mtch_app.get_save_matches(),
+                    initial_cars_ds=self.pairs[
+                        pair_key
+                    ]["epipolar_matches_left"],
+                    save_matches=save_matches,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "initial", pair_key
                     ),
@@ -968,7 +979,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
                 # Clean grid at the end of processing if required
-                if not save_corrected_grid:
+                if not (save_corrected_grid or save_matches):
                     self.cars_orchestrator.add_to_clean(
                         os.path.join(
                             self.dump_dir,
@@ -1063,10 +1074,8 @@ class CarsPipeline(PipelineTemplate):
                         self.used_conf[GEOMETRY_PLUGIN],
                         inputs,
                         dem=dem_median,
-                        crop_dem=False,
                     )
                 )
-
             dem_min = dem.attributes[dem_gen_cst.DEM_MIN_PATH]
             dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
@@ -1085,6 +1094,13 @@ class CarsPipeline(PipelineTemplate):
                 dem_min=dem_min,
                 dem_max=dem_max,
             )
+
+        advanced_parameters.update_conf(
+            self.config_full_res,
+            dem_median=dem_median,
+            dem_min=dem_min,
+            dem_max=dem_max,
+        )
 
         # quit only after the configuration was updated
         if self.quit_on_app("dem_generation"):
@@ -1143,17 +1159,21 @@ class CarsPipeline(PipelineTemplate):
                             self.pairs[pair_key]["new_grid_right"],
                         )
                     )
+                    save_matches = self.sparse_mtch_app.get_save_matches()
                     # Estimate grid_correction
                     (
                         self.pairs[pair_key]["grid_correction_coef"],
                         self.pairs[pair_key]["corrected_matches_array"],
-                        _,
+                        self.pairs[pair_key]["corrected_matches_cars_ds"],
                         _,
                         _,
                     ) = grid_correction.estimate_right_grid_correction(
                         new_grid_matches_array,
                         self.pairs[pair_key]["new_grid_right"],
-                        save_matches=(self.sparse_mtch_app.get_save_matches()),
+                        save_matches=save_matches,
+                        initial_cars_ds=self.pairs[
+                            pair_key
+                        ]["epipolar_matches_left"],
                         pair_folder=os.path.join(
                             self.dump_dir, "grid_correction", "new", pair_key
                         ),
@@ -1177,7 +1197,7 @@ class CarsPipeline(PipelineTemplate):
                         )
                     )
 
-                    if not save_corrected_grid:
+                    if not (save_corrected_grid or save_matches):
                         self.cars_orchestrator.add_to_clean(
                             os.path.join(
                                 self.dump_dir,
@@ -1221,13 +1241,10 @@ class CarsPipeline(PipelineTemplate):
                         sparse_mtch_tools.filter_point_cloud_matches(
                             self.pairs[pair_key]["triangulated_matches"],
                             matches_filter_knn=matches_filter_knn,
-                            matches_filter_dev_factor=(
-                                matches_filter_dev_factor
-                            ),
+                            matches_filter_dev_factor=matches_filter_dev_factor,
                         )
                     )
 
-                if use_global_disp_range:
                     # Compute disp_min and disp_max
                     (
                         dmin,
@@ -1242,6 +1259,13 @@ class CarsPipeline(PipelineTemplate):
                         disp_to_alt_ratio=self.pairs[pair_key][
                             "corrected_grid_left"
                         ].attributes["disp_to_alt_ratio"],
+                    )
+                    
+                    advanced_parameters.update_conf(
+                        self.config_full_res,
+                        dmin=dmin,
+                        dmax=dmax,
+                        pair_key=pair_key,
                     )
             else:
                 # Use epipolar a priori
@@ -1273,13 +1297,25 @@ class CarsPipeline(PipelineTemplate):
                             ),
                         )
                     )
-
+                advanced_parameters.update_conf(
+                    self.config_full_res,
+                    dmin=dmin,
+                    dmax=dmax,
+                    pair_key=pair_key,
+                )
             # Run epipolar resampling
 
             # Update used_conf configuration with epipolar a priori
             # Add global min and max computed with grids
             advanced_parameters.update_conf(
                 self.used_conf,
+                grid_correction_coef=self.pairs[pair_key][
+                    "grid_correction_coef"
+                ],
+                pair_key=pair_key,
+            )
+            advanced_parameters.update_conf(
+                self.config_full_res,
                 grid_correction_coef=self.pairs[pair_key][
                     "grid_correction_coef"
                 ],
@@ -1357,6 +1393,15 @@ class CarsPipeline(PipelineTemplate):
                 dmax=np.max(disp_range_grid[0, 0]["disp_max_grid"].values),
                 pair_key=pair_key,
             )
+            advanced_parameters.update_conf(
+                self.config_full_res,
+                dmin=np.min(
+                    disp_range_grid[0, 0]["disp_min_grid"].values
+                ),  # TODO compute dmin dans dmax
+                dmax=np.max(disp_range_grid[0, 0]["disp_max_grid"].values),
+                pair_key=pair_key,
+            )
+
             # saved used configuration
             cars_dataset.save_dict(
                 self.used_conf,
@@ -1681,6 +1726,12 @@ class CarsPipeline(PipelineTemplate):
                 self.list_epipolar_points_cloud.append(
                     denoised_epipolar_points_cloud
                 )
+
+        cars_dataset.save_dict(
+            self.config_full_res,
+            os.path.join(self.out_dir, "refined_config_dense_dsm.json"),
+            safe_save=True,
+        )
 
         return False
 

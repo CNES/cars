@@ -75,7 +75,6 @@ def cars_path():
 def generate_input_json(
     input_json,
     output_directory,
-    pipeline,
     orchestrator_mode,
     orchestrator_parameters=None,
     geometry_plugin_name=None,
@@ -89,8 +88,6 @@ def generate_input_json(
     :type input_json: str
     :param output_directory: absolute path out directory
     :type output_directory: str
-    :param pipeline: pipeline to run
-    :type pipeline: str
     :param orchestrator_mode: orchestrator mode
     :type orchestrator_mode: str
     :param orchestrator_parameters: advanced orchestrator params
@@ -117,7 +114,7 @@ def generate_input_json(
     config["geometry_plugin"] = geometry_plugin_name
 
     # overload pipeline
-    config["pipeline"] = pipeline
+    config["pipeline"] = "cars"
 
     # Create keys
     if "applications" not in config:

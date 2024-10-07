@@ -43,15 +43,10 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import roi_tools
-from cars.pipelines.depth_maps_to_dsm import (
-    depth_maps_to_dsm_pipeline as pipeline_dsm,
-)
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
 )
-from cars.pipelines.sensor_to_sparse_dsm import (
-    sensor_to_sparse_dsm_pipeline as sensor_to_sparse_dsm,
-)
+from cars.pipelines.sensor_to_sparse_dsm import sensor_to_sparse_dsm
 
 # CARS Tests imports
 from .helpers import (
@@ -82,7 +77,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         _, input_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -233,7 +227,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #         )
         #     ),
         # )
-
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -295,7 +288,6 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -315,11 +307,25 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_upper_bound": 20.0,
                 "save_intermediate_data": False,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
+        }
+
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_dsm
         )
         sparse_res_pipeline.run()
@@ -352,11 +358,11 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 < -13
             )
             assert (
-                17
+                7
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 22
+                < 11
             )
 
         used_conf_path = os.path.join(out_dir, "used_conf.json")
@@ -438,7 +444,6 @@ def test_end2end_ventoux_unique():
         _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -446,7 +451,10 @@ def test_end2end_ventoux_unique():
             },
         )
         application_config = {
-            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "grid_generation": {
+                "method": "epipolar", 
+                "epi_step": 30, 
+            },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
                 "method": "sift",
@@ -456,11 +464,24 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
+        }
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
+        input_config_sparse_dsm["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_dsm
         )
         sparse_res_pipeline.run()
@@ -486,21 +507,26 @@ def test_end2end_ventoux_unique():
                 == 612
             )
             assert (
-                -29
+                -22
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["minimum_disparity"]
-                < -27
+                < -19
             )
             assert (
-                26
+                12
                 < out_json["applications"]["left_right"][
                     "disparity_range_computation_run"
                 ]["maximum_disparity"]
-                < 30
+                < 16
             )
 
-            # check matches file exists
+            cfm_path = out_json[
+                "applications"]["left_right"]["grid_correction"
+            ][
+                "corrected_filtered_matches"
+            ]
+
             assert os.path.isfile(
                 out_json["applications"]["left_right"]["grid_correction"][
                     "corrected_filtered_matches"
@@ -588,8 +614,6 @@ def test_end2end_ventoux_unique():
             # check used_conf inputs conf exists
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
-            # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -602,7 +626,7 @@ def test_end2end_ventoux_unique():
             )
 
             # check used_conf reentry
-            _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -697,6 +721,8 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
         input_config_dense_dsm["output"]["epsg"] = 32631
+        # update output product
+        input_config_dense_dsm["output"]["product_level"] = ["dsm"]
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
@@ -720,8 +746,6 @@ def test_end2end_ventoux_unique():
             # check used_conf inputs conf exists
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
-            # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -989,7 +1013,6 @@ def test_end2end_ventoux_unique():
         _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -1007,11 +1030,19 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_dsm
         )
         sparse_res_pipeline.run()
@@ -1085,7 +1116,6 @@ def test_end2end_ventoux_unique():
         _, input_config_sparse_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "mp",
             orchestrator_parameters={
                 "nb_workers": 4,
@@ -1103,11 +1133,19 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_dsm
         )
         sparse_res_pipeline.run()
@@ -1190,7 +1228,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_depth_maps",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -1203,6 +1240,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "use_cross_validation": True,
             },
         }
+        input_config_pc["output"]["product_level"] = ["depth_map"]
         pc_pipeline = sensor_to_dense_dsm.CarsPipeline(input_config_pc)
 
         input_config_pc["output"]["epsg"] = 4326
@@ -1264,7 +1302,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
+            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1335,12 +1373,16 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             )
 
             # launch with no merging pipeline
-            input_dsm_config["pipeline"] = (
-                "dense_depth_maps_to_dense_dsm_no_merging"
-            )
+
+            # avoid deleting other variables in advanced if it exists
+            if "advanced" in input_dsm_config:
+                input_dsm_config["advanced"]["merging"] = False
+            else:
+                input_dsm_config["advanced"] = {"merging": False}
+
             input_dsm_config["output"]["directory"] = output_path + "no_merging"
 
-            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
+            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1396,7 +1438,6 @@ def test_end2end_ventoux_unique_split():
         _, input_config_pc = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_depth_maps",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -1474,6 +1515,7 @@ def test_end2end_ventoux_unique_split():
 
         input_config_pc["applications"].update(application_config)
 
+        input_config_pc["output"]["product_level"] = ["depth_map"]
         input_config_pc["output"]["auxiliary"] = {
             "classification": True,
             "filling": True,
@@ -1572,7 +1614,7 @@ def test_end2end_ventoux_unique_split():
                 },
             }
 
-            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
+            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1806,9 +1848,17 @@ def test_end2end_ventoux_unique_split():
 
             # Run no merging pipeline
 
+            # avoid deleting other variables in advanced if it exists
+            if "advanced" in input_dsm_config:
+                input_dsm_config["advanced"]["merging"] = False
+            else:
+                input_dsm_config["advanced"] = {"merging": False}
+
+            input_dsm_config["output"]["product_level"] = ["dsm"]
             input_dsm_config["output"]["directory"] = (
                 input_dsm_config["output"]["directory"] + "_no_merging"
             )
+
             del input_dsm_config["applications"][
                 "point_cloud_outliers_removing.1"
             ]
@@ -1820,7 +1870,7 @@ def test_end2end_ventoux_unique_split():
             )
 
             # launch
-            dsm_pipeline = pipeline_dsm.DepthMapsToDsmPipeline(input_dsm_config)
+            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2061,7 +2111,6 @@ def test_end2end_use_epipolar_a_priori():
         _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -2080,10 +2129,23 @@ def test_end2end_use_epipolar_a_priori():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
+        }
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
         }
 
+        input_config_sparse_res["output"].update(output_config)
         input_config_sparse_res["applications"].update(application_config)
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_res
         )
         sparse_res_pipeline.run()
@@ -2231,8 +2293,6 @@ def test_end2end_use_epipolar_a_priori():
             # check used_conf inputs conf exists
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
-            # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensors_to_sparse_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["sparse_matching"]["disparity_margin"]
@@ -2244,7 +2304,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_sparse_dsm.SensorSparseDsmPipeline(used_conf)
+            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
 
         refined_config_dense_dsm_json = os.path.join(
             out_dir, "refined_config_dense_dsm.json"
@@ -2257,11 +2317,6 @@ def test_end2end_use_epipolar_a_priori():
             # check refined_config_dense_dsm_json inputs conf exists
             assert "inputs" in refined_config_dense_dsm_json
             assert "sensors" in refined_config_dense_dsm_json["inputs"]
-            # check refined_config_dense_dsm_json pipeline
-            assert (
-                refined_config_dense_dsm_json["pipeline"]
-                == "sensors_to_dense_dsm"
-            )
             # check refined_config_dense_dsm_json sparse_matching configuration
             assert "advanced" in refined_config_dense_dsm_json
             assert (
@@ -2352,8 +2407,6 @@ def test_end2end_use_epipolar_a_priori():
             # check used_conf inputs conf exists
             assert "inputs" in used_conf
             assert "sensors" in used_conf["inputs"]
-            # check used_conf pipeline
-            assert used_conf["pipeline"] == "sensors_to_dense_dsm"
             # check used_conf sparse_matching configuration
             assert (
                 used_conf["applications"]["point_cloud_rasterization"]["sigma"]
@@ -2445,7 +2498,6 @@ def test_prepare_ventoux_bias():
         _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -2464,11 +2516,26 @@ def test_prepare_ventoux_bias():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
         }
 
-        input_config_sparse_res["applications"].update(application_config)
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
+        }
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+
+        input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["output"].update(output_config)
+
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_res
         )
         sparse_res_pipeline.run()
@@ -2489,10 +2556,10 @@ def test_prepare_ventoux_bias():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -28
-            assert out_disp_compute["minimum_disparity"] < -26
-            assert out_disp_compute["maximum_disparity"] > 24
-            assert out_disp_compute["maximum_disparity"] < 29
+            assert out_disp_compute["minimum_disparity"] > -86
+            assert out_disp_compute["minimum_disparity"] < -83
+            assert out_disp_compute["maximum_disparity"] > -48
+            assert out_disp_compute["maximum_disparity"] < -46
 
             # check matches file exists
             assert os.path.isfile(
@@ -2518,7 +2585,6 @@ def test_end2end_ventoux_full_output_no_elevation():
         _, input_config = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -2867,7 +2933,6 @@ def test_end2end_ventoux_with_color():
         _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -2889,11 +2954,25 @@ def test_end2end_ventoux_with_color():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
+        }
+
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
         }
 
         input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_res
         )
         sparse_res_pipeline.run()
@@ -2914,10 +2993,10 @@ def test_end2end_ventoux_with_color():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -29
-            assert out_disp_compute["minimum_disparity"] < -27
-            assert out_disp_compute["maximum_disparity"] > 26
-            assert out_disp_compute["maximum_disparity"] < 30
+            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -2980,6 +3059,7 @@ def test_end2end_ventoux_with_color():
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+        input_config_sparse_res["output"]["product_level"] = ["dsm"]
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -3128,7 +3208,6 @@ def test_end2end_ventoux_with_classif():
         _, input_config_sparse_res = generate_input_json(
             input_json,
             directory,
-            "sensors_to_sparse_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -3150,11 +3229,25 @@ def test_end2end_ventoux_with_classif():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "dense_matching": {
+                # run disp min disp max in the global pipeline
+                "use_global_disp_range": True
+            },
+            "dem_generation": {
+                # save the dems in the global pipeline
+                "save_intermediate_data": True
+            }
+        }
+
+        output_config = {
+            # reduce computation time by not going further for nothing
+            "product_level": ["depth_map"]
         }
 
         input_config_sparse_res["applications"].update(application_config)
+        input_config_sparse_res["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_sparse_dsm.SensorSparseDsmPipeline(
+        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_sparse_res
         )
         sparse_res_pipeline.run()
@@ -3175,10 +3268,10 @@ def test_end2end_ventoux_with_classif():
             out_disp_compute = out_data["applications"]["left_right"][
                 "disparity_range_computation_run"
             ]
-            assert out_disp_compute["minimum_disparity"] > -29
-            assert out_disp_compute["minimum_disparity"] < -27
-            assert out_disp_compute["maximum_disparity"] > 26
-            assert out_disp_compute["maximum_disparity"] < 30
+            assert out_disp_compute["minimum_disparity"] > -20
+            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["maximum_disparity"] > 13
+            assert out_disp_compute["maximum_disparity"] < 15
 
             assert os.path.isfile(
                 out_data["applications"]["left_right"]["grid_correction"][
@@ -3234,11 +3327,10 @@ def test_end2end_ventoux_with_classif():
         # update epsg
         input_config_dense_dsm["output"]["resolution"] = 0.5
 
+        input_config_dense_dsm["output"]["product_level"] = ["dsm"]
+
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
-
-        # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -3367,7 +3459,6 @@ def test_compute_dsm_with_roi_ventoux():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -3521,7 +3612,6 @@ def test_compute_dsm_with_snap_to_img1():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -3641,7 +3731,6 @@ def test_end2end_quality_stats():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -3931,7 +4020,6 @@ def test_end2end_ventoux_egm96_geoid():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -4064,7 +4152,6 @@ def test_end2end_ventoux_egm96_geoid():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -4155,7 +4242,6 @@ def test_end2end_ventoux_egm96_geoid():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -4302,7 +4388,6 @@ def test_end2end_paca_with_mask():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -4425,7 +4510,6 @@ def test_end2end_disparity_filling():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
             orchestrator_parameters={
                 "nb_workers": NB_WORKERS,
@@ -4562,7 +4646,6 @@ def test_end2end_disparity_filling_with_zeros():
         _, input_config_dense_dsm = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
         )
         dense_dsm_applications = {
@@ -4702,7 +4785,6 @@ def test_end2end_gizeh_dry_run_of_used_conf():
         _, sensors_input_config_first_run = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "multiprocessing",
         )
 
@@ -4768,7 +4850,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "output": {"directory": directory2},
             }
 
-            pc_pipeline_first_run = pipeline_dsm.DepthMapsToDsmPipeline(
+            pc_pipeline_first_run = sensor_to_dense_dsm.CarsPipeline(
                 pc_input_config_first_run
             )
             pc_pipeline_first_run.run()
@@ -4785,7 +4867,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "directory"
             ] += "_from_used_conf"
 
-            pc_pipeline_second_run = pipeline_dsm.DepthMapsToDsmPipeline(
+            pc_pipeline_second_run = sensor_to_dense_dsm.CarsPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()
