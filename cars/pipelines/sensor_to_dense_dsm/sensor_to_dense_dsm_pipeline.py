@@ -262,9 +262,10 @@ class CarsPipeline(PipelineTemplate):
             "point_cloud_rasterization": 16,
         }
 
-        self.app_values = (
-            sensor_to_depth_apps | depth_merge_apps | depth_to_dsm_apps
-        )
+        self.app_values = {}
+        self.app_values.update(sensor_to_depth_apps)
+        self.app_values.update(depth_merge_apps)
+        self.app_values.update(depth_to_dsm_apps)
 
         app_conf = conf.get(APPLICATIONS, {})
         for key in app_conf:
@@ -354,11 +355,11 @@ class CarsPipeline(PipelineTemplate):
         else:
             log_msg = "No product level was given. CARS has detected that you "
             "wish to run up to the {} application.".format(
-                [
+                next(
                     k
-                    for k in self.app_values
-                    if self.app_values[k] == self.last_application_to_run
-                ][0]
+                    for k, v in self.app_values.items()
+                    if v == self.last_application_to_run
+                )
             )
             logging.warning(log_msg)
 
@@ -953,9 +954,9 @@ class CarsPipeline(PipelineTemplate):
                 ) = grid_correction.estimate_right_grid_correction(
                     self.pairs[pair_key]["matches_array"],
                     self.pairs[pair_key]["grid_right"],
-                    initial_cars_ds=self.pairs[
-                        pair_key
-                    ]["epipolar_matches_left"],
+                    initial_cars_ds=self.pairs[pair_key][
+                        "epipolar_matches_left"
+                    ],
                     save_matches=save_matches,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "initial", pair_key
@@ -1171,9 +1172,9 @@ class CarsPipeline(PipelineTemplate):
                         new_grid_matches_array,
                         self.pairs[pair_key]["new_grid_right"],
                         save_matches=save_matches,
-                        initial_cars_ds=self.pairs[
-                            pair_key
-                        ]["epipolar_matches_left"],
+                        initial_cars_ds=self.pairs[pair_key][
+                            "epipolar_matches_left"
+                        ],
                         pair_folder=os.path.join(
                             self.dump_dir, "grid_correction", "new", pair_key
                         ),
@@ -1260,7 +1261,7 @@ class CarsPipeline(PipelineTemplate):
                             "corrected_grid_left"
                         ].attributes["disp_to_alt_ratio"],
                     )
-                    
+
                     advanced_parameters.update_conf(
                         self.config_full_res,
                         dmin=dmin,
