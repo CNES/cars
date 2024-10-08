@@ -46,7 +46,6 @@ from cars.core import roi_tools
 from cars.pipelines.sensor_to_dense_dsm import (
     sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
 )
-from cars.pipelines.sensor_to_sparse_dsm import sensor_to_sparse_dsm
 
 # CARS Tests imports
 from .helpers import (
@@ -314,7 +313,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         output_config = {
@@ -452,8 +451,8 @@ def test_end2end_ventoux_unique():
         )
         application_config = {
             "grid_generation": {
-                "method": "epipolar", 
-                "epi_step": 30, 
+                "method": "epipolar",
+                "epi_step": 30,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
             "sparse_matching": {
@@ -471,7 +470,7 @@ def test_end2end_ventoux_unique():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
         output_config = {
             # reduce computation time by not going further for nothing
@@ -520,12 +519,6 @@ def test_end2end_ventoux_unique():
                 ]["maximum_disparity"]
                 < 16
             )
-
-            cfm_path = out_json[
-                "applications"]["left_right"]["grid_correction"
-            ][
-                "corrected_filtered_matches"
-            ]
 
             assert os.path.isfile(
                 out_json["applications"]["left_right"]["grid_correction"][
@@ -1037,7 +1030,7 @@ def test_end2end_ventoux_unique():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
@@ -1140,7 +1133,7 @@ def test_end2end_ventoux_unique():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         input_config_sparse_dsm["applications"].update(application_config)
@@ -2136,7 +2129,7 @@ def test_end2end_use_epipolar_a_priori():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
         output_config = {
             # reduce computation time by not going further for nothing
@@ -2523,14 +2516,13 @@ def test_prepare_ventoux_bias():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         output_config = {
             # reduce computation time by not going further for nothing
             "product_level": ["depth_map"]
         }
-
 
         input_config_sparse_res["applications"].update(application_config)
         input_config_sparse_res["output"].update(output_config)
@@ -2961,7 +2953,7 @@ def test_end2end_ventoux_with_color():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         output_config = {
@@ -3236,7 +3228,7 @@ def test_end2end_ventoux_with_classif():
             "dem_generation": {
                 # save the dems in the global pipeline
                 "save_intermediate_data": True
-            }
+            },
         }
 
         output_config = {
