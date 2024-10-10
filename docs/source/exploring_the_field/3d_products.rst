@@ -9,7 +9,7 @@ These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
 
 .. |dsm| image:: ../images/dsm.png
   :width: 100%
-.. |clr| image:: ../images/clr.png
+.. |color| image:: ../images/clr.png
   :width: 100%
 .. |dsmclr| image:: ../images/dsm_clr.png
   :width: 100%
@@ -17,7 +17,7 @@ These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
   :width: 100%
 
 +--------------+-------------+-------------+-------------------+
-|   dsm.tif    |   clr.tif   | `QGIS`_ Mix |    cloudcompare   |
+|   dsm.tif    |   color.tif | `QGIS`_ Mix |    cloudcompare   |
 +--------------+-------------+-------------+-------------------+
-| |dsm|        | |clr|       |  |dsmclr|   |        |pc|       |
+| |dsm|        | |color|       |  |dsmclr|   |        |pc|       |
 +--------------+-------------+-------------+-------------------+
