@@ -64,7 +64,7 @@ Output data
 How to generate output files overview ?
 ---------------------------------------
 
-Considering bulky files, it can be recommended to generate an overview file with `GDAL`_ before opening it with QGIS:
+Considering bulky files, it can be recommended to generate an overview file with `GDAL`_ before opening it with `QGIS <https://www.qgis.org>`_:
 
 .. code-block:: console
 
