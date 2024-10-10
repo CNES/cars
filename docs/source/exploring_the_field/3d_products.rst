@@ -19,5 +19,5 @@ These two products can be visualized with `QGIS <https://www.qgis.org/fr/site/>`
 +--------------+-------------+-------------+-------------------+
 |   dsm.tif    |   color.tif | `QGIS`_ Mix |    cloudcompare   |
 +--------------+-------------+-------------+-------------------+
-| |dsm|        |   |color|   |  |dsmclr|   |        |pc|       |
+| |dsm|        | |color|       |  |dsmclr|   |        |pc|       |
 +--------------+-------------+-------------+-------------------+
