@@ -640,12 +640,24 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # We generate grids with dem if it is provided.
                 # If not provided, grid are generated without dem and a dem
                 # will be generated, to use later for a new grid generation**
+                altitude_delta_min = self.inputs.get(
+                    sens_cst.INITIAL_ELEVATION, {}
+                ).get(sens_cst.ALTITUDE_DELTA_MIN, None)
+                altitude_delta_max = self.inputs.get(
+                    sens_cst.INITIAL_ELEVATION, {}
+                ).get(sens_cst.ALTITUDE_DELTA_MAX, None)
 
                 if (
                     self.inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
                     is None
                 ):
                     geom_plugin = self.geom_plugin_without_dem_and_geoid
+
+                    if None not in (altitude_delta_min, altitude_delta_max):
+                        raise RuntimeError(
+                            "Dem path is mandatory for "
+                            "the use of altitude deltas"
+                        )
                 else:
                     geom_plugin = self.geom_plugin_with_dem_and_geoid
 
@@ -873,7 +885,12 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem_max = self.used_conf[ADVANCED][adv_cst.TERRAIN_A_PRIORI][
                     adv_cst.DEM_MAX
                 ]
-
+                altitude_delta_min = self.used_conf[ADVANCED][
+                    adv_cst.TERRAIN_A_PRIORI
+                ][adv_cst.ALTITUDE_DELTA_MIN]
+                altitude_delta_max = self.used_conf[ADVANCED][
+                    adv_cst.TERRAIN_A_PRIORI
+                ][adv_cst.ALTITUDE_DELTA_MAX]
             else:
                 dem_generation_output_dir = os.path.join(
                     dump_dir, "dem_generation"
@@ -917,12 +934,20 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 dem_max = dem.attributes[dem_gen_cst.DEM_MAX_PATH]
 
             # update used configuration with terrain a priori
-            advanced_parameters.update_conf(
-                self.used_conf,
-                dem_median=dem_median,
-                dem_min=dem_min,
-                dem_max=dem_max,
-            )
+            if None not in (altitude_delta_min, altitude_delta_max):
+                advanced_parameters.update_conf(
+                    self.used_conf,
+                    dem_median=dem_median,
+                    altitude_delta_min=altitude_delta_min,
+                    altitude_delta_max=altitude_delta_max,
+                )
+            else:
+                advanced_parameters.update_conf(
+                    self.used_conf,
+                    dem_median=dem_median,
+                    dem_min=dem_min,
+                    dem_max=dem_max,
+                )
 
             # Define param
             use_global_disp_range = (
@@ -946,11 +971,11 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                     is False
                 ):
 
-                    if not (
+                    if (
                         self.inputs[sens_cst.INITIAL_ELEVATION][
                             sens_cst.DEM_PATH
                         ]
-                        is not None
+                        is None
                     ):
                         # Generate grids with new MNT
                         (
@@ -1149,7 +1174,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             pair_folder=dense_matching_pair_folder,
                         )
                     )
-                else:
+                elif None in (altitude_delta_min, altitude_delta_max):
                     # Generate min and max disp grids from dems
                     disp_range_grid = (
                         self.dense_matching_app.generate_disparity_grids(
@@ -1158,6 +1183,19 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                             self.geom_plugin_with_dem_and_geoid,
                             dem_min=dem_min,
                             dem_max=dem_max,
+                            dem_median=dem_median,
+                            pair_folder=dense_matching_pair_folder,
+                        )
+                    )
+                else:
+                    # Generate min and max disp grids from deltas
+                    disp_range_grid = (
+                        self.dense_matching_app.generate_disparity_grids(
+                            pairs[pair_key]["sensor_image_right"],
+                            pairs[pair_key]["corrected_grid_right"],
+                            self.geom_plugin_with_dem_and_geoid,
+                            altitude_delta_min=altitude_delta_min,
+                            altitude_delta_max=altitude_delta_max,
                             dem_median=dem_median,
                             pair_folder=dense_matching_pair_folder,
                         )

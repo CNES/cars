@@ -34,6 +34,8 @@ CHECK_INPUTS = "check_inputs"
 ROI = "roi"
 GEOID = "geoid"
 DEM_PATH = "dem"
+ALTITUDE_DELTA_MIN = "altitude_delta_min"
+ALTITUDE_DELTA_MAX = "altitude_delta_max"
 
 INPUT_IMG = "image"
 INPUT_MSK = "mask"
