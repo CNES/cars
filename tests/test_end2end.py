@@ -1052,6 +1052,59 @@ def test_end2end_ventoux_unique():
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "cost_volume_confidence.before": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "cost_volume_confidence.std_intensity_before": {
+                            "confidence_method": "std_intensity"
+                        },
+                        "cost_volume_confidence.risk_before": {
+                            "confidence_method": "risk"
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "p2_method": "constant",
+                                "penalty_method": "sgm_penalty",
+                            },
+                            "overcounting": False,
+                            "min_cost_paths": False,
+                        },
+                        "cost_volume_confidence": {
+                            "confidence_method": "ambiguity",
+                            "eta_max": 0.7,
+                            "eta_step": 0.01,
+                        },
+                        "cost_volume_confidence.std_intensity": {
+                            "confidence_method": "std_intensity"
+                        },
+                        "cost_volume_confidence.risk": {
+                            "confidence_method": "risk"
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
             },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
