@@ -477,7 +477,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
         :type application_conf: dict
         """
 
-        initial_elevation = self.inputs["initial_elevation"] is not None
+        initial_elevation = self.inputs["initial_elevation"]["dem"] is not None
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
             self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
                 -100 if initial_elevation else -1000
