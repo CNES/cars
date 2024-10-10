@@ -646,7 +646,9 @@ class CarsPipeline(PipelineTemplate):
         :type application_conf: dict
         """
 
-        initial_elevation = inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
+        initial_elevation = (
+            inputs_conf[sens_cst.INITIAL_ELEVATION]["dem"] is not None
+        )
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
             self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
                 -100 if initial_elevation else -1000
