@@ -187,6 +187,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
 
         # launch no mergin pipeline
         input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
+        input_dense_dsm["advanced"]["merging"] = False
         input_dense_dsm["output"]["directory"] = out_dir + "no_merging"
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
