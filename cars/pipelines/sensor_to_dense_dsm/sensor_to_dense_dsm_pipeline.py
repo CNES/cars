@@ -270,6 +270,9 @@ class CarsPipeline(PipelineTemplate):
         app_conf = conf.get(APPLICATIONS, {})
         for key in app_conf:
 
+            if adv_cst.SAVE_INTERMEDIATE_DATA not in app_conf[key]:
+                continue
+
             if not app_conf[key][adv_cst.SAVE_INTERMEDIATE_DATA]:
                 continue
 
@@ -353,12 +356,14 @@ class CarsPipeline(PipelineTemplate):
             )
             logging.info(log_msg)
         else:
-            log_msg = "No product level was given. CARS has detected that you "
-            "wish to run up to the {} application.".format(
-                next(
-                    k
-                    for k, v in self.app_values.items()
-                    if v == self.last_application_to_run
+            log_msg = (
+                "No product level was given. CARS has detected that you "
+                + "wish to run up to the {} application.".format(
+                    next(
+                        k
+                        for k, v in self.app_values.items()
+                        if v == self.last_application_to_run
+                    )
                 )
             )
             logging.warning(log_msg)
@@ -820,7 +825,7 @@ class CarsPipeline(PipelineTemplate):
             )
 
             if self.quit_on_app("grid_generation"):
-                return True
+                continue  # keep iterating over pairs, but don't go further
 
             # Run holes detection
             # Get classif depending on which filling is used
@@ -879,7 +884,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
                 if self.quit_on_app("resampling"):
-                    return True
+                    continue  # keep iterating over pairs, but don't go further
 
                 # Generate the holes polygons in epipolar images
                 # They are only generated if dense_matches_filling
@@ -900,7 +905,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
                 if self.quit_on_app("holes_detection"):
-                    return True
+                    continue  # keep iterating over pairs, but don't go further
 
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
                 # Run epipolar sparse_matching application
@@ -921,7 +926,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
                 if self.quit_on_app("sparse_matching"):
-                    return True
+                    continue  # keep iterating over pairs, but don't go further
 
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
@@ -1027,6 +1032,15 @@ class CarsPipeline(PipelineTemplate):
                 self.triangulated_matches_list.append(
                     self.pairs[pair_key]["filtered_triangulated_matches"]
                 )
+
+        # quit if any app in the loop over the pairs was the last one
+        if (
+            self.quit_on_app("grid_generation")
+            or self.quit_on_app("resampling")
+            or self.quit_on_app("holes_detection")
+            or self.quit_on_app("sparse_matching")
+        ):
+            return True
 
         if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI]:
             # Use a priori
@@ -1482,7 +1496,7 @@ class CarsPipeline(PipelineTemplate):
             )
 
             if self.quit_on_app("dense_matching"):
-                return True
+                continue  # keep iterating over pairs, but don't go further
 
             # Dense matches filling
             if self.dense_matches_filling_1.used_method == "plane":
@@ -1519,7 +1533,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
             if self.quit_on_app("dense_matches_filling.1"):
-                return True
+                continue  # keep iterating over pairs, but don't go further
 
             if self.dense_matches_filling_2.used_method == "plane":
                 # Fill holes in disparity map
@@ -1555,7 +1569,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
             if self.quit_on_app("dense_matches_filling.2"):
-                return True
+                continue  # keep iterating over pairs, but don't go further
 
             if self.epsg is None:
                 # compute epsg
@@ -1668,7 +1682,7 @@ class CarsPipeline(PipelineTemplate):
             )
 
             if self.quit_on_app("triangulation"):
-                return True
+                continue  # keep iterating over pairs, but don't go further
 
             if self.merging:
                 self.list_epipolar_points_cloud.append(epipolar_points_cloud)
@@ -1690,7 +1704,7 @@ class CarsPipeline(PipelineTemplate):
                 )
 
                 if self.quit_on_app("pc_denoising"):
-                    return True
+                    continue  # keep iterating over pairs, but don't go further
 
             if self.save_output_dsm or self.save_output_point_cloud:
                 # Compute terrain bounding box /roi related to
@@ -1729,6 +1743,16 @@ class CarsPipeline(PipelineTemplate):
                     roi_poly=(None if self.debug_with_roi else self.roi_poly),
                     resolution=self.resolution,
                 )
+
+        # quit if any app in the loop over the pairs was the last one
+        if (
+            self.quit_on_app("dense_matching")
+            or self.quit_on_app("dense_matches_filling.1")
+            or self.quit_on_app("dense_matches_filling.2")
+            or self.quit_on_app("triangulation")
+            or self.quit_on_app("pc_denoising")
+        ):
+            return True
 
         cars_dataset.save_dict(
             self.config_full_res,
