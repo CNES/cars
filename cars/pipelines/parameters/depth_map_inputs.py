@@ -223,22 +223,6 @@ def check_geometry_plugin(conf_inputs, conf_geom_plugin):
     if conf_geom_plugin is None:
         conf_geom_plugin = "SharelocGeometry"
 
-    geom_plugin = generate_geometry_plugin_with_dem(
-        conf_geom_plugin, conf_inputs
-    )
-
-    return geom_plugin
-
-
-def generate_geometry_plugin_with_dem(conf_geom_plugin, conf_inputs):
-    """
-    Generate geometry plugin with dem and geoid
-
-    :param conf_geom_plugin: plugin configuration
-    :param conf_inputs: inputs configuration
-
-    :return: geometry plugin object, with a dem
-    """
     dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
 
     if dem_path is None:
