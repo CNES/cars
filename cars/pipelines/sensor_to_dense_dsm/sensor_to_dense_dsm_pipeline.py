@@ -467,9 +467,10 @@ class CarsPipeline(PipelineTemplate):
         used_conf = {}
         for app_key in needed_applications:
             used_conf[app_key] = conf.get(app_key, {})
-            used_conf[app_key]["save_intermediate_data"] = used_conf[
-                app_key
-            ].get("save_intermediate_data", self.save_all_intermediate_data)
+            used_conf[app_key]["save_intermediate_data"] = (
+                self.save_all_intermediate_data
+                or used_conf[app_key].get("save_intermediate_data", False)
+            )
 
         for app_key in [
             "point_cloud_fusion",
@@ -1669,7 +1670,10 @@ class CarsPipeline(PipelineTemplate):
             if self.quit_on_app("triangulation"):
                 return True
 
-            if not self.merging:
+            if self.merging:
+                self.list_epipolar_points_cloud.append(epipolar_points_cloud)
+            # denoising available only if we'll go further in the pipeline
+            elif self.save_output_dsm or self.save_output_point_cloud:
                 denoised_epipolar_points_cloud = (
                     self.pc_denoising_application.run(
                         epipolar_points_cloud,
@@ -1679,6 +1683,10 @@ class CarsPipeline(PipelineTemplate):
                         ),
                         pair_key=pair_key,
                     )
+                )
+
+                self.list_epipolar_points_cloud.append(
+                    denoised_epipolar_points_cloud
                 )
 
                 if self.quit_on_app("pc_denoising"):
@@ -1720,14 +1728,6 @@ class CarsPipeline(PipelineTemplate):
                     self.list_terrain_roi,
                     roi_poly=(None if self.debug_with_roi else self.roi_poly),
                     resolution=self.resolution,
-                )
-
-            # add points cloud to list
-            if self.merging:
-                self.list_epipolar_points_cloud.append(epipolar_points_cloud)
-            else:
-                self.list_epipolar_points_cloud.append(
-                    denoised_epipolar_points_cloud
                 )
 
         cars_dataset.save_dict(

@@ -53,7 +53,7 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.DEBUG_WITH_ROI, False
     )
 
-    overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, True)
+    overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
 
     if check_epipolar_a_priori:
         # Check conf use_epipolar_a_priori

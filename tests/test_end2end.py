@@ -109,6 +109,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "mask": True,
             "performance_map": True,
         }
+        input_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
@@ -721,6 +722,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -1130,6 +1132,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -1234,6 +1237,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -1347,6 +1351,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                         "save_intermediate_data": True,
                     }
                 },
+                "advanced": {"merging": True},
             }
 
             dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
@@ -1421,12 +1426,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             # launch with no merging pipeline
 
-            # avoid deleting other variables in advanced if it exists
-            if "advanced" in input_dsm_config:
-                input_dsm_config["advanced"]["merging"] = False
-            else:
-                input_dsm_config["advanced"] = {"merging": False}
-
+            input_dsm_config["advanced"]["merging"] = False
             input_dsm_config["output"]["directory"] = output_path + "no_merging"
 
             dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
@@ -1659,6 +1659,7 @@ def test_end2end_ventoux_unique_split():
                         "save_intermediate_data": True,
                     },
                 },
+                "advanced": {"merging": True},
             }
 
             dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
@@ -1915,6 +1916,7 @@ def test_end2end_ventoux_unique_split():
             input_dsm_config["pipeline"] = (
                 "dense_depth_maps_to_dense_dsm_no_merging"
             )
+            input_dsm_config["advanced"]["merging"] = False
 
             # launch
             dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
@@ -2435,6 +2437,9 @@ def test_end2end_use_epipolar_a_priori():
         input_config_dense_dsm["output"]["resolution"] = 0.5
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
+
+        input_config_dense_dsm["advanced"]["merging"] = True
+
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
@@ -2676,6 +2681,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         input_config["applications"].update(application_config)
         input_config["advanced"].update(advanced_config)
         input_config["output"].update(output_config)
+        input_config["advanced"]["merging"] = True
 
         pipeline = sensor_to_dense_dsm.CarsPipeline(input_config)
 
@@ -3105,14 +3111,15 @@ def test_end2end_ventoux_with_color():
 
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        input_config_sparse_res["output"]["product_level"] = ["dsm"]
+        input_config_dense_dsm["output"]["product_level"] = ["dsm"]
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
         dense_dsm_pipeline.run()
 
-        out_dir = input_config_sparse_res["output"]["directory"]
+        out_dir = input_config_dense_dsm["output"]["directory"]
 
         assert (
             os.path.exists(
@@ -3377,7 +3384,7 @@ def test_end2end_ventoux_with_classif():
 
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
-
+        input_config_dense_dsm["advanced"]["merging"] = True
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
         )
@@ -3709,6 +3716,7 @@ def test_compute_dsm_with_snap_to_img1():
         # resolution
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -3825,8 +3833,11 @@ def test_end2end_quality_stats():
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
 
-        # Save all intermediate data
-        input_config_dense_dsm["advanced"] = {"save_intermediate_data": True}
+        # Save all intermediate data and add merging
+        input_config_dense_dsm["advanced"] = {
+            "save_intermediate_data": True,
+            "merging": True,
+        }
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4119,6 +4130,7 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4252,6 +4264,7 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4343,6 +4356,7 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
             "input/geoid/egm96_15_modified.tif"
         )
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4486,6 +4500,7 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4606,6 +4621,7 @@ def test_end2end_disparity_filling():
             "filling": True,
             "mask": True,
         }
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
@@ -4726,6 +4742,8 @@ def test_end2end_disparity_filling_with_zeros():
             "filling": True,
             "mask": True,
         }
+
+        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
             input_config_dense_dsm
