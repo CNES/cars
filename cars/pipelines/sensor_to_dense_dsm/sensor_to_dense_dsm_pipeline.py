@@ -673,6 +673,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                 # with any order. the .1 will be performed before the .2
                 pairs[pair_key]["holes_classif"] = []
                 pairs[pair_key]["holes_poly_margin"] = 0
+                add_classif = False
                 if self.dense_matches_filling_1.used_method == "plane":
                     pairs[pair_key][
                         "holes_classif"
@@ -681,6 +682,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["holes_poly_margin"],
                         self.dense_matches_filling_1.get_poly_margin(),
                     )
+                    add_classif = True
                 if self.dense_matches_filling_2.used_method == "plane":
                     pairs[pair_key][
                         "holes_classif"
@@ -689,6 +691,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         pairs[pair_key]["holes_poly_margin"],
                         self.dense_matches_filling_2.get_poly_margin(),
                     )
+                    add_classif = True
 
                 pairs[pair_key]["holes_bbox_left"] = []
                 pairs[pair_key]["holes_bbox_right"] = []
@@ -717,7 +720,7 @@ class SensorToDenseDsmPipeline(PipelineTemplate):
                         tile_width=None,
                         tile_height=None,
                         add_color=False,
-                        add_classif=False,
+                        add_classif=add_classif,
                     )
 
                     # Generate the holes polygons in epipolar images
