@@ -32,7 +32,8 @@ import os
 # Third party imports
 import numpy as np
 import pandas
-from scipy import interpolate
+from scipy.interpolate import LinearNDInterpolator
+from scipy.spatial import Delaunay  # pylint: disable=E0611
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -193,6 +194,7 @@ def estimate_right_grid_correction(
             grid_correction is : (coefsx_2d, coefsy_2d) , each of size (2,2)
 
     """
+
     # Default orchestrator
     if orchestrator is None:
         # Create default sequential orchestrator for current application
@@ -243,31 +245,24 @@ def estimate_right_grid_correction(
     matches_y2 = matches[:, 3]
 
     # Map real matches to sensor geometry
-    sensor_matches_raw_x = interpolate.griddata(
-        (np.ravel(x_values_2d), np.ravel(y_values_2d)),
-        np.ravel(source_points[:, :, 0]),
-        (matches_x2, matches_y2),
-    )
+    points = np.column_stack((np.ravel(x_values_2d), np.ravel(y_values_2d)))
 
-    sensor_matches_raw_y = interpolate.griddata(
-        (np.ravel(x_values_2d), np.ravel(y_values_2d)),
-        np.ravel(source_points[:, :, 1]),
-        (matches_x2, matches_y2),
-    )
+    triangulation = Delaunay(points)
+
+    values = np.ravel(source_points[:, :, 0])
+
+    interpolator = LinearNDInterpolator(triangulation, values)
+    sensor_matches_raw_x = interpolator(matches_x2, matches_y2)
 
     # Simulate matches that have no epipolar error (i.e. y2 == y1) and map
     # them to sensor geometry
-    sensor_matches_perfect_x = interpolate.griddata(
-        (np.ravel(x_values_2d), np.ravel(y_values_2d)),
-        np.ravel(source_points[:, :, 0]),
-        (matches_x2, matches_y1),
-    )
+    sensor_matches_perfect_x = interpolator(matches_x2, matches_y1)
 
-    sensor_matches_perfect_y = interpolate.griddata(
-        (np.ravel(x_values_2d), np.ravel(y_values_2d)),
-        np.ravel(source_points[:, :, 1]),
-        (matches_x2, matches_y1),
-    )
+    values = np.ravel(source_points[:, :, 1])
+    interpolator = LinearNDInterpolator(triangulation, values)
+    sensor_matches_raw_y = interpolator(matches_x2, matches_y2)
+
+    sensor_matches_perfect_y = interpolator(matches_x2, matches_y1)
 
     # Compute epipolar error in sensor geometry in both direction
     epipolar_error_x = sensor_matches_perfect_x - sensor_matches_raw_x
@@ -372,15 +367,21 @@ def estimate_right_grid_correction(
     )
 
     # Map corrected matches to epipolar geometry
-    epipolar_matches_corrected_x = interpolate.griddata(
-        (np.ravel(source_points[:, :, 0]), np.ravel(source_points[:, :, 1])),
-        np.ravel(x_values_2d),
-        (sensor_matches_corrected_x, sensor_matches_corrected_y),
+    points = np.column_stack(
+        (np.ravel(source_points[:, :, 0]), np.ravel(source_points[:, :, 1]))
     )
-    epipolar_matches_corrected_y = interpolate.griddata(
-        (np.ravel(source_points[:, :, 0]), np.ravel(source_points[:, :, 1])),
-        np.ravel(y_values_2d),
-        (sensor_matches_corrected_x, sensor_matches_corrected_y),
+    triangulation = Delaunay(points)
+
+    values = np.ravel(x_values_2d)
+    interpolator = LinearNDInterpolator(triangulation, values)
+    epipolar_matches_corrected_x = interpolator(
+        sensor_matches_corrected_x, sensor_matches_corrected_y
+    )
+
+    values = np.ravel(y_values_2d)
+    interpolator = LinearNDInterpolator(triangulation, values)
+    epipolar_matches_corrected_y = interpolator(
+        sensor_matches_corrected_x, sensor_matches_corrected_y
     )
 
     corrected_matches = np.copy(matches)
@@ -460,6 +461,7 @@ def estimate_right_grid_correction(
 
     # Export filtered matches
     matches_array_path = None
+    current_out_dir = None
     if save_matches:
         logging.info("Writing matches file")
         if pair_folder is None:
