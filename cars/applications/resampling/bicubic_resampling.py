@@ -213,7 +213,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             largest_epipolar_region,
         )
 
-    def run(
+    def run(  # noqa: C901
         self,
         sensor_image_left,
         sensor_image_right,
@@ -226,8 +226,9 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         tile_width=None,
         tile_height=None,
         add_color=True,
+        add_classif=True,
         epipolar_roi=None,
-    ):  # noqa: C901
+    ):
         """
         Run resampling application.
 
@@ -276,6 +277,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         :type tile_height: int
         :param add_color: add color image to dataset
         :type add_color: bool
+        :param add_classif: add classif to dataset
+        :type add_classif: bool
         :param epipolar_roi: Epipolar roi to use if set.
             Set None tiles outsize roi
         :type epipolar_roi: list(int), [row_min, row_max,  col_min, col_max]
@@ -438,20 +441,21 @@ class BicubicResampling(Resampling, short_name="bicubic"):
             )
 
             self.orchestrator.add_to_save_lists(
+                os.path.join(pair_folder, "epi_img_right_mask.tif"),
+                cst.EPI_MSK,
+                epipolar_images_right,
+                cars_ds_name="epi_img_right_mask",
+                dtype=np.uint8,
+            )
+
+        if self.save_intermediate_data and add_classif:
+            self.orchestrator.add_to_save_lists(
                 os.path.join(pair_folder, "epi_img_left_classif.tif"),
                 cst.EPI_CLASSIFICATION,
                 epipolar_images_left,
                 cars_ds_name="epi_img_left_classif",
                 dtype=np.uint8,
                 optional_data=True,
-            )
-
-            self.orchestrator.add_to_save_lists(
-                os.path.join(pair_folder, "epi_img_right_mask.tif"),
-                cst.EPI_MSK,
-                epipolar_images_right,
-                cars_ds_name="epi_img_right_mask",
-                dtype=np.uint8,
             )
 
             self.orchestrator.add_to_save_lists(
@@ -610,6 +614,7 @@ class BicubicResampling(Resampling, short_name="bicubic"):
                         used_disp_min=used_disp_min[row, col],
                         used_disp_max=used_disp_max[row, col],
                         add_color=add_color,
+                        add_classif=add_classif,
                         color1=color1,
                         mask1=mask1,
                         mask2=mask2,
@@ -647,6 +652,7 @@ def generate_epipolar_images_wrapper(
     used_disp_min=None,
     used_disp_max=None,
     add_color=True,
+    add_classif=True,
     color1=None,
     mask1=None,
     mask2=None,
@@ -719,6 +725,7 @@ def generate_epipolar_images_wrapper(
         nodata1=nodata1,
         nodata2=nodata2,
         add_color=add_color,
+        add_classif=add_classif,
     )
 
     if add_color:
@@ -753,22 +760,24 @@ def generate_epipolar_images_wrapper(
         left_dataset[cst.EPI_IMAGE].attrs["color_type"] = color_types
 
     # Add classification layers to dataset
-    if left_classif_dataset:
-        left_dataset.coords[cst.BAND_CLASSIF] = left_classif_dataset.attrs[
-            cst.BAND_NAMES
-        ]
-        left_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
-            left_classif_dataset[cst.EPI_IMAGE].values,
-            dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
-        ).astype(bool)
-    if right_classif_dataset:
-        right_dataset.coords[cst.BAND_CLASSIF] = right_classif_dataset.attrs[
-            cst.BAND_NAMES
-        ]
-        right_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
-            right_classif_dataset[cst.EPI_IMAGE].values,
-            dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
-        ).astype(bool)
+    if add_classif:
+        if left_classif_dataset:
+            left_dataset.coords[cst.BAND_CLASSIF] = left_classif_dataset.attrs[
+                cst.BAND_NAMES
+            ]
+            left_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
+                left_classif_dataset[cst.EPI_IMAGE].values,
+                dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
+            ).astype(bool)
+        if right_classif_dataset:
+            right_dataset.coords[cst.BAND_CLASSIF] = (
+                right_classif_dataset.attrs[cst.BAND_NAMES]
+            )
+            right_dataset[cst.EPI_CLASSIFICATION] = xr.DataArray(
+                right_classif_dataset[cst.EPI_IMAGE].values,
+                dims=[cst.BAND_CLASSIF, cst.ROW, cst.COL],
+            ).astype(bool)
+
     # Add attributes info
     attributes = {}
     # fill datasets with saving info, window, profile, overlaps for correct
