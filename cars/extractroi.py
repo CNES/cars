@@ -28,9 +28,7 @@ import os
 import numpy as np
 import rasterio as rio
 from affine import Affine
-from rasterio.features import geometry_window
-from rasterio.mask import mask
-from shapely.geometry import box, shape
+from shapely.geometry import box
 
 
 def is_bbx_in_image(bbx, image_dataset):
@@ -87,7 +85,7 @@ def process_image_file(
     """
 
     with rio.open(input_image_path) as image_dataset:
-        if not (image_dataset.rpcs):
+        if not image_dataset.rpcs:
             raise ValueError("Image dataset has no RPCs")
         validate_bounding_box(bbx, image_dataset)
         row, col = get_slices_from_bbx(image_dataset, bbx)
@@ -103,7 +101,10 @@ def process_image_file(
         if "crs" in profile:
             del profile["crs"]
         with rio.open(output_image_path, "w", **profile) as dst:
+            # write data
             dst.write(array, 1)
+            # copy rpc
+            dst.rpcs = image_dataset.rpcs
 
         create_geom_file(image_dataset, geom_file_path)
 
@@ -116,7 +117,8 @@ def get_human_readable_bbox(image_dataset):
         image_dataset (rio.DatasetReader): Opened image dataset.
 
     Returns:
-        tuple: The human-readable bounding box in the format (min_x, max_x, min_y, max_y).
+        tuple: The human-readable bounding box in the format
+        (min_x, max_x, min_y, max_y).
     """
 
     transformer = rio.transform.RPCTransformer(image_dataset.rpcs)
@@ -129,7 +131,10 @@ def get_human_readable_bbox(image_dataset):
     image_coords = [
         (round(coord[0], 7), round(coord[1], 7)) for coord in human_readable_bbx
     ]
-    [(min_x, min_y), (max_x, max_y)] = image_coords
+    [(x_1, y_1), (x_2, y_2)] = image_coords
+
+    min_x, max_x = min(x_1, x_2), max(x_1, x_2)
+    min_y, max_y = min(y_1, y_2), max(y_1, y_2)
 
     return min_x, max_x, min_y, max_y
 
@@ -150,7 +155,8 @@ def validate_bounding_box(bbx, image_dataset):
     if not is_bbx_in_image(input_box, image_dataset):
         min_x, max_x, min_y, max_y = get_human_readable_bbox(image_dataset)
         raise ValueError(
-            f"Coordinates must between ({min_x}, {min_y}) and ({max_x}, {max_y})"
+            f"Coordinates must between "
+            f"({min_x}, {min_y}) and ({max_x}, {max_y})"
         )
 
 
