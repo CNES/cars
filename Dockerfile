@@ -16,15 +16,24 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     && rm -rf /var/lib/apt/lists/*
 
 # copy and install cars with mccnn plugin capabilities installed (but not configured by default)
-WORKDIR /cars
-COPY . /cars/
+WORKDIR /app
 
-# Install fiona and rasterio with gdal / proj from otb
-RUN make clean && make install-gdal
+
+# Create a virtual environment
+RUN python3 -m venv /app/venv
 
 # source venv/bin/activate in docker mode
-ENV VIRTUAL_ENV='/cars/venv'
+ENV VIRTUAL_ENV='/app/venv'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
+
+
+# Copy only necessary files for installation
+COPY . /app/cars
+
+# Install fiona and rasterio with gdal / proj from otb
+WORKDIR /app/cars
+RUN CARS_VENV=$VIRTUAL_ENV make clean && CARS_VENV=$VIRTUAL_ENV make install-gdal-dev
+
 
 # hadolint ignore=DL3013,SC2102
 RUN python -m pip cache purge
