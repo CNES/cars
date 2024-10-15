@@ -128,7 +128,7 @@ Convert RGB image to panchromatic image
 
 CARS only uses panchromatic images for processing.
 
-If you have a multi-spectral image, you'll need to convert it to a panchromatic image before using it with CARS.
+If you have a multi-spectral image, you'll need to extract a single band to use, or convert it to a panchromatic image before using it with CARS.
 
 The line below use `"Grayscale Using Luminance" <https://en.wikipedia.org/wiki/Grayscale#Luma_coding_in_video_systems>`_ expression with `OTB BandMath <https://www.orfeo-toolbox.org/CookBook/Applications/app_BandMath.html>`_
 
