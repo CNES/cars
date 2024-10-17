@@ -108,7 +108,6 @@ class CensusMccnnSgm(
         self.disp_range_propagation_filter_size = self.used_config[
             "disp_range_propagation_filter_size"
         ]
-        self.use_cross_validation = self.used_config["use_cross_validation"]
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -172,9 +171,6 @@ class CensusMccnnSgm(
         overloaded_conf["perf_ambiguity_threshold"] = conf.get(
             "perf_ambiguity_threshold", 0.6
         )
-        overloaded_conf["use_cross_validation"] = conf.get(
-            "use_cross_validation", False
-        )
         # Margins computation parameters
         overloaded_conf["use_global_disp_range"] = conf.get(
             "use_global_disp_range", False
@@ -217,7 +213,6 @@ class CensusMccnnSgm(
             perf_eta_max_ambiguity=overloaded_conf["perf_eta_max_ambiguity"],
             perf_eta_max_risk=overloaded_conf["perf_eta_max_risk"],
             perf_eta_step=overloaded_conf["perf_eta_step"],
-            use_cross_validation=overloaded_conf["use_cross_validation"],
         )
         overloaded_conf["loader"] = loader
         overloaded_conf["loader_conf"] = loader_conf
@@ -242,7 +237,6 @@ class CensusMccnnSgm(
             "perf_eta_max_risk": float,
             "perf_eta_step": float,
             "perf_ambiguity_threshold": float,
-            "use_cross_validation": bool,
             "use_global_disp_range": bool,
             "local_disp_grid_step": int,
             "disp_range_propagation_filter_size": And(

@@ -25,8 +25,6 @@ Test module for cars pandora loadr
 # Standard imports
 
 # Third party imports
-import copy
-
 import pytest
 
 # CARS imports
@@ -95,67 +93,6 @@ def test_configure_pandora_config():
     corr_config = pandora_loader.get_conf()
 
     assert corr_config["pipeline"]["optimization"]["penalty"]["P2"] == 24
-
-
-@pytest.mark.unit_tests
-def test_configure_cross_validation():
-    """
-    Test configure pandora correlator cross validation
-    """
-
-    pandora_config = {
-        "input": {"nodata_left": "NaN", "nodata_right": "NaN"},
-        "pipeline": {
-            "right_disp_map": {"method": "accurate"},
-            "matching_cost": {
-                "matching_cost_method": "census",
-                "window_size": 5,
-                "subpix": 1,
-            },
-            "optimization": {
-                "optimization_method": "sgm",
-                "penalty": {
-                    "P1": 8,
-                    "P2": 24,
-                    "p2_method": "constant",
-                    "penalty_method": "sgm_penalty",
-                },
-                "overcounting": False,
-                "min_cost_paths": False,
-            },
-            "disparity": {
-                "disparity_method": "wta",
-                "invalid_disparity": "NaN",
-            },
-            "refinement": {"refinement_method": "vfit"},
-            "filter": {"filter_method": "median", "filter_size": 3},
-        },
-    }
-
-    # test 1, validation as input already
-    conf_with_validation = copy.deepcopy(pandora_config)
-    conf_with_validation["pipeline"].update(
-        {"validation": {"validation_method": "cross_checking"}}
-    )
-    pandora_loader = PandoraLoader(
-        conf=conf_with_validation, use_cross_validation=False
-    )
-    corr_config = pandora_loader.get_conf()
-    assert "validation" in corr_config["pipeline"]
-
-    # test 2: no validation as input, add it
-    pandora_loader = PandoraLoader(
-        conf=copy.deepcopy(pandora_config), use_cross_validation=True
-    )
-    corr_config = pandora_loader.get_conf()
-    assert "validation" in corr_config["pipeline"]
-
-    # test 3: no validation as input, do not add it
-    pandora_loader = PandoraLoader(
-        conf=copy.deepcopy(pandora_config), use_cross_validation=False
-    )
-    corr_config = pandora_loader.get_conf()
-    assert "validation" not in corr_config["pipeline"]
 
 
 @pytest.mark.unit_tests

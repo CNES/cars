@@ -58,7 +58,6 @@ class PandoraLoader:
         perf_eta_max_ambiguity=0.99,
         perf_eta_max_risk=0.25,
         perf_eta_step=0.04,
-        use_cross_validation=False,
     ):
         """
         Init function of PandoraLoader
@@ -71,11 +70,8 @@ class PandoraLoader:
         :type conf: dict
         :param method_name: name of method to use
         :param performance_map_conf: true if generate performance maps
-        :param use_cross_validation: true to add crossvalidation
 
         """
-        if method_name is None:
-            method_name = "census_sgm"
 
         self.pandora_config = None
 
@@ -145,13 +141,6 @@ class PandoraLoader:
                 "confidence_method": "interval_bounds",
             }
         }
-        # Cross validation
-        cross_validation_conf = {
-            "validation": {
-                "validation_method": "cross_checking_accurate",
-                "cross_checking_threshold": 1.0,
-            }
-        }
 
         confidences = {}
         if generate_performance_map:
@@ -185,10 +174,6 @@ class PandoraLoader:
         conf["pipeline"] = overload_pandora_conf_with_confidence(
             conf["pipeline"], confidences
         )
-
-        # update with cross validation
-        if use_cross_validation and "validation" not in conf["pipeline"]:
-            conf["pipeline"].update(cross_validation_conf)
 
         if generate_confidence_intervals:
             # To ensure the consistency between the disparity map
