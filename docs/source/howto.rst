@@ -26,7 +26,7 @@ Example files are available here: https://intelligence.airbus.com/imagery/sample
 Maxar WorldView example files
 -----------------------------
 
-| Example files are available on AWS S3 through the SpaceNet challenge here: s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/.
+| Example files are available on AWS S3 through the SpaceNet challenge here: `s3://spacenet-dataset/Hosted-Datasets/MVS_dataset/WV3/PAN/`
 | You need to install `aws-cli <https://github.com/aws/aws-cli>`_:
 
 .. code-block:: console
@@ -104,6 +104,7 @@ For example, if you want to monitor the computation of a CARS run:
 
 .. _make_a_simple_pan_sharpening:
 
+
 Make a simple pan sharpening
 ----------------------------
 
@@ -120,6 +121,24 @@ It can be recommended to apply a P+XS pansharpening with `OTB`_.
     docker run -w /data -v "$(pwd)"/data:/data --entrypoint=/bin/bash  cnes/cars otbcli_BundleToPerfectSensor -inp /data/image.tif -inxs /data/color.tif -out /data/color_pxs.tif
 
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook-8.0/C++/UserGuide.html#image-data-representation
+
+
+Convert RGB image to panchromatic image
+--------------------------------------
+
+CARS only uses panchromatic images for processing.
+
+If you have a multi-spectral image, you'll need to extract a single band to use, or convert it to a panchromatic image before using it with CARS.
+
+The line below use `"Grayscale Using Luminance" <https://en.wikipedia.org/wiki/Grayscale#Luma_coding_in_video_systems>`_ expression with `OTB BandMath <https://www.orfeo-toolbox.org/CookBook/Applications/app_BandMath.html>`_
+
+
+.. code-block:: console
+
+    otbcli_BandMath -il image.tif -out image_panchromatic.tif -exp "(0.2126 * im1b1 + 0.7152 * im1b2 + 0.0722 * im1b3)"
+
+
+
 
 .. _make_a_water_mask:
 
@@ -141,7 +160,7 @@ See next section to apply a gdal_translate to convert the mask with 1bit image s
 Convert image to binary image
 -----------------------------
 
-To translate single image or multiband image with several nbits per band to 1bit per band, it can be recommended to use gdal_translate as follows:
+To translate single image or multiband image with several nbits per band to 1bit per band, it can be recommended to use `gdal_translate <https://gdal.org/en/latest/programs/gdal_translate.html>`_ as follows:
 
 .. code-block:: console
 
@@ -171,7 +190,7 @@ Post process output
 Merge Laz files
 ---------------
 
-CARS generates several laz files corresponding to the tiles processed.
+CARS generates several `laz files <https://docs.fileformat.com/gis/laz/>`_ corresponding to the tiles processed.
 Merge can be done with `laszip`_. 
 
 To merge them:
