@@ -2,9 +2,8 @@ Mask and Classification Usage
 =============================
 
 | Photogrammetry is a technique that cannot reproduce altitude on water. This technique also has difficulties for moving elements or in shaded areas.
-| For this reason, it is possible to mask out areas or apply ad hoc processing to aid the matching stage (see :ref:`mask_and_classification_usage`).
+| For this reason, it is possible to mask out areas or apply ad hoc processing to aid the matching stage.
 
-.. _mask_and_classification_usage:
 Masks
 -----
 
@@ -23,4 +22,4 @@ Classification
 | Please, see the section :ref:`convert_image_to_binary_image` to make a multiband binary image with 1 bit per band.
 
 | All non-zeros values of the classification image will be considered as invalid data.
-| The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`configuration`.
+| The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`configuration`..

@@ -49,7 +49,8 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
     --full                Fill all default values
     --check               Check inputs
 
-Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the parameters used during execution and can be used as an input configuration file to re-run cars.
+Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the execution used
+parameters and can be used as an input configuration file to re-run cars.
 
 .. _configuration:
 
@@ -79,10 +80,10 @@ The structure follows this organisation:
 
    .. tab:: Inputs
 
-    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Point Clouds:
+    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Depth Maps:
 
-    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds" pipelines.
-    * Point Clouds: used in  "dense_point_clouds_to_dense_dsm" pipeline.
+    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps" pipelines.
+    * Depth Maps: used in  "dense_depth_maps_to_dense_dsm" pipeline.
 
 
     .. tabs::
@@ -96,29 +97,15 @@ The structure follows this organisation:
             +============================+=====================================================================+=======================+======================+==========+
             | *sensor*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes      |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                     | EPSG code                                                           | int, should be > 0    | None                 | No       |
+            | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *initial_elevation*        | Path to SRTM tiles (see :ref:`plugins` section for details)         | string                | None                 | No       |
             |                            | If not provided, internal dem is generated with sparse matches      |                       |                      |          |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *use_endogenous_elevation* | Use endogenous eleveation intead of provided initial_elevation      | bool                  | False                | No       |
-            |                            | when endogenous elevation is available                              |                       |                      |          |
-            |                            | If no initial_elevation, endogenous elevation is always used        |                       |                      |          |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
             | *roi*                      | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
             +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *debug_with_roi*           | Use ROI with the tiling of the entire image                         | Boolean               | False                | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *check_inputs*             | Check inputs consistency (to be deprecated and changed)             | Boolean               | False                | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *use_epipolar_a_priori*    | Active epipolar a priori                                            | bool                  | False                | Yes      |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epipolar_a_priori*        | Provide epipolar a priori information (see section below)           | dict                  |                      | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *terrain_a_priori*         | Provide terrain a priori information (see section below)            | dict                  |                      | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+            (*) `pairing` is required If there are more than two sensors (see pairing section below)
 
             **Sensor**
 
@@ -189,6 +176,8 @@ The structure follows this organisation:
                     }
                 }
 
+            This attribute is required when there are more than two input sensor images. If only two images ares provided, the pairing can be deduced by cars, considering the first image defined as the left image and second image as right image.
+
             **Initial elevation**
 
             The attribute contains all informations about initial elevation: dem path, geoid and default altitude
@@ -196,16 +185,14 @@ The structure follows this organisation:
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
             | Name                  | Description                    | Type   | Default value        | Required                   |
             +=======================+================================+========+======================+============================+
-            | *dem_path*            | Path to DEM tiles              | string | None                 | No                         |
+            | *dem*                 | Path to DEM tiles              | string | None                 | No                         |
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
             | *geoid*               | Geoid path                     | string | Cars internal geoid  | No                         |
-            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
-            | *default_alt*         | Default altitude               | int    | 0                    | No                         |
             +-----------------------+--------------------------------+--------+----------------------+----------------------------+
 
             If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96).
 
-            `default_alt` is the default height above ellipsoid when there is no DEM available (no coverage for some points or pixels with no_data in the DEM tiles)
+            When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
 
             Initial elevation can be provided as a dictionary with a field for each parameter, for example:
 
@@ -215,9 +202,8 @@ The structure follows this organisation:
                 {
                 "inputs": {
                         "initial_elevation": {
-                            "dem_path": "/path/to/srtm.tif",
-                            "geoid": "/path/to/geoid.tif",
-                            "default_alt": 30
+                            "dem": "/path/to/srtm.tif",
+                            "geoid": "/path/to/geoid.tif"
                         }
                     }
                 }
@@ -237,74 +223,28 @@ The structure follows this organisation:
 
             Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
 
-            **Epipolar a priori**
-
-            The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
-            particularly for the sensor_to_full_resolution_dsm pipeline.
-            The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
-            However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
-            So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
-            that contains the epipolar_a_priori information for each sensor image pairs.
-            The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
-
-            For each sensor images, the epipolar a priori are filled as following:
-
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | Name                  | Description                                                 | Type   | Default value  | Required                         |
-            +=======================+=============================================================+========+================+==================================+
-            | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
-            +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-
-            .. note::
-
-                The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
-                The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
+      .. tab:: Depth Maps inputs
 
 
-            **Terrain a priori**
-
-            The terrain a priori is used at the same time that epipolar a priori.
-            If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
-            The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
-
-            The terrain a priori is initially populated with DEM information.
-
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | Name           | Description                                                 | Type   | Default value  | Required                         |
-            +================+=============================================================+========+================+==================================+
-            | *dem_median*   | DEM generated with median function                          | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
-            +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
-            
-
-        .. tab:: Point Clouds inputs
+          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+          | Name                    | Description                                                         | Type                  | Default value        | Required |
+          +=========================+=====================================================================+=======================+======================+==========+
+          | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
+          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+          | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
+          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
 
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | Name                    | Description                                                         | Type                  | Default value        | Required |
-            +=========================+=====================================================================+=======================+======================+==========+
-            | *point_clouds*          | Point Clouds to rasterize                                           | dict                  | No                   | Yes      |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *epsg*                  | EPSG code to use for DSM                                            | int, should be > 0    | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
-            +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
+            **Depth Maps**
 
-            **Point Clouds**
-
-            For each point cloud, give a particular name (what you want):
+            For each depth map, give a particular name (what you want):
 
             .. code-block:: json
 
                 {
-                    "point_clouds": {
-                        "my_name_for_this_point_cloud":
+                    "depth_maps": {
+                        "my_name_for_this_depth_map":
                         {
                             "x" : "path_to_x.tif",
                             "y" : "path_to_y.tif",
@@ -316,40 +256,39 @@ The structure follows this organisation:
                             "confidence": {
                                 "confidence_name1": "path_to_confidence1.tif",
                                 "confidence_name2": "path_to_confidence2.tif",
-                                "confidence_parformance_map": "path_to_performance_map.tif",
-                            }
-                            "epsg": "point_cloud_epsg"
+                            },
+                            "performance_map": "path_to_performance_map.tif",
+                            "epsg": "depth_map_epsg"
                         }
-                    },
-                    "epsg": 32644
+                    }
                 }
 
-            These input files can be generated with the sensors_to_dense_point_clouds pipeline, or sensors_to_dense_dsm pipeline activating the saving of point clouds in `triangulation` application.
+            These input files can be generated with the `sensors_to_dense_depth_maps` pipeline, or `sensors_to_dense_dsm` pipeline activating the saving of depth_map using `save_intermediate_data` in the `triangulation` application.
 
             .. note::
 
-                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_disparity_map` of `dense_matching` application must be activated in sensors_to_dense_point_clouds pipeline. The output performance map is `epi_confidence_performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_point_clouds_to_dense_dsm pipeline to save the performance map.
+                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_intermediate_data` of `dense_matching` application must be activated in `sensors_to_dense_depth_maps` pipeline. The output performance map is `performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_depth_maps_to_dense_dsm pipeline to save the performance map.
 
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
             | Name             | Description                                                       | Type           | Default value | Required |
             +==================+===================================================================+================+===============+==========+
-            | *x*              | Path to the x coordinates of point cloud                          | string         |               | Yes      |
+            | *x*              | Path to the x coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *y*              | Path to the y coordinates of point cloud                          | string         |               | Yes      |
+            | *y*              | Path to the y coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *z*              | Path to the z coordinates of point cloud                          | string         |               | Yes      |
+            | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *color*          | Color of point cloud                                              | string         |               | Yes      |
+            | *color*          | Color of depth map                                                | string         |               | Yes      |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *mask*           | Validity mask of point cloud : 0 values are considered valid data | string         |               | No       |
+            | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *classification* | Classification of point cloud                                     | string         |               | No       |
+            | *classification* | Classification of depth map                                       | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *filling*        | Filling map of point cloud                                        | string         |               | No       |
+            | *filling*        | Filling map of depth map                                          | string         |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *confidence*     | Dict of paths to the confidences of point cloud                   | dict           |               | No       |
+            | *confidence*     | Dict of paths to the confidences of depth map                     | dict           |               | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *epsg*           | Epsg code of point cloud                                          | int            | 4326          | No       |
+            | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
             +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
 
     **Region Of Interest (ROI)**
@@ -389,7 +328,7 @@ The structure follows this organisation:
             }
         }
 
-    If the *debug_with_roi* parameter is enabled, the tiling of the entire image is kept but only the tiles intersecting 
+    If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting 
     the ROI are computed.
 
     MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
@@ -443,7 +382,10 @@ The structure follows this organisation:
                         }
                     }
                 },
-                 "debug_with_roi": true,
+            }
+            "advanced":
+            {
+                "debug_with_roi": true
             }
         }
 
@@ -611,7 +553,7 @@ The structure follows this organisation:
     +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
     | Name           | Description           | Type   | Default value                      | Available values                                                                                                                                                                                     | Required |
     +================+=======================+========+====================================+======================================================================================================================================================================================================+==========+
-    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm_no_merging"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_point_clouds", "dense_point_clouds_to_dense_dsm", "sensors_to_dense_dsm_no_merging", "dense_point_clouds_to_dense_dsm_no_merging" | False    |
+    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm_no_merging"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps", "dense_depth_maps_to_dense_dsm", "sensors_to_dense_dsm_no_merging", "dense_depth_maps_to_dense_dsm_no_merging"       | False    |
     +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
 
 
@@ -702,9 +644,9 @@ The structure follows this organisation:
                 8. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
 
-        .. tab:: Sensor to Dense Point Clouds
+        .. tab:: Sensor to Dense Depth Maps
 
-            **Name**: "sensors_to_dense_point_clouds"
+            **Name**: "sensors_to_dense_depth_maps"
 
             **Description**
 
@@ -724,9 +666,9 @@ The structure follows this organisation:
                 8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
 
 
-        .. tab:: Dense Point Clouds to Dense DSM
+        .. tab:: Dense Dense Depth Maps to Dense DSM
 
-            **Name**: "dense_point_clouds_to_dense_dsm"
+            **Name**: "dense_depth_maps_to_dense_dsm"
 
             **Description**
 
@@ -735,13 +677,13 @@ The structure follows this organisation:
                 :align: center
 
 
-            1. Merge points clouds coming from each stereo pairs.
+            1. Merge depth maps coming from each stereo pairs.
             2. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
             3. Rasterize: Project these altitudes on a regular grid as well as the associated color.
 
-        .. tab:: Dense Point Clouds to Dense DSM no merging
+        .. tab:: Dense Depth Maps to Dense DSM no merging
 
-            **Name**: "dense_point_clouds_to_dense_dsm_no_merging"
+            **Name**: "dense_depth_maps_to_dense_dsm_no_merging"
 
             **Description**
 
@@ -803,15 +745,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name            | Description                                   | Type    |     Available values              | Default value | Required |
-            +=================+===============================================+=========+===================================+===============+==========+
-            | method          | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | epi_step        | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_grids      | Save the generated grids                      | boolean |                                   | false         | No       |
-            +-----------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | Name                    | Description                                   | Type    |     Available values              | Default value | Required |
+            +=========================+===============================================+=========+===================================+===============+==========+
+            | method                  | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | epi_step                | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+            | save_intermediate_data  | Save the generated grids                      | boolean |                                   | false         | No       |
+            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             **Example**
 
@@ -834,19 +776,17 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | Name                | Description                                            | Type    | Available value | Default value | Required |
-            +=====================+========================================================+=========+=================+===============+==========+
-            | method              | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | strip_height        | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | step                | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | save_epipolar_image | Save the generated images in output folder             | boolean |                 | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | save_epipolar_color | Save the generated images (only if color is available) | boolean |                 | false         | No       |
-            +---------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | Name                   | Description                                            | Type    | Available value | Default value | Required |
+            +========================+========================================================+=========+=================+===============+==========+
+            | method                 | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | strip_height           | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | step                   | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+            | save_intermediate_data | Save epipolar images and color                         | boolean |                 | false         | No       |
+            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
 
             **Example**
 
@@ -906,7 +846,7 @@ The structure follows this organisation:
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | save_matches                         | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
+            | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
             | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
             +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -946,6 +886,8 @@ The structure follows this organisation:
             * median
             * min
             * max
+
+            The DEMs are generated in the application dump directory
 
             **Configuration**
 
@@ -1091,7 +1033,7 @@ The structure follows this organisation:
                   - 
                   - 0.6
                   - No
-                * - save_disparity_map
+                * - save_intermediate_data
                   - Save disparity map and disparity confidence
                   - boolean
                   - 
@@ -1134,7 +1076,7 @@ The structure follows this organisation:
 
                 * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
                 * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
-                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_disparity_map parameter should be activated.
+                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_intermediate_data parameter should be activated.
 
         
         .. tab:: Dense matches filling
@@ -1153,7 +1095,7 @@ The structure follows this organisation:
             +=====================================+=================================+=========+=========================+====================+==========+
             | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | save_disparity_map                  | Save disparity map              | boolean |                         | False              | No       |
+            | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
             +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
 
 
@@ -1219,12 +1161,12 @@ The structure follows this organisation:
                         "dense_matches_filling.1": {
                             "method": "plane",
                             "classification": ["water"],
-                            "save_disparity_map": true
+                            "save_intermediate_data": true
                         },
                         "dense_matches_filling.2": {
                             "method": "zero_padding",
                             "classification": ["cloud", "snow"],
-                            "save_disparity_map": true
+                            "save_intermediate_data": true
                         }
                     },
 
@@ -1239,15 +1181,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | Name              | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
-            +===================+====================================================================================================================+=========+======================================+==============================+==========+
-            | method            | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | snap_to_img1      | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | save_points_cloud | Save points cloud                                                                                                  | boolean |                                      | false                        | No       |
-            +-------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | Name                   | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
+            +========================+====================================================================================================================+=========+======================================+==============================+==========+
+            | method                 | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+            | save_intermediate_data | Save depth map                                                                                                     | boolean |                                      | false                        | No       |
+            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
 
             **Example**
 
@@ -1256,7 +1198,7 @@ The structure follows this organisation:
                 "applications": {
                     "triangulation": {
                         "method": "line_of_sight_intersection",
-                        "use_geoid_alt": true
+                        "snap_to_img1": true
                     }
                 },
 
@@ -1272,17 +1214,15 @@ The structure follows this organisation:
 
             **Configuration**
 
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                         | Description                             | Type    | Available value            | Default value              | Required |
-            +==============================+=========================================+=========+============================+============================+==========+
-            | method                       | Method for fusion                       | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_laz     | Save points clouds as laz format        | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_as_csv     | Save points clouds as csv format        | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_points_cloud_by_pair    | Enable points cloud saving by pair      | boolean |                            | false                      | No       |
-            +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | Name                         | Description                              | Type    | Available value            | Default value              | Required |
+            +==============================+==========================================+=========+============================+============================+==========+
+            | method                       | Method for fusion                        | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                            | false                      | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                            | false                      | No       |
+            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
 
             **Example**
 
@@ -1292,16 +1232,15 @@ The structure follows this organisation:
                     "applications": {
                         "point_cloud_fusion": {
                             "method": "mapping_to_terrain_tiles",
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_as_csv": true,
-                            "save_points_cloud_by_pair": true,
+                            "save_intermediate_data": true,
+                            "save_by_pair": true,
                         }
                     },
 
             .. note::
-                When `save_points_cloud_as_laz` is activated, multiple Laz files are saved, corresponding to each processed terrain tiles.
+                When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
                 Please, see the section :ref:`merge_laz_files` to merge them into one single file.
-                `save_points_cloud_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
+                `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
 
         .. tab:: Point Cloud outliers removing
 
@@ -1318,11 +1257,9 @@ The structure follows this organisation:
             +==============================+==========================================+=========+===================================+===============+==========+
             | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_laz     | Save points clouds as laz format         | boolean |                                   | false         | No       |
+            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_as_csv     | Save points clouds as csv format         | boolean |                                   | false         | No       |
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_points_cloud_by_pair    | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
+            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
             +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
             If method is *statistical*:
@@ -1374,14 +1311,13 @@ The structure follows this organisation:
                         "point_cloud_outliers_removing.1": {
                             "method": "small_components",
                             "on_ground_margin": 10,
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_as_csv": false
+                            "save_intermediate_data": true
                         },
                         "point_cloud_outliers_removing.2": {
                             "method": "statistical",
                             "k": 10,
-                            "save_points_cloud_as_laz": true,
-                            "save_points_cloud_by_pair": true,
+                            "save_intermediate_data": true,
+                            "save_by_pair": true,
                         }
                     },
 
@@ -1429,12 +1365,6 @@ The structure follows this organisation:
                   - 
                   - None
                   - No
-                * - resolution
-                  - Altitude grid step (dsm)
-                  - float
-                  - should be > 0
-                  - 0.5
-                  - No
                 * - dsm_no_data
                   - 
                   - int
@@ -1461,67 +1391,8 @@ The structure follows this organisation:
                   - 
                   - 255
                   - 
-                * - save_color
-                  - Save color ortho-image
-                  - boolean
-                  - 
-                  - true
-                  - No
-                * - save_stats
-                  - 
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_mask
-                  - Save mask raster
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_classif
-                  - Save classification mask raster
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_dsm
-                  - Save dsm
-                  - boolean
-                  - 
-                  - true
-                  - No
-                * - save_confidence
-                  - Save all the disparity confidence
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_intervals
-                  - | Save the propagated height confidence intervals
-                    | Confidence disparity intervals must have been
-                    | computed during the dense matching step.
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_source_pc
-                  - Save mask with data source
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - save_filling
-                  - Save mask with filling information
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - compute_all
-                  - | Compute all layers even
-                    | if one or more layers
-                    | are not saved (color
-                    | , dsm, msk..)
+                * - save_intermediate_data
+                  - Save all layers from input point cloud in application `dump_dir`
                   - boolean
                   - 
                   - false
@@ -1538,30 +1409,148 @@ The structure follows this organisation:
                         }
                     },
 
+   .. tab:: Advanced parameters
+
+
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | Name                       | Description                                                             | Type                  | Default value        | Required |
+        +============================+=========================================================================+=======================+======================+==========+
+        | *save_intermediate data*   | Save intermediate data for all applications                             | bool                  | False                | Yes      |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *use_epipolar_a_priori*    | Active epipolar a priori                                                | bool                  | False                | Yes      |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *epipolar_a_priori*        | Provide epipolar a priori information (see section below)               | dict                  |                      | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *terrain_a_priori*         | Provide terrain a priori information (see section below)                | dict                  |                      | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *debug_with_roi*           | Use input ROI with the tiling of the entire image (see Inputs section)  | Boolean               | False                | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+        **Save intermediate data**
+
+        The `save_intermediate_data` flag can be used to activate and deactivate the saving of the possible output of applications.
+
+        It is set in the `advanced` category and can be overloaded in each application separately. It default to false, meaning that no intermediate product in saved). Intermediate data are saved in the `dump_dir` folder found in cars output directory, with a subfolder corresponding to each application.
+
+        For exemple setting `save_intermediate_data` to `true` in `advanced` and to `false` in `application/point_cloud_rasterization` will activate product saving in all applications excepting `point_cloud_rasterization`. Conversely, setting it to `false` in `advanced` and to `true` in `application/point_cloud_rasterization`  will only save rasterization outputs.
+
+        Intermediate data refers to all files that are not part of an output product. Files that compose an output product will not be found in the application dump directory. For exemple if `dsm` is requested as output product, the `dsm.tif` files and all activated dsm auxiliary files will not be found in `rasterization` dump directory. This directory will still contain the files generated by the `rasterization` application that are not part of the `dsm` product.
+
+
+        **Epipolar a priori**
+
+        The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+        particularly for the sensor_to_full_resolution_dsm pipeline.
+        The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
+        However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
+        So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
+        that contains the epipolar_a_priori information for each sensor image pairs.
+        The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
+
+        For each sensor images, the epipolar a priori are filled as following:
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | Name                  | Description                                                 | Type   | Default value  | Required                         |
+        +=======================+=============================================================+========+================+==================================+
+        | *grid_correction*     | The grid correction coefficients                            | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *disparity_range*     | The disparity range [disp_min, disp_max]                    | list   |                | if use_epipolar_a_priori is True |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+
+        .. note::
+
+            The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
+            The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
+
+
+        **Terrain a priori**
+
+        The terrain a priori is used at the same time that epipolar a priori.
+        If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
+        The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
+
+        The terrain a priori is initially populated with DEM information.
+
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | Name           | Description                                                 | Type   | Default value  | Required                         |
+        +================+=============================================================+========+================+==================================+
+        | *dem_median*   | DEM generated with median function                          | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *dem_min*      | DEM generated with min function                             | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        | *dem_max*      | DEM generated with max function                             | str    |                | if use_epipolar_a_priori is True |
+        +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
+        
+
+          **Example**
+
+          .. code-block:: json
+
+              "advanced": {
+                  "save_intermediate_data": true
+                  }
+              },
+
    .. tab:: Outputs
 
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
-        | Name           | Description                                                 | Type           | Default value  | Required |
-        +================+=============================================================+================+================+==========+
-        | out_dir        | Output folder where results are stored                      | string         | No             | No       |
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
-        | dsm_basename   | base name for dsm                                           | string         | "dsm.tif"      | No       |
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
-        | geoid          | output geoid                                                | bool or string | False          | No       |
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
-        | color_basename | base name for  ortho-image                                  | string         | "color.tif     | No       |
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
-        | info_basename  | base name for file containing information about computation | string         | "content.json" | No       |
-        +----------------+-------------------------------------------------------------+----------------+----------------+----------+
+
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | Name             | Description                                                 | Type               | Default value        | Required |
+        +==================+=============================================================+====================+======================+==========+
+        | *directory*      | Output folder where results are stored                      | string             | No                   | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *product_level*  | Output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *resolution*     | Output DSM grid strp (only for dsm product level)           | float              | 0.5                  | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *auxiliary*      | Selection of additional files in products                   | dict               | See below            | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *epsg*           | EPSG code                                                   | int, should be > 0 | None                 | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *geoid*          | Output geoid                                                | bool or string     | False                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+        | *save_by_pair*   | save output point clouds by pair                            | bool               | False                | No       |
+        +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
+
 
         **Output contents**
 
         The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
 
-        * the dsm
-        * color image (if *color image* has been given)
-        * information json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
-        * subfolder for each defined pair which can contains intermediate data
+        * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
+        * the dump directory (`dump_dir`) containing intermediate data for all applications
+        * metadata json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
+        * logs folder containing Cars log and profiling information
+
+
+        **Output products**
+
+        The `product_level` attribute defines which product should be produced by cars. There are three available product type: `depth_map`, `point_cloud` and `dsm`. A single product can be requested by setting the parameter as string, several products can be requested by providing a list. For `depth_map` and `dsm`, additional auxiliary files can be produced with the product by setting the `auxiliary` dictionary attribute, it contains the following attributes:
+
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | Name                  | Description                                                 | Type   | Default value  | Required  |
+        +=======================+=============================================================+========+================+===========+
+        | *color*               | Save output color (dsm/depth_map)                           | bool   | True           | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *mask*                | Save output mask (dsm/depth map)                            | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *classification*      | Save output classification (dsm/depth_map)                  | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *performance_map*     | Save output performance map (dsm)                           | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *contributing_pair*   | Save output contributing pair (dsm)                         | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+        | *filling*             | Save output filling (dsm)                                   | bool   | False          | No        |
+        +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
+
+        Note that not all rasters associated to the DSM that cars can produce are available in the output product auxiliary data. For exemple, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `generate_confidence_intervals` is activated in the `dense_matching` application (to compute the confidence) and `save_intermediate_data` is activated in the `rasterization` application configuration (to write it on disk).
+
+        **Point cloud output**
+
+        The point cloud output product consists of a collection of laz files, each containing a tile of the point cloud. If the `save_by_pair` option is set, laz will be produced for each sensor pair defined in input pairing.
+
+        The point cloud found in the product the highest level point cloud produced by cars. For exemple, if outlier removing and point cloud denoising are deactivated, the point cloud will correspond to the output of point cloud fusion. If only the first application of outlier removing is activated, this will be the output point cloud.
 
         **Geoid**
 
@@ -1610,7 +1599,7 @@ This section describes optional plugins possibilities of CARS.
                 },
                 "pairing": [["one", "two"]],
                 "initial_elevation": {
-                    "dem_path": "path/to/srtm_file.tif"
+                    "dem": "path/to/srtm_file.tif"
                   },
               },
               "geometry_plugin": "SharelocGeometry",

@@ -7,7 +7,7 @@ Goals
 -----
 
 The *orchestrator* is the central element of CARS concepts.
-Its role is to ensure the communication between the *computing technology*, the *applications* and the *CarsDatasets*.
+Its role is to ensure the communication between the computing technology,the *applications* and *CarsDatasets*.
 
 Details
 -------
@@ -73,7 +73,7 @@ The cluster is the component which allows to realize the calculations.
 * `start_tasks` to compute each task that have been declared.
 * `future_iterator`: iterate over the `future` objects
 
-There are already 3 plugins, each one representing a mode:
+There are already 4 plugins, each one representing a mode:
 
 * *dask*
 
