@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the bulldozer dsm filling application class.
+This module contains the bulldozer dsm filling application class.
 """
 
 import logging
