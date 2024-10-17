@@ -22,6 +22,7 @@
 This module contains the bulldozer dsm filling application class.
 """
 
+import contextlib
 import logging
 import os
 import shutil
@@ -145,9 +146,9 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 orchestrator.get_conf()["mode"] == "multiprocessing"
                 or orchestrator.get_conf()["mode"] == "local_dask"
             ):
-                bull_conf[
-                    "nb_max_workers"
-                ] = orchestrator.get_conf()["nb_workers"]
+                bull_conf["nb_max_workers"] = orchestrator.get_conf()[
+                    "nb_workers"
+                ]
 
         bull_conf_path = os.path.join(dump_dir, "bulldozer_config.yaml")
         with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
@@ -272,12 +273,22 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
 
         try:
             try:
-                dsm_to_dtm(bull_conf_path)
+                # suppress prints in bulldozer by redirecting stdout&stderr
+                with open(os.devnull, "w", encoding="utf8") as devnull:
+                    with contextlib.redirect_stdout(
+                        devnull
+                    ), contextlib.redirect_stderr(devnull):
+                        dsm_to_dtm(bull_conf_path)
             except Exception:
                 logging.info(
                     "Bulldozer failed on its first execution. Retrying"
                 )
-                dsm_to_dtm(bull_conf_path)
+                # suppress prints in bulldozer by redirecting stdout&stderr
+                with open(os.devnull, "w", encoding="utf8") as devnull:
+                    with contextlib.redirect_stdout(
+                        devnull
+                    ), contextlib.redirect_stderr(devnull):
+                        dsm_to_dtm(bull_conf_path)
         except Exception:
             logging.error(
                 "Bulldozer failed on its second execution."
