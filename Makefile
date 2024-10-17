@@ -86,15 +86,6 @@ install-gdal: install-deps-gdal ## install cars (not editable) with dev, docs, n
 	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
 	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
 
-.PHONY: install-gdal-dev
-install-gdal-dev: install-deps-gdal ## install cars dev (editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
-	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
-	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
-	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
-	@echo "CARS ${CARS_VERSION} installed in dev mode in virtualenv ${CARS_VENV}"
-	@echo "CARS venv usage: source ${CARS_VENV}/bin/activate; cars -h"
-
 .PHONY: install-pandora-mccnn
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
 	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
@@ -235,7 +226,6 @@ clean: clean-venv clean-build clean-precommit clean-pyc clean-test clean-docs cl
 .PHONY: clean-venv
 clean-venv:
 	@echo "+ $@"
-	@echo ${CARS_VENV}
 	@rm -rf ${CARS_VENV}
 
 .PHONY: clean-build

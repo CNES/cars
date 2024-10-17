@@ -1,8 +1,9 @@
+# Use the same base image
 # hadolint ignore=DL3007
 FROM orfeotoolbox/otb:latest
 LABEL maintainer="CNES"
 
-# Dependencies packages
+# Install dependencies
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     git \
@@ -13,22 +14,25 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     python3-pip \
     python3-numpy \
     python3-virtualenv \
+    make \
     && rm -rf /var/lib/apt/lists/*
 
-# copy and install cars with mccnn plugin capabilities installed (but not configured by default)
-WORKDIR /cars
-COPY . /cars/
+# Set up working directory
+WORKDIR /app
 
-# Install fiona and rasterio with gdal / proj from otb
-RUN make clean && make install-gdal
+# Create a virtual environment
+RUN python3 -m venv /app/venv
 
-# source venv/bin/activate in docker mode
-ENV VIRTUAL_ENV='/cars/venv'
+# Activate the virtual environment
+ENV VIRTUAL_ENV='/app/venv'
 ENV PATH="$VIRTUAL_ENV/bin:$PATH"
 
-# hadolint ignore=DL3013,SC2102
-RUN python -m pip cache purge
+# Copy only necessary files for installation
+COPY . /app/cars
+
+WORKDIR /app/cars
+# Install CARS using make
+RUN make clean && make install-dev
 
 # launch cars
-ENTRYPOINT ["cars"]
-CMD ["-h"]
+CMD ["/bin/bash"]
