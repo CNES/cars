@@ -22,4 +22,4 @@ Classification
 | Please, see the section :ref:`convert_image_to_binary_image` to make a multiband binary image with 1 bit per band.
 
 | All non-zeros values of the classification image will be considered as invalid data.
-| The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`configuration`..
+| The classification can be used in each application by band name list selection parameter. See application ``classification`` parameter :ref:`configuration`.

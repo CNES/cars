@@ -370,6 +370,7 @@ class SensorSparseDsmPipeline(PipelineTemplate):
                     tile_width=None,
                     tile_height=None,
                     add_color=False,
+                    add_classif=False,
                 )
 
                 # Run epipolar sparse_matching application

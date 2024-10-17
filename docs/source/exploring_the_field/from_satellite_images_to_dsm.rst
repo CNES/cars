@@ -64,8 +64,8 @@ Generate a DSM step by step
 +--------------------------+---------------------------------------------+
 
 | For each point in one image, the software searches the corresponding point in the other image.
-| The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match (matching error due to moving objects, shadows etc.).
-
+| The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match, which are represented as transparent pixels in the image. These matching errors can occur due to various reasons such as moving objects, shadows, occlusions, or areas with insufficient texture.
+| The transparent pixels indicate areas where the matching algorithm couldn't find a reliable correspondence between the two images, highlighting regions of uncertainty in the matching process.
 
 .. _matching:
 
@@ -81,6 +81,7 @@ Generate a DSM step by step
 
 | The displacements obtained are transformed into positions in both images.
 | This allows to deduce lines of sight. The intersection of these lines gives a point in space: longitude, latitude, altitude (see :ref:`below<triangulation>`).
+| A line of sight is an imaginary straight line from the camera's perspective through a specific point in the image, extending into 3D space. It represents all possible 3D positions that could have produced that image point.
 
 .. _triangulation:
 
@@ -113,8 +114,6 @@ Initial Input Digital Elevation Model
 
 For now, CARS uses an initial input Digital Elevation Model (:term:`DEM`) which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
 Any geotiff file can be used.
-
-For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to the processed zone can be used through `otbcli_DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook-7.4/Applications/app_DownloadSRTMTiles.html>`_.
 
 The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 

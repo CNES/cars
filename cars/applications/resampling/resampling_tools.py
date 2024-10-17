@@ -63,6 +63,7 @@ def epipolar_rectify_images(
     nodata1=0,
     nodata2=0,
     add_color=True,
+    add_classif=True,
 ):
     """
     Resample left and right images, with color on left
@@ -184,28 +185,29 @@ def epipolar_rectify_images(
 
     # resample the mask images
     left_classif_dataset = None
-    if classif1:
-        left_classif_dataset = resample_image(
-            classif1,
-            grid1,
-            [epipolar_size_x, epipolar_size_y],
-            region=left_region,
-            band_coords=cst.BAND_CLASSIF,
-            interpolator_img=interpolator_classif,
-            interpolator_mask=interpolator_mask,
-        )
-
     right_classif_dataset = None
-    if classif2:
-        right_classif_dataset = resample_image(
-            classif2,
-            grid2,
-            [epipolar_size_x, epipolar_size_y],
-            region=right_region,
-            band_coords=cst.BAND_CLASSIF,
-            interpolator_img=interpolator_classif,
-            interpolator_mask=interpolator_mask,
-        )
+    if add_classif:
+        if classif1:
+            left_classif_dataset = resample_image(
+                classif1,
+                grid1,
+                [epipolar_size_x, epipolar_size_y],
+                region=left_region,
+                band_coords=cst.BAND_CLASSIF,
+                interpolator_img=interpolator_classif,
+                interpolator_mask=interpolator_mask,
+            )
+
+        if classif2:
+            right_classif_dataset = resample_image(
+                classif2,
+                grid2,
+                [epipolar_size_x, epipolar_size_y],
+                region=right_region,
+                band_coords=cst.BAND_CLASSIF,
+                interpolator_img=interpolator_classif,
+                interpolator_mask=interpolator_mask,
+            )
 
     return (
         left_dataset,
