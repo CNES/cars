@@ -1424,6 +1424,43 @@ The structure follows this organisation:
                         }
                     },
 
+
+            .. tab:: DSM Filling
+
+                **Name**: "dsm_filling"
+
+                **Description**
+
+                Fill in the missing values of the DSM by using the DEM's elevation. 
+                This application replaces the existing dsm.tif. The replaced dsm.tif is 
+                saved under dump_dir/dsm_filling when save_intermediate_data is True.
+
+                Only one method is available for now: "bulldozer".
+
+                **Configuration**
+
+                +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+                | Name                         | Description                             | Type    | Available values           | Default value              | Required |
+                +==============================+=========================================+=========+============================+============================+==========+
+                | method                       | Method for filling                      | string  | "bulldozer"                | "bulldozer"                | No       |
+                +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+                | activated                    | Activates the filling                   | boolean |                            | false                      | No       |
+                +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+                | save_intermediate_data       | Saves the temporary data in dump_dir    | boolean |                            | false                      | No       |
+                +------------------------------+-----------------------------------------+---------+----------------------------+----------------------------+----------+
+
+                **Example**
+
+
+                .. code-block:: json
+
+                        "applications": {
+                            "dsm_filling": {
+                                "method": "bulldozer",
+                                "activated": true,
+                            }
+                        },
+
     .. tab:: Advanced parameters
 
 
