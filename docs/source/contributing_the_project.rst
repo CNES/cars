@@ -46,6 +46,21 @@ Particularly, it uses the following pip editable install:
 
 With this pip install mode, source code modifications directly impacts ``cars`` command line.
 
+
+Setting up a development environment with docker
+================================================
+
+To setup a development environment with docker, run the following command:
+
+.. code-block:: console
+
+    docker build -t cars-dev -f Dockerfile .
+    docker run -it  -v "$(pwd)":/app/cars  --entrypoint=/bin/bash cars-dev
+
+You're ready to use CARS, all files in the current directory are mounted in the container.
+
+
+
 Coding guide
 ============
 
@@ -55,8 +70,8 @@ Here are some rules to apply when developing a new functionality:
 * **Test**: Each new functionality shall have a corresponding test in its module's test file. This test shall, if possible, check the function's outputs and the corresponding degraded cases.
 * **Documentation**: All functions shall be documented (object, parameters, return values).
 * **Use type hints**: Use the type hints provided by the `typing` python module.
-* **Use doctype**: Follow sphinx default doctype for automatic API
-* **Quality code**: Correct project quality code errors with pre-commit automatic workflow (see below)
+* **Use doctype**: Follow sphinx default doctype for automatic API.
+* **Quality code**: Correct project quality code errors with pre-commit automatic workflow (see below).
 * **Factorization**: Factorize the code as much as possible. The command line tools shall only include the main workflow and rely on the cars python modules.
 * **Be careful with user interface upgrade:** If major modifications of the user interface or of the tool's behaviour are done, update the user documentation (and the notebooks if necessary).
 * **Logging and no print**: The usage of the `print()` function is forbidden: use the `logging` python standard module instead.
@@ -107,7 +122,7 @@ Jupyter notebooks
 
 CARS contains notebooks in tutorials directory.
 
-To generate a Jupyter kernel with CARS installation, use:
+To generate a `Jupyter kernel <https://jupyter.org/install>`_ with CARS installation, use:
 
 .. code-block:: console
 
@@ -180,7 +195,7 @@ If necessary, Black doesn’t reformat blocks that start with "# fmt: off" and e
 
 Flake8
 ------
-`Flake8`_ is a command-line utility for enforcing style consistency across Python projects. By default it includes lint checks provided by the PyFlakes project, PEP-0008 inspired style checks provided by the PyCodeStyle project, and McCabe complexity checking provided by the McCabe project. It will also run third-party extensions if they are found and installed.
+`Flake8`_ is a command-line utility for enforcing style consistency across Python projects. By default it includes lint checks provided by the `PyFlakes project <https://github.com/PyCQA/pyflakes>`_ , PEP-0008 inspired style checks provided by the `PyCodeStyle project <https://github.com/PyCQA/pycodestyle>`_ , and McCabe complexity checking provided by the `McCabe project <https://github.com/PyCQA/mccabe>`_. It will also run third-party extensions if they are found and installed.
 
 CARS ``flake8`` configuration is done in `setup.cfg <https://raw.githubusercontent.com/CNES/cars/master/setup.cfg>`_
 
