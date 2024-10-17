@@ -14,6 +14,17 @@ Getting Started
 
     pip install cars
 
+* Alternatively, you can use the provided Dockerfile to build a Docker image for CARS:
+
+.. code-block:: console
+
+    # Clone the CARS repository
+    git clone https://github.com/CNES/cars.git
+    cd cars
+
+    # Build the Docker image
+    docker build -t cars:latest .
+
 * Get and extract data samples from CARS repository:
 
 .. code-block:: console

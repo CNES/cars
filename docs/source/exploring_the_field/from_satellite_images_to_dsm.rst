@@ -64,8 +64,8 @@ Generate a DSM step by step
 +--------------------------+---------------------------------------------+
 
 | For each point in one image, the software searches the corresponding point in the other image.
-| The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match (matching error due to moving objects, shadows etc.).
-
+| The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match, which are represented as transparent pixels in the image. These matching errors can occur due to various reasons such as moving objects, shadows, occlusions, or areas with insufficient texture.
+| The transparent pixels indicate areas where the matching algorithm couldn't find a reliable correspondence between the two images, highlighting regions of uncertainty in the matching process.
 
 .. _matching:
 
@@ -81,6 +81,7 @@ Generate a DSM step by step
 
 | The displacements obtained are transformed into positions in both images.
 | This allows to deduce lines of sight. The intersection of these lines gives a point in space: longitude, latitude, altitude (see :ref:`below<triangulation>`).
+| A line of sight is an imaginary straight line from the camera's perspective through a specific point in the image, extending into 3D space. It represents all possible 3D positions that could have produced that image point.
 
 .. _triangulation:
 

@@ -49,8 +49,7 @@ Note that ``cars-starter`` script can be used to instantiate this configuration 
     --full                Fill all default values
     --check               Check inputs
 
-Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the execution used
-parameters and can be used as an input configuration file to re-run cars.
+Finally, an output ``used_conf.json`` file will be created on the output directory. This file contains all the parameters used during execution and can be used as an input configuration file to re-run cars.
 
 .. _configuration:
 
@@ -1440,7 +1439,7 @@ The structure follows this organisation:
 
         **Epipolar a priori**
 
-        The epipolar is usefull to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
+        The epipolar a priori is useful to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
         particularly for the sensor_to_full_resolution_dsm pipeline.
         The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
         However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
