@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS holes detection module init file
+CARS dsm filling module init file
 """
 # flake8: noqa: F401
 
