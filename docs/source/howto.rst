@@ -123,7 +123,7 @@ It can be recommended to apply a P+XS pansharpening with `OTB`_.
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook-8.0/C++/UserGuide.html#image-data-representation
 
 Convert RGB image to panchromatic image
---------------------------------------
+---------------------------------------
 
 CARS only uses panchromatic images for processing.
 
