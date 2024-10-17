@@ -115,8 +115,6 @@ Initial Input Digital Elevation Model
 For now, CARS uses an initial input Digital Elevation Model (:term:`DEM`) which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
 Any geotiff file can be used.
 
-For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to the processed zone can be used through `otbcli_DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook-7.4/Applications/app_DownloadSRTMTiles.html>`_.
-
 The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 
 
