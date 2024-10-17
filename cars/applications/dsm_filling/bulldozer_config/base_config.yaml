@@ -3,3 +3,30 @@ dsm_path: "path/to/dsm"
 output_dir: "path/to/output"
 
 # everything else will be used directly as-is
+
+max_object_width : 16
+# If True, this flag allows snapping DTM values above the DSM to the DSM values in order to satisfy the property that DTM is always below the DSM.
+check_intersection: False
+# If null, the nodata value will be extracted from the input DSM (float value or nan)
+no_data : null
+# If True, keep the intermediate results
+developper_mode : False
+# If True, keep the intermediate DTM at each level of the pyramid
+keep_inter_dtm : False
+
+#-------------------------#
+# Bulldozer core settings #
+#-------------------------#
+# /!\ Modify those data at your own risk (it is suggested to keep the default values) /!\
+
+# DetectDisturbedAreasAndFill part
+slope_threshold : 2.0
+# numnumber of evaluated axis. Vertical and horizontal if true else vertical, horizontal and diagonals.
+four_connexity : True
+
+# DtmExtraction part
+uniform_filter_size : 3
+prevent_unhook_iter : 10
+num_outer_iter : 50
+num_inner_iter : 10
+mp_tile_size : 1500
