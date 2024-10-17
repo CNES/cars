@@ -5,6 +5,7 @@ Mask and Classification Usage
 | For this reason, it is possible to mask out areas or apply ad hoc processing to aid the matching stage (see :ref:`mask_and_classification_usage`).
 
 .. _mask_and_classification_usage:
+
 Masks
 -----
 
