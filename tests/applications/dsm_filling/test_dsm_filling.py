@@ -109,6 +109,7 @@ def test_fill_dsm():
 
         # first test with no roi (fill everything)
         _ = dsm_filling_application.run(
+            orchestrator=None,
             initial_elevation=geometry_plugin,
             dsm_path=input_dsm_noroi,
             roi_polys=None,
@@ -127,6 +128,7 @@ def test_fill_dsm():
 
         # second test with an roi
         _ = dsm_filling_application.run(
+            orchestrator=None,
             initial_elevation=geometry_plugin,
             dsm_path=input_dsm_roi,
             roi_polys=roi_poly,

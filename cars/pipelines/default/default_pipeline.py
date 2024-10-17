@@ -1898,6 +1898,7 @@ class DefaultPipeline(PipelineTemplate):
         cars_orchestrator.breakpoint()
 
         _ = self.dsm_filling_application.run(
+            orchestrator=self.cars_orchestrator,
             # path to initial elevation file via geom plugin
             initial_elevation=self.geom_plugin_with_dem_and_geoid,
             dsm_path=dsm_file_name,

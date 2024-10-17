@@ -140,11 +140,14 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         bull_conf["dsm_path"] = temp_dsm_path
         bull_conf["output_dir"] = os.path.join(dump_dir, "bulldozer")
 
-        if (
-            orchestrator.get_conf()["mode"] == "multiprocessing"
-            or orchestrator.get_conf()["mode"] == "local_dask"
-        ):
-            bull_conf["nb_max_workers"] = orchestrator.get_conf()["nb_workers"]
+        if orchestrator is not None:
+            if (
+                orchestrator.get_conf()["mode"] == "multiprocessing"
+                or orchestrator.get_conf()["mode"] == "local_dask"
+            ):
+                bull_conf[
+                    "nb_max_workers"
+                ] = orchestrator.get_conf()["nb_workers"]
 
         bull_conf_path = os.path.join(dump_dir, "bulldozer_config.yaml")
         with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
