@@ -25,6 +25,7 @@ Cars tests/bulldozer_filling  file
 import os
 import shutil
 import tempfile
+from shutil import copy2  # noqa: F401 # pylint: disable=unused-import
 
 # Third party imports
 import pytest
@@ -119,6 +120,13 @@ def test_fill_dsm():
             dump_dir=dump_dir,
         )
 
+        # copy2(
+        #     input_dsm_noroi,
+        #     absolute_data_path(
+        #         "ref_output/dsm_filling_dsm_filled_gizeh_crop_no_roi.tif"
+        #     )
+        # )
+
         assert_same_images(
             input_dsm_noroi,
             absolute_data_path(
@@ -137,6 +145,13 @@ def test_fill_dsm():
             filling_file_name=None,
             dump_dir=dump_dir,
         )
+
+        # copy2(
+        #     input_dsm_roi,
+        #     absolute_data_path(
+        #         "ref_output/dsm_filling_dsm_filled_gizeh_crop_roi.tif"
+        #     )
+        # )
 
         assert_same_images(
             input_dsm_roi,
