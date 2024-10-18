@@ -7,7 +7,8 @@ Geometry plugin
 ^^^^^^^^^^^^^^^^^
 
 Geometry plugins aim to enable the use of different geometry libraries, typically `libGEO <https://github.com/OSGeo/libgeotiff>`_ or `Shareloc <https://github.com/CNES/shareloc>`_ to perform CARS geometric operations which require the interpretation of the geometric models of the pairs to process.
-Those operation are:
+
+Those operations are:
 
 * The epipolar grids computation
 * The direct localization operation
@@ -45,9 +46,10 @@ For example, if the AbstractGeometry object is defined in file `cars_geometry_pl
 
 Mandatory methods
 ++++++++++++++++++
+
 Currently, the `AbstractGeometry` class requires the implementation of the following mandatory methods and properties:
 
-* `conf_schema` which specify the user inputs json schema required by the geometric library.
+* `conf_schema` which specify the user input json schema required by the geometric library.
 
 .. code-block:: python
 

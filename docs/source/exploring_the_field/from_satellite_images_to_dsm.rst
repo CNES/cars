@@ -67,7 +67,6 @@ Generate a DSM step by step
 | The color of the pixels (grayscale) in the image :ref:`below<matching>` corresponds to the shift value. Some pixels do not have a match, which are represented as transparent pixels in the image. These matching errors can occur due to various reasons such as moving objects, shadows, occlusions, or areas with insufficient texture.
 | The transparent pixels indicate areas where the matching algorithm couldn't find a reliable correspondence between the two images, highlighting regions of uncertainty in the matching process.
 
-
 .. _matching:
 
 +--------------------------+---------------------------------------------+
@@ -115,8 +114,6 @@ Initial Input Digital Elevation Model
 
 For now, CARS uses an initial input Digital Elevation Model (:term:`DEM`) which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
 Any geotiff file can be used.
-
-For example, the `SRTM <https://www2.jpl.nasa.gov/srtm/>`_ data corresponding to the processed zone can be used through `otbcli_DownloadSRTMTiles <https://www.orfeo-toolbox.org/CookBook-7.4/Applications/app_DownloadSRTMTiles.html>`_.
 
 The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
 

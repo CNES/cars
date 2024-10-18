@@ -122,9 +122,8 @@ It can be recommended to apply a P+XS pansharpening with `OTB`_.
 
 .. _`OTB`: https://www.orfeo-toolbox.org/CookBook-8.0/C++/UserGuide.html#image-data-representation
 
-
 Convert RGB image to panchromatic image
---------------------------------------
+---------------------------------------
 
 CARS only uses panchromatic images for processing.
 
@@ -136,8 +135,6 @@ The line below use `"Grayscale Using Luminance" <https://en.wikipedia.org/wiki/G
 .. code-block:: console
 
     otbcli_BandMath -il image.tif -out image_panchromatic.tif -exp "(0.2126 * im1b1 + 0.7152 * im1b2 + 0.0722 * im1b3)"
-
-
 
 
 .. _make_a_water_mask:
@@ -191,7 +188,6 @@ Merge Laz files
 ---------------
 
 CARS generates several `laz files <https://docs.fileformat.com/gis/laz/>`_ corresponding to the tiles processed.
-Merge can be done with `laszip`_. 
 
 To merge them:
 

@@ -25,7 +25,6 @@ Getting Started
     # Build the Docker image
     docker build -t cars:latest .
 
-
 * Get and extract data samples from CARS repository:
 
 .. code-block:: console
