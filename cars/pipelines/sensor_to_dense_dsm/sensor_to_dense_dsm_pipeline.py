@@ -184,6 +184,11 @@ class CarsPipeline(PipelineTemplate):
             depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]
         )
         self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
+
+        # if point_cloud is in product_level, we need to guarantee that
+        # point clouds are in the output, by activating merging
+        self.merging = self.merging or self.save_output_point_cloud
+
         self.compute_depth_map = self.sensors_in_inputs and (
             not self.output_level_none
         )
