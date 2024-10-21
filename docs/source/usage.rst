@@ -562,53 +562,6 @@ The structure follows this organisation:
             }
 
         .. tabs::
-            .. tab:: N inputs to N DSMs 
-                This is the default behavior of CARS, which means there are no specific configuration steps that need to be done ! 
-                Just put all the sensor pairs or depth maps as inputs and the DSMs will be generated, one for each pair or depth map provided.
-                
-                .. code-block:: json
-
-                    {
-
-                        "inputs": {
-                            // either provide sensor images
-                            "sensors" : {
-                                "one": {
-                                    "image": "img1.tif",
-                                    "geomodel": "img1.geom"
-                                },
-                                "two": {
-                                    "image": "img2.tif",
-                                    "geomodel": "img2.geom"
-
-                                }
-                            }
-
-                            // or (a) depth map(s)
-                            "depth_maps": {
-                                "my_name_for_this_depth_map": {
-                                    "x" : "path_to_x.tif",
-                                    "y" : "path_to_y.tif",
-                                    "z" : "path_to_z.tif",
-                                    "color" : "path_to_color.tif"
-                                }
-                            }
-                        }
-                        
-                    }
-
-            .. tab:: N inputs to 1 DSM
-                This behavior requires you to enable the `merging` part of the pipeline.
-                To do so, in the ``advanced`` configuration key, set ``merging`` to ``True``.
-
-                
-                .. code-block:: json
-
-                    {
-                        "advanced": {
-                            "merging": true
-                        }
-                    }
 
             .. tab:: Sparse DSMs
 
@@ -618,14 +571,11 @@ The structure follows this organisation:
                 CARS provides an easy way of customizing the step at which the pipeline should be stopped. When the key ``product_level`` of ``output`` is empty, CARS will stop after the last application
                 whose ``save_intermediate_data`` key is set to True.
 
-                Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
-
-                .. warning::
-                    If the input is a depth map, sparse DSMs cannot be computed.
-
                 .. note::
                     If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``initial_elevation`` parameter, saving computation time.
                     Very useful when trying to test multiple configurations later in the pipeline !
+
+                Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
 
                 .. code-block:: json
 
@@ -646,7 +596,7 @@ The structure follows this organisation:
             .. tab:: N pairs to N Depth Maps
 
                 Depth maps are a way to represent point clouds as three images X Y and Z, each one representing the position of a pixel on its axis. 
-                They are an official product of CARS, and can thus be created more easily than sparse DSMs, for instance.
+                They are an official product of CARS, and can thus be created more easily than sparse DSMs.
 
                 The ``product_level`` key in ``output`` can contain any combination of the values `dsm`, `depth_map`, and `point_cloud`.
 
@@ -662,13 +612,17 @@ The structure follows this organisation:
 
                     }
 
-            
             .. tab:: N inputs to Point clouds
                 
-                Just like depth maps, point clouds are an official product of CARS. As such, setting ``product_level`` is the only step needed to generate them.
+                Just like depth maps, the point cloud is an official product of CARS. As such, all that's needed is to add `point_cloud` to ``product_level`` in order for it to be generated.
                 
+                .. warning::
+                    CARS will only compute a point cloud when the key ``merging`` in ``advanced`` is set to `True`, which means
+                    setting ``output_level`` as containing `point_cloud` will effectively force ``merging`` to `True`. 
+                    This behavior will have the side-effect of running the point cloud denoising and outliers removing applications.
+
                 .. note::
-                    By setting the key ``merging`` in ``advanced`` to `True`, a single point cloud can be generated from multiple input depth maps or sensor image pairs.
+                    If you wish to save an individual point cloud for each input given, the key ``save_by_pair`` of ``output`` will need to be set to `True`.
 
                 .. code-block:: json
 
