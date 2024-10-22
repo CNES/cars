@@ -563,6 +563,76 @@ The structure follows this organisation:
 
         .. tabs::
 
+            .. tab:: N inputs to 1 DSM
+
+                This is the default behavior of CARS. With inputs that are either sensor 
+                image pairs or depth maps, CARS will automatically generate a single DSM. 
+                The smallest configuration can simply contain only those inputs.
+
+                .. note::
+                    The DSM will always be generated with all the inputs. 
+
+                    When the ``merging`` parameter is set to `False`, a DSM 
+                    will **not** be generated for each individual input. 
+                    Instead, the combined point cloud containing all points 
+                    from the depth maps will be created on the fly during 
+                    the rasterization process.
+
+                    Conversely, if the ``merging`` parameter is set to `True`, 
+                    a point cloud will be generated from all depth maps 
+                    before the rasterization occurs. 
+                    This allows for point cloud filtering applications that can
+                    consider all depth maps collectively.
+                
+                .. code-block:: json
+
+                    {
+
+                        "inputs": {
+                            
+                            // sensor image pair(s) as inputs
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
+
+                                },
+                                "three": {
+                                    "image": "img3.tif",
+                                    "geomodel": "img3.geom"
+                                }
+                            },
+                            "pairing": [["one", "two"],["one", "three"]]
+                        
+                            // or depth map(s)
+                            "depth_maps": {
+                                "my_name_for_this_depth_map":
+                                {
+                                    "x" : "path_to_x.tif",
+                                    "y" : "path_to_y.tif",
+                                    "z" : "path_to_z.tif",
+                                    "color" : "path_to_color.tif",
+                                    "mask": "path_to_mask.tif",
+                                    "classification": "path_to_classification.tif",
+                                    "filling": "path_to_filling.tif",
+                                    "confidence": {
+                                        "confidence_name1": "path_to_confidence1.tif",
+                                        "confidence_name2": "path_to_confidence2.tif",
+                                    },
+                                    "performance_map": "path_to_performance_map.tif",
+                                    "epsg": "depth_map_epsg"
+                                }
+                            }
+
+                        }
+
+                    }                
+
+
             .. tab:: Sparse DSMs
 
                 In CARS, sparse DSMs are computed during the process of creating depth maps from sensor images (specifically during the `dem_generation` application). This means they cannot be created from depth maps.
