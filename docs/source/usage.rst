@@ -572,11 +572,10 @@ The structure follows this organisation:
                 .. note::
                     The DSM will always be generated with all the inputs. 
 
-                    When the ``merging`` parameter is set to `False`, a DSM 
-                    will **not** be generated for each individual input. 
-                    Instead, the combined point cloud containing all points 
-                    from the depth maps will be created on the fly during 
-                    the rasterization process.
+                    When the ``merging`` parameter is set to `False`, the 
+                    combined point cloud containing all points 
+                    from the depth maps will be created on the fly 
+                    during the rasterization process.
 
                     Conversely, if the ``merging`` parameter is set to `True`, 
                     a point cloud will be generated from all depth maps 
