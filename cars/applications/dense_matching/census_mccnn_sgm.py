@@ -513,6 +513,8 @@ class CensusMccnnSgm(
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
+        altitude_delta_min=None,
+        altitude_delta_max=None,
         dem_median=None,
         dem_min=None,
         dem_max=None,
@@ -536,6 +538,10 @@ class CensusMccnnSgm(
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
+        :param altitude_delta_max: Delta max of altitude
+        :type altitude_delta_max: int
+        :param altitude_delta_min: Delta min of altitude
+        :type altitude_delta_min: int
         :param dem_median: path to median dem
         :type dem_median: str
         :param dem_min: path to minimum dem
@@ -612,23 +618,31 @@ class CensusMccnnSgm(
 
         if None not in (dmin, dmax):
             # use global disparity range
-            if None not in (dem_min, dem_max):
+            if None not in (dem_min, dem_max) or None not in (
+                altitude_delta_min,
+                altitude_delta_max,
+            ):
                 raise RuntimeError("Mix between local and global mode")
 
             grid_min[:, :] = dmin
             grid_max[:, :] = dmax
 
-        elif None not in (dem_min, dem_max, dem_median):
+        elif None not in (dem_min, dem_max, dem_median) or None not in (
+            altitude_delta_min,
+            altitude_delta_max,
+        ):
             # use local disparity
             if None not in (dmin, dmax):
                 raise RuntimeError("Mix between local and global mode")
 
-            # dem min max are the same shape
-            # dem median is not , hence we crop it
-
             # Get associated alti mean / min / max values
             dem_median_shape = inputs.rasterio_get_size(dem_median)
             dem_median_width, dem_median_height = dem_median_shape
+
+            min_row = 0
+            min_col = 0
+            max_row = dem_median_height
+            max_col = dem_median_width
 
             # get epsg
             terrain_epsg = inputs.rasterio_get_epsg(dem_median)
@@ -636,49 +650,96 @@ class CensusMccnnSgm(
             # Get epipolar position of all dem mean
             transform = inputs.rasterio_get_transform(dem_median)
 
-            # get terrain bounds dem min
-            dem_min_bounds = inputs.rasterio_get_bounds(dem_min)
+            if None not in (dem_min, dem_max, dem_median):
+                dem_min_shape = inputs.rasterio_get_size(dem_min)
 
-            # find roi in dem_mean
-            roi_points = np.array(
-                [
-                    [dem_min_bounds[0], dem_min_bounds[1]],
-                    [dem_min_bounds[0], dem_min_bounds[3]],
-                    [dem_min_bounds[2], dem_min_bounds[1]],
-                    [dem_min_bounds[2], dem_min_bounds[3]],
-                ]
-            )
+                if dem_median_shape != dem_min_shape:
+                    # dem min max are the same shape
+                    # dem median is not , hence we crop it
 
-            # Transform points to terrain_epsg (dem min is in 4326)
-            roi_points_terrain = points_cloud_conversion(
-                roi_points,
-                4326,
-                terrain_epsg,
-            )
+                    # get terrain bounds dem min
+                    dem_min_bounds = inputs.rasterio_get_bounds(dem_min)
 
-            # Get pixel roi in dem mean
-            pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
-                dem_median, roi_points_terrain
-            )
-            roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
-            roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
-            roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
-            roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
+                    # find roi in dem_mean
+                    roi_points = np.array(
+                        [
+                            [dem_min_bounds[0], dem_min_bounds[1]],
+                            [dem_min_bounds[0], dem_min_bounds[3]],
+                            [dem_min_bounds[2], dem_min_bounds[1]],
+                            [dem_min_bounds[2], dem_min_bounds[3]],
+                        ]
+                    )
 
-            min_row = int(max(0, roi_lower_row))
-            max_row = int(
-                min(
-                    dem_median_height,  # number of rows
-                    roi_upper_row,
+                    # Transform points to terrain_epsg (dem min is in 4326)
+                    roi_points_terrain = points_cloud_conversion(
+                        roi_points,
+                        4326,
+                        terrain_epsg,
+                    )
+
+                    # Get pixel roi in dem mean
+                    pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
+                        dem_median, roi_points_terrain
+                    )
+                    roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
+                    roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
+                    roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
+                    roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
+
+                    min_row = int(max(0, roi_lower_row))
+                    max_row = int(
+                        min(
+                            dem_median_height,  # number of rows
+                            roi_upper_row,
+                        )
+                    )
+                    min_col = int(max(0, roi_lower_col))
+                    max_col = int(
+                        min(
+                            dem_median_width,  # number of columns
+                            roi_upper_col,
+                        )
+                    )
+
+            elif (
+                None not in (altitude_delta_min, altitude_delta_max)
+                and geom_plugin_with_dem_and_geoid.plugin_name
+                == "SharelocGeometry"
+            ):
+                roi_points_terrain = np.array(
+                    [
+                        [
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[1],
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[0],
+                        ],
+                        [
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[1],
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[2],
+                        ],
+                        [
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[3],
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[0],
+                        ],
+                        [
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[3],
+                            geom_plugin_with_dem_and_geoid.roi_shareloc[2],
+                        ],
+                    ]
                 )
-            )
-            min_col = int(max(0, roi_lower_col))
-            max_col = int(
-                min(
-                    dem_median_width,  # number of columns
-                    roi_upper_col,
+
+                pixel_roi_dem_mean = inputs.rasterio_get_pixel_points(
+                    dem_median, roi_points_terrain
                 )
-            )
+
+                roi_lower_row = np.floor(np.min(pixel_roi_dem_mean[:, 0]))
+                roi_upper_row = np.ceil(np.max(pixel_roi_dem_mean[:, 0]))
+                roi_lower_col = np.floor(np.min(pixel_roi_dem_mean[:, 1]))
+                roi_upper_col = np.ceil(np.max(pixel_roi_dem_mean[:, 1]))
+
+                min_row = int(max(0, roi_lower_row))
+                max_row = int(min(dem_median_height, roi_upper_row))
+                min_col = int(max(0, roi_lower_col))
+                max_col = int(min(dem_median_width, roi_upper_col))
 
             # compute terrain positions to use (all dem min and max)
             row_indexes = range(min_row, max_row)
@@ -707,13 +768,17 @@ class CensusMccnnSgm(
             lon_mean = terrain_position_lon_lat[:, 0]
             lat_mean = terrain_position_lon_lat[:, 1]
 
-            # dem min and max are in 4326
-            dem_min_list = inputs.rasterio_get_values(
-                dem_min, lon_mean, lat_mean, points_cloud_conversion
-            )
-            dem_max_list = inputs.rasterio_get_values(
-                dem_max, lon_mean, lat_mean, points_cloud_conversion
-            )
+            if None not in (dem_min, dem_max, dem_median):
+                # dem min and max are in 4326
+                dem_min_list = inputs.rasterio_get_values(
+                    dem_min, lon_mean, lat_mean, points_cloud_conversion
+                )
+                dem_max_list = inputs.rasterio_get_values(
+                    dem_max, lon_mean, lat_mean, points_cloud_conversion
+                )
+            else:
+                dem_min_list = dem_median_list - altitude_delta_min
+                dem_max_list = dem_median_list + altitude_delta_max
 
             # sensors physical positions
             (

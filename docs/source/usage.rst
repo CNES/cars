@@ -181,15 +181,28 @@ The structure follows this organisation:
 
             The attribute contains all informations about initial elevation: dem path, geoid and default altitude
             
-            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
-            | Name                  | Description                    | Type   | Default value        | Required                   |
-            +=======================+================================+========+======================+============================+
-            | *dem*                 | Path to DEM tiles              | string | None                 | No                         |
-            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
-            | *geoid*               | Geoid path                     | string | Cars internal geoid  | No                         |
-            +-----------------------+--------------------------------+--------+----------------------+----------------------------+
+            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
+            | Name                  | Description                                                                | Type   |  Available value     |  Default value             | Required                   |
+            +=======================+============================================================================+========+======================+============================+============================+
+            | *dem*                 | Path to DEM tiles                                                          | string |                      | None                       | No                         |
+            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
+            | *geoid*               | Geoid path                                                                 | string |                      | Cars internal geoid        | No                         |
+            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
+            | *altitude_delta_min*  | constant delta in altitude (meters) between dem median and dem min         | int    | should be > 0        | None                       | No                         |
+            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
+            | *altitude_delta_max*  | constant delta in altitude (meters) between dem max and dem median         | int    | should be > 0        | None                       | No                         |
+            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
 
-            If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96).
+            If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96). If no delta is provided, the dem_min and max generated with sparse matches will be used.
+            
+            The Deltas are used following this formula :
+
+            .. code-block:: python
+
+                dem_min = initial_elevation - altitude_delta_min
+                dem_max = initial_elevation + altitude_delta_max
+
+            .. warning::  Dem path is mandatory for the use of the altitude deltas.
 
             When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
 
@@ -202,7 +215,9 @@ The structure follows this organisation:
                 "inputs": {
                         "initial_elevation": {
                             "dem": "/path/to/srtm.tif",
-                            "geoid": "/path/to/geoid.tif"
+                            "geoid": "/path/to/geoid.tif",
+                            "altitude_delta_min": 10,
+                            "altitude_delta_max": 40
                         }
                     }
                 }

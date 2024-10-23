@@ -128,6 +128,8 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         geom_plugin_with_dem_and_geoid,
         dmin=None,
         dmax=None,
+        altitude_delta_min=None,
+        altitude_delta_max=None,
         dem_min=None,
         dem_max=None,
         pair_folder=None,
@@ -154,6 +156,10 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type dmin: float
         :param dmax: maximum disparity
         :type dmax: float
+        :param altitude_delta_max: Delta max of altitude
+        :type altitude_delta_max: int
+        :param altitude_delta_min: Delta min of altitude
+        :type altitude_delta_min: int
         :param dem_min: path to minimum dem
         :type dem_min: str
         :param dem_max: path to maximum dem
