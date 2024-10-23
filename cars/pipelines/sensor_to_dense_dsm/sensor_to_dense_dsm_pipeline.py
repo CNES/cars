@@ -793,21 +793,21 @@ class CarsPipeline(PipelineTemplate):
             # We generate grids with dem if it is provided.
             # If not provided, grid are generated without dem and a dem
             # will be generated, to use later for a new grid generation**
-            altitude_delta_min = self.inputs.get(
-                sens_cst.INITIAL_ELEVATION, {}
-            ).get(sens_cst.ALTITUDE_DELTA_MIN, None)
-            altitude_delta_max = self.inputs.get(
-                sens_cst.INITIAL_ELEVATION, {}
-            ).get(sens_cst.ALTITUDE_DELTA_MAX, None)
+            altitude_delta_min = inputs.get(sens_cst.INITIAL_ELEVATION, {}).get(
+                sens_cst.ALTITUDE_DELTA_MIN, None
+            )
+            altitude_delta_max = inputs.get(sens_cst.INITIAL_ELEVATION, {}).get(
+                sens_cst.ALTITUDE_DELTA_MAX, None
+            )
 
             if inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH] is None:
                 geom_plugin = self.geom_plugin_without_dem_and_geoid
 
-                    if None not in (altitude_delta_min, altitude_delta_max):
-                        raise RuntimeError(
-                            "Dem path is mandatory for "
-                            "the use of altitude deltas"
-                        )
+                if None not in (altitude_delta_min, altitude_delta_max):
+                    raise RuntimeError(
+                        "Dem path is mandatory for "
+                        "the use of altitude deltas"
+                    )
             else:
                 geom_plugin = self.geom_plugin_with_dem_and_geoid
 
