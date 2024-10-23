@@ -641,7 +641,7 @@ The structure follows this organisation:
                 whose ``save_intermediate_data`` key is set to True.
 
                 .. note::
-                    If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``initial_elevation`` parameter, saving computation time.
+                    If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``terrain_a_priori`` parameter, saving computation time.
                     Very useful when trying to test multiple configurations later in the pipeline !
 
                 Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
