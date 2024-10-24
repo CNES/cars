@@ -28,6 +28,7 @@ from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
+import outlier_filter  # pylint:disable=E0401
 import pandas
 import xarray as xr
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
@@ -64,9 +65,24 @@ def small_components_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = detect_small_components(
-        cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold
+    # cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
+    # index_elt_to_remove = detect_small_components(
+    #   cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold
+    # )
+
+    clusters_distance_threshold_float = (
+        np.nan
+        if clusters_distance_threshold is None
+        else clusters_distance_threshold
+    )
+
+    index_elt_to_remove = outlier_filter.pc_small_components_outlier_filtering(
+        cloud.loc[:, cst.X].values,
+        cloud.loc[:, cst.Y].values,
+        cloud.loc[:, cst.Z].values,
+        radius=connection_val,
+        min_cluster_size=nb_pts_threshold,
+        clusters_distance_threshold=clusters_distance_threshold_float,
     )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
@@ -198,9 +214,18 @@ def statistical_outliers_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = detect_statistical_outliers(
-        cloud_xyz, k, dev_factor, use_median
+    # cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
+    # index_elt_to_remove = detect_statistical_outliers(
+    #     cloud_xyz, k, dev_factor, use_median
+    # )
+
+    index_elt_to_remove = outlier_filter.pc_statistical_outlier_filtering(
+        cloud.loc[:, cst.X].values,
+        cloud.loc[:, cst.Y].values,
+        cloud.loc[:, cst.Z].values,
+        dev_factor=dev_factor,
+        k=k,
+        use_median=use_median,
     )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
@@ -247,6 +272,7 @@ def detect_statistical_outliers(
         iqr_distances = np.percentile(
             mean_neighbors_distances, 75
         ) - np.percentile(mean_neighbors_distances, 25)
+
         # compute distance threshold and
         # apply it to determine which points will be removed
         dist_thresh = median_distances + dev_factor * iqr_distances
