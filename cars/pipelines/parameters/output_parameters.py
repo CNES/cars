@@ -33,9 +33,7 @@ from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 
 
-def check_output_parameters(
-    conf, pipeline_name="sensors_to_dense_dsm_no_merging"
-):
+def check_output_parameters(conf):
     """
     Check the output json configuration and fill in default values
 
@@ -54,16 +52,15 @@ def check_output_parameters(
     overloaded_conf[output_constants.OUT_DIRECTORY] = out_dir
 
     overloaded_conf[output_constants.PRODUCT_LEVEL] = overloaded_conf.get(
-        output_constants.PRODUCT_LEVEL, get_default_product_level(pipeline_name)
+        output_constants.PRODUCT_LEVEL, "dsm"
     )
     if isinstance(overloaded_conf[output_constants.PRODUCT_LEVEL], str):
         overloaded_conf[output_constants.PRODUCT_LEVEL] = [
             overloaded_conf[output_constants.PRODUCT_LEVEL]
         ]
-
-    check_product_levels(
-        overloaded_conf[output_constants.PRODUCT_LEVEL], pipeline_name
-    )
+    for level in overloaded_conf[output_constants.PRODUCT_LEVEL]:
+        if level not in ["dsm", "depth_map", "point_cloud"]:
+            raise RuntimeError("Unknown product level {}".format(level))
 
     overloaded_conf[output_constants.OUT_GEOID] = overloaded_conf.get(
         output_constants.OUT_GEOID, False
@@ -154,50 +151,3 @@ def check_output_parameters(
                 )
 
     return overloaded_conf
-
-
-def get_default_product_level(pipeline_name):
-    """
-    Check the output json configuration and fill in default values
-
-    :param pipeline_name: name of corresponding pipeline
-    :type pipeline_name: str
-    """
-
-    # sensor_to_sparse_dsm does not produce any official product
-    if pipeline_name == "sensors_to_sparse_dsm":
-        ret = []
-    # sensors_to_dense_depth_maps produce a depth map
-    elif pipeline_name == "sensors_to_dense_depth_maps":
-        ret = ["depth_map"]
-    # other pipeline produce a dsm
-    else:
-        ret = ["dsm"]
-    return ret
-
-
-def check_product_levels(product_levels, pipeline_name):
-    """
-    Check if product levels are compatible with the pipeline
-
-    :param pipeline_name: name of corresponding pipeline
-    :type pipeline_name: str
-    """
-
-    if pipeline_name == "sensors_to_sparse_dsm" and product_levels:
-        raise RuntimeError(
-            "Requested product levels {}".format(product_levels)
-            + ", but sensors_to_sparse_dsm does not support any product level"
-        )
-
-    for level in product_levels:
-        if (
-            level in ["dsm", "point_cloud"]
-            and pipeline_name == "sensors_to_dense_depth_maps"
-        ):
-            raise RuntimeError(
-                "sensors_to_dense_depth_maps only supports"
-                + " 'depth map' output level"
-            )
-        if level not in ["dsm", "depth_map", "point_cloud"]:
-            raise RuntimeError("Unknown product level {}".format(level))

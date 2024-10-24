@@ -373,7 +373,6 @@ def test_check_tiles_in_sensor():
         _, input_data = generate_input_json(
             input_json,
             directory,
-            "sensors_to_dense_dsm",
             "local_dask",
             orchestrator_parameters={
                 "walltime": "00:10:00",

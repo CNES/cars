@@ -31,7 +31,9 @@ import cars.pipelines.parameters.depth_map_inputs_constants as depth_map_cst
 # CARS imports
 from cars.core import constants as cst
 from cars.core import inputs
+from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
+from cars.pipelines.parameters import sensor_inputs as sens_inp
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 
@@ -55,10 +57,17 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
     overloaded_conf[depth_map_cst.DEPTH_MAPS] = {}
 
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = (
+        sens_inp.get_initial_elevation(
+            conf.get(sens_cst.INITIAL_ELEVATION, None)
+        )
+    )
+
     # Validate inputs
     inputs_schema = {
         depth_map_cst.DEPTH_MAPS: dict,
         sens_cst.ROI: Or(str, dict, None),
+        sens_cst.INITIAL_ELEVATION: Or(dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -193,7 +202,43 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
             ],
         )
 
+    # Check srtm dir
+    sens_inp.check_srtm(
+        overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+    )
+
     return overloaded_conf
+
+
+def check_geometry_plugin(conf_inputs, conf_geom_plugin):
+    """
+    Check the geometry plugin with inputs
+    :param conf_geom_plugin: name of geometry plugin
+    :type conf_geom_plugin: str
+    :param conf_inputs: checked configuration of inputs
+    :type conf_inputs: type
+
+    :return: geometry plugin with dem
+    """
+    if conf_geom_plugin is None:
+        conf_geom_plugin = "SharelocGeometry"
+
+    dem_path = conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
+
+    if dem_path is None:
+        return None
+
+    # Initialize a geometry plugin with elevation information
+    geom_plugin_with_dem_and_geoid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            conf_geom_plugin,
+            dem=dem_path,
+            geoid=conf_inputs[sens_cst.INITIAL_ELEVATION][sens_cst.GEOID],
+            default_alt=sens_cst.CARS_DEFAULT_ALT,
+        )
+    )
+
+    return geom_plugin_with_dem_and_geoid
 
 
 def check_input_size(

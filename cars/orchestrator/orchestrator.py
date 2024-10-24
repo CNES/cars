@@ -526,6 +526,10 @@ class Orchestrator:
         """
         Reset registries
         """
+
+        # cleanup the current registry before replacing it, to save files
+        self.cars_ds_savers_registry.cleanup()
+
         # reset registries
         # CarsDataset savers registry
         self.cars_ds_savers_registry = saver_registry.CarsDatasetsRegistrySaver(

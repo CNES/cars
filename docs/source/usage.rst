@@ -7,7 +7,7 @@ Usage
 Command line
 ============
 
-``cars`` command line is the entry point for CARS to run 3D pipelines.
+``cars`` command line is the entry point for CARS to run the 3D pipeline.
 
 .. code-block:: console
 
@@ -67,7 +67,6 @@ The structure follows this organisation:
         "orchestrator": {},
         "applications": {},
         "output": {},
-        "pipeline": "pipeline_to_use",
         "geometry_plugin": "geometry_plugin_to_use"
     }
 
@@ -77,345 +76,338 @@ The structure follows this organisation:
 
 .. tabs::
 
-   .. tab:: Inputs
+    .. tab:: Inputs
 
-    Inputs depends on the pipeline used by CARS. CARS can be entered with Sensor Images or Depth Maps:
+        CARS can be entered either with Sensor Images or with Depth Maps. 
+        
+        Additional inputs can be provided for both types of inputs, namely a ROI and an initial elevation.
 
-    * Sensor Images: used in "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps" pipelines.
-    * Depth Maps: used in  "dense_depth_maps_to_dense_dsm" pipeline.
+        .. tabs::
 
+            .. tab:: Sensors Images inputs
 
-    .. tabs::
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | Name                       | Description                                                         | Type                  | Default value        | Required |
+                +============================+=====================================================================+=======================+======================+==========+
+                | *sensor*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
-        .. tab:: Sensors Images inputs
+                (*) `pairing` is required If there are more than two sensors (see pairing section below)
 
+                **Sensor**
 
+                For each sensor images, give a particular name (what you want):
 
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | Name                       | Description                                                         | Type                  | Default value        | Required |
-            +============================+=====================================================================+=======================+======================+==========+
-            | *sensor*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *initial_elevation*        | Path to SRTM tiles (see :ref:`plugins` section for details)         | string                | None                 | No       |
-            |                            | If not provided, internal dem is generated with sparse matches      |                       |                      |          |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-            | *roi*                      | ROI: Vector file path or GeoJson                                    | string, dict          | None                 | No       |
-            +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                .. code-block:: json
 
-            (*) `pairing` is required If there are more than two sensors (see pairing section below)
-
-            **Sensor**
-
-            For each sensor images, give a particular name (what you want):
-
-            .. code-block:: json
-
-                {
-                    "my_name_for_this_image":
                     {
-                        "image" : "path_to_image.tif",
-                        "color" : "path_to_color.tif",
-                        "mask" : "path_to_mask.tif",
-                        "classification" : "path_to_classification.tif",
-                        "nodata": 0
-                    }
-                }
-
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | Name              | Description                                                                              | Type           | Default value | Required |
-            +===================+==========================================================================================+================+===============+==========+
-            | *image*           | Path to the image                                                                        | string         |               | Yes      |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *color*           | Image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *no_data*         | No data value of the image                                                               | int            | 0             | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *geomodel*        | Path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | string, dict   |               | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-            | *classification*  | Multiband classification image (label keys inside metadata): 1 values = valid data       | string         | None          | No       |
-            +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
-
-            .. note::
-
-                - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
-                - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
-                - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
-                - The classification of second input is not necessary. In this case, the applications use only the available classification.
-                - Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications
-                - *geomodel*: If no geomodel is provide, CARS will try to use the rpc loaded with rasterio opening *image*.
-
-            **Pairing**
-
-            The pairing attribute defines the pairs to use, using sensors keys used to define sensor images.
-
-            .. code-block:: json
-
-                {
-                "inputs": {
-                    "sensors" : {
-                        "one": {
-                            "image": "img1.tif",
-                            "geomodel": "img1.geom"
-                        },
-                        "two": {
-                            "image": "img2.tif",
-                            "geomodel": "img2.geom"
-
-                        },
-                        "three": {
-                            "image": "img3.tif",
-                            "geomodel": "img3.geom"
-                        }
-                    },
-                    "pairing": [["one", "two"],["one", "three"]]
-                    }
-                }
-
-            This attribute is required when there are more than two input sensor images. If only two images ares provided, the pairing can be deduced by cars, considering the first image defined as the left image and second image as right image.
-
-            **Initial elevation**
-
-            The attribute contains all informations about initial elevation: dem path, geoid and default altitude
-            
-            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
-            | Name                  | Description                                                                | Type   |  Available value     |  Default value             | Required                   |
-            +=======================+============================================================================+========+======================+============================+============================+
-            | *dem*                 | Path to DEM tiles                                                          | string |                      | None                       | No                         |
-            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
-            | *geoid*               | Geoid path                                                                 | string |                      | Cars internal geoid        | No                         |
-            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
-            | *altitude_delta_min*  | constant delta in altitude (meters) between dem median and dem min         | int    | should be > 0        | None                       | No                         |
-            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
-            | *altitude_delta_max*  | constant delta in altitude (meters) between dem max and dem median         | int    | should be > 0        | None                       | No                         |
-            +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------------+----------------------------+
-
-            If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96). If no delta is provided, the dem_min and max generated with sparse matches will be used.
-            
-            The Deltas are used following this formula :
-
-            .. code-block:: python
-
-                dem_min = initial_elevation - altitude_delta_min
-                dem_max = initial_elevation + altitude_delta_max
-
-            .. warning::  Dem path is mandatory for the use of the altitude deltas.
-
-            When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
-
-            Initial elevation can be provided as a dictionary with a field for each parameter, for example:
-
-
-            .. code-block:: json
-
-                {
-                "inputs": {
-                        "initial_elevation": {
-                            "dem": "/path/to/srtm.tif",
-                            "geoid": "/path/to/geoid.tif",
-                            "altitude_delta_min": 10,
-                            "altitude_delta_max": 40
-                        }
-                    }
-                }
-
-            Alternatively, it can be set as a string corresponding to the DEM path, in which case default values for the geoid and the default altitude are used.
-
-            .. code-block:: json
-
-                {
-                "inputs": {
-                        "initial_elevation": "/path/to/srtm.tif"
-                    }
-                }
-
-            Note that the geoid parameter in initial_elevation is not the geoid used for output products generated after the triangulation step
-            (see output parameters).
-
-            Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
-
-      .. tab:: Depth Maps inputs
-
-
-          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-          | Name                    | Description                                                         | Type                  | Default value        | Required |
-          +=========================+=====================================================================+=======================+======================+==========+
-          | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
-          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-          | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
-          +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-
-
-
-            **Depth Maps**
-
-            For each depth map, give a particular name (what you want):
-
-            .. code-block:: json
-
-                {
-                    "depth_maps": {
-                        "my_name_for_this_depth_map":
+                        "my_name_for_this_image":
                         {
-                            "x" : "path_to_x.tif",
-                            "y" : "path_to_y.tif",
-                            "z" : "path_to_z.tif",
+                            "image" : "path_to_image.tif",
                             "color" : "path_to_color.tif",
-                            "mask": "path_to_mask.tif",
-                            "classification": "path_to_classification.tif",
-                            "filling": "path_to_filling.tif",
-                            "confidence": {
-                                "confidence_name1": "path_to_confidence1.tif",
-                                "confidence_name2": "path_to_confidence2.tif",
-                            },
-                            "performance_map": "path_to_performance_map.tif",
-                            "epsg": "depth_map_epsg"
+                            "mask" : "path_to_mask.tif",
+                            "classification" : "path_to_classification.tif",
+                            "nodata": 0
                         }
                     }
-                }
 
-            These input files can be generated with the `sensors_to_dense_depth_maps` pipeline, or `sensors_to_dense_dsm` pipeline activating the saving of depth_map using `save_intermediate_data` in the `triangulation` application.
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | Name              | Description                                                                              | Type           | Default value | Required |
+                +===================+==========================================================================================+================+===============+==========+
+                | *image*           | Path to the image                                                                        | string         |               | Yes      |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | *color*           | Image stackable to image used to create an ortho-image corresponding to the produced dsm | string         |               | No       |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | *no_data*         | No data value of the image                                                               | int            | 0             | No       |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | *geomodel*        | Path of geomodel and plugin-specific attributes (see :ref:`plugins` section for details) | string, dict   |               | No       |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | *mask*            | Binary mask stackable to image: 0 values are considered valid data                       | string         | None          | No       |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
+                | *classification*  | Multiband classification image (label keys inside metadata): 1 values = valid data       | string         | None          | No       |
+                +-------------------+------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
-            .. note::
+                .. note::
 
-                To generate confidence maps and performance map, parameters `generate_performance_map` and `save_intermediate_data` of `dense_matching` application must be activated in `sensors_to_dense_depth_maps` pipeline. The output performance map is `performance_map.tif`. Then the parameter `save_confidence` of `point_cloud_rasterization` should be activated in dense_depth_maps_to_dense_dsm pipeline to save the performance map.
+                    - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
+                    - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
+                    - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
+                    - The classification of second input is not necessary. In this case, the applications use only the available classification.
+                    - Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications
+                    - *geomodel*: If no geomodel is provide, CARS will try to use the rpc loaded with rasterio opening *image*.
 
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | Name             | Description                                                       | Type           | Default value | Required |
-            +==================+===================================================================+================+===============+==========+
-            | *x*              | Path to the x coordinates of depth map                            | string         |               | Yes      |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *y*              | Path to the y coordinates of depth map                            | string         |               | Yes      |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *color*          | Color of depth map                                                | string         |               | Yes      |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *classification* | Classification of depth map                                       | string         |               | No       |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *filling*        | Filling map of depth map                                          | string         |               | No       |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *confidence*     | Dict of paths to the confidences of depth map                     | dict           |               | No       |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
-            | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
-            +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                **Pairing**
 
-    **Region Of Interest (ROI)**
+                The pairing attribute defines the pairs to use, using sensors keys used to define sensor images.
 
-    A terrain ROI can be provided by user. It can be either a vector file (Shapefile for instance) path,
-    or a GeoJson dictionnary. These structures must contain a single Polygon or MultiPolygon. Multi-features are 
-    not supported.
+                .. code-block:: json
 
-    Example of the "roi" parameter with a GeoJson dictionnary containing a Polygon as feature :
-
-    .. code-block:: json
-
-        {
-            "inputs":
-            {
-                "roi" : {
-                    "type": "FeatureCollection",
-                    "features": [
-                        {
-                        "type": "Feature",
-                        "properties": {},
-                        "geometry": {
-                            "coordinates": [
-                            [
-                                [5.194, 44.2064],
-                                [5.194, 44.2059],
-                                [5.195, 44.2059],
-                                [5.195, 44.2064],
-                                [5.194, 44.2064]
-                            ]
-                            ],
-                            "type": "Polygon"
-                        }
-                        }
-                    ]
-                }
-            }
-        }
-
-    If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting 
-    the ROI are computed.
-
-    MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
-    MultiPolygon will be used as ROI. 
-
-    By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
-
-    Example of the *debug_with_roi* mode utilizing an "roi" parameter of type MultiPolygon as a feature and a specific EPSG.
-
-    .. code-block:: json
-
-        {
-            "inputs":
-            {
-                "roi" : {
-                    "type": "FeatureCollection",
-                    "features": [
-                        {
-                        "type": "Feature",
-                        "properties": {},
-                        "geometry": {
-                            "coordinates": [
-                            [
-                                [
-                                    [319700, 3317700],
-                                    [319800, 3317700],
-                                    [319800, 3317800],
-                                    [319800, 3317800],
-                                    [319700, 3317700]
-                                ]
-                            ],
-                            [
-                                [
-                                    [319900, 3317900],
-                                    [320000, 3317900],
-                                    [320000, 3318000],
-                                    [319900, 3318000],
-                                    [319900, 3317900]
-                                ]
-                            ]
-                            ],
-                            "type": "MultiPolygon"
-                        }
-                        }
-                    ],
-                    "crs" :
                     {
-                        "type": "name",
-                        "properties": {
-                            "name": "EPSG:32636"
+                        "inputs": {
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
+
+                                },
+                                "three": {
+                                    "image": "img3.tif",
+                                    "geomodel": "img3.geom"
+                                }
+                            },
+                            "pairing": [["one", "two"],["one", "three"]]
                         }
                     }
-                },
-            }
-            "advanced":
-            {
-                "debug_with_roi": true
-            }
-        }
 
-    Example of the "roi" parameter with a Shapefile
+                This attribute is required when there are more than two input sensor images. If only two images ares provided, the pairing can be deduced by cars, considering the first image defined as the left image and second image as right image.
 
-    .. code-block:: json
 
-        {
-            "inputs":
-            {
-                "roi" : "roi_vector_file.shp"
-            }
-        }
+            .. tab:: Depth Maps inputs
 
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | Name                    | Description                                                         | Type                  | Default value        | Required |
+                +=========================+=====================================================================+=======================+======================+==========+
+                | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+
+
+                **Depth Maps**
+
+                For each depth map, give a particular name (what you want):
+
+                .. code-block:: json
+
+                    {
+                        "depth_maps": {
+                            "my_name_for_this_depth_map":
+                            {
+                                "x" : "path_to_x.tif",
+                                "y" : "path_to_y.tif",
+                                "z" : "path_to_z.tif",
+                                "color" : "path_to_color.tif",
+                                "mask": "path_to_mask.tif",
+                                "classification": "path_to_classification.tif",
+                                "filling": "path_to_filling.tif",
+                                "confidence": {
+                                    "confidence_name1": "path_to_confidence1.tif",
+                                    "confidence_name2": "path_to_confidence2.tif",
+                                },
+                                "performance_map": "path_to_performance_map.tif",
+                                "epsg": "depth_map_epsg"
+                            }
+                        }
+                    }
+
+                These input files can be generated by activating the saving of depth_map using `save_intermediate_data` in the `triangulation` application.
+
+                .. note::
+
+                    To generate confidence maps, the parameter `save_confidence` of `point_cloud_rasterization` should be activated.
+
+                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated. 
+                    
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | Name             | Description                                                       | Type           | Default value | Required |
+                +==================+===================================================================+================+===============+==========+
+                | *x*              | Path to the x coordinates of depth map                            | string         |               | Yes      |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *y*              | Path to the y coordinates of depth map                            | string         |               | Yes      |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *color*          | Color of depth map                                                | string         |               | Yes      |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *classification* | Classification of depth map                                       | string         |               | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *filling*        | Filling map of depth map                                          | string         |               | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *confidence*     | Dict of paths to the confidences of depth map                     | dict           |               | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *epsg*           | Epsg code of depth map                                            | int            | 4326          | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+
+            .. tab:: ROI
+                A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
+                or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are 
+                not supported.
+
+                Example of the "roi" parameter with a GeoJson dictionnary containing a Polygon as feature :
+
+                .. code-block:: json
+
+                    {
+                        "inputs":
+                        {
+                            "roi" : {
+                                "type": "FeatureCollection",
+                                "features": [
+                                    {
+                                    "type": "Feature",
+                                    "properties": {},
+                                    "geometry": {
+                                        "coordinates": [
+                                        [
+                                            [5.194, 44.2064],
+                                            [5.194, 44.2059],
+                                            [5.195, 44.2059],
+                                            [5.195, 44.2064],
+                                            [5.194, 44.2064]
+                                        ]
+                                        ],
+                                        "type": "Polygon"
+                                    }
+                                    }
+                                ]
+                            }
+                        }
+                    }
+
+                If the *debug_with_roi* advanced parameter (see dedicated tab) is enabled, the tiling of the entire image is kept but only the tiles intersecting 
+                the ROI are computed.
+
+                MultiPolygon feature is only useful if the parameter *debug_with_roi* is activated, otherwise the total footprint of the 
+                MultiPolygon will be used as ROI. 
+
+                By default epsg 4326 is used. If the user has defined a polygon in a different reference system, the "crs" field must be specified.
+
+                Example of the *debug_with_roi* mode utilizing an "roi" parameter of type MultiPolygon as a feature and a specific EPSG.
+
+                .. code-block:: json
+
+                    {
+                        "inputs":
+                        {
+                            "roi" : {
+                                "type": "FeatureCollection",
+                                "features": [
+                                    {
+                                    "type": "Feature",
+                                    "properties": {},
+                                    "geometry": {
+                                        "coordinates": [
+                                        [
+                                            [
+                                                [319700, 3317700],
+                                                [319800, 3317700],
+                                                [319800, 3317800],
+                                                [319800, 3317800],
+                                                [319700, 3317700]
+                                            ]
+                                        ],
+                                        [
+                                            [
+                                                [319900, 3317900],
+                                                [320000, 3317900],
+                                                [320000, 3318000],
+                                                [319900, 3318000],
+                                                [319900, 3317900]
+                                            ]
+                                        ]
+                                        ],
+                                        "type": "MultiPolygon"
+                                    }
+                                    }
+                                ],
+                                "crs" :
+                                {
+                                    "type": "name",
+                                    "properties": {
+                                        "name": "EPSG:32636"
+                                    }
+                                }
+                            },
+                        }
+                        "advanced":
+                        {
+                            "debug_with_roi": true
+                        }
+                    }
+
+                Example of the "roi" parameter with a Shapefile
+
+                .. code-block:: json
+
+                    {
+                        "inputs":
+                        {
+                            "roi" : "roi_vector_file.shp"
+                        }
+                    }
+
+            .. tab:: Initial Elevation
+
+                **Initial elevation**
+
+                The attribute contains all informations about initial elevation: dem path, geoid and default altitude
+                
+                +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
+                | Name                  | Description                                                                | Type   | Available value      | Default value        | Required |
+                +=======================+============================================================================+========+======================+======================+==========+
+                | *dem*                 | Path to DEM tiles                                                          | string |                      | None                 | No       |
+                +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
+                | *geoid*               | Geoid path                                                                 | string |                      | Cars internal geoid  | No       |
+                +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
+                | *altitude_delta_min*  | constant delta in altitude (meters) between dem median and dem min         | int    | should be > 0        | None                 | No       |
+                +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
+                | *altitude_delta_max*  | constant delta in altitude (meters) between dem max and dem median         | int    | should be > 0        | None                 | No       |
+                +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
+
+                If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96). If no delta is provided, the dem_min and max generated with sparse matches will be used.
+                
+                The Deltas are used following this formula :
+
+                .. code-block:: python
+
+                    dem_min = initial_elevation - altitude_delta_min
+                    dem_max = initial_elevation + altitude_delta_max
+
+                .. warning::  Dem path is mandatory for the use of the altitude deltas.
+
+                When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
+
+                Initial elevation can be provided as a dictionary with a field for each parameter, for example:
+
+
+                .. code-block:: json
+
+                    {
+                        "inputs": {
+                            "initial_elevation": {
+                                "dem": "/path/to/srtm.tif",
+                                "geoid": "/path/to/geoid.tif",
+                                "altitude_delta_min": 10,
+                                "altitude_delta_max": 40
+                            }
+                        }
+                    }
+
+                Alternatively, it can be set as a string corresponding to the DEM path, in which case default values for the geoid and the default altitude are used.
+
+                .. code-block:: json
+
+                    {
+                    "inputs": {
+                            "initial_elevation": "/path/to/srtm.tif"
+                        }
+                    }
+
+                Note that the geoid parameter in initial_elevation is not the geoid used for output products generated after the triangulation step
+                (see output parameters).
+
+                Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
 		
-   .. tab:: Orchestrator
+    .. tab:: Orchestrator
 
         CARS can distribute the computations chunks by using either dask (local or distributed cluster) or multiprocessing libraries.
         The distributed cluster require centralized files storage and uses PBS scheduler.
@@ -550,877 +542,880 @@ The structure follows this organisation:
             In the case of distributed orchestration, the worker's logging output file is located in the workers_log directory (the message format indicates thread ID and process ID).
             A summary of basic profiling is generated in output directory.
 
-   .. tab:: Pipelines
+    .. tab:: Pipeline configurations
 
-    The ``pipeline`` key is optional and allows to choose the pipeline to use. By default CARS takes sensor images as inputs, and generates a DSM.
+        The ``pipeline`` key is optional and allows users to choose the pipeline they would like to run. By default, CARS has a single pipeline: `default`. 
+        This pipeline is modular and can be adapted to your needs. This sections provides examples of specific configurations.
 
-    The pipeline is a preconfigured application chain. For now, there are four pipelines. By default CARS launch a Sensor to Dense DSM pipeline.
+        Installed plugins may provide additional pipelines. The inputs and outputs are specific to each pipeline. This section describes the pipeline available in CARS. 
 
-    .. note::
+        +----------------+-----------------------+--------+---------------+------------------+----------+
+        | Name           | Description           | Type   | Default value | Available values | Required |
+        +================+=======================+========+===============+==================+==========+
+        | *pipeline*     | The pipeline to use   | str    | "default"     | "default"        | False    |
+        +----------------+-----------------------+--------+---------------+------------------+----------+
 
-        The sensor_to_sparse_dsm pipeline can be used to prepare a refined configuration for the sensors_to_dense_dsm pipeline to facilitate and accelerate the sensors_to_dense_dsm pipeline.
-        See the `configuration/inputs/epipolar_a_priori` section for more details.
+        .. code-block:: json
 
+            {
+                "pipeline": "default"
+            }
 
-    This section describes the pipeline available in CARS.
+        .. tabs::
 
-    +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
-    | Name           | Description           | Type   | Default value                      | Available values                                                                                                                                                                                     | Required |
-    +================+=======================+========+====================================+======================================================================================================================================================================================================+==========+
-    | *pipeline*     | The pipeline to use   | str    | "sensors_to_dense_dsm_no_merging"  | "sensors_to_dense_dsm", "sensors_to_sparse_dsm", "sensors_to_dense_depth_maps", "dense_depth_maps_to_dense_dsm", "sensors_to_dense_dsm_no_merging", "dense_depth_maps_to_dense_dsm_no_merging"       | False    |
-    +----------------+-----------------------+--------+------------------------------------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+----------+
+            .. tab:: N inputs to 1 DSM
 
+                This is the default behavior of CARS. With inputs that are either sensor 
+                image pairs or depth maps, CARS will automatically generate a single DSM. 
+                The smallest configuration can simply contain only those inputs.
 
+                .. note::
+                    The DSM will always be generated with all the inputs. 
 
+                    When the ``merging`` parameter is set to `False`, the 
+                    combined point cloud containing all points 
+                    from the depth maps will be created on the fly 
+                    during the rasterization process.
 
-    .. code-block:: json
-
-        {
-            "pipeline": "sensors_to_dense_dsm"
-        },
-
-    .. tabs::
-
-        .. tab:: Sensor to Dense DSM
-
-            **Name**: "sensors_to_dense_dsm"
-
-            **Description**
-
-            .. figure:: ./images/cars_pipeline_sensor2dsm.png
-                :width: 700px
-                :align: center
-
-            - For each stereo pair:
-
-                1. Create stereo-rectification grids for left and right views.
-                2. Resample the both images into epipolar geometry.
-                3. Compute sift matches between left and right views in epipolar geometry.
-                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`dem` (such as SRTM) in order to reduce the disparity intervals to explore.
-                6. Compute disparity for each image pair in epipolar geometry.
-                7. Fill holes in disparity maps for each image pair in epipolar geometry.
-                8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
-
-            - Then
-
-                9. Merge points clouds coming from each stereo pairs.
-                10. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
-                11. Rasterize: Project these altitudes on a regular grid as well as the associated color.
-
-        .. tab:: Sensor to Dense DSM no merging
-
-            **Name**: "sensors_to_dense_dsm_no_merging"
-
-            **Description**
-
-            .. figure:: ./images/cars_pipeline_sensor2dsm_no_merging.png
-                :width: 700px
-                :align: center
-
-            - For each stereo pair:
-
-                1. Create stereo-rectification grids for left and right views.
-                2. Resample the both images into epipolar geometry.
-                3. Compute sift matches between left and right views in epipolar geometry.
-                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`dem` (such as SRTM) in order to reduce the disparity intervals to explore.
-                6. Compute disparity for each image pair in epipolar geometry.
-                7. Fill holes in disparity maps for each image pair in epipolar geometry.
-                8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
-
-            - Then
-
-                9. Rasterize: Project these altitudes on a regular grid as well as the associated color.
-
-        .. tab:: Sensor to Sparse DSM
-
-            **Name**: "sensors_to_sparse_dsm"
-
-            **Description**
-
-            .. figure:: ./images/sensor_to_low_dsm.png
-                :width: 700px
-                :align: center
-
-            - For each stereo pair:
-
-                1. Create stereo-rectification grids for left and right views.
-                2. Resample the both images into epipolar geometry.
-                3. Compute sift matches between left and right views in epipolar geometry.
-                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
-
-            - Then
-
-                6. Merge points clouds coming from each stereo pairs.
-                7. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
-                8. Rasterize: Project these altitudes on a regular grid as well as the associated color.
-
-
-        .. tab:: Sensor to Dense Depth Maps
-
-            **Name**: "sensors_to_dense_depth_maps"
-
-            **Description**
-
-            .. figure:: ./images/cars_pipeline_sensor_to_pc.png
-                :width: 700px
-                :align: center
-
-            - For each stereo pair:
-
-                1. Create stereo-rectification grids for left and right views.
-                2. Resample the both images into epipolar geometry.
-                3. Compute sift matches between left and right views in epipolar geometry.
-                4. Predict an optimal disparity range from the sift matches and create a bilinear correction model of the right image's stereo-rectification grid in order to minimize the epipolar error. Apply the estimated correction to the right grid.
-                5. Resample again the stereo pair in epipolar geometry (using corrected grid for the right image) by using input :term:`dem` (such as SRTM) in order to reduce the disparity intervals to explore.
-                6. Compute disparity for each image pair in epipolar geometry.
-                7. Fill holes in disparity maps for each image pair in epipolar geometry.
-                8. Triangule the matches and get for each pixel of the reference image a latitude, longitude and altitude coordinate.
-
-
-        .. tab:: Dense Dense Depth Maps to Dense DSM
-
-            **Name**: "dense_depth_maps_to_dense_dsm"
-
-            **Description**
-
-            .. figure:: ./images/pc_to_dsm.png
-                :width: 700px
-                :align: center
-
-
-            1. Merge depth maps coming from each stereo pairs.
-            2. Filter the resulting 3D points cloud via two consecutive filters: the first removes the small groups of 3D points, the second filters the points which have the most scattered neighbors.
-            3. Rasterize: Project these altitudes on a regular grid as well as the associated color.
-
-        .. tab:: Dense Depth Maps to Dense DSM no merging
-
-            **Name**: "dense_depth_maps_to_dense_dsm_no_merging"
-
-            **Description**
-
-            .. figure:: ./images/pc_to_dsm_no_merging.png
-                :width: 700px
-                :align: center
-
-
-            1. Rasterize: Project these altitudes on a regular grid as well as the associated color.
-
-
-   .. tab:: Geometry plugin
-
-    This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on geometry plugins configuration.
-
-    +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
-    | Name              | Description           | Type   | Default value           | Available values                      | Required |
-    +===================+=======================+========+=========================+=======================================+==========+
-    | *geometry_plugin* | The plugin to use     | str    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
-    +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
-
-    .. code-block:: json
-
-        {
-            "geometry_plugin": "SharelocGeometry"
-        },
-
-   .. tab:: Applications
-
-    This key is optional and allows to redefine parameters for each application used in pipeline.
-
-    This section describes all possible configuration of CARS applications.
-
-    CARS applications are defined and called by their name in applications configuration section:
-
-    .. code-block:: json
-
-      "applications":{
-          "application_name": {
-              "method": "application_dependent",
-              "parameter1": 3,
-              "parameter2": 0.3
-          }
-      },
-
-    Be careful with these parameters: no mechanism ensures consistency between applications for now.
-    And some parameters can degrade performance and DSM quality heavily.
-    The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
-
-    .. tabs::
-
-        .. tab:: Grid Generation
-
-            **Name**: "grid_generation"
-
-            **Description**
-
-            From sensors image, compute the stereo-rectification grids
-
-            **Configuration**
-
-            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name                    | Description                                   | Type    |     Available values              | Default value | Required |
-            +=========================+===============================================+=========+===================================+===============+==========+
-            | method                  | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
-            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | epi_step                | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
-            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_intermediate_data  | Save the generated grids                      | boolean |                                   | false         | No       |
-            +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "grid_generation": {
-                        "method": "epipolar",
-                        "epi_step": 35
-                    }
-                },
-
-        .. tab:: Resampling
-
-            **Name**: "resampling"
-
-            **Description**
-
-            Input images are resampled with grids.
-
-            **Configuration**
-
-            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | Name                   | Description                                            | Type    | Available value | Default value | Required |
-            +========================+========================================================+=========+=================+===============+==========+
-            | method                 | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
-            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | strip_height           | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
-            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | step                   | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
-            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-            | save_intermediate_data | Save epipolar images and color                         | boolean |                 | false         | No       |
-            +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "resampling": {
-                        "method": "bicubic",
-                        "epi_tile_size": 600
-                    }
-                },
-
-        .. tab:: Sparse matching
-
-            **Name**: "sparse_matching"
-
-            **Description**
-
-            Compute keypoints matches on pair images
-
-            **Configuration**
-
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
-            +======================================+================================================================================================+=============+========================+===============+==========+
-            | method                               | Method for sparse matching                                                                     | string      | "sift"                 | "sift"        | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0         | 0.0           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                               | float       | between 0 and 1        | 0.1           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.6           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                               | int         | should be > 0          | 8             | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                    | int         | should be > 0          | 3             | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_peak_threshold                  | Constrast threshold to discard a match (at None it will be set according to image type)        | float       | should be > 0, or None | None          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_edge_threshold                  | Distance to image edge threshold to discard a match                                            | float       |                        | -5.0          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_magnification                   | The descriptor magnification factor                                                            | float       | should be > 0          | 2.0           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-            | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
-            +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-
-
-	        For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
-            
-            .. note::
-
-                By default, the sift_peak_threshold is set to None (auto-mode). In this mode, the sift_peak_threshold is determined at runtime based on the sensor image type:
-
-                * uint8 image type : sift_peak_threshold = 1
-                * other image type sift_peak_threshold = 20
-
-                It is also possible to set the value to a fixed value.
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "sparse_matching": {
-                        "method": "sift",
-                        "disparity_margin": 0.01
-                    }
-                },
-
-        .. tab:: dem Generation
-
-            **Name**: "dem_generation"
-
-            **Description**
-
-            Generates dem from sparse matches. 
-
-            3 dems are generated, with different methods:
-            * median
-            * min
-            * max
-
-            The DEMs are generated in the application dump directory
-
-            **Configuration**
-
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | Name                            | Description                                                | Type       | Available value | Default value | Required |
-            +=================================+============================================================+============+=================+===============+==========+
-            | method                          | Method for dem_generation                                  | string     | "dichotomic"    | "dichotomic"  | Yes      |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | resolution                      | Resolution of dem, in meter                                | int, float |  should be > 0  | 200           | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | margin                          | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | percentile                      | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 3             | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | min_number_matches              | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | height_margin                   | Height margin [margin min, margin max], in meter           | int        |                 | 20            | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-            | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata               | int        | should be > 0   | 3             | No       |
-            +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "dem_generation": {
-                        "method": "dichotomic",
-                        "min_number_matches": 20
-                    }
-
-        .. tab:: Dense matching
-
-            **Name**: "dense_matching"
-
-            **Description**
-
-            Compute disparity map from stereo-rectified pair images
-            
-            .. list-table:: Configuration
-                :widths: 19 19 19 19 19 19
-                :header-rows: 1
+                    Conversely, if the ``merging`` parameter is set to `True`, 
+                    a point cloud will be generated from all depth maps 
+                    before the rasterization occurs. 
+                    This allows for point cloud filtering applications that can
+                    consider all depth maps collectively.
                 
-                * - Name
-                  - Description
-                  - Type
-                  - Available value
-                  - Default value
-                  - Required
-                * - method
-                  - Method for dense matching
-                  - string
-                  - "census_sgm", "mccnn_sgm"
-                  - "census_sgm"
-                  - No
-                * - loader
-                  - external library use to compute dense matching
-                  - string
-                  - "pandora"
-                  - "pandora"
-                  - No
-                * - loader_conf
-                  - Configuration associated with loader, dictionary or path to config
-                  - dict or str
-                  - 
-                  - 
-                  - No
-                * - min_elevation_offset
-                  - Override minimum disparity from prepare step with this offset in meters
-                  - int
-                  - 
-                  - None
-                  - No
-                * - max_elevation_offset
-                  - Override maximum disparity from prepare step with this offset in meters
-                  - int
-                  - should be > min
-                  - None
-                  - No
-                * - disp_min_threshold
-                  - Override minimum disparity when less than lower bound
-                  - int
-                  - 
-                  - None
-                  - No
-                * - disp_max_threshold
-                  - Override maximum disparity when greater than upper bound
-                  - int
-                  - should be > min
-                  - None
-                  - No
-                * - min_epi_tile_size
-                  - Lower bound of optimal epipolar tile size for dense matching
-                  - int
-                  - should be > 0
-                  - 300
-                  - No
-                * - max_epi_tile_size
-                  - Upper bound of optimal epipolar tile size for dense matching
-                  - int
-                  - should be > 0 and > min
-                  - 1500
-                  - No
-                * - epipolar_tile_margin_in_percent
-                  - Size of the margin used for dense matching (percent of tile size)
-                  - int
-                  - 
-                  - 60
-                  - No
-                * - generate_performance_map
-                  - Generate a performance map from disparity map
-                  - boolean
-                  - 
-                  - False
-                  - No
-                * - generate_confidence_intervals
-                  - Compute confidence intervals from disparity map. 
-                  - boolean
-                  - 
-                  - False
-                  - No
-                * - perf_eta_max_ambiguity
-                  - Ambiguity confidence eta max used for performance map
-                  - float
-                  - 
-                  - 0.99
-                  - No
-                * - perf_eta_max_risk
-                  - Risk confidence eta max used for performance map
-                  - float
-                  - 
-                  - 0.25
-                  - No
-                * - perf_eta_step
-                  - Risk and Ambiguity confidence eta step used for performance map
-                  - float
-                  - 
-                  - 0.04
-                  - No
-                * - perf_ambiguity_threshold
-                  - Maximal ambiguity considered for performance map
-                  - float
-                  - 
-                  - 0.6
-                  - No
-                * - save_intermediate_data
-                  - Save disparity map and disparity confidence
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - use_global_disp_range
-                  - If true, use global disparity range, otherwise local range estimation
-                  - boolean
-                  - 
-                  - false
-                  - No
-                * - local_disp_grid_step
-                  - Step of disparity min/ max grid used to resample dense disparity range
-                  - int
-                  - 
-                  - 30
-                  - No
-                * - disp_range_propagation_filter_size
-                  - Filter size of local min/max disparity, to propagate local min/max
-                  - int
-                  - should be > 0
-                  - 300
-                  - No
-                * - use_cross_validation
-                  - Add cross validation step
-                  - bool
-                  -
-                  - false
-                  - No
+                .. code-block:: json
 
-            See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
+                    {
 
-            **Example**
+                        "inputs": {
+                            
+                            // sensor image pair(s) as inputs
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
 
-            .. code-block:: json
+                                },
+                                "three": {
+                                    "image": "img3.tif",
+                                    "geomodel": "img3.geom"
+                                }
+                            },
+                            "pairing": [["one", "two"],["one", "three"]]
+                        
+                            // or depth map(s)
+                            "depth_maps": {
+                                "my_name_for_this_depth_map":
+                                {
+                                    "x" : "path_to_x.tif",
+                                    "y" : "path_to_y.tif",
+                                    "z" : "path_to_z.tif",
+                                    "color" : "path_to_color.tif",
+                                    "mask": "path_to_mask.tif",
+                                    "classification": "path_to_classification.tif",
+                                    "filling": "path_to_filling.tif",
+                                    "confidence": {
+                                        "confidence_name1": "path_to_confidence1.tif",
+                                        "confidence_name2": "path_to_confidence2.tif",
+                                    },
+                                    "performance_map": "path_to_performance_map.tif",
+                                    "epsg": "depth_map_epsg"
+                                }
+                            }
 
-                "applications": {
-                    "dense_matching": {
-                        "method": "census_sgm",
-                        "loader": "pandora",
-                        "loader_conf": "path_to_user_pandora_configuration"
+                        }
+
+                    }                
+
+
+            .. tab:: Sparse DSMs
+
+                In CARS, sparse DSMs are computed during the process of creating depth maps from sensor images (specifically during the `dem_generation` application). This means they cannot be created from depth maps.
+                It also means the program should be stopped even before finishing the first part of the pipeline (sensor images to depth maps) in order not to run useless applications.
+
+                CARS provides an easy way of customizing the step at which the pipeline should be stopped. When the key ``product_level`` of ``output`` is empty, CARS will stop after the last application
+                whose ``save_intermediate_data`` key is set to True.
+
+                .. note::
+                    If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``terrain_a_priori`` parameter, saving computation time.
+                    Very useful when trying to test multiple configurations later in the pipeline !
+
+                Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
+
+                .. code-block:: json
+
+                    {
+
+                        "applications": {
+                            "dem_generation": {
+                                "save_intermediate_data": true
+                            }
+                        }
+
+                        "output": {
+                            "product_level": []
+                        }
+
                     }
-                },
 
-            .. note::
+            .. tab:: N pairs to N Depth Maps
 
-                * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
-                * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
-                * To save the confidence in the sensors_to_dense_point_clouds pipeline, the save_intermediate_data parameter should be activated.
+                Depth maps are a way to represent point clouds as three images X Y and Z, each one representing the position of a pixel on its axis. 
+                They are an official product of CARS, and can thus be created more easily than sparse DSMs.
 
-        
-        .. tab:: Dense matches filling
+                The ``product_level`` key in ``output`` can contain any combination of the values `dsm`, `depth_map`, and `point_cloud`.
 
-            **Name**: "dense_matches_filling"
+                Depth maps (one for each sensor pair) will be saved if `depth_map` is present in ``product_level`` : 
 
-            **Description**
+                .. code-block:: json
 
-            Fill holes in dense matches map. This uses the holes detected with the HolesDetection application.
-            The holes correspond to the area masked for dense matching.
+                    {
 
-            **Configuration**
-
-            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type    | Available value         | Default value      | Required |
-            +=====================================+=================================+=========+=========================+====================+==========+
-            | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | No       |
-            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-            | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
-            +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
-
-
-            **Method plane:**
-
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type        | Available value         | Default value      | Required |
-            +=====================================+=================================+=============+=========================+====================+==========+
-            | classification                      | Classification band name        | List[str]   |                         | None               | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | interpolation_type                  | Interpolation type              | string      | "pandora"               | "pandora"          | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | interpolation_method                | Method for holes interpolation  | string      | "mc_cnn"                | "mc_cnn"           | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | max_search_distance                 | Maximum search distance         | int         |                         | 100                | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | ignore_nodata_at_disp_mask_borders  | Ignore nodata at borders        | boolean     |                         | false              | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | ignore_extrema_disp_values          | Ignore extrema values           | boolean     |                         | true               | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | nb_pix                              | Margin used for mask            | int         |                         | 20                 | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-            | percent_to_erode                    | Percentage to erode             | float       |                         | 0.2                | No       |
-            +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-
-
-            **Method zero_padding:**
-
-            The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
-
-            +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-            | Name                                | Description                     | Type      | Available value         | Default value      | Required |
-            +=====================================+=================================+===========+=========================+====================+==========+
-            | classification                      | Classification band name        | List[str] |                         | None               | No       |
-            +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
-
-            .. note::
-                - The classification of second input is not given. Only the first disparity will be filled with zero value.
-                - The filled area will be considered as a valid disparity mask.
-
-            .. warning::
-
-                There is a particular case with the *dense_matches_filling* application because it is called twice.
-                The eighth step consists of fill dense matches via two consecutive methods.
-                So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
-                Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
-                those two applications with :
-
-                 * *dense_matches_filling.1*
-                 * *dense_matches_filling.2*
-
-                Each one is associated to a particular *dense_matches_filling* method*
-
-            **Example**
-
-            .. code-block:: json
-
-                    "applications": {
-                        "dense_matches_filling.1": {
-                            "method": "plane",
-                            "classification": ["water"],
-                            "save_intermediate_data": true
-                        },
-                        "dense_matches_filling.2": {
-                            "method": "zero_padding",
-                            "classification": ["cloud", "snow"],
-                            "save_intermediate_data": true
+                        "output": {
+                            "product_level": ["depth_map"]
                         }
-                    },
 
-
-        .. tab:: Triangulation
-
-            **Name**: "triangulation"
-
-            **Description**
-
-            Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude point
-
-            **Configuration**
-
-            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | Name                   | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
-            +========================+====================================================================================================================+=========+======================================+==============================+==========+
-            | method                 | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
-            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
-            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-            | save_intermediate_data | Save depth map                                                                                                     | boolean |                                      | false                        | No       |
-            +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-
-            **Example**
-
-            .. code-block:: json
-
-                "applications": {
-                    "triangulation": {
-                        "method": "line_of_sight_intersection",
-                        "snap_to_img1": true
                     }
-                },
 
-        .. tab:: Point Cloud fusion
+            .. tab:: N inputs to Point clouds
+                
+                Just like depth maps, the point cloud is an official product of CARS. As such, all that's needed is to add `point_cloud` to ``product_level`` in order for it to be generated.
+                
+                .. warning::
+                    CARS will only compute a point cloud when the key ``merging`` in ``advanced`` is set to `True`, which means
+                    setting ``output_level`` as containing `point_cloud` will effectively force ``merging`` to `True`. 
+                    This behavior will have the side-effect of running the point cloud denoising and outliers removing applications.
 
-            **Name**: "point_cloud_fusion"
+                .. note::
+                    If you wish to save an individual point cloud for each input given, the key ``save_by_pair`` of ``output`` will need to be set to `True`.
 
-            **Description**
+                .. code-block:: json
 
-            Merge points clouds coming from each pair
+                    {
 
-            Only one method is available for now: "mapping_to_terrain_tiles"
+                        "output": {
+                            "product_level": ["point_cloud"]
+                        }
 
-            **Configuration**
+                    }
 
-            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
-            | Name                         | Description                              | Type    | Available value            | Default value              | Required |
-            +==============================+==========================================+=========+============================+============================+==========+
-            | method                       | Method for fusion                        | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
-            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                            | false                      | No       |
-            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
-            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                            | false                      | No       |
-            +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+    .. tab:: Geometry plugin
 
-            **Example**
+        This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on geometry plugins configuration.
+
+        +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
+        | Name              | Description           | Type   | Default value           | Available values                      | Required |
+        +===================+=======================+========+=========================+=======================================+==========+
+        | *geometry_plugin* | The plugin to use     | str    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
+        +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
+
+        .. code-block:: json
+
+            {
+                "geometry_plugin": "SharelocGeometry"
+            },
+
+    .. tab:: Applications
+
+        This key is optional and allows to redefine parameters for each application used in pipeline.
+
+        This section describes all possible configuration of CARS applications.
+
+        CARS applications are defined and called by their name in applications configuration section:
+
+        .. code-block:: json
+
+            "applications":{
+                "application_name": {
+                    "method": "application_dependent",
+                    "parameter1": 3,
+                    "parameter2": 0.3
+                }
+            }
 
 
-            .. code-block:: json
+        Be careful with these parameters: no mechanism ensures consistency between applications for now.
+        And some parameters can degrade performance and DSM quality heavily.
+        The default parameters have been set as a robust and consistent end to end configuration for the whole pipeline.
+
+        .. tabs::
+
+            .. tab:: Grid Generation
+
+                **Name**: "grid_generation"
+
+                **Description**
+
+                From sensors image, compute the stereo-rectification grids
+
+                **Configuration**
+
+                +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | Name                    | Description                                   | Type    |     Available values              | Default value | Required |
+                +=========================+===============================================+=========+===================================+===============+==========+
+                | method                  | Method for grid generation                    | string  | "epipolar"                        | epipolar      | No       |
+                +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | epi_step                | Step of the deformation grid in nb. of pixels | int     | should be > 0                     | 30            | No       |
+                +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | save_intermediate_data  | Save the generated grids                      | boolean |                                   | false         | No       |
+                +-------------------------+-----------------------------------------------+---------+-----------------------------------+---------------+----------+
+
+                **Example**
+
+                .. code-block:: json
 
                     "applications": {
-                        "point_cloud_fusion": {
-                            "method": "mapping_to_terrain_tiles",
-                            "save_intermediate_data": true,
-                            "save_by_pair": true,
+                        "grid_generation": {
+                            "method": "epipolar",
+                            "epi_step": 35
                         }
                     },
 
-            .. note::
-                When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
-                Please, see the section :ref:`merge_laz_files` to merge them into one single file.
-                `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
+            .. tab:: Resampling
 
-        .. tab:: Point Cloud outliers removing
+                **Name**: "resampling"
 
-            **Name**: "point_cloud_outliers_removing"
+                **Description**
 
-            **Description**
+                Input images are resampled with grids.
 
-            Point cloud outliers removing
+                **Configuration**
 
-            **Configuration**
+                +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+                | Name                   | Description                                            | Type    | Available value | Default value | Required |
+                +========================+========================================================+=========+=================+===============+==========+
+                | method                 | Method for resampling                                  | string  | "bicubic"       | "bicubic"     | No       |
+                +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+                | strip_height           | Height of strip (only when tiling is done by strip)    | int     | should be > 0   | 60            | No       |
+                +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+                | step                   | Horizontal step for resampling inside a strip          | int     | should be > 0   | 500           | No       |
+                +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
+                | save_intermediate_data | Save epipolar images and color                         | boolean |                 | false         | No       |
+                +------------------------+--------------------------------------------------------+---------+-----------------+---------------+----------+
 
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | Name                         | Description                              | Type    | Available value                   | Default value | Required |
-            +==============================+==========================================+=========+===================================+===============+==========+
-            | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-            | save_by_pair                 | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
-            +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+                **Example**
 
-            If method is *statistical*:
-
-            +----------------+-------------+---------+-----------------+---------------+----------+
-            | Name           | Description | Type    | Available value | Default value | Required |
-            +================+=============+=========+=================+===============+==========+
-            | activated      |             | boolean |                 | false         | No       |
-            +----------------+-------------+---------+-----------------+---------------+----------+
-            | k              |             | int     | should be > 0   | 50            | No       |
-            +----------------+-------------+---------+-----------------+---------------+----------+
-            | std_dev_factor |             | float   | should be > 0   | 5.0           | No       |
-            +----------------+-------------+---------+-----------------+---------------+----------+
-
-            If method is *small_components*
-
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | Name                        | Description | Type    | Available value | Default value | Required |
-            +=============================+=============+=========+=================+===============+==========+
-            | activated                   |             | boolean |                 | false         | No       |
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | on_ground_margin            |             | int     |                 | 10            | No       |
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | connection_distance         |             | float   |                 | 3.0           | No       |
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | nb_points_threshold         |             | int     |                 | 50            | No       |
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-            | clusters_distance_threshold |             | float   |                 | None          | No       |
-            +-----------------------------+-------------+---------+-----------------+---------------+----------+
-
-            .. warning::
-
-                There is a particular case with the *Point Cloud outliers removing* application because it is called twice.
-                The ninth step consists of Filter the 3D points cloud via two consecutive filters.
-                So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
-                Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
-                those two applications with :
-
-                 * *point_cloud_outliers_removing.1*
-                 * *point_cloud_outliers_removing.2*
-
-                Each one is associated to a particular *point_cloud_outliers_removing* method*
-
-            **Example**
-
-            .. code-block:: json
+                .. code-block:: json
 
                     "applications": {
-                        "point_cloud_outliers_removing.1": {
-                            "method": "small_components",
-                            "on_ground_margin": 10,
-                            "save_intermediate_data": true
+                        "resampling": {
+                            "method": "bicubic",
+                            "epi_tile_size": 600
+                        }
+                    },
+
+            .. tab:: Sparse matching
+
+                **Name**: "sparse_matching"
+
+                **Description**
+
+                Compute keypoints matches on pair images
+
+                **Configuration**
+
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
+                +======================================+================================================================================================+=============+========================+===============+==========+
+                | method                               | Method for sparse matching                                                                     | string      | "sift"                 | "sift"        | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0         | 0.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                               | float       | between 0 and 1        | 0.1           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.6           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                               | int         | should be > 0          | 8             | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                    | int         | should be > 0          | 3             | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_peak_threshold                  | Constrast threshold to discard a match (at None it will be set according to image type)        | float       | should be > 0, or None | None          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_edge_threshold                  | Distance to image edge threshold to discard a match                                            | float       |                        | -5.0          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_magnification                   | The descriptor magnification factor                                                            | float       | should be > 0          | 2.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+
+
+                For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
+                
+                .. note::
+
+                    By default, the sift_peak_threshold is set to None (auto-mode). In this mode, the sift_peak_threshold is determined at runtime based on the sensor image type:
+
+                    * uint8 image type : sift_peak_threshold = 1
+                    * other image type sift_peak_threshold = 20
+
+                    It is also possible to set the value to a fixed value.
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "sparse_matching": {
+                            "method": "sift",
+                            "disparity_margin": 0.01
+                        }
+                    },
+
+            .. tab:: dem Generation
+
+                **Name**: "dem_generation"
+
+                **Description**
+
+                Generates dem from sparse matches. 
+
+                3 dems are generated, with different methods:
+                * median
+                * min
+                * max
+
+                The DEMs are generated in the application dump directory
+
+                **Configuration**
+
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | Name                            | Description                                                | Type       | Available value | Default value | Required |
+                +=================================+============================================================+============+=================+===============+==========+
+                | method                          | Method for dem_generation                                  | string     | "dichotomic"    | "dichotomic"  | Yes      |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | resolution                      | Resolution of dem, in meter                                | int, float |  should be > 0  | 200           | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | margin                          | Margin to use on the border of dem, in meter               | int, float |  should be > 0  | 6000          | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | percentile                      | Percentile of matches to ignore in min and max functions   | int        | should be > 0   | 3             | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | min_number_matches              | Minimum number of matches needed to have a valid tile      | int        | should be > 0   | 30            | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | height_margin                   | Height margin [margin min, margin max], in meter           | int        |                 | 20            | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata               | int        | should be > 0   | 3             | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "dem_generation": {
+                            "method": "dichotomic",
+                            "min_number_matches": 20
+                        }
+
+            .. tab:: Dense matching
+
+                **Name**: "dense_matching"
+
+                **Description**
+
+                Compute the disparity map from stereo-rectified pair images
+                
+                .. list-table:: Configuration
+                    :widths: 19 19 19 19 19 19
+                    :header-rows: 1
+                    
+                    * - Name
+                      - Description
+                      - Type
+                      - Available value
+                      - Default value
+                      - Required
+                    * - method
+                      - Method for dense matching
+                      - string
+                      - "census_sgm", "mccnn_sgm"
+                      - "census_sgm"
+                      - No
+                    * - loader
+                      - external library use to compute dense matching
+                      - string
+                      - "pandora"
+                      - "pandora"
+                      - No
+                    * - loader_conf
+                      - Configuration associated with loader, dictionary or path to config
+                      - dict or str
+                      - 
+                      - 
+                      - No
+                    * - min_elevation_offset
+                      - Override minimum disparity from prepare step with this offset in meters
+                      - int
+                      - 
+                      - None
+                      - No
+                    * - max_elevation_offset
+                      - Override maximum disparity from prepare step with this offset in meters
+                      - int
+                      - should be > min
+                      - None
+                      - No
+                    * - disp_min_threshold
+                      - Override minimum disparity when less than lower bound
+                      - int
+                      - 
+                      - None
+                      - No
+                    * - disp_max_threshold
+                      - Override maximum disparity when greater than upper bound
+                      - int
+                      - should be > min
+                      - None
+                      - No
+                    * - min_epi_tile_size
+                      - Lower bound of optimal epipolar tile size for dense matching
+                      - int
+                      - should be > 0
+                      - 300
+                      - No
+                    * - max_epi_tile_size
+                      - Upper bound of optimal epipolar tile size for dense matching
+                      - int
+                      - should be > 0 and > min
+                      - 1500
+                      - No
+                    * - epipolar_tile_margin_in_percent
+                      - Size of the margin used for dense matching (percent of tile size)
+                      - int
+                      - 
+                      - 60
+                      - No
+                    * - generate_performance_map
+                      - Generate a performance map from disparity map
+                      - boolean
+                      - 
+                      - False
+                      - No
+                    * - generate_confidence_intervals
+                      - Compute confidence intervals from disparity map. 
+                      - boolean
+                      - 
+                      - False
+                      - No
+                    * - perf_eta_max_ambiguity
+                      - Ambiguity confidence eta max used for performance map
+                      - float
+                      - 
+                      - 0.99
+                      - No
+                    * - perf_eta_max_risk
+                      - Risk confidence eta max used for performance map
+                      - float
+                      - 
+                      - 0.25
+                      - No
+                    * - perf_eta_step
+                      - Risk and Ambiguity confidence eta step used for performance map
+                      - float
+                      - 
+                      - 0.04
+                      - No
+                    * - perf_ambiguity_threshold
+                      - Maximal ambiguity considered for performance map
+                      - float
+                      - 
+                      - 0.6
+                      - No
+                    * - save_intermediate_data
+                      - Save disparity map and disparity confidence
+                      - boolean
+                      - 
+                      - false
+                      - No
+                    * - use_global_disp_range
+                      - If true, use global disparity range, otherwise local range estimation
+                      - boolean
+                      - 
+                      - false
+                      - No
+                    * - local_disp_grid_step
+                      - Step of disparity min/ max grid used to resample dense disparity range
+                      - int
+                      - 
+                      - 30
+                      - No
+                    * - disp_range_propagation_filter_size
+                      - Filter size of local min/max disparity, to propagate local min/max
+                      - int
+                      - should be > 0
+                      - 300
+                      - No
+                    * - use_cross_validation
+                      - Add cross validation step
+                      - bool
+                      -
+                      - false
+                      - No
+
+                See `Pandora documentation <https://pandora.readthedocs.io/>`_ for more information.
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "dense_matching": {
+                            "method": "census_sgm",
+                            "loader": "pandora",
+                            "loader_conf": "path_to_user_pandora_configuration"
+                        }
+                    },
+
+                .. note::
+
+                    * Disparity range can be global (same disparity range used for each tile), or local (disparity range is estimated for each tile with dem min/max).
+                    * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
+                    * To save the confidence, the save_intermediate_data parameter should be activated.
+
+            
+            .. tab:: Dense matches filling
+
+                **Name**: "dense_matches_filling"
+
+                **Description**
+
+                Fill holes in dense matches map. This uses the holes detected with the HolesDetection application.
+                The holes correspond to the area masked for dense matching.
+
+                **Configuration**
+
+                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+                | Name                                | Description                     | Type    | Available value         | Default value      | Required |
+                +=====================================+=================================+=========+=========================+====================+==========+
+                | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | No       |
+                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+                | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
+                +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
+
+
+                **Method plane:**
+
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | Name                                | Description                     | Type        | Available value         | Default value      | Required |
+                +=====================================+=================================+=============+=========================+====================+==========+
+                | classification                      | Classification band name        | List[str]   |                         | None               | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | interpolation_type                  | Interpolation type              | string      | "pandora"               | "pandora"          | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | interpolation_method                | Method for holes interpolation  | string      | "mc_cnn"                | "mc_cnn"           | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | max_search_distance                 | Maximum search distance         | int         |                         | 100                | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | smoothing_iterations                | Number of smoothing iterations  | int         |                         | 1                  | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | ignore_nodata_at_disp_mask_borders  | Ignore nodata at borders        | boolean     |                         | false              | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | ignore_zero_fill_disp_mask_values   | Ignore zeros                    | boolean     |                         | true               | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | ignore_extrema_disp_values          | Ignore extrema values           | boolean     |                         | true               | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | nb_pix                              | Margin used for mask            | int         |                         | 20                 | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+                | percent_to_erode                    | Percentage to erode             | float       |                         | 0.2                | No       |
+                +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
+
+
+                **Method zero_padding:**
+
+                The zero_padding method fills the disparity with zeros where the selected classification values are non-zero values.
+
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+                | Name                                | Description                     | Type      | Available value         | Default value      | Required |
+                +=====================================+=================================+===========+=========================+====================+==========+
+                | classification                      | Classification band name        | List[str] |                         | None               | No       |
+                +-------------------------------------+---------------------------------+-----------+-------------------------+--------------------+----------+
+
+                .. note::
+                    - The classification of second input is not given. Only the first disparity will be filled with zero value.
+                    - The filled area will be considered as a valid disparity mask.
+
+                .. warning::
+
+                    There is a particular case with the *dense_matches_filling* application because it is called twice.
+                    The eighth step consists of fill dense matches via two consecutive methods.
+                    So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
+                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    those two applications with :
+
+                    * *dense_matches_filling.1*
+                    * *dense_matches_filling.2*
+
+                    Each one is associated to a particular *dense_matches_filling* method*
+
+                **Example**
+
+                .. code-block:: json
+
+                        "applications": {
+                            "dense_matches_filling.1": {
+                                "method": "plane",
+                                "classification": ["water"],
+                                "save_intermediate_data": true
+                            },
+                            "dense_matches_filling.2": {
+                                "method": "zero_padding",
+                                "classification": ["cloud", "snow"],
+                                "save_intermediate_data": true
+                            }
                         },
-                        "point_cloud_outliers_removing.2": {
-                            "method": "statistical",
-                            "k": 10,
-                            "save_intermediate_data": true,
-                            "save_by_pair": true,
+
+
+            .. tab:: Triangulation
+
+                **Name**: "triangulation"
+
+                **Description**
+
+                Triangulating the sights and get for each point of the reference image a latitude, longitude, altitude point
+
+                **Configuration**
+
+                +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+                | Name                   | Description                                                                                                        | Type    | Available values                      | Default value               | Required |
+                +========================+====================================================================================================================+=========+======================================+==============================+==========+
+                | method                 | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
+                +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+                | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
+                +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+                | save_intermediate_data | Save depth map                                                                                                     | boolean |                                      | false                        | No       |
+                +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "triangulation": {
+                            "method": "line_of_sight_intersection",
+                            "snap_to_img1": true
                         }
                     },
 
-        .. tab:: Point Cloud Rasterization
+            .. tab:: Point Cloud fusion
 
-            **Name**: "point_cloud_rasterization"
+                **Name**: "point_cloud_fusion"
 
-            **Description**
+                **Description**
 
-            Project altitudes on regular grid.
+                Merge points clouds coming from each pair
 
-            Only one simple gaussian method is available for now.
-            
-            .. list-table:: Configuration
-                :widths: 19 19 19 19 19 19
-                :header-rows: 1
-            
-                * - Name
-                  - Description
-                  - Type
-                  - Available value
-                  - Default value
-                  - Required
-                * - method
-                  - 
-                  - string
-                  - "simple_gaussian"
-                  - simple_gaussian
-                  - No
-                * - dsm_radius
-                  - 
-                  - float, int
-                  - 
-                  - 1.0
-                  - No
-                * - sigma
-                  - 
-                  - float
-                  - 
-                  - None
-                  - No
-                * - grid_points_division_factor
-                  - 
-                  - int
-                  - 
-                  - None
-                  - No
-                * - dsm_no_data
-                  - 
-                  - int
-                  - 
-                  - -32768
-                  - 
-                * - color_no_data
-                  - 
-                  - int
-                  - 
-                  - 0
-                  - 
-                * - color_dtype
-                  - | By default, it's retrieved from the input color
-                    | Otherwise, specify an image type
-                  - string
-                  - | "uint8", "uint16"
-                    | "float32" ...
-                  - None
-                  - No
-                * - msk_no_data
-                  - No data value for mask  and classif
-                  - int
-                  - 
-                  - 255
-                  - 
-                * - save_intermediate_data
-                  - Save all layers from input point cloud in application `dump_dir`
-                  - boolean
-                  - 
-                  - false
-                  - No
+                Only one method is available for now: "mapping_to_terrain_tiles"
 
-            **Example**
+                **Configuration**
 
-            .. code-block:: json
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | Name                         | Description                              | Type    | Available value            | Default value              | Required |
+                +==============================+==========================================+=========+============================+============================+==========+
+                | method                       | Method for fusion                        | string  | "mapping_to_terrain_tiles" | "mapping_to_terrain_tiles" | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                            | false                      | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+                | save_by_pair                 | Enable points cloud saving by pair       | boolean |                            | false                      | No       |
+                +------------------------------+------------------------------------------+---------+----------------------------+----------------------------+----------+
+
+                **Example**
+
+
+                .. code-block:: json
+
+                        "applications": {
+                            "point_cloud_fusion": {
+                                "method": "mapping_to_terrain_tiles",
+                                "save_intermediate_data": true,
+                                "save_by_pair": true,
+                            }
+                        },
+
+                .. note::
+                    When `save_intermediate_data` is activated, multiple Laz and csv files are saved, corresponding to each processed terrain tiles.
+                    Please, see the section :ref:`merge_laz_files` to merge them into one single file.
+                    `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
+
+            .. tab:: Point Cloud outliers removing
+
+                **Name**: "point_cloud_outliers_removing"
+
+                **Description**
+
+                Point cloud outliers removing
+
+                **Configuration**
+
+                +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | Name                         | Description                              | Type    | Available value                   | Default value | Required |
+                +==============================+==========================================+=========+===================================+===============+==========+
+                | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
+                +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
+                +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+                | save_by_pair                 | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
+                +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
+
+                If method is *statistical*:
+
+                +----------------+-------------+---------+-----------------+---------------+----------+
+                | Name           | Description | Type    | Available value | Default value | Required |
+                +================+=============+=========+=================+===============+==========+
+                | activated      |             | boolean |                 | false         | No       |
+                +----------------+-------------+---------+-----------------+---------------+----------+
+                | k              |             | int     | should be > 0   | 50            | No       |
+                +----------------+-------------+---------+-----------------+---------------+----------+
+                | std_dev_factor |             | float   | should be > 0   | 5.0           | No       |
+                +----------------+-------------+---------+-----------------+---------------+----------+
+
+                If method is *small_components*
+
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | Name                        | Description | Type    | Available value | Default value | Required |
+                +=============================+=============+=========+=================+===============+==========+
+                | activated                   |             | boolean |                 | false         | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | on_ground_margin            |             | int     |                 | 10            | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | connection_distance         |             | float   |                 | 3.0           | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | nb_points_threshold         |             | int     |                 | 50            | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | clusters_distance_threshold |             | float   |                 | None          | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
+
+                .. warning::
+
+                    There is a particular case with the *Point Cloud outliers removing* application because it is called twice.
+                    The ninth step consists of Filter the 3D points cloud via two consecutive filters.
+                    So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
+                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    those two applications with :
+
+                    * *point_cloud_outliers_removing.1*
+                    * *point_cloud_outliers_removing.2*
+
+                    Each one is associated to a particular *point_cloud_outliers_removing* method*
+
+                **Example**
+
+                .. code-block:: json
+
+                        "applications": {
+                            "point_cloud_outliers_removing.1": {
+                                "method": "small_components",
+                                "on_ground_margin": 10,
+                                "save_intermediate_data": true
+                            },
+                            "point_cloud_outliers_removing.2": {
+                                "method": "statistical",
+                                "k": 10,
+                                "save_intermediate_data": true,
+                                "save_by_pair": true,
+                            }
+                        },
+
+            .. tab:: Point Cloud Rasterization
+
+                **Name**: "point_cloud_rasterization"
+
+                **Description**
+
+                Project altitudes on regular grid.
+
+                Only one simple gaussian method is available for now.
+                
+                .. list-table:: Configuration
+                    :widths: 19 19 19 19 19 19
+                    :header-rows: 1
+                
+                    * - Name
+                      - Description
+                      - Type
+                      - Available value
+                      - Default value
+                      - Required
+                    * - method
+                      - 
+                      - string
+                      - "simple_gaussian"
+                      - simple_gaussian
+                      - No
+                    * - dsm_radius
+                      - 
+                      - float, int
+                      - 
+                      - 1.0
+                      - No
+                    * - sigma
+                      - 
+                      - float
+                      - 
+                      - None
+                      - No
+                    * - grid_points_division_factor
+                      - 
+                      - int
+                      - 
+                      - None
+                      - No
+                    * - dsm_no_data
+                      - 
+                      - int
+                      - 
+                      - -32768
+                      - 
+                    * - color_no_data
+                      - 
+                      - int
+                      - 
+                      - 0
+                      - 
+                    * - color_dtype
+                      - | By default, it's retrieved from the input color
+                        | Otherwise, specify an image type
+                      - string
+                      - | "uint8", "uint16"
+                        | "float32" ...
+                      - None
+                      - No
+                    * - msk_no_data
+                      - No data value for mask  and classif
+                      - int
+                      - 
+                      - 255
+                      - 
+                    * - save_intermediate_data
+                      - Save all layers from input point cloud in application `dump_dir`
+                      - boolean
+                      - 
+                      - false
+                      - No
+
+                **Example**
+
+                .. code-block:: json
 
                     "applications": {
                         "point_cloud_rasterization": {
@@ -1429,7 +1424,7 @@ The structure follows this organisation:
                         }
                     },
 
-   .. tab:: Advanced parameters
+    .. tab:: Advanced parameters
 
 
         +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
@@ -1460,13 +1455,10 @@ The structure follows this organisation:
 
         **Epipolar a priori**
 
-        The epipolar a priori is useful to accelerate the preliminary steps of the grid correction and the disparity range evaluation,
-        particularly for the sensor_to_full_resolution_dsm pipeline.
-        The epipolar_a_priori data dict is produced during low or full resolution dsm pipeline.
-        However, the epipolar_a_priori should be not activated for the sensor_to_low_resolution_dsm.
-        So, the sensor_to_low_resolution_dsm pipeline produces a refined_conf_full_res.json in the outdir
-        that contains the epipolar_a_priori information for each sensor image pairs.
-        The epipolar_a_priori is also saved in the used_conf.json with the sensor_to_full_resolution_dsm pipeline.
+        The CARS pipeline produces a used_conf.json in the outdir that contains the epipolar_a_priori
+        information for each sensor image pairs. If you wish to re-run CARS, this time by skipping the 
+        sparse matching, you can use the ``used_conf.json`` as the new input configuration, with 
+        its `use_epipolar_a_priori` parameter set to `True`.
 
         For each sensor images, the epipolar a priori are filled as following:
 
@@ -1512,7 +1504,7 @@ The structure follows this organisation:
                   }
               },
 
-   .. tab:: Outputs
+    .. tab:: Outputs
 
 
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+

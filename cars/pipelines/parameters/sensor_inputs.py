@@ -232,7 +232,7 @@ def check_geometry_plugin(conf_inputs, conf_advanced, conf_geom_plugin):
         )
     )
 
-    # If use a priori, overide initial elevation with dem_median
+    # If use a priori, override initial elevation with dem_median
     if adv_cst.USE_EPIPOLAR_A_PRIORI in conf_advanced:
         if conf_advanced[adv_cst.USE_EPIPOLAR_A_PRIORI]:
             if adv_cst.DEM_MEDIAN in conf_advanced[adv_cst.TERRAIN_A_PRIORI]:

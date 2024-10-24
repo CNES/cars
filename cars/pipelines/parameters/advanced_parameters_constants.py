@@ -30,6 +30,7 @@ DEBUG_WITH_ROI = "debug_with_roi"
 USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
 EPIPOLAR_A_PRIORI = "epipolar_a_priori"
 
+MERGING = "merging"
 
 # inner epipolar a priori constants
 GRID_CORRECTION = "grid_correction"
