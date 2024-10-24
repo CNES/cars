@@ -114,7 +114,7 @@ def generate_input_json(
     config["geometry_plugin"] = geometry_plugin_name
 
     # overload pipeline
-    config["pipeline"] = "cars"
+    config["pipeline"] = "default"
 
     # Create keys
     if "applications" not in config:

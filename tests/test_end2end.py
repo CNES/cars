@@ -43,9 +43,7 @@ from shapely.ops import transform
 
 # CARS imports
 from cars.core import roi_tools
-from cars.pipelines.sensor_to_dense_dsm import (
-    sensor_to_dense_dsm_pipeline as sensor_to_dense_dsm,
-)
+from cars.pipelines.default import default_pipeline as default
 
 # CARS Tests imports
 from .helpers import (
@@ -111,7 +109,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         }
         input_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
+        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_dense_dsm["output"]["directory"]
@@ -191,7 +189,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         input_dense_dsm["advanced"]["merging"] = False
         input_dense_dsm["output"]["directory"] = out_dir + "no_merging"
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dense_dsm)
+        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
         out_dir = input_dense_dsm["output"]["directory"]
 
@@ -326,9 +324,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         input_config_sparse_dsm["applications"].update(application_config)
         input_config_sparse_dsm["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_dsm
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -482,9 +478,7 @@ def test_end2end_ventoux_unique():
         input_config_sparse_dsm["applications"].update(application_config)
         input_config_sparse_dsm["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_dsm
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -621,7 +615,7 @@ def test_end2end_ventoux_unique():
             )
 
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
+            _ = default.DefaultPipeline(used_conf)
 
         # clean outdir
         shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
@@ -724,9 +718,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -753,7 +745,7 @@ def test_end2end_ventoux_unique():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
+            _ = default.DefaultPipeline(used_conf)
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
@@ -1038,9 +1030,7 @@ def test_end2end_ventoux_unique():
 
         input_config_sparse_dsm["applications"].update(application_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_dsm
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -1134,9 +1124,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -1195,9 +1183,7 @@ def test_end2end_ventoux_unique():
 
         input_config_sparse_dsm["applications"].update(application_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_dsm
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_dsm)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -1239,9 +1225,7 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_sparse_dsm["output"]["directory"]
@@ -1292,7 +1276,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         }
         input_config_pc["output"]["product_level"] = ["depth_map"]
-        pc_pipeline = sensor_to_dense_dsm.CarsPipeline(input_config_pc)
+        pc_pipeline = default.DefaultPipeline(input_config_pc)
 
         input_config_pc["output"]["epsg"] = 4326
 
@@ -1354,7 +1338,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                 "advanced": {"merging": True},
             }
 
-            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
+            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1429,7 +1413,7 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             input_dsm_config["advanced"]["merging"] = False
             input_dsm_config["output"]["directory"] = output_path + "no_merging"
 
-            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
+            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1570,7 +1554,7 @@ def test_end2end_ventoux_unique_split():
             "performance_map": True,
         }
 
-        pc_pipeline = sensor_to_dense_dsm.CarsPipeline(input_config_pc)
+        pc_pipeline = default.DefaultPipeline(input_config_pc)
         pc_pipeline.run()
 
         out_dir = input_config_pc["output"]["directory"]
@@ -1662,7 +1646,7 @@ def test_end2end_ventoux_unique_split():
                 "advanced": {"merging": True},
             }
 
-            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
+            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -1919,7 +1903,7 @@ def test_end2end_ventoux_unique_split():
             input_dsm_config["advanced"]["merging"] = False
 
             # launch
-            dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(input_dsm_config)
+            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
             dsm_pipeline.run()
 
             out_dir_dsm = input_dsm_config["output"]["directory"]
@@ -2194,9 +2178,7 @@ def test_end2end_use_epipolar_a_priori():
 
         input_config_sparse_res["output"].update(output_config)
         input_config_sparse_res["applications"].update(application_config)
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_res
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -2353,7 +2335,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
+            _ = default.DefaultPipeline(used_conf)
 
         refined_config_dense_dsm_json = os.path.join(
             out_dir, "refined_config_dense_dsm.json"
@@ -2440,9 +2422,7 @@ def test_end2end_use_epipolar_a_priori():
 
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
 
         dense_dsm_pipeline.run()
 
@@ -2470,7 +2450,7 @@ def test_end2end_use_epipolar_a_priori():
                 == gt_used_conf_orchestrator["orchestrator"]
             )
             # check used_conf reentry
-            _ = sensor_to_dense_dsm.CarsPipeline(used_conf)
+            _ = default.DefaultPipeline(used_conf)
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -2586,9 +2566,7 @@ def test_prepare_ventoux_bias():
         input_config_sparse_res["applications"].update(application_config)
         input_config_sparse_res["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_res
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -2683,7 +2661,7 @@ def test_end2end_ventoux_full_output_no_elevation():
         input_config["output"].update(output_config)
         input_config["advanced"]["merging"] = True
 
-        pipeline = sensor_to_dense_dsm.CarsPipeline(input_config)
+        pipeline = default.DefaultPipeline(input_config)
 
         pipeline.run()
 
@@ -3024,9 +3002,7 @@ def test_end2end_ventoux_with_color():
         input_config_sparse_res["applications"].update(application_config)
         input_config_sparse_res["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_res
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -3114,9 +3090,7 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -3300,9 +3274,7 @@ def test_end2end_ventoux_with_classif():
         input_config_sparse_res["applications"].update(application_config)
         input_config_sparse_res["output"].update(output_config)
 
-        sparse_res_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_sparse_res
-        )
+        sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -3385,9 +3357,7 @@ def test_end2end_ventoux_with_classif():
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
         input_config_dense_dsm["advanced"]["merging"] = True
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -3577,9 +3547,7 @@ def test_compute_dsm_with_roi_ventoux():
 
         input_config_dense_dsm["inputs"]["roi"] = roi_geo_json
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -3718,9 +3686,7 @@ def test_compute_dsm_with_snap_to_img1():
         input_config_dense_dsm["output"]["resolution"] = resolution
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -3839,9 +3805,7 @@ def test_end2end_quality_stats():
             "merging": True,
         }
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4132,9 +4096,7 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["geoid"] = True
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4266,9 +4228,7 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["geoid"] = True
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4358,9 +4318,7 @@ def test_end2end_ventoux_egm96_geoid():
         )
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4502,9 +4460,7 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["resolution"] = resolution
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4623,9 +4579,7 @@ def test_end2end_disparity_filling():
         }
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4745,9 +4699,7 @@ def test_end2end_disparity_filling_with_zeros():
 
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = sensor_to_dense_dsm.CarsPipeline(
-            input_config_dense_dsm
-        )
+        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4860,7 +4812,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
 
         sensors_input_config_first_run["applications"].update(applications)
 
-        sensors_pipeline_first_run = sensor_to_dense_dsm.CarsPipeline(
+        sensors_pipeline_first_run = default.DefaultPipeline(
             sensors_input_config_first_run
         )
         sensors_pipeline_first_run.run()
@@ -4877,7 +4829,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
             "directory"
         ] += "_from_used_conf"
 
-        sensors_pipeline_second_run = sensor_to_dense_dsm.CarsPipeline(
+        sensors_pipeline_second_run = default.DefaultPipeline(
             sensors_input_config_second_run
         )
         sensors_pipeline_second_run.run()
@@ -4914,7 +4866,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "output": {"directory": directory2},
             }
 
-            pc_pipeline_first_run = sensor_to_dense_dsm.CarsPipeline(
+            pc_pipeline_first_run = default.DefaultPipeline(
                 pc_input_config_first_run
             )
             pc_pipeline_first_run.run()
@@ -4931,7 +4883,7 @@ def test_end2end_gizeh_dry_run_of_used_conf():
                 "directory"
             ] += "_from_used_conf"
 
-            pc_pipeline_second_run = sensor_to_dense_dsm.CarsPipeline(
+            pc_pipeline_second_run = default.DefaultPipeline(
                 pc_input_config_second_run
             )
             pc_pipeline_second_run.run()

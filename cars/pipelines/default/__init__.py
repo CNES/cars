@@ -19,10 +19,8 @@
 # limitations under the License.
 #
 """
-CARS sensor_to_dense_dsm pipeline module init file
+CARS default pipeline module init file
 """
 
 # Cars imports
-from cars.pipelines.sensor_to_dense_dsm import (  # noqa: F401
-    sensor_to_dense_dsm_pipeline,
-)
+from cars.pipelines.default import default_pipeline  # noqa: F401

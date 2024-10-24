@@ -544,7 +544,7 @@ The structure follows this organisation:
 
     .. tab:: Pipeline configurations
 
-        The ``pipeline`` key is optional and allows users to choose the pipeline they would like to run. By default, CARS has a single pipeline: `cars`. 
+        The ``pipeline`` key is optional and allows users to choose the pipeline they would like to run. By default, CARS has a single pipeline: `default`. 
         This pipeline is modular and can be adapted to your needs. This sections provides examples of specific configurations.
 
         Installed plugins may provide additional pipelines. The inputs and outputs are specific to each pipeline. This section describes the pipeline available in CARS. 
@@ -552,13 +552,13 @@ The structure follows this organisation:
         +----------------+-----------------------+--------+---------------+------------------+----------+
         | Name           | Description           | Type   | Default value | Available values | Required |
         +================+=======================+========+===============+==================+==========+
-        | *pipeline*     | The pipeline to use   | str    | "cars"        | "cars"           | False    |
+        | *pipeline*     | The pipeline to use   | str    | "default"     | "default"        | False    |
         +----------------+-----------------------+--------+---------------+------------------+----------+
 
         .. code-block:: json
 
             {
-                "pipeline": "cars"
+                "pipeline": "default"
             }
 
         .. tabs::

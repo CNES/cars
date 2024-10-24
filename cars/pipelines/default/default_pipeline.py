@@ -18,9 +18,13 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-# pylint: disable=too-many-lines
+
+# attribute-defined-outside-init is disabled so that we can create and use
+# attributes however we need, to stick to the "everything is attribute" logic
+# introduced in issue#895
+# pylint: disable=too-many-lines,attribute-defined-outside-init
 """
-CARS sensors_to_dense_dsm pipeline class file
+CARS default pipeline class file
 """
 # Standard imports
 from __future__ import print_function
@@ -71,14 +75,11 @@ from cars.pipelines.pipeline_template import PipelineTemplate
 
 
 @Pipeline.register(
-    "sensors_to_dense_dsm",
-    "sensors_to_dense_dsm_no_merging",
-    "sensors_to_dense_depth_maps",
-    "cars",
+    "default",
 )
-class CarsPipeline(PipelineTemplate):
+class DefaultPipeline(PipelineTemplate):
     """
-    CarsPipeline
+    DefaultPipeline
     """
 
     # pylint: disable=too-many-instance-attributes
@@ -419,17 +420,6 @@ class CarsPipeline(PipelineTemplate):
 
         :param conf: configuration of applications
         :type conf: dict
-        :param generate_terrain_products: true if uses point cloud
-            fusion, pc removing, rasterization
-        :type generate_terrain_products: bool
-        :param merging: False if skip PC fusion and PC removing
-        :type merging: bool
-        :param save_all_intermediate_data: True to save intermediate data in all
-            applications
-        :type save_all_intermediate_data: bool
-        :param save_all_point_clouds_by_pair: save point clouds by pair in all
-            relevant applications
-        :type save_all_point_clouds_by_pair: bool
         """
 
         # Check if all specified applications are used
@@ -466,12 +456,12 @@ class CarsPipeline(PipelineTemplate):
 
         for app_key in conf.keys():
             if app_key not in needed_applications:
-                logging.error(
-                    "No {} application used in Cars pipeline".format(app_key)
+                msg = (
+                    f"No {app_key} application used in the "
+                    + "default Cars pipeline"
                 )
-                raise NameError(
-                    "No {} application used in Cars pipeline".format(app_key)
-                )
+                logging.error(msg)
+                raise NameError(msg)
 
         # Initialize used config
         used_conf = {}
@@ -2152,7 +2142,7 @@ class CarsPipeline(PipelineTemplate):
             self.cars_orchestrator.update_out_info(
                 {
                     "version": __version__,
-                    "pipeline": "cars",
+                    "pipeline": "default",
                     "inputs": self.used_conf[INPUTS],
                 }
             )

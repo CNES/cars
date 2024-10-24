@@ -110,7 +110,7 @@ def main_cli(args, dry_run=False):  # noqa: C901
             del config["output"]["out_dir"]
 
         config_json_dir = os.path.abspath(os.path.dirname(args.conf))
-        pipeline_name = config.get("pipeline", "cars")
+        pipeline_name = config.get("pipeline", "default")
         old_pipelines = [
             "sensors_to_dense_dsm",
             "sensors_to_dense_dsm_no_merging",
@@ -123,11 +123,11 @@ def main_cli(args, dry_run=False):  # noqa: C901
             warnings.warn(
                 f"The 'pipeline' value {pipeline_name} corresponds to"
                 " an old pipeline."
-                "Using the main CARS pipeline instead.",
+                "Using the default CARS pipeline instead.",
                 FutureWarning,
                 stacklevel=2,
             )
-            pipeline_name = "cars"
+            pipeline_name = "default"
 
         # Logging configuration with args Loglevel
         loglevel = getattr(args, "loglevel", "PROGRESS").upper()

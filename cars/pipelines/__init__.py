@@ -23,4 +23,4 @@ CARS pipelines module init file
 """
 
 # Imports needed in order to register pipeline for Pipeline factory
-from . import sensor_to_dense_dsm  # noqa: F401
+from . import default  # noqa: F401
