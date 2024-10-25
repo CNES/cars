@@ -39,7 +39,6 @@ import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
 from cars.applications.grid_generation import grids
 from cars.applications.triangulation import (
-    epipolar_outlier_filtering,
     triangulation_constants,
     triangulation_tools,
 )
@@ -233,33 +232,6 @@ class LineOfSightIntersection(
                 nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 optional_data=True,
                 dtype=np.uint8,
-            )
-            self.orchestrator.add_to_save_lists(
-                os.path.join(mask_output_dir, "small_components_outliers.tif"),
-                "small_components_outliers",
-                epipolar_points_cloud,
-                cars_ds_name="depth_map_small_components_outliers",
-                nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-                optional_data=True,
-                dtype=np.uint8,
-            )
-            self.orchestrator.add_to_save_lists(
-                os.path.join(mask_output_dir, "statistical_outliers.tif"),
-                "statistical_outliers",
-                epipolar_points_cloud,
-                cars_ds_name="depth_map_stat_outliers",
-                nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-                optional_data=True,
-                dtype=np.uint8,
-            )
-            self.orchestrator.add_to_save_lists(
-                os.path.join(mask_output_dir, "distances.tif"),
-                "distances",
-                epipolar_points_cloud,
-                cars_ds_name="depth_map_outliers_distances",
-                nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
-                optional_data=True,
-                dtype=np.float64,
             )
 
         if save_output_performance_map or dump_dir:
@@ -791,23 +763,6 @@ def triangulation_wrapper(
     if geoid_path is not None:  # if user pass a geoid, use it as alt reference
         for key, point in points.items():
             points[key] = triangulation_tools.geoid_offset(point, geoid_path)
-
-    statistical_outliers, distances = epipolar_outlier_filtering.filter_pc(
-        points[cst.STEREO_REF], method="statistical"
-    )
-    small_component_outliers, _ = epipolar_outlier_filtering.filter_pc(
-        points[cst.STEREO_REF], method="small_components"
-    )
-
-    points[cst.STEREO_REF]["statistical_outliers"] = (
-        ["row", "col"],
-        statistical_outliers,
-    )
-    points[cst.STEREO_REF]["small_components_outliers"] = (
-        ["row", "col"],
-        small_component_outliers,
-    )
-    points[cst.STEREO_REF]["distances"] = (["row", "col"], distances)
 
     # Fill datasets
     pc_dataset = points[cst.STEREO_REF]
