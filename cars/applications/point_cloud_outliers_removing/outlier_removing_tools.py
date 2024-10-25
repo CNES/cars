@@ -458,9 +458,13 @@ def epipolar_small_components(
     :param std_dev_factor: std factor
     :type std_dev_factor: float
     :param half_window_size: use median and quartile instead of mean and std
-    :type half_window_size int
+    :type half_window_size: int
     :param use_median: use median and quartile instead of mean and std
-    :type use_median bool
+    :type use_median: bool
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
     """
 
     projection.points_cloud_conversion_dataset(cloud, epsg)
@@ -501,9 +505,13 @@ def epipolar_statistical_filtering(
     :param std_dev_factor: std factor
     :type std_dev_factor: float
     :param half_window_size: use median and quartile instead of mean and std
-    :type half_window_size int
+    :type half_window_size: int
     :param use_median: use median and quartile instead of mean and std
-    :type use_median bool
+    :type use_median: bool
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
     """
 
     projection.points_cloud_conversion_dataset(epipolar_ds, epsg)

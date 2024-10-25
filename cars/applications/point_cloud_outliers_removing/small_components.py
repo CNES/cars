@@ -259,10 +259,10 @@ class SmallComponents(
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
-        :param dump_dir output directory for filtered points (for array input)
-        :type dump_dir str
-        :param epsg cartographic reference for the point cloud (array input)
-        :type epsg int
+        :param dump_dir: output directory for filtered points (for array input)
+        :type dump_dir: str
+        :param epsg: cartographic reference for the point cloud (array input)
+        :type epsg: int
 
         :return: filtered merged points cloud. CarsDataset contains:
 
@@ -555,7 +555,7 @@ def epipolar_small_components_removing_wrapper(
     Small components outlier removing in epipolar geometry
 
     :param epipolar_ds: epipolar dataset to filter
-    :type cloud: xr.Dataset
+    :type epipolar_ds: xr.Dataset
     :param connection_distance: minimum distance of two connected points
     :type connection_distance: float
     :param nb_points_threshold: minimum valid cluster size
@@ -569,6 +569,10 @@ def epipolar_small_components_removing_wrapper(
     :type overlap: list
     :param epsg: epsg code of the CRS used to compute distances
     :type epsg: int
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
     """
 
     # Copy input cloud

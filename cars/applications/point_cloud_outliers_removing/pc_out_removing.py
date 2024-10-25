@@ -239,10 +239,10 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
-        :param dump_dir output directory for filtered points (for array input)
-        :type dump_dir str
-        :param epsg cartographic reference for the point cloud (array input)
-        :type epsg int
+        :param dump_dir: output directory for filtered points (for array input)
+        :type dump_dir: str
+        :param epsg: cartographic reference for the point cloud (array input)
+        :type epsg: int
 
         :return: filtered merged points cloud
         :rtype: CarsDataset filled with xr.Dataset

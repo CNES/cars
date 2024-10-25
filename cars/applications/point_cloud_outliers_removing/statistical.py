@@ -234,6 +234,10 @@ class Statistical(
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
+        :param dump_dir: output directory for filtered points (for array input)
+        :type dump_dir: str
+        :param epsg: cartographic reference for the point cloud (array input)
+        :type epsg: int
 
         :return: filtered merged points cloud. CarsDataset contains:
 
@@ -522,7 +526,7 @@ def epipolar_statistical_removing_wrapper(
     Statistical outlier removing in epipolar geometry
 
     :param epipolar_ds: epipolar dataset to filter
-    :type cloud: xr.Dataset
+    :type epipolar_ds: xr.Dataset
     :param statistical_k: k
     :type statistical_k: int
     :param std_dev_factor: std factor
@@ -535,6 +539,10 @@ def epipolar_statistical_removing_wrapper(
     :type overlap: list
     :param epsg: epsg code of the CRS used to compute distances
     :type epsg: int
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
     """
 
     # Copy input cloud
