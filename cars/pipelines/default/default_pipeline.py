@@ -266,6 +266,7 @@ class DefaultPipeline(PipelineTemplate):
         depth_to_dsm_apps = {
             "pc_denoising": 15,
             "point_cloud_rasterization": 16,
+            "dsm_filling": 17,
         }
 
         self.app_values = {}
@@ -445,7 +446,10 @@ class DefaultPipeline(PipelineTemplate):
             needed_applications += ["pc_denoising"]
 
             if self.save_output_dsm:
-                needed_applications += ["point_cloud_rasterization"]
+                needed_applications += [
+                    "point_cloud_rasterization",
+                    "dsm_filling",
+                ]
 
             if self.merging:  # we have to merge point clouds, add merging apps
                 needed_applications += [
@@ -497,6 +501,7 @@ class DefaultPipeline(PipelineTemplate):
         self.pc_outliers_removing_2_app = None
         self.rasterization_application = None
         self.pc_fusion_application = None
+        self.dsm_filling_application = None
 
         if self.sensors_in_inputs:
             # Epipolar grid generation
@@ -597,6 +602,13 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 used_conf["point_cloud_rasterization"] = (
                     self.rasterization_application.get_conf()
+                )
+                # DSM filling
+                self.dsm_filling_application = Application(
+                    "dsm_filling", cfg=conf.get("dsm_filling", {})
+                )
+                used_conf["dsm_filling"] = (
+                    self.dsm_filling_application.get_conf()
                 )
 
             if self.merging:
@@ -746,6 +758,10 @@ class DefaultPipeline(PipelineTemplate):
         # List of terrain roi corresponding to each epipolar pair
         # Used to generate final terrain roi
         self.list_terrain_roi = []
+
+        # Polygons representing the intersection of each pair of images
+        # Used to fill the final DSM only inside of those Polygons
+        self.list_intersection_poly = []
 
         # initialize lists of points
         self.list_epipolar_points_cloud = []
@@ -1704,30 +1720,35 @@ class DefaultPipeline(PipelineTemplate):
             if self.save_output_dsm or self.save_output_point_cloud:
                 # Compute terrain bounding box /roi related to
                 # current images
-                (current_terrain_roi_bbox) = preprocessing.compute_terrain_bbox(
-                    self.pairs[pair_key]["sensor_image_left"],
-                    self.pairs[pair_key]["sensor_image_right"],
-                    new_epipolar_image_left,
-                    self.pairs[pair_key]["corrected_grid_left"],
-                    self.pairs[pair_key]["corrected_grid_right"],
-                    self.epsg,
-                    self.geom_plugin_with_dem_and_geoid,
-                    resolution=self.resolution,
-                    disp_min=np.min(
-                        disp_range_grid[0, 0]["disp_min_grid"].values
-                    ),
-                    disp_max=np.max(
-                        disp_range_grid[0, 0]["disp_max_grid"].values
-                    ),
-                    roi_poly=(None if self.debug_with_roi else self.roi_poly),
-                    orchestrator=self.cars_orchestrator,
-                    pair_key=pair_key,
-                    pair_folder=os.path.join(
-                        self.dump_dir, "terrain_bbox", pair_key
-                    ),
-                    check_inputs=True,
+                (current_terrain_roi_bbox, intersection_poly) = (
+                    preprocessing.compute_terrain_bbox(
+                        self.pairs[pair_key]["sensor_image_left"],
+                        self.pairs[pair_key]["sensor_image_right"],
+                        new_epipolar_image_left,
+                        self.pairs[pair_key]["corrected_grid_left"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        self.epsg,
+                        self.geom_plugin_with_dem_and_geoid,
+                        resolution=self.resolution,
+                        disp_min=np.min(
+                            disp_range_grid[0, 0]["disp_min_grid"].values
+                        ),
+                        disp_max=np.max(
+                            disp_range_grid[0, 0]["disp_max_grid"].values
+                        ),
+                        roi_poly=(
+                            None if self.debug_with_roi else self.roi_poly
+                        ),
+                        orchestrator=self.cars_orchestrator,
+                        pair_key=pair_key,
+                        pair_folder=os.path.join(
+                            self.dump_dir, "terrain_bbox", pair_key
+                        ),
+                        check_inputs=True,
+                    )
                 )
                 self.list_terrain_roi.append(current_terrain_roi_bbox)
+                self.list_intersection_poly.append(intersection_poly)
 
                 # compute terrain bounds for later use
                 (
@@ -1871,7 +1892,27 @@ class DefaultPipeline(PipelineTemplate):
                 os.path.join(self.dump_dir, "terrain_bbox")
             )
 
-        return self.quit_on_app("point_cloud_rasterization")
+        if self.quit_on_app("point_cloud_rasterization"):
+            return True
+
+        # dsm needs to be saved before filling
+        self.cars_orchestrator.breakpoint()
+
+        _ = self.dsm_filling_application.run(
+            orchestrator=self.cars_orchestrator,
+            # path to initial elevation file via geom plugin
+            initial_elevation=self.geom_plugin_with_dem_and_geoid,
+            dsm_path=dsm_file_name,
+            roi_polys=(
+                self.list_intersection_poly if self.compute_depth_map else None
+            ),
+            roi_epsg=self.epsg,
+            output_geoid=self.used_conf[OUTPUT][sens_cst.GEOID],
+            filling_file_name=filling_file_name,
+            dump_dir=self.dump_dir,
+        )
+
+        return self.quit_on_app("dsm_filling")
 
     def preprocess_depth_maps(self):
         """

@@ -4429,10 +4429,6 @@ def test_end2end_paca_with_mask():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "dense_matches_filling.2": {
-                "method": "zero_padding",
-                "classification": ["water", "road"],
-            },
             "point_cloud_outliers_removing.1": {
                 "method": "small_components",
                 "activated": True,
@@ -4449,6 +4445,7 @@ def test_end2end_paca_with_mask():
                 "color_no_data": 0,
                 "msk_no_data": 254,
             },
+            "dsm_filling": {"method": "bulldozer", "activated": True},
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
@@ -4460,46 +4457,54 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["resolution"] = resolution
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
-        dense_dsm_pipeline.run()
+        dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline_bulldozer.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
+        # Uncomment the following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     os.path.join(out_dir,  "dsm", "dsm.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
+        #         os.path.join(ref_output_dir, "dsm_end2end_paca_bulldozer.tif")
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "color_end2end_paca.tif")
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "color_end2end_paca_bulldozer.tif"
+        #         )
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir,  "dsm", "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "mask_end2end_paca.tif")
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "mask_end2end_paca_bulldozer.tif"
+        #         )
         #     ),
         # )
 
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_paca.tif")
+                os.path.join(ref_output_dir, "dsm_end2end_paca_bulldozer.tif")
             ),
-            atol=0.0001,
-            rtol=1e-6,
+            rtol=1.0e-7,
+            atol=1.0e-7,
         )
         assert_same_images(
             os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "color_end2end_paca.tif")
+                os.path.join(ref_output_dir, "color_end2end_paca_bulldozer.tif")
             ),
             rtol=0.0002,
             atol=1.0e-6,
@@ -4507,7 +4512,84 @@ def test_end2end_paca_with_mask():
         assert_same_images(
             os.path.join(out_dir, "dsm", "mask.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "mask_end2end_paca.tif")
+                os.path.join(ref_output_dir, "mask_end2end_paca_bulldozer.tif")
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+
+        # clean out dir for second run
+        shutil.rmtree(out_dir, ignore_errors=False, onerror=None)
+
+        input_config_dense_dsm["applications"].update(
+            {
+                "dense_matches_filling.2": {
+                    "method": "zero_padding",
+                    "classification": ["water", "road"],
+                },
+                "dsm_filling": {"activated": False},
+            }
+        )
+
+        dense_dsm_pipeline_matches = default.DefaultPipeline(
+            input_config_dense_dsm
+        )
+        dense_dsm_pipeline_matches.run()
+
+        # copy2(
+        #     os.path.join(out_dir,  "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "dsm_end2end_paca_matches_filling.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "color_end2end_paca_matches_filling.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir,  "dsm", "mask.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "mask_end2end_paca_matches_filling.tif"
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "dsm_end2end_paca_matches_filling.tif"
+                )
+            ),
+            rtol=1.0e-7,
+            atol=1.0e-7,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "color_end2end_paca_matches_filling.tif"
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "mask.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "mask_end2end_paca_matches_filling.tif"
+                )
             ),
             rtol=1.0e-7,
             atol=1.0e-7,

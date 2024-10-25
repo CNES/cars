@@ -38,6 +38,7 @@ This file keeps track of authors contributions.
 * Tommy Calendini <tommy.calendini@cs-soprasteria.com>
 * Dimitri Lallement <dimitri.lallement@cnes.fr>
 * Datafalk <louis@datafalk.com>
+* Marian Rassat <marian.rassat@cs-soprasteria.com>
 
 Update here with new contributors.
 

@@ -19,20 +19,18 @@
 # limitations under the License.
 #
 """
-CARS application module init file
+this module contains tools for the dsm filling applications
 """
+import numpy as np
 
-# Imports needed in order to register application for Application factory
-from . import dem_generation  # noqa: F401
-from . import dense_matches_filling  # noqa: F401
-from . import dense_matching  # noqa: F401
-from . import dsm_filling  # noqa: F401
-from . import grid_generation  # noqa: F401
-from . import holes_detection  # noqa: F401
-from . import point_cloud_denoising  # noqa: F401
-from . import point_cloud_fusion  # noqa: F401
-from . import point_cloud_outliers_removing  # noqa: F401
-from . import rasterization  # noqa: F401
-from . import resampling  # noqa: F401
-from . import sparse_matching  # noqa: F401
-from . import triangulation  # noqa: F401
+
+def project(points, matrix):
+    """
+    Projects a np.array of (n, 2) points using any transformation
+    matrix of  shape (3,3), taking into account homogeneous coordinates.
+    """
+    pts_homo = np.hstack((points, np.ones((points.shape[0], 1))))
+    tr_pts_homo = np.dot(matrix, pts_homo.T).T
+    tr_points = tr_pts_homo[:, :2] / tr_pts_homo[:, 2][:, np.newaxis]
+
+    return tr_points

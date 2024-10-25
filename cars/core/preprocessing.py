@@ -322,7 +322,7 @@ def compute_terrain_bbox(  # noqa: 751
     # Compute average epipolar tile width
     epipolar_average_tile_width = math.sqrt(terrain_area / nb_epipolar_tiles)
 
-    return (terrain_bounding_box, epipolar_average_tile_width)
+    return (terrain_bounding_box, epipolar_average_tile_width), inter_poly
 
 
 def compute_roi_poly(input_roi_poly, input_roi_epsg, epsg):
