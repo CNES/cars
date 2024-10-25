@@ -4457,8 +4457,8 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["resolution"] = resolution
         input_config_dense_dsm["advanced"]["merging"] = True
 
-        dense_dsm_pipeline_bulldozer = (
-            default.DefaultPipeline(input_config_dense_dsm)
+        dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
+            input_config_dense_dsm
         )
         dense_dsm_pipeline_bulldozer.run()
 
@@ -4531,8 +4531,8 @@ def test_end2end_paca_with_mask():
             }
         )
 
-        dense_dsm_pipeline_matches = (
-            sensor_to_dense_dsm.SensorToDenseDsmPipeline(input_config_dense_dsm)
+        dense_dsm_pipeline_matches = default.DefaultPipeline(
+            input_config_dense_dsm
         )
         dense_dsm_pipeline_matches.run()
 
