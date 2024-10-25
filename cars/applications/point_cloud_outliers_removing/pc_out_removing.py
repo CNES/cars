@@ -185,6 +185,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         # Get tiling grid
         filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
         filtered_point_cloud.generate_none_tiles()
+        filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
 
         # Save objects
         pc_laz_file_name = None
