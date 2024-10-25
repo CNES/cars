@@ -65,7 +65,7 @@ def test_fill_dsm():
         input_app_conf = {"activated": True}
 
         _, input_data = generate_input_json(
-            input_json, directory, "sensors_to_dense_dsm", "multiprocessing"
+            input_json, directory, "multiprocessing"
         )
 
         dump_dir = os.path.join(directory, "dump_dir")
