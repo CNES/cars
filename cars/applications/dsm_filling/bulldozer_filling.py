@@ -127,8 +127,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         if not os.path.exists(dump_dir):
             os.makedirs(dump_dir)
 
-        old_dsm_path = os.path.join(dump_dir, "old_dsm.tif")
-        temp_dsm_path = os.path.join(dump_dir, "temp_dsm.tif")
+        old_dsm_path = os.path.join(dump_dir, "dsm_not_filled.tif")
+        temp_dsm_path = os.path.join(
+            dump_dir, "dsm_filled_with_dem_not_smoothed.tif"
+        )
         final_dsm_path = dsm_path
 
         # create the config for the bulldozer execution
