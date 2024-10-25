@@ -1433,7 +1433,7 @@ The structure follows this organisation:
 
                 Fill in the missing values of the DSM by using the DEM's elevation. 
                 This application replaces the existing dsm.tif. The replaced dsm.tif is 
-                saved under dump_dir/dsm_filling when save_intermediate_data is True.
+                saved under ``dump_dir/dsm_filling/dsm_not_filled.tif`` when save_intermediate_data is True.
 
                 Only one method is available for now: "bulldozer".
 
