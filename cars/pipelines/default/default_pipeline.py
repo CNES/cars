@@ -442,17 +442,17 @@ class DefaultPipeline(PipelineTemplate):
 
         if self.save_output_dsm or self.save_output_point_cloud:
 
-            needed_applications += ["pc_denoising"]
+            needed_applications += [
+                "pc_denoising",
+                "point_cloud_outliers_removing.1",
+                "point_cloud_outliers_removing.2",
+            ]
 
             if self.save_output_dsm:
                 needed_applications += ["point_cloud_rasterization"]
 
             if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += [
-                    "point_cloud_fusion",
-                    "point_cloud_outliers_removing.1",
-                    "point_cloud_outliers_removing.2",
-                ]
+                needed_applications += ["point_cloud_fusion"]
 
         for app_key in conf.keys():
             if app_key not in needed_applications:
@@ -599,6 +599,30 @@ class DefaultPipeline(PipelineTemplate):
                     self.rasterization_application.get_conf()
                 )
 
+            # Points cloud outlier removing small components
+            self.pc_outliers_removing_1_app = Application(
+                "point_cloud_outliers_removing",
+                cfg=used_conf.get(
+                    "point_cloud_outliers_removing.1",
+                    {"method": "small_components"},
+                ),
+            )
+            used_conf["point_cloud_outliers_removing.1"] = (
+                self.pc_outliers_removing_1_app.get_conf()
+            )
+
+            # Points cloud outlier removing statistical
+            self.pc_outliers_removing_2_app = Application(
+                "point_cloud_outliers_removing",
+                cfg=used_conf.get(
+                    "point_cloud_outliers_removing.2",
+                    {"method": "statistical"},
+                ),
+            )
+            used_conf["point_cloud_outliers_removing.2"] = (
+                self.pc_outliers_removing_2_app.get_conf()
+            )
+
             if self.merging:
 
                 # Points cloud fusion
@@ -608,30 +632,6 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 used_conf["point_cloud_fusion"] = (
                     self.pc_fusion_application.get_conf()
-                )
-
-                # Points cloud outlier removing small components
-                self.pc_outliers_removing_1_app = Application(
-                    "point_cloud_outliers_removing",
-                    cfg=used_conf.get(
-                        "point_cloud_outliers_removing.1",
-                        {"method": "small_components"},
-                    ),
-                )
-                used_conf["point_cloud_outliers_removing.1"] = (
-                    self.pc_outliers_removing_1_app.get_conf()
-                )
-
-                # Points cloud outlier removing statistical
-                self.pc_outliers_removing_2_app = Application(
-                    "point_cloud_outliers_removing",
-                    cfg=used_conf.get(
-                        "point_cloud_outliers_removing.2",
-                        {"method": "statistical"},
-                    ),
-                )
-                used_conf["point_cloud_outliers_removing.2"] = (
-                    self.pc_outliers_removing_2_app.get_conf()
                 )
 
         return used_conf
@@ -1683,9 +1683,31 @@ class DefaultPipeline(PipelineTemplate):
                 self.list_epipolar_points_cloud.append(epipolar_points_cloud)
             # denoising available only if we'll go further in the pipeline
             elif self.save_output_dsm or self.save_output_point_cloud:
+                filtered_epipolar_points_cloud_1 = (
+                    self.pc_outliers_removing_1_app.run(
+                        epipolar_points_cloud,
+                        dump_dir=os.path.join(
+                            self.dump_dir, "pc_outliers_removing_1", pair_key
+                        ),
+                        epsg=self.epsg,
+                        orchestrator=self.cars_orchestrator,
+                    )
+                )
+
+                filtered_epipolar_points_cloud_2 = (
+                    self.pc_outliers_removing_2_app.run(
+                        filtered_epipolar_points_cloud_1,
+                        dump_dir=os.path.join(
+                            self.dump_dir, "pc_outliers_removing_2", pair_key
+                        ),
+                        epsg=self.epsg,
+                        orchestrator=self.cars_orchestrator,
+                    )
+                )
+
                 denoised_epipolar_points_cloud = (
                     self.pc_denoising_application.run(
-                        epipolar_points_cloud,
+                        filtered_epipolar_points_cloud_2,
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
                             self.dump_dir, "denoising", pair_key

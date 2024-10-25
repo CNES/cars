@@ -185,7 +185,6 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         # Get tiling grid
         filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
         filtered_point_cloud.generate_none_tiles()
-        filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
 
         # Save objects
         pc_laz_file_name = None
@@ -223,7 +222,12 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
     @abstractmethod
     def run(
-        self, merged_points_cloud, orchestrator=None, save_laz_output=False
+        self,
+        merged_points_cloud,
+        orchestrator=None,
+        save_laz_output=False,
+        dump_dir=None,
+        epsg=None,
     ):
         """
         Run PointCloudOutliersRemoving application.
@@ -235,6 +239,10 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
+        :param dump_dir output directory for filtered points (for array input)
+        :type dump_dir str
+        :param epsg cartographic reference for the point cloud (array input)
+        :type epsg int
 
         :return: filtered merged points cloud
         :rtype: CarsDataset filled with xr.Dataset

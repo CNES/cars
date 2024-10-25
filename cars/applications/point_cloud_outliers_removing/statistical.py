@@ -28,6 +28,7 @@ import copy
 # Standard imports
 import logging
 import math
+import os
 import time
 
 import numpy as np
@@ -48,7 +49,9 @@ from cars.applications.point_cloud_outliers_removing import (
 from cars.applications.point_cloud_outliers_removing import (
     points_removing_constants as pr_cst,
 )
+from cars.core import constants as cst
 from cars.core import projection
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 # R0903  temporary disabled for error "Too few public methods"
@@ -80,6 +83,7 @@ class Statistical(
         self.activated = self.used_config["activated"]
         self.k = self.used_config["k"]
         self.std_dev_factor = self.used_config["std_dev_factor"]
+        self.use_median = self.used_config["use_median"]
 
         # Saving files
         self.save_by_pair = self.used_config.get("save_by_pair", False)
@@ -112,6 +116,7 @@ class Statistical(
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
+        overloaded_conf["use_median"] = conf.get("use_median", False)
 
         # statistical outlier filtering
         overloaded_conf["activated"] = conf.get(
@@ -129,6 +134,7 @@ class Statistical(
             "activated": bool,
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),
+            "use_median": bool,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -205,6 +211,8 @@ class Statistical(
         merged_points_cloud,
         orchestrator=None,
         save_laz_output=False,
+        dump_dir=None,
+        epsg=None,
     ):
         """
         Run PointCloudOutliersRemoving application.
@@ -307,6 +315,87 @@ class Statistical(
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
                         )
+        elif merged_points_cloud.dataset_type == "arrays":
+            filtered_point_cloud = None
+
+            # Create CarsDataset
+            # Epipolar_point_cloud
+            filtered_point_cloud = cars_dataset.CarsDataset(
+                merged_points_cloud.dataset_type, name="small_components"
+            )
+            filtered_point_cloud.create_empty_copy(merged_points_cloud)
+            filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
+
+            # Update attributes to get epipolar info
+            filtered_point_cloud.attributes.update(
+                merged_points_cloud.attributes
+            )
+            # Get saving infos in order to save tiles when they are computed
+            [saving_info] = self.orchestrator.get_saving_infos(
+                [filtered_point_cloud]
+            )
+
+            # Add infos to orchestrator.out_json
+            updating_dict = {
+                application_constants.APPLICATION_TAG: {
+                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                }
+            }
+            orchestrator.update_out_info(updating_dict)
+            if self.used_config.get(
+                application_constants.SAVE_INTERMEDIATE_DATA
+            ):
+                safe_makedirs(dump_dir)
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "X.tif"),
+                    cst.X,
+                    filtered_point_cloud,
+                    cars_ds_name="depth_map_x_filtered_statistical",
+                    dtype=np.float64,
+                )
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Y.tif"),
+                    cst.Y,
+                    filtered_point_cloud,
+                    cars_ds_name="depth_map_y_filtered_statistical",
+                    dtype=np.float64,
+                )
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, "Z.tif"),
+                    cst.Z,
+                    filtered_point_cloud,
+                    cars_ds_name="depth_map_z_filtered_statistical",
+                    dtype=np.float64,
+                )
+
+            # Generate rasters
+            for col in range(filtered_point_cloud.shape[1]):
+                for row in range(filtered_point_cloud.shape[0]):
+
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
+                    if merged_points_cloud[row][col] is not None:
+
+                        window = merged_points_cloud.tiling_grid[row, col]
+                        overlap = merged_points_cloud.overlaps[row, col]
+                        # Delayed call to cloud filtering
+                        filtered_point_cloud[
+                            row, col
+                        ] = self.orchestrator.cluster.create_task(
+                            epipolar_statistical_removing_wrapper
+                        )(
+                            merged_points_cloud[row, col],
+                            self.k,
+                            self.std_dev_factor,
+                            self.use_median,
+                            window,
+                            overlap,
+                            epsg=epsg,
+                            saving_info=full_saving_info,
+                        )
 
         else:
             logging.error(
@@ -333,7 +422,7 @@ def statistical_removing_wrapper(
     :param cloud: cloud to filter
     :type cloud: pandas DataFrame
     :param statistical_k: k
-    :type statistical_k: float
+    :type statistical_k: int
     :param std_dev_factor: std factor
     :type std_dev_factor: float
     :param save_by_pair: save point cloud as pair
@@ -417,3 +506,57 @@ def statistical_removing_wrapper(
         )
 
     return new_cloud
+
+
+def epipolar_statistical_removing_wrapper(
+    epipolar_ds,
+    statistical_k,
+    std_dev_factor,
+    use_median,
+    window,
+    overlap,
+    epsg,
+    saving_info=None,
+):
+    """
+    Statistical outlier removing in epipolar geometry
+
+    :param epipolar_ds: epipolar dataset to filter
+    :type cloud: xr.Dataset
+    :param statistical_k: k
+    :type statistical_k: int
+    :param std_dev_factor: std factor
+    :type std_dev_factor: float
+    :param use_median: use median and quartile instead of mean and std
+    :type use median: bool
+    :param window: window of base tile [row min, row max, col min col max]
+    :type window: list
+    :param overlap: overlap [row min, row max, col min col max]
+    :type overlap: list
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+    """
+
+    # Copy input cloud
+    filtered_cloud = copy.copy(epipolar_ds)
+
+    outlier_removing_tools.epipolar_statistical_filtering(
+        filtered_cloud,
+        epsg,
+        k=statistical_k,
+        dev_factor=std_dev_factor,
+        use_median=use_median,
+        half_window_size=5,
+    )
+
+    # Fill with attributes
+    cars_dataset.fill_dataset(
+        filtered_cloud,
+        saving_info=saving_info,
+        window=cars_dataset.window_array_to_dict(window),
+        profile=None,
+        attributes=None,
+        overlaps=cars_dataset.overlap_array_to_dict(overlap),
+    )
+
+    return filtered_cloud

@@ -35,6 +35,7 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import projection
 
 # ##### Small components filtering ######
 
@@ -435,3 +436,86 @@ def add_cloud_filtering_msk(
                     ) from index_error
 
             cloud_item[mask_label] = ([cst.ROW, cst.COL], msk)
+
+
+def epipolar_small_components(
+    cloud,
+    epsg,
+    min_cluster_size=15,
+    radius=1.0,
+    half_window_size=5,
+    clusters_distance_threshold=np.nan,
+):
+    """
+    Filter outliers using the small components method in epipolar geometry
+
+    :param epipolar_ds: epipolar dataset to filter
+    :type epipolar_ds: xr.Dataset
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+    :param statistical_k: k
+    :type statistical_k: int
+    :param std_dev_factor: std factor
+    :type std_dev_factor: float
+    :param half_window_size: use median and quartile instead of mean and std
+    :type half_window_size int
+    :param use_median: use median and quartile instead of mean and std
+    :type use_median bool
+    """
+
+    projection.points_cloud_conversion_dataset(cloud, epsg)
+
+    if clusters_distance_threshold is None:
+        clusters_distance_threshold = np.nan
+
+    outlier_filter.epipolar_small_components_outlier_filtering(
+        cloud[cst.X],
+        cloud[cst.Y],
+        cloud[cst.Z],
+        min_cluster_size,
+        radius,
+        half_window_size,
+        clusters_distance_threshold,
+    )
+
+    return cloud
+
+
+def epipolar_statistical_filtering(
+    epipolar_ds,
+    epsg,
+    k=15,
+    dev_factor=1.0,
+    half_window_size=5,
+    use_median=False,
+):
+    """
+    Filter outliers using the statistical method in epipolar geometry
+
+    :param epipolar_ds: epipolar dataset to filter
+    :type epipolar_ds: xr.Dataset
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+    :param statistical_k: k
+    :type statistical_k: int
+    :param std_dev_factor: std factor
+    :type std_dev_factor: float
+    :param half_window_size: use median and quartile instead of mean and std
+    :type half_window_size int
+    :param use_median: use median and quartile instead of mean and std
+    :type use_median bool
+    """
+
+    projection.points_cloud_conversion_dataset(epipolar_ds, epsg)
+
+    outlier_filter.epipolar_statistical_outlier_filtering(
+        epipolar_ds[cst.X],
+        epipolar_ds[cst.Y],
+        epipolar_ds[cst.Z],
+        k,
+        half_window_size,
+        dev_factor,
+        use_median,
+    )
+
+    return epipolar_ds
