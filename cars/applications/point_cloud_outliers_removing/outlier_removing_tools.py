@@ -65,10 +65,6 @@ def small_components_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    # cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    # index_elt_to_remove = detect_small_components(
-    #   cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold
-    # )
 
     clusters_distance_threshold_float = (
         np.nan
@@ -214,10 +210,6 @@ def statistical_outliers_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    # cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    # index_elt_to_remove = detect_statistical_outliers(
-    #     cloud_xyz, k, dev_factor, use_median
-    # )
 
     index_elt_to_remove = outlier_filter.pc_statistical_outlier_filtering(
         cloud.loc[:, cst.X].values,
