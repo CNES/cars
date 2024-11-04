@@ -19,20 +19,5 @@
 # limitations under the License.
 #
 """
-CARS application module init file
+Cars tests/dsm_filling init file
 """
-
-# Imports needed in order to register application for Application factory
-from . import dem_generation  # noqa: F401
-from . import dense_matches_filling  # noqa: F401
-from . import dense_matching  # noqa: F401
-from . import dsm_filling  # noqa: F401
-from . import grid_generation  # noqa: F401
-from . import holes_detection  # noqa: F401
-from . import point_cloud_denoising  # noqa: F401
-from . import point_cloud_fusion  # noqa: F401
-from . import point_cloud_outliers_removing  # noqa: F401
-from . import rasterization  # noqa: F401
-from . import resampling  # noqa: F401
-from . import sparse_matching  # noqa: F401
-from . import triangulation  # noqa: F401
