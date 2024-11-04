@@ -83,6 +83,7 @@ class SmallComponents(
         self.clusters_distance_threshold = self.used_config[
             "clusters_distance_threshold"
         ]
+        self.half_epipolar_size = self.used_config["half_epipolar_size"]
 
         # Saving files
         self.save_by_pair = self.used_config.get("save_by_pair", False)
@@ -147,6 +148,13 @@ class SmallComponents(
             "clusters_distance_threshold", None
         )
 
+        # half_epipolar_size:
+        # Half size of the epipolar window used for neighobr search (depth map
+        # input only)
+        overloaded_conf["half_epipolar_size"] = conf.get(
+            "half_epipolar_size", 5
+        )
+
         points_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
@@ -155,6 +163,7 @@ class SmallComponents(
             "connection_distance": And(float, lambda x: x > 0),
             "nb_points_threshold": And(int, lambda x: x > 0),
             "clusters_distance_threshold": Or(None, float),
+            "half_epipolar_size": int,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -415,6 +424,7 @@ class SmallComponents(
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
+                            self.half_epipolar_size,
                             window,
                             overlap,
                             epsg=epsg,
@@ -546,6 +556,7 @@ def epipolar_small_components_removing_wrapper(
     connection_distance,
     nb_points_threshold,
     clusters_distance_threshold,
+    half_epipolar_size,
     window,
     overlap,
     epsg,
@@ -563,6 +574,8 @@ def epipolar_small_components_removing_wrapper(
     :param clusters_distance_threshold: max distance between an outlier cluster
         and other points
     :type clusters_distance_threshold: float
+    :param half_epipolar_size: half size of the window used to search neighbors
+    :type half_epipolar_size: int
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
     :param overlap: overlap [row min, row max, col min col max]
@@ -583,7 +596,7 @@ def epipolar_small_components_removing_wrapper(
         epsg,
         min_cluster_size=nb_points_threshold,
         radius=connection_distance,
-        half_window_size=5,
+        half_window_size=half_epipolar_size,
         clusters_distance_threshold=clusters_distance_threshold,
     )
 

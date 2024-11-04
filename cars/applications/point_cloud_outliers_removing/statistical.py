@@ -84,6 +84,7 @@ class Statistical(
         self.k = self.used_config["k"]
         self.std_dev_factor = self.used_config["std_dev_factor"]
         self.use_median = self.used_config["use_median"]
+        self.half_epipolar_size = self.used_config["half_epipolar_size"]
 
         # Saving files
         self.save_by_pair = self.used_config.get("save_by_pair", False)
@@ -128,6 +129,13 @@ class Statistical(
         # stdev_factor: factor to apply in the distance threshold computation
         overloaded_conf["std_dev_factor"] = conf.get("std_dev_factor", 5.0)
 
+        # half_epipolar_size:
+        # Half size of the epipolar window used for neighobr search (depth map
+        # input only)
+        overloaded_conf["half_epipolar_size"] = conf.get(
+            "half_epipolar_size", 5
+        )
+
         points_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
@@ -135,6 +143,7 @@ class Statistical(
             "k": And(int, lambda x: x > 0),
             "std_dev_factor": And(float, lambda x: x > 0),
             "use_median": bool,
+            "half_epipolar_size": int,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -395,6 +404,7 @@ class Statistical(
                             self.k,
                             self.std_dev_factor,
                             self.use_median,
+                            self.half_epipolar_size,
                             window,
                             overlap,
                             epsg=epsg,
@@ -517,6 +527,7 @@ def epipolar_statistical_removing_wrapper(
     statistical_k,
     std_dev_factor,
     use_median,
+    half_epipolar_size,
     window,
     overlap,
     epsg,
@@ -533,6 +544,8 @@ def epipolar_statistical_removing_wrapper(
     :type std_dev_factor: float
     :param use_median: use median and quartile instead of mean and std
     :type use median: bool
+    :param half_epipolar_size: half size of the window used to search neighbors
+    :type half_epipolar_size: int
     :param window: window of base tile [row min, row max, col min col max]
     :type window: list
     :param overlap: overlap [row min, row max, col min col max]
@@ -554,7 +567,7 @@ def epipolar_statistical_removing_wrapper(
         k=statistical_k,
         dev_factor=std_dev_factor,
         use_median=use_median,
-        half_window_size=5,
+        half_window_size=half_epipolar_size,
     )
 
     # Fill with attributes
