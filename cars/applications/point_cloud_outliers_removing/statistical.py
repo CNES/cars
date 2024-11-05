@@ -323,6 +323,7 @@ class Statistical(
                             merged_points_cloud[row, col],
                             self.k,
                             self.std_dev_factor,
+                            self.use_median,
                             save_by_pair=(self.save_by_pair),
                             point_cloud_csv_file_name=point_cloud_csv_file_name,
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
@@ -425,6 +426,7 @@ def statistical_removing_wrapper(
     cloud,
     statistical_k,
     std_dev_factor,
+    use_median,
     save_by_pair: bool = False,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
@@ -439,6 +441,8 @@ def statistical_removing_wrapper(
     :type statistical_k: int
     :param std_dev_factor: std factor
     :type std_dev_factor: float
+    :param use_median: use median and quartile instead of mean and std
+    :type use median: bool
     :param save_by_pair: save point cloud as pair
     :type save_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
@@ -483,7 +487,7 @@ def statistical_removing_wrapper(
     # Filter point cloud
     tic = time.process_time()
     (new_cloud, _) = outlier_removing_tools.statistical_outliers_filtering(
-        new_cloud, statistical_k, std_dev_factor
+        new_cloud, statistical_k, std_dev_factor, use_median
     )
     toc = time.process_time()
     logging.debug(
