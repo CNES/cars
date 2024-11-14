@@ -441,13 +441,17 @@ class DefaultPipeline(PipelineTemplate):
                 "dem_generation",
             ]
 
+        # TODO: point_cloud_outliers_removing is always needed for now, but
+        # after merging mode removal it would only be required if
+        # self.sensors_in_inputs.
+        needed_applications += [
+            "point_cloud_outliers_removing.1",
+            "point_cloud_outliers_removing.2",
+        ]
+
         if self.save_output_dsm or self.save_output_point_cloud:
 
-            needed_applications += [
-                "pc_denoising",
-                "point_cloud_outliers_removing.1",
-                "point_cloud_outliers_removing.2",
-            ]
+            needed_applications += ["pc_denoising"]
 
             if self.save_output_dsm:
                 needed_applications += [
