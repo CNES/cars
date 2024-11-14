@@ -761,6 +761,8 @@ class CensusMccnnSgm(
                 dem_median, x_mean, y_mean, points_cloud_conversion
             )
 
+            nan_mask = ~np.isnan(dem_median_list)
+
             # transform to lon lat
             terrain_position_lon_lat = projection.points_cloud_conversion(
                 terrain_positions, terrain_epsg, 4326
@@ -776,9 +778,19 @@ class CensusMccnnSgm(
                 dem_max_list = inputs.rasterio_get_values(
                     dem_max, lon_mean, lat_mean, points_cloud_conversion
                 )
+                nan_mask = (
+                    nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)
+                )
             else:
                 dem_min_list = dem_median_list - altitude_delta_min
                 dem_max_list = dem_median_list + altitude_delta_max
+
+            # filter nan value from input points
+            lon_mean = lon_mean[nan_mask]
+            lat_mean = lat_mean[nan_mask]
+            dem_median_list = dem_median_list[nan_mask]
+            dem_min_list = dem_min_list[nan_mask]
+            dem_max_list = dem_max_list[nan_mask]
 
             # sensors physical positions
             (
