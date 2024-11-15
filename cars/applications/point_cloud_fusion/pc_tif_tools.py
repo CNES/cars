@@ -589,6 +589,16 @@ def generate_pc_wrapper(  # noqa: C901
             pass
         elif key in ["x", "y", "z"]:
             pass
+        elif key == "intervals_z_inf":
+            data_z_inf = read_image_full(
+                cloud["intervals_z_inf"], window=window, squeeze=True
+            )
+            values[cst.Z_INF] = ([cst.ROW, cst.COL], data_z_inf)
+        elif key == "intervals_z_sup":
+            data_z_sup = read_image_full(
+                cloud["intervals_z_sup"], window=window, squeeze=True
+            )
+            values[cst.Z_SUP] = ([cst.ROW, cst.COL], data_z_sup)
         elif key == "point_cloud_epsg":
             attributes["epsg"] = cloud[key]
         elif key == "mask":
@@ -678,7 +688,6 @@ def get_bounds(
     ymax_list = []
 
     for _, point_cloud in list_epipolar_points_cloud.items():
-
         local_x_y_min_max = get_min_max_band(
             point_cloud[cst.X],
             point_cloud[cst.Y],
@@ -773,6 +782,7 @@ def transform_input_pc(
 
         # Add to replace list so tiles will be readable at the same time
         [saving_info_pc] = cars_orchestrator.get_saving_infos([epi_pc])
+
         cars_orchestrator.add_to_replace_lists(
             epi_pc, cars_ds_name="epi_pc_min_max"
         )
@@ -807,6 +817,7 @@ def transform_input_pc(
                     saving_info=full_saving_info_pc,
                 )
         epi_pc.attributes["source_pc_name"] = pair_key
+
         list_epipolar_points_cloud_by_tiles.append(epi_pc)
 
     # Breakpoint : compute
@@ -1011,6 +1022,10 @@ def compute_x_y_min_max_wrapper(items, epsg, window, saving_info=None):
         data_dict[cst.POINTS_CLOUD_PERFORMANCE_MAP] = items[
             cst.POINTS_CLOUD_PERFORMANCE_MAP
         ]
+    if cst.Z_INF in items:
+        data_dict[cst.Z_INF] = items[cst.Z_INF]
+    if cst.Z_SUP in items:
+        data_dict[cst.Z_SUP] = items[cst.Z_SUP]
 
     # create dict
     tile = {

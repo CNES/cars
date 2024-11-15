@@ -79,6 +79,8 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         cst.X: str,
         cst.Y: str,
         cst.Z: str,
+        cst.Z_INF: Or(str, None),
+        cst.Z_SUP: Or(str, None),
         cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
         cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
         cst.POINTS_CLOUD_CLR_KEY_ROOT: str,
@@ -101,6 +103,13 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Z] = conf[
             depth_map_cst.DEPTH_MAPS
         ][depth_map_key].get("z", None)
+
+        overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Z_INF] = (
+            conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("z_inf", None)
+        )
+        overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Z_SUP] = (
+            conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("z_sup", None)
+        )
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.POINTS_CLOUD_CLR_KEY_ROOT
