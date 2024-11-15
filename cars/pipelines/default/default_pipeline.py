@@ -588,6 +588,30 @@ class DefaultPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
+        # Points cloud outlier removing small components
+        self.pc_outliers_removing_1_app = Application(
+            "point_cloud_outliers_removing",
+            cfg=used_conf.get(
+                "point_cloud_outliers_removing.1",
+                {"method": "small_components"},
+            ),
+        )
+        used_conf["point_cloud_outliers_removing.1"] = (
+            self.pc_outliers_removing_1_app.get_conf()
+        )
+
+        # Points cloud outlier removing statistical
+        self.pc_outliers_removing_2_app = Application(
+            "point_cloud_outliers_removing",
+            cfg=used_conf.get(
+                "point_cloud_outliers_removing.2",
+                {"method": "statistical"},
+            ),
+        )
+        used_conf["point_cloud_outliers_removing.2"] = (
+            self.pc_outliers_removing_2_app.get_conf()
+        )
+
         if self.save_output_dsm or self.save_output_point_cloud:
 
             # Point cloud denoising
@@ -614,30 +638,6 @@ class DefaultPipeline(PipelineTemplate):
                 used_conf["dsm_filling"] = (
                     self.dsm_filling_application.get_conf()
                 )
-
-            # Points cloud outlier removing small components
-            self.pc_outliers_removing_1_app = Application(
-                "point_cloud_outliers_removing",
-                cfg=used_conf.get(
-                    "point_cloud_outliers_removing.1",
-                    {"method": "small_components"},
-                ),
-            )
-            used_conf["point_cloud_outliers_removing.1"] = (
-                self.pc_outliers_removing_1_app.get_conf()
-            )
-
-            # Points cloud outlier removing statistical
-            self.pc_outliers_removing_2_app = Application(
-                "point_cloud_outliers_removing",
-                cfg=used_conf.get(
-                    "point_cloud_outliers_removing.2",
-                    {"method": "statistical"},
-                ),
-            )
-            used_conf["point_cloud_outliers_removing.2"] = (
-                self.pc_outliers_removing_2_app.get_conf()
-            )
 
             if self.merging:
 
@@ -1662,6 +1662,23 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 safe_makedirs(depth_map_dir)
 
+            if (
+                self.pc_outliers_removing_2_app.used_config.get(
+                    "activated", False
+                )
+                is True
+            ):
+                last_depth_map_application = "pc_outliers_removing_2"
+            elif (
+                self.pc_outliers_removing_1_app.used_config.get(
+                    "activated", False
+                )
+                is True
+            ):
+                last_depth_map_application = "pc_outliers_removing_1"
+            else:
+                last_depth_map_application = "triangulation"
+
             # Run epipolar triangulation application
             epipolar_points_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
@@ -1684,6 +1701,8 @@ class DefaultPipeline(PipelineTemplate):
                 cloud_id=cloud_id,
                 intervals=intervals,
                 pair_output_dir=depth_map_dir,
+                save_output_coordinates=last_depth_map_application
+                == "triangulation",
                 save_output_color=bool(depth_map_dir)
                 and self.auxiliary[out_cst.AUX_COLOR],
                 save_output_classification=bool(depth_map_dir)
@@ -1701,47 +1720,70 @@ class DefaultPipeline(PipelineTemplate):
 
             if self.merging:
                 self.list_epipolar_points_cloud.append(epipolar_points_cloud)
-            # denoising available only if we'll go further in the pipeline
-            elif self.save_output_dsm or self.save_output_point_cloud:
+            else:
+                filtering_out_dir = (
+                    depth_map_dir
+                    if (
+                        depth_map_dir
+                        and last_depth_map_application
+                        == "pc_outliers_removing_1"
+                    )
+                    else os.path.join(
+                        self.dump_dir, "pc_outliers_removing_1", pair_key
+                    )
+                )
                 filtered_epipolar_points_cloud_1 = (
                     self.pc_outliers_removing_1_app.run(
                         epipolar_points_cloud,
-                        dump_dir=os.path.join(
-                            self.dump_dir, "pc_outliers_removing_1", pair_key
-                        ),
+                        dump_dir=filtering_out_dir,
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
-
+                if self.quit_on_app("point_cloud_outliers_removing.1"):
+                    continue  # keep iterating over pairs, but don't go further
+                filtering_out_dir = (
+                    depth_map_dir
+                    if (
+                        depth_map_dir
+                        and last_depth_map_application
+                        == "pc_outliers_removing_2"
+                    )
+                    else os.path.join(
+                        self.dump_dir, "pc_outliers_removing_2", pair_key
+                    )
+                )
                 filtered_epipolar_points_cloud_2 = (
                     self.pc_outliers_removing_2_app.run(
                         filtered_epipolar_points_cloud_1,
-                        dump_dir=os.path.join(
-                            self.dump_dir, "pc_outliers_removing_2", pair_key
-                        ),
+                        dump_dir=filtering_out_dir,
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
-
-                denoised_epipolar_points_cloud = (
-                    self.pc_denoising_application.run(
-                        filtered_epipolar_points_cloud_2,
-                        orchestrator=self.cars_orchestrator,
-                        pair_folder=os.path.join(
-                            self.dump_dir, "denoising", pair_key
-                        ),
-                        pair_key=pair_key,
-                    )
-                )
-
-                self.list_epipolar_points_cloud.append(
-                    denoised_epipolar_points_cloud
-                )
-
-                if self.quit_on_app("pc_denoising"):
+                if self.quit_on_app("point_cloud_outliers_removing.2"):
                     continue  # keep iterating over pairs, but don't go further
+
+                # denoising available only if we'll go further in the pipeline
+                if self.save_output_dsm or self.save_output_point_cloud:
+                    denoised_epipolar_points_cloud = (
+                        self.pc_denoising_application.run(
+                            filtered_epipolar_points_cloud_2,
+                            orchestrator=self.cars_orchestrator,
+                            pair_folder=os.path.join(
+                                self.dump_dir, "denoising", pair_key
+                            ),
+                            pair_key=pair_key,
+                        )
+                    )
+
+                    self.list_epipolar_points_cloud.append(
+                        denoised_epipolar_points_cloud
+                    )
+
+                    if self.quit_on_app("pc_denoising"):
+                        # keep iterating over pairs, but don't go further
+                        continue
 
             if self.save_output_dsm or self.save_output_point_cloud:
                 # Compute terrain bounding box /roi related to
@@ -1787,11 +1829,14 @@ class DefaultPipeline(PipelineTemplate):
                 )
 
         # quit if any app in the loop over the pairs was the last one
+        # pylint:disable=too-many-boolean-expressions
         if (
             self.quit_on_app("dense_matching")
             or self.quit_on_app("dense_matches_filling.1")
             or self.quit_on_app("dense_matches_filling.2")
             or self.quit_on_app("triangulation")
+            or self.quit_on_app("point_cloud_outliers_removing.1")
+            or self.quit_on_app("point_cloud_outliers_removing.2")
             or self.quit_on_app("pc_denoising")
         ):
             return True

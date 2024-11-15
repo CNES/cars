@@ -130,6 +130,7 @@ class LineOfSightIntersection(
         output_dir,
         dump_dir=None,
         intervals=None,
+        save_output_coordinates=True,
         save_output_color=True,
         save_output_classification=False,
         save_output_mask=False,
@@ -158,6 +159,8 @@ class LineOfSightIntersection(
         :type dump_dir: str
         :param intervals: Either None or a List of 2 intervals indicators
         :type intervals: None or [str, str]
+        :param save_output_coordinates: Save X, Y and Z coords in output_dir
+        :type save_output_coordinates: bool
         :param save_output_color: Save color depth map in output_dir
         :type save_output_color: bool
         :param save_output_classification: Save classification depth map in
@@ -187,9 +190,13 @@ class LineOfSightIntersection(
 
         if output_dir is None:
             output_dir = dump_dir
-        if output_dir:
+
+        if save_output_coordinates or dump_dir:
+            coords_output_dir = (
+                output_dir if save_output_coordinates else dump_dir
+            )
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "X.tif"),
+                os.path.join(coords_output_dir, "X.tif"),
                 cst.X,
                 epipolar_points_cloud,
                 cars_ds_name="depth_map_x",
@@ -197,7 +204,7 @@ class LineOfSightIntersection(
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "Y.tif"),
+                os.path.join(coords_output_dir, "Y.tif"),
                 cst.Y,
                 epipolar_points_cloud,
                 cars_ds_name="depth_map_y",
@@ -205,7 +212,7 @@ class LineOfSightIntersection(
             )
 
             self.orchestrator.add_to_save_lists(
-                os.path.join(output_dir, "Z.tif"),
+                os.path.join(coords_output_dir, "Z.tif"),
                 cst.Z,
                 epipolar_points_cloud,
                 cars_ds_name="depth_map_z",
@@ -315,6 +322,7 @@ class LineOfSightIntersection(
         cloud_id=None,
         intervals=None,
         pair_output_dir=None,
+        save_output_coordinates=False,
         save_output_color=False,
         save_output_classification=False,
         save_output_mask=False,
@@ -397,6 +405,8 @@ class LineOfSightIntersection(
         :param pair_output_dir: directory to write triangulation output depth
                 map.
         :type pair_output_dir: None or str
+        :param save_output_coordinates: Save X, Y, Z coords in pair_output_dir
+        :type save_output_coordinates: bool
         :param save_output_color: Save color depth map in pair_output_dir
         :type save_output_color: bool
         :param save_output_classification: Save classification depth map in
@@ -563,6 +573,7 @@ class LineOfSightIntersection(
                 pair_output_dir,
                 pair_dump_dir if self.save_intermediate_data else None,
                 intervals,
+                save_output_coordinates,
                 save_output_color,
                 save_output_classification,
                 save_output_mask,
