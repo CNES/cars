@@ -45,7 +45,7 @@ from cars.core import inputs, outputs, utils
 
 
 def compute_dem_intersection_with_poly(  # noqa: C901
-    srtm_dir: str, ref_poly: Polygon, ref_epsg: int
+    srtm_file: str, ref_poly: Polygon, ref_epsg: int
 ) -> Polygon:
     """
     Compute the intersection polygon between the defined dem regions
@@ -53,7 +53,7 @@ def compute_dem_intersection_with_poly(  # noqa: C901
 
     :raise Exception: when the input dem doesn't intersect the reference polygon
 
-    :param srtm_dir: srtm directory
+    :param srtm_file: srtm file
     :param ref_poly: reference polygon
     :param ref_epsg: reference epsg code
     :return: The intersection polygon between the defined dem regions
@@ -61,84 +61,67 @@ def compute_dem_intersection_with_poly(  # noqa: C901
     """
     dem_poly = None
 
-    srtm_files_dir = []
-    if os.path.isfile(os.path.abspath(srtm_dir)):
-        srtm_files_dir.append([srtm_dir])
-    else:
-        for _, _, srtm_files in os.walk(srtm_dir):
-            srtm_files_dir.append(srtm_files)
+    if os.path.isdir(os.path.abspath(srtm_file)):
+        raise RuntimeError("srtm input should be a file and not a directory")
 
-    for srtm_files in srtm_files_dir:
-        logging.info(
-            "Browsing all files of the srtm dir. "
-            "Some files might be unreadable by rasterio (non blocking matter)."
-        )
-        for file in srtm_files:
-            unsupported_formats = [".omd"]
-            _, ext = os.path.splitext(file)
-            if ext not in unsupported_formats:
-                if inputs.rasterio_can_open(os.path.join(srtm_dir, file)):
-                    with rio.open(os.path.join(srtm_dir, file)) as data:
-                        xmin = min(data.bounds.left, data.bounds.right)
-                        ymin = min(data.bounds.bottom, data.bounds.top)
-                        xmax = max(data.bounds.left, data.bounds.right)
-                        ymax = max(data.bounds.bottom, data.bounds.top)
+    if inputs.rasterio_can_open(srtm_file):
+        with rio.open(srtm_file) as data:
+            xmin = min(data.bounds.left, data.bounds.right)
+            ymin = min(data.bounds.bottom, data.bounds.top)
+            xmax = max(data.bounds.left, data.bounds.right)
+            ymax = max(data.bounds.bottom, data.bounds.top)
 
-                        try:
-                            file_epsg = data.crs.to_epsg()
-                            file_bb = Polygon(
-                                [
-                                    (xmin, ymin),
-                                    (xmin, ymax),
-                                    (xmax, ymax),
-                                    (xmax, ymin),
-                                    (xmin, ymin),
-                                ]
-                            )
+            try:
+                file_epsg = data.crs.to_epsg()
+                file_bb = Polygon(
+                    [
+                        (xmin, ymin),
+                        (xmin, ymax),
+                        (xmax, ymax),
+                        (xmax, ymin),
+                        (xmin, ymin),
+                    ]
+                )
 
-                            # transform polygon if needed
+                # transform polygon if needed
+                if ref_epsg != file_epsg:
+                    file_bb = polygon_projection(file_bb, file_epsg, ref_epsg)
+
+                # if the srtm tile intersects the reference polygon
+                if file_bb.intersects(ref_poly):
+                    local_dem_poly = None
+
+                    # retrieve valid polygons
+                    for poly, val in shapes(
+                        data.dataset_mask(),
+                        transform=data.transform,
+                    ):
+                        if val != 0:
+                            poly = shape(poly)
+                            poly = poly.buffer(0)
                             if ref_epsg != file_epsg:
-                                file_bb = polygon_projection(
-                                    file_bb, file_epsg, ref_epsg
+                                poly = polygon_projection(
+                                    poly, file_epsg, ref_epsg
                                 )
 
-                            # if the srtm tile intersects the reference polygon
-                            if file_bb.intersects(ref_poly):
-                                local_dem_poly = None
+                            # combine valid polygons
+                            if local_dem_poly is None:
+                                local_dem_poly = poly
+                            else:
+                                local_dem_poly = poly.union(local_dem_poly)
 
-                                # retrieve valid polygons
-                                for poly, val in shapes(
-                                    data.dataset_mask(),
-                                    transform=data.transform,
-                                ):
-                                    if val != 0:
-                                        poly = shape(poly)
-                                        poly = poly.buffer(0)
-                                        if ref_epsg != file_epsg:
-                                            poly = polygon_projection(
-                                                poly, file_epsg, ref_epsg
-                                            )
+                    # combine the tile valid polygon to the other
+                    # tiles' ones
+                    if dem_poly is None:
+                        dem_poly = local_dem_poly
+                    else:
+                        dem_poly = dem_poly.union(local_dem_poly)
 
-                                        # combine valid polygons
-                                        if local_dem_poly is None:
-                                            local_dem_poly = poly
-                                        else:
-                                            local_dem_poly = poly.union(
-                                                local_dem_poly
-                                            )
-
-                                # combine the tile valid polygon to the other
-                                # tiles' ones
-                                if dem_poly is None:
-                                    dem_poly = local_dem_poly
-                                else:
-                                    dem_poly = dem_poly.union(local_dem_poly)
-
-                        except AttributeError as attribute_error:
-                            logging.warning(
-                                "Impossible to read the SRTM"
-                                "tile epsg code: {}".format(attribute_error)
-                            )
+            except AttributeError as attribute_error:
+                logging.warning(
+                    "Impossible to read the SRTM"
+                    "tile epsg code: {}".format(attribute_error)
+                )
 
     # compute dem coverage polygon over the reference polygon
     if dem_poly is None or not dem_poly.intersects(ref_poly):
