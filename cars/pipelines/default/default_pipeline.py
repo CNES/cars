@@ -672,7 +672,7 @@ class DefaultPipeline(PipelineTemplate):
         )
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
             self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
-                -100 if initial_elevation else -1000
+                -500 if initial_elevation else -1000
             )
             self.sparse_mtch_app.elevation_delta_lower_bound = (
                 self.sparse_mtch_app.used_config["elevation_delta_lower_bound"]

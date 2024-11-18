@@ -83,6 +83,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         self.fillnodata_max_search_distance = self.used_config[
             "fillnodata_max_search_distance"
         ]
+        self.min_dem = self.used_config["min_dem"]
+        self.max_dem = self.used_config["max_dem"]
 
         # Init orchestrator
         self.orchestrator = None
@@ -117,9 +119,11 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         overloaded_conf["min_number_matches"] = conf.get(
             "min_number_matches", 100
         )
+        overloaded_conf["min_dem"] = conf.get("min_dem", -500)
+        overloaded_conf["max_dem"] = conf.get("max_dem", 1000)
 
         overloaded_conf["fillnodata_max_search_distance"] = conf.get(
-            "fillnodata_max_search_distance", 3
+            "fillnodata_max_search_distance", 5
         )
 
         rectification_schema = {
@@ -129,6 +133,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "height_margin": Or(list, int),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
+            "min_dem": And(int, lambda x: x < 0),
+            "max_dem": And(int, lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
@@ -310,6 +316,17 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         dem_median = dem_median.astype(int)
         dem_min = np.floor(dem_min).astype(int)
         dem_max = np.ceil(dem_max).astype(int)
+
+        dem_min = np.where(
+            dem_median - dem_min < self.min_dem,
+            dem_median + self.min_dem,
+            dem_min,
+        )
+        dem_max = np.where(
+            dem_max - dem_median > self.max_dem,
+            dem_median + self.max_dem,
+            dem_max,
+        )
 
         # Generate CarsDataset
 
