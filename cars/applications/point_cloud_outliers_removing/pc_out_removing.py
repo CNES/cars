@@ -144,7 +144,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
     def __register_dataset__(
         self,
         merged_points_cloud,
-        save_laz_output=False,
+        output_dir=None,
+        dump_dir=None,
         app_name=None,
     ):
         """
@@ -156,8 +157,12 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
         :param merged_points_cloud:  Merged point cloud
         :type merged_points_cloud: CarsDataset
-        :param save_laz_output: true if save to laz as official product
-        :type save_laz_output: bool
+        :param output_dir: output depth map directory. If None output will be
+            written in dump_dir if intermediate data is requested
+        :type output_dir: str
+        :param dump_dir: dump dir for output (except depth map) if intermediate
+            data is requested
+        :type dump_dir: str
         :param app_name: application name for file names
         :type app_name: str
 
@@ -172,8 +177,8 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
             application_constants.SAVE_INTERMEDIATE_DATA, False
         )
         # Save laz point cloud if save_intermediate_date is activated (dump_dir)
-        # or if save_laz_output is activated (official product)
-        save_point_cloud_as_laz = save_laz_output or self.used_config.get(
+        # or if output_dir is provided is activated (save as official product)
+        save_point_cloud_as_laz = dump_dir is not None or self.used_config.get(
             application_constants.SAVE_INTERMEDIATE_DATA, False
         )
 
@@ -191,14 +196,10 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         pc_laz_file_name = None
         if save_point_cloud_as_laz:
             # Points cloud file name
-            if save_laz_output:
-                pc_laz_file_name = os.path.join(
-                    self.orchestrator.out_dir, "point_cloud"
-                )
+            if output_dir is not None:
+                pc_laz_file_name = output_dir
             else:
-                pc_laz_file_name = os.path.join(
-                    self.orchestrator.out_dir, "dump_dir", app_name, "laz"
-                )
+                pc_laz_file_name = os.path.join(dump_dir, "laz")
             safe_makedirs(pc_laz_file_name)
             pc_laz_file_name = os.path.join(pc_laz_file_name, "pc")
             self.orchestrator.add_to_compute_lists(
@@ -209,9 +210,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         pc_csv_file_name = None
         if save_point_cloud_as_csv:
             # Points cloud file name
-            pc_csv_file_name = os.path.join(
-                self.orchestrator.out_dir, "dump_dir", app_name, "csv"
-            )
+            pc_csv_file_name = os.path.join(dump_dir, "csv")
             safe_makedirs(pc_csv_file_name)
             pc_csv_file_name = os.path.join(pc_csv_file_name, "pc")
             self.orchestrator.add_to_compute_lists(
@@ -227,6 +226,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         merged_points_cloud,
         orchestrator=None,
         save_laz_output=False,
+        output_dir=None,
         dump_dir=None,
         epsg=None,
     ):
@@ -240,7 +240,11 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
-        :param dump_dir: output directory for filtered points (for array input)
+        :param output_dir: output depth map directory. If None output will be
+            written in dump_dir if intermediate data is requested
+        :type output_dir: str
+        :param dump_dir: dump dir for output (except depth map) if intermediate
+            data is requested
         :type dump_dir: str
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int

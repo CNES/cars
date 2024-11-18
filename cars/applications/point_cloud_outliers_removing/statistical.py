@@ -219,7 +219,7 @@ class Statistical(
         self,
         merged_points_cloud,
         orchestrator=None,
-        save_laz_output=False,
+        output_dir=None,
         dump_dir=None,
         epsg=None,
     ):
@@ -241,9 +241,11 @@ class Statistical(
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
-        :param save_laz_output: save output point cloud as laz
-        :type save_laz_output: bool
-        :param dump_dir: output directory for filtered points (for array input)
+        :param output_dir: output depth map directory. If None output will be
+            written in dump_dir if intermediate data is requested
+        :type output_dir: str
+        :param dump_dir: dump dir for output (except depth map) if intermediate
+            data is requested
         :type dump_dir: str
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int
@@ -283,7 +285,8 @@ class Statistical(
                 point_cloud_csv_file_name,
             ) = self.__register_dataset__(
                 merged_points_cloud,
-                save_laz_output,
+                output_dir,
+                dump_dir,
                 app_name="statistical",
             )
 
@@ -356,12 +359,15 @@ class Statistical(
                 }
             }
             orchestrator.update_out_info(updating_dict)
-            if self.used_config.get(
+            if output_dir or self.used_config.get(
                 application_constants.SAVE_INTERMEDIATE_DATA
             ):
-                safe_makedirs(dump_dir)
+                filtered_dir = (
+                    output_dir if output_dir is not None else dump_dir
+                )
+                safe_makedirs(filtered_dir)
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(dump_dir, "X.tif"),
+                    os.path.join(filtered_dir, "X.tif"),
                     cst.X,
                     filtered_point_cloud,
                     cars_ds_name="depth_map_x_filtered_statistical",
@@ -369,14 +375,14 @@ class Statistical(
                 )
 
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(dump_dir, "Y.tif"),
+                    os.path.join(filtered_dir, "Y.tif"),
                     cst.Y,
                     filtered_point_cloud,
                     cars_ds_name="depth_map_y_filtered_statistical",
                     dtype=np.float64,
                 )
                 self.orchestrator.add_to_save_lists(
-                    os.path.join(dump_dir, "Z.tif"),
+                    os.path.join(filtered_dir, "Z.tif"),
                     cst.Z,
                     filtered_point_cloud,
                     cars_ds_name="depth_map_z_filtered_statistical",

@@ -1659,7 +1659,7 @@ def test_end2end_ventoux_unique_split():
                     os.path.join(
                         out_dir_dsm,
                         "dump_dir",
-                        "small_components",
+                        "point_cloud_outliers_removing_1",
                         "laz",
                         "675292.3110543193_4897140.457149682_one.laz",
                     )
@@ -3140,7 +3140,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "small_components",
+                    "point_cloud_outliers_removing_1",
                     "laz",
                     pc2 + "_left_right.laz",
                 )
@@ -3152,7 +3152,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "small_components",
+                    "point_cloud_outliers_removing_1",
                     "csv",
                     pc2 + "_left_right.csv",
                 )
@@ -3164,7 +3164,11 @@ def test_end2end_ventoux_with_color():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_2",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3172,7 +3176,11 @@ def test_end2end_ventoux_with_color():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_2",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3392,7 +3400,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "small_components", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_1",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3400,7 +3412,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "small_components", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_1",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3409,7 +3425,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_2",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3417,7 +3437,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outliers_removing_2",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True

@@ -1667,6 +1667,7 @@ class DefaultPipeline(PipelineTemplate):
                     "activated", False
                 )
                 is True
+                and self.merging is False
             ):
                 last_depth_map_application = "pc_outliers_removing_2"
             elif (
@@ -1674,6 +1675,7 @@ class DefaultPipeline(PipelineTemplate):
                     "activated", False
                 )
                 is True
+                and self.merging is False
             ):
                 last_depth_map_application = "pc_outliers_removing_1"
             else:
@@ -1728,14 +1730,15 @@ class DefaultPipeline(PipelineTemplate):
                         and last_depth_map_application
                         == "pc_outliers_removing_1"
                     )
-                    else os.path.join(
-                        self.dump_dir, "pc_outliers_removing_1", pair_key
-                    )
+                    else None
                 )
                 filtered_epipolar_points_cloud_1 = (
                     self.pc_outliers_removing_1_app.run(
                         epipolar_points_cloud,
-                        dump_dir=filtering_out_dir,
+                        output_dir=filtering_out_dir,
+                        dump_dir=os.path.join(
+                            self.dump_dir, "pc_outliers_removing_1", pair_key
+                        ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
@@ -1749,14 +1752,15 @@ class DefaultPipeline(PipelineTemplate):
                         and last_depth_map_application
                         == "pc_outliers_removing_2"
                     )
-                    else os.path.join(
-                        self.dump_dir, "pc_outliers_removing_2", pair_key
-                    )
+                    else None
                 )
                 filtered_epipolar_points_cloud_2 = (
                     self.pc_outliers_removing_2_app.run(
                         filtered_epipolar_points_cloud_1,
-                        dump_dir=filtering_out_dir,
+                        output_dir=filtering_out_dir,
+                        dump_dir=os.path.join(
+                            self.dump_dir, "pc_outliers_removing_2", pair_key
+                        ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
@@ -2074,8 +2078,15 @@ class DefaultPipeline(PipelineTemplate):
                 self.pc_outliers_removing_1_app.run(
                     merged_points_clouds,
                     orchestrator=self.cars_orchestrator,
-                    save_laz_output=self.save_output_point_cloud
-                    and last_pc_application == "pc_outliers_removing_1",
+                    output_dir=(
+                        os.path.join(self.out_dir, "point_cloud")
+                        if self.save_output_point_cloud
+                        and last_pc_application == "pc_outliers_removing_1"
+                        else None
+                    ),
+                    dump_dir=os.path.join(
+                        self.dump_dir, "pc_outliers_removing_1"
+                    ),
                 )
             )
 
@@ -2087,8 +2098,15 @@ class DefaultPipeline(PipelineTemplate):
                 self.pc_outliers_removing_2_app.run(
                     filtered_1_merged_points_clouds,
                     orchestrator=self.cars_orchestrator,
-                    save_laz_output=self.save_output_point_cloud
-                    and last_pc_application == "pc_outliers_removing_2",
+                    output_dir=(
+                        os.path.join(self.out_dir, "point_cloud")
+                        if self.save_output_point_cloud
+                        and last_pc_application == "pc_outliers_removing_2"
+                        else None
+                    ),
+                    dump_dir=os.path.join(
+                        self.dump_dir, "pc_outliers_removing_2"
+                    ),
                 )
             )
 
