@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the statistical points removing application class.
+this module contains the small_components point removal application class.
 """
 
 
@@ -39,14 +39,12 @@ from pyproj import CRS
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_outliers_removing import (
-    outlier_removing_tools,
+from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
+from cars.applications.point_cloud_outlier_removal import (
+    pc_out_removal as pc_removal,
 )
-from cars.applications.point_cloud_outliers_removing import (
-    pc_out_removing as pc_removing,
-)
-from cars.applications.point_cloud_outliers_removing import (
-    points_removing_constants as pr_cst,
+from cars.applications.point_cloud_outlier_removal import (
+    point_removal_constants as pr_cst,
 )
 from cars.core import constants as cst
 from cars.core import projection
@@ -55,19 +53,19 @@ from cars.data_structures import cars_dataset
 
 
 class SmallComponents(
-    pc_removing.PointCloudOutliersRemoving, short_name="small_components"
+    pc_removal.PointCloudOutlierRemoval, short_name="small_components"
 ):  # pylint: disable=R0903
     """
-    PointCloudOutliersRemoving
+    SmallComponents
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf=None):
         """
-        Init function of PointCloudOutliersRemoving
+        Init function of SmallComponents
 
-        :param conf: configuration for points outliers removing
+        :param conf: configuration for points outlier removal
         :return: an application_to_use object
         """
 
@@ -208,7 +206,7 @@ class SmallComponents(
 
         logging.info(
             "Estimated optimal tile size for small"
-            "components removing: {} meters".format(tile_size)
+            "component removal: {} meters".format(tile_size)
         )
 
         return tile_size
@@ -249,7 +247,7 @@ class SmallComponents(
         epsg=None,
     ):
         """
-        Run PointCloudOutliersRemoving application.
+        Run PointCloudOutlierRemoval application.
 
         Creates a CarsDataset filled with new point cloud tiles.
 
@@ -323,7 +321,7 @@ class SmallComponents(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
                 }
             }
             orchestrator.update_out_info(updating_dict)
@@ -340,7 +338,7 @@ class SmallComponents(
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
-                            small_components_removing_wrapper
+                            small_component_removal_wrapper
                         )(
                             merged_points_cloud[row, col],
                             self.connection_distance,
@@ -374,7 +372,7 @@ class SmallComponents(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
                 }
             }
             orchestrator.update_out_info(updating_dict)
@@ -424,7 +422,7 @@ class SmallComponents(
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
-                            epipolar_small_components_removing_wrapper
+                            epipolar_small_component_removal_wrapper
                         )(
                             merged_points_cloud[row, col],
                             self.connection_distance,
@@ -439,7 +437,7 @@ class SmallComponents(
 
         else:
             logging.error(
-                "PointCloudOutliersRemoving application doesn't support "
+                "PointCloudOutlierRemoval application doesn't support "
                 "this input data "
                 "format"
             )
@@ -447,7 +445,7 @@ class SmallComponents(
         return filtered_point_cloud
 
 
-def small_components_removing_wrapper(
+def small_component_removal_wrapper(
     cloud,
     connection_distance,
     nb_points_threshold,
@@ -458,7 +456,7 @@ def small_components_removing_wrapper(
     saving_info=None,
 ):
     """
-    Statistical outlier removing
+    Statistical outlier removal
 
     :param cloud: cloud to filter
     :type cloud: pandas DataFrame
@@ -515,7 +513,7 @@ def small_components_removing_wrapper(
     (
         new_cloud,
         _,
-    ) = outlier_removing_tools.small_components_filtering(
+    ) = outlier_removal_tools.small_component_filtering(
         new_cloud,
         connection_distance,
         nb_points_threshold,
@@ -523,7 +521,7 @@ def small_components_removing_wrapper(
     )
     toc = time.process_time()
     logging.debug(
-        "Small components cloud filtering done in {} seconds".format(toc - tic)
+        "Small component cloud filtering done in {} seconds".format(toc - tic)
     )
 
     # Conversion to UTM
@@ -557,7 +555,7 @@ def small_components_removing_wrapper(
     return new_cloud
 
 
-def epipolar_small_components_removing_wrapper(
+def epipolar_small_component_removal_wrapper(
     cloud,
     connection_distance,
     nb_points_threshold,
@@ -569,7 +567,7 @@ def epipolar_small_components_removing_wrapper(
     saving_info=None,
 ):
     """
-    Small components outlier removing in epipolar geometry
+    Small component outlier removal in epipolar geometry
 
     :param epipolar_ds: epipolar dataset to filter
     :type epipolar_ds: xr.Dataset
@@ -597,7 +595,7 @@ def epipolar_small_components_removing_wrapper(
     # Copy input cloud
     filtered_cloud = copy.copy(cloud)
 
-    outlier_removing_tools.epipolar_small_components(
+    outlier_removal_tools.epipolar_small_components(
         filtered_cloud,
         epsg,
         min_cluster_size=nb_points_threshold,

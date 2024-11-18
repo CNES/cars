@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-This module contains functions used in outlier removing
+This module contains functions used in outlier removal
 """
 
 # Standard imports
@@ -37,10 +37,10 @@ from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
 from cars.core import constants as cst
 from cars.core import projection
 
-# ##### Small components filtering ######
+# ##### Small component filtering ######
 
 
-def small_components_filtering(
+def small_component_filtering(
     cloud: pandas.DataFrame,
     connection_val: float,
     nb_pts_threshold: int,
@@ -73,7 +73,7 @@ def small_components_filtering(
         else clusters_distance_threshold
     )
 
-    index_elt_to_remove = outlier_filter.pc_small_components_outlier_filtering(
+    index_elt_to_remove = outlier_filter.pc_small_component_outlier_filtering(
         cloud.loc[:, cst.X].values,
         cloud.loc[:, cst.Y].values,
         cloud.loc[:, cst.Z].values,
@@ -188,7 +188,7 @@ def detect_small_components(
 # ##### statistical filtering ######
 
 
-def statistical_outliers_filtering(
+def statistical_outlier_filtering(
     cloud: pandas.DataFrame,
     k: int,
     dev_factor: float,
@@ -472,7 +472,7 @@ def epipolar_small_components(
     if clusters_distance_threshold is None:
         clusters_distance_threshold = np.nan
 
-    outlier_filter.epipolar_small_components_outlier_filtering(
+    outlier_filter.epipolar_small_component_outlier_filtering(
         cloud[cst.X],
         cloud[cst.Y],
         cloud[cst.Z],

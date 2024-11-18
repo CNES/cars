@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,25 +19,12 @@
 # limitations under the License.
 #
 """
-file contains all the constants used in cloud fusion module
+CARS core cloud outlier removing module init file
 """
+# flake8: noqa: F401
 
+from cars.applications.point_cloud_outlier_removal.pc_out_removal import (
+    PointCloudOutlierRemoval,
+)
 
-CLOUD_OUTLIER_REMOVING_RUN_TAG = "points_removing_constants_run"
-
-# Params
-METHOD = "method"
-
-
-# small components
-SMALL_COMPONENTS_FILTER = "small_components_filter_activated"
-SC_ON_GROUND_MARGIN = "on_ground_margin"
-SC_CONNECTION_DISTANCE = "connection_distance"
-SC_NB_POINTS_THRESHOLD = "nb_points_threshold"
-SC_CLUSTERS_DISTANCES_THRESHOLD = "clusters_distance_threshold"
-
-
-# statistical outlier
-STATISTICAL_OUTLIER = "statistical_outliers_filter_activated"
-SO_K = "k"
-SO_STD_DEV_FACTOR = "std_dev_factor"
+from . import small_components, statistical

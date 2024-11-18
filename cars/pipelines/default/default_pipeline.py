@@ -259,8 +259,8 @@ class DefaultPipeline(PipelineTemplate):
 
         depth_merge_apps = {
             "point_cloud_fusion": 12,
-            "point_cloud_outliers_removing.1": 13,
-            "point_cloud_outliers_removing.2": 14,
+            "point_cloud_outlier_removal.1": 13,
+            "point_cloud_outlier_removal.2": 14,
         }
 
         depth_to_dsm_apps = {
@@ -441,12 +441,12 @@ class DefaultPipeline(PipelineTemplate):
                 "dem_generation",
             ]
 
-        # TODO: point_cloud_outliers_removing is always needed for now, but
+        # TODO: point_cloud_outlier_removal is always needed for now, but
         # after merging mode removal it would only be required if
         # self.sensors_in_inputs.
         needed_applications += [
-            "point_cloud_outliers_removing.1",
-            "point_cloud_outliers_removing.2",
+            "point_cloud_outlier_removal.1",
+            "point_cloud_outlier_removal.2",
         ]
 
         if self.save_output_dsm or self.save_output_point_cloud:
@@ -482,8 +482,8 @@ class DefaultPipeline(PipelineTemplate):
 
         for app_key in [
             "point_cloud_fusion",
-            "point_cloud_outliers_removing.1",
-            "point_cloud_outliers_removing.2",
+            "point_cloud_outlier_removal.1",
+            "point_cloud_outlier_removal.2",
             "pc_denoising",
         ]:
             if app_key in needed_applications:
@@ -501,8 +501,8 @@ class DefaultPipeline(PipelineTemplate):
         self.triangulation_application = None
         self.dem_generation_application = None
         self.pc_denoising_application = None
-        self.pc_outliers_removing_1_app = None
-        self.pc_outliers_removing_2_app = None
+        self.pc_outlier_removal_1_app = None
+        self.pc_outlier_removal_2_app = None
         self.rasterization_application = None
         self.pc_fusion_application = None
         self.dsm_filling_application = None
@@ -588,28 +588,28 @@ class DefaultPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-        # Points cloud outlier removing small components
-        self.pc_outliers_removing_1_app = Application(
-            "point_cloud_outliers_removing",
+        # Points cloud small component outlier removal
+        self.pc_outlier_removal_1_app = Application(
+            "point_cloud_outlier_removal",
             cfg=used_conf.get(
-                "point_cloud_outliers_removing.1",
+                "point_cloud_outlier_removal.1",
                 {"method": "small_components"},
             ),
         )
-        used_conf["point_cloud_outliers_removing.1"] = (
-            self.pc_outliers_removing_1_app.get_conf()
+        used_conf["point_cloud_outlier_removal.1"] = (
+            self.pc_outlier_removal_1_app.get_conf()
         )
 
-        # Points cloud outlier removing statistical
-        self.pc_outliers_removing_2_app = Application(
-            "point_cloud_outliers_removing",
+        # Points cloud statistical outlier removal
+        self.pc_outlier_removal_2_app = Application(
+            "point_cloud_outlier_removal",
             cfg=used_conf.get(
-                "point_cloud_outliers_removing.2",
+                "point_cloud_outlier_removal.2",
                 {"method": "statistical"},
             ),
         )
-        used_conf["point_cloud_outliers_removing.2"] = (
-            self.pc_outliers_removing_2_app.get_conf()
+        used_conf["point_cloud_outlier_removal.2"] = (
+            self.pc_outlier_removal_2_app.get_conf()
         )
 
         if self.save_output_dsm or self.save_output_point_cloud:
@@ -1663,21 +1663,21 @@ class DefaultPipeline(PipelineTemplate):
                 safe_makedirs(depth_map_dir)
 
             if (
-                self.pc_outliers_removing_2_app.used_config.get(
+                self.pc_outlier_removal_2_app.used_config.get(
                     "activated", False
                 )
                 is True
                 and self.merging is False
             ):
-                last_depth_map_application = "pc_outliers_removing_2"
+                last_depth_map_application = "pc_outlier_removal_2"
             elif (
-                self.pc_outliers_removing_1_app.used_config.get(
+                self.pc_outlier_removal_1_app.used_config.get(
                     "activated", False
                 )
                 is True
                 and self.merging is False
             ):
-                last_depth_map_application = "pc_outliers_removing_1"
+                last_depth_map_application = "pc_outlier_removal_1"
             else:
                 last_depth_map_application = "triangulation"
 
@@ -1727,45 +1727,43 @@ class DefaultPipeline(PipelineTemplate):
                     depth_map_dir
                     if (
                         depth_map_dir
-                        and last_depth_map_application
-                        == "pc_outliers_removing_1"
+                        and last_depth_map_application == "pc_outlier_removal_1"
                     )
                     else None
                 )
                 filtered_epipolar_points_cloud_1 = (
-                    self.pc_outliers_removing_1_app.run(
+                    self.pc_outlier_removal_1_app.run(
                         epipolar_points_cloud,
                         output_dir=filtering_out_dir,
                         dump_dir=os.path.join(
-                            self.dump_dir, "pc_outliers_removing_1", pair_key
+                            self.dump_dir, "pc_outlier_removal_1", pair_key
                         ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
-                if self.quit_on_app("point_cloud_outliers_removing.1"):
+                if self.quit_on_app("point_cloud_outlier_removal.1"):
                     continue  # keep iterating over pairs, but don't go further
                 filtering_out_dir = (
                     depth_map_dir
                     if (
                         depth_map_dir
-                        and last_depth_map_application
-                        == "pc_outliers_removing_2"
+                        and last_depth_map_application == "pc_outlier_removal_2"
                     )
                     else None
                 )
                 filtered_epipolar_points_cloud_2 = (
-                    self.pc_outliers_removing_2_app.run(
+                    self.pc_outlier_removal_2_app.run(
                         filtered_epipolar_points_cloud_1,
                         output_dir=filtering_out_dir,
                         dump_dir=os.path.join(
-                            self.dump_dir, "pc_outliers_removing_2", pair_key
+                            self.dump_dir, "pc_outlier_removal_2", pair_key
                         ),
                         epsg=self.epsg,
                         orchestrator=self.cars_orchestrator,
                     )
                 )
-                if self.quit_on_app("point_cloud_outliers_removing.2"):
+                if self.quit_on_app("point_cloud_outlier_removal.2"):
                     continue  # keep iterating over pairs, but don't go further
 
                 # denoising available only if we'll go further in the pipeline
@@ -1839,8 +1837,8 @@ class DefaultPipeline(PipelineTemplate):
             or self.quit_on_app("dense_matches_filling.1")
             or self.quit_on_app("dense_matches_filling.2")
             or self.quit_on_app("triangulation")
-            or self.quit_on_app("point_cloud_outliers_removing.1")
-            or self.quit_on_app("point_cloud_outliers_removing.2")
+            or self.quit_on_app("point_cloud_outlier_removal.1")
+            or self.quit_on_app("point_cloud_outlier_removal.2")
             or self.quit_on_app("pc_denoising")
         ):
             return True
@@ -1992,7 +1990,7 @@ class DefaultPipeline(PipelineTemplate):
     def preprocess_depth_maps(self):
         """
         Adds multiple processing steps to the depth maps :
-        Merging, filtering, denoising, outliers removing.
+        Merging, filtering, denoising, outlier removal.
         Creates the point cloud that will be rasterized in
         the last step of the pipeline.
         """
@@ -2007,13 +2005,13 @@ class DefaultPipeline(PipelineTemplate):
             ].attributes.get("color_type", None)
         else:
             # Merge point clouds
-            pc_outliers_removing_1_margins = (
-                self.pc_outliers_removing_1_app.get_on_ground_margin(
+            pc_outlier_removal_1_margins = (
+                self.pc_outlier_removal_1_app.get_on_ground_margin(
                     resolution=self.resolution
                 )
             )
-            pc_outliers_removing_2_margins = (
-                self.pc_outliers_removing_2_app.get_on_ground_margin(
+            pc_outlier_removal_2_margins = (
+                self.pc_outlier_removal_2_app.get_on_ground_margin(
                     resolution=self.resolution
                 )
             )
@@ -2029,19 +2027,19 @@ class DefaultPipeline(PipelineTemplate):
             if self.pc_denoising_application.used_method != "none":
                 last_pc_application = "denoising"
             elif (
-                self.pc_outliers_removing_2_app.used_config.get(
+                self.pc_outlier_removal_2_app.used_config.get(
                     "activated", False
                 )
                 is True
             ):
-                last_pc_application = "pc_outliers_removing_2"
+                last_pc_application = "pc_outlier_removal_2"
             elif (
-                self.pc_outliers_removing_1_app.used_config.get(
+                self.pc_outlier_removal_1_app.used_config.get(
                     "activated", False
                 )
                 is True
             ):
-                last_pc_application = "pc_outliers_removing_1"
+                last_pc_application = "pc_outlier_removal_1"
             else:
                 last_pc_application = "fusion"
 
@@ -2060,8 +2058,8 @@ class DefaultPipeline(PipelineTemplate):
                 ),
                 orchestrator=self.cars_orchestrator,
                 margins=(
-                    pc_outliers_removing_1_margins
-                    + pc_outliers_removing_2_margins
+                    pc_outlier_removal_1_margins
+                    + pc_outlier_removal_2_margins
                     + raster_app_margin
                 ),
                 optimal_terrain_tile_width=self.optimal_terrain_tile_width,
@@ -2074,43 +2072,39 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # Remove outliers with small components method
-            filtered_1_merged_points_clouds = (
-                self.pc_outliers_removing_1_app.run(
-                    merged_points_clouds,
-                    orchestrator=self.cars_orchestrator,
-                    output_dir=(
-                        os.path.join(self.out_dir, "point_cloud")
-                        if self.save_output_point_cloud
-                        and last_pc_application == "pc_outliers_removing_1"
-                        else None
-                    ),
-                    dump_dir=os.path.join(
-                        self.dump_dir, "point_cloud_outliers_removing_1"
-                    ),
-                )
+            filtered_1_merged_points_clouds = self.pc_outlier_removal_1_app.run(
+                merged_points_clouds,
+                orchestrator=self.cars_orchestrator,
+                output_dir=(
+                    os.path.join(self.out_dir, "point_cloud")
+                    if self.save_output_point_cloud
+                    and last_pc_application == "pc_outlier_removal_1"
+                    else None
+                ),
+                dump_dir=os.path.join(
+                    self.dump_dir, "point_cloud_outlier_removal_1"
+                ),
             )
 
-            if self.quit_on_app("point_cloud_outliers_removing.1"):
+            if self.quit_on_app("point_cloud_outlier_removal.1"):
                 return True
 
             # Remove outliers with statistical components method
-            filtered_2_merged_points_clouds = (
-                self.pc_outliers_removing_2_app.run(
-                    filtered_1_merged_points_clouds,
-                    orchestrator=self.cars_orchestrator,
-                    output_dir=(
-                        os.path.join(self.out_dir, "point_cloud")
-                        if self.save_output_point_cloud
-                        and last_pc_application == "pc_outliers_removing_2"
-                        else None
-                    ),
-                    dump_dir=os.path.join(
-                        self.dump_dir, "point_cloud_outliers_removing_2"
-                    ),
-                )
+            filtered_2_merged_points_clouds = self.pc_outlier_removal_2_app.run(
+                filtered_1_merged_points_clouds,
+                orchestrator=self.cars_orchestrator,
+                output_dir=(
+                    os.path.join(self.out_dir, "point_cloud")
+                    if self.save_output_point_cloud
+                    and last_pc_application == "pc_outlier_removal_2"
+                    else None
+                ),
+                dump_dir=os.path.join(
+                    self.dump_dir, "point_cloud_outlier_removal_2"
+                ),
             )
 
-            if self.quit_on_app("point_cloud_outliers_removing.2"):
+            if self.quit_on_app("point_cloud_outlier_removal.2"):
                 return True
 
             # denoise point cloud
@@ -2202,7 +2196,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
             self.optimal_terrain_tile_width = min(
-                self.pc_outliers_removing_1_app.get_optimal_tile_size(
+                self.pc_outlier_removal_1_app.get_optimal_tile_size(
                     self.cars_orchestrator.cluster.checked_conf_cluster[
                         "max_ram_per_worker"
                     ],
@@ -2211,7 +2205,7 @@ class DefaultPipeline(PipelineTemplate):
                     ),
                     point_cloud_resolution=average_distance_point_cloud,
                 ),
-                self.pc_outliers_removing_2_app.get_optimal_tile_size(
+                self.pc_outlier_removal_2_app.get_optimal_tile_size(
                     self.cars_orchestrator.cluster.checked_conf_cluster[
                         "max_ram_per_worker"
                     ],

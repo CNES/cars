@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the abstract PointsCloudOutlierRemoving application class.
+this module contains the abstract PointsCloudOutlierRemoval application class.
 """
 
 import logging
@@ -34,10 +34,10 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
-@Application.register("point_cloud_outliers_removing")
-class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
+@Application.register("point_cloud_outlier_removal")
+class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
     """
-    PointCloudOutliersRemoving
+    PointCloudOutlierRemoval
     """
 
     available_applications: Dict = {}
@@ -49,38 +49,38 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         :raises:
          - KeyError when the required application is not registered
 
-        :param conf: configuration for points removing
+        :param conf: configuration for points removal
         :return: a application_to_use object
         """
 
-        points_removing_method = cls.default_application
+        points_removal_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
             logging.info(
-                "Points removing method not specified, "
-                "default {} is used".format(points_removing_method)
+                "Points removal method not specified, "
+                "default {} is used".format(points_removal_method)
             )
         else:
-            points_removing_method = conf.get("method", cls.default_application)
+            points_removal_method = conf.get("method", cls.default_application)
 
-        if points_removing_method not in cls.available_applications:
+        if points_removal_method not in cls.available_applications:
             logging.error(
-                "No Points removing application named {} registered".format(
-                    points_removing_method
+                "No Points removal application named {} registered".format(
+                    points_removal_method
                 )
             )
             raise KeyError(
-                "No Points removing application named {} registered".format(
-                    points_removing_method
+                "No Points removal application named {} registered".format(
+                    points_removal_method
                 )
             )
 
         logging.info(
-            "The PointCloudOutliersRemoving({}) application"
-            " will be used".format(points_removing_method)
+            "The PointCloudOutlierRemoval({}) application"
+            " will be used".format(points_removal_method)
         )
 
-        return super(PointCloudOutliersRemoving, cls).__new__(
-            cls.available_applications[points_removing_method]
+        return super(PointCloudOutlierRemoval, cls).__new__(
+            cls.available_applications[points_removal_method]
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302
@@ -91,7 +91,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
     def __init__(self, conf=None):
         """
-        Init function of PointCloudOutliersRemoving
+        Init function of PointCloudOutlierRemoval
 
         :param conf: configuration
         :return: an application_to_use object
@@ -187,7 +187,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
 
         # Create CarsDataset
         filtered_point_cloud = cars_dataset.CarsDataset(
-            "points", name="point_cloud_removing_" + app_name
+            "points", name="point_cloud_removal_" + app_name
         )
 
         # Get tiling grid
@@ -234,7 +234,7 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         epsg=None,
     ):
         """
-        Run PointCloudOutliersRemoving application.
+        Run PointCloudOutlierRemoval application.
 
         Creates a CarsDataset filled with new point cloud tiles.
 

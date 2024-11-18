@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the statistical points removing application class.
+this module contains the statistical point removal application class.
 """
 
 
@@ -40,14 +40,12 @@ from pyproj import CRS
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_outliers_removing import (
-    outlier_removing_tools,
+from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
+from cars.applications.point_cloud_outlier_removal import (
+    pc_out_removal as pc_removal,
 )
-from cars.applications.point_cloud_outliers_removing import (
-    pc_out_removing as pc_removing,
-)
-from cars.applications.point_cloud_outliers_removing import (
-    points_removing_constants as pr_cst,
+from cars.applications.point_cloud_outlier_removal import (
+    point_removal_constants as pr_cst,
 )
 from cars.core import constants as cst
 from cars.core import projection
@@ -59,19 +57,19 @@ from cars.data_structures import cars_dataset
 
 
 class Statistical(
-    pc_removing.PointCloudOutliersRemoving, short_name="statistical"
+    pc_removal.PointCloudOutlierRemoval, short_name="statistical"
 ):  # pylint: disable=R0903
     """
-    PointCloudOutliersRemoving
+    Statistical
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf=None):
         """
-        Init function of PointCloudOutliersRemoving
+        Init function of Statistical
 
-        :param conf: configuration for points outliers removing
+        :param conf: configuration for points outlier removal
         :return: a application_to_use object
         """
 
@@ -188,7 +186,7 @@ class Statistical(
 
         logging.info(
             "Estimated optimal tile size for statistical "
-            "removing: {} meters".format(tile_size)
+            "removal: {} meters".format(tile_size)
         )
 
         return tile_size
@@ -224,7 +222,7 @@ class Statistical(
         epsg=None,
     ):
         """
-        Run PointCloudOutliersRemoving application.
+        Run PointCloudOutlierRemoval application.
 
         Creates a CarsDataset filled with new point cloud tiles.
 
@@ -298,7 +296,7 @@ class Statistical(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
                 }
             }
             orchestrator.update_out_info(updating_dict)
@@ -321,7 +319,7 @@ class Statistical(
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
-                            statistical_removing_wrapper
+                            statistical_removal_wrapper
                         )(
                             merged_points_cloud[row, col],
                             self.k,
@@ -355,7 +353,7 @@ class Statistical(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
                 }
             }
             orchestrator.update_out_info(updating_dict)
@@ -405,7 +403,7 @@ class Statistical(
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
-                            epipolar_statistical_removing_wrapper
+                            epipolar_statistical_removal_wrapper
                         )(
                             merged_points_cloud[row, col],
                             self.k,
@@ -420,7 +418,7 @@ class Statistical(
 
         else:
             logging.error(
-                "PointCloudOutliersRemoving application doesn't support"
+                "PointCloudOutlierRemoval application doesn't support"
                 "this input data "
                 "format"
             )
@@ -428,7 +426,7 @@ class Statistical(
         return filtered_point_cloud
 
 
-def statistical_removing_wrapper(
+def statistical_removal_wrapper(
     cloud,
     statistical_k,
     std_dev_factor,
@@ -439,7 +437,7 @@ def statistical_removing_wrapper(
     saving_info=None,
 ):
     """
-    Statistical outlier removing
+    Statistical outlier removal
 
     :param cloud: cloud to filter
     :type cloud: pandas DataFrame
@@ -492,7 +490,7 @@ def statistical_removing_wrapper(
 
     # Filter point cloud
     tic = time.process_time()
-    (new_cloud, _) = outlier_removing_tools.statistical_outliers_filtering(
+    (new_cloud, _) = outlier_removal_tools.statistical_outlier_filtering(
         new_cloud, statistical_k, std_dev_factor, use_median
     )
     toc = time.process_time()
@@ -532,7 +530,7 @@ def statistical_removing_wrapper(
     return new_cloud
 
 
-def epipolar_statistical_removing_wrapper(
+def epipolar_statistical_removal_wrapper(
     epipolar_ds,
     statistical_k,
     std_dev_factor,
@@ -544,7 +542,7 @@ def epipolar_statistical_removing_wrapper(
     saving_info=None,
 ):
     """
-    Statistical outlier removing in epipolar geometry
+    Statistical outlier removal in epipolar geometry
 
     :param epipolar_ds: epipolar dataset to filter
     :type epipolar_ds: xr.Dataset
@@ -571,7 +569,7 @@ def epipolar_statistical_removing_wrapper(
     # Copy input cloud
     filtered_cloud = copy.copy(epipolar_ds)
 
-    outlier_removing_tools.epipolar_statistical_filtering(
+    outlier_removal_tools.epipolar_statistical_filtering(
         filtered_cloud,
         epsg,
         k=statistical_k,
