@@ -178,8 +178,11 @@ class PointCloudOutliersRemoving(ApplicationTemplate, metaclass=ABCMeta):
         )
         # Save laz point cloud if save_intermediate_date is activated (dump_dir)
         # or if output_dir is provided is activated (save as official product)
-        save_point_cloud_as_laz = dump_dir is not None or self.used_config.get(
-            application_constants.SAVE_INTERMEDIATE_DATA, False
+        save_point_cloud_as_laz = (
+            output_dir is not None
+            or self.used_config.get(
+                application_constants.SAVE_INTERMEDIATE_DATA, False
+            )
         )
 
         # Create CarsDataset
