@@ -2085,7 +2085,7 @@ class DefaultPipeline(PipelineTemplate):
                         else None
                     ),
                     dump_dir=os.path.join(
-                        self.dump_dir, "pc_outliers_removing_1"
+                        self.dump_dir, "point_cloud_outliers_removing_1"
                     ),
                 )
             )
@@ -2105,7 +2105,7 @@ class DefaultPipeline(PipelineTemplate):
                         else None
                     ),
                     dump_dir=os.path.join(
-                        self.dump_dir, "pc_outliers_removing_2"
+                        self.dump_dir, "point_cloud_outliers_removing_2"
                     ),
                 )
             )

@@ -631,6 +631,7 @@ def test_end2end_ventoux_unique():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1106,6 +1107,7 @@ def test_end2end_ventoux_unique():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1207,6 +1209,7 @@ def test_end2end_ventoux_unique():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1633,6 +1636,7 @@ def test_end2end_ventoux_unique_split():
                         "method": "statistical",
                         "activated": True,
                         "save_intermediate_data": True,
+                        "use_median": False,
                     },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -2959,6 +2963,7 @@ def test_end2end_ventoux_with_color():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_color.json"
         )
+
         # Run sparse dsm pipeline
         _, input_config_sparse_res = generate_input_json(
             input_json,
@@ -3072,6 +3077,7 @@ def test_end2end_ventoux_with_color():
                 "method": "statistical",
                 "activated": True,
                 "save_intermediate_data": True,
+                "use_median": False,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -3347,6 +3353,7 @@ def test_end2end_ventoux_with_classif():
                 "method": "statistical",
                 "activated": True,
                 "save_intermediate_data": True,
+                "use_median": False,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -3690,6 +3697,7 @@ def test_compute_dsm_with_snap_to_img1():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -3804,6 +3812,7 @@ def test_end2end_quality_stats():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4099,6 +4108,7 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4230,6 +4240,7 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4319,6 +4330,7 @@ def test_end2end_ventoux_egm96_geoid():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4460,6 +4472,7 @@ def test_end2end_paca_with_mask():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4659,6 +4672,7 @@ def test_end2end_disparity_filling():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4789,6 +4803,7 @@ def test_end2end_disparity_filling_with_zeros():
             "point_cloud_outliers_removing.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
