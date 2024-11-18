@@ -90,34 +90,12 @@ def test_compute_dem_intersection_with_poly():
     )
 
     dem_inter_poly, cover = projection.compute_dem_intersection_with_poly(
-        absolute_data_path("input/phr_ventoux/srtm"), inter_poly, inter_epsg
-    )
-    assert dem_inter_poly.equals(inter_poly)
-    assert cover == 100.0
-
-    # test partial coverage over with several srtm tiles with no data holes
-    inter_poly = Polygon(
-        [(4.8, 44.2), (4.8, 44.3), (6.2, 44.3), (6.2, 44.2), (4.8, 44.2)]
-    )
-    dem_inter_poly, cover = projection.compute_dem_intersection_with_poly(
-        absolute_data_path("input/utils_input/srtm_with_hole"),
+        absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt"),
         inter_poly,
         inter_epsg,
     )
-
-    ref_dem_inter_poly = Polygon(
-        [
-            (4.999583333333334, 44.3),
-            (6.2, 44.3),
-            (6.2, 44.2),
-            (4.999583333333334, 44.2),
-            (4.999583333333334, 44.3),
-        ]
-    )
-
-    assert ref_dem_inter_poly.exterior.equals(dem_inter_poly.exterior)
-    assert len(list(dem_inter_poly.interiors)) == 6
-    assert cover == 85.72172619047616
+    assert dem_inter_poly.equals(inter_poly)
+    assert cover == 100.0
 
     # test no coverage
     inter_poly = Polygon(
@@ -126,7 +104,9 @@ def test_compute_dem_intersection_with_poly():
 
     with pytest.raises(Exception) as intersect_error:
         dem_inter_poly, cover = projection.compute_dem_intersection_with_poly(
-            absolute_data_path("input/phr_ventoux/srtm"), inter_poly, inter_epsg
+            absolute_data_path("input/phr_ventoux/srtm/N44E005.hgt"),
+            inter_poly,
+            inter_epsg,
         )
     assert (
         str(intersect_error.value) == "The input DEM does not intersect "
