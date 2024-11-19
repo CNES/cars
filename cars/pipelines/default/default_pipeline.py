@@ -1656,30 +1656,31 @@ class DefaultPipeline(PipelineTemplate):
                 output_geoid_path = None
 
             depth_map_dir = None
+            last_depth_map_application = None
             if self.save_output_depth_map:
                 depth_map_dir = os.path.join(
                     self.out_dir, "depth_map", pair_key
                 )
                 safe_makedirs(depth_map_dir)
 
-            if (
-                self.pc_outlier_removal_2_app.used_config.get(
-                    "activated", False
-                )
-                is True
-                and self.merging is False
-            ):
-                last_depth_map_application = "pc_outlier_removal_2"
-            elif (
-                self.pc_outlier_removal_1_app.used_config.get(
-                    "activated", False
-                )
-                is True
-                and self.merging is False
-            ):
-                last_depth_map_application = "pc_outlier_removal_1"
-            else:
-                last_depth_map_application = "triangulation"
+                if (
+                    self.pc_outlier_removal_2_app.used_config.get(
+                        "activated", False
+                    )
+                    is True
+                    and self.merging is False
+                ):
+                    last_depth_map_application = "pc_outlier_removal_2"
+                elif (
+                    self.pc_outlier_removal_1_app.used_config.get(
+                        "activated", False
+                    )
+                    is True
+                    and self.merging is False
+                ):
+                    last_depth_map_application = "pc_outlier_removal_1"
+                else:
+                    last_depth_map_application = "triangulation"
 
             # Run epipolar triangulation application
             epipolar_points_cloud = self.triangulation_application.run(
