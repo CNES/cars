@@ -69,6 +69,8 @@ EPI_NO_DATA_MASK = "no_data_mask"
 EPI_NO_DATA_IMG = "no_data_img"
 EPI_TRANSFORM = "transform"
 EPI_CRS = "crs"
+EPI_GROUND_TRUTH = "epi_ground_truth"
+SENSOR_GROUND_TRUTH = "sensor_ground_truth"
 
 # points cloud fields (xarray Dataset and pandas Dataframe)
 POINT_CLOUD_CORR_MSK = "corr_msk"

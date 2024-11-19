@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the dense_matching application class.
+this module contains the bicubic_resampling application class.
 """
 # pylint: disable=too-many-lines
 # TODO refacto: factorize disributed code, and remove too-many-lines

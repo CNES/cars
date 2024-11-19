@@ -263,23 +263,24 @@ class DefaultPipeline(PipelineTemplate):
             "sparse_matching.sift": 4,
             "sparse_matching.pandora": 6,
             "dem_generation": 7,
-            "dense_matching": 9,
-            "dense_match_filling.1": 10,
-            "dense_match_filling.2": 11,
-            "triangulation": 12,
-            "point_cloud_outlier_removal.1": 13,
-            "point_cloud_outlier_removal.2": 14,
+            "ground_truth_reprojection": 9,
+            "dense_matching": 10,
+            "dense_match_filling.1": 11,
+            "dense_match_filling.2": 12,
+            "triangulation": 13,
+            "point_cloud_outlier_removal.1": 14,
+            "point_cloud_outlier_removal.2": 15,
         }
 
         depth_merge_apps = {
-            "point_cloud_fusion": 15,
+            "point_cloud_fusion": 16,
         }
 
         depth_to_dsm_apps = {
-            "pc_denoising": 16,
-            "point_cloud_rasterization": 17,
-            "dsm_filling": 18,
-            "auxiliary_filling": 19,
+            "pc_denoising": 17,
+            "point_cloud_rasterization": 18,
+            "dsm_filling": 19,
+            "auxiliary_filling": 20,
         }
 
         self.app_values = {}
@@ -461,7 +462,7 @@ class DefaultPipeline(PipelineTemplate):
         """
         return output_parameters.check_output_parameters(conf)
 
-    def check_applications(  # noqa: C901
+    def check_applications(  # noqa: C901 : too complex
         self,
         conf,
     ):
@@ -482,6 +483,7 @@ class DefaultPipeline(PipelineTemplate):
             needed_applications += [
                 "grid_generation",
                 "resampling",
+                "ground_truth_reprojection",
                 "hole_detection",
                 "dense_match_filling.1",
                 "dense_match_filling.2",
@@ -555,6 +557,7 @@ class DefaultPipeline(PipelineTemplate):
 
         self.epipolar_grid_generation_application = None
         self.resampling_application = None
+        self.ground_truth_reprojection = None
         self.hole_detection_app = None
         self.dense_match_filling_1 = None
         self.dense_match_filling_2 = None
@@ -585,6 +588,25 @@ class DefaultPipeline(PipelineTemplate):
             )
             used_conf["resampling"] = self.resampling_application.get_conf()
 
+            # ground truth disparity map computation
+            if self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
+                used_conf["ground_truth_reprojection"][
+                    "save_intermediate_data"
+                ] = True
+
+                if isinstance(
+                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM], str
+                ):
+                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM] = {
+                        "dsm": self.used_conf[ADVANCED][
+                            adv_cst.GROUND_TRUTH_DSM
+                        ]
+                    }
+
+                self.ground_truth_reprojection = Application(
+                    "ground_truth_reprojection",
+                    cfg=used_conf.get("ground_truth_reprojection", {}),
+                )
             # holes detection
             self.hole_detection_app = Application(
                 "hole_detection", cfg=used_conf.get("hole_detection", {})
@@ -1769,6 +1791,36 @@ class DefaultPipeline(PipelineTemplate):
                 add_classif=True,
                 epipolar_roi=epipolar_roi,
             )
+
+            # Run ground truth dsm computation
+            if self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM]:
+                self.used_conf["applications"]["ground_truth_reprojection"][
+                    "save_intermediate_data"
+                ] = True
+                new_geomplugin_dsm = AbstractGeometry(  # pylint: disable=E0110
+                    self.used_conf[GEOMETRY_PLUGIN],
+                    dem=self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
+                        adv_cst.INPUT_GROUND_TRUTH_DSM
+                    ],
+                )
+                self.ground_truth_reprojection.run(
+                    self.used_conf[ADVANCED][adv_cst.GROUND_TRUTH_DSM][
+                        adv_cst.INPUT_GROUND_TRUTH_DSM
+                    ],
+                    self.pairs[pair_key]["sensor_image_left"],
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    self.pairs[pair_key]["sensor_image_left"][
+                        sens_cst.INPUT_GEO_MODEL
+                    ],
+                    new_geomplugin_dsm,
+                    self.pairs[pair_key]["corrected_grid_left"].attributes[
+                        "disp_to_alt_ratio"
+                    ],
+                    orchestrator=self.cars_orchestrator,
+                    pair_folder=os.path.join(
+                        self.dump_dir, "ground_truth_reprojection", pair_key
+                    ),
+                )
 
             # Run epipolar matching application
             epipolar_disparity_map = self.dense_matching_app.run(
