@@ -28,12 +28,12 @@ import json_checker
 # Third party imports
 import pytest
 
-from cars.applications.point_cloud_outliers_removing.small_components import (
+from cars.applications.point_cloud_outlier_removal.small_components import (
     SmallComponents,
 )
 
 # CARS imports
-from cars.applications.point_cloud_outliers_removing.statistical import (
+from cars.applications.point_cloud_outlier_removal.statistical import (
     Statistical,
 )
 
@@ -52,6 +52,7 @@ def test_check_full_conf_small_components():
         "connection_distance": 3.0,
         "nb_points_threshold": 50,
         "clusters_distance_threshold": None,
+        "half_epipolar_size": 5,
     }
     _ = SmallComponents(conf)
 
@@ -68,6 +69,8 @@ def test_check_full_conf_statistical():
         "activated": False,
         "k": 50,
         "std_dev_factor": 5.0,
+        "use_median": False,
+        "half_epipolar_size": 5,
     }
     _ = Statistical(conf)
 

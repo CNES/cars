@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Cars tests/points_cloud_outliers_removing  file
+Cars tests/points_cloud_outlier_removal  file
 """
 
 import datetime
@@ -34,9 +34,7 @@ import pytest
 import rasterio
 
 # CARS imports
-from cars.applications.point_cloud_outliers_removing import (
-    outlier_removing_tools,
-)
+from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
 
 # CARS Tests imports
 from tests.helpers import absolute_data_path
@@ -67,13 +65,13 @@ def test_detect_small_components():
         axis=0,
     )
 
-    indexes_to_filter = outlier_filter.pc_small_components_outlier_filtering(
+    indexes_to_filter = outlier_filter.pc_small_component_outlier_filtering(
         cloud_arr[:, 0], cloud_arr[:, 1], cloud_arr[:, 2], 0.5, 10, 2
     )
     assert sorted(indexes_to_filter) == [3, 4, 24]
 
     # test without the second level of filtering
-    indexes_to_filter = outlier_filter.pc_small_components_outlier_filtering(
+    indexes_to_filter = outlier_filter.pc_small_component_outlier_filtering(
         cloud_arr[:, 0], cloud_arr[:, 1], cloud_arr[:, 2], 0.5, 10, np.nan
     )
     assert sorted(indexes_to_filter) == [0, 1, 3, 4, 5, 6, 24]
@@ -174,7 +172,7 @@ def test_detect_statistical_outliers():
 
 @pytest.mark.unit_tests
 @pytest.mark.parametrize("use_median", [True, False])
-def test_outlier_removing_point_cloud_statistical(use_median):
+def test_outlier_removal_point_cloud_statistical(use_median):
     """
     Outlier filtering test from laz, using statistical method.
 
@@ -203,7 +201,7 @@ def test_outlier_removing_point_cloud_statistical(use_median):
     transposed_points = np.transpose(points)
 
     scipy_start = datetime.datetime.now()
-    detected_points = outlier_removing_tools.detect_statistical_outliers(
+    detected_points = outlier_removal_tools.detect_statistical_outliers(
         transposed_points, k, dev_factor, use_median
     )
 
@@ -216,7 +214,7 @@ def test_outlier_removing_point_cloud_statistical(use_median):
 
 @pytest.mark.unit_tests
 @pytest.mark.parametrize("clusters_distance_threshold", [float("nan"), 4])
-def test_outlier_removing_point_cloud_small_components(
+def test_outlier_removal_point_cloud_small_components(
     clusters_distance_threshold,
 ):
     """
@@ -236,7 +234,7 @@ def test_outlier_removing_point_cloud_small_components(
         points = np.vstack((las.x, las.y, las.z))
 
     start_time = datetime.datetime.now()
-    result_cpp = outlier_filter.pc_small_components_outlier_filtering(
+    result_cpp = outlier_filter.pc_small_component_outlier_filtering(
         las.x,
         las.y,
         las.z,
@@ -254,7 +252,7 @@ def test_outlier_removing_point_cloud_small_components(
 
     scipy_start = datetime.datetime.now()
 
-    cluster_to_remove = outlier_removing_tools.detect_small_components(
+    cluster_to_remove = outlier_removal_tools.detect_small_components(
         transposed_points,
         connection_val,
         nb_pts_threshold,
@@ -278,7 +276,7 @@ def test_outlier_removing_point_cloud_small_components(
 
 @pytest.mark.unit_tests
 @pytest.mark.parametrize("use_median", [True, False])
-def test_outlier_removing_epipolar_statistical(use_median):
+def test_outlier_removal_epipolar_statistical(use_median):
     """
     Outlier filtering test from depth map in epipolar geometry, using
     statistical method
@@ -365,7 +363,7 @@ def test_outlier_removing_epipolar_statistical(use_median):
 
 @pytest.mark.unit_tests
 @pytest.mark.parametrize("clusters_distance_threshold", [float("nan"), 2])
-def test_outlier_removing_epipolar_small_components(
+def test_outlier_removal_epipolar_small_components(
     clusters_distance_threshold,
 ):
     """
@@ -401,7 +399,7 @@ def test_outlier_removing_epipolar_small_components(
 
     start_time = datetime.datetime.now()
 
-    outlier_array = outlier_filter.epipolar_small_components_outlier_filtering(
+    outlier_array = outlier_filter.epipolar_small_component_outlier_filtering(
         x_utm,
         y_utm,
         z_values,
@@ -427,7 +425,7 @@ def test_outlier_removing_epipolar_small_components(
     start_time = datetime.datetime.now()
 
     result_kdtree = np.array(
-        outlier_filter.pc_small_components_outlier_filtering(
+        outlier_filter.pc_small_component_outlier_filtering(
             x_utm_flat,
             y_utm_flat,
             z_flat,
