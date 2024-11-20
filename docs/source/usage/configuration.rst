@@ -1112,6 +1112,37 @@ The structure follows this organization:
                         }
                     }
 
+            .. tab:: Ground truth reprojection
+
+                **Name**: "ground_truth_reprojection"
+
+                **Description**
+
+                Generates epipolar and sensor ground truth from input dsm using direct localization.
+
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+                | Name                            | Description                                                | Type       | Available value              | Default value | Required |
+                +=================================+============================================================+============+==============================+===============+==========+
+                | method                          | Method for ground_truth_reprojection                       | string     | "direct_loc"                 |               | Yes      |
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+                | target                          | Type of ground truth                                       | string     | "epipolar", "sensor", "all"  | "epipolar"    | No       |
+                +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+
+                **Example**
+
+                .. code-block:: json
+
+                    "applications": {
+                        "ground_truth_reprojection": {
+                            "method": "direct_loc",
+                            "target": "all"
+                        }
+                    }
+
+                .. figure:: ../images/cars_pipeline_advanced.png
+                    :align: center
+                    :alt: Applications
+
             .. tab:: Dense matching
 
                 **Name**: "dense_matching"
@@ -1744,6 +1775,11 @@ The structure follows this organization:
               - list or None
               - [0, 1.936, 2.2675, 2.59, 3.208, 4.846, 6.856]
               - No
+            * - ground_truth_dsm
+              - Datas to be reprojected from the application ground_truth_reprojection
+              - dict
+              -
+              - No
 
 
         **Save intermediate data**
@@ -1811,6 +1847,28 @@ The structure follows this organization:
         +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
 
 
+        **Ground truth DSM**
+
+        To activate the ground truth reprojection application, it is necessary to specify the required inputs in the advanced settings.
+        For this, a dictionary named `ground_truth_dsm` must be added, containing the keys presented in the following table.
+
+        +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+        | Name                            | Description                                                | Type       | Available value              | Default value | Required |
+        +=================================+============================================================+============+==============================+===============+==========+
+        | dsm                             | Path to ground truth dsm (Lidar for example)               | string     |                              |               | Yes      |
+        +---------------------------------+------------------------------------------------------------+------------+------------------------------+---------------+----------+
+
+
+        Example:
+
+        .. code-block:: json
+
+            "advanced":
+                {
+                    "ground_truth_dsm": {
+                        "dsm": "path/to/ground/truth/dsm.tif"
+                    }
+                }
 
     .. tab:: Output
 
