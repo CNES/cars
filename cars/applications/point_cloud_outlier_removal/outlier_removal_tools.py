@@ -23,15 +23,15 @@ This module contains functions used in outlier removal
 """
 
 # Standard imports
-import logging
 from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
 import outlier_filter  # pylint:disable=E0401
 import pandas
-import xarray as xr
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
+
+from cars.applications.point_cloud_fusion.point_cloud_tools import filter_cloud
 
 # CARS imports
 from cars.core import constants as cst
@@ -286,156 +286,6 @@ def detect_statistical_outliers(
         detected_points.extend(removed_point)
 
     return detected_points
-
-
-# ##### common filtering tools ######
-
-
-def filter_cloud(
-    cloud: pandas.DataFrame,
-    index_elt_to_remove: List[int],
-    filtered_elt_pos: bool = False,
-) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
-    """
-    Filter all points of the cloud DataFrame
-    which index is in the index_elt_to_remove list.
-
-    If filtered_elt_pos is set to True, the information of the removed elements
-    positions in their original epipolar images are returned.
-
-    To do so the cloud DataFrame has to be build
-    with the 'with_coords' option activated.
-
-    :param cloud: combined cloud
-        as returned by the create_combined_cloud function
-    :param index_elt_to_remove: indexes of lines
-        to filter in the cloud DataFrame
-    :param filtered_elt_pos: if filtered_elt_pos is set to True,
-        the removed points positions in their original epipolar images are
-        returned, otherwise it is set to None
-    :return: Tuple composed of the filtered cloud DataFrame and
-        the filtered elements epipolar position information
-        (or None for the latter if filtered_elt_pos is set to False
-        or if the cloud Dataframe has not been build with with_coords option)
-    """
-    if filtered_elt_pos and not (
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
-        and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
-        and cst.POINTS_CLOUD_ID_IM_EPI in cloud.columns
-    ):
-        logging.warning(
-            "In filter_cloud: the filtered_elt_pos has been activated but "
-            "the cloud Datafram has not been build with option with_coords. "
-            "The positions cannot be retrieved."
-        )
-        filtered_elt_pos = False
-
-    # retrieve removed points position in their original epipolar images
-    if filtered_elt_pos:
-        labels = [
-            cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-            cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-            cst.POINTS_CLOUD_ID_IM_EPI,
-        ]
-
-        removed_elt_pos_infos = cloud.loc[
-            cloud.index.values[index_elt_to_remove], labels
-        ].values
-
-        removed_elt_pos_infos = pandas.DataFrame(
-            removed_elt_pos_infos, columns=labels
-        )
-    else:
-        removed_elt_pos_infos = None
-
-    # remove points from the cloud
-    cloud = cloud.drop(index=cloud.index.values[index_elt_to_remove])
-
-    return cloud, removed_elt_pos_infos
-
-
-def add_cloud_filtering_msk(
-    clouds_list: List[xr.Dataset],
-    elt_pos_infos: pandas.DataFrame,
-    mask_label: str,
-    mask_value: int = 255,
-):
-    """
-    Add a uint16 mask labeled 'mask_label' to the clouds in clouds_list.
-    (in-line function)
-
-    :param clouds_list: Input list of clouds
-    :param elt_pos_infos: pandas dataframe
-        composed of cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_ID_IM_EPI columns
-        as computed in the create_combined_cloud function.
-        Those information are used to retrieve the point position
-        in its original epipolar image.
-    :param mask_label: label to give to the mask in the datasets
-    :param mask_value: filtered elements value in the mask
-    """
-
-    # Verify that the elt_pos_infos is consistent
-    if (
-        elt_pos_infos is None
-        or cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns
-        or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
-        or cst.POINTS_CLOUD_ID_IM_EPI not in elt_pos_infos.columns
-    ):
-        logging.warning(
-            "Cannot generate filtered elements mask, "
-            "no information about the point's"
-            " original position in the epipolar image is given"
-        )
-
-    else:
-        elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_ID_IM_EPI].to_numpy()
-
-        min_elt_index = np.min(elt_index)
-        max_elt_index = np.max(elt_index)
-
-        if min_elt_index < 0 or max_elt_index > len(clouds_list) - 1:
-            raise RuntimeError(
-                "Index indicated in the elt_pos_infos pandas. "
-                "DataFrame is not coherent with the clouds list given in input"
-            )
-
-        # create and add mask to each element of clouds_list
-        for cloud_idx, cloud_item in enumerate(clouds_list):
-            if mask_label not in cloud_item:
-                nb_row = cloud_item.coords[cst.ROW].data.shape[0]
-                nb_col = cloud_item.coords[cst.COL].data.shape[0]
-                msk = np.zeros((nb_row, nb_col), dtype=np.uint16)
-            else:
-                msk = cloud_item[mask_label].values
-
-            cur_elt_index = np.argwhere(elt_index == cloud_idx)
-
-            for elt_pos in range(cur_elt_index.shape[0]):
-                i = int(
-                    elt_pos_infos.loc[
-                        cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-                    ].iat[0]
-                )
-                j = int(
-                    elt_pos_infos.loc[
-                        cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-                    ].iat[0]
-                )
-
-                try:
-                    msk[i, j] = mask_value
-                except Exception as index_error:
-                    raise RuntimeError(
-                        "Point at location ({},{}) is not accessible "
-                        "in an image of size ({},{})".format(
-                            i, j, msk.shape[0], msk.shape[1]
-                        )
-                    ) from index_error
-
-            cloud_item[mask_label] = ([cst.ROW, cst.COL], msk)
 
 
 def epipolar_small_components(
