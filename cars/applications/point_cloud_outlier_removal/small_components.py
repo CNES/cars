@@ -28,7 +28,6 @@ import copy
 # Standard imports
 import logging
 import math
-import os
 import time
 
 # Third party imports
@@ -46,9 +45,7 @@ from cars.applications.point_cloud_outlier_removal import (
 from cars.applications.point_cloud_outlier_removal import (
     point_removal_constants as pr_cst,
 )
-from cars.core import constants as cst
 from cars.core import projection
-from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
@@ -306,7 +303,7 @@ class SmallComponents(
                 filtered_point_cloud,
                 point_cloud_laz_file_name,
                 point_cloud_csv_file_name,
-            ) = self.__register_dataset__(
+            ) = self.__register_pc_dataset__(
                 merged_points_cloud,
                 output_dir,
                 dump_dir,
@@ -350,20 +347,13 @@ class SmallComponents(
                             saving_info=full_saving_info,
                         )
         elif merged_points_cloud.dataset_type == "arrays":
-            filtered_point_cloud = None
-
-            # Create CarsDataset
-            # Epipolar_point_cloud
-            filtered_point_cloud = cars_dataset.CarsDataset(
-                merged_points_cloud.dataset_type, name="small_components"
+            filtered_point_cloud = self.__register_epipolar_dataset__(
+                merged_points_cloud,
+                output_dir,
+                dump_dir,
+                app_name="small_components",
             )
-            filtered_point_cloud.create_empty_copy(merged_points_cloud)
-            filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
 
-            # Update attributes to get epipolar info
-            filtered_point_cloud.attributes.update(
-                merged_points_cloud.attributes
-            )
             # Get saving infos in order to save tiles when they are computed
             [saving_info] = self.orchestrator.get_saving_infos(
                 [filtered_point_cloud]
@@ -376,35 +366,6 @@ class SmallComponents(
                 }
             }
             orchestrator.update_out_info(updating_dict)
-            if output_dir or self.used_config.get(
-                application_constants.SAVE_INTERMEDIATE_DATA
-            ):
-                filtered_dir = (
-                    output_dir if output_dir is not None else dump_dir
-                )
-                safe_makedirs(filtered_dir)
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(filtered_dir, "X.tif"),
-                    cst.X,
-                    filtered_point_cloud,
-                    cars_ds_name="depth_map_x_filtered_small_components",
-                    dtype=np.float64,
-                )
-
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(filtered_dir, "Y.tif"),
-                    cst.Y,
-                    filtered_point_cloud,
-                    cars_ds_name="depth_map_y_filtered_small_components",
-                    dtype=np.float64,
-                )
-                self.orchestrator.add_to_save_lists(
-                    os.path.join(filtered_dir, "Z.tif"),
-                    cst.Z,
-                    filtered_point_cloud,
-                    cars_ds_name="depth_map_z_filtered_small_components",
-                    dtype=np.float64,
-                )
 
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):

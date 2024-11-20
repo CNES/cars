@@ -27,9 +27,12 @@ import os
 from abc import ABCMeta, abstractmethod
 from typing import Dict
 
+import numpy as np
+
 from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.core import constants as cst
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
@@ -141,7 +144,73 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         """
 
-    def __register_dataset__(
+    def __register_epipolar_dataset__(
+        self, merged_points_cloud, output_dir=None, dump_dir=None, app_name=""
+    ):
+        """
+        Create dataset and registered the output in the orchestrator. the output
+        X, Y and Z ground coordinates will be saved in output_dir if the
+        parameter is no None. Alternatively it will be saved to dump_dir if
+        save_intermediate_data is set and output_dir is None.
+
+        :param merged_points_cloud:  Merged point cloud
+        :type merged_points_cloud: CarsDataset
+        :param output_dir: output depth map directory. If None output will be
+            written in dump_dir if intermediate data is requested
+        :type output_dir: str
+        :param dump_dir: dump dir for output (except depth map) if intermediate
+            data is requested
+        :type dump_dir: str
+        :param app_name: application name for file names
+        :type app_name: str
+
+        :return: Filtered point cloud
+        :rtype: CarsDataset
+
+        """
+
+        # Create epipolar point cloud CarsDataset
+        filtered_point_cloud = cars_dataset.CarsDataset(
+            merged_points_cloud.dataset_type, name=app_name
+        )
+
+        filtered_point_cloud.create_empty_copy(merged_points_cloud)
+        filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
+
+        # Update attributes to get epipolar info
+        filtered_point_cloud.attributes.update(merged_points_cloud.attributes)
+
+        if output_dir or self.used_config.get(
+            application_constants.SAVE_INTERMEDIATE_DATA
+        ):
+            filtered_dir = output_dir if output_dir is not None else dump_dir
+            safe_makedirs(filtered_dir)
+            self.orchestrator.add_to_save_lists(
+                os.path.join(filtered_dir, "X.tif"),
+                cst.X,
+                filtered_point_cloud,
+                cars_ds_name="depth_map_x_filtered_" + app_name,
+                dtype=np.float64,
+            )
+
+            self.orchestrator.add_to_save_lists(
+                os.path.join(filtered_dir, "Y.tif"),
+                cst.Y,
+                filtered_point_cloud,
+                cars_ds_name="depth_map_y_filtered_" + app_name,
+                dtype=np.float64,
+            )
+            self.orchestrator.add_to_save_lists(
+                os.path.join(filtered_dir, "Z.tif"),
+                cst.Z,
+                filtered_point_cloud,
+                cars_ds_name="depth_map_z_filtered_" + app_name,
+                dtype=np.float64,
+            )
+
+        return filtered_point_cloud
+
+    def __register_pc_dataset__(
         self,
         merged_points_cloud,
         output_dir=None,
