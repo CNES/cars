@@ -336,7 +336,7 @@ class Statistical(
             # Create CarsDataset
             # Epipolar_point_cloud
             filtered_point_cloud = cars_dataset.CarsDataset(
-                merged_points_cloud.dataset_type, name="small_components"
+                merged_points_cloud.dataset_type, name="statistical"
             )
             filtered_point_cloud.create_empty_copy(merged_points_cloud)
             filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
