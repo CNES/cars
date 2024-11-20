@@ -328,25 +328,14 @@ class Statistical(
                             saving_info=full_saving_info,
                         )
         elif merged_points_cloud.dataset_type == "arrays":
-            filtered_point_cloud = self.__register_epipolar_dataset__(
-                merged_points_cloud,
-                output_dir,
-                dump_dir,
-                app_name="statistical",
+            filtered_point_cloud, saving_info = (
+                self.__register_epipolar_dataset__(
+                    merged_points_cloud,
+                    output_dir,
+                    dump_dir,
+                    app_name="statistical",
+                )
             )
-
-            # Get saving infos in order to save tiles when they are computed
-            [saving_info] = self.orchestrator.get_saving_infos(
-                [filtered_point_cloud]
-            )
-
-            # Add infos to orchestrator.out_json
-            updating_dict = {
-                application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
-                }
-            }
-            orchestrator.update_out_info(updating_dict)
 
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):

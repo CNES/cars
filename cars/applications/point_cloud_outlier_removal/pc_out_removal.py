@@ -32,6 +32,9 @@ import numpy as np
 from cars.applications import application_constants
 from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
+from cars.applications.point_cloud_outlier_removal import (
+    point_removal_constants as pr_cst,
+)
 from cars.core import constants as cst
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -208,7 +211,20 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
                 dtype=np.float64,
             )
 
-        return filtered_point_cloud
+        # Get saving infos in order to save tiles when they are computed
+        [saving_info] = self.orchestrator.get_saving_infos(
+            [filtered_point_cloud]
+        )
+
+        # Add infos to orchestrator.out_json
+        updating_dict = {
+            application_constants.APPLICATION_TAG: {
+                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
+            }
+        }
+        self.orchestrator.update_out_info(updating_dict)
+
+        return filtered_point_cloud, saving_info
 
     def __register_pc_dataset__(
         self,
