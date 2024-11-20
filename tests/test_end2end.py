@@ -373,7 +373,7 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
     End to end processing
 
     Test pipeline with a non square epipolar image, and the generation
-    of the performance map
+    of the performance map and the ground truth reprojection
     """
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
@@ -403,6 +403,10 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 "use_cross_validation": True,
                 "use_global_disp_range": True,
             },
+            "ground_truth_reprojection": {
+                "method": "direct_loc",
+                "target": "all",
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -423,6 +427,11 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "mask": True,
             "performance_map": True,
         }
+
+        # Ground truth generation
+        dsm_gt = input_dense_dsm["inputs"]["initial_elevation"]["dem"]
+
+        input_dense_dsm["advanced"]["ground_truth_dsm"] = {"dsm": dsm_gt}
 
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
@@ -462,6 +471,38 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         #         os.path.join(
         #             ref_output_dir,
         #             "performance_map_end2end_gizeh_crop_no_merging.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "epipolar_disp_ground_truth.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_epipolar_disp_ground_truth.tif",
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(
+        #         out_dir,
+        #         "dump_dir",
+        #         "ground_truth_reprojection",
+        #         "one_two",
+        #         "sensor_dsm_ground_truth.tif",
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir + "_application",
+        #             "ground_truth_reprojection",
+        #             "ref_sensor_dsm_ground_truth.tif",
         #         )
         #     ),
         # )
@@ -505,6 +546,41 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
                 os.path.join(
                     ref_output_dir,
                     "performance_map_end2end_gizeh_crop_no_merging.tif",
+                )
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir",
+                "ground_truth_reprojection",
+                "one_two",
+                "epipolar_disp_ground_truth.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir + "_application/",
+                    "ground_truth_reprojection/"
+                    "ref_epipolar_disp_ground_truth.tif",
+                )
+            ),
+            rtol=1.0e-6,
+            atol=1.0e-6,
+        )
+        assert_same_images(
+            os.path.join(
+                out_dir,
+                "dump_dir/",
+                "ground_truth_reprojection/one_two/"
+                "sensor_dsm_ground_truth.tif",
+            ),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir + "_application/",
+                    "ground_truth_reprojection/"
+                    "ref_sensor_dsm_ground_truth.tif",
                 )
             ),
             rtol=1.0e-6,
