@@ -132,6 +132,7 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         dem_min=None,
         dem_max=None,
         pair_folder=None,
+        loc_inverse_orchestrator=None,
     ):
         """
         Generate disparity grids min and max, with given step
@@ -165,6 +166,8 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         :type dem_max: str
         :param pair_folder: folder used for current pair
         :type pair_folder: str
+        :param loc_inverse_orchestrator: orchestrator to perform inverse locs
+        :type loc_inverse_orchestrator: Orchestrator
 
 
         :return disparity grid range, containing grid min and max
