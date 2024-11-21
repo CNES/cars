@@ -843,18 +843,20 @@ The structure follows this organisation:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.6           | No       |
+                | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.7           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | sift_n_octave                        | The number of octaves of the Difference of Gaussians scale space                               | int         | should be > 0          | 8             | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | sift_n_scale_per_octave              | The numbers of levels per octave of the Difference of Gaussians scale space                    | int         | should be > 0          | 3             | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | sift_peak_threshold                  | Constrast threshold to discard a match (at None it will be set according to image type)        | float       | should be > 0, or None | None          | No       |
+                | sift_peak_threshold                  | Constrast threshold to discard a match (at None it will be set according to image type)        | float       | should be > 0          | 4.0           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | sift_edge_threshold                  | Distance to image edge threshold to discard a match                                            | float       |                        | -5.0          | No       |
+                | sift_edge_threshold                  | Distance to image edge threshold to discard a match                                            | float       |                        | 10.0          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | sift_magnification                   | The descriptor magnification factor                                                            | float       | should be > 0          | 2.0           | No       |
+                | sift_magnification                   | The descriptor magnification factor                                                            | float       | should be > 0          | 7.0           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | sift_window_size                     | smaller values let the center of the descriptor count more                                     | int         | should be > 0          | 2             | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+                                
                 | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
@@ -868,15 +870,6 @@ The structure follows this organisation:
 
 
                 For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
-                
-                .. note::
-
-                    By default, the sift_peak_threshold is set to None (auto-mode). In this mode, the sift_peak_threshold is determined at runtime based on the sensor image type:
-
-                    * uint8 image type : sift_peak_threshold = 1
-                    * other image type sift_peak_threshold = 20
-
-                    It is also possible to set the value to a fixed value.
 
                 **Example**
 
@@ -922,6 +915,10 @@ The structure follows this organisation:
                 | height_margin                   | Height margin [margin min, margin max], in meter           | int        |                 | 20            | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | fillnodata_max_search_distance  | Max search distance for rasterio fill nodata               | int        | should be > 0   | 3             | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | min_dem                         | Min value that has to be reached by dem_min                | int        | should be < 0   | -500          | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | max_dem                         | Max value that has to be reached by dem_max                | int        | should be > 0   | 1000          | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
 
                 **Example**
