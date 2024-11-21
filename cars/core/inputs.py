@@ -99,6 +99,8 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
     with rio.open(raster_file, "r") as descriptor:
         file_espg = descriptor.crs.to_epsg()
 
+        nodata_value = descriptor.nodata
+
         # convert point to epsg
         cloud_in = np.stack([x_list, y_list], axis=1)
         cloud_out = proj_function(cloud_in, 4326, file_espg)
@@ -112,7 +114,8 @@ def rasterio_get_values(raster_file: str, x_list, y_list, proj_function):
                 [(new_x[row], new_y[row]) for row in range(new_x.shape[0])]
             )
         )
-        z_list = np.array(z_list)
+        z_list = np.array(z_list, dtype=float)
+        z_list[z_list == nodata_value] = np.nan
         return z_list[:, 0]
 
 
