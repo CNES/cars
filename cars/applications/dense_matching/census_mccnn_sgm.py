@@ -818,8 +818,10 @@ class CensusMccnnSgm(
             )
 
             # compute reverse matrix
-            transform_sensor = inputs.rasterio_get_transform(
-                sensor_image_right["image"]
+            transform_sensor = rasterio.Affine(
+                *np.abs(
+                    inputs.rasterio_get_transform(sensor_image_right["image"])
+                )
             )
 
             trans_inv = ~transform_sensor
