@@ -35,9 +35,7 @@ from vlsift.sift.sift import sift
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications import application_constants
-from cars.applications.point_cloud_outliers_removing import (
-    outlier_removing_tools,
-)
+from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -403,7 +401,7 @@ def filter_point_cloud_matches(
     """
 
     # Statistical filtering
-    filter_cloud, _ = outlier_removing_tools.statistical_outliers_filtering(
+    filter_cloud, _ = outlier_removal_tools.statistical_outlier_filtering(
         pd_cloud,
         k=matches_filter_knn,
         dev_factor=matches_filter_dev_factor,

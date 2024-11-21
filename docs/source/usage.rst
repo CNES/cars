@@ -688,7 +688,7 @@ The structure follows this organisation:
                 .. warning::
                     CARS will only compute a point cloud when the key ``merging`` in ``advanced`` is set to `True`, which means
                     setting ``output_level`` as containing `point_cloud` will effectively force ``merging`` to `True`. 
-                    This behavior will have the side-effect of running the point cloud denoising and outliers removing applications.
+                    This behavior will have the side-effect of running the point cloud denoising and outlier removal applications.
 
                 .. note::
                     If you wish to save an individual point cloud for each input given, the key ``save_by_pair`` of ``output`` will need to be set to `True`.
@@ -1257,20 +1257,20 @@ The structure follows this organisation:
                     Please, see the section :ref:`merge_laz_files` to merge them into one single file.
                     `save_by_pair` parameter enables saving by input pair. The csv/laz name aggregates row, col and corresponding pair key.
 
-            .. tab:: Point Cloud outliers removing
+            .. tab:: Point Cloud outlier removal
 
-                **Name**: "point_cloud_outliers_removing"
+                **Name**: "point_cloud_outlier_removal"
 
                 **Description**
 
-                Point cloud outliers removing
+                Point cloud outlier removal
 
                 **Configuration**
 
                 +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
                 | Name                         | Description                              | Type    | Available value                   | Default value | Required |
                 +==============================+==========================================+=========+===================================+===============+==========+
-                | method                       | Method for point cloud outliers removing | string  | "statistical", "small_components" | "statistical" | No       |
+                | method                       | Method for point cloud outlier removal   | string  | "statistical", "small_components" | "statistical" | No       |
                 +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
                 | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
                 +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
@@ -1279,15 +1279,19 @@ The structure follows this organisation:
 
                 If method is *statistical*:
 
-                +----------------+-------------+---------+-----------------+---------------+----------+
-                | Name           | Description | Type    | Available value | Default value | Required |
-                +================+=============+=========+=================+===============+==========+
-                | activated      |             | boolean |                 | false         | No       |
-                +----------------+-------------+---------+-----------------+---------------+----------+
-                | k              |             | int     | should be > 0   | 50            | No       |
-                +----------------+-------------+---------+-----------------+---------------+----------+
-                | std_dev_factor |             | float   | should be > 0   | 5.0           | No       |
-                +----------------+-------------+---------+-----------------+---------------+----------+
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | Name               | Description | Type    | Available value | Default value | Required |
+                +====================+=============+=========+=================+===============+==========+
+                | activated          |             | boolean |                 | false         | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | k                  |             | int     | should be > 0   | 50            | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | std_dev_factor     |             | float   | should be > 0   | 5.0           | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | use_median         |             | bool    |                 | True          | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
+                | half_epipolar_size |             | int     |                 | 5             | No       |
+                +--------------------+-------------+---------+-----------------+---------------+----------+
 
                 If method is *small_components*
 
@@ -1304,31 +1308,33 @@ The structure follows this organisation:
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
                 | clusters_distance_threshold |             | float   |                 | None          | No       |
                 +-----------------------------+-------------+---------+-----------------+---------------+----------+
+                | half_epipolar_size          |             | int     |                 | 5             | No       |
+                +-----------------------------+-------------+---------+-----------------+---------------+----------+
 
                 .. warning::
 
-                    There is a particular case with the *Point Cloud outliers removing* application because it is called twice.
+                    There is a particular case with the *Point Cloud outlier removal* application because it is called twice.
                     The ninth step consists of Filter the 3D points cloud via two consecutive filters.
                     So you can configure the application twice , once for the *small component filters*, the other for *statistical* filter.
                     Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
                     those two applications with :
 
-                    * *point_cloud_outliers_removing.1*
-                    * *point_cloud_outliers_removing.2*
+                    * *point_cloud_outlier_removal.1*
+                    * *point_cloud_outlier_removal.2*
 
-                    Each one is associated to a particular *point_cloud_outliers_removing* method*
+                    Each one is associated to a particular *point_cloud_outlier_removal* method*
 
                 **Example**
 
                 .. code-block:: json
 
                         "applications": {
-                            "point_cloud_outliers_removing.1": {
+                            "point_cloud_outlier_removal.1": {
                                 "method": "small_components",
                                 "on_ground_margin": 10,
                                 "save_intermediate_data": true
                             },
-                            "point_cloud_outliers_removing.2": {
+                            "point_cloud_outlier_removal.2": {
                                 "method": "statistical",
                                 "k": 10,
                                 "save_intermediate_data": true,
@@ -1608,7 +1614,7 @@ The structure follows this organisation:
 
         The point cloud output product consists of a collection of laz files, each containing a tile of the point cloud. If the `save_by_pair` option is set, laz will be produced for each sensor pair defined in input pairing.
 
-        The point cloud found in the product the highest level point cloud produced by cars. For exemple, if outlier removing and point cloud denoising are deactivated, the point cloud will correspond to the output of point cloud fusion. If only the first application of outlier removing is activated, this will be the output point cloud.
+        The point cloud found in the product the highest level point cloud produced by cars. For exemple, if outlier removal and point cloud denoising are deactivated, the point cloud will correspond to the output of point cloud fusion. If only the first application of outlier removal is activated, this will be the output point cloud.
 
         **Geoid**
 

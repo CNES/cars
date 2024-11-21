@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the statistical points removing application class.
+this module contains the small_components point removal application class.
 """
 
 
@@ -30,59 +30,59 @@ import logging
 import math
 import time
 
-import numpy as np
-
 # Third party imports
-from json_checker import And, Checker
+import numpy as np
+from json_checker import And, Checker, Or
 from pyproj import CRS
 
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.point_cloud_outliers_removing import (
-    outlier_removing_tools,
+from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
+from cars.applications.point_cloud_outlier_removal import (
+    pc_out_removal as pc_removal,
 )
-from cars.applications.point_cloud_outliers_removing import (
-    pc_out_removing as pc_removing,
-)
-from cars.applications.point_cloud_outliers_removing import (
-    points_removing_constants as pr_cst,
+from cars.applications.point_cloud_outlier_removal import (
+    point_removal_constants as pr_cst,
 )
 from cars.core import projection
 from cars.data_structures import cars_dataset
 
-# R0903  temporary disabled for error "Too few public methods"
-# œgoing to be corrected by adding new methods as check_conf
 
-
-class Statistical(
-    pc_removing.PointCloudOutliersRemoving, short_name="statistical"
+class SmallComponents(
+    pc_removal.PointCloudOutlierRemoval, short_name="small_components"
 ):  # pylint: disable=R0903
     """
-    PointCloudOutliersRemoving
+    SmallComponents
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf=None):
         """
-        Init function of PointCloudOutliersRemoving
+        Init function of SmallComponents
 
-        :param conf: configuration for points outliers removing
-        :return: a application_to_use object
+        :param conf: configuration for points outlier removal
+        :return: an application_to_use object
         """
 
         super().__init__(conf=conf)
 
         self.used_method = self.used_config["method"]
 
-        # statistical outliers
+        # small components
         self.activated = self.used_config["activated"]
-        self.k = self.used_config["k"]
-        self.std_dev_factor = self.used_config["std_dev_factor"]
+        self.on_ground_margin = self.used_config["on_ground_margin"]
+        self.connection_distance = self.used_config["connection_distance"]
+        self.nb_points_threshold = self.used_config["nb_points_threshold"]
+        self.clusters_distance_threshold = self.used_config[
+            "clusters_distance_threshold"
+        ]
+        self.half_epipolar_size = self.used_config["half_epipolar_size"]
 
         # Saving files
         self.save_by_pair = self.used_config.get("save_by_pair", False)
+
         # Init orchestrator
         self.orchestrator = None
 
@@ -106,29 +106,59 @@ class Statistical(
             overloaded_conf = {}
 
         # Overload conf
-        overloaded_conf["method"] = conf.get("method", "statistical")
-
+        overloaded_conf["method"] = conf.get("method", "small_components")
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
         overloaded_conf["save_by_pair"] = conf.get("save_by_pair", False)
 
-        # statistical outlier filtering
+        # small components
         overloaded_conf["activated"] = conf.get(
             "activated", False
         )  # if false, the following
         # parameters are unused
-        # k: number of neighbors
-        overloaded_conf["k"] = conf.get("k", 50)
-        # stdev_factor: factor to apply in the distance threshold computation
-        overloaded_conf["std_dev_factor"] = conf.get("std_dev_factor", 5.0)
+        # on_ground_margin:
+        #           margin added to the on ground region to not filter
+        #           points clusters
+        #           that were incomplete because they were on the edges
+        overloaded_conf["on_ground_margin"] = conf.get("on_ground_margin", 11)
+        # pts_connection_dist:
+        #           distance to use to consider that two points are connected
+        overloaded_conf["connection_distance"] = conf.get(
+            "connection_distance", 3.0
+        )
+        # nb_pts_threshold:
+        #           points clusters that have less than this number of points
+        #           will be filtered
+        overloaded_conf["nb_points_threshold"] = conf.get(
+            "nb_points_threshold", 50
+        )
+        # dist_between_clusters:
+        #           distance to use to consider that two points clusters
+        #           are far from each other or not.
+        #       If a small points cluster is near to another one, it won't
+        #           be filtered.
+        #          (None = deactivated)
+        overloaded_conf["clusters_distance_threshold"] = conf.get(
+            "clusters_distance_threshold", None
+        )
+
+        # half_epipolar_size:
+        # Half size of the epipolar window used for neighobr search (depth map
+        # input only)
+        overloaded_conf["half_epipolar_size"] = conf.get(
+            "half_epipolar_size", 5
+        )
 
         points_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
             "activated": bool,
-            "k": And(int, lambda x: x > 0),
-            "std_dev_factor": And(float, lambda x: x > 0),
+            "on_ground_margin": int,
+            "connection_distance": And(float, lambda x: x > 0),
+            "nb_points_threshold": And(int, lambda x: x > 0),
+            "clusters_distance_threshold": Or(None, float),
+            "half_epipolar_size": int,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
@@ -172,8 +202,8 @@ class Statistical(
             )
 
         logging.info(
-            "Estimated optimal tile size for statistical "
-            "removing: {} meters".format(tile_size)
+            "Estimated optimal tile size for small"
+            "component removal: {} meters".format(tile_size)
         )
 
         return tile_size
@@ -198,16 +228,23 @@ class Statistical(
 
         """
 
-        return 0
+        on_ground_margin = 0
+
+        if self.activated:
+            on_ground_margin = self.on_ground_margin * resolution
+
+        return on_ground_margin
 
     def run(
         self,
         merged_points_cloud,
         orchestrator=None,
-        save_laz_output=False,
+        output_dir=None,
+        dump_dir=None,
+        epsg=None,
     ):
         """
-        Run PointCloudOutliersRemoving application.
+        Run PointCloudOutlierRemoval application.
 
         Creates a CarsDataset filled with new point cloud tiles.
 
@@ -216,29 +253,35 @@ class Statistical(
             - Z x W Delayed tiles. \
                 Each tile will be a future pandas DataFrame containing:
 
-                - data : with keys : "x", "y", "z", "corr_msk" \
+                - data : with keys : "x", "y", "z", "corr_msk"\
                     optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
-                     "coord_epi_geom_j", "idx_im_epi"
+                     "coord_epi_geom_j","idx_im_epi" \
                 - attrs with keys: "epsg"
             - attributes containing "bounds", "ysize", "xsize", "epsg"
 
         :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
-        :param save_laz_output: save output point cloud as laz
-        :type save_laz_output: bool
+        :param output_dir: output depth map directory. If None output will be
+            written in dump_dir if intermediate data is requested
+        :type output_dir: str
+        :param dump_dir: dump dir for output (except depth map) if intermediate
+            data is requested
+        :type dump_dir: str
+        :param epsg: cartographic reference for the point cloud (array input)
+        :type epsg: int
 
         :return: filtered merged points cloud. CarsDataset contains:
 
-            - Z x W Delayed tiles. \
+            - Z x W Delayed tiles.\
                 Each tile will be a future pandas DataFrame containing:
 
-                - data : with keys "x", "y", "z", "corr_msk" \
-                    optional: "clr", "msk", "data_valid", "coord_epi_geom_i",\
-                     "coord_epi_geom_j", "idx_im_epi"
+                - data : with keys : "x", "y", "z", "corr_msk"\
+                    optional: "clr", "msk", "data_valid","coord_epi_geom_i",\
+                     "coord_epi_geom_j","idx_im_epi"
                 - attrs with keys: "epsg"
             - attributes containing "bounds", "ysize", "xsize", "epsg"
 
-        :rtype : CarsDataset filled with xr.Dataset
+        :rtype: CarsDataset filled with xr.Dataset
         """
 
         if not self.activated:
@@ -260,10 +303,11 @@ class Statistical(
                 filtered_point_cloud,
                 point_cloud_laz_file_name,
                 point_cloud_csv_file_name,
-            ) = self.__register_dataset__(
+            ) = self.__register_pc_dataset__(
                 merged_points_cloud,
-                save_laz_output,
-                app_name="statistical",
+                output_dir,
+                dump_dir,
+                app_name="small_components",
             )
 
             # Get saving infos in order to save tiles when they are computed
@@ -274,16 +318,10 @@ class Statistical(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pr_cst.CLOUD_OUTLIER_REMOVING_RUN_TAG: {},
+                    pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
                 }
             }
             orchestrator.update_out_info(updating_dict)
-            logging.info(
-                "Cloud filtering: Filtered points number: {}".format(
-                    filtered_point_cloud.shape[1]
-                    * filtered_point_cloud.shape[0]
-                )
-            )
 
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
@@ -297,20 +335,59 @@ class Statistical(
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
-                            statistical_removing_wrapper
+                            small_component_removal_wrapper
                         )(
                             merged_points_cloud[row, col],
-                            self.k,
-                            self.std_dev_factor,
+                            self.connection_distance,
+                            self.nb_points_threshold,
+                            self.clusters_distance_threshold,
                             save_by_pair=(self.save_by_pair),
                             point_cloud_csv_file_name=point_cloud_csv_file_name,
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
                         )
+        elif merged_points_cloud.dataset_type == "arrays":
+            filtered_point_cloud, saving_info = (
+                self.__register_epipolar_dataset__(
+                    merged_points_cloud,
+                    output_dir,
+                    dump_dir,
+                    app_name="small_components",
+                )
+            )
+
+            # Generate rasters
+            for col in range(filtered_point_cloud.shape[1]):
+                for row in range(filtered_point_cloud.shape[0]):
+
+                    # update saving infos  for potential replacement
+                    full_saving_info = ocht.update_saving_infos(
+                        saving_info, row=row, col=col
+                    )
+                    if merged_points_cloud[row][col] is not None:
+
+                        window = merged_points_cloud.tiling_grid[row, col]
+                        overlap = merged_points_cloud.overlaps[row, col]
+                        # Delayed call to cloud filtering
+                        filtered_point_cloud[
+                            row, col
+                        ] = self.orchestrator.cluster.create_task(
+                            epipolar_small_component_removal_wrapper
+                        )(
+                            merged_points_cloud[row, col],
+                            self.connection_distance,
+                            self.nb_points_threshold,
+                            self.clusters_distance_threshold,
+                            self.half_epipolar_size,
+                            window,
+                            overlap,
+                            epsg=epsg,
+                            saving_info=full_saving_info,
+                        )
 
         else:
             logging.error(
-                "PointCloudOutliersRemoving application doesn't support"
+                "PointCloudOutlierRemoval application doesn't support "
                 "this input data "
                 "format"
             )
@@ -318,24 +395,27 @@ class Statistical(
         return filtered_point_cloud
 
 
-def statistical_removing_wrapper(
+def small_component_removal_wrapper(
     cloud,
-    statistical_k,
-    std_dev_factor,
+    connection_distance,
+    nb_points_threshold,
+    clusters_distance_threshold,
     save_by_pair: bool = False,
     point_cloud_csv_file_name=None,
     point_cloud_laz_file_name=None,
     saving_info=None,
 ):
     """
-    Statistical outlier removing
+    Statistical outlier removal
 
     :param cloud: cloud to filter
     :type cloud: pandas DataFrame
-    :param statistical_k: k
-    :type statistical_k: float
-    :param std_dev_factor: std factor
-    :type std_dev_factor: float
+    :param connection_distance: connection distance
+    :type connection_distance: float
+    :param nb_points_threshold:
+    :type nb_points_threshold: int
+    :param clusters_distance_threshold:
+    :type clusters_distance_threshold: float
     :param save_by_pair: save point cloud as pair
     :type save_by_pair: bool
     :param point_cloud_csv_file_name: write point cloud as CSV in filename
@@ -367,11 +447,12 @@ def statistical_removing_wrapper(
         logging.debug(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
-            "to this referential. Convert the points "
+            "to this referential. Please, convert the points "
             "cloud to ECEF to ensure a proper points_cloud."
         )
         # Convert to epsg = 4978
         cartographic_epsg = 4978
+
         projection.points_cloud_conversion_dataframe(
             new_cloud, current_epsg, cartographic_epsg
         )
@@ -379,12 +460,18 @@ def statistical_removing_wrapper(
 
     # Filter point cloud
     tic = time.process_time()
-    (new_cloud, _) = outlier_removing_tools.statistical_outliers_filtering(
-        new_cloud, statistical_k, std_dev_factor
+    (
+        new_cloud,
+        _,
+    ) = outlier_removal_tools.small_component_filtering(
+        new_cloud,
+        connection_distance,
+        nb_points_threshold,
+        clusters_distance_threshold,
     )
     toc = time.process_time()
     logging.debug(
-        "Statistical cloud filtering done in {} seconds".format(toc - tic)
+        "Small component cloud filtering done in {} seconds".format(toc - tic)
     )
 
     # Conversion to UTM
@@ -393,7 +480,6 @@ def statistical_removing_wrapper(
     )
     # Update attributes
     cloud_attributes["epsg"] = current_epsg
-
     cars_dataset.fill_dataframe(
         new_cloud, saving_info=saving_info, attributes=cloud_attributes
     )
@@ -417,3 +503,65 @@ def statistical_removing_wrapper(
         )
 
     return new_cloud
+
+
+def epipolar_small_component_removal_wrapper(
+    cloud,
+    connection_distance,
+    nb_points_threshold,
+    clusters_distance_threshold,
+    half_epipolar_size,
+    window,
+    overlap,
+    epsg,
+    saving_info=None,
+):
+    """
+    Small component outlier removal in epipolar geometry
+
+    :param epipolar_ds: epipolar dataset to filter
+    :type epipolar_ds: xr.Dataset
+    :param connection_distance: minimum distance of two connected points
+    :type connection_distance: float
+    :param nb_points_threshold: minimum valid cluster size
+    :type nb_points_threshold: int
+    :param clusters_distance_threshold: max distance between an outlier cluster
+        and other points
+    :type clusters_distance_threshold: float
+    :param half_epipolar_size: half size of the window used to search neighbors
+    :type half_epipolar_size: int
+    :param window: window of base tile [row min, row max, col min col max]
+    :type window: list
+    :param overlap: overlap [row min, row max, col min col max]
+    :type overlap: list
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
+    """
+
+    # Copy input cloud
+    filtered_cloud = copy.copy(cloud)
+
+    outlier_removal_tools.epipolar_small_components(
+        filtered_cloud,
+        epsg,
+        min_cluster_size=nb_points_threshold,
+        radius=connection_distance,
+        half_window_size=half_epipolar_size,
+        clusters_distance_threshold=clusters_distance_threshold,
+    )
+
+    # Fill with attributes
+    cars_dataset.fill_dataset(
+        filtered_cloud,
+        saving_info=saving_info,
+        window=cars_dataset.window_array_to_dict(window),
+        profile=None,
+        attributes=None,
+        overlaps=cars_dataset.overlap_array_to_dict(overlap),
+    )
+
+    return filtered_cloud

@@ -31,7 +31,7 @@ from . import grid_generation  # noqa: F401
 from . import holes_detection  # noqa: F401
 from . import point_cloud_denoising  # noqa: F401
 from . import point_cloud_fusion  # noqa: F401
-from . import point_cloud_outliers_removing  # noqa: F401
+from . import point_cloud_outlier_removal  # noqa: F401
 from . import rasterization  # noqa: F401
 from . import resampling  # noqa: F401
 from . import sparse_matching  # noqa: F401

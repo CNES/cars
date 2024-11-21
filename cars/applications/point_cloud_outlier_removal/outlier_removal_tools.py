@@ -19,26 +19,28 @@
 # limitations under the License.
 #
 """
-This module contains functions used in outlier removing
+This module contains functions used in outlier removal
 """
 
 # Standard imports
-import logging
 from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
+import outlier_filter  # pylint:disable=E0401
 import pandas
-import xarray as xr
 from scipy.spatial import cKDTree  # pylint: disable=no-name-in-module
+
+from cars.applications.point_cloud_fusion.point_cloud_tools import filter_cloud
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import projection
 
-# ##### Small components filtering ######
+# ##### Small component filtering ######
 
 
-def small_components_filtering(
+def small_component_filtering(
     cloud: pandas.DataFrame,
     connection_val: float,
     nb_pts_threshold: int,
@@ -64,9 +66,20 @@ def small_components_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = detect_small_components(
-        cloud_xyz, connection_val, nb_pts_threshold, clusters_distance_threshold
+
+    clusters_distance_threshold_float = (
+        np.nan
+        if clusters_distance_threshold is None
+        else clusters_distance_threshold
+    )
+
+    index_elt_to_remove = outlier_filter.pc_small_component_outlier_filtering(
+        cloud.loc[:, cst.X].values,
+        cloud.loc[:, cst.Y].values,
+        cloud.loc[:, cst.Z].values,
+        radius=connection_val,
+        min_cluster_size=nb_pts_threshold,
+        clusters_distance_threshold=clusters_distance_threshold_float,
     )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
@@ -175,7 +188,7 @@ def detect_small_components(
 # ##### statistical filtering ######
 
 
-def statistical_outliers_filtering(
+def statistical_outlier_filtering(
     cloud: pandas.DataFrame,
     k: int,
     dev_factor: float,
@@ -198,9 +211,14 @@ def statistical_outliers_filtering(
     :return: Tuple made of the filtered cloud and
         the removed elements positions in their epipolar images
     """
-    cloud_xyz = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
-    index_elt_to_remove = detect_statistical_outliers(
-        cloud_xyz, k, dev_factor, use_median
+
+    index_elt_to_remove = outlier_filter.pc_statistical_outlier_filtering(
+        cloud.loc[:, cst.X].values,
+        cloud.loc[:, cst.Y].values,
+        cloud.loc[:, cst.Z].values,
+        dev_factor=dev_factor,
+        k=k,
+        use_median=use_median,
     )
 
     return filter_cloud(cloud, index_elt_to_remove, filtered_elt_pos)
@@ -247,6 +265,7 @@ def detect_statistical_outliers(
         iqr_distances = np.percentile(
             mean_neighbors_distances, 75
         ) - np.percentile(mean_neighbors_distances, 25)
+
         # compute distance threshold and
         # apply it to determine which points will be removed
         dist_thresh = median_distances + dev_factor * iqr_distances
@@ -269,151 +288,92 @@ def detect_statistical_outliers(
     return detected_points
 
 
-# ##### common filtering tools ######
-
-
-def filter_cloud(
-    cloud: pandas.DataFrame,
-    index_elt_to_remove: List[int],
-    filtered_elt_pos: bool = False,
-) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
-    """
-    Filter all points of the cloud DataFrame
-    which index is in the index_elt_to_remove list.
-
-    If filtered_elt_pos is set to True, the information of the removed elements
-    positions in their original epipolar images are returned.
-
-    To do so the cloud DataFrame has to be build
-    with the 'with_coords' option activated.
-
-    :param cloud: combined cloud
-        as returned by the create_combined_cloud function
-    :param index_elt_to_remove: indexes of lines
-        to filter in the cloud DataFrame
-    :param filtered_elt_pos: if filtered_elt_pos is set to True,
-        the removed points positions in their original epipolar images are
-        returned, otherwise it is set to None
-    :return: Tuple composed of the filtered cloud DataFrame and
-        the filtered elements epipolar position information
-        (or None for the latter if filtered_elt_pos is set to False
-        or if the cloud Dataframe has not been build with with_coords option)
-    """
-    if filtered_elt_pos and not (
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_I in cloud.columns
-        and cst.POINTS_CLOUD_COORD_EPI_GEOM_J in cloud.columns
-        and cst.POINTS_CLOUD_ID_IM_EPI in cloud.columns
-    ):
-        logging.warning(
-            "In filter_cloud: the filtered_elt_pos has been activated but "
-            "the cloud Datafram has not been build with option with_coords. "
-            "The positions cannot be retrieved."
-        )
-        filtered_elt_pos = False
-
-    # retrieve removed points position in their original epipolar images
-    if filtered_elt_pos:
-        labels = [
-            cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-            cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-            cst.POINTS_CLOUD_ID_IM_EPI,
-        ]
-
-        removed_elt_pos_infos = cloud.loc[
-            cloud.index.values[index_elt_to_remove], labels
-        ].values
-
-        removed_elt_pos_infos = pandas.DataFrame(
-            removed_elt_pos_infos, columns=labels
-        )
-    else:
-        removed_elt_pos_infos = None
-
-    # remove points from the cloud
-    cloud = cloud.drop(index=cloud.index.values[index_elt_to_remove])
-
-    return cloud, removed_elt_pos_infos
-
-
-def add_cloud_filtering_msk(
-    clouds_list: List[xr.Dataset],
-    elt_pos_infos: pandas.DataFrame,
-    mask_label: str,
-    mask_value: int = 255,
+def epipolar_small_components(
+    cloud,
+    epsg,
+    min_cluster_size=15,
+    radius=1.0,
+    half_window_size=5,
+    clusters_distance_threshold=np.nan,
 ):
     """
-    Add a uint16 mask labeled 'mask_label' to the clouds in clouds_list.
-    (in-line function)
+    Filter outliers using the small components method in epipolar geometry
 
-    :param clouds_list: Input list of clouds
-    :param elt_pos_infos: pandas dataframe
-        composed of cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_J, cst.POINTS_CLOUD_ID_IM_EPI columns
-        as computed in the create_combined_cloud function.
-        Those information are used to retrieve the point position
-        in its original epipolar image.
-    :param mask_label: label to give to the mask in the datasets
-    :param mask_value: filtered elements value in the mask
+    :param epipolar_ds: epipolar dataset to filter
+    :type epipolar_ds: xr.Dataset
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+    :param statistical_k: k
+    :type statistical_k: int
+    :param std_dev_factor: std factor
+    :type std_dev_factor: float
+    :param half_window_size: use median and quartile instead of mean and std
+    :type half_window_size: int
+    :param use_median: use median and quartile instead of mean and std
+    :type use_median: bool
+
+    :return: filtered dataset
+    :rtype:  xr.Dataset
+
     """
 
-    # Verify that the elt_pos_infos is consistent
-    if (
-        elt_pos_infos is None
-        or cst.POINTS_CLOUD_COORD_EPI_GEOM_I not in elt_pos_infos.columns
-        or cst.POINTS_CLOUD_COORD_EPI_GEOM_J not in elt_pos_infos.columns
-        or cst.POINTS_CLOUD_ID_IM_EPI not in elt_pos_infos.columns
-    ):
-        logging.warning(
-            "Cannot generate filtered elements mask, "
-            "no information about the point's"
-            " original position in the epipolar image is given"
-        )
+    projection.points_cloud_conversion_dataset(cloud, epsg)
 
-    else:
-        elt_index = elt_pos_infos.loc[:, cst.POINTS_CLOUD_ID_IM_EPI].to_numpy()
+    if clusters_distance_threshold is None:
+        clusters_distance_threshold = np.nan
 
-        min_elt_index = np.min(elt_index)
-        max_elt_index = np.max(elt_index)
+    outlier_filter.epipolar_small_component_outlier_filtering(
+        cloud[cst.X],
+        cloud[cst.Y],
+        cloud[cst.Z],
+        min_cluster_size,
+        radius,
+        half_window_size,
+        clusters_distance_threshold,
+    )
 
-        if min_elt_index < 0 or max_elt_index > len(clouds_list) - 1:
-            raise RuntimeError(
-                "Index indicated in the elt_pos_infos pandas. "
-                "DataFrame is not coherent with the clouds list given in input"
-            )
+    return cloud
 
-        # create and add mask to each element of clouds_list
-        for cloud_idx, cloud_item in enumerate(clouds_list):
-            if mask_label not in cloud_item:
-                nb_row = cloud_item.coords[cst.ROW].data.shape[0]
-                nb_col = cloud_item.coords[cst.COL].data.shape[0]
-                msk = np.zeros((nb_row, nb_col), dtype=np.uint16)
-            else:
-                msk = cloud_item[mask_label].values
 
-            cur_elt_index = np.argwhere(elt_index == cloud_idx)
+def epipolar_statistical_filtering(
+    epipolar_ds,
+    epsg,
+    k=15,
+    dev_factor=1.0,
+    half_window_size=5,
+    use_median=False,
+):
+    """
+    Filter outliers using the statistical method in epipolar geometry
 
-            for elt_pos in range(cur_elt_index.shape[0]):
-                i = int(
-                    elt_pos_infos.loc[
-                        cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
-                    ].iat[0]
-                )
-                j = int(
-                    elt_pos_infos.loc[
-                        cur_elt_index[elt_pos],
-                        cst.POINTS_CLOUD_COORD_EPI_GEOM_J,
-                    ].iat[0]
-                )
+    :param epipolar_ds: epipolar dataset to filter
+    :type epipolar_ds: xr.Dataset
+    :param epsg: epsg code of the CRS used to compute distances
+    :type epsg: int
+    :param statistical_k: k
+    :type statistical_k: int
+    :param std_dev_factor: std factor
+    :type std_dev_factor: float
+    :param half_window_size: use median and quartile instead of mean and std
+    :type half_window_size: int
+    :param use_median: use median and quartile instead of mean and std
+    :type use_median: bool
 
-                try:
-                    msk[i, j] = mask_value
-                except Exception as index_error:
-                    raise RuntimeError(
-                        "Point at location ({},{}) is not accessible "
-                        "in an image of size ({},{})".format(
-                            i, j, msk.shape[0], msk.shape[1]
-                        )
-                    ) from index_error
+    :return: filtered dataset
+    :rtype:  xr.Dataset
 
-            cloud_item[mask_label] = ([cst.ROW, cst.COL], msk)
+    """
+
+    projection.points_cloud_conversion_dataset(epipolar_ds, epsg)
+
+    outlier_filter.epipolar_statistical_outlier_filtering(
+        epipolar_ds[cst.X],
+        epipolar_ds[cst.Y],
+        epipolar_ds[cst.Z],
+        k,
+        half_window_size,
+        dev_factor,
+        use_median,
+    )
+
+    return epipolar_ds

@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+# !/usr/bin/env python
 # coding: utf8
 #
 # Copyright (c) 2020 Centre National d'Etudes Spatiales (CNES).
@@ -19,5 +19,12 @@
 # limitations under the License.
 #
 """
-Cars tests/points_cloud_outliers_removing init file
+CARS core cloud outlier removing module init file
 """
+# flake8: noqa: F401
+
+from cars.applications.point_cloud_outlier_removal.pc_out_removal import (
+    PointCloudOutlierRemoval,
+)
+
+from . import small_components, statistical

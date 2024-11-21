@@ -624,13 +624,14 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1099,13 +1100,14 @@ def test_end2end_ventoux_unique():
                     },
                 },
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1200,13 +1202,14 @@ def test_end2end_ventoux_unique():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -1623,16 +1626,17 @@ def test_end2end_ventoux_unique_split():
                 "output": {"directory": output_path, "resolution": 0.5},
                 "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
-                    "point_cloud_outliers_removing.1": {
+                    "point_cloud_outlier_removal.1": {
                         "method": "small_components",
                         "activated": True,
                         "save_intermediate_data": True,
                         "save_by_pair": True,
                     },
-                    "point_cloud_outliers_removing.2": {
+                    "point_cloud_outlier_removal.2": {
                         "method": "statistical",
                         "activated": True,
                         "save_intermediate_data": True,
+                        "use_median": False,
                     },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
@@ -1659,7 +1663,7 @@ def test_end2end_ventoux_unique_split():
                     os.path.join(
                         out_dir_dsm,
                         "dump_dir",
-                        "small_components",
+                        "point_cloud_outlier_removal_1",
                         "laz",
                         "675292.3110543193_4897140.457149682_one.laz",
                     )
@@ -1892,10 +1896,10 @@ def test_end2end_ventoux_unique_split():
             )
 
             del input_dsm_config["applications"][
-                "point_cloud_outliers_removing.1"
+                "point_cloud_outlier_removal.1"
             ]
             del input_dsm_config["applications"][
-                "point_cloud_outliers_removing.2"
+                "point_cloud_outlier_removal.2"
             ]
             input_dsm_config["pipeline"] = (
                 "dense_depth_maps_to_dense_dsm_no_merging"
@@ -2959,6 +2963,7 @@ def test_end2end_ventoux_with_color():
         input_json = absolute_data_path(
             "input/phr_ventoux/input_with_color.json"
         )
+
         # Run sparse dsm pipeline
         _, input_config_sparse_res = generate_input_json(
             input_json,
@@ -3062,16 +3067,17 @@ def test_end2end_ventoux_with_color():
                 "save_intermediate_data": True,
                 "save_by_pair": True,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
                 "save_intermediate_data": True,
                 "save_by_pair": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
                 "save_intermediate_data": True,
+                "use_median": False,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -3140,7 +3146,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "small_components",
+                    "point_cloud_outlier_removal_1",
                     "laz",
                     pc2 + "_left_right.laz",
                 )
@@ -3152,7 +3158,7 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "small_components",
+                    "point_cloud_outlier_removal_1",
                     "csv",
                     pc2 + "_left_right.csv",
                 )
@@ -3164,7 +3170,11 @@ def test_end2end_ventoux_with_color():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_2",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3172,7 +3182,11 @@ def test_end2end_ventoux_with_color():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_2",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3330,15 +3344,16 @@ def test_end2end_ventoux_with_classif():
                 "method": "mapping_to_terrain_tiles",
                 "save_intermediate_data": True,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
                 "save_intermediate_data": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
                 "save_intermediate_data": True,
+                "use_median": False,
             },
             "triangulation": {
                 "method": "line_of_sight_intersection",
@@ -3392,7 +3407,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "small_components", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_1",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3400,7 +3419,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "small_components", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_1",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3409,7 +3432,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "laz", pc1 + ".laz"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_2",
+                    "laz",
+                    pc1 + ".laz",
                 )
             )
             is True
@@ -3417,7 +3444,11 @@ def test_end2end_ventoux_with_classif():
         assert (
             os.path.exists(
                 os.path.join(
-                    out_dir, "dump_dir", "statistical", "csv", pc1 + ".csv"
+                    out_dir,
+                    "dump_dir",
+                    "point_cloud_outlier_removal_2",
+                    "csv",
+                    pc1 + ".csv",
                 )
             )
             is True
@@ -3659,13 +3690,14 @@ def test_compute_dsm_with_snap_to_img1():
                 "method": "line_of_sight_intersection",
                 "snap_to_img1": True,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -3773,13 +3805,14 @@ def test_end2end_quality_stats():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4068,13 +4101,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4199,13 +4233,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4288,13 +4323,14 @@ def test_end2end_ventoux_egm96_geoid():
                 "use_global_disp_range": False,
             },
             "triangulation": {"method": "line_of_sight_intersection"},
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4429,13 +4465,14 @@ def test_end2end_paca_with_mask():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4628,13 +4665,14 @@ def test_end2end_disparity_filling():
                 "save_intermediate_data": True,
                 "classification": ["shadow"],
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -4758,13 +4796,14 @@ def test_end2end_disparity_filling_with_zeros():
                 "save_intermediate_data": True,
                 "classification": ["bat"],
             },
-            "point_cloud_outliers_removing.1": {
+            "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
             },
-            "point_cloud_outliers_removing.2": {
+            "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
+                "use_median": False,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)

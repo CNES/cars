@@ -114,6 +114,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         cloud_id=None,
         intervals=None,
         pair_output_dir=None,
+        save_output_coordinates=False,
         save_output_color=False,
         save_output_classification=False,
         save_output_mask=False,
@@ -196,6 +197,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         :param pair_output_dir: directory to write triangulation output depth
                 map.
         :type pair_output_dir: None or str
+        :param save_output_coordinates: Save X, Y, Z coords in pair_output_dir
+        :type save_output_coordinates: bool
         :param save_output_color: Save color depth map in pair_output_dir
         :type save_output_color: bool
         :param save_output_classification: Save classification depth map in
