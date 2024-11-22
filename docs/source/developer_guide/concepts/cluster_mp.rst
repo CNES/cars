@@ -1,24 +1,23 @@
-.. _cluster_mp:
 
-Cluster Multiprocessing
-=======================
-
-Goals
------
-
-The multiprocessing (MP) cluster facilitates the distribution of computing for the :ref:`application` and the management of :ref:`cars_dataset` data.
+**Cluster Multiprocessing**
 
 
-Details
--------
+**Goals**
+
+
+The multiprocessing (MP) cluster facilitates the distribution of computing for the application and the management of cars_dataset data.
+
+
+**Details**
+
 The MP cluster is built upon `Python's multiprocessing`_ module using the forkserver mode. In this mode, a pool of worker processes handles the parallel execution of functions. Each worker process is single-threaded, and only essential resources are inherited.
 By design, CARS utilizes disk-based registry for data storage, distributing data across the processes. If specified in configuration, data distribution can be done in memory, with degraded performance.
 
 
 .. _`Python's multiprocessing`: https://docs.python.org/3/library/multiprocessing.html
 
-How it works
-------------
+**How it works**
+
 
 The main class is the MP Cluster, which inherits from the AbstractCluster class. It is instantiated within the orchestrator.
 
@@ -26,38 +25,38 @@ Inspired by the Dask cluster approach, the MP cluster initiates a list of delaye
 Factorisation of tasks allows to reduce the number of tasks without losing any time. Reducing the number of tasks permits to reduce the number of dumps on disk and to save time.
 For each task that has available data (intermediate results input from the linked previous task), the MP cluster transforms the delayed task into an MpFutureTask.
 
-Upon completion of these jobs, the results are saved on disk, and the reference is passed to the next job. The :ref:`refresh_task_cache` function serves as the primary control function of the MP cluster.
+Upon completion of these jobs, the results are saved on disk, and the reference is passed to the next job. The refresh_task_cache function serves as the primary control function of the MP cluster.
 
 The next sections illustrates the architecture of the MP cluster, while the API provides detailed functions that offer more insight into interactions and operations.
 
-Class diagram
-^^^^^^^^^^^^^
-.. image:: ../images/mp_cluster.svg
+*Class diagram*
+
+.. image:: ../../images/mp_cluster.svg
     :align: center
 
-API detailed functions
-^^^^^^^^^^^^^^^^^^^^^^
+*API detailed functions*
+
 
 **init**
-++++++++
+
 Cluster allocation using a Python thread pool.
 The worker pool is set up in forkserver mode with a specified number of workers, job timeouts, and wrapper configuration for cluster logging.
 
 **create_task_wrapped**
-+++++++++++++++++++++++
+
 Declare task as **MpDelayed** within the cluster.
 **MpDelayed** are instantiated using the **mp_delayed_builder** wrapper builder.
 Furthermore, the wrapper provides parameters for the job logger.
 
 
 **start_tasks**
-+++++++++++++++
+
 Factorize tasks with **mp_factorizer.factorize_tasks** and add future tasks in the cluster queue. The cluster processes tasks from the queue.
 Transform **MpDelayed** with rec_start to **MpJob**, and calculate task dependencies for each job.
 
 
 **mp_factorizer.factorize_tasks**
-+++++++++++++++++++++++++++++++++
+
 Take as input a list of final **MpDelayed** and factorize all the dependent tasks that are *factorizable*.
 
 A task **t** of the class **MpDelayedTask** is *factorizable* if :
@@ -81,7 +80,7 @@ will be replaced by output of **t1** and then **t2** will be computed. Thus, the
 
 
 **rec_start**
-+++++++++++++
+
 Transform delayed tasks to MpJob and create MpFuture objects to retrieve results.
 
 For each task:
@@ -98,9 +97,9 @@ For each task:
 
 .. _refresh_task_cache:
 
+# refresh_task_cache
 
-**refresh_task_cache**
-++++++++++++++++++++++
+
 At each refresh:
 
 1. Sleep (refresh time).
@@ -137,41 +136,41 @@ At each refresh:
 
 
 **get_ready_failed_tasks**
-++++++++++++++++++++++++++
+
 Retrieve the new ready tasks and failed tasks.
 
 
 **get_tasks_without_deps**
-++++++++++++++++++++++++++
+
 A static method evaluates a list of tasks that are ready and lack dependencies, excluding those deemed as initial tasks. 
 The initial tasks of the graph have no priority. In order to enhance disk usage efficiency, the cluster initiates with N initial tasks (where N equals the number of workers), assigning priority to the subsequent connected tasks. After finishing a segment of the task graph, the cluster introduces N new initial tasks to continue the process.
 
 
 **future_iterator**
-+++++++++++++++++++
+
 Enable the initiation of all tasks from the orchestrator controller.
 
 
 **get_job_ids_from_futures**
-++++++++++++++++++++++++++++
+
 Obtain a list of job IDs from the future list.
 
 **replace_job_by_data**
-+++++++++++++++++++++++
+
 Substitute MpJob instances in lists or dict with their actual data.
 
 
 **compute_dependencies**
-++++++++++++++++++++++++
+
 Compute job result dependencies from args and kw_args.
 
 
 **MpFutureTask**
-++++++++++++++++
+
 A multiprocessing version of the Dask distributed.future.
 This class encapsulates data and references to job cluster threads.
 It also facilitates the sharing of references between jobs and cleaning cache operations.
 
 **log_error_hook**
-++++++++++++++++++
+
 A custom Exception hook to manage cluster thread exceptions.

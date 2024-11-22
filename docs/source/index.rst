@@ -39,9 +39,8 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
    exploring_the_field/index.rst
    usage
    howto
-   software_design/index.rst
    troubleshooting_and_faqs
-   contributing_the_project
+   developer_guide/index.rst
 
 
 .. toctree::

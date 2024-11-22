@@ -1,10 +1,14 @@
+
+.. role:: raw-html(raw)
+   :format: html
+
 .. _application:
 
-Application
-===========
+:raw-html:`<h1>Application</h1>`
 
-Overview
---------
+
+**Overview**
+
 
 An *application* is a main step of CARS 3D reconstruction framework.
 It contains algorithm methods.
@@ -17,13 +21,13 @@ It is composed of:
 * Some abstract applications (each one defined a main 3d step)
 * Some subclass associated to each abstract application, containing specific algorithm
 
-.. figure:: ../images/application_concept.png
+.. figure:: ../../images/application_concept.png
     :align: center
     :alt: Applications
 
 
-Example
--------
+**Example**
+
 
 Let's take an example of `dense_matching` application to describe the main steps:
 
