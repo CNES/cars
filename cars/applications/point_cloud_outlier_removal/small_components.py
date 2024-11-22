@@ -150,7 +150,7 @@ class SmallComponents(
             "half_epipolar_size", 5
         )
 
-        points_cloud_fusion_schema = {
+        point_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
             "activated": bool,
@@ -163,7 +163,7 @@ class SmallComponents(
         }
 
         # Check conf
-        checker = Checker(points_cloud_fusion_schema)
+        checker = Checker(point_cloud_fusion_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf
@@ -237,7 +237,7 @@ class SmallComponents(
 
     def run(
         self,
-        merged_points_cloud,
+        merged_point_cloud,
         orchestrator=None,
         output_dir=None,
         dump_dir=None,
@@ -248,7 +248,7 @@ class SmallComponents(
 
         Creates a CarsDataset filled with new point cloud tiles.
 
-        :param merged_points_cloud: merged point cloud. CarsDataset contains:
+        :param merged_point_cloud: merged point cloud. CarsDataset contains:
 
             - Z x W Delayed tiles. \
                 Each tile will be a future pandas DataFrame containing:
@@ -259,7 +259,7 @@ class SmallComponents(
                 - attrs with keys: "epsg"
             - attributes containing "bounds", "ysize", "xsize", "epsg"
 
-        :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
+        :type merged_point_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
         :param output_dir: output depth map directory. If None output will be
             written in dump_dir if intermediate data is requested
@@ -270,7 +270,7 @@ class SmallComponents(
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int
 
-        :return: filtered merged points cloud. CarsDataset contains:
+        :return: filtered merged point cloud. CarsDataset contains:
 
             - Z x W Delayed tiles.\
                 Each tile will be a future pandas DataFrame containing:
@@ -285,7 +285,7 @@ class SmallComponents(
         """
 
         if not self.activated:
-            return merged_points_cloud
+            return merged_point_cloud
 
         # Default orchestrator
         if orchestrator is None:
@@ -298,13 +298,13 @@ class SmallComponents(
         else:
             self.orchestrator = orchestrator
 
-        if merged_points_cloud.dataset_type == "points":
+        if merged_point_cloud.dataset_type == "points":
             (
                 filtered_point_cloud,
                 point_cloud_laz_file_name,
                 point_cloud_csv_file_name,
             ) = self.__register_pc_dataset__(
-                merged_points_cloud,
+                merged_point_cloud,
                 output_dir,
                 dump_dir,
                 app_name="small_components",
@@ -330,14 +330,14 @@ class SmallComponents(
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
                     )
-                    if merged_points_cloud.tiles[row][col] is not None:
+                    if merged_point_cloud.tiles[row][col] is not None:
                         # Delayed call to cloud filtering
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
                             small_component_removal_wrapper
                         )(
-                            merged_points_cloud[row, col],
+                            merged_point_cloud[row, col],
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
@@ -346,10 +346,10 @@ class SmallComponents(
                             point_cloud_laz_file_name=point_cloud_laz_file_name,
                             saving_info=full_saving_info,
                         )
-        elif merged_points_cloud.dataset_type == "arrays":
+        elif merged_point_cloud.dataset_type == "arrays":
             filtered_point_cloud, saving_info = (
                 self.__register_epipolar_dataset__(
-                    merged_points_cloud,
+                    merged_point_cloud,
                     output_dir,
                     dump_dir,
                     app_name="small_components",
@@ -364,17 +364,17 @@ class SmallComponents(
                     full_saving_info = ocht.update_saving_infos(
                         saving_info, row=row, col=col
                     )
-                    if merged_points_cloud[row][col] is not None:
+                    if merged_point_cloud[row][col] is not None:
 
-                        window = merged_points_cloud.tiling_grid[row, col]
-                        overlap = merged_points_cloud.overlaps[row, col]
+                        window = merged_point_cloud.tiling_grid[row, col]
+                        overlap = merged_point_cloud.overlaps[row, col]
                         # Delayed call to cloud filtering
                         filtered_point_cloud[
                             row, col
                         ] = self.orchestrator.cluster.create_task(
                             epipolar_small_component_removal_wrapper
                         )(
-                            merged_points_cloud[row, col],
+                            merged_point_cloud[row, col],
                             self.connection_distance,
                             self.nb_points_threshold,
                             self.clusters_distance_threshold,
@@ -448,12 +448,12 @@ def small_component_removal_wrapper(
             "The points cloud to filter is not in a cartographic system. "
             "The filter's default parameters might not be adapted "
             "to this referential. Please, convert the points "
-            "cloud to ECEF to ensure a proper points_cloud."
+            "cloud to ECEF to ensure a proper point_cloud."
         )
         # Convert to epsg = 4978
         cartographic_epsg = 4978
 
-        projection.points_cloud_conversion_dataframe(
+        projection.point_cloud_conversion_dataframe(
             new_cloud, current_epsg, cartographic_epsg
         )
         current_epsg = cartographic_epsg
@@ -475,7 +475,7 @@ def small_component_removal_wrapper(
     )
 
     # Conversion to UTM
-    projection.points_cloud_conversion_dataframe(
+    projection.point_cloud_conversion_dataframe(
         new_cloud, cloud_epsg, current_epsg
     )
     # Update attributes

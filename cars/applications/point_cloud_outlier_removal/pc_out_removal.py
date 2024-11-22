@@ -228,7 +228,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
     def __register_pc_dataset__(
         self,
-        merged_points_cloud,
+        merged_point_cloud,
         output_dir=None,
         dump_dir=None,
         app_name=None,
@@ -240,8 +240,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         in the dump directory if the application save_intermediate data
         configuration parameter is set.
 
-        :param merged_points_cloud:  Merged point cloud
-        :type merged_points_cloud: CarsDataset
+        :param merged_point_cloud:  Merged point cloud
+        :type merged_point_cloud: CarsDataset
         :param output_dir: output depth map directory. If None output will be
             written in dump_dir if intermediate data is requested
         :type output_dir: str
@@ -276,9 +276,9 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         )
 
         # Get tiling grid
-        filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
+        filtered_point_cloud.tiling_grid = merged_point_cloud.tiling_grid
         filtered_point_cloud.generate_none_tiles()
-        filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
+        filtered_point_cloud.attributes = merged_point_cloud.attributes.copy()
 
         # Save objects
         pc_laz_file_name = None
@@ -311,7 +311,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        merged_points_cloud,
+        merged_point_cloud,
         orchestrator=None,
         save_laz_output=False,
         output_dir=None,
@@ -323,8 +323,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         Creates a CarsDataset filled with new point cloud tiles.
 
-        :param merged_points_cloud: merged point cloud
-        :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
+        :param merged_point_cloud: merged point cloud
+        :type merged_point_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
@@ -337,6 +337,6 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int
 
-        :return: filtered merged points cloud
+        :return: filtered merged point cloud
         :rtype: CarsDataset filled with xr.Dataset
         """

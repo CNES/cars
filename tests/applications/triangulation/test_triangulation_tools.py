@@ -141,7 +141,7 @@ def test_triangulate_matches_shareloc(
     np.testing.assert_almost_equal(llh.z[0], 512.807649359107, decimal=10)
     # np.testing.assert_almost_equal(llh.z[0], 511.4383088)
     assert llh[cst.DISPARITY][0] == 0.0
-    assert llh[cst.POINTS_CLOUD_CORR_MSK][0] == 255
+    assert llh[cst.POINT_CLOUD_CORR_MSK][0] == 255
 
 
 @pytest.mark.parametrize(

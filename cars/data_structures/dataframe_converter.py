@@ -70,7 +70,7 @@ def get_input_color(point_clouds):
     color_names = [
         name
         for name in point_clouds.columns
-        if cst.POINTS_CLOUD_CLR_KEY_ROOT in name
+        if cst.POINT_CLOUD_CLR_KEY_ROOT in name
     ]
     nb_color = len(color_names)
     if nb_color == 1:
@@ -149,7 +149,7 @@ def generate_prj_file(output_filename, epsg):
         proj = crs.to_proj4()
     if crs.is_geographic:
         logging.warning(
-            "Coordinate system of points cloud is geographic: "
+            "Coordinate system of point cloud is geographic: "
             "Display of LAZ file may not work"
         )
     with open(output_filename + ".prj", "w", encoding="utf8") as file_prj:

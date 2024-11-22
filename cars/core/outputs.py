@@ -52,8 +52,8 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
     with open(path_ply_file, "w", encoding="utf-8") as ply_file:
         if isinstance(cloud, xr.Dataset):
             nb_points = int(
-                cloud[cst.POINTS_CLOUD_CORR_MSK]
-                .where(cloud[cst.POINTS_CLOUD_CORR_MSK].values != 0)
+                cloud[cst.POINT_CLOUD_CORR_MSK]
+                .where(cloud[cst.POINT_CLOUD_CORR_MSK].values != 0)
                 .count()
             )
         else:
@@ -72,7 +72,7 @@ def write_ply(path_ply_file: str, cloud: Union[xr.Dataset, pandas.DataFrame]):
                 np.nditer(cloud[cst.X].values),
                 np.nditer(cloud[cst.Y].values),
                 np.nditer(cloud[cst.Z].values),
-                np.nditer(cloud[cst.POINTS_CLOUD_CORR_MSK].values),
+                np.nditer(cloud[cst.POINT_CLOUD_CORR_MSK].values),
             ):
                 if mask_item != 0:
                     ply_file.write("{} {} {}\n".format(x_item, y_item, z_item))

@@ -47,13 +47,13 @@ from ..helpers import absolute_data_path, get_geometry_plugin, temporary_dir
 @pytest.mark.unit_tests
 def test_point_cloud_conversion():
     """
-    Create fake and right cloud and test points_cloud_conversion function
+    Create fake and right cloud and test point_cloud_conversion function
     """
     llh = np.load(absolute_data_path("input/rasterization_input/llh.npy"))
 
-    # points_cloud_conversion expects a list of points
+    # point_cloud_conversion expects a list of points
     llh = np.reshape(llh, (-1, 3))
-    utm = projection.points_cloud_conversion(llh, 4326, 32630)
+    utm = projection.point_cloud_conversion(llh, 4326, 32630)
 
     assert len(utm) == llh.shape[0]
 
@@ -64,14 +64,14 @@ def test_point_cloud_conversion():
 @pytest.mark.unit_tests
 def test_point_cloud_conversion_dataframe():
     """
-    Create fake and right point cloud and test points_cloud_conversion_dataframe
+    Create fake and right point cloud and test point_cloud_conversion_dataframe
     """
     llh = np.load(absolute_data_path("input/rasterization_input/llh.npy"))
 
-    # points_cloud_conversion expects a list of points
+    # point_cloud_conversion expects a list of points
     llh = np.reshape(llh, (-1, 3))
     utm_df = pandas.DataFrame(llh, columns=["x", "y", "z"])
-    projection.points_cloud_conversion_dataframe(utm_df, 4326, 32630)
+    projection.point_cloud_conversion_dataframe(utm_df, 4326, 32630)
 
     assert len(utm_df.loc[:, ["x", "y", "z"]].values) == llh.shape[0]
 

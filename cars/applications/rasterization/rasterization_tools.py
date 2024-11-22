@@ -120,7 +120,7 @@ def simple_rasterization_dataset_wrapper(
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
     :param list_computed_layers: list of computed output data
-    :param source_pc_names: list of names of points cloud before merging :
+    :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
     :return: Rasterized cloud
     """
@@ -270,35 +270,35 @@ def compute_vector_raster_and_stats(
     values_bands = [cst.Z] if cst.Z in cloud else []
 
     clr_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_CLR_KEY_ROOT
+        cloud, cst.POINT_CLOUD_CLR_KEY_ROOT
     )
     values_bands.extend(clr_indexes)
     split_indexes.append(len(values_bands))
 
     # 2. confidences
     confidences_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
+        cloud, cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(confidences_indexes)
     split_indexes.append(len(confidences_indexes))
 
     # 3. confidence interval
     interval_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_INTERVALS_KEY_ROOT, list_computed_layers
+        cloud, cst.POINT_CLOUD_INTERVALS_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(interval_indexes)
     split_indexes.append(len(interval_indexes))
 
     # 4. mask
     msk_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_MSK, list_computed_layers
+        cloud, cst.POINT_CLOUD_MSK, list_computed_layers
     )
     values_bands.extend(msk_indexes)
     split_indexes.append(len(msk_indexes))
 
     # 5. classification
     classif_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_CLASSIF_KEY_ROOT, list_computed_layers
+        cloud, cst.POINT_CLOUD_CLASSIF_KEY_ROOT, list_computed_layers
     )
 
     values_bands.extend(classif_indexes)
@@ -308,37 +308,37 @@ def compute_vector_raster_and_stats(
     # Fill the dataframe with additional columns :
     # each column refers to a point cloud id
     number_of_pc = cars_dataset.get_attributes_dataframe(cloud)["number_of_pc"]
-    if cst.POINTS_CLOUD_GLOBAL_ID in cloud.columns and (
+    if cst.POINT_CLOUD_GLOBAL_ID in cloud.columns and (
         (list_computed_layers is None)
         or substring_in_list(
-            list_computed_layers, cst.POINTS_CLOUD_SOURCE_KEY_ROOT
+            list_computed_layers, cst.POINT_CLOUD_SOURCE_KEY_ROOT
         )
     ):
         for pc_id in range(number_of_pc):
             # Create binary list that indicates from each point whether it comes
             # from point cloud number "pc_id"
             point_is_from_pc = list(
-                map(int, cloud[cst.POINTS_CLOUD_GLOBAL_ID] == pc_id)
+                map(int, cloud[cst.POINT_CLOUD_GLOBAL_ID] == pc_id)
             )
-            pc_key = "{}{}".format(cst.POINTS_CLOUD_SOURCE_KEY_ROOT, pc_id)
+            pc_key = "{}{}".format(cst.POINT_CLOUD_SOURCE_KEY_ROOT, pc_id)
             cloud[pc_key] = point_is_from_pc
 
     source_pc_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_SOURCE_KEY_ROOT, list_computed_layers
+        cloud, cst.POINT_CLOUD_SOURCE_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(source_pc_indexes)
     split_indexes.append(len(source_pc_indexes))
 
     # 7. filling
     filling_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_FILLING_KEY_ROOT, list_computed_layers
+        cloud, cst.POINT_CLOUD_FILLING_KEY_ROOT, list_computed_layers
     )
     values_bands.extend(filling_indexes)
     split_indexes.append(len(filling_indexes))
 
     # 8. Performance map
     performance_map_indexes = find_indexes_in_point_cloud(
-        cloud, cst.POINTS_CLOUD_PERFORMANCE_MAP, list_computed_layers
+        cloud, cst.POINT_CLOUD_PERFORMANCE_MAP, list_computed_layers
     )
     values_bands.extend(performance_map_indexes)
 
@@ -483,7 +483,7 @@ def create_raster_dataset(
     :param interval_stat_index: list containing index of
         intervals in mean and stdev rasters
     :param source_pc: binary raster with source point cloud information
-    :param source_pc_names: list of names of points cloud before merging :
+    :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
     :param performance_map: raster containing the performance map
     :return: the raster xarray dataset
@@ -507,7 +507,7 @@ def create_raster_dataset(
         color = np.nan_to_num(raster[1:], nan=color_no_data)
         for idx, band_name in enumerate(band_im):
             band_im[idx] = band_name.replace(
-                cst.POINTS_CLOUD_CLR_KEY_ROOT + "_", ""
+                cst.POINT_CLOUD_CLR_KEY_ROOT + "_", ""
             )
         color_out = xr.Dataset(
             {
@@ -560,7 +560,7 @@ def create_raster_dataset(
         classif = np.nan_to_num(classif, nan=msk_no_data)
         for idx, band_name in enumerate(band_classif):
             band_classif[idx] = band_name.replace(
-                cst.POINTS_CLOUD_CLASSIF_KEY_ROOT + "_", ""
+                cst.POINT_CLOUD_CLASSIF_KEY_ROOT + "_", ""
             )
         classif_out = xr.Dataset(
             {
@@ -630,7 +630,7 @@ def create_raster_dataset(
         filling = np.nan_to_num(filling, nan=msk_no_data)
         for idx, band_name in enumerate(band_filling):
             band_filling[idx] = band_name.replace(
-                cst.POINTS_CLOUD_FILLING_KEY_ROOT + "_", ""
+                cst.POINT_CLOUD_FILLING_KEY_ROOT + "_", ""
             )
         filling_out = xr.Dataset(
             {

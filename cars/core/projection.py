@@ -170,7 +170,7 @@ def geo_to_ecef(
     epsg_in = 4979  # EPSG code for Geocentric WGS84 in lat, lon, alt (degree)
     epsg_out = 4978  # EPSG code for ECEF WGS84 in x, y, z (meters)
 
-    return points_cloud_conversion(
+    return point_cloud_conversion(
         np.array([[lon, lat, alt]]), epsg_in, epsg_out
     )[0]
 
@@ -298,7 +298,7 @@ def geo_to_aer(
     return enu_to_aer(x_east, y_north, z_up)
 
 
-def points_cloud_conversion(
+def point_cloud_conversion(
     cloud_in: np.ndarray, epsg_in: int, epsg_out: int
 ) -> np.ndarray:
     """
@@ -361,7 +361,7 @@ def get_converted_xy_np_arrays_from_dataset(
     """
     xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud_in)
     epsg = int(cloud_in.attrs[cst.EPSG])
-    xyz = points_cloud_conversion(xyz, epsg, epsg_out)
+    xyz = point_cloud_conversion(xyz, epsg, epsg_out)
     xyz = xyz.reshape(xyz_shape)
     if isinstance(cloud_in, xr.Dataset):
         proj_x = xyz[:, :, 0]
@@ -372,7 +372,7 @@ def get_converted_xy_np_arrays_from_dataset(
     return proj_x, proj_y
 
 
-def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
+def point_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     """
     Convert a point cloud as an xarray.Dataset to another epsg (inplace)
     TODO: add test
@@ -384,7 +384,7 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
     if cloud.attrs[cst.EPSG] != epsg_out:
         xyz, xyz_shape = get_xyz_np_array_from_dataset(cloud)
 
-        xyz = points_cloud_conversion(xyz, cloud.attrs[cst.EPSG], epsg_out)
+        xyz = point_cloud_conversion(xyz, cloud.attrs[cst.EPSG], epsg_out)
         xyz = xyz.reshape(xyz_shape)
         xyz[xyz == np.inf] = np.nan
         if isinstance(cloud, xr.Dataset):
@@ -402,11 +402,11 @@ def points_cloud_conversion_dataset(cloud: xr.Dataset, epsg_out: int):
             cloud.attrs[cst.EPSG] = epsg_out
         else:
             logging.error(
-                "points_cloud_conversion_dataset error: point cloud is unknown"
+                "point_cloud_conversion_dataset error: point cloud is unknown"
             )
 
 
-def points_cloud_conversion_dataframe(
+def point_cloud_conversion_dataframe(
     cloud: pandas.DataFrame, epsg_in: int, epsg_out: int
 ):
     """
@@ -419,7 +419,7 @@ def points_cloud_conversion_dataframe(
     xyz_in = cloud.loc[:, [cst.X, cst.Y, cst.Z]].values
 
     if xyz_in.shape[0] != 0:
-        xyz_in = points_cloud_conversion(xyz_in, epsg_in, epsg_out)
+        xyz_in = point_cloud_conversion(xyz_in, epsg_in, epsg_out)
         cloud[cst.X] = xyz_in[:, 0]
         cloud[cst.Y] = xyz_in[:, 1]
         cloud[cst.Z] = xyz_in[:, 2]

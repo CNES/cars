@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the abstract PointsCloudFusion application class.
+this module contains the abstract PointCloudFusion application class.
 """
 import logging
 from abc import ABCMeta, abstractmethod
@@ -32,7 +32,7 @@ from cars.applications.application_template import ApplicationTemplate
 @Application.register("point_cloud_fusion")
 class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
     """
-    PointsCloudFusion
+    PointCloudFusion
     """
 
     available_applications: Dict = {}
@@ -96,7 +96,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        list_epipolar_points_cloud,
+        list_epipolar_point_clouds,
         bounds,
         epsg,
         source_pc_names=None,
@@ -108,10 +108,10 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         """
         Run EpipolarCloudFusion application.
 
-        Creates a CarsDataset corresponding to the merged points clouds,
+        Creates a CarsDataset corresponding to the merged point clouds,
         tiled with the terrain grid used during rasterization.
 
-        :param list_epipolar_points_cloud: list with points clouds\
+        :param list_epipolar_point_clouds: list with point clouds\
             Each CarsDataset contains:
 
             - N x M Delayed tiles. \
@@ -122,7 +122,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound", "elevation_delta_upper_bound"
-        :type list_epipolar_points_cloud: list(CarsDataset) filled with
+        :type list_epipolar_point_clouds: list(CarsDataset) filled with
           xr.Dataset
         :param bounds: terrain bounds
         :type bounds: list
@@ -137,7 +137,7 @@ class PointCloudFusion(ApplicationTemplate, metaclass=ABCMeta):
         :param optimal_terrain_tile_width: optimal terrain tile width
         :type optimal_terrain_tile_width: int
 
-        :return: Merged points clouds
+        :return: Merged point clouds
 
             CarsDataset contains:
 

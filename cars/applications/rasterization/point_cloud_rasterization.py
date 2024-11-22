@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-this module contains the abstract PointsCloudRasterization application class.
+this module contains the abstract PointCloudRasterization application class.
 """
 import logging
 from abc import ABCMeta, abstractmethod
@@ -129,7 +129,7 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
     @abstractmethod
     def run(
         self,
-        points_clouds,
+        point_clouds,
         epsg,
         resolution,
         orchestrator=None,
@@ -144,12 +144,12 @@ class PointCloudRasterization(ApplicationTemplate, metaclass=ABCMeta):
         dump_dir=None,
     ):
         """
-        Run PointsCloudRasterisation application.
+        Run PointCloudRasterisation application.
 
         Creates a CarsDataset filled with dsm tiles.
 
-        :param points_clouds: merged point cloud
-        :type points_clouds: CarsDataset filled with pandas.DataFrame
+        :param point_clouds: merged point cloud
+        :type point_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
         :param resolution: resolution of raster data (in target CRS unit)

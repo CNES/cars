@@ -565,12 +565,12 @@ def get_corresponding_tiles_row_col(
     terrain_tiling_grid: np.ndarray,
     row: int,
     col: int,
-    list_points_clouds: list,
+    list_point_clouds: list,
     list_epipolar_points_min: list,
     list_epipolar_points_max: list,
 ) -> Tuple[List, List, List]:
     """
-    This function allows to get required points cloud for each
+    This function allows to get required point cloud for each
     terrain region.
 
     :param terrain_tiling_grid: terrain grid positions
@@ -614,20 +614,20 @@ def get_corresponding_tiles_row_col(
 
     # For each stereo configuration
     for pc_id, (
-        points_cloud,
+        point_cloud,
         epipolar_points_min,
         epipolar_points_max,
     ) in enumerate(
         zip(  # noqa: B905
-            list_points_clouds,
+            list_point_clouds,
             list_epipolar_points_min,
             list_epipolar_points_max,
         )
     ):
-        largest_epipolar_region = points_cloud.attributes[
+        largest_epipolar_region = point_cloud.attributes[
             "largest_epipolar_region"
         ]
-        opt_epipolar_tile_size = points_cloud.attributes[
+        opt_epipolar_tile_size = point_cloud.attributes[
             "opt_epipolar_tile_size"
         ]
 
@@ -713,14 +713,14 @@ def get_corresponding_tiles_row_col(
                 id_x = epipolar_tile["idx"]
                 id_y = epipolar_tile["idy"]
 
-                epi_grid_shape = points_cloud.tiling_grid.shape
+                epi_grid_shape = point_cloud.tiling_grid.shape
 
                 if (
                     0 <= id_x < epi_grid_shape[1]
                     and 0 <= id_y < epi_grid_shape[0]
                 ):
                     required_point_clouds.append(
-                        (points_cloud[id_y, id_x], pc_id)
+                        (point_cloud[id_y, id_x], pc_id)
                     )
                     list_indexes.append([id_y, id_x])
 

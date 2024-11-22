@@ -219,7 +219,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             # third: project elev crs to elev pixel coords
             ijs_window_dem = dft.project(
                 # second: project dsm crs to elev crs
-                projection.points_cloud_conversion(
+                projection.point_cloud_conversion(
                     # first: project dsm pixel coords to dsm crs
                     dft.project(ijs_window[:, [1, 0]], dsm_tr_mat),
                     dsm_crs.to_epsg(),
@@ -247,7 +247,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             to_fill_xys = dft.project(to_fill_ijs[:, [1, 0]], dsm_tr_mat)
 
             applied_offset = np.zeros(len(to_fill_ijs))  # (n,)
-            pts_to_project_on_geoid = projection.points_cloud_conversion(
+            pts_to_project_on_geoid = projection.point_cloud_conversion(
                 to_fill_xys, dsm_crs.to_epsg(), 4326
             )
 

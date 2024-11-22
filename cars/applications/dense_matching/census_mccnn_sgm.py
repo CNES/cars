@@ -56,7 +56,7 @@ from cars.applications.dense_matching.loaders.pandora_loader import (
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 from cars.core import inputs, projection
-from cars.core.projection import points_cloud_conversion
+from cars.core.projection import point_cloud_conversion
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator.cluster.log_wrapper import cars_profile
@@ -671,7 +671,7 @@ class CensusMccnnSgm(
                     )
 
                     # Transform points to terrain_epsg (dem min is in 4326)
-                    roi_points_terrain = points_cloud_conversion(
+                    roi_points_terrain = point_cloud_conversion(
                         roi_points,
                         4326,
                         terrain_epsg,
@@ -758,13 +758,13 @@ class CensusMccnnSgm(
             y_mean = terrain_positions[:, 1]
 
             dem_median_list = inputs.rasterio_get_values(
-                dem_median, x_mean, y_mean, points_cloud_conversion
+                dem_median, x_mean, y_mean, point_cloud_conversion
             )
 
             nan_mask = ~np.isnan(dem_median_list)
 
             # transform to lon lat
-            terrain_position_lon_lat = projection.points_cloud_conversion(
+            terrain_position_lon_lat = projection.point_cloud_conversion(
                 terrain_positions, terrain_epsg, 4326
             )
             lon_mean = terrain_position_lon_lat[:, 0]
@@ -773,10 +773,10 @@ class CensusMccnnSgm(
             if None not in (dem_min, dem_max, dem_median):
                 # dem min and max are in 4326
                 dem_min_list = inputs.rasterio_get_values(
-                    dem_min, lon_mean, lat_mean, points_cloud_conversion
+                    dem_min, lon_mean, lat_mean, point_cloud_conversion
                 )
                 dem_max_list = inputs.rasterio_get_values(
-                    dem_max, lon_mean, lat_mean, points_cloud_conversion
+                    dem_max, lon_mean, lat_mean, point_cloud_conversion
                 )
                 nan_mask = (
                     nan_mask & ~np.isnan(dem_min_list) & ~np.isnan(dem_max_list)

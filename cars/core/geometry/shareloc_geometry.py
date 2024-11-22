@@ -161,7 +161,7 @@ class SharelocGeometry(AbstractGeometry):
                 (roi[3], roi[2], 0),
             ]
         )
-        new_points = projection.points_cloud_conversion(points, 4326, epsg)
+        new_points = projection.point_cloud_conversion(points, 4326, epsg)
         roi = [
             min(new_points[:, 1]),
             min(new_points[:, 0]),

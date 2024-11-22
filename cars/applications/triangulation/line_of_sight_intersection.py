@@ -125,7 +125,7 @@ class LineOfSightIntersection(
 
     def save_triangulation_output(
         self,
-        epipolar_points_cloud,
+        epipolar_point_cloud,
         sensor_image_left,
         output_dir,
         dump_dir=None,
@@ -145,8 +145,8 @@ class LineOfSightIntersection(
         to the output directory (because they are not part of the depth map
         definition, or because they have not been requested)
 
-        :param epipolar_points_cloud: tiled epipolar left image
-        :type epipolar_points_cloud: CarsDataset
+        :param epipolar_point_cloud: tiled epipolar left image
+        :type epipolar_point_cloud: CarsDataset
         :param sensor_image_left: tiled sensor left image
             Dict Must contain keys : "image", "color", "geomodel",
             "no_data", "mask". Paths must be absolutes
@@ -198,7 +198,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "X.tif"),
                 cst.X,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_x",
                 dtype=np.float64,
             )
@@ -206,7 +206,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "Y.tif"),
                 cst.Y,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_y",
                 dtype=np.float64,
             )
@@ -214,7 +214,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(coords_output_dir, "Z.tif"),
                 cst.Z,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_z",
                 dtype=np.float64,
             )
@@ -224,7 +224,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(color_output_dir, "color.tif"),
                 cst.EPI_COLOR,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_color",
                 dtype=color_type,
             )
@@ -234,7 +234,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(mask_output_dir, "mask.tif"),
                 cst.EPI_MSK,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_msk",
                 nodata=mask_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 optional_data=True,
@@ -248,7 +248,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(map_output_dir, "performance_map.tif"),
                 cst.EPI_PERFORMANCE_MAP,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_performance_map",
                 optional_data=True,
                 dtype=np.float64,
@@ -261,7 +261,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(classif_output_dir, "classification.tif"),
                 cst.EPI_CLASSIFICATION,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_classification",
                 optional_data=True,
                 dtype=np.uint8,
@@ -272,7 +272,7 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(filling_output_dir, "filling.tif"),
                 cst.EPI_FILLING,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_filling",
                 optional_data=True,
                 dtype=np.uint8,
@@ -283,21 +283,21 @@ class LineOfSightIntersection(
             self.orchestrator.add_to_save_lists(
                 os.path.join(dump_dir, "Z_inf.tif"),
                 cst.Z_INF,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_z_inf",
             )
             self.orchestrator.add_to_save_lists(
                 os.path.join(dump_dir, "Z_sup.tif"),
                 cst.Z_SUP,
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_z_sup",
             )
 
         if dump_dir:
             self.orchestrator.add_to_save_lists(
                 os.path.join(dump_dir, "corr_mask.tif"),
-                cst.POINTS_CLOUD_CORR_MSK,
-                epipolar_points_cloud,
+                cst.POINT_CLOUD_CORR_MSK,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_corr_msk",
                 optional_data=True,
             )
@@ -333,7 +333,7 @@ class LineOfSightIntersection(
         Run Triangulation application.
 
         Created left and right CarsDataset filled with xarray.Dataset,
-        corresponding to 3D points clouds, stored on epipolar geometry grid.
+        corresponding to 3D point clouds, stored on epipolar geometry grid.
 
         :param sensor_image_left: tiled sensor left image
             Dict Must contain keys : "image", "color", "geomodel",
@@ -420,7 +420,7 @@ class LineOfSightIntersection(
                 pair_output_dir
         :type save_output_performance_map: bool
 
-        :return: points cloud \
+        :return: point cloud \
                 The CarsDataset contains:
 
             - N x M Delayed tiles \
@@ -554,21 +554,21 @@ class LineOfSightIntersection(
 
         # Create CarsDataset
         # Epipolar_point_cloud
-        epipolar_points_cloud = cars_dataset.CarsDataset(
+        epipolar_point_cloud = cars_dataset.CarsDataset(
             epipolar_disparity_map.dataset_type,
             name="triangulation_" + pair_key,
         )
-        epipolar_points_cloud.create_empty_copy(epipolar_image)
-        epipolar_points_cloud.overlaps *= 0  # Margins removed
+        epipolar_point_cloud.create_empty_copy(epipolar_image)
+        epipolar_point_cloud.overlaps *= 0  # Margins removed
 
         # Update attributes to get epipolar info
-        epipolar_points_cloud.attributes.update(pc_attributes)
+        epipolar_point_cloud.attributes.update(pc_attributes)
 
         # Save objects
-        # if isinstance(epipolar_points_cloud, xr.DataArray):
+        # if isinstance(epipolar_point_cloud, xr.DataArray):
         if epipolar_disparity_map.dataset_type == "arrays":
             self.save_triangulation_output(
-                epipolar_points_cloud,
+                epipolar_point_cloud,
                 sensor_image_left,
                 pair_output_dir,
                 pair_dump_dir if self.save_intermediate_data else None,
@@ -586,14 +586,14 @@ class LineOfSightIntersection(
 
             self.orchestrator.add_to_save_lists(
                 os.path.join(pair_dump_dir, "depth_map"),
-                cst.POINTS_CLOUD_MATCHES,
-                epipolar_points_cloud,
+                cst.POINT_CLOUD_MATCHES,
+                epipolar_point_cloud,
                 cars_ds_name="depth_map_x",
             )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos(
-            [epipolar_points_cloud]
+            [epipolar_point_cloud]
         )
 
         # Generate Point clouds
@@ -620,7 +620,7 @@ class LineOfSightIntersection(
                     )
                     # Compute points
                     (
-                        epipolar_points_cloud[row][col]
+                        epipolar_point_cloud[row][col]
                     ) = self.orchestrator.cluster.create_task(
                         triangulation_wrapper
                     )(
@@ -640,7 +640,7 @@ class LineOfSightIntersection(
                         saving_info=full_saving_info,
                     )
 
-        return epipolar_points_cloud
+        return epipolar_point_cloud
 
 
 def triangulation_wrapper(
@@ -660,7 +660,7 @@ def triangulation_wrapper(
     saving_info=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
-    Compute points clouds from image objects and disparity objects.
+    Compute point clouds from image objects and disparity objects.
 
     :param disparity_object: Left disparity map dataset with :
             - cst_disp.MAP
@@ -799,13 +799,13 @@ def triangulation_wrapper(
     attributes = None
     if isinstance(disp_ref, pandas.DataFrame):
         # Conversion to UTM
-        projection.points_cloud_conversion_dataframe(
+        projection.point_cloud_conversion_dataframe(
             points[cst.STEREO_REF], points[cst.STEREO_REF].attrs[cst.EPSG], epsg
         )
         cloud_epsg = epsg
         pc_dataset.attrs["epsg"] = cloud_epsg
         attributes = {
-            "save_points_cloud_as_laz": True,
+            "save_point_cloud_as_laz": True,
             "epsg": cloud_epsg,
             "color_type": None,
         }

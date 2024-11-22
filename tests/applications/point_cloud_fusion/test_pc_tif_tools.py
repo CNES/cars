@@ -49,14 +49,14 @@ def generate_test_inputs():
         cst.X: os.path.join(path_pc, "X.tif"),
         cst.Y: os.path.join(path_pc, "Y.tif"),
         cst.Z: os.path.join(path_pc, "Z.tif"),
-        cst.POINTS_CLOUD_CLR_KEY_ROOT: os.path.join(path_pc, "color.tif"),
-        cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
+        cst.POINT_CLOUD_CLR_KEY_ROOT: os.path.join(path_pc, "color.tif"),
+        cst.POINT_CLOUD_CLASSIF_KEY_ROOT: os.path.join(
             path_pc, "classification.tif"
         ),
-        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: {
+        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT: {
             "confidence1": os.path.join(path_pc, "performance_map.tif")
         },
-        cst.POINTS_CLOUD_MSK: None,
+        cst.POINT_CLOUD_MSK: None,
         cst.PC_EPSG: 4326,
     }
 
@@ -153,7 +153,7 @@ def test_transform_input_pc_and_metrics():
     ) as cars_orchestrator:
         (
             terrain_bbox,
-            list_epipolar_points_cloud_by_tiles,
+            list_epipolar_point_clouds_by_tiles,
         ) = pc_tif_tools.transform_input_pc(
             list_epi_pc,
             32636,
@@ -168,21 +168,21 @@ def test_transform_input_pc_and_metrics():
         3318157.187469204,
     ]
 
-    assert len(list_epipolar_points_cloud_by_tiles) == 2
+    assert len(list_epipolar_point_clouds_by_tiles) == 2
 
-    assert list_epipolar_points_cloud_by_tiles[0].shape == (5, 5)
+    assert list_epipolar_point_clouds_by_tiles[0].shape == (5, 5)
 
     # tes compute_max_nb_point_clouds
 
     nb_max_nb_pc = pc_tif_tools.compute_max_nb_point_clouds(
-        list_epipolar_points_cloud_by_tiles
+        list_epipolar_point_clouds_by_tiles
     )
 
     assert nb_max_nb_pc == 2
 
     # test compute_average_distance
     average_dist = pc_tif_tools.compute_average_distance(
-        list_epipolar_points_cloud_by_tiles
+        list_epipolar_point_clouds_by_tiles
     )
 
     assert int(100 * average_dist) / 100 == 0.46
@@ -205,7 +205,7 @@ def test_transform_input_pc_and_correspondance():
     ) as cars_orchestrator:
         (
             terrain_bbox,
-            list_epipolar_points_cloud_by_tiles,
+            list_epipolar_point_clouds_by_tiles,
         ) = pc_tif_tools.transform_input_pc(
             list_epi_pc,
             32636,
@@ -235,7 +235,7 @@ def test_transform_input_pc_and_correspondance():
     ) as cars_orchestrator:
         corresponding_tiles = pc_tif_tools.get_corresponding_tiles_tif(
             terrain_tiling_grid,
-            list_epipolar_points_cloud_by_tiles,
+            list_epipolar_point_clouds_by_tiles,
             margins=0,
             orchestrator=cars_orchestrator,
         )

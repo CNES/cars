@@ -645,7 +645,7 @@ class DefaultPipeline(PipelineTemplate):
 
             if self.merging:
 
-                # Points cloud fusion
+                # Point cloud fusion
                 self.pc_fusion_application = Application(
                     "point_cloud_fusion",
                     cfg=used_conf.get("point_cloud_fusion", {}),
@@ -772,7 +772,7 @@ class DefaultPipeline(PipelineTemplate):
         self.list_intersection_poly = []
 
         # initialize lists of points
-        self.list_epipolar_points_cloud = []
+        self.list_epipolar_point_clouds = []
         self.list_sensor_pairs = sensor_inputs.generate_inputs(
             inputs, self.geom_plugin_without_dem_and_geoid
         )
@@ -1687,7 +1687,7 @@ class DefaultPipeline(PipelineTemplate):
                     last_depth_map_application = "triangulation"
 
             # Run epipolar triangulation application
-            epipolar_points_cloud = self.triangulation_application.run(
+            epipolar_point_clouds = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
                 new_epipolar_image_left,
@@ -1726,7 +1726,7 @@ class DefaultPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             if self.merging:
-                self.list_epipolar_points_cloud.append(epipolar_points_cloud)
+                self.list_epipolar_point_clouds.append(epipolar_point_clouds)
             else:
                 filtering_out_dir = (
                     depth_map_dir
@@ -1736,9 +1736,9 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_points_cloud_1 = (
+                filtered_epipolar_point_clouds_1 = (
                     self.pc_outlier_removal_1_app.run(
-                        epipolar_points_cloud,
+                        epipolar_point_clouds,
                         output_dir=filtering_out_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_1", pair_key
@@ -1757,9 +1757,9 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_points_cloud_2 = (
+                filtered_epipolar_point_clouds_2 = (
                     self.pc_outlier_removal_2_app.run(
-                        filtered_epipolar_points_cloud_1,
+                        filtered_epipolar_point_clouds_1,
                         output_dir=filtering_out_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_2", pair_key
@@ -1773,9 +1773,9 @@ class DefaultPipeline(PipelineTemplate):
 
                 # denoising available only if we'll go further in the pipeline
                 if self.save_output_dsm or self.save_output_point_cloud:
-                    denoised_epipolar_points_cloud = (
+                    denoised_epipolar_point_clouds = (
                         self.pc_denoising_application.run(
-                            filtered_epipolar_points_cloud_2,
+                            filtered_epipolar_point_clouds_2,
                             orchestrator=self.cars_orchestrator,
                             pair_folder=os.path.join(
                                 self.dump_dir, "denoising", pair_key
@@ -1784,8 +1784,8 @@ class DefaultPipeline(PipelineTemplate):
                         )
                     )
 
-                    self.list_epipolar_points_cloud.append(
-                        denoised_epipolar_points_cloud
+                    self.list_epipolar_point_clouds.append(
+                        denoised_epipolar_point_clouds
                     )
 
                     if self.quit_on_app("pc_denoising"):
@@ -2002,7 +2002,7 @@ class DefaultPipeline(PipelineTemplate):
 
         if not self.merging:
             self.point_cloud_to_rasterize = (
-                self.list_epipolar_points_cloud,
+                self.list_epipolar_point_clouds,
                 self.terrain_bounds,
             )
             self.color_type = self.point_cloud_to_rasterize[0][
@@ -2054,8 +2054,8 @@ class DefaultPipeline(PipelineTemplate):
                     self.resolution
                 )
 
-            merged_points_clouds = self.pc_fusion_application.run(
-                self.list_epipolar_points_cloud,
+            merged_point_clouds = self.pc_fusion_application.run(
+                self.list_epipolar_point_clouds,
                 self.terrain_bounds,
                 self.epsg,
                 source_pc_names=(
@@ -2077,8 +2077,8 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # Remove outliers with small components method
-            filtered_1_merged_points_clouds = self.pc_outlier_removal_1_app.run(
-                merged_points_clouds,
+            filtered_1_merged_point_clouds = self.pc_outlier_removal_1_app.run(
+                merged_point_clouds,
                 orchestrator=self.cars_orchestrator,
                 output_dir=(
                     os.path.join(self.out_dir, "point_cloud")
@@ -2095,8 +2095,8 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # Remove outliers with statistical components method
-            filtered_2_merged_points_clouds = self.pc_outlier_removal_2_app.run(
-                filtered_1_merged_points_clouds,
+            filtered_2_merged_point_clouds = self.pc_outlier_removal_2_app.run(
+                filtered_1_merged_point_clouds,
                 orchestrator=self.cars_orchestrator,
                 output_dir=(
                     os.path.join(self.out_dir, "point_cloud")
@@ -2113,8 +2113,8 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # denoise point cloud
-            denoised_merged_points_clouds = self.pc_denoising_application.run(
-                filtered_2_merged_points_clouds,
+            denoised_merged_point_clouds = self.pc_denoising_application.run(
+                filtered_2_merged_point_clouds,
                 orchestrator=self.cars_orchestrator,
                 save_laz_output=self.save_output_point_cloud
                 and last_pc_application == "denoising",
@@ -2124,10 +2124,10 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # Rasterize merged and filtered point cloud
-            self.point_cloud_to_rasterize = denoised_merged_points_clouds
+            self.point_cloud_to_rasterize = denoised_merged_point_clouds
 
             # try getting the color type from multiple sources
-            self.color_type = self.list_epipolar_points_cloud[0].attributes.get(
+            self.color_type = self.list_epipolar_point_clouds[0].attributes.get(
                 "color_type",
                 self.point_cloud_to_rasterize.attributes.get(
                     "color_type", None
@@ -2167,7 +2167,7 @@ class DefaultPipeline(PipelineTemplate):
                 roi_poly=self.roi_poly,
             )
 
-            self.list_epipolar_points_cloud = (
+            self.list_epipolar_point_clouds = (
                 pc_tif_tools.generate_point_clouds(
                     self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                     self.cars_orchestrator,
@@ -2178,7 +2178,7 @@ class DefaultPipeline(PipelineTemplate):
             # Compute terrain bounds and transform point clouds
             (
                 self.terrain_bounds,
-                self.list_epipolar_points_cloud,
+                self.list_epipolar_point_clouds,
             ) = pc_tif_tools.transform_input_pc(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
@@ -2190,14 +2190,14 @@ class DefaultPipeline(PipelineTemplate):
             # Compute number of superposing point cloud for density
             max_number_superposing_point_clouds = (
                 pc_tif_tools.compute_max_nb_point_clouds(
-                    self.list_epipolar_points_cloud
+                    self.list_epipolar_point_clouds
                 )
             )
 
             # Compute average distance between two points
             average_distance_point_cloud = (
                 pc_tif_tools.compute_average_distance(
-                    self.list_epipolar_points_cloud
+                    self.list_epipolar_point_clouds
                 )
             )
             self.optimal_terrain_tile_width = min(
