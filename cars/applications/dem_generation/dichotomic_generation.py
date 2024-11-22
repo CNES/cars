@@ -133,8 +133,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "height_margin": Or(list, int),
             "percentile": And(Or(int, float), lambda x: x >= 0),
             "min_number_matches": And(int, lambda x: x > 0),
-            "min_dem": And(int, lambda x: x < 0),
-            "max_dem": And(int, lambda x: x > 0),
+            "min_dem": And(Or(int, float), lambda x: x < 0),
+            "max_dem": And(Or(int, float), lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
             OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
