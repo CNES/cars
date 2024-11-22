@@ -1,6 +1,9 @@
-========================
-Contributing the project
-========================
+
+.. _contributing_to_cars:
+
+====================
+Contributing to CARS
+====================
 
 CARS is an open source software : don't hesitate to hack it and contribute !
 
@@ -112,7 +115,7 @@ To generate documentation, use:
 .. code-block:: console
 
   make docs
-  
+
 The documentation is then build in docs/build directory and can be consulted with a web browser.
 
 Documentation can be edited in docs/source/ RST files.
@@ -127,7 +130,7 @@ To generate a `Jupyter kernel <https://jupyter.org/install>`_ with CARS installa
 .. code-block:: console
 
   make notebook
-  
+
 Follow indications to run a jupyter notebook.
 
 Kernel is created with following command (with cars-version updated):
