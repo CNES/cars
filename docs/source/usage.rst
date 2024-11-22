@@ -194,6 +194,8 @@ The structure follows this organisation:
                                 "y" : "path_to_y.tif",
                                 "z" : "path_to_z.tif",
                                 "color" : "path_to_color.tif",
+                                "z_inf" : "path_to_z_inf.tif",
+                                "z_sup" : "path_to_z_sup.tif",
                                 "mask": "path_to_mask.tif",
                                 "classification": "path_to_classification.tif",
                                 "filling": "path_to_filling.tif",
@@ -225,6 +227,10 @@ The structure follows this organisation:
                 | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *color*          | Color of depth map                                                | string         |               | Yes      |
+        	+------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *z_inf*          | Path to the z_inf coordinates of depth map                        | string         |               | No       |
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                | *z_sup*          | Path to the z_sup coordinates of depth map                        | string         |               | No       |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *mask*           | Validity mask of depth map   : 0 values are considered valid data | string         |               | No       |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
