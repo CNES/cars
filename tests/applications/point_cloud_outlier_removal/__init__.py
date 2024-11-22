@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-Cars tests/point_cloud_outlier_removal init file
+Cars tests/point_cloud_outliers_removing init file
 """
