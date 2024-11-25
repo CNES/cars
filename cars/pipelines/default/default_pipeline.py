@@ -2211,11 +2211,7 @@ class DefaultPipeline(PipelineTemplate):
 
             # initialize out_json
             self.cars_orchestrator.update_out_info(
-                {
-                    "version": __version__,
-                    "pipeline": "default",
-                    "inputs": self.used_conf[INPUTS],
-                }
+                {"version": __version__, "pipeline": "default"}
             )
 
             if self.compute_depth_map:
