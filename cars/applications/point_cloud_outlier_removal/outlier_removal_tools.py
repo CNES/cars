@@ -322,7 +322,7 @@ def epipolar_small_components(
     if clusters_distance_threshold is None:
         clusters_distance_threshold = np.nan
 
-    outlier_filter.epipolar_small_components_outlier_filtering(
+    outlier_filter.epipolar_small_component_outlier_filtering(
         cloud[cst.X],
         cloud[cst.Y],
         cloud[cst.Z],
@@ -331,6 +331,8 @@ def epipolar_small_components(
         half_window_size,
         clusters_distance_threshold,
     )
+
+    projection.points_cloud_conversion_dataset(cloud, 4326)
 
     return cloud
 
@@ -375,5 +377,7 @@ def epipolar_statistical_filtering(
         dev_factor,
         use_median,
     )
+
+    projection.points_cloud_conversion_dataset(epipolar_ds, 4326)
 
     return epipolar_ds
