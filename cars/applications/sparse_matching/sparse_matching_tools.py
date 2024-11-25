@@ -60,12 +60,13 @@ def compute_matches(
     right_mask: np.ndarray = None,
     left_origin: [float, float] = None,
     right_origin: [float, float] = None,
-    matching_threshold: float = 0.6,
+    matching_threshold: float = 0.7,
     n_octave: int = 8,
     n_scale_per_octave: int = 3,
-    peak_threshold: float = 20.0,
-    edge_threshold: float = 5.0,
-    magnification: float = 2.0,
+    peak_threshold: float = 4.0,
+    edge_threshold: float = 10.0,
+    magnification: float = 7.0,
+    window_size: int = 2,
     backmatching: bool = True,
     disp_lower_bound=None,
     disp_upper_bound=None,
@@ -98,6 +99,8 @@ def compute_matches(
     :type edge_threshold: float
     :param magnification: set the descriptor magnification factor
     :type magnification: float
+    :param window_size: size of the window
+    :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
     :return: matches
@@ -115,6 +118,7 @@ def compute_matches(
         peak_thresh=peak_threshold,
         edge_thresh=edge_threshold,
         magnification=magnification,
+        window_size=window_size,
         float_descriptors=True,
         compute_descriptor=True,
         verbose=False,
@@ -128,6 +132,7 @@ def compute_matches(
         peak_thresh=peak_threshold,
         edge_thresh=edge_threshold,
         magnification=magnification,
+        window_size=window_size,
         float_descriptors=True,
         compute_descriptor=True,
         verbose=False,
@@ -265,12 +270,13 @@ def compute_matches(
 def dataset_matching(
     ds1,
     ds2,
-    matching_threshold=0.6,
+    matching_threshold=0.7,
     n_octave=8,
     n_scale_per_octave=3,
-    peak_threshold=20.0,
-    edge_threshold=5.0,
-    magnification=2.0,
+    peak_threshold=4.0,
+    edge_threshold=10.0,
+    magnification=7.0,
+    window_size=2,
     backmatching=True,
     disp_lower_bound=None,
     disp_upper_bound=None,
@@ -294,6 +300,8 @@ def dataset_matching(
     :param edge_threshold: the edge selection threshold.
     :param magnification: set the descriptor magnification factor
     :type magnification: float
+    :param window_size: size of the window
+    :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
     :return: matches
@@ -320,6 +328,7 @@ def dataset_matching(
         peak_threshold=peak_threshold,
         edge_threshold=edge_threshold,
         magnification=magnification,
+        window_size=window_size,
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,

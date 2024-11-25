@@ -102,6 +102,7 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_peak_threshold = self.used_config["sift_peak_threshold"]
         self.sift_edge_threshold = self.used_config["sift_edge_threshold"]
         self.sift_magnification = self.used_config["sift_magnification"]
+        self.sift_window_size = self.used_config["sift_window_size"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
 
         # sifts filter
@@ -163,21 +164,22 @@ class Sift(SparseMatching, short_name="sift"):
 
         # sifts params
         overloaded_conf["sift_matching_threshold"] = conf.get(
-            "sift_matching_threshold", 0.6
+            "sift_matching_threshold", 0.7
         )
         overloaded_conf["sift_n_octave"] = conf.get("sift_n_octave", 8)
         overloaded_conf["sift_n_scale_per_octave"] = conf.get(
             "sift_n_scale_per_octave", 3
         )
         overloaded_conf["sift_peak_threshold"] = conf.get(
-            "sift_peak_threshold", None
+            "sift_peak_threshold", 4.0
         )
         overloaded_conf["sift_edge_threshold"] = conf.get(
-            "sift_edge_threshold", 5.0
+            "sift_edge_threshold", 10.0
         )
         overloaded_conf["sift_magnification"] = conf.get(
-            "sift_magnification", 2.0
+            "sift_magnification", 7.0
         )
+        overloaded_conf["sift_window_size"] = conf.get("sift_window_size", 2)
         overloaded_conf["sift_back_matching"] = conf.get(
             "sift_back_matching", True
         )
@@ -214,6 +216,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_peak_threshold": Or(float, None),
             "sift_edge_threshold": float,
             "sift_magnification": And(float, lambda x: x > 0),
+            "sift_window_size": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
@@ -547,6 +550,7 @@ class Sift(SparseMatching, short_name="sift"):
                         peak_threshold=tmp_sift_peak_threshold,
                         edge_threshold=self.sift_edge_threshold,
                         magnification=self.sift_magnification,
+                        window_size=self.sift_window_size,
                         backmatching=self.sift_back_matching,
                         disp_lower_bound=disp_lower_bound,
                         disp_upper_bound=disp_upper_bound,
@@ -763,6 +767,7 @@ def compute_matches_wrapper(
     peak_threshold=None,
     edge_threshold=None,
     magnification=None,
+    window_size=None,
     backmatching=None,
     disp_lower_bound=None,
     disp_upper_bound=None,
@@ -811,6 +816,7 @@ def compute_matches_wrapper(
         peak_threshold=peak_threshold,
         edge_threshold=edge_threshold,
         magnification=magnification,
+        window_size=window_size,
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,

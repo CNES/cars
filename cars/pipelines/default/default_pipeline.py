@@ -460,7 +460,11 @@ class DefaultPipeline(PipelineTemplate):
                 ]
 
             if self.merging:  # we have to merge point clouds, add merging apps
-                needed_applications += ["point_cloud_fusion"]
+                needed_applications += [
+                    "point_cloud_fusion",
+                    "point_cloud_outliers_removing.1",
+                    "point_cloud_outliers_removing.2",
+                ]
 
         for app_key in conf.keys():
             if app_key not in needed_applications:
@@ -668,7 +672,7 @@ class DefaultPipeline(PipelineTemplate):
         )
         if self.sparse_mtch_app.elevation_delta_lower_bound is None:
             self.sparse_mtch_app.used_config["elevation_delta_lower_bound"] = (
-                -100 if initial_elevation else -1000
+                -500 if initial_elevation else -1000
             )
             self.sparse_mtch_app.elevation_delta_lower_bound = (
                 self.sparse_mtch_app.used_config["elevation_delta_lower_bound"]
