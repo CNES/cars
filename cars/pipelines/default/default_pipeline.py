@@ -582,29 +582,29 @@ class DefaultPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-        # Points cloud small component outlier removal
-        self.pc_outlier_removal_1_app = Application(
-            "point_cloud_outlier_removal",
-            cfg=used_conf.get(
-                "point_cloud_outlier_removal.1",
-                {"method": "small_components"},
-            ),
-        )
-        used_conf["point_cloud_outlier_removal.1"] = (
-            self.pc_outlier_removal_1_app.get_conf()
-        )
+            # Points cloud small component outlier removal
+            self.pc_outlier_removal_1_app = Application(
+                "point_cloud_outlier_removal",
+                cfg=used_conf.get(
+                    "point_cloud_outlier_removal.1",
+                    {"method": "small_components"},
+                ),
+            )
+            used_conf["point_cloud_outlier_removal.1"] = (
+                self.pc_outlier_removal_1_app.get_conf()
+            )
 
-        # Points cloud statistical outlier removal
-        self.pc_outlier_removal_2_app = Application(
-            "point_cloud_outlier_removal",
-            cfg=used_conf.get(
-                "point_cloud_outlier_removal.2",
-                {"method": "statistical"},
-            ),
-        )
-        used_conf["point_cloud_outlier_removal.2"] = (
-            self.pc_outlier_removal_2_app.get_conf()
-        )
+            # Points cloud statistical outlier removal
+            self.pc_outlier_removal_2_app = Application(
+                "point_cloud_outlier_removal",
+                cfg=used_conf.get(
+                    "point_cloud_outlier_removal.2",
+                    {"method": "statistical"},
+                ),
+            )
+            used_conf["point_cloud_outlier_removal.2"] = (
+                self.pc_outlier_removal_2_app.get_conf()
+            )
 
         if self.save_output_dsm or self.save_output_point_cloud:
 

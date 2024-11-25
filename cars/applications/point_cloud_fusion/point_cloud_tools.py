@@ -234,6 +234,9 @@ def create_combined_sparse_cloud(  # noqa: C901
                 cloud_indexes.index(cst.POINT_CLOUD_COORD_EPI_GEOM_I), :
             ] = coords_line
 
+        # Transpose point cloud
+        crop_cloud = crop_cloud.transpose()
+
         # remove masked data (pandora + out of the terrain tile points)
         crop_terrain_tile_data_msk = (
             point_cloud[cst.POINT_CLOUD_CORR_MSK][bbox[0] : bbox[1]] == 255
