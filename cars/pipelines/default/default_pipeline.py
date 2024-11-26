@@ -780,6 +780,11 @@ class DefaultPipeline(PipelineTemplate):
         # used in dem generation
         self.triangulated_matches_list = []
 
+        save_matches = self.sparse_mtch_app.get_save_matches()
+        save_corrected_grid = (
+            self.epipolar_grid_generation_application.get_save_grids()
+        )
+
         for (
             pair_key,
             sensor_image_left,
@@ -941,9 +946,6 @@ class DefaultPipeline(PipelineTemplate):
             self.cars_orchestrator.breakpoint()
 
             # Run grid correction application
-            save_corrected_grid = (
-                self.epipolar_grid_generation_application.get_save_grids()
-            )
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
                 # Estimate grid correction if no epipolar a priori
                 # Filter and save matches
@@ -961,7 +963,6 @@ class DefaultPipeline(PipelineTemplate):
                     )
                 )
                 # Compute grid correction
-                save_matches = self.sparse_mtch_app.get_save_matches()
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
                     self.pairs[pair_key]["corrected_matches_array"],
@@ -995,17 +996,6 @@ class DefaultPipeline(PipelineTemplate):
                         ),
                     )
                 )
-
-                # Clean grid at the end of processing if required
-                if not (save_corrected_grid or save_matches):
-                    self.cars_orchestrator.add_to_clean(
-                        os.path.join(
-                            self.dump_dir,
-                            "grid_correction",
-                            "initial",
-                            pair_key,
-                        )
-                    )
 
                 self.pairs[pair_key]["corrected_grid_left"] = self.pairs[
                     pair_key
@@ -1042,6 +1032,20 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["filtered_triangulated_matches"]
                 )
 
+        # Clean grids at the end of processing if required. Note that this will
+        # also clean refined grids
+        if not (save_corrected_grid or save_matches):
+            self.cars_orchestrator.add_to_clean(
+                os.path.join(self.dump_dir, "grid_correction")
+            )
+        # grids file are already cleaned in the application, but the tree
+        # structure should also be cleaned
+        if not save_corrected_grid:
+
+            self.cars_orchestrator.add_to_clean(
+                os.path.join(self.dump_dir, "epipolar_grid_generation")
+            )
+
         # quit if any app in the loop over the pairs was the last one
         if (
             self.quit_on_app("grid_generation")
@@ -1073,6 +1077,11 @@ class DefaultPipeline(PipelineTemplate):
                 self.dump_dir, "dem_generation"
             )
             safe_makedirs(dem_generation_output_dir)
+            if not self.dem_generation_application.used_config[
+                "save_intermediate_data"
+            ]:
+                self.cars_orchestrator.add_to_clean(dem_generation_output_dir)
+
             # Use initial elevation if provided, and generate dems
             # Generate MNT from matches
             dem = self.dem_generation_application.run(
@@ -1223,16 +1232,6 @@ class DefaultPipeline(PipelineTemplate):
                             ),
                         )
                     )
-
-                    if not (save_corrected_grid or save_matches):
-                        self.cars_orchestrator.add_to_clean(
-                            os.path.join(
-                                self.dump_dir,
-                                "grid_correction",
-                                "new",
-                                pair_key,
-                            )
-                        )
 
                     # Use the new grid as uncorrected grid
                     self.pairs[pair_key]["grid_right"] = self.pairs[pair_key][
@@ -2199,6 +2198,12 @@ class DefaultPipeline(PipelineTemplate):
                     self.dump_dir, self.cars_orchestrator.cluster.worker_log_dir
                 )
             )
+
+            if not any(
+                app.get("save_intermediate_data", False) is True
+                for app in self.used_conf[APPLICATIONS].values()
+            ):
+                self.cars_orchestrator.add_to_clean(self.dump_dir)
 
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self):  # noqa C901

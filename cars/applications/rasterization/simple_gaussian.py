@@ -300,10 +300,15 @@ class SimpleGaussian(
         else:
             self.orchestrator = orchestrator
 
+        # Get if color, mask and stats are saved
+        save_intermediate_data = self.used_config["save_intermediate_data"]
+
         # Setup dump directory
         if dump_dir is not None:
             out_dump_dir = dump_dir
             safe_makedirs(dump_dir)
+            if not save_intermediate_data:
+                self.orchestrator.add_to_clean(dump_dir)
         else:
             out_dump_dir = self.orchestrator.out_dir
 
@@ -363,9 +368,6 @@ class SimpleGaussian(
             source_pc_names = point_clouds[0][0].attributes["source_pc_names"]
         else:
             source_pc_names = point_clouds.attributes["source_pc_names"]
-
-        # Get if color, mask and stats are saved
-        save_intermediate_data = self.used_config["save_intermediate_data"]
 
         # Save objects
         # Initialize files names

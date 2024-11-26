@@ -33,7 +33,7 @@ import numpy as np
 import pandas
 import rasterio
 import xarray as xr
-from json_checker import And, Checker, OptionalKey, Or
+from json_checker import And, Checker, Or
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
@@ -126,6 +126,10 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "fillnodata_max_search_distance", 5
         )
 
+        overloaded_conf["save_intermediate_data"] = conf.get(
+            "save_intermediate_data", False
+        )
+
         rectification_schema = {
             "method": str,
             "resolution": And(Or(float, int), lambda x: x > 0),
@@ -136,7 +140,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "min_dem": And(Or(int, float), lambda x: x < 0),
             "max_dem": And(Or(int, float), lambda x: x > 0),
             "fillnodata_max_search_distance": And(int, lambda x: x > 0),
-            OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
+            application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
@@ -369,6 +373,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             nodata=-32768,
             cars_ds_name="dem_max",
         )
+
         dem.attributes[dem_gen_cst.DEM_MAX_PATH] = dem_max_path
 
         bounds = [xmin, ymin, xmax, ymax]
