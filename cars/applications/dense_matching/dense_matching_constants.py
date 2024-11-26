@@ -28,7 +28,7 @@ from cars.core import constants_disparity as disp_cst
 # USED VARIABLES
 
 
-DENSE_MATCHING_RUN_TAG = "dense_matching_run"
+DENSE_MATCHING_RUN_TAG = "dense_matching"
 
 # grids disp
 DISP_MIN_GRID = "disp_min_grid"

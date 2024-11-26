@@ -22,7 +22,7 @@
 file contains all the constants used in rasterization module
 """
 
-RASTERIZATION_RUN_TAG = "rasterization_run"
+RASTERIZATION_RUN_TAG = "rasterization"
 
 # Params
 METHOD = "method"

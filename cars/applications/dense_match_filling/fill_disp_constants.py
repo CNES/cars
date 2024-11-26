@@ -25,10 +25,8 @@ this module contains the constants of fill_disp.
 
 # USED VARIABLES
 
-
-FILL_DISP_PARAMS_TAG = "fill_dip_params"
-FILL_DISP_WITH_PLAN_RUN_TAG = "fill_disp_with_plan_run_tag"
-FILL_DISP_WITH_ZEROS_RUN_TAG = "fill_disp_with_zeros_run_tag"
+FILL_DISP_WITH_PLAN_RUN_TAG = "fill_disparity_with_plan"
+FILL_DISP_WITH_ZEROS_RUN_TAG = "fill_disparity_with_zeros"
 
 # PARAMS
 METHOD = "method"  # default : 'plane'

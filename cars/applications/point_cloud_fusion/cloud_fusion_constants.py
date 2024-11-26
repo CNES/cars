@@ -23,7 +23,7 @@ file contains all the constants used in cloud fusion module
 """
 
 
-CLOUD_FUSION_RUN_TAG = "cloud_fusion_run"
+CLOUD_FUSION_RUN_TAG = "cloud_fusion"
 
 # Params
 METHOD = "method"

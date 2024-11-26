@@ -23,7 +23,7 @@ grid_constants contains all the constants used in grid_generation module
 """
 
 
-GRID_GENERATION_RUN_TAG = "grid_generation_run"
+GRID_GENERATION_RUN_TAG = "grid_generation"
 
 # Run infos
 
