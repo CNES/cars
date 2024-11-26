@@ -2180,7 +2180,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
 
-    def final_cleaning(self):
+    def final_cleanup(self):
         """
         Clean temporary files and directory at the end of cars processing
         """
@@ -2192,13 +2192,7 @@ class DefaultPipeline(PipelineTemplate):
                 os.path.join(self.dump_dir, "tile_processing")
             )
 
-            # remove worker logs
-            self.cars_orchestrator.add_to_clean(
-                os.path.join(
-                    self.dump_dir, self.cars_orchestrator.cluster.worker_log_dir
-                )
-            )
-
+            # Remove dump_dir if no intermediate data should be written
             if not any(
                 app.get("save_intermediate_data", False) is True
                 for app in self.used_conf[APPLICATIONS].values()
@@ -2249,4 +2243,4 @@ class DefaultPipeline(PipelineTemplate):
                 if self.save_output_dsm and not end_pipeline:
                     self.rasterize_point_cloud()
 
-            self.final_cleaning()
+            self.final_cleanup()

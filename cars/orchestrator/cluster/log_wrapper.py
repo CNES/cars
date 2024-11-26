@@ -31,6 +31,7 @@ import io
 import logging
 import os
 import pstats
+import shutil
 import time
 import uuid
 from abc import ABCMeta, abstractmethod
@@ -495,7 +496,7 @@ def log_delta_memory(func, memory_start, memory_end):
     log_message(func, message)
 
 
-def generate_summary(out_dir, used_conf):
+def generate_summary(out_dir, used_conf, clean_worker_logs=False):
     """
     Generate Profiling summary
     """
@@ -504,10 +505,10 @@ def generate_summary(out_dir, used_conf):
     if "nb_workers" in used_conf["orchestrator"]:
         nb_workers = used_conf["orchestrator"]["nb_workers"]
 
+    workers_log_dir = os.path.join(out_dir, "logs", "workers_log")
+
     log_file_main = os.path.join(
-        out_dir,
-        "logs",
-        "workers_log",
+        workers_log_dir,
         "profiling.log",
     )
 
@@ -738,6 +739,9 @@ def generate_summary(out_dir, used_conf):
         "profiling_plots.pdf",
     )
     plt.savefig(profiling_plot)
+
+    if clean_worker_logs and os.path.exists(workers_log_dir):
+        shutil.rmtree(workers_log_dir)
 
 
 def filter_lists(names, data, cond):
