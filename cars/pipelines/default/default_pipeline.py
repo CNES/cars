@@ -2181,6 +2181,25 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
 
+    def final_cleaning(self):
+        """
+        Clean temporary files and directory at the end of cars processing
+        """
+
+        if not self.used_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
+            # delete everything in tile_processing if save_intermediate_data is
+            # not activated
+            self.cars_orchestrator.add_to_clean(
+                os.path.join(self.dump_dir, "tile_processing")
+            )
+
+            # remove worker logs
+            self.cars_orchestrator.add_to_clean(
+                os.path.join(
+                    self.dump_dir, self.cars_orchestrator.cluster.worker_log_dir
+                )
+            )
+
     @cars_profile(name="run_dense_pipeline", interval=0.5)
     def run(self):  # noqa C901
         """
@@ -2225,9 +2244,4 @@ class DefaultPipeline(PipelineTemplate):
                 if self.save_output_dsm and not end_pipeline:
                     self.rasterize_point_cloud()
 
-            # Cleaning: delete everything in tile_processing if
-            # save_intermediate_data is not activated
-            if not self.used_conf[ADVANCED][adv_cst.SAVE_INTERMEDIATE_DATA]:
-                self.cars_orchestrator.add_to_clean(
-                    os.path.join(self.dump_dir, "tile_processing")
-                )
+            self.final_cleaning()
