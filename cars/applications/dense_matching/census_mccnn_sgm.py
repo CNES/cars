@@ -1187,8 +1187,8 @@ class CensusMccnnSgm(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    pair_key: {
-                        dm_cst.DENSE_MATCHING_RUN_TAG: {
+                    dm_cst.DENSE_MATCHING_RUN_TAG: {
+                        pair_key: {
                             "global_disp_min": np.nanmin(
                                 disp_range_grid[0, 0][
                                     dm_cst.DISP_MIN_GRID

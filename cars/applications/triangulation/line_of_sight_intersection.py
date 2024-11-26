@@ -477,8 +477,8 @@ class LineOfSightIntersection(
         # Add infos to orchestrator.out_json
         updating_dict = {
             application_constants.APPLICATION_TAG: {
-                pair_key: {
-                    triangulation_constants.TRIANGULATION_RUN_TAG: {
+                triangulation_constants.TRIANGULATION_RUN_TAG: {
+                    pair_key: {
                         triangulation_constants.ALT_REFERENCE_TAG: alt_reference
                     },
                 }

@@ -505,8 +505,8 @@ class Sift(SparseMatching, short_name="sift"):
             # Update orchestrator out_json
             updating_infos = {
                 application_constants.APPLICATION_TAG: {
-                    pair_key: {
-                        sm_cst.SPARSE_MATCHING_RUN_TAG: {
+                    sm_cst.SPARSE_MATCHING_RUN_TAG: {
+                        pair_key: {
                             sm_cst.DISP_LOWER_BOUND: disp_lower_bound,
                             sm_cst.DISP_UPPER_BOUND: disp_upper_bound,
                         },
