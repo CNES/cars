@@ -332,7 +332,7 @@ def epipolar_small_components(
         clusters_distance_threshold,
     )
 
-    projection.points_cloud_conversion_dataset(cloud, 4326)
+    projection.point_cloud_conversion_dataset(cloud, 4326)
 
     return cloud
 
@@ -378,6 +378,6 @@ def epipolar_statistical_filtering(
         use_median,
     )
 
-    projection.points_cloud_conversion_dataset(epipolar_ds, 4326)
+    projection.point_cloud_conversion_dataset(epipolar_ds, 4326)
 
     return epipolar_ds

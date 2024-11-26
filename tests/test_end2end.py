@@ -294,26 +294,29 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         ref_output_dir = "ref_output"
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(
-        #         out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
-        #         )
-        #     ),
+        #  os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                 "dem_median.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir, "dem_median_end2end_ventoux_8bit.tif"
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dem_min_end2end_ventoux_8bit.tif")
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "dem_generation",
+        #                 "dem_min.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir,
+        #      "dem_min_end2end_ventoux_8bit.tif")
+        #  ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dem_max_end2end_ventoux_8bit.tif")
-        #     ),
+        #  os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                            "dem_max.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir,
+        #      "dem_max_end2end_ventoux_8bit.tif")
+        #  ),
         # )
 
         assert_same_images(
@@ -447,24 +450,25 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(
-        #         out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
-        #     ),
+        #  os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                          "dem_median.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir, "dem_median_end2end_ventoux.tif")
+        #  ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
-        #     ),
+        #  os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                               "dem_min.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir, "dem_min_end2end_ventoux.tif")
+        #  ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
-        #     ),
+        #  os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                  "dem_max.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir, "dem_max_end2end_ventoux.tif")
+        #  ),
         # )
 
         assert_same_images(
@@ -662,129 +666,101 @@ def test_end2end_ventoux_unique():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm", "dsm.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
-        #     ),
+        #  os.path.join(out_dir, "dsm", "dsm.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir, "dsm_end2end_ventoux.tif")
+        #  ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm", "color.tif"),
-        #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
-        #     ),
+        #  os.path.join(out_dir, "dsm", "color.tif"),
+        #  absolute_data_path(
+        #      os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_ambiguity.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_ambiguity_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                "confidence_from_ambiguity.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_ambiguity_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_intensity_std_std_intensity.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_intensity_std_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(
+        #      out_dir,  "dump_dir", "rasterization",
+        #                "confidence_from_intensity_std_std_intensity.tif"
+        #  ),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_intensity_std_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_risk_min_risk.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_risk_min_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                          "confidence_from_risk_min_risk.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_risk_min_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_risk_max_risk.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_risk_max_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                            "confidence_from_risk_max_risk.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_risk_max_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_ambiguity_before.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_ambiguity_before_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                        "confidence_from_ambiguity_before.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_ambiguity_before_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_intensity_std_std_intensity_before.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_intensity"
-        #             + "_std_before_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(
+        #      out_dir, "dump_dir", "rasterization",
+        #      "confidence_from_intensity_std_std_intensity_before.tif",
+        #  ),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_intensity"
+        #          + "_std_before_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_risk_min_risk_before.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_risk_min_before_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                   "confidence_from_risk_min_risk_before.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_risk_min_before_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_risk_max_risk_before.tif",
-        #     ),
-        #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "confidence_from_risk_max_before_end2end_ventoux.tif",
-        #         )
-        #     ),
+        #  os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                      "confidence_from_risk_max_risk_before.tif"),
+        #  absolute_data_path(
+        #      os.path.join(
+        #          ref_output_dir,
+        #          "confidence_from_risk_max_before_end2end_ventoux.tif",
+        #      )
+        #  ),
         # )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
@@ -1283,31 +1259,30 @@ def test_end2end_ventoux_unique_split_epsg_4326():
 
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "color_end2end_ventoux_split_4326.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "color.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "color_end2end_ventoux_split_4326.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "source_pc_end2end" + "_ventoux_split_4326.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                              "source_pc.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "source_pc_end2end" + "_ventoux_split_4326.tif",
+            #      )
+            #  ),
             # )
 
             assert_same_images(
@@ -1561,108 +1536,89 @@ def test_end2end_ventoux_unique_split():
             )
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "dsm_end2end_ventoux_split.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "dsm_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "color_end2end_ventoux_split.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "color.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "color_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "mask.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "mask_end2end_ventoux_split.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                                "mask.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "mask_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "classification.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "classification_end2end_ventoux_split.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                      "classification.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "classification_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "performance_map.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "performance_map_end2end_ventoux_split.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                      "performance_map.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "performance_map_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "filling.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "filling_end2end_ventoux_split.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                              "filling.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "filling_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "confidence_from_ambiguity1.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "confidence_from_ambiguity1"
-            #             + "_end2end_ventoux_split.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                            "confidence_from_ambiguity1.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "confidence_from_ambiguity1"
+            #          + "_end2end_ventoux_split.tif",
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "confidence_from_ambiguity2.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "confidence_from_ambiguity2"
-            #             + "_end2end_ventoux_split.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                            "confidence_from_ambiguity2.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "confidence_from_ambiguity2"
+            #          + "_end2end_ventoux_split.tif",
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "source_pc_end2end_ventoux_split.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm,  "dump_dir", "rasterization",
+            #                                             "source_pc.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir, "source_pc_end2end_ventoux_split.tif"
+            #      )
+            #  ),
             # )
 
             assert_same_images(
@@ -1812,113 +1768,94 @@ def test_end2end_ventoux_unique_split():
 
             # Uncomment the following instructions to update reference data
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "dsm_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "dsm_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(out_dir_dsm, "dsm", "color.tif"),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "clr_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dsm", "color.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "clr_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "mask.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "msk_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                "mask.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "msk_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "classification.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "classif_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #               "classification.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "classif_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "performance_map.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "performance_map_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #               "performance_map.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "performance_map_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "filling.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "filling_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                   "filling.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "filling_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "confidence_from_ambiguity1.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "confidence_from_ambiguity1"
-            #             + "_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            # os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                  "confidence_from_ambiguity1.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "confidence_from_ambiguity1"
+            #          + "_end2end_ventoux_split_no_merging.tif",
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm,
-            #         "dump_dir",
-            #         "rasterization",
-            #         "confidence_from_ambiguity2.tif",
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "confidence_from_ambiguity2"
-            #             + "_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #                           "confidence_from_ambiguity2.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "confidence_from_ambiguity2"
+            #          + "_end2end_ventoux_split_no_merging.tif",
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir,
-            #             "source_pc_end2end_ventoux_split_no_merging.tif",
-            #         )
-            #     ),
+            #  os.path.join(out_dir_dsm, "dump_dir", "rasterization",
+            #               "source_pc.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "source_pc_end2end_ventoux_split_no_merging.tif"
+            #      )
+            #  ),
             # )
 
             assert_same_images(
@@ -2149,34 +2086,34 @@ def test_end2end_use_epipolar_a_priori():
 
             # Uncomment the 2 following instructions to update reference data
             # copy2(
-            #     os.path.join(
-            #         out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "dem_median_end2end_ventoux_no_srtm.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                   "dem_median.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "dem_median_end2end_ventoux_no_srtm.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir, "dump_dir", "dem_generation", "dem_min.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "dem_min_end2end_ventoux_no_srtm.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                             "dem_min.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "dem_min_end2end_ventoux_no_srtm.tif"
+            #      )
+            #  ),
             # )
             # copy2(
-            #     os.path.join(
-            #         out_dir, "dump_dir", "dem_generation", "dem_max.tif"
-            #     ),
-            #     absolute_data_path(
-            #         os.path.join(
-            #             ref_output_dir, "dem_max_end2end_ventoux_no_srtm.tif"
-            #         )
-            #     ),
+            #  os.path.join(out_dir, "dump_dir", "dem_generation",
+            #                                           "dem_max.tif"),
+            #  absolute_data_path(
+            #      os.path.join(
+            #          ref_output_dir,
+            #          "dem_max_end2end_ventoux_no_srtm.tif"
+            #      )
+            #  ),
             # )
 
             assert_same_images(
@@ -2391,12 +2328,8 @@ def test_end2end_use_epipolar_a_priori():
         #     ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir,
-        #         "dump_dir",
-        #         "rasterization",
-        #         "confidence_from_ambiguity.tif",
-        #     ),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                   "confidence_from_ambiguity.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -2680,28 +2613,34 @@ def test_end2end_ventoux_full_output_no_elevation():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right", "X.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "X.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "epi_pc_X_end2end_ventoux_no_elevation.tif"
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_X_end2end_ventoux_no_elevation.tif"
         #         )
-        #     ),
+        #    ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right", "Y.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "Y.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "epi_pc_Y_end2end_ventoux_no_elevation.tif"
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Y_end2end_ventoux_no_elevation.tif"
         #         )
-        #     ),
+        #    ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right", "Z.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right",
+        #                         "Z.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "epi_pc_Z_end2end_ventoux_no_elevation.tif"
+        #     os.path.join(
+        #             ref_output_dir,
+        #             "epi_pc_Z_end2end_ventoux_no_elevation.tif"
         #         )
-        #     ),
+        #    ),
         # )
 
         # DSM
@@ -3640,7 +3579,8 @@ def test_compute_dsm_with_snap_to_img1():
         #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dsm_end2end_ventoux_with_snap_to_img1.tif"
+        #             ref_output_dir,
+        #             "dsm_end2end_ventoux_with_snap_to_img1.tif"
         #         )
         #     ),
         # )
@@ -3649,7 +3589,7 @@ def test_compute_dsm_with_snap_to_img1():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "color_end2end_ventoux_with_snap_to_img1.tif",
+        #             "color_end2end_ventoux_with_snap_to_img1.tif"
         #         )
         #     ),
         # )
@@ -3780,29 +3720,32 @@ def test_end2end_quality_stats():
 
         # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #     os.path.join(
-        #         out_dir, "dump_dir", "dem_generation", "dem_median.tif"
-        #     ),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                "dem_median.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "dem_median_end2end_ventoux_quality_stats.tif",
+        #             "dem_median_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_min.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                    "dem_min.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dem_min_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "dem_min_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "dem_generation", "dem_max.tif"),
+        #     os.path.join(out_dir, "dump_dir", "dem_generation",
+        #                                                     "dem_max.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dem_max_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "dem_max_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
@@ -3810,7 +3753,8 @@ def test_end2end_quality_stats():
         #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dsm_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "dsm_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
@@ -3818,28 +3762,34 @@ def test_end2end_quality_stats():
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "color_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "color_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "dsm_mean.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                   "dsm_mean.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dsm_mean_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "dsm_mean_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "dsm_std.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                     "dsm_std.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir, "dsm_std_end2end_ventoux_quality_stats.tif"
+        #             ref_output_dir,
+        #             "dsm_std_end2end_ventoux_quality_stats.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dump_dir", "rasterization", "dsm_n_pts.tif"),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                                 "dsm_n_pts.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -3848,9 +3798,8 @@ def test_end2end_quality_stats():
         #     ),
         # )
         # copy2(
-        #     os.path.join(
-        #         out_dir, "dump_dir", "rasterization", "dsm_pts_in_cell.tif"
-        #     ),
+        #     os.path.join(out_dir,  "dump_dir", "rasterization",
+        #                                           "dsm_pts_in_cell.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
@@ -4072,7 +4021,7 @@ def test_end2end_ventoux_egm96_geoid():
         # copy2(
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
+        #       os.path.join(ref_output_dir, "color_end2end_ventoux_egm96.tif")
         #     ),
         # )
 
@@ -4288,18 +4237,15 @@ def test_end2end_ventoux_egm96_geoid():
         # copy2(
         #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir, "dsm_end2end_ventoux_egm96_custom_geoid.tif"
-        #         )
+        #         os.path.join(ref_output_dir,
+        #             "dsm_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(
-        #             ref_output_dir,
-        #             "color_end2end_ventoux_egm96_custom_geoid.tif",
-        #         )
+        #         os.path.join(ref_output_dir,
+        #             "color_end2end_ventoux_egm96_custom_geoid.tif")
         #     ),
         # )
 
@@ -4405,7 +4351,7 @@ def test_end2end_paca_with_mask():
 
         # Uncomment the following instructions to update reference data
         # copy2(
-        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     os.path.join(out_dir,  "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(ref_output_dir, "dsm_end2end_paca_bulldozer.tif")
         #     ),
@@ -4413,13 +4359,19 @@ def test_end2end_paca_with_mask():
         # copy2(
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "color_end2end_paca_bulldozer.tif")
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "color_end2end_paca_bulldozer.tif"
+        #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "dsm", "mask.tif"),
+        #     os.path.join(out_dir,  "dsm", "mask.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir, "mask_end2end_paca_bulldozer.tif")
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "mask_end2end_paca_bulldozer.tif"
+        #         )
         #     ),
         # )
 

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-Cars tests/points_cloud_outlier_removal  file
+Cars tests/point_cloud_outlier_removal  file
 """
 
 import datetime
