@@ -33,18 +33,16 @@ from json_checker import Checker, Or
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dense_matches_filling import (
-    fill_disp_constants as fd_cst,
-)
-from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
-from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchesFilling,
+from cars.applications.dense_match_filling import fill_disp_constants as fd_cst
+from cars.applications.dense_match_filling import fill_disp_tools as fd_tools
+from cars.applications.dense_match_filling.dense_match_filling import (
+    DenseMatchFilling,
 )
 from cars.data_structures import cars_dataset
 
 
 class ZerosPadding(
-    DenseMatchesFilling, short_name=["zero_padding"]
+    DenseMatchFilling, short_name=["zero_padding"]
 ):  # pylint: disable=R0903
     """
     Fill invalid area in disparity map with zeros values

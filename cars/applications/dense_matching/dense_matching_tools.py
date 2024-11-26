@@ -45,7 +45,7 @@ from scipy.interpolate import (
     RegularGridInterpolator,
 )
 
-from cars.applications.dense_matches_filling import fill_disp_tools
+from cars.applications.dense_match_filling import fill_disp_tools
 
 # CARS imports
 from cars.applications.dense_matching import (

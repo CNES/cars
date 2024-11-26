@@ -51,7 +51,7 @@ from shapely import affinity
 from skimage.segmentation import find_boundaries
 
 # Cars import
-from cars.applications.holes_detection import holes_detection_tools
+from cars.applications.hole_detection import hole_detection_tools
 from cars.conf import mask_cst
 from cars.core import constants as cst
 
@@ -114,7 +114,7 @@ def fill_central_area_using_plane(  # noqa: C901
     disp_values = np.copy(disp_map["disp"].values)
 
     # Find invalid region of interest in disp data from polygon info
-    classif_mask = holes_detection_tools.classif_to_stacked_array(
+    classif_mask = hole_detection_tools.classif_to_stacked_array(
         disp_map, class_index
     )
 
@@ -128,10 +128,8 @@ def fill_central_area_using_plane(  # noqa: C901
         roi_msk = classif_mask_arrays == segm
 
         # Create Polygon of current mask
-        mask_polys = (
-            holes_detection_tools.get_roi_coverage_as_poly_with_margins(
-                roi_msk, row_offset=row_min, col_offset=col_min, margin=0
-            )
+        mask_polys = hole_detection_tools.get_roi_coverage_as_poly_with_margins(
+            roi_msk, row_offset=row_min, col_offset=col_min, margin=0
         )
         # Clean mask polygons, remove artefacts
         cleaned_mask_poly = []
@@ -852,7 +850,7 @@ def fill_disp_using_zero_padding(
     # according the coords classif band
     if cst.BAND_CLASSIF in disp_map.coords:
         # get index for each band classification
-        stack_index = holes_detection_tools.classif_to_stacked_array(
+        stack_index = hole_detection_tools.classif_to_stacked_array(
             disp_map, class_index
         )
         # Exclude pixels outside of epipolar footprint
