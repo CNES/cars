@@ -721,7 +721,7 @@ class DefaultPipeline(PipelineTemplate):
                 classif_left = inputs_conf["sensors"][key1]["classification"]
             if "classification" in inputs_conf["sensors"][key2]:
                 classif_right = inputs_conf["sensors"][key2]["classification"]
-            self.dense_matching_app.corr_config = (
+            self.dense_matching_app.used_config["loader_conf"] = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
                     img_left,
@@ -1607,9 +1607,9 @@ class DefaultPipeline(PipelineTemplate):
             ]:
                 intervals = [cst_disp.INTERVAL_INF, cst_disp.INTERVAL_SUP]
                 intervals_pair_flag = False
-                for key, item in self.dense_matching_app.corr_config[
-                    "pipeline"
-                ].items():
+                for key, item in self.dense_matching_app.used_config[
+                    "loader_conf"
+                ]["pipeline"].items():
                     if (
                         cst_disp.CONFIDENCE_KEY in key
                         and item["confidence_method"] == cst_disp.INTERVAL

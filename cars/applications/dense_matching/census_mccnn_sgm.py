@@ -220,11 +220,12 @@ class CensusMccnnSgm(
             use_cross_validation=overloaded_conf["use_cross_validation"],
         )
         overloaded_conf["loader"] = loader
-        overloaded_conf["loader_conf"] = loader_conf
 
         # Get params from loader
         self.loader = pandora_loader
-        self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
+        overloaded_conf["loader_conf"] = collections.OrderedDict(
+            pandora_loader.get_conf()
+        )
 
         application_schema = {
             "method": str,
@@ -408,7 +409,9 @@ class CensusMccnnSgm(
 
             # Compute margins for the correlator
             # TODO use loader correlators
-            margins = dm_tools.get_margins(disp_min, disp_max, self.corr_config)
+            margins = dm_tools.get_margins(
+                disp_min, disp_max, self.used_config["loader_conf"]
+            )
             return margins
 
         return margins_wrapper
@@ -1184,9 +1187,6 @@ class CensusMccnnSgm(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    dm_cst.DENSE_MATCHING_PARAM_TAG: {
-                        "pandora_config": self.corr_config
-                    },
                     pair_key: {
                         dm_cst.DENSE_MATCHING_RUN_TAG: {
                             "global_disp_min": np.nanmin(
@@ -1260,7 +1260,7 @@ class CensusMccnnSgm(
                         )(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
-                            self.corr_config,
+                            self.used_config["loader_conf"],
                             broadcasted_disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
