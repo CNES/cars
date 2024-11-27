@@ -23,8 +23,7 @@ Cars module init file
 """
 
 import os
-
-# Standard imports
+import sys
 from importlib import metadata
 
 # VERSION through setuptools_scm when python3 > 3.8
@@ -32,6 +31,13 @@ try:
     __version__ = metadata.version("cars")
 except Exception:  # pylint: disable=broad-except
     __version__ = "unknown"
+
+# Standard imports
+if sys.version_info < (3, 10):
+    from importlib_metadata import entry_points
+else:
+    from importlib.metadata import entry_points
+
 
 __author__ = "CNES"
 __email__ = "cars@cnes.fr"
@@ -62,10 +68,8 @@ def import_plugins() -> None:
     Load all the registered entry points
     :return: None
     """
-    eps = metadata.entry_points()
-    if "cars.plugins" in eps:
-        for entry_point in metadata.entry_points()["cars.plugins"]:
-            entry_point.load()
+    for entry_point in entry_points(group="cars.plugins"):
+        entry_point.load()
 
 
 import_plugins()
