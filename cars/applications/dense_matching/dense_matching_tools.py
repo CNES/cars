@@ -26,7 +26,6 @@ This module is responsible for the dense matching algorithms:
 # Standard imports
 import logging
 import math
-from importlib import metadata
 from typing import Dict, List
 
 import numpy as np
@@ -848,13 +847,7 @@ def compute_disparity(
         )
 
     # Load pandora plugin
-    if "pandora.plugin" in metadata.entry_points():
-        for entry_point in metadata.entry_points()["pandora.plugin"]:
-            entry_point.load()
-    else:
-        raise ImportError(
-            "Pandora plugin is not correctly installed or missing."
-        )
+    pandora.import_plugin()
 
     # Update nodata values
     left_dataset.attrs[cst.EPI_NO_DATA_IMG] = corr_cfg["input"]["nodata_left"]
