@@ -75,7 +75,7 @@ def test_create_combined_dense_cloud():
             cst.X: ([cst.ROW, cst.COL], x_coord),
             cst.Y: ([cst.ROW, cst.COL], y_coord),
             cst.Z: ([cst.ROW, cst.COL], z_coord),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+            cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         }
 
         if with_msk:
@@ -108,7 +108,7 @@ def test_create_combined_dense_cloud():
             cst.X: ([cst.ROW, cst.COL], x_coord),
             cst.Y: ([cst.ROW, cst.COL], y_coord),
             cst.Z: ([cst.ROW, cst.COL], z_coord),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+            cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
@@ -127,7 +127,7 @@ def test_create_combined_dense_cloud():
             cst.X: ([cst.ROW, cst.COL], x_coord),
             cst.Y: ([cst.ROW, cst.COL], y_coord),
             cst.Z: ([cst.ROW, cst.COL], z_coord),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+            cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
@@ -404,7 +404,7 @@ def test_create_combined_dense_cloud():
             cst.Z: ([cst.ROW, cst.COL], z_coord),
             cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
             cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+            cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
@@ -427,7 +427,7 @@ def test_create_combined_dense_cloud():
             cst.Z: ([cst.ROW, cst.COL], z_coord),
             cst.Z_INF: ([cst.ROW, cst.COL], z_inf_coord),
             cst.Z_SUP: ([cst.ROW, cst.COL], z_sup_coord),
-            cst.POINTS_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
+            cst.POINT_CLOUD_CORR_MSK: ([cst.ROW, cst.COL], corr_msk),
         },
         coords={cst.ROW: np.array(range(row)), cst.COL: np.array(range(col))},
     )
@@ -581,7 +581,7 @@ def test_create_combined_sparse_cloud():
             msk[3] = 255
             msk[4] = 255
 
-        point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_CORR_MSK]
+        point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINT_CLOUD_CORR_MSK]
         point_cloud_array = np.zeros((number, 4), dtype=np.float64)
         point_cloud_array[:, 0] = np.array(x_coord)
         point_cloud_array[:, 1] = np.array(y_coord)
@@ -593,7 +593,7 @@ def test_create_combined_sparse_cloud():
 
     number = 7
 
-    point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINTS_CLOUD_CORR_MSK]
+    point_cloud_index = [cst.X, cst.Y, cst.Z, cst.POINT_CLOUD_CORR_MSK]
     point_cloud_array1 = np.zeros((number, 4), dtype=np.float64)
     point_cloud_array1[:, 0] = np.full(number, fill_value=0, dtype=np.float64)
     point_cloud_array1[:, 1] = np.full(number, fill_value=1, dtype=np.float64)
@@ -668,7 +668,7 @@ def test_create_combined_sparse_cloud():
         cst.X,
         cst.Y,
         cst.Z,
-        cst.POINTS_CLOUD_COORD_EPI_GEOM_I,
+        cst.POINT_CLOUD_COORD_EPI_GEOM_I,
     ]
     number = 9
     ref_array2 = np.zeros((number, 4), dtype=np.float64)

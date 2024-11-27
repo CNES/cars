@@ -113,7 +113,8 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         geoid_path=None,
         cloud_id=None,
         intervals=None,
-        pair_output_dir=None,
+        depth_map_dir=None,
+        point_cloud_dir=None,
         save_output_coordinates=False,
         save_output_color=False,
         save_output_classification=False,
@@ -125,7 +126,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
         Run Triangulation application.
 
         Created left and right CarsDataset filled with xarray.Dataset,
-        corresponding to 3D points clouds, stored on epipolar geometry grid.
+        corresponding to 3D point clouds, stored on epipolar geometry grid.
 
         :param sensor_image_left: tiled sensor left image
             Dict Must contain keys : "image", "color", "geomodel",
@@ -212,7 +213,7 @@ class Triangulation(ApplicationTemplate, metaclass=ABCMeta):
                 pair_output_dir
         :type save_output_performance_map: bool
 
-        :return: points cloud \
+        :return: point cloud \
                 The CarsDataset contains:
 
             - N x M Delayed tiles \

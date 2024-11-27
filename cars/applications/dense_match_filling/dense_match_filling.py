@@ -36,10 +36,10 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
-@Application.register("dense_matches_filling")
-class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
+@Application.register("dense_match_filling")
+class DenseMatchFilling(ApplicationTemplate, metaclass=ABCMeta):
     """
-    DenseMatchesFilling
+    DenseMatchFilling
     """
 
     available_applications: Dict = {}
@@ -58,7 +58,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
         fill_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
             logging.info(
-                "dense_matches_filling method not specified, "
+                "dense_match_filling method not specified, "
                 "default {} is used".format(fill_method)
             )
         else:
@@ -66,20 +66,20 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
 
         if fill_method not in cls.available_applications:
             logging.error(
-                "No DenseMatchesFilling application "
+                "No DenseMatchFilling application "
                 "named {} registered".format(fill_method)
             )
             raise KeyError(
-                "No DenseMatchesFilling application"
+                "No DenseMatchFilling application"
                 " named {} registered".format(fill_method)
             )
 
         logging.info(
-            "The DenseMatchesFilling({}) application "
+            "The DenseMatchFilling({}) application "
             "will be used".format(fill_method)
         )
 
-        return super(DenseMatchesFilling, cls).__new__(
+        return super(DenseMatchFilling, cls).__new__(
             cls.available_applications[fill_method]
         )
 
@@ -185,7 +185,7 @@ class DenseMatchesFilling(ApplicationTemplate, metaclass=ABCMeta):
         # Create CarsDataset Epipolar_disparity
         new_epipolar_disparity_map = cars_dataset.CarsDataset(
             "arrays",
-            name="dense_matches_filling_" + app_name + "_" + pair_key,
+            name="dense_match_filling_" + app_name + "_" + pair_key,
         )
         new_epipolar_disparity_map.create_empty_copy(epipolar_disparity_map)
 

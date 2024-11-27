@@ -64,14 +64,14 @@ class SimpleGaussian(
     PointCloudRasterization, short_name="simple_gaussian"
 ):  # pylint: disable=R0903
     """
-    PointsCloudRasterisation
+    PointCloudRasterisation
     """
 
     # pylint: disable=too-many-instance-attributes
 
     def __init__(self, conf=None):
         """
-        Init function of PointsCloudRasterisation
+        Init function of PointCloudRasterisation
 
         :param conf: configuration for rasterization
         :return: a application_to_use object
@@ -204,7 +204,7 @@ class SimpleGaussian(
 
     def run(  # noqa: C901 function is too complex
         self,
-        points_clouds,
+        point_clouds,
         epsg,
         resolution,
         orchestrator=None,
@@ -219,11 +219,11 @@ class SimpleGaussian(
         dump_dir=None,
     ):
         """
-        Run PointsCloudRasterisation application.
+        Run PointCloudRasterisation application.
 
         Creates a CarsDataset filled with dsm tiles.
 
-        :param points_clouds: merged point cloud or list of array points clouds
+        :param point_clouds: merged point cloud or list of array point clouds
 
             . CarsDataset contains:
 
@@ -247,7 +247,7 @@ class SimpleGaussian(
                     optional: "color", "mask", "data_valid",\
                       "coord_epi_geom_i", "coord_epi_geom_j", "idx_im_epi"
 
-        :type points_clouds: CarsDataset filled with pandas.DataFrame
+        :type point_clouds: CarsDataset filled with pandas.DataFrame
         :param epsg: epsg of raster data
         :type epsg: str
         :param resolution: resolution of raster data (in target CRS unit)
@@ -309,22 +309,22 @@ class SimpleGaussian(
 
         # Check if input data is supported
         data_valid = True
-        if isinstance(points_clouds, tuple):
-            if isinstance(points_clouds[0][0], cars_dataset.CarsDataset):
-                if points_clouds[0][0].dataset_type not in ("arrays", "points"):
+        if isinstance(point_clouds, tuple):
+            if isinstance(point_clouds[0][0], cars_dataset.CarsDataset):
+                if point_clouds[0][0].dataset_type not in ("arrays", "points"):
                     data_valid = False
             else:
                 data_valid = False
-        elif isinstance(points_clouds, cars_dataset.CarsDataset):
-            if points_clouds.dataset_type != "points":
+        elif isinstance(point_clouds, cars_dataset.CarsDataset):
+            if point_clouds.dataset_type != "points":
                 data_valid = False
         else:
             data_valid = False
         if not data_valid:
             message = (
-                "PointsCloudRasterisation application doesn't support "
+                "PointCloudRasterisation application doesn't support "
                 "this input data "
-                "format : type : {}".format(type(points_clouds))
+                "format : type : {}".format(type(point_clouds))
             )
             logging.error(message)
             raise RuntimeError(message)
@@ -334,20 +334,20 @@ class SimpleGaussian(
             "arrays", name="rasterization"
         )
 
-        if isinstance(points_clouds, cars_dataset.CarsDataset):
+        if isinstance(point_clouds, cars_dataset.CarsDataset):
             # Get tiling grid
             terrain_raster.tiling_grid = (
                 format_transformation.terrain_coords_to_pix(
-                    points_clouds, resolution
+                    point_clouds, resolution
                 )
             )
-            bounds = points_clouds.attributes["bounds"]
+            bounds = point_clouds.attributes["bounds"]
         else:
-            bounds = points_clouds[1]
+            bounds = point_clouds[1]
             # tiling grid: all tiles from sources -> not replaceable.
             # CarsDataset is only used for processing
             nb_tiles = 0
-            for point_cld in points_clouds[0]:
+            for point_cld in point_clouds[0]:
                 nb_tiles += point_cld.shape[0] * point_cld.shape[1]
             terrain_raster.tiling_grid = tiling.generate_tiling_grid(
                 0, 0, 1, nb_tiles, 1, 1
@@ -359,10 +359,10 @@ class SimpleGaussian(
         xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)[2:]
         logging.info("DSM output image size: {}x{} pixels".format(xsize, ysize))
 
-        if isinstance(points_clouds, tuple):
-            source_pc_names = points_clouds[0][0].attributes["source_pc_names"]
+        if isinstance(point_clouds, tuple):
+            source_pc_names = point_clouds[0][0].attributes["source_pc_names"]
         else:
-            source_pc_names = points_clouds.attributes["source_pc_names"]
+            source_pc_names = point_clouds.attributes["source_pc_names"]
 
         # Get if color, mask and stats are saved
         save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -715,7 +715,7 @@ class SimpleGaussian(
         self.orchestrator.update_out_info(updating_dict)
 
         # Generate rasters
-        if not isinstance(points_clouds, tuple):
+        if not isinstance(point_clouds, tuple):
             for col in range(terrain_raster.shape[1]):
                 for row in range(terrain_raster.shape[0]):
                     # get corresponding point cloud
@@ -729,7 +729,7 @@ class SimpleGaussian(
                         row, col
                     )
 
-                    if points_clouds.tiles[pc_row][pc_col] is not None:
+                    if point_clouds.tiles[pc_row][pc_col] is not None:
                         # Get window
                         window = cars_dataset.window_array_to_dict(
                             terrain_raster.tiling_grid[row, col]
@@ -742,10 +742,10 @@ class SimpleGaussian(
                         # Get terrain region
                         # corresponding to point cloud tile
                         terrain_region = [
-                            points_clouds.tiling_grid[pc_row, pc_col, 0],
-                            points_clouds.tiling_grid[pc_row, pc_col, 2],
-                            points_clouds.tiling_grid[pc_row, pc_col, 1],
-                            points_clouds.tiling_grid[pc_row, pc_col, 3],
+                            point_clouds.tiling_grid[pc_row, pc_col, 0],
+                            point_clouds.tiling_grid[pc_row, pc_col, 2],
+                            point_clouds.tiling_grid[pc_row, pc_col, 1],
+                            point_clouds.tiling_grid[pc_row, pc_col, 3],
                         ]
 
                         # Delayed call to rasterization operations using all
@@ -755,7 +755,7 @@ class SimpleGaussian(
                         ] = self.orchestrator.cluster.create_task(
                             rasterization_wrapper
                         )(
-                            points_clouds[pc_row, pc_col],
+                            point_clouds[pc_row, pc_col],
                             resolution,
                             epsg,
                             raster_profile,
@@ -775,7 +775,7 @@ class SimpleGaussian(
             # Add final function to apply
             terrain_raster.final_function = raster_final_function
             ind_tile = 0
-            for point_cloud in points_clouds[0]:
+            for point_cloud in point_clouds[0]:
                 for row_pc in range(point_cloud.shape[0]):
                     for col_pc in range(point_cloud.shape[1]):
                         # update saving infos  for potential replacement
@@ -860,7 +860,7 @@ def rasterization_wrapper(
     :param dsm_no_data: no data value to use in the final raster
     :param color_no_data: no data value to use in the final colored raster
     :param msk_no_data: no data value to use in the final mask image
-    :param source_pc_names: list of names of points cloud before merging :
+    :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
@@ -874,7 +874,7 @@ def rasterization_wrapper(
         del attributes["saving_info"]
 
     # convert back to correct epsg
-    # If the points cloud is not in the right epsg referential, it is converted
+    # If the point cloud is not in the right epsg referential, it is converted
     if isinstance(cloud, xarray.Dataset):
         # Transform Dataset to Dataframe
         cloud, cloud_epsg = point_cloud_tools.create_combined_cloud(
@@ -894,7 +894,7 @@ def rasterization_wrapper(
     cars_dataset.fill_dataframe(cloud, attributes=attributes)
 
     if epsg != cloud_epsg:
-        projection.points_cloud_conversion_dataframe(cloud, cloud_epsg, epsg)
+        projection.point_cloud_conversion_dataframe(cloud, cloud_epsg, epsg)
 
     # filter cloud
     if "mask" in cloud:

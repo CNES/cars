@@ -211,7 +211,7 @@ def compute_epipolar_grid_min_max(
         axis=1,
     )
 
-    # Generate corresponding points clouds
+    # Generate corresponding point clouds
     pc_min = triangulate_matches(
         geometry_plugin,
         sensor1,
@@ -234,8 +234,8 @@ def compute_epipolar_grid_min_max(
     )
 
     # Convert to correct EPSG
-    projection.points_cloud_conversion_dataset(pc_min, epsg)
-    projection.points_cloud_conversion_dataset(pc_max, epsg)
+    projection.point_cloud_conversion_dataset(pc_min, epsg)
+    projection.point_cloud_conversion_dataset(pc_max, epsg)
 
     # Form grid_min and grid_max
     grid_min = None

@@ -148,19 +148,19 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     def __register_epipolar_dataset__(
-        self, merged_points_cloud, output_dir=None, dump_dir=None, app_name=""
+        self, merged_point_cloud, depth_map_dir=None, dump_dir=None, app_name=""
     ):
         """
         Create dataset and registered the output in the orchestrator. the output
-        X, Y and Z ground coordinates will be saved in output_dir if the
+        X, Y and Z ground coordinates will be saved in depth_map_dir if the
         parameter is no None. Alternatively it will be saved to dump_dir if
-        save_intermediate_data is set and output_dir is None.
+        save_intermediate_data is set and depth_map_dir is None.
 
-        :param merged_points_cloud:  Merged point cloud
-        :type merged_points_cloud: CarsDataset
-        :param output_dir: output depth map directory. If None output will be
+        :param merged_point_cloud:  Merged point cloud
+        :type merged_point_cloud: CarsDataset
+        :param depth_map_dir: output depth map directory. If None output will be
             written in dump_dir if intermediate data is requested
-        :type output_dir: str
+        :type depth_map_dir: str
         :param dump_dir: dump dir for output (except depth map) if intermediate
             data is requested
         :type dump_dir: str
@@ -174,19 +174,21 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         # Create epipolar point cloud CarsDataset
         filtered_point_cloud = cars_dataset.CarsDataset(
-            merged_points_cloud.dataset_type, name=app_name
+            merged_point_cloud.dataset_type, name=app_name
         )
 
-        filtered_point_cloud.create_empty_copy(merged_points_cloud)
+        filtered_point_cloud.create_empty_copy(merged_point_cloud)
         filtered_point_cloud.overlaps *= 0  # Margins removed (for now)
 
         # Update attributes to get epipolar info
-        filtered_point_cloud.attributes.update(merged_points_cloud.attributes)
+        filtered_point_cloud.attributes.update(merged_point_cloud.attributes)
 
-        if output_dir or self.used_config.get(
+        if depth_map_dir or self.used_config.get(
             application_constants.SAVE_INTERMEDIATE_DATA
         ):
-            filtered_dir = output_dir if output_dir is not None else dump_dir
+            filtered_dir = (
+                depth_map_dir if depth_map_dir is not None else dump_dir
+            )
             safe_makedirs(filtered_dir)
             self.orchestrator.add_to_save_lists(
                 os.path.join(filtered_dir, "X.tif"),
@@ -228,8 +230,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
     def __register_pc_dataset__(
         self,
-        merged_points_cloud,
-        output_dir=None,
+        merged_point_cloud=None,
+        point_cloud_dir=None,
         dump_dir=None,
         app_name=None,
     ):
@@ -240,11 +242,11 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         in the dump directory if the application save_intermediate data
         configuration parameter is set.
 
-        :param merged_points_cloud:  Merged point cloud
-        :type merged_points_cloud: CarsDataset
-        :param output_dir: output depth map directory. If None output will be
-            written in dump_dir if intermediate data is requested
-        :type output_dir: str
+        :param merged_point_cloud:  Merged point cloud
+        :type merged_point_cloud: CarsDataset
+        :param point_cloud_dir: output depth map directory. If None output will
+            be written in dump_dir if intermediate data is requested
+        :type point_cloud_dir: str
         :param dump_dir: dump dir for output (except depth map) if intermediate
             data is requested
         :type dump_dir: str
@@ -262,9 +264,9 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
             application_constants.SAVE_INTERMEDIATE_DATA, False
         )
         # Save laz point cloud if save_intermediate_date is activated (dump_dir)
-        # or if output_dir is provided is activated (save as official product)
+        # or if point_cloud_dir is provided (save as official product)
         save_point_cloud_as_laz = (
-            output_dir is not None
+            point_cloud_dir is not None
             or self.used_config.get(
                 application_constants.SAVE_INTERMEDIATE_DATA, False
             )
@@ -276,23 +278,22 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         )
 
         # Get tiling grid
-        filtered_point_cloud.tiling_grid = merged_points_cloud.tiling_grid
-        filtered_point_cloud.generate_none_tiles()
-        filtered_point_cloud.attributes = merged_points_cloud.attributes.copy()
+        filtered_point_cloud.create_empty_copy(merged_point_cloud)
+        filtered_point_cloud.attributes = merged_point_cloud.attributes.copy()
 
         # Save objects
         pc_laz_file_name = None
         if save_point_cloud_as_laz:
             # Points cloud file name
-            if output_dir is not None:
-                pc_laz_file_name = output_dir
+            if point_cloud_dir is not None:
+                pc_laz_file_name = point_cloud_dir
             else:
                 pc_laz_file_name = os.path.join(dump_dir, "laz")
             safe_makedirs(pc_laz_file_name)
             pc_laz_file_name = os.path.join(pc_laz_file_name, "pc")
             self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
-                cars_ds_name="filtered_merged_pc_laz_" + app_name,
+                cars_ds_name="filtered_point_cloud_laz_" + app_name,
             )
 
         pc_csv_file_name = None
@@ -303,18 +304,37 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
             pc_csv_file_name = os.path.join(pc_csv_file_name, "pc")
             self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
-                cars_ds_name="filtered_merged_pc_csv_" + app_name,
+                cars_ds_name="filtered_point_cloud_csv_" + app_name,
             )
 
-        return filtered_point_cloud, pc_laz_file_name, pc_csv_file_name
+        # Get saving infos in order to save tiles when they are computed
+        [saving_info] = self.orchestrator.get_saving_infos(
+            [filtered_point_cloud]
+        )
+
+        # Add infos to orchestrator.out_json
+        updating_dict = {
+            application_constants.APPLICATION_TAG: {
+                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
+            }
+        }
+        self.orchestrator.update_out_info(updating_dict)
+
+        return (
+            filtered_point_cloud,
+            pc_laz_file_name,
+            pc_csv_file_name,
+            saving_info,
+        )
 
     @abstractmethod
     def run(
         self,
-        merged_points_cloud,
+        merged_point_cloud,
         orchestrator=None,
         save_laz_output=False,
-        output_dir=None,
+        depth_map_dir=None,
+        point_cloud_dir=None,
         dump_dir=None,
         epsg=None,
     ):
@@ -323,8 +343,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         Creates a CarsDataset filled with new point cloud tiles.
 
-        :param merged_points_cloud: merged point cloud
-        :type merged_points_cloud: CarsDataset filled with pandas.DataFrame
+        :param merged_point_cloud: merged point cloud
+        :type merged_point_cloud: CarsDataset filled with pandas.DataFrame
         :param orchestrator: orchestrator used
         :param save_laz_output: save output point cloud as laz
         :type save_laz_output: bool
@@ -337,6 +357,6 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         :param epsg: cartographic reference for the point cloud (array input)
         :type epsg: int
 
-        :return: filtered merged points cloud
+        :return: filtered merged point cloud
         :rtype: CarsDataset filled with xr.Dataset
         """

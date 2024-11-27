@@ -94,7 +94,7 @@ class DefaultPipeline(PipelineTemplate):
             debug_with_roi
             save_output_dsm
             save_output_depth_map
-            save_output__point_clouds
+            save_output_point_clouds
             geom_plugin_without_dem_and_geoid
             geom_plugin_with_dem_and_geoid
             dem_generation_roi
@@ -186,10 +186,6 @@ class DefaultPipeline(PipelineTemplate):
         )
         self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
 
-        # if point_cloud is in product_level, we need to guarantee that
-        # point clouds are in the output, by activating merging
-        self.merging = self.merging or self.save_output_point_cloud
-
         self.compute_depth_map = self.sensors_in_inputs and (
             not self.output_level_none
         )
@@ -248,19 +244,19 @@ class DefaultPipeline(PipelineTemplate):
         sensor_to_depth_apps = {
             "grid_generation": 1,  # and 6
             "resampling": 2,  # and 7
-            "holes_detection": 3,
+            "hole_detection": 3,
             "sparse_matching": 4,
             "dem_generation": 5,
             "dense_matching": 8,
-            "dense_matches_filling.1": 9,
-            "dense_matches_filling.2": 10,
+            "dense_match_filling.1": 9,
+            "dense_match_filling.2": 10,
             "triangulation": 11,
+            "point_cloud_outlier_removal.1": 12,
+            "point_cloud_outlier_removal.2": 13,
         }
 
         depth_merge_apps = {
-            "point_cloud_fusion": 12,
-            "point_cloud_outlier_removal.1": 13,
-            "point_cloud_outlier_removal.2": 14,
+            "point_cloud_fusion": 14,
         }
 
         depth_to_dsm_apps = {
@@ -432,22 +428,16 @@ class DefaultPipeline(PipelineTemplate):
             needed_applications += [
                 "grid_generation",
                 "resampling",
-                "holes_detection",
-                "dense_matches_filling.1",
-                "dense_matches_filling.2",
+                "hole_detection",
+                "dense_match_filling.1",
+                "dense_match_filling.2",
                 "sparse_matching",
                 "dense_matching",
                 "triangulation",
                 "dem_generation",
+                "point_cloud_outlier_removal.1",
+                "point_cloud_outlier_removal.2",
             ]
-
-        # TODO: point_cloud_outlier_removal is always needed for now, but
-        # after merging mode removal it would only be required if
-        # self.sensors_in_inputs.
-        needed_applications += [
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
-        ]
 
         if self.save_output_dsm or self.save_output_point_cloud:
 
@@ -497,9 +487,9 @@ class DefaultPipeline(PipelineTemplate):
 
         self.epipolar_grid_generation_application = None
         self.resampling_application = None
-        self.holes_detection_app = None
-        self.dense_matches_filling_1 = None
-        self.dense_matches_filling_2 = None
+        self.hole_detection_app = None
+        self.dense_match_filling_1 = None
+        self.dense_match_filling_2 = None
         self.sparse_mtch_app = None
         self.dense_matching_app = None
         self.triangulation_application = None
@@ -527,33 +517,33 @@ class DefaultPipeline(PipelineTemplate):
             used_conf["resampling"] = self.resampling_application.get_conf()
 
             # holes detection
-            self.holes_detection_app = Application(
-                "holes_detection", cfg=used_conf.get("holes_detection", {})
+            self.hole_detection_app = Application(
+                "hole_detection", cfg=used_conf.get("hole_detection", {})
             )
-            used_conf["holes_detection"] = self.holes_detection_app.get_conf()
+            used_conf["hole_detection"] = self.hole_detection_app.get_conf()
 
             # disparity filling 1 plane
-            self.dense_matches_filling_1 = Application(
-                "dense_matches_filling",
+            self.dense_match_filling_1 = Application(
+                "dense_match_filling",
                 cfg=used_conf.get(
-                    "dense_matches_filling.1",
+                    "dense_match_filling.1",
                     {"method": "plane"},
                 ),
             )
-            used_conf["dense_matches_filling.1"] = (
-                self.dense_matches_filling_1.get_conf()
+            used_conf["dense_match_filling.1"] = (
+                self.dense_match_filling_1.get_conf()
             )
 
             # disparity filling 2
-            self.dense_matches_filling_2 = Application(
-                "dense_matches_filling",
+            self.dense_match_filling_2 = Application(
+                "dense_match_filling",
                 cfg=used_conf.get(
-                    "dense_matches_filling.2",
+                    "dense_match_filling.2",
                     {"method": "zero_padding"},
                 ),
             )
-            used_conf["dense_matches_filling.2"] = (
-                self.dense_matches_filling_2.get_conf()
+            used_conf["dense_match_filling.2"] = (
+                self.dense_match_filling_2.get_conf()
             )
 
             # Sparse Matching
@@ -645,7 +635,7 @@ class DefaultPipeline(PipelineTemplate):
 
             if self.merging:
 
-                # Points cloud fusion
+                # Point cloud fusion
                 self.pc_fusion_application = Application(
                     "point_cloud_fusion",
                     cfg=used_conf.get("point_cloud_fusion", {}),
@@ -772,7 +762,7 @@ class DefaultPipeline(PipelineTemplate):
         self.list_intersection_poly = []
 
         # initialize lists of points
-        self.list_epipolar_points_cloud = []
+        self.list_epipolar_point_clouds = []
         self.list_sensor_pairs = sensor_inputs.generate_inputs(
             inputs, self.geom_plugin_without_dem_and_geoid
         )
@@ -853,22 +843,22 @@ class DefaultPipeline(PipelineTemplate):
             self.pairs[pair_key]["holes_classif"] = []
             self.pairs[pair_key]["holes_poly_margin"] = 0
             add_classif = False
-            if self.dense_matches_filling_1.used_method == "plane":
+            if self.dense_match_filling_1.used_method == "plane":
                 self.pairs[pair_key][
                     "holes_classif"
-                ] += self.dense_matches_filling_1.get_classif()
+                ] += self.dense_match_filling_1.get_classif()
                 self.pairs[pair_key]["holes_poly_margin"] = max(
                     self.pairs[pair_key]["holes_poly_margin"],
-                    self.dense_matches_filling_1.get_poly_margin(),
+                    self.dense_match_filling_1.get_poly_margin(),
                 )
                 add_classif = True
-            if self.dense_matches_filling_2.used_method == "plane":
+            if self.dense_match_filling_2.used_method == "plane":
                 self.pairs[pair_key][
                     "holes_classif"
-                ] += self.dense_matches_filling_2.get_classif()
+                ] += self.dense_match_filling_2.get_classif()
                 self.pairs[pair_key]["holes_poly_margin"] = max(
                     self.pairs[pair_key]["holes_poly_margin"],
-                    self.dense_matches_filling_2.get_poly_margin(),
+                    self.dense_match_filling_2.get_poly_margin(),
                 )
                 add_classif = True
 
@@ -906,12 +896,12 @@ class DefaultPipeline(PipelineTemplate):
                     continue  # keep iterating over pairs, but don't go further
 
                 # Generate the holes polygons in epipolar images
-                # They are only generated if dense_matches_filling
+                # They are only generated if dense_match_filling
                 # applications are used later
                 (
                     self.pairs[pair_key]["holes_bbox_left"],
                     self.pairs[pair_key]["holes_bbox_right"],
-                ) = self.holes_detection_app.run(
+                ) = self.hole_detection_app.run(
                     self.pairs[pair_key]["epipolar_image_left"],
                     self.pairs[pair_key]["epipolar_image_right"],
                     classification=self.pairs[pair_key]["holes_classif"],
@@ -923,7 +913,7 @@ class DefaultPipeline(PipelineTemplate):
                     pair_key=pair_key,
                 )
 
-                if self.quit_on_app("holes_detection"):
+                if self.quit_on_app("hole_detection"):
                     continue  # keep iterating over pairs, but don't go further
 
             if self.used_conf[ADVANCED][adv_cst.USE_EPIPOLAR_A_PRIORI] is False:
@@ -1056,7 +1046,7 @@ class DefaultPipeline(PipelineTemplate):
         if (
             self.quit_on_app("grid_generation")
             or self.quit_on_app("resampling")
-            or self.quit_on_app("holes_detection")
+            or self.quit_on_app("hole_detection")
             or self.quit_on_app("sparse_matching")
         ):
             return True
@@ -1518,10 +1508,10 @@ class DefaultPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             # Dense matches filling
-            if self.dense_matches_filling_1.used_method == "plane":
+            if self.dense_match_filling_1.used_method == "plane":
                 # Fill holes in disparity map
                 (filled_with_1_epipolar_disparity_map) = (
-                    self.dense_matches_filling_1.run(
+                    self.dense_match_filling_1.run(
                         epipolar_disparity_map,
                         self.pairs[pair_key]["holes_bbox_left"],
                         self.pairs[pair_key]["holes_bbox_right"],
@@ -1533,7 +1523,7 @@ class DefaultPipeline(PipelineTemplate):
                         ),
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
-                            self.dump_dir, "dense_matches_filling_1", pair_key
+                            self.dump_dir, "dense_match_filling_1", pair_key
                         ),
                         pair_key=pair_key,
                     )
@@ -1541,23 +1531,23 @@ class DefaultPipeline(PipelineTemplate):
             else:
                 # Fill with zeros
                 (filled_with_1_epipolar_disparity_map) = (
-                    self.dense_matches_filling_1.run(
+                    self.dense_match_filling_1.run(
                         epipolar_disparity_map,
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
-                            self.dump_dir, "dense_matches_filling_1", pair_key
+                            self.dump_dir, "dense_match_filling_1", pair_key
                         ),
                         pair_key=pair_key,
                     )
                 )
 
-            if self.quit_on_app("dense_matches_filling.1"):
+            if self.quit_on_app("dense_match_filling.1"):
                 continue  # keep iterating over pairs, but don't go further
 
-            if self.dense_matches_filling_2.used_method == "plane":
+            if self.dense_match_filling_2.used_method == "plane":
                 # Fill holes in disparity map
                 (filled_with_2_epipolar_disparity_map) = (
-                    self.dense_matches_filling_2.run(
+                    self.dense_match_filling_2.run(
                         filled_with_1_epipolar_disparity_map,
                         self.pairs[pair_key]["holes_bbox_left"],
                         self.pairs[pair_key]["holes_bbox_right"],
@@ -1569,7 +1559,7 @@ class DefaultPipeline(PipelineTemplate):
                         ),
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
-                            self.dump_dir, "dense_matches_filling_2", pair_key
+                            self.dump_dir, "dense_match_filling_2", pair_key
                         ),
                         pair_key=pair_key,
                     )
@@ -1577,17 +1567,17 @@ class DefaultPipeline(PipelineTemplate):
             else:
                 # Fill with zeros
                 (filled_with_2_epipolar_disparity_map) = (
-                    self.dense_matches_filling_2.run(
+                    self.dense_match_filling_2.run(
                         filled_with_1_epipolar_disparity_map,
                         orchestrator=self.cars_orchestrator,
                         pair_folder=os.path.join(
-                            self.dump_dir, "dense_matches_filling_2", pair_key
+                            self.dump_dir, "dense_match_filling_2", pair_key
                         ),
                         pair_key=pair_key,
                     )
                 )
 
-            if self.quit_on_app("dense_matches_filling.2"):
+            if self.quit_on_app("dense_match_filling.2"):
                 continue  # keep iterating over pairs, but don't go further
 
             if self.epsg is None:
@@ -1667,6 +1657,14 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 safe_makedirs(depth_map_dir)
 
+            point_cloud_dir = None
+            if self.save_output_point_cloud:
+                point_cloud_dir = os.path.join(
+                    self.out_dir, "point_cloud", pair_key
+                )
+                safe_makedirs(point_cloud_dir)
+
+            if self.save_output_depth_map or self.save_output_point_cloud:
                 if (
                     self.pc_outlier_removal_2_app.used_config.get(
                         "activated", False
@@ -1686,8 +1684,17 @@ class DefaultPipeline(PipelineTemplate):
                 else:
                     last_depth_map_application = "triangulation"
 
+            triangulation_point_cloud_dir = (
+                point_cloud_dir
+                if (
+                    point_cloud_dir
+                    and last_depth_map_application == "triangulation"
+                )
+                else None
+            )
+
             # Run epipolar triangulation application
-            epipolar_points_cloud = self.triangulation_application.run(
+            epipolar_point_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
                 new_epipolar_image_left,
@@ -1707,7 +1714,8 @@ class DefaultPipeline(PipelineTemplate):
                 geoid_path=output_geoid_path,
                 cloud_id=cloud_id,
                 intervals=intervals,
-                pair_output_dir=depth_map_dir,
+                depth_map_dir=depth_map_dir,
+                point_cloud_dir=triangulation_point_cloud_dir,
                 save_output_coordinates=last_depth_map_application
                 == "triangulation",
                 save_output_color=bool(depth_map_dir)
@@ -1726,9 +1734,9 @@ class DefaultPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             if self.merging:
-                self.list_epipolar_points_cloud.append(epipolar_points_cloud)
+                self.list_epipolar_point_clouds.append(epipolar_point_cloud)
             else:
-                filtering_out_dir = (
+                filtering_depth_map_dir = (
                     depth_map_dir
                     if (
                         depth_map_dir
@@ -1736,10 +1744,19 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_points_cloud_1 = (
+                filtering_point_cloud_dir = (
+                    point_cloud_dir
+                    if (
+                        point_cloud_dir
+                        and last_depth_map_application == "pc_outlier_removal_1"
+                    )
+                    else None
+                )
+                filtered_epipolar_point_cloud_1 = (
                     self.pc_outlier_removal_1_app.run(
-                        epipolar_points_cloud,
-                        output_dir=filtering_out_dir,
+                        epipolar_point_cloud,
+                        depth_map_dir=filtering_depth_map_dir,
+                        point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_1", pair_key
                         ),
@@ -1749,7 +1766,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 if self.quit_on_app("point_cloud_outlier_removal.1"):
                     continue  # keep iterating over pairs, but don't go further
-                filtering_out_dir = (
+                filtering_depth_map_dir = (
                     depth_map_dir
                     if (
                         depth_map_dir
@@ -1757,10 +1774,19 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_points_cloud_2 = (
+                filtering_point_cloud_dir = (
+                    point_cloud_dir
+                    if (
+                        point_cloud_dir
+                        and last_depth_map_application == "pc_outlier_removal_2"
+                    )
+                    else None
+                )
+                filtered_epipolar_point_cloud_2 = (
                     self.pc_outlier_removal_2_app.run(
-                        filtered_epipolar_points_cloud_1,
-                        output_dir=filtering_out_dir,
+                        filtered_epipolar_point_cloud_1,
+                        depth_map_dir=filtering_depth_map_dir,
+                        point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_2", pair_key
                         ),
@@ -1773,9 +1799,9 @@ class DefaultPipeline(PipelineTemplate):
 
                 # denoising available only if we'll go further in the pipeline
                 if self.save_output_dsm or self.save_output_point_cloud:
-                    denoised_epipolar_points_cloud = (
+                    denoised_epipolar_point_clouds = (
                         self.pc_denoising_application.run(
-                            filtered_epipolar_points_cloud_2,
+                            filtered_epipolar_point_cloud_2,
                             orchestrator=self.cars_orchestrator,
                             pair_folder=os.path.join(
                                 self.dump_dir, "denoising", pair_key
@@ -1784,8 +1810,8 @@ class DefaultPipeline(PipelineTemplate):
                         )
                     )
 
-                    self.list_epipolar_points_cloud.append(
-                        denoised_epipolar_points_cloud
+                    self.list_epipolar_point_clouds.append(
+                        denoised_epipolar_point_clouds
                     )
 
                     if self.quit_on_app("pc_denoising"):
@@ -1839,8 +1865,8 @@ class DefaultPipeline(PipelineTemplate):
         # pylint:disable=too-many-boolean-expressions
         if (
             self.quit_on_app("dense_matching")
-            or self.quit_on_app("dense_matches_filling.1")
-            or self.quit_on_app("dense_matches_filling.2")
+            or self.quit_on_app("dense_match_filling.1")
+            or self.quit_on_app("dense_match_filling.2")
             or self.quit_on_app("triangulation")
             or self.quit_on_app("point_cloud_outlier_removal.1")
             or self.quit_on_app("point_cloud_outlier_removal.2")
@@ -1995,32 +2021,20 @@ class DefaultPipeline(PipelineTemplate):
     def preprocess_depth_maps(self):
         """
         Adds multiple processing steps to the depth maps :
-        Merging, filtering, denoising, outlier removal.
+        Merging, denoising.
         Creates the point cloud that will be rasterized in
         the last step of the pipeline.
         """
 
         if not self.merging:
             self.point_cloud_to_rasterize = (
-                self.list_epipolar_points_cloud,
+                self.list_epipolar_point_clouds,
                 self.terrain_bounds,
             )
             self.color_type = self.point_cloud_to_rasterize[0][
                 0
             ].attributes.get("color_type", None)
         else:
-            # Merge point clouds
-            pc_outlier_removal_1_margins = (
-                self.pc_outlier_removal_1_app.get_on_ground_margin(
-                    resolution=self.resolution
-                )
-            )
-            pc_outlier_removal_2_margins = (
-                self.pc_outlier_removal_2_app.get_on_ground_margin(
-                    resolution=self.resolution
-                )
-            )
-
             # find which application produce the final version of the
             # point cloud. The last generated point cloud will be saved
             # as official point cloud product if save_output_point_cloud
@@ -2031,20 +2045,6 @@ class DefaultPipeline(PipelineTemplate):
             # it uses the 'none' method.
             if self.pc_denoising_application.used_method != "none":
                 last_pc_application = "denoising"
-            elif (
-                self.pc_outlier_removal_2_app.used_config.get(
-                    "activated", False
-                )
-                is True
-            ):
-                last_pc_application = "pc_outlier_removal_2"
-            elif (
-                self.pc_outlier_removal_1_app.used_config.get(
-                    "activated", False
-                )
-                is True
-            ):
-                last_pc_application = "pc_outlier_removal_1"
             else:
                 last_pc_application = "fusion"
 
@@ -2054,19 +2054,15 @@ class DefaultPipeline(PipelineTemplate):
                     self.resolution
                 )
 
-            merged_points_clouds = self.pc_fusion_application.run(
-                self.list_epipolar_points_cloud,
+            merged_point_clouds = self.pc_fusion_application.run(
+                self.list_epipolar_point_clouds,
                 self.terrain_bounds,
                 self.epsg,
                 source_pc_names=(
                     self.pairs_names if self.compute_depth_map else None
                 ),
                 orchestrator=self.cars_orchestrator,
-                margins=(
-                    pc_outlier_removal_1_margins
-                    + pc_outlier_removal_2_margins
-                    + raster_app_margin
-                ),
+                margins=raster_app_margin,
                 optimal_terrain_tile_width=self.optimal_terrain_tile_width,
                 roi=(self.roi_poly if self.debug_with_roi else None),
                 save_laz_output=self.save_output_point_cloud
@@ -2076,45 +2072,9 @@ class DefaultPipeline(PipelineTemplate):
             if self.quit_on_app("point_cloud_fusion"):
                 return True
 
-            # Remove outliers with small components method
-            filtered_1_merged_points_clouds = self.pc_outlier_removal_1_app.run(
-                merged_points_clouds,
-                orchestrator=self.cars_orchestrator,
-                output_dir=(
-                    os.path.join(self.out_dir, "point_cloud")
-                    if self.save_output_point_cloud
-                    and last_pc_application == "pc_outlier_removal_1"
-                    else None
-                ),
-                dump_dir=os.path.join(
-                    self.dump_dir, "point_cloud_outlier_removal_1"
-                ),
-            )
-
-            if self.quit_on_app("point_cloud_outlier_removal.1"):
-                return True
-
-            # Remove outliers with statistical components method
-            filtered_2_merged_points_clouds = self.pc_outlier_removal_2_app.run(
-                filtered_1_merged_points_clouds,
-                orchestrator=self.cars_orchestrator,
-                output_dir=(
-                    os.path.join(self.out_dir, "point_cloud")
-                    if self.save_output_point_cloud
-                    and last_pc_application == "pc_outlier_removal_2"
-                    else None
-                ),
-                dump_dir=os.path.join(
-                    self.dump_dir, "point_cloud_outlier_removal_2"
-                ),
-            )
-
-            if self.quit_on_app("point_cloud_outlier_removal.2"):
-                return True
-
             # denoise point cloud
-            denoised_merged_points_clouds = self.pc_denoising_application.run(
-                filtered_2_merged_points_clouds,
+            denoised_merged_point_clouds = self.pc_denoising_application.run(
+                merged_point_clouds,
                 orchestrator=self.cars_orchestrator,
                 save_laz_output=self.save_output_point_cloud
                 and last_pc_application == "denoising",
@@ -2124,10 +2084,10 @@ class DefaultPipeline(PipelineTemplate):
                 return True
 
             # Rasterize merged and filtered point cloud
-            self.point_cloud_to_rasterize = denoised_merged_points_clouds
+            self.point_cloud_to_rasterize = denoised_merged_point_clouds
 
             # try getting the color type from multiple sources
-            self.color_type = self.list_epipolar_points_cloud[0].attributes.get(
+            self.color_type = self.list_epipolar_point_clouds[0].attributes.get(
                 "color_type",
                 self.point_cloud_to_rasterize.attributes.get(
                     "color_type", None
@@ -2167,7 +2127,7 @@ class DefaultPipeline(PipelineTemplate):
                 roi_poly=self.roi_poly,
             )
 
-            self.list_epipolar_points_cloud = (
+            self.list_epipolar_point_clouds = (
                 pc_tif_tools.generate_point_clouds(
                     self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                     self.cars_orchestrator,
@@ -2178,7 +2138,7 @@ class DefaultPipeline(PipelineTemplate):
             # Compute terrain bounds and transform point clouds
             (
                 self.terrain_bounds,
-                self.list_epipolar_points_cloud,
+                self.list_epipolar_point_clouds,
             ) = pc_tif_tools.transform_input_pc(
                 self.used_conf[INPUTS][depth_cst.DEPTH_MAPS],
                 self.epsg,
@@ -2190,35 +2150,17 @@ class DefaultPipeline(PipelineTemplate):
             # Compute number of superposing point cloud for density
             max_number_superposing_point_clouds = (
                 pc_tif_tools.compute_max_nb_point_clouds(
-                    self.list_epipolar_points_cloud
+                    self.list_epipolar_point_clouds
                 )
             )
 
             # Compute average distance between two points
             average_distance_point_cloud = (
                 pc_tif_tools.compute_average_distance(
-                    self.list_epipolar_points_cloud
+                    self.list_epipolar_point_clouds
                 )
             )
-            self.optimal_terrain_tile_width = min(
-                self.pc_outlier_removal_1_app.get_optimal_tile_size(
-                    self.cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
-                self.pc_outlier_removal_2_app.get_optimal_tile_size(
-                    self.cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
+            self.optimal_terrain_tile_width = (
                 self.rasterization_application.get_optimal_tile_size(
                     self.cars_orchestrator.cluster.checked_conf_cluster[
                         "max_ram_per_worker"
@@ -2227,7 +2169,7 @@ class DefaultPipeline(PipelineTemplate):
                         max_number_superposing_point_clouds
                     ),
                     point_cloud_resolution=average_distance_point_cloud,
-                ),
+                )
             )
             # epsg_cloud and optimal_terrain_tile_width have the same epsg
             self.optimal_terrain_tile_width = (

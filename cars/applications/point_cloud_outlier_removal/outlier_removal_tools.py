@@ -48,7 +48,7 @@ def small_component_filtering(
     filtered_elt_pos: bool = False,
 ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
-    Filter points cloud to remove small clusters of points
+    Filter point cloud to remove small clusters of points
     (see the detect_small_components function).
 
     :param cloud: combined cloud
@@ -196,7 +196,7 @@ def statistical_outlier_filtering(
     filtered_elt_pos: bool = False,
 ) -> Tuple[pandas.DataFrame, Union[None, pandas.DataFrame]]:
     """
-    Filter points cloud to remove statistical outliers
+    Filter point cloud to remove statistical outliers
     (see the detect_statistical_outliers function).
 
     :param cloud: combined cloud
@@ -317,12 +317,12 @@ def epipolar_small_components(
 
     """
 
-    projection.points_cloud_conversion_dataset(cloud, epsg)
+    projection.point_cloud_conversion_dataset(cloud, epsg)
 
     if clusters_distance_threshold is None:
         clusters_distance_threshold = np.nan
 
-    outlier_filter.epipolar_small_component_outlier_filtering(
+    outlier_filter.epipolar_small_components_outlier_filtering(
         cloud[cst.X],
         cloud[cst.Y],
         cloud[cst.Z],
@@ -364,7 +364,7 @@ def epipolar_statistical_filtering(
 
     """
 
-    projection.points_cloud_conversion_dataset(epipolar_ds, epsg)
+    projection.point_cloud_conversion_dataset(epipolar_ds, epsg)
 
     outlier_filter.epipolar_statistical_outlier_filtering(
         epipolar_ds[cst.X],

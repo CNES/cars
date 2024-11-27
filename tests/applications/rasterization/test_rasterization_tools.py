@@ -20,7 +20,7 @@
 #
 """
 Test module for
-    cars/application/points_cloud_rasterization/rasterization_tools.py
+    cars/application/point_cloud_rasterization/rasterization_tools.py
 TODO: refactor with code source
 """
 # pylint: disable= C0302
@@ -332,9 +332,9 @@ def test_simple_rasterization_dataset_1_intervals():
     )
 
     # Uncomment to update references
-    raster.to_netcdf(
-        absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
-    )
+    # raster.to_netcdf(
+    #     absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
+    # )
 
     raster_ref = xr.open_dataset(
         absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc")
@@ -730,7 +730,7 @@ def test_mask_interp_case1(
 
     # create panda dataframe
     cloud_pd = pandas.DataFrame(
-        cloud, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
+        cloud, columns=[cst.X, cst.Y, cst.POINT_CLOUD_MSK]
     )
     cloud_pd.attrs = {"attributes": {"number_of_pc": 1}}
 

@@ -185,7 +185,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
 
             # convert to degrees for geoid offset
             if pair_pc.attrs["epsg"] != epsg:
-                projection.points_cloud_conversion_dataset(pair_pc, epsg)
+                projection.point_cloud_conversion_dataset(pair_pc, epsg)
 
         merged_point_cloud = pandas.concat(
             triangulated_matches_list,
@@ -284,7 +284,7 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
         )
         alti_zeros_dataset.attrs[cst.EPSG] = epsg
         # Transform to lon lat
-        projection.points_cloud_conversion_dataset(alti_zeros_dataset, 4326)
+        projection.point_cloud_conversion_dataset(alti_zeros_dataset, 4326)
 
         geoid_offset = triangulation_tools.geoid_offset(
             alti_zeros_dataset, geoid_path

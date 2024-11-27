@@ -19,5 +19,5 @@
 # limitations under the License.
 #
 """
-Cars tests/points_cloud_fusion init file
+Cars tests/point_cloud_fusion init file
 """

@@ -32,8 +32,8 @@ from json_checker import Checker, OptionalKey
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.holes_detection import holes_detection_tools
-from cars.applications.holes_detection.holes_detection import HolesDetection
+from cars.applications.hole_detection import hole_detection_tools
+from cars.applications.hole_detection.hole_detection import HoleDetection
 
 # CARS imports
 from cars.core.utils import safe_makedirs
@@ -41,7 +41,7 @@ from cars.data_structures import cars_dataset, cars_dict
 
 
 class CloudToBbox(
-    HolesDetection, short_name="cloud_to_bbox"
+    HoleDetection, short_name="cloud_to_bbox"
 ):  # pylint: disable=R0903
     """
     CloudToBbox
@@ -53,7 +53,7 @@ class CloudToBbox(
         """
         Init function of CloudToBbox
 
-        :param conf: configuration for holes detection
+        :param conf: configuration for hole detection
         :return: a application_to_use object
         """
 
@@ -91,13 +91,13 @@ class CloudToBbox(
         # get rasterization parameter
         overloaded_conf["method"] = conf.get("method", "cloud_to_bbox")
 
-        holes_detection_schema = {
+        hole_detection_schema = {
             "method": str,
             OptionalKey(application_constants.SAVE_INTERMEDIATE_DATA): bool,
         }
 
         # Check conf
-        checker = Checker(holes_detection_schema)
+        checker = Checker(hole_detection_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf
@@ -315,7 +315,7 @@ def compute_mask_bboxes_wrapper(
     bbox_left = {}
 
     if left_image_dataset is not None:
-        bbox_left = holes_detection_tools.localize_masked_areas(
+        bbox_left = hole_detection_tools.localize_masked_areas(
             left_image_dataset,
             classification,
             row_offset=row_offset_left,
@@ -326,7 +326,7 @@ def compute_mask_bboxes_wrapper(
     bbox_right = {}
 
     if right_image_dataset is not None:
-        bbox_right = holes_detection_tools.localize_masked_areas(
+        bbox_right = hole_detection_tools.localize_masked_areas(
             right_image_dataset,
             classification,
             row_offset=row_offset_right,

@@ -35,19 +35,17 @@ from shapely.geometry import Polygon
 # CARS imports
 import cars.orchestrator.orchestrator as ocht
 from cars.applications import application_constants
-from cars.applications.dense_matches_filling import (
-    fill_disp_constants as fd_cst,
-)
-from cars.applications.dense_matches_filling import fill_disp_tools as fd_tools
-from cars.applications.dense_matches_filling.dense_matches_filling import (
-    DenseMatchesFilling,
+from cars.applications.dense_match_filling import fill_disp_constants as fd_cst
+from cars.applications.dense_match_filling import fill_disp_tools as fd_tools
+from cars.applications.dense_match_filling.dense_match_filling import (
+    DenseMatchFilling,
 )
 from cars.core import constants as cst
 from cars.data_structures import cars_dataset, corresponding_tiles_tools
 
 
 class PlaneFill(
-    DenseMatchesFilling, short_name=["plane"]
+    DenseMatchFilling, short_name=["plane"]
 ):  # pylint: disable=R0903
     """
     Fill invalid area in disparity map using plane method
