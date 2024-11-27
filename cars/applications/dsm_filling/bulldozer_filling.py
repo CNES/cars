@@ -156,7 +156,7 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
         with open(bull_conf_path, "w", encoding="utf8") as bull_conf_file:
             yaml.dump(bull_conf, bull_conf_file)
 
-        dtm_path = os.path.join(bull_conf["output_dir"], "DTM.tif")
+        dtm_path = os.path.join(bull_conf["output_dir"], "dtm.tif")
 
         # get dsm to be filled and its metadata
         with rio.open(dsm_path) as in_dsm:
@@ -297,7 +297,6 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 + " The DSM could not be filled."
             )
         else:
-
             with rio.open(dtm_path) as in_dtm:
                 dtm = in_dtm.read()
 
