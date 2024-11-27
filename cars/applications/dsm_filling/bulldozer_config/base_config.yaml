@@ -4,29 +4,41 @@ output_dir: "path/to/output"
 
 # everything else will be used directly as-is
 
-max_object_width : 16
-# If True, this flag allows snapping DTM values above the DSM to the DSM values in order to satisfy the property that DTM is always below the DSM.
-check_intersection: False
-# If null, the nodata value will be extracted from the input DSM (float value or nan)
-no_data : null
+#-------------------------#
+#         Options         #
+#-------------------------#
+
+
+max_object_size : 16
 # If True, keep the intermediate results
-developper_mode : False
-# If True, keep the intermediate DTM at each level of the pyramid
-keep_inter_dtm : False
+developer_mode : False
+
+
+#-------------------------#
+#    Advanced settings    #
+#-------------------------#
+# [Optional] - Altimetric height accuracy of the input DSM (m). If null, use the default value: 2*planimetric resolution
+dsm_z_accuracy: null
+# [Optional] - Maximum slope of the observed landscape terrain (%)
+# former slope_threshold
+max_ground_slope: 2.0
+# [Optional] - If True, activate the ground pre-detection
+activate_ground_anchors : False
+# [Optional] - If True, keep the intermediate results
+developer_mode : False
+
 
 #-------------------------#
 # Bulldozer core settings #
 #-------------------------#
 # /!\ Modify those data at your own risk (it is suggested to keep the default values) /!\
 
-# DetectDisturbedAreasAndFill part
-slope_threshold : 2.0
-# numnumber of evaluated axis. Vertical and horizontal if true else vertical, horizontal and diagonals.
-four_connexity : True
-
-# DtmExtraction part
-uniform_filter_size : 3
+# [Optional] - DtmExtraction parameters
+# former uniform_filter_size
+cloth_tension_force : 3
 prevent_unhook_iter : 10
 num_outer_iter : 50
 num_inner_iter : 10
-mp_tile_size : 1500
+
+
+
