@@ -29,6 +29,7 @@ import os
 from json_checker import Checker, Or
 from pyproj import CRS
 
+import cars.core.constants as cst
 from cars.core.utils import safe_makedirs
 from cars.pipelines.parameters import output_constants
 
@@ -151,3 +152,52 @@ def check_output_parameters(conf):
                 )
 
     return overloaded_conf
+
+
+def intialize_product_index(orchestrator, product_levels, input_pairs):
+    """
+    Initialize the index dictionary according to requested levels with None
+    values for all paths.
+
+    :param orchestrator: cars orchestrator
+    :type orchestrator: Orchestrator
+    :param product_levels: name of corresponding pipeline
+    :type product_levels: list
+    :param input_pairs: list containing the pair names
+    :type input_pairs: list
+    """
+
+    index = {}
+
+    if "dsm" in product_levels:
+        index["dsm"] = {
+            cst.INDEX_DSM_ALT: None,
+            cst.INDEX_DSM_COLOR: None,
+            cst.INDEX_DSM_MASK: None,
+            cst.INDEX_DSM_CLASSIFICATION: None,
+            cst.INDEX_DSM_PERFORMANCE_MAP: None,
+            cst.INDEX_DSM_CONTRIBUTING_PAIR: None,
+            cst.INDEX_DSM_FILLING: None,
+        }
+
+    if "point_cloud" in product_levels:
+        index["point_cloud"] = {}
+        for pair in input_pairs:
+            index["point_cloud"][pair] = {}
+
+    if "depth_map" in product_levels:
+        index["depth_map"] = {}
+        for pair in input_pairs:
+            index["depth_map"][pair] = {
+                cst.INDEX_DEPTH_MAP_X: None,
+                cst.INDEX_DEPTH_MAP_Y: None,
+                cst.INDEX_DEPTH_MAP_Z: None,
+                cst.INDEX_DEPTH_MAP_COLOR: None,
+                cst.INDEX_DEPTH_MAP_MASK: None,
+                cst.INDEX_DEPTH_MAP_CLASSIFICATION: None,
+                cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP: None,
+                cst.INDEX_DEPTH_MAP_FILLING: None,
+                cst.INDEX_DEPTH_MAP_EPSG: None,
+            }
+
+    orchestrator.update_index(index)

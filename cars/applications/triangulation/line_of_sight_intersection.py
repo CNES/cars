@@ -144,7 +144,7 @@ class LineOfSightIntersection(
         requested or not using the parameters. A dump directory can also be
         provided to write any additionnal files that have not been written
         to the output directory (because they are not part of the depth map
-        definition, or because they have not been requested)
+        definition, or because they have not been requested).
 
         :param epipolar_point_cloud: tiled epipolar left image
         :type epipolar_point_cloud: CarsDataset
@@ -302,6 +302,74 @@ class LineOfSightIntersection(
                 cars_ds_name="depth_map_corr_msk",
                 optional_data=True,
             )
+
+    def fill_index(
+        self,
+        save_output_coordinates=True,
+        save_output_color=True,
+        save_output_classification=False,
+        save_output_mask=False,
+        save_output_filling=False,
+        save_output_performance_map=False,
+        pair_key="PAIR_0",
+    ):
+        """
+        Fill depth map index for current pair, according to which product
+        should be saved
+
+        :param save_output_coordinates: Save X, Y and Z coords in output_dir
+        :type save_output_coordinates: bool
+        :param save_output_color: Save color depth map in output_dir
+        :type save_output_color: bool
+        :param save_output_classification: Save classification depth map in
+                output_dir
+        :type save_output_classification: bool
+        :param save_output_mask: Save mask depth map in output_dir
+        :type save_output_mask: bool
+        :param save_output_filling: Save filling depth map in output_dir
+        :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in output_dir
+        :type save_output_performance_map: bool
+        :param pair_key: name of the current pair
+        :type pair_key: str
+        """
+
+        # index file for this depth map
+        index = {}
+
+        if save_output_coordinates:
+            index[cst.INDEX_DEPTH_MAP_X] = os.path.join(pair_key, "X.tif")
+            index[cst.INDEX_DEPTH_MAP_Y] = os.path.join(pair_key, "Y.tif")
+            index[cst.INDEX_DEPTH_MAP_Z] = os.path.join(pair_key, "Z.tif")
+
+        if save_output_color:
+            index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
+                pair_key, "color.tif"
+            )
+
+        if save_output_mask:
+            index[cst.INDEX_DEPTH_MAP_MASK] = os.path.join(pair_key, "mask.tif")
+
+        if save_output_performance_map:
+            index[cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP] = os.path.join(
+                pair_key, "performance_map.tif"
+            )
+
+        if save_output_classification:
+            index[cst.INDEX_DEPTH_MAP_CLASSIFICATION] = os.path.join(
+                pair_key, "classification.tif"
+            )
+
+        if save_output_filling:
+            index[cst.INDEX_DEPTH_MAP_FILLING] = os.path.join(
+                pair_key, "filling.tif"
+            )
+
+        # update orchestrator index if it has been filled
+        if index:
+            # Add epsg code (always lon/lat in triangulation)
+            index[cst.INDEX_DEPTH_MAP_EPSG] = 4326
+            self.orchestrator.update_index({"depth_map": {pair_key: index}})
 
     def run(  # noqa: C901
         self,
@@ -580,6 +648,15 @@ class LineOfSightIntersection(
             save_output_filling,
             save_output_performance_map,
         )
+        self.fill_index(
+                save_output_coordinates,
+                save_output_color,
+                save_output_classification,
+                save_output_mask,
+                save_output_filling,
+                save_output_performance_map,
+                pair_key,
+            )
         # Save as point cloud
         point_cloud = cars_dataset.CarsDataset(
             "points",

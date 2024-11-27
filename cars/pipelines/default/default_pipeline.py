@@ -773,6 +773,12 @@ class DefaultPipeline(PipelineTemplate):
             )
         )
 
+        output_parameters.intialize_product_index(
+            self.cars_orchestrator,
+            output["product_level"],
+            [sensor_pair[0] for sensor_pair in self.list_sensor_pairs],
+        )
+
         # pairs is a dict used to store the CarsDataset of
         # all pairs, easily retrievable with pair keys
         self.pairs = {}
@@ -2101,6 +2107,12 @@ class DefaultPipeline(PipelineTemplate):
         Loads all the data and creates all the variables used
         later when processing a depth map, as if it was just computed.
         """
+
+        output_parameters.intialize_product_index(
+            self.cars_orchestrator,
+            self.used_conf[OUTPUT]["product_level"],
+            self.used_conf[INPUTS][depth_cst.DEPTH_MAPS].keys(),
+        )
 
         # get epsg
         self.epsg = self.used_conf[OUTPUT][out_cst.EPSG]

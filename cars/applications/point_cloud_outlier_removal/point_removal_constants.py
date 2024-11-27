@@ -23,8 +23,7 @@ file contains all the constants used in cloud fusion module
 """
 
 
-STATISTICAL_RUN_TAG = "outlier_removal_statistical"
-SMALL_COMPONENT_RUN_TAG = "outlier_removal_small_component"
+CLOUD_OUTLIER_REMOVAL_RUN_TAG = "outlier_removal"
 
 # Params
 METHOD = "method"

@@ -148,7 +148,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     def __register_epipolar_dataset__(
-        self, merged_point_cloud, depth_map_dir=None, dump_dir=None, app_name=""
+        self, merged_point_cloud, depth_map_dir=None, dump_dir=None, app_name="", pair_key="PAIR_0"
     ):
         """
         Create dataset and registered the output in the orchestrator. the output
@@ -166,6 +166,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         :type dump_dir: str
         :param app_name: application name for file names
         :type app_name: str
+        :param pair_key: name of current pair for index registration
+        :type pair_key: str
 
         :return: Filtered point cloud
         :rtype: CarsDataset
@@ -213,6 +215,15 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
                 dtype=np.float64,
             )
 
+        # update depth map index if required
+        if output_dir:
+            index = {
+                cst.INDEX_DEPTH_MAP_X: os.path.join(pair_key, "X.tif"),
+                cst.INDEX_DEPTH_MAP_Y: os.path.join(pair_key, "Y.tif"),
+                cst.INDEX_DEPTH_MAP_Z: os.path.join(pair_key, "Z.tif"),
+            }
+            self.orchestrator.update_index({"depth_map": {pair_key: index}})
+
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos(
             [filtered_point_cloud]
@@ -221,7 +232,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         # Add infos to orchestrator.out_json
         updating_dict = {
             application_constants.APPLICATION_TAG: {
-                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
+                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {app_name: {}},
             }
         }
         self.orchestrator.update_out_info(updating_dict)

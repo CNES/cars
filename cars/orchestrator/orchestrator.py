@@ -41,6 +41,7 @@ from tqdm import tqdm
 
 # CARS imports
 from cars.core.cars_logging import add_progress_message
+from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import achievement_tracker
 from cars.orchestrator.cluster.abstract_cluster import AbstractCluster
@@ -183,6 +184,9 @@ class Orchestrator:
             os.path.join(self.out_dir, "metadata.json")
         self.out_json = {}
 
+        # product index file
+        self.product_index = {}
+
     def add_to_clean(self, tmp_dir):
         self.tmp_dir_list.append(tmp_dir)
 
@@ -295,6 +299,20 @@ class Orchestrator:
                 self.out_json, self.out_json_path, safe_save=True
             )
 
+    def save_index(self):
+        """
+        Save all product index files
+        """
+
+        for product, index in self.product_index.items():
+            index_directory = os.path.join(self.out_dir, product)
+            safe_makedirs(index_directory)
+            cars_dataset.save_dict(
+                index,
+                os.path.join(index_directory, "index.json"),
+                safe_save=True,
+            )
+
     def update_out_info(self, new_dict):
         """
         Update self.out_json with new dict
@@ -306,27 +324,17 @@ class Orchestrator:
         # TODO merge with safe creation of new keys of application
         # when 2 same applications are used
 
-        def merge_dicts(dict1, dict2):
-            """
-            Merge dict2 into dict 1
-
-            :param dict1: dict 1
-            :type dict1: dict
-            :param dict2: dict 2
-            :type dict2: dict
-
-            """
-
-            for key, value2 in dict2.items():
-                value1 = dict1.get(key)
-                if isinstance(value1, collections.abc.Mapping) and isinstance(
-                    value2, collections.abc.Mapping
-                ):
-                    merge_dicts(value1, value2)
-                else:
-                    dict1[key] = value2
-
         merge_dicts(self.out_json, new_dict)
+
+    def update_index(self, new_dict):
+        """
+        Update self.product_index with new dict
+
+        :param new_dict: dict to merge
+        :type new_dict: dict
+        """
+
+        merge_dicts(self.product_index, new_dict)
 
     def get_saving_infos(self, cars_ds_list):
         """
@@ -399,6 +407,7 @@ class Orchestrator:
         # save json
         if self.launch_worker:
             self.save_out_json()
+            self.save_index()
 
             # run compute and save files
             logging.info("Compute delayed ...")
@@ -611,6 +620,27 @@ class Orchestrator:
         for tmp_dir in self.tmp_dir_list:
             if tmp_dir is not None and os.path.exists(tmp_dir):
                 shutil.rmtree(tmp_dir)
+
+
+def merge_dicts(dict1, dict2):
+    """
+    Merge dict2 into dict 1
+
+    :param dict1: dict 1
+    :type dict1: dict
+    :param dict2: dict 2
+    :type dict2: dict
+
+    """
+
+    for key, value2 in dict2.items():
+        value1 = dict1.get(key)
+        if isinstance(value1, collections.abc.Mapping) and isinstance(
+            value2, collections.abc.Mapping
+        ):
+            merge_dicts(value1, value2)
+        else:
+            dict1[key] = value2
 
 
 def flatten_object(cars_ds_list, delayed_type):

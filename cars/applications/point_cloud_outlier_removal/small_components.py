@@ -28,6 +28,7 @@ import copy
 # Standard imports
 import logging
 import math
+import os
 import time
 
 # Third party imports
@@ -346,6 +347,7 @@ class SmallComponents(
                     depth_map_dir,
                     dump_dir,
                     app_name="small_components",
+                    pair_key=os.path.basename(output_dir),
                 )
             )
 

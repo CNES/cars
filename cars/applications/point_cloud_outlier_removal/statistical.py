@@ -28,6 +28,7 @@ import copy
 # Standard imports
 import logging
 import math
+import os
 import time
 
 import numpy as np
@@ -328,6 +329,7 @@ class Statistical(
                     depth_map_dir,
                     dump_dir,
                     app_name="statistical",
+                    pair_key=os.path.basename(output_dir),
                 )
             )
 
