@@ -70,6 +70,7 @@ from cars.pipelines.pipeline_constants import (
     INPUTS,
     ORCHESTRATOR,
     OUTPUT,
+    PIPELINE,
 )
 from cars.pipelines.pipeline_template import PipelineTemplate
 
@@ -108,7 +109,7 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         # Used conf
-        self.used_conf = {}
+        self.used_conf = {PIPELINE: "default"}
 
         # check global conf
         self.check_global_schema(conf)
@@ -2228,9 +2229,7 @@ class DefaultPipeline(PipelineTemplate):
         ) as self.cars_orchestrator:
 
             # initialize out_json
-            self.cars_orchestrator.update_out_info(
-                {"version": __version__, "pipeline": "default"}
-            )
+            self.cars_orchestrator.update_out_info({"version": __version__})
 
             if self.compute_depth_map:
                 self.sensor_to_depth_maps()
