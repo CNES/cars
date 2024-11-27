@@ -469,9 +469,11 @@ def ground_intersection_envelopes(
     geomodel1,
     geomodel2,
     geometry_plugin: str,
-    shp1_path: str,
-    shp2_path: str,
+    envelope_1_path: str,
+    envelope_2_path: str,
     out_intersect_path: str,
+    envelope_file_driver: str = "GeoJSON",
+    intersect_file_driver: str = "GPKG",
 ) -> Tuple[Polygon, Tuple[int, int, int, int]]:
     """
     Compute ground intersection of two images with envelopes:
@@ -489,29 +491,27 @@ def ground_intersection_envelopes(
     :param geomodel1: path and attributes for left geomodel
     :param geomodel2: path and attributes for right geomodel
     :param geometry_plugin: name of geometry plugin to use
-    :param shp1_path: Path to the output shapefile left
-    :param shp2_path: Path to the output shapefile right
+    :param envelope_1_path: Path to the output shapefile left
+    :param envelope_2_path: Path to the output shapefile right
     :param dem_dir: Directory containing DEM tiles
     :param default_alt: Default altitude above ellipsoid
     :param out_intersect_path: out vector file path to create
+    :param envelope_file_driver: driver used to write envelope files
+    :param intersect_file_driver: driver used to write the intersection file
     :return: a tuple with the shapely polygon of the intersection
              and the intersection's bounding box
              (described by a tuple (minx, miny, maxx, maxy))
     """
     geometry_plugin.image_envelope(
-        sensor1,
-        geomodel1,
-        shp1_path,
+        sensor1, geomodel1, envelope_1_path, envelope_file_driver
     )
     geometry_plugin.image_envelope(
-        sensor2,
-        geomodel2,
-        shp2_path,
+        sensor2, geomodel2, envelope_2_path, envelope_file_driver
     )
 
     # Read vectors shapefiles
-    poly1, epsg1 = inputs.read_vector(shp1_path)
-    poly2, epsg2 = inputs.read_vector(shp2_path)
+    poly1, epsg1 = inputs.read_vector(envelope_1_path)
+    poly2, epsg2 = inputs.read_vector(envelope_2_path)
 
     # Find polygon intersection from left, right polygons
     inter_poly, (
@@ -522,7 +522,9 @@ def ground_intersection_envelopes(
     ) = ground_polygon_from_envelopes(poly1, poly2, epsg1, epsg2, epsg1)
 
     # Write intersection file vector from inter_poly
-    outputs.write_vector([inter_poly], out_intersect_path, epsg1)
+    outputs.write_vector(
+        [inter_poly], out_intersect_path, epsg1, intersect_file_driver
+    )
 
     return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)
 
