@@ -740,10 +740,6 @@ class Sift(SparseMatching, short_name="sift"):
             application_constants.APPLICATION_TAG: {
                 pair_key: {
                     sm_cst.MATCHES_FILTERING_TAG: {
-                        sm_cst.RAW_MATCHES_TAG: raw_matches_array_path,
-                        sm_cst.FILTERED_MATCHES_TAG: (
-                            filtered_matches_array_path
-                        ),
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,

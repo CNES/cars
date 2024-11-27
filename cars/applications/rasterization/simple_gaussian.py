@@ -386,12 +386,8 @@ class SimpleGaussian(
         out_dsm_points_in_cell_file_name = None
         out_dsm_inf_mean_file_name = None
         out_dsm_inf_std_file_name = None
-        out_dsm_inf_n_pts_file_name = None
-        out_dsm_inf_points_in_cell_file_name = None
         out_dsm_sup_mean_file_name = None
         out_dsm_sup_std_file_name = None
-        out_dsm_sup_n_pts_file_name = None
-        out_dsm_sup_points_in_cell_file_name = None
 
         if dsm_file_name is not None:
             safe_makedirs(os.path.dirname(dsm_file_name))
@@ -624,6 +620,7 @@ class SimpleGaussian(
             out_dsm_sup_std_file_name = os.path.join(
                 out_dump_dir, "dsm_sup_std.tif"
             )
+
             self.orchestrator.add_to_save_lists(
                 out_dsm_sup_mean_file_name,
                 cst.RASTER_HGT_SUP_MEAN,
@@ -684,33 +681,8 @@ class SimpleGaussian(
             application_constants.APPLICATION_TAG: {
                 raster_cst.RASTERIZATION_RUN_TAG: {
                     raster_cst.EPSG_TAG: epsg,
-                    raster_cst.DSM_TAG: out_dsm_file_name,
-                    raster_cst.DSM_INF_TAG: out_dsm_inf_file_name,
-                    raster_cst.DSM_SUP_TAG: out_dsm_sup_file_name,
                     raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
                     raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
-                    raster_cst.COLOR_TAG: out_clr_file_name,
-                    raster_cst.MSK_TAG: out_msk_file_name,
-                    raster_cst.CONFIDENCE_TAG: out_confidence,
-                    raster_cst.PERFORMANCE_MAP_TAG: out_confidence,
-                    raster_cst.DSM_MEAN_TAG: out_dsm_mean_file_name,
-                    raster_cst.DSM_STD_TAG: out_dsm_std_file_name,
-                    raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,
-                    raster_cst.DSM_POINTS_IN_CELL_TAG: (
-                        out_dsm_points_in_cell_file_name
-                    ),
-                    raster_cst.DSM_INF_MEAN_TAG: out_dsm_inf_mean_file_name,
-                    raster_cst.DSM_INF_STD_TAG: out_dsm_inf_std_file_name,
-                    raster_cst.DSM_INF_N_PTS_TAG: out_dsm_inf_n_pts_file_name,
-                    raster_cst.DSM_INF_POINTS_IN_CELL_TAG: (
-                        out_dsm_inf_points_in_cell_file_name
-                    ),
-                    raster_cst.DSM_SUP_MEAN_TAG: out_dsm_sup_mean_file_name,
-                    raster_cst.DSM_SUP_STD_TAG: out_dsm_sup_std_file_name,
-                    raster_cst.DSM_SUP_N_PTS_TAG: out_dsm_sup_n_pts_file_name,
-                    raster_cst.DSM_SUP_POINTS_IN_CELL_TAG: (
-                        out_dsm_sup_points_in_cell_file_name
-                    ),
                 },
             }
         }

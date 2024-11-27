@@ -484,11 +484,7 @@ def estimate_right_grid_correction(
     # Update orchestrator out_json
     corrected_matches_infos = {
         application_constants.APPLICATION_TAG: {
-            pair_key: {
-                grid_constants.GRID_CORRECTION_TAG: {
-                    grid_constants.CORRECTED_MATCHES_TAG: matches_array_path
-                }
-            }
+            grid_constants.GRID_CORRECTION_TAG: {pair_key: {}}
         }
     }
     cars_orchestrator.update_out_info(corrected_matches_infos)
