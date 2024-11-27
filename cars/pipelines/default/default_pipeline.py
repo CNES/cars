@@ -1880,12 +1880,6 @@ class DefaultPipeline(PipelineTemplate):
         ):
             return True
 
-        cars_dataset.save_dict(
-            self.config_full_res,
-            os.path.join(self.out_dir, "refined_config_dense_dsm.json"),
-            safe_save=True,
-        )
-
         return False
 
     def rasterize_point_cloud(self):
