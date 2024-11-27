@@ -590,14 +590,14 @@ def get_conversion_factor(bounds, epsg, epsg_cloud):
             [xmin, ymin],
             [xmax, ymax],
         ]
-        bounds_points_epsg_cloud = projection.points_cloud_conversion(
+        bounds_point_epsg_cloud = projection.point_cloud_conversion(
             bounds_points, epsg, epsg_cloud
         )
         # Compute area in both epsg
         terrain_area_epsg = (xmax - xmin) * (ymax - ymin)
         terrain_area_epsg_cloud = (
-            bounds_points_epsg_cloud[1][0] - bounds_points_epsg_cloud[0][0]
-        ) * (bounds_points_epsg_cloud[1][1] - bounds_points_epsg_cloud[0][1])
+            bounds_point_epsg_cloud[1][0] - bounds_point_epsg_cloud[0][0]
+        ) * (bounds_point_epsg_cloud[1][1] - bounds_point_epsg_cloud[0][1])
         # Compute conversion factor
         conversion_factor = math.sqrt(
             terrain_area_epsg / terrain_area_epsg_cloud

@@ -95,16 +95,16 @@ def triangulate_sparse_matches(
         disp_max=0,
     )
     # Project point cloud to UTM
-    projection.points_cloud_conversion_dataset(point_cloud, epsg)
+    projection.point_cloud_conversion_dataset(point_cloud, epsg)
 
     # Convert point cloud to pandas format to allow statistical filtering
-    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINTS_CLOUD_CORR_MSK]
+    labels = [cst.X, cst.Y, cst.Z, cst.DISPARITY, cst.POINT_CLOUD_CORR_MSK]
     cloud_array = []
     cloud_array.append(point_cloud[cst.X].values)
     cloud_array.append(point_cloud[cst.Y].values)
     cloud_array.append(point_cloud[cst.Z].values)
     cloud_array.append(point_cloud[cst.DISPARITY].values)
-    cloud_array.append(point_cloud[cst.POINTS_CLOUD_CORR_MSK].values)
+    cloud_array.append(point_cloud[cst.POINT_CLOUD_CORR_MSK].values)
     pd_cloud = pandas.DataFrame(
         np.transpose(np.array(cloud_array)), columns=labels
     )

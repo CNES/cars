@@ -24,11 +24,11 @@ CARS application module init file
 
 # Imports needed in order to register application for Application factory
 from . import dem_generation  # noqa: F401
-from . import dense_matches_filling  # noqa: F401
+from . import dense_match_filling  # noqa: F401
 from . import dense_matching  # noqa: F401
 from . import dsm_filling  # noqa: F401
 from . import grid_generation  # noqa: F401
-from . import holes_detection  # noqa: F401
+from . import hole_detection  # noqa: F401
 from . import point_cloud_denoising  # noqa: F401
 from . import point_cloud_fusion  # noqa: F401
 from . import point_cloud_outlier_removal  # noqa: F401

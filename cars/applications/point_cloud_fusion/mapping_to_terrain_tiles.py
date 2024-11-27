@@ -100,21 +100,21 @@ class MappingToTerrainTiles(
         overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
             conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
-        points_cloud_fusion_schema = {
+        point_cloud_fusion_schema = {
             "method": str,
             "save_by_pair": bool,
             application_constants.SAVE_INTERMEDIATE_DATA: bool,
         }
 
         # Check conf
-        checker = Checker(points_cloud_fusion_schema)
+        checker = Checker(point_cloud_fusion_schema)
         checker.validate(overloaded_conf)
 
         return overloaded_conf
 
     def run(  # noqa: C901
         self,
-        list_epipolar_points_cloud,
+        list_epipolar_point_clouds,
         bounds,
         epsg,
         source_pc_names=None,
@@ -127,10 +127,10 @@ class MappingToTerrainTiles(
         """
         Run EpipolarCloudFusion application.
 
-        Creates a CarsDataset corresponding to the merged points clouds,
+        Creates a CarsDataset corresponding to the merged point clouds,
         tiled with the terrain grid used during rasterization.
 
-        :param list_epipolar_points_cloud: list with points clouds\
+        :param list_epipolar_point_clouds: list with point clouds\
             Each CarsDataset contains:
 
             - N x M Delayed tiles. \
@@ -141,7 +141,7 @@ class MappingToTerrainTiles(
                 - attrs with keys: "margins", "epi_full_size", "epsg"
             - attributes containing: "disp_lower_bound",  "disp_upper_bound" \
                 "elevation_delta_lower_bound", "elevation_delta_upper_bound"
-        :type list_epipolar_points_cloud: list(CarsDataset) filled with
+        :type list_epipolar_point_clouds: list(CarsDataset) filled with
           xr.Dataset
         :param bounds: terrain bounds
         :type bounds: list
@@ -159,7 +159,7 @@ class MappingToTerrainTiles(
         :type save_laz_output: bool
 
 
-        :return: Merged points clouds
+        :return: Merged point clouds
 
             CarsDataset contains:
 
@@ -214,13 +214,11 @@ class MappingToTerrainTiles(
             optimal_terrain_tile_width,
         )
         source_pc_names = []
-        for points_cloud in list_epipolar_points_cloud:
-            if "source_pc_name" in points_cloud.attributes:
-                source_pc_names.append(
-                    points_cloud.attributes["source_pc_name"]
-                )
-        # Get dataset type of first item in list_epipolar_points_cloud
-        pc_dataset_type = list_epipolar_points_cloud[0].dataset_type
+        for point_cloud in list_epipolar_point_clouds:
+            if "source_pc_name" in point_cloud.attributes:
+                source_pc_names.append(point_cloud.attributes["source_pc_name"])
+        # Get dataset type of first item in list_epipolar_point_clouds
+        pc_dataset_type = list_epipolar_point_clouds[0].dataset_type
 
         if pc_dataset_type in (
             "arrays",
@@ -268,12 +266,12 @@ class MappingToTerrainTiles(
                 # TODO change method for corresponding tiles
                 list_points_min = []
                 list_points_max = []
-                for points_cloud in list_epipolar_points_cloud:
+                for point_cloud in list_epipolar_point_clouds:
                     points_min, points_max = tiling.terrain_grid_to_epipolar(
                         terrain_tiling_grid,
-                        points_cloud.tiling_grid,
-                        points_cloud.attributes["epipolar_grid_min"],
-                        points_cloud.attributes["epipolar_grid_max"],
+                        point_cloud.tiling_grid,
+                        point_cloud.attributes["epipolar_grid_min"],
+                        point_cloud.attributes["epipolar_grid_max"],
                         epsg,
                     )
                     list_points_min.append(points_min)
@@ -307,12 +305,12 @@ class MappingToTerrainTiles(
                 corresponding_tiles_cars_ds = (
                     pc_tif_tools.get_corresponding_tiles_tif(
                         terrain_tiling_grid,
-                        list_epipolar_points_cloud,
+                        list_epipolar_point_clouds,
                         margins=margins,
                         orchestrator=self.orchestrator,
                     )
                 )
-                color_file = list_epipolar_points_cloud[0].tiles[0][0]["data"][
+                color_file = list_epipolar_point_clouds[0].tiles[0][0]["data"][
                     "color"
                 ]
                 if color_file is not None:
@@ -332,7 +330,7 @@ class MappingToTerrainTiles(
                 safe_makedirs(csv_pc_file_name)
                 csv_pc_file_name = os.path.join(csv_pc_file_name, "pc")
                 self.orchestrator.add_to_compute_lists(
-                    merged_point_cloud, cars_ds_name="merged_points_cloud_csv"
+                    merged_point_cloud, cars_ds_name="merged_point_cloud_csv"
                 )
 
             laz_pc_file_name = None
@@ -352,7 +350,7 @@ class MappingToTerrainTiles(
                 safe_makedirs(laz_pc_file_name)
                 laz_pc_file_name = os.path.join(laz_pc_file_name, "pc")
                 self.orchestrator.add_to_compute_lists(
-                    merged_point_cloud, cars_ds_name="merged_points_cloud"
+                    merged_point_cloud, cars_ds_name="merged_point_cloud"
                 )
 
             # Get saving infos in order to save tiles when they are computed
@@ -379,7 +377,7 @@ class MappingToTerrainTiles(
                             terrain_tiling_grid,
                             row,
                             col,
-                            list_epipolar_points_cloud,
+                            list_epipolar_point_clouds,
                             list_points_min,
                             list_points_max,
                         )
@@ -484,7 +482,7 @@ class MappingToTerrainTiles(
 
         else:
             logging.error(
-                "PointsCloudRasterisation application doesn't "
+                "PointCloudRasterisation application doesn't "
                 "support this input data format"
             )
 
@@ -506,7 +504,7 @@ def compute_point_cloud_wrapper(
     source_pc_names=None,
 ):
     """
-    Wrapper for points clouds fusion step :
+    Wrapper for point clouds fusion step :
     - Convert a list of clouds to correct epsg
 
     :param point_clouds: list of clouds, list of (dataset, dataset_id) with :
@@ -542,7 +540,7 @@ def compute_point_cloud_wrapper(
     :param source_pc_names: source point cloud name (correspond to pair_key)
     :type source_pc_names: list str
 
-    :return: merged points cloud dataframe with:
+    :return: merged point cloud dataframe with:
             - cst.X
             - cst.Y
             - cst.Z
@@ -594,9 +592,7 @@ def compute_point_cloud_wrapper(
 
     # Conversion to UTM
     if cloud_epsg != epsg:
-        projection.points_cloud_conversion_dataframe(
-            pc_pandas, cloud_epsg, epsg
-        )
+        projection.point_cloud_conversion_dataframe(pc_pandas, cloud_epsg, epsg)
         cloud_epsg = epsg
 
     # Fill attributes for rasterization

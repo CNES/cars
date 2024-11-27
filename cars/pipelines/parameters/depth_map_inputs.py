@@ -81,12 +81,12 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         cst.Z: str,
         cst.Z_INF: Or(str, None),
         cst.Z_SUP: Or(str, None),
-        cst.POINTS_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
-        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
-        cst.POINTS_CLOUD_CLR_KEY_ROOT: str,
-        cst.POINTS_CLOUD_FILLING_KEY_ROOT: Or(str, None),
-        cst.POINTS_CLOUD_MSK: Or(str, None),
-        cst.POINTS_CLOUD_PERFORMANCE_MAP: Or(str, None),
+        cst.POINT_CLOUD_CLASSIF_KEY_ROOT: Or(str, None),
+        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT: Or(dict, None),
+        cst.POINT_CLOUD_CLR_KEY_ROOT: str,
+        cst.POINT_CLOUD_FILLING_KEY_ROOT: Or(str, None),
+        cst.POINT_CLOUD_MSK: Or(str, None),
+        cst.POINT_CLOUD_PERFORMANCE_MAP: Or(str, None),
         cst.PC_EPSG: Or(str, int, None),
     }
     checker_pc = Checker(pc_schema)
@@ -112,26 +112,26 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         )
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-            cst.POINTS_CLOUD_CLR_KEY_ROOT
+            cst.POINT_CLOUD_CLR_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("color", None)
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-            cst.POINTS_CLOUD_MSK
+            cst.POINT_CLOUD_MSK
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("mask", None)
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-            cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+            cst.POINT_CLOUD_CLASSIF_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
             "classification", None
         )
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-            cst.POINTS_CLOUD_PERFORMANCE_MAP
+            cst.POINT_CLOUD_PERFORMANCE_MAP
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
             "performance_map", None
         )
 
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-            cst.POINTS_CLOUD_FILLING_KEY_ROOT
+            cst.POINT_CLOUD_FILLING_KEY_ROOT
         ] = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get("filling", None)
 
         confidence_conf = conf[depth_map_cst.DEPTH_MAPS][depth_map_key].get(
@@ -139,7 +139,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         )
         if confidence_conf:
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
             ] = {}
             if (
                 confidence_conf_ref
@@ -156,20 +156,20 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
             for confidence_name in confidence_conf:
                 output_confidence_name = confidence_name
                 if (
-                    cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                    cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
                     not in output_confidence_name
                 ):
                     output_confidence_name = (
-                        cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                        cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
                         + "_"
                         + output_confidence_name
                     )
                 overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                    cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                    cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
                 ][output_confidence_name] = confidence_conf[confidence_name]
         else:
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
             ] = None
         overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
             cst.PC_EPSG
@@ -195,19 +195,19 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Y],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][cst.Z],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_MSK
+                cst.POINT_CLOUD_MSK
             ],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_CLR_KEY_ROOT
+                cst.POINT_CLOUD_CLR_KEY_ROOT
             ],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_CLASSIF_KEY_ROOT
+                cst.POINT_CLOUD_CLASSIF_KEY_ROOT
             ],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_FILLING_KEY_ROOT
+                cst.POINT_CLOUD_FILLING_KEY_ROOT
             ],
             overloaded_conf[depth_map_cst.DEPTH_MAPS][depth_map_key][
-                cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT
+                cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT
             ],
         )
 
@@ -317,13 +317,13 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             cst.X,
             cst.Y,
             cst.Z,
-            cst.POINTS_CLOUD_CLR_KEY_ROOT,
-            cst.POINTS_CLOUD_MSK,
-            cst.POINTS_CLOUD_CLASSIF_KEY_ROOT,
-            cst.POINTS_CLOUD_FILLING_KEY_ROOT,
-            cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT,
+            cst.POINT_CLOUD_CLR_KEY_ROOT,
+            cst.POINT_CLOUD_MSK,
+            cst.POINT_CLOUD_CLASSIF_KEY_ROOT,
+            cst.POINT_CLOUD_FILLING_KEY_ROOT,
+            cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT,
         ]:
-            if tag != cst.POINTS_CLOUD_CONFIDENCE_KEY_ROOT:
+            if tag != cst.POINT_CLOUD_CONFIDENCE_KEY_ROOT:
                 if depth_map[tag] is not None:
                     depth_map[tag] = make_relative_path_absolute(
                         depth_map[tag], config_json_dir

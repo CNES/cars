@@ -185,7 +185,7 @@ def test_epipolar_pipeline(
         left_image, right_image, corr_cfg, disp_range_grid
     )
 
-    points_cloud = triangulation_wrapper(
+    point_cloud = triangulation_wrapper(
         disp_map,
         img1,
         img2,
@@ -200,11 +200,11 @@ def test_epipolar_pipeline(
     # Uncomment to update reference
     # with open(
     #     absolute_data_path("ref_output/cloud1_ref_pandora"), "wb"
-    # ) as points_cloud_file:
-    #     pickle.dump(points_cloud, points_cloud_file)
+    # ) as point_cloud_file:
+    #     pickle.dump(point_cloud, point_cloud_file)
 
     with open(
         absolute_data_path("ref_output/cloud1_ref_pandora"), "rb"
-    ) as points_cloud_file:
-        ref_pc = pickle.load(points_cloud_file)
-        assert_same_datasets(points_cloud, ref_pc, atol=1.0e-3)
+    ) as point_cloud_file:
+        ref_pc = pickle.load(point_cloud_file)
+        assert_same_datasets(point_cloud, ref_pc, atol=1.0e-3)

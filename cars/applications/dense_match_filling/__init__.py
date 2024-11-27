@@ -19,10 +19,12 @@
 # limitations under the License.
 #
 """
-CARS holes detection module init file
+CARS core fill disparity map module init file
 """
 # flake8: noqa: F401
 
-from cars.applications.holes_detection.holes_detection import HolesDetection
+from cars.applications.dense_match_filling.dense_match_filling import (
+    DenseMatchFilling,
+)
 
-from . import cloud_to_bbox
+from . import plane, zero_padding

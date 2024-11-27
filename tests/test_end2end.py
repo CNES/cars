@@ -1539,7 +1539,7 @@ def test_end2end_ventoux_unique_split():
                     },
                 },
             },
-            "dense_matches_filling.1": {
+            "dense_match_filling.1": {
                 "method": "plane",
                 "classification": ["forest"],
             },
@@ -4562,7 +4562,7 @@ def test_end2end_paca_with_mask():
 
         input_config_dense_dsm["applications"].update(
             {
-                "dense_matches_filling.2": {
+                "dense_match_filling.2": {
                     "method": "zero_padding",
                     "classification": ["water", "road"],
                 },
@@ -4662,7 +4662,7 @@ def test_end2end_disparity_filling():
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
-            "dense_matches_filling.1": {
+            "dense_match_filling.1": {
                 "method": "plane",
                 "save_intermediate_data": True,
                 "classification": ["shadow"],
@@ -4793,7 +4793,7 @@ def test_end2end_disparity_filling_with_zeros():
                 "save_intermediate_data": True,
                 "use_global_disp_range": True,
             },
-            "dense_matches_filling.2": {
+            "dense_match_filling.2": {
                 "method": "zero_padding",
                 "save_intermediate_data": True,
                 "classification": ["bat"],

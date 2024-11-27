@@ -271,7 +271,7 @@ def test_tiles_pairing(
     pc_left.attributes["largest_epipolar_region"] = largest_epipolar_region
     pc_left.attributes["opt_epipolar_tile_size"] = epipolar_tile_size
 
-    list_points_clouds_left = [pc_left]
+    list_point_clouds_left = [pc_left]
     list_epipolar_points_min = [points_min]
     list_epipolar_points_max = [points_max]
 
@@ -294,7 +294,7 @@ def test_tiles_pairing(
                 terrain_tiling_grid,
                 row,
                 col,
-                list_points_clouds_left,
+                list_point_clouds_left,
                 list_epipolar_points_min,
                 list_epipolar_points_max,
             )

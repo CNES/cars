@@ -1099,7 +1099,7 @@ The structure follows this organisation:
             
             .. tab:: Dense matches filling
 
-                **Name**: "dense_matches_filling"
+                **Name**: "dense_match_filling"
 
                 **Description**
 
@@ -1160,28 +1160,28 @@ The structure follows this organisation:
 
                 .. warning::
 
-                    There is a particular case with the *dense_matches_filling* application because it is called twice.
+                    There is a particular case with the *dense_match_filling* application because it is called twice.
                     The eighth step consists of fill dense matches via two consecutive methods.
                     So you can configure the application twice , once for the *plane*, the other for *zero_padding* method.
                     Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
                     those two applications with :
 
-                    * *dense_matches_filling.1*
-                    * *dense_matches_filling.2*
+                    * *dense_match_filling.1*
+                    * *dense_match_filling.2*
 
-                    Each one is associated to a particular *dense_matches_filling* method*
+                    Each one is associated to a particular *dense_match_filling* method*
 
                 **Example**
 
                 .. code-block:: json
 
                         "applications": {
-                            "dense_matches_filling.1": {
+                            "dense_match_filling.1": {
                                 "method": "plane",
                                 "classification": ["water"],
                                 "save_intermediate_data": true
                             },
-                            "dense_matches_filling.2": {
+                            "dense_match_filling.2": {
                                 "method": "zero_padding",
                                 "classification": ["cloud", "snow"],
                                 "save_intermediate_data": true

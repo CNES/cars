@@ -97,7 +97,7 @@ def triangulate(
         )
 
     point_clouds = {}
-    point_clouds[cst.STEREO_REF] = compute_points_cloud(
+    point_clouds[cst.STEREO_REF] = compute_point_cloud(
         geometry_plugin,
         sensor1,
         sensor2,
@@ -178,7 +178,7 @@ def triangulate_matches(
         cst.Y,
         cst.Z,
         cst.DISPARITY,
-        cst.POINTS_CLOUD_CORR_MSK,
+        cst.POINT_CLOUD_CORR_MSK,
     ]
     point_cloud_array = np.zeros(
         (np.ravel(llh[:, :, 0]).size, len(point_cloud_index)), dtype=np.float64
@@ -193,7 +193,7 @@ def triangulate_matches(
     return point_cloud
 
 
-def compute_points_cloud(
+def compute_point_cloud(
     geometry_plugin,
     sensor1,
     sensor2,
@@ -206,7 +206,7 @@ def compute_points_cloud(
 ) -> xr.Dataset:
     # TODO detail a bit more what this method do
     """
-    Compute points cloud
+    Compute point cloud
 
     :param geometry_plugin: geometry plugin to use
     :param sensor1: path to left sensor image
@@ -219,7 +219,7 @@ def compute_points_cloud(
     :param roi_key: roi of the disparity map key
           ('roi' if cropped while calling create_disp_dataset,
           otherwise 'roi_with_margins')
-    :return: the points cloud dataset
+    :return: the point cloud dataset
     """
     # Extract input paths from configuration
     llh = geometry_plugin.triangulate(
@@ -247,7 +247,7 @@ def compute_points_cloud(
         cst.X: ([cst.ROW, cst.COL], llh[:, :, 0]),  # longitudes
         cst.Y: ([cst.ROW, cst.COL], llh[:, :, 1]),  # latitudes
         cst.Z: ([cst.ROW, cst.COL], llh[:, :, 2]),
-        cst.POINTS_CLOUD_CORR_MSK: (
+        cst.POINT_CLOUD_CORR_MSK: (
             [cst.ROW, cst.COL],
             data[cst_disp.VALID].values,
         ),

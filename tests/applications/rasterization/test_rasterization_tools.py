@@ -20,7 +20,7 @@
 #
 """
 Test module for
-    cars/application/points_cloud_rasterization/rasterization_tools.py
+    cars/application/point_cloud_rasterization/rasterization_tools.py
 TODO: refactor with code source
 """
 # pylint: disable= C0302
@@ -730,7 +730,7 @@ def test_mask_interp_case1(
 
     # create panda dataframe
     cloud_pd = pandas.DataFrame(
-        cloud, columns=[cst.X, cst.Y, cst.POINTS_CLOUD_MSK]
+        cloud, columns=[cst.X, cst.Y, cst.POINT_CLOUD_MSK]
     )
     cloud_pd.attrs = {"attributes": {"number_of_pc": 1}}
 

@@ -19,7 +19,7 @@
 # limitations under the License.
 #
 """
-CARS holes detection module init file
+CARS hole detection module init file
 """
 
 import logging
@@ -30,10 +30,10 @@ from cars.applications.application import Application
 from cars.applications.application_template import ApplicationTemplate
 
 
-@Application.register("holes_detection")
-class HolesDetection(ApplicationTemplate, metaclass=ABCMeta):
+@Application.register("hole_detection")
+class HoleDetection(ApplicationTemplate, metaclass=ABCMeta):
     """
-    HolesDetection
+    HoleDetection
     """
 
     available_applications: Dict = {}
@@ -45,39 +45,39 @@ class HolesDetection(ApplicationTemplate, metaclass=ABCMeta):
         :raises:
          - KeyError when the required application is not registered
 
-        :param conf: configuration for holes_detection
+        :param conf: configuration for hole_detection
         :return: a application_to_use object
         """
 
-        holes_detection_method = cls.default_application
+        hole_detection_method = cls.default_application
         if bool(conf) is False or "method" not in conf:
             logging.info(
                 "Holes Detection method not specified, "
-                "default {} is used".format(holes_detection_method)
+                "default {} is used".format(hole_detection_method)
             )
         else:
-            holes_detection_method = conf["method"]
+            hole_detection_method = conf["method"]
 
-        if holes_detection_method not in cls.available_applications:
+        if hole_detection_method not in cls.available_applications:
             logging.error(
-                "No holes_detection application named {} registered".format(
-                    holes_detection_method
+                "No hole_detection application named {} registered".format(
+                    hole_detection_method
                 )
             )
             raise KeyError(
-                "No holes_detection application named {} registered".format(
-                    holes_detection_method
+                "No hole_detection application named {} registered".format(
+                    hole_detection_method
                 )
             )
 
         logging.info(
-            "The HolesDetection({}) application will be used".format(
-                holes_detection_method
+            "The HoleDetection({}) application will be used".format(
+                hole_detection_method
             )
         )
 
-        return super(HolesDetection, cls).__new__(
-            cls.available_applications[holes_detection_method]
+        return super(HoleDetection, cls).__new__(
+            cls.available_applications[hole_detection_method]
         )
 
     def __init_subclass__(cls, short_name, **kwargs):  # pylint: disable=E0302

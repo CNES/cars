@@ -38,18 +38,18 @@
     },
     "point_cloud_fusion": {
       "method": "mapping_to_terrain_tiles",
-      "save_points_cloud_as_laz": false,
-      "save_points_cloud_as_csv": false
+      "save_point_cloud_as_laz": false,
+      "save_point_cloud_as_csv": false
     },
     "point_cloud_outliers_removing.1": {
       "method": "small_components",
-      "save_points_cloud_as_laz": false,
-      "save_points_cloud_as_csv": false
+      "save_point_cloud_as_laz": false,
+      "save_point_cloud_as_csv": false
     },
     "point_cloud_outliers_removing.2": {
       "method": "statistical",
-      "save_points_cloud_as_laz": true,
-      "save_points_cloud_as_csv": false
+      "save_point_cloud_as_laz": true,
+      "save_point_cloud_as_csv": false
     }
   },
   "output": {

@@ -102,7 +102,7 @@ def resample_polygon(roi_poly, roi_epsg, resolution=100):
             # Get distance in meter of line
             first, last = line.coords[0], line.coords[1]
             in_cloud = np.array([[first[0], first[1]], [last[0], last[1]]])
-            out_cloud = projection.points_cloud_conversion(
+            out_cloud = projection.point_cloud_conversion(
                 in_cloud, roi_epsg, epsg_meter
             )
             new_first = Point(out_cloud[0, 0], out_cloud[0, 1])
