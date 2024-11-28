@@ -45,29 +45,23 @@ Getting Started
 .. sourcecode:: text
 
     {
-            "inputs": {
-                "sensors" : {
-                    "one": {
-                        "image": "img1.tif",
-                        "geomodel": "img1.geom",
-                        "color": "color1.tif"
-                    },
-                    "two": {
-                        "image": "img2.tif",
-                        "geomodel": "img2.geom"
-                    },
-                    "three": {
-                        "image": "img3.tif",
-                        "geomodel": "img3.geom"
-                    }
+        "inputs": {
+            "sensors" : {
+                "one": {
+                    "image": "img1.tif",
+                    "geomodel": "img1.geom",
+                    "color": "color1.tif"
                 },
-                "pairing": [["one", "two"],["one", "three"]],
-                "initial_elevation": "srtm_dir/N29E031_KHEOPS.tif"
-            },
-
-            "output": {
-                  "out_dir": "outresults"
+                "two": {
+                    "image": "img2.tif",
+                    "geomodel": "img2.geom"
+                }
             }
+        },
+
+        "output": {
+                "directory": "outresults"
+        }
     }
 
 * Go to the ``data_gizeh/outresults/`` output directory to get a :term:`DSM` and color image associated.
