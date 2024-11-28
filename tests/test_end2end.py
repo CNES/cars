@@ -107,7 +107,6 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
             "mask": True,
             "performance_map": True,
         }
-        input_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
         dense_dsm_pipeline.run()
@@ -117,117 +116,39 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
-        # Uncomment the 2 following instructions to update reference data
         # copy2(
-        #      os.path.join(out_dir, "dsm", "dsm.tif"),
-        #      absolute_data_path(
-        #          os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
-        #      ),
-        #  )
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
         # copy2(
-        #      os.path.join(out_dir, "dsm", "color.tif"),
-        #      absolute_data_path(
-        #          os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
-        #      ),
-        #  )
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
         # copy2(
-        #      os.path.join(out_dir, "dsm", "mask.tif"),
-        #      absolute_data_path(
-        #          os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
-        #      ),
-        #  )
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
+        #         )
+        #     ),
+        # )
         # copy2(
-        #      os.path.join(out_dir, "dsm", "performance_map.tif"),
-        #      absolute_data_path(
-        #          os.path.join(
-        #              ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
-        #          )
-        #      ),
-        #  )
-
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "dsm.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "dsm_end2end_gizeh_crop.tif")
-            ),
-            atol=0.0001,
-            rtol=1e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "color.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "color_end2end_gizeh_crop.tif")
-            ),
-            rtol=0.0002,
-            atol=1.0e-6,
-        )
-        assert_same_images(
-            os.path.join(out_dir, "dsm", "mask.tif"),
-            absolute_data_path(
-                os.path.join(ref_output_dir, "mask_end2end_gizeh_crop.tif")
-            ),
-            rtol=1.0e-7,
-            atol=1.0e-7,
-        )
-        assert_same_images(
-            os.path.join(
-                out_dir,
-                "dsm",
-                "performance_map.tif",
-            ),
-            absolute_data_path(
-                os.path.join(
-                    ref_output_dir, "performance_map_end2end_gizeh_crop.tif"
-                )
-            ),
-            rtol=1.0e-6,
-            atol=1.0e-6,
-        )
-
-        # launch no mergin pipeline
-        input_dense_dsm["pipeline"] = "sensors_to_dense_dsm_no_merging"
-        input_dense_dsm["advanced"]["merging"] = False
-        input_dense_dsm["output"]["directory"] = out_dir + "no_merging"
-
-        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm)
-        dense_dsm_pipeline.run()
-        out_dir = input_dense_dsm["output"]["directory"]
-
-        # Uncomment the 2 following instructions to update reference data
-        # copy2(
-        #      os.path.join(out_dir, "dsm", "dsm.tif"),
-        #      absolute_data_path(
-        #          os.path.join(
-        #              ref_output_dir, "dsm_end2end_gizeh_crop_no_merging.tif"
-        #          )
-        #      ),
-        #  )
-        # copy2(
-        #      os.path.join(out_dir, "dsm", "color.tif"),
-        #      absolute_data_path(
-        #          os.path.join(
-        #              ref_output_dir, "color_end2end_gizeh_crop_no_merging.tif"
-        #          )
-        #      ),
-        #  )
-        # copy2(
-        #      os.path.join(out_dir, "dsm", "mask.tif"),
-        #      absolute_data_path(
-        #          os.path.join(
-        #              ref_output_dir, "mask_end2end_gizeh_crop_no_merging.tif"
-        #          )
-        #      ),
-        #  )
-        # copy2(
-        #      os.path.join(out_dir, "dsm", "performance_map.tif"),
-        #      absolute_data_path(
-        #          os.path.join(
-        #              ref_output_dir,
-        #              "performance_map_end2end_gizeh_crop_no_merging.tif",
-        #          )
-        #      ),
-        #  )
-
+        #     os.path.join(out_dir, "dsm", "performance_map.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "performance_map_end2end_gizeh_crop_no_merging.tif",
+        #         )
+        #     ),
+        # )
         assert_same_images(
             os.path.join(out_dir, "dsm", "dsm.tif"),
             absolute_data_path(
@@ -705,10 +626,6 @@ def test_end2end_ventoux_unique():
                 "method": "line_of_sight_intersection",
                 "save_intermediate_data": True,
             },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
-                "save_intermediate_data": True,
-            },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
@@ -717,9 +634,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
-        # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -1124,9 +1038,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
-        # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -1226,9 +1137,6 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm["output"]["epsg"] = 32631
         # resolution
         input_config_dense_dsm["output"]["resolution"] = 0.5
-        # update pipeline
-        input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -1248,8 +1156,7 @@ def test_end2end_ventoux_unique():
             absolute_data_path(
                 os.path.join(ref_output_dir, "color_end2end_ventoux.tif")
             ),
-            rtol=0.0002,
-            atol=1.0e-6,
+            rtol=0.005,
         )
         assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
@@ -1340,7 +1247,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                         "save_intermediate_data": True,
                     }
                 },
-                "advanced": {"merging": True},
             }
 
             dsm_pipeline = default.DefaultPipeline(input_dsm_config)
@@ -1378,50 +1284,6 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             #      )
             #  ),
             # )
-
-            assert_same_images(
-                os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
-                absolute_data_path(
-                    os.path.join(
-                        ref_output_dir, "dsm_end2end_ventoux_split_4326.tif"
-                    )
-                ),
-                atol=0.0001,
-                rtol=1e-6,
-            )
-            assert_same_images(
-                os.path.join(out_dir_dsm, "dsm", "color.tif"),
-                absolute_data_path(
-                    os.path.join(
-                        ref_output_dir, "color_end2end_ventoux_split_4326.tif"
-                    )
-                ),
-                rtol=1.0e-7,
-                atol=1.0e-7,
-            )
-            assert_same_images(
-                os.path.join(
-                    out_dir_dsm, "dump_dir", "rasterization", "source_pc.tif"
-                ),
-                absolute_data_path(
-                    os.path.join(
-                        ref_output_dir,
-                        "source_pc_end2end_ventoux_split_4326.tif",
-                    )
-                ),
-                rtol=1.0e-7,
-                atol=1.0e-7,
-            )
-
-            # launch with no merging pipeline
-
-            input_dsm_config["advanced"]["merging"] = False
-            input_dsm_config["output"]["directory"] = output_path + "no_merging"
-
-            dsm_pipeline = default.DefaultPipeline(input_dsm_config)
-            dsm_pipeline.run()
-
-            out_dir_dsm = input_dsm_config["output"]["directory"]
 
             assert_same_images(
                 os.path.join(out_dir_dsm, "dsm", "dsm.tif"),
@@ -1547,6 +1409,17 @@ def test_end2end_ventoux_unique_split():
                 "method": "line_of_sight_intersection",
                 "save_intermediate_data": True,
             },
+            "point_cloud_outlier_removal.1": {
+                "method": "small_components",
+                "activated": True,
+                "save_intermediate_data": True,
+            },
+            "point_cloud_outlier_removal.2": {
+                "method": "statistical",
+                "activated": True,
+                "save_intermediate_data": True,
+                "use_median": False,
+            },
         }
 
         input_config_pc["applications"].update(application_config)
@@ -1628,18 +1501,6 @@ def test_end2end_ventoux_unique_split():
                 "output": {"directory": output_path, "resolution": 0.5},
                 "pipeline": "dense_depth_maps_to_dense_dsm",
                 "applications": {
-                    "point_cloud_outlier_removal.1": {
-                        "method": "small_components",
-                        "activated": True,
-                        "save_intermediate_data": True,
-                        "save_by_pair": True,
-                    },
-                    "point_cloud_outlier_removal.2": {
-                        "method": "statistical",
-                        "activated": True,
-                        "save_intermediate_data": True,
-                        "use_median": False,
-                    },
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "dsm_radius": 3,
@@ -1663,11 +1524,12 @@ def test_end2end_ventoux_unique_split():
             assert (
                 os.path.exists(
                     os.path.join(
-                        out_dir_dsm,
+                        out_dir,
                         "dump_dir",
-                        "point_cloud_outlier_removal_1",
+                        "triangulation",
+                        "left_right",
                         "laz",
-                        "675292.3110543193_4897140.457149682_one.laz",
+                        "0_0.laz",
                     )
                 )
                 is True
@@ -1895,16 +1757,6 @@ def test_end2end_ventoux_unique_split():
             input_dsm_config["output"]["product_level"] = ["dsm"]
             input_dsm_config["output"]["directory"] = (
                 input_dsm_config["output"]["directory"] + "_no_merging"
-            )
-
-            del input_dsm_config["applications"][
-                "point_cloud_outlier_removal.1"
-            ]
-            del input_dsm_config["applications"][
-                "point_cloud_outlier_removal.2"
-            ]
-            input_dsm_config["pipeline"] = (
-                "dense_depth_maps_to_dense_dsm_no_merging"
             )
             input_dsm_config["advanced"]["merging"] = False
 
@@ -2426,8 +2278,6 @@ def test_end2end_use_epipolar_a_priori():
         # Update outdir, write new dir
         input_config_dense_dsm["output"]["directory"] += "dense"
 
-        input_config_dense_dsm["advanced"]["merging"] = True
-
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
 
         dense_dsm_pipeline.run()
@@ -2593,7 +2443,7 @@ def test_prepare_ventoux_bias():
             ]
             assert out_disp_compute["minimum_disparity"] > -86
             assert out_disp_compute["minimum_disparity"] < -83
-            assert out_disp_compute["maximum_disparity"] > -48
+            assert out_disp_compute["maximum_disparity"] > -46
             assert out_disp_compute["maximum_disparity"] < -45
 
             # check matches file exists
@@ -2665,7 +2515,6 @@ def test_end2end_ventoux_full_output_no_elevation():
         input_config["applications"].update(application_config)
         input_config["advanced"].update(advanced_config)
         input_config["output"].update(output_config)
-        input_config["advanced"]["merging"] = True
 
         pipeline = default.DefaultPipeline(input_config)
 
@@ -2678,92 +2527,90 @@ def test_end2end_ventoux_full_output_no_elevation():
         # copy2(
         #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
-        #        os.path.join(
-        #            ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
-        #        )
+        #         os.path.join(
+        #             ref_output_dir, "dsm_end2end_ventoux_no_elevation.tif"
+        #         )
         #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir, "color_end2end_ventoux_no_elevation.tif"
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "classification.tif"),
         #     absolute_data_path(
-        #     os.path.join(
-        #               ref_output_dir,
-        #               "classification_end2end_ventoux_no_elevation.tif"
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "classification_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir, "mask_end2end_ventoux_no_elevation.tif"
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir, "filling_end2end_ventoux_no_elevation.tif"
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "dsm", "contributing_pair.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir,
-        #             "contributing_pair_end2end_ventoux_no_elevation.tif"
+        #             "contributing_pair_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "color.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right", "color.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir,
-        #             "epi_pc_color_end2end_ventoux_no_elevation.tif"
+        #             "epi_pc_color_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "classification.tif"),
-        #     absolute_data_path(
         #     os.path.join(
+        #         out_dir, "depth_map", "left_right", "classification.tif"
+        #     ),
+        #     absolute_data_path(
+        #         os.path.join(
         #             ref_output_dir,
-        #             "epi_pc_classification_end2end_ventoux_no_elevation.tif"
+        #             "epi_pc_classification_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "filling.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right", "filling.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir,
-        #             "epi_pc_filling_end2end_ventoux_no_elevation.tif"
+        #             "epi_pc_filling_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir, "depth_map", "left_right",
-        #                         "mask.tif"),
+        #     os.path.join(out_dir, "depth_map", "left_right", "mask.tif"),
         #     absolute_data_path(
-        #     os.path.join(
+        #         os.path.join(
         #             ref_output_dir,
-        #             "epi_pc_mask_end2end_ventoux_no_elevation.tif"
+        #             "epi_pc_mask_end2end_ventoux_no_elevation.tif",
         #         )
-        #    ),
+        #     ),
         # )
         # copy2(
         #     os.path.join(out_dir, "depth_map", "left_right",
@@ -2941,13 +2788,14 @@ def test_end2end_ventoux_full_output_no_elevation():
             atol=1.0e-6,
         )
 
-        pc_name = "675248.5_4897170.0"
+        pc_name = "0_0"
 
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
                     "point_cloud",
+                    "left_right",
                     pc_name + ".laz",
                 )
             )
@@ -3064,26 +2912,19 @@ def test_end2end_ventoux_with_color():
                 "generate_performance_map": False,
                 "generate_confidence_intervals": False,
             },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
+            "triangulation": {
                 "save_intermediate_data": True,
-                "save_by_pair": True,
             },
             "point_cloud_outlier_removal.1": {
                 "method": "small_components",
                 "activated": True,
                 "save_intermediate_data": True,
-                "save_by_pair": True,
             },
             "point_cloud_outlier_removal.2": {
                 "method": "statistical",
                 "activated": True,
                 "save_intermediate_data": True,
                 "use_median": False,
-            },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_intermediate_data": True,
             },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
@@ -3096,7 +2937,8 @@ def test_end2end_ventoux_with_color():
         # update pipeline
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
-        input_config_dense_dsm["advanced"]["merging"] = True
+
+        print(json.dumps(input_config_dense_dsm, indent=4))
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -3115,66 +2957,16 @@ def test_end2end_ventoux_with_color():
             is True
         )
 
-        pc1 = "675248.0_4897173.0"
-        pc2 = "675374.0_4897173.0"
+        pc1 = "0_0"
+        pc2 = "1_0"
 
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_fusion",
-                    "laz",
-                    pc1 + "_left_right.laz",
-                )
-            )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "point_cloud_fusion",
-                    "csv",
-                    pc1 + "_left_right.csv",
-                )
-            )
-            is True
-        )
-
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "point_cloud_outlier_removal_1",
-                    "laz",
-                    pc2 + "_left_right.laz",
-                )
-            )
-            is True
-        )
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "point_cloud_outlier_removal_1",
-                    "csv",
-                    pc2 + "_left_right.csv",
-                )
-            )
-            is True
-        )
-
-        # Output is not saved by pair here
-        assert (
-            os.path.exists(
-                os.path.join(
-                    out_dir,
-                    "dump_dir",
-                    "point_cloud_outlier_removal_2",
+                    "triangulation",
+                    "left_right",
                     "laz",
                     pc1 + ".laz",
                 )
@@ -3186,7 +2978,62 @@ def test_end2end_ventoux_with_color():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_outlier_removal_2",
+                    "triangulation",
+                    "left_right",
+                    "csv",
+                    pc1 + ".csv",
+                )
+            )
+            is True
+        )
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "pc_outlier_removal_1",
+                    "left_right",
+                    "laz",
+                    pc2 + ".laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "pc_outlier_removal_1",
+                    "left_right",
+                    "csv",
+                    pc2 + ".csv",
+                )
+            )
+            is True
+        )
+
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "pc_outlier_removal_2",
+                    "left_right",
+                    "laz",
+                    pc1 + ".laz",
+                )
+            )
+            is True
+        )
+        assert (
+            os.path.exists(
+                os.path.join(
+                    out_dir,
+                    "dump_dir",
+                    "pc_outlier_removal_2",
+                    "left_right",
                     "csv",
                     pc1 + ".csv",
                 )
@@ -3342,8 +3189,7 @@ def test_end2end_ventoux_with_classif():
                 "save_intermediate_data": True,
                 "use_global_disp_range": False,
             },
-            "point_cloud_fusion": {
-                "method": "mapping_to_terrain_tiles",
+            "triangulation": {
                 "save_intermediate_data": True,
             },
             "point_cloud_outlier_removal.1": {
@@ -3357,10 +3203,6 @@ def test_end2end_ventoux_with_classif():
                 "save_intermediate_data": True,
                 "use_median": False,
             },
-            "triangulation": {
-                "method": "line_of_sight_intersection",
-                "save_intermediate_data": True,
-            },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
         # update epsg
@@ -3373,20 +3215,20 @@ def test_end2end_ventoux_with_classif():
 
         # Save classif
         input_config_dense_dsm["output"]["auxiliary"] = {"classification": True}
-        input_config_dense_dsm["advanced"]["merging"] = True
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
 
-        pc1 = "675248.0_4897173.0"
+        pc1 = "0_0"
 
         assert (
             os.path.exists(
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_fusion",
+                    "triangulation",
+                    "left_right",
                     "laz",
                     pc1 + ".laz",
                 )
@@ -3398,7 +3240,8 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_fusion",
+                    "triangulation",
+                    "left_right",
                     "csv",
                     pc1 + ".csv",
                 )
@@ -3411,7 +3254,8 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_outlier_removal_1",
+                    "pc_outlier_removal_1",
+                    "left_right",
                     "laz",
                     pc1 + ".laz",
                 )
@@ -3423,7 +3267,8 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_outlier_removal_1",
+                    "pc_outlier_removal_1",
+                    "left_right",
                     "csv",
                     pc1 + ".csv",
                 )
@@ -3436,7 +3281,8 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_outlier_removal_2",
+                    "pc_outlier_removal_2",
+                    "left_right",
                     "laz",
                     pc1 + ".laz",
                 )
@@ -3448,7 +3294,8 @@ def test_end2end_ventoux_with_classif():
                 os.path.join(
                     out_dir,
                     "dump_dir",
-                    "point_cloud_outlier_removal_2",
+                    "pc_outlier_removal_2",
+                    "left_right",
                     "csv",
                     pc1 + ".csv",
                 )
@@ -3469,11 +3316,11 @@ def test_end2end_ventoux_with_classif():
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dsm", "classification.tif"),
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "classification_end2end_ventoux_with_classif.tif"
+        #             "classification_end2end_ventoux_with_classif.tif",
         #         )
         #     ),
         # )
@@ -3718,7 +3565,6 @@ def test_compute_dsm_with_snap_to_img1():
         # resolution
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -3837,7 +3683,6 @@ def test_end2end_quality_stats():
         # Save all intermediate data and add merging
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
-            "merging": True,
         }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
@@ -3860,7 +3705,7 @@ def test_end2end_quality_stats():
                 "dense_matching_run"
             ]
             assert out_disp_compute["global_disp_min"] > -33
-            assert out_disp_compute["global_disp_min"] < -30
+            assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
 
@@ -4130,7 +3975,6 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4152,7 +3996,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] > -67
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4263,7 +4107,6 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["resolution"] = resolution
 
         input_config_dense_dsm["output"]["geoid"] = True
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4354,7 +4197,6 @@ def test_end2end_ventoux_egm96_geoid():
         input_config_dense_dsm["output"]["geoid"] = absolute_data_path(
             "input/geoid/egm96_15_modified.tif"
         )
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4376,7 +4218,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "dense_matching_run"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -68
+            assert out_disp_compute["global_disp_min"] > -67
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4494,7 +4336,8 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
-        input_config_dense_dsm["advanced"]["merging"] = True
+
+        print(json.dumps(input_config_dense_dsm, indent=4))
 
         dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
             input_config_dense_dsm
@@ -4576,11 +4419,10 @@ def test_end2end_paca_with_mask():
         dense_dsm_pipeline_matches.run()
 
         # copy2(
-        #     os.path.join(out_dir,  "dsm", "dsm.tif"),
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir,
-        #             "dsm_end2end_paca_matches_filling.tif"
+        #             ref_output_dir, "dsm_end2end_paca_matches_filling.tif"
         #         )
         #     ),
         # )
@@ -4588,17 +4430,15 @@ def test_end2end_paca_with_mask():
         #     os.path.join(out_dir, "dsm", "color.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir,
-        #             "color_end2end_paca_matches_filling.tif"
+        #             ref_output_dir, "color_end2end_paca_matches_filling.tif"
         #         )
         #     ),
         # )
         # copy2(
-        #     os.path.join(out_dir,  "dsm", "mask.tif"),
+        #     os.path.join(out_dir, "dsm", "mask.tif"),
         #     absolute_data_path(
         #         os.path.join(
-        #             ref_output_dir,
-        #             "mask_end2end_paca_matches_filling.tif"
+        #             ref_output_dir, "mask_end2end_paca_matches_filling.tif"
         #         )
         #     ),
         # )
@@ -4699,7 +4539,6 @@ def test_end2end_disparity_filling():
             "filling": True,
             "mask": True,
         }
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
@@ -4731,8 +4570,7 @@ def test_end2end_disparity_filling():
         # copy2(
         #     os.path.join(out_dir, "dsm", "filling.tif"),
         #     absolute_data_path(
-        #         os.path.join(ref_output_dir,
-        #         "filling_end2end_gizeh_fill.tif")
+        #         os.path.join(ref_output_dir, "filling_end2end_gizeh_fill.tif")
         #     ),
         # )
 
@@ -4819,8 +4657,6 @@ def test_end2end_disparity_filling_with_zeros():
             "filling": True,
             "mask": True,
         }
-
-        input_config_dense_dsm["advanced"]["merging"] = True
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()

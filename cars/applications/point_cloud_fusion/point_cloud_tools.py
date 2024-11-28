@@ -234,6 +234,9 @@ def create_combined_sparse_cloud(  # noqa: C901
                 cloud_indexes.index(cst.POINT_CLOUD_COORD_EPI_GEOM_I), :
             ] = coords_line
 
+        # Transpose point cloud
+        crop_cloud = crop_cloud.transpose()
+
         # remove masked data (pandora + out of the terrain tile points)
         crop_terrain_tile_data_msk = (
             point_cloud[cst.POINT_CLOUD_CORR_MSK][bbox[0] : bbox[1]] == 255
@@ -294,9 +297,7 @@ def filter_cloud_with_mask(nb_points, crop_cloud, crop_terrain_tile_data_msk):
     # compute nb points before apply the mask
     nb_points += crop_cloud.shape[1]
 
-    crop_cloud = np.delete(
-        crop_cloud.transpose(), crop_terrain_tile_data_msk_pos[0], 0
-    )
+    crop_cloud = np.delete(crop_cloud, crop_terrain_tile_data_msk_pos[0], 0)
 
     return crop_cloud
 
@@ -577,6 +578,9 @@ def create_combined_dense_cloud(  # noqa: C901
                 cloud_list_id
             )
 
+        # Transpose point cloud
+        flatten_cloud = flatten_cloud.transpose()
+
         # remove masked data (pandora + out of the terrain tile points)
         crop_terrain_tile_data_msk = (
             point_cloud[cst.POINT_CLOUD_CORR_MSK].values[
@@ -597,7 +601,10 @@ def create_combined_dense_cloud(  # noqa: C901
             nb_points, flatten_cloud, crop_terrain_tile_data_msk
         )
 
-        # add current cloud to the combined one
+        # Remove points with nan values
+        flatten_cloud = flatten_cloud[~np.any(np.isnan(flatten_cloud), axis=1)]
+
+        # Add current cloud to the combined one
         combined_cloud = np.concatenate([combined_cloud, flatten_cloud], axis=0)
 
     logging.debug("Received {} points to rasterize".format(nb_points))

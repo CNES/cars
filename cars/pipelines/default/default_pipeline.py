@@ -94,7 +94,7 @@ class DefaultPipeline(PipelineTemplate):
             debug_with_roi
             save_output_dsm
             save_output_depth_map
-            save_output__point_clouds
+            save_output_point_clouds
             geom_plugin_without_dem_and_geoid
             geom_plugin_with_dem_and_geoid
             dem_generation_roi
@@ -186,10 +186,6 @@ class DefaultPipeline(PipelineTemplate):
         )
         self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
 
-        # if point_cloud is in product_level, we need to guarantee that
-        # point clouds are in the output, by activating merging
-        self.merging = self.merging or self.save_output_point_cloud
-
         self.compute_depth_map = self.sensors_in_inputs and (
             not self.output_level_none
         )
@@ -255,12 +251,12 @@ class DefaultPipeline(PipelineTemplate):
             "dense_match_filling.1": 9,
             "dense_match_filling.2": 10,
             "triangulation": 11,
+            "point_cloud_outlier_removal.1": 12,
+            "point_cloud_outlier_removal.2": 13,
         }
 
         depth_merge_apps = {
-            "point_cloud_fusion": 12,
-            "point_cloud_outlier_removal.1": 13,
-            "point_cloud_outlier_removal.2": 14,
+            "point_cloud_fusion": 14,
         }
 
         depth_to_dsm_apps = {
@@ -439,15 +435,9 @@ class DefaultPipeline(PipelineTemplate):
                 "dense_matching",
                 "triangulation",
                 "dem_generation",
+                "point_cloud_outlier_removal.1",
+                "point_cloud_outlier_removal.2",
             ]
-
-        # TODO: point_cloud_outlier_removal is always needed for now, but
-        # after merging mode removal it would only be required if
-        # self.sensors_in_inputs.
-        needed_applications += [
-            "point_cloud_outlier_removal.1",
-            "point_cloud_outlier_removal.2",
-        ]
 
         if self.save_output_dsm or self.save_output_point_cloud:
 
@@ -592,29 +582,29 @@ class DefaultPipeline(PipelineTemplate):
                 self.dem_generation_application.get_conf()
             )
 
-        # Points cloud small component outlier removal
-        self.pc_outlier_removal_1_app = Application(
-            "point_cloud_outlier_removal",
-            cfg=used_conf.get(
-                "point_cloud_outlier_removal.1",
-                {"method": "small_components"},
-            ),
-        )
-        used_conf["point_cloud_outlier_removal.1"] = (
-            self.pc_outlier_removal_1_app.get_conf()
-        )
+            # Points cloud small component outlier removal
+            self.pc_outlier_removal_1_app = Application(
+                "point_cloud_outlier_removal",
+                cfg=used_conf.get(
+                    "point_cloud_outlier_removal.1",
+                    {"method": "small_components"},
+                ),
+            )
+            used_conf["point_cloud_outlier_removal.1"] = (
+                self.pc_outlier_removal_1_app.get_conf()
+            )
 
-        # Points cloud statistical outlier removal
-        self.pc_outlier_removal_2_app = Application(
-            "point_cloud_outlier_removal",
-            cfg=used_conf.get(
-                "point_cloud_outlier_removal.2",
-                {"method": "statistical"},
-            ),
-        )
-        used_conf["point_cloud_outlier_removal.2"] = (
-            self.pc_outlier_removal_2_app.get_conf()
-        )
+            # Points cloud statistical outlier removal
+            self.pc_outlier_removal_2_app = Application(
+                "point_cloud_outlier_removal",
+                cfg=used_conf.get(
+                    "point_cloud_outlier_removal.2",
+                    {"method": "statistical"},
+                ),
+            )
+            used_conf["point_cloud_outlier_removal.2"] = (
+                self.pc_outlier_removal_2_app.get_conf()
+            )
 
         if self.save_output_dsm or self.save_output_point_cloud:
 
@@ -1667,6 +1657,14 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 safe_makedirs(depth_map_dir)
 
+            point_cloud_dir = None
+            if self.save_output_point_cloud:
+                point_cloud_dir = os.path.join(
+                    self.out_dir, "point_cloud", pair_key
+                )
+                safe_makedirs(point_cloud_dir)
+
+            if self.save_output_depth_map or self.save_output_point_cloud:
                 if (
                     self.pc_outlier_removal_2_app.used_config.get(
                         "activated", False
@@ -1686,8 +1684,17 @@ class DefaultPipeline(PipelineTemplate):
                 else:
                     last_depth_map_application = "triangulation"
 
+            triangulation_point_cloud_dir = (
+                point_cloud_dir
+                if (
+                    point_cloud_dir
+                    and last_depth_map_application == "triangulation"
+                )
+                else None
+            )
+
             # Run epipolar triangulation application
-            epipolar_point_clouds = self.triangulation_application.run(
+            epipolar_point_cloud = self.triangulation_application.run(
                 self.pairs[pair_key]["sensor_image_left"],
                 self.pairs[pair_key]["sensor_image_right"],
                 new_epipolar_image_left,
@@ -1707,7 +1714,8 @@ class DefaultPipeline(PipelineTemplate):
                 geoid_path=output_geoid_path,
                 cloud_id=cloud_id,
                 intervals=intervals,
-                pair_output_dir=depth_map_dir,
+                depth_map_dir=depth_map_dir,
+                point_cloud_dir=triangulation_point_cloud_dir,
                 save_output_coordinates=last_depth_map_application
                 == "triangulation",
                 save_output_color=bool(depth_map_dir)
@@ -1726,9 +1734,9 @@ class DefaultPipeline(PipelineTemplate):
                 continue  # keep iterating over pairs, but don't go further
 
             if self.merging:
-                self.list_epipolar_point_clouds.append(epipolar_point_clouds)
+                self.list_epipolar_point_clouds.append(epipolar_point_cloud)
             else:
-                filtering_out_dir = (
+                filtering_depth_map_dir = (
                     depth_map_dir
                     if (
                         depth_map_dir
@@ -1736,10 +1744,19 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_point_clouds_1 = (
+                filtering_point_cloud_dir = (
+                    point_cloud_dir
+                    if (
+                        point_cloud_dir
+                        and last_depth_map_application == "pc_outlier_removal_1"
+                    )
+                    else None
+                )
+                filtered_epipolar_point_cloud_1 = (
                     self.pc_outlier_removal_1_app.run(
-                        epipolar_point_clouds,
-                        output_dir=filtering_out_dir,
+                        epipolar_point_cloud,
+                        depth_map_dir=filtering_depth_map_dir,
+                        point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_1", pair_key
                         ),
@@ -1749,7 +1766,7 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 if self.quit_on_app("point_cloud_outlier_removal.1"):
                     continue  # keep iterating over pairs, but don't go further
-                filtering_out_dir = (
+                filtering_depth_map_dir = (
                     depth_map_dir
                     if (
                         depth_map_dir
@@ -1757,10 +1774,19 @@ class DefaultPipeline(PipelineTemplate):
                     )
                     else None
                 )
-                filtered_epipolar_point_clouds_2 = (
+                filtering_point_cloud_dir = (
+                    point_cloud_dir
+                    if (
+                        point_cloud_dir
+                        and last_depth_map_application == "pc_outlier_removal_2"
+                    )
+                    else None
+                )
+                filtered_epipolar_point_cloud_2 = (
                     self.pc_outlier_removal_2_app.run(
-                        filtered_epipolar_point_clouds_1,
-                        output_dir=filtering_out_dir,
+                        filtered_epipolar_point_cloud_1,
+                        depth_map_dir=filtering_depth_map_dir,
+                        point_cloud_dir=filtering_point_cloud_dir,
                         dump_dir=os.path.join(
                             self.dump_dir, "pc_outlier_removal_2", pair_key
                         ),
@@ -1775,7 +1801,7 @@ class DefaultPipeline(PipelineTemplate):
                 if self.save_output_dsm or self.save_output_point_cloud:
                     denoised_epipolar_point_clouds = (
                         self.pc_denoising_application.run(
-                            filtered_epipolar_point_clouds_2,
+                            filtered_epipolar_point_cloud_2,
                             orchestrator=self.cars_orchestrator,
                             pair_folder=os.path.join(
                                 self.dump_dir, "denoising", pair_key
@@ -1995,7 +2021,7 @@ class DefaultPipeline(PipelineTemplate):
     def preprocess_depth_maps(self):
         """
         Adds multiple processing steps to the depth maps :
-        Merging, filtering, denoising, outlier removal.
+        Merging, denoising.
         Creates the point cloud that will be rasterized in
         the last step of the pipeline.
         """
@@ -2009,18 +2035,6 @@ class DefaultPipeline(PipelineTemplate):
                 0
             ].attributes.get("color_type", None)
         else:
-            # Merge point clouds
-            pc_outlier_removal_1_margins = (
-                self.pc_outlier_removal_1_app.get_on_ground_margin(
-                    resolution=self.resolution
-                )
-            )
-            pc_outlier_removal_2_margins = (
-                self.pc_outlier_removal_2_app.get_on_ground_margin(
-                    resolution=self.resolution
-                )
-            )
-
             # find which application produce the final version of the
             # point cloud. The last generated point cloud will be saved
             # as official point cloud product if save_output_point_cloud
@@ -2031,20 +2045,6 @@ class DefaultPipeline(PipelineTemplate):
             # it uses the 'none' method.
             if self.pc_denoising_application.used_method != "none":
                 last_pc_application = "denoising"
-            elif (
-                self.pc_outlier_removal_2_app.used_config.get(
-                    "activated", False
-                )
-                is True
-            ):
-                last_pc_application = "pc_outlier_removal_2"
-            elif (
-                self.pc_outlier_removal_1_app.used_config.get(
-                    "activated", False
-                )
-                is True
-            ):
-                last_pc_application = "pc_outlier_removal_1"
             else:
                 last_pc_application = "fusion"
 
@@ -2062,11 +2062,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs_names if self.compute_depth_map else None
                 ),
                 orchestrator=self.cars_orchestrator,
-                margins=(
-                    pc_outlier_removal_1_margins
-                    + pc_outlier_removal_2_margins
-                    + raster_app_margin
-                ),
+                margins=raster_app_margin,
                 optimal_terrain_tile_width=self.optimal_terrain_tile_width,
                 roi=(self.roi_poly if self.debug_with_roi else None),
                 save_laz_output=self.save_output_point_cloud
@@ -2076,45 +2072,9 @@ class DefaultPipeline(PipelineTemplate):
             if self.quit_on_app("point_cloud_fusion"):
                 return True
 
-            # Remove outliers with small components method
-            filtered_1_merged_point_clouds = self.pc_outlier_removal_1_app.run(
-                merged_point_clouds,
-                orchestrator=self.cars_orchestrator,
-                output_dir=(
-                    os.path.join(self.out_dir, "point_cloud")
-                    if self.save_output_point_cloud
-                    and last_pc_application == "pc_outlier_removal_1"
-                    else None
-                ),
-                dump_dir=os.path.join(
-                    self.dump_dir, "point_cloud_outlier_removal_1"
-                ),
-            )
-
-            if self.quit_on_app("point_cloud_outlier_removal.1"):
-                return True
-
-            # Remove outliers with statistical components method
-            filtered_2_merged_point_clouds = self.pc_outlier_removal_2_app.run(
-                filtered_1_merged_point_clouds,
-                orchestrator=self.cars_orchestrator,
-                output_dir=(
-                    os.path.join(self.out_dir, "point_cloud")
-                    if self.save_output_point_cloud
-                    and last_pc_application == "pc_outlier_removal_2"
-                    else None
-                ),
-                dump_dir=os.path.join(
-                    self.dump_dir, "point_cloud_outlier_removal_2"
-                ),
-            )
-
-            if self.quit_on_app("point_cloud_outlier_removal.2"):
-                return True
-
             # denoise point cloud
             denoised_merged_point_clouds = self.pc_denoising_application.run(
-                filtered_2_merged_point_clouds,
+                merged_point_clouds,
                 orchestrator=self.cars_orchestrator,
                 save_laz_output=self.save_output_point_cloud
                 and last_pc_application == "denoising",
@@ -2200,25 +2160,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.list_epipolar_point_clouds
                 )
             )
-            self.optimal_terrain_tile_width = min(
-                self.pc_outlier_removal_1_app.get_optimal_tile_size(
-                    self.cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
-                self.pc_outlier_removal_2_app.get_optimal_tile_size(
-                    self.cars_orchestrator.cluster.checked_conf_cluster[
-                        "max_ram_per_worker"
-                    ],
-                    superposing_point_clouds=(
-                        max_number_superposing_point_clouds
-                    ),
-                    point_cloud_resolution=average_distance_point_cloud,
-                ),
+            self.optimal_terrain_tile_width = (
                 self.rasterization_application.get_optimal_tile_size(
                     self.cars_orchestrator.cluster.checked_conf_cluster[
                         "max_ram_per_worker"
@@ -2227,7 +2169,7 @@ class DefaultPipeline(PipelineTemplate):
                         max_number_superposing_point_clouds
                     ),
                     point_cloud_resolution=average_distance_point_cloud,
-                ),
+                )
             )
             # epsg_cloud and optimal_terrain_tile_width have the same epsg
             self.optimal_terrain_tile_width = (

@@ -332,9 +332,9 @@ def test_simple_rasterization_dataset_1_intervals():
     )
 
     # Uncomment to update references
-    raster.to_netcdf(
-        absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
-    )
+    # raster.to_netcdf(
+    #     absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc"),
+    # )
 
     raster_ref = xr.open_dataset(
         absolute_data_path("ref_output/rasterization_res_ref_1_intervals.nc")
