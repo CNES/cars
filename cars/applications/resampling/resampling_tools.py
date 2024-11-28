@@ -110,6 +110,7 @@ def epipolar_rectify_images(
     right_margins[3] = right_region[3] - right_roi[3]
 
     # Resample left image
+    left_img_transform = inputs.rasterio_get_transform(img1)
     left_dataset = resample_image(
         img1,
         grid1,
@@ -120,6 +121,7 @@ def epipolar_rectify_images(
         mask=mask1,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
+        img_transform=left_img_transform,
     )
 
     # Update attributes
@@ -134,6 +136,7 @@ def epipolar_rectify_images(
         left_dataset.attrs[cst.EPI_DISP_MAX] = margins.attrs["disp_max"]
 
     # Resample right image
+    right_img_transform = inputs.rasterio_get_transform(img2)
     right_dataset = resample_image(
         img2,
         grid2,
@@ -144,6 +147,7 @@ def epipolar_rectify_images(
         mask=mask2,
         interpolator_img=interpolator_image,
         interpolator_mask=interpolator_mask,
+        img_transform=right_img_transform,
     )
 
     # Update attributes
@@ -172,6 +176,7 @@ def epipolar_rectify_images(
                 band_coords=cst.BAND_IM,
                 interpolator_img=interpolator_color,
                 interpolator_mask=interpolator_mask,
+                img_transform=left_img_transform,
             )
         else:
             raise RuntimeError(
@@ -196,6 +201,7 @@ def epipolar_rectify_images(
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
                 interpolator_mask=interpolator_mask,
+                img_transform=left_img_transform,
             )
 
         if classif2:
@@ -207,6 +213,7 @@ def epipolar_rectify_images(
                 band_coords=cst.BAND_CLASSIF,
                 interpolator_img=interpolator_classif,
                 interpolator_mask=interpolator_mask,
+                img_transform=right_img_transform,
             )
 
     return (
@@ -229,6 +236,7 @@ def resample_image(
     band_coords=False,
     interpolator_img="bicubic",
     interpolator_mask="nearest",
+    img_transform=None,
 ):
     """
     Resample image according to grid and largest size.
@@ -264,6 +272,9 @@ def resample_image(
             int(math.ceil(region[2])),
             int(math.ceil(region[3])),
         ]
+
+    if img_transform is None:
+        img_transform = inputs.rasterio_get_transform(img)
 
     # Convert largest_size to int if needed
     largest_size = [int(x) for x in largest_size]
@@ -321,7 +332,7 @@ def resample_image(
             top = math.floor(np.amin(grid_as_array[1, ...]))
             bottom = math.ceil(np.amax(grid_as_array[1, ...]))
 
-            transform = rio.Affine(*np.abs(img_reader.transform))
+            transform = rio.Affine(*np.abs(img_transform))
             # transform xmin and xmax positions to index
             (top, bottom, left, right) = (
                 abstract_geometry.min_max_to_index_min_max(

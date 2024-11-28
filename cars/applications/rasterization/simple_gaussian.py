@@ -900,7 +900,7 @@ def rasterization_wrapper(
     if "mask" in cloud:
         cloud = cloud[cloud["mask"] == 0]
 
-    if cloud.dropna().empty:
+    if cloud.dropna(subset=["x", "y", "z"]).empty:
         return None
 
     # Compute start and size
