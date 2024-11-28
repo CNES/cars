@@ -946,9 +946,6 @@ class DefaultPipeline(PipelineTemplate):
                     pair_key=pair_key,
                 )
 
-                if self.quit_on_app("sparse_matching"):
-                    continue  # keep iterating over pairs, but don't go further
-
             # Run cluster breakpoint to compute sifts: force computation
             self.cars_orchestrator.breakpoint()
 
@@ -1038,6 +1035,9 @@ class DefaultPipeline(PipelineTemplate):
                 self.triangulated_matches_list.append(
                     self.pairs[pair_key]["filtered_triangulated_matches"]
                 )
+
+                if self.quit_on_app("sparse_matching"):
+                    continue  # keep iterating over pairs, but don't go further
 
         # Clean grids at the end of processing if required. Note that this will
         # also clean refined grids
