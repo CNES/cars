@@ -597,6 +597,9 @@ def run_save_points(
     :type overwrite: bool
     :param point_cloud_format: output point cloud format
     :type point_cloud_format: str
+    :param overwrite_file_name: generate a new filename from input filename
+        matching input dataframe attributes
+    :type overwrite_file_name: bool
     """
 
     # Save
@@ -949,6 +952,9 @@ def save_all_dataframe(
     :type overwrite: bool
     :param point_cloud_format: point cloud format (csv or laz)
     :type point_cloud_format: str
+    :param overwrite_file_name: generate a new filename from input filename
+        matching input dataframe attributes
+    :type overwrite_file_name: bool
     """
     # generate filename if attributes have xstart and ystart settings
     if overwrite_file_name:

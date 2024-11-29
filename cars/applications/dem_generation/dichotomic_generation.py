@@ -126,8 +126,8 @@ class DichotomicGeneration(DemGeneration, short_name="dichotomic"):
             "fillnodata_max_search_distance", 5
         )
 
-        overloaded_conf["save_intermediate_data"] = conf.get(
-            "save_intermediate_data", False
+        overloaded_conf[application_constants.SAVE_INTERMEDIATE_DATA] = (
+            conf.get(application_constants.SAVE_INTERMEDIATE_DATA, False)
         )
 
         rectification_schema = {
