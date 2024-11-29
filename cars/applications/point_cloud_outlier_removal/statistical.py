@@ -406,9 +406,7 @@ class Statistical(
 
             # update point cloud index
             if point_cloud_dir:
-                self.orchestrator.update_index(
-                    {"point_cloud": {prefix: pc_index}}
-                )
+                self.orchestrator.update_index(pc_index)
 
         else:
             logging.error(

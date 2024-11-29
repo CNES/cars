@@ -425,12 +425,11 @@ class MappingToTerrainTiles(
                                 row,
                                 col,
                                 pc_index,
-                                pair_key=source_pc_names[0],
+                                pair_key=(
+                                    source_pc_names if save_by_pair else None
+                                ),
                             )
                         )
-
-                        csv_pc_file_name = os.path.join(csv_pc_dir_name, "pc")
-                        laz_pc_file_name = os.path.join(laz_pc_dir_name, "pc")
 
                         # Delayed call to rasterization operations using all
                         # required point clouds
@@ -455,9 +454,7 @@ class MappingToTerrainTiles(
 
             # update point cloud index
             if save_laz_output:
-                self.orchestrator.update_index(
-                    {"point_cloud": {source_pc_names[0]: pc_index}}
-                )
+                self.orchestrator.update_index(pc_index)
 
             # Sort tiles according to rank TODO remove or implement it ?
 

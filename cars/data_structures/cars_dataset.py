@@ -985,9 +985,9 @@ def save_all_dataframe(
                 os.path.dirname(file_name), source_pc_names[int(pair_index)]
             )
             safe_makedirs(dir_name)
-            file_name = os.path.basename(file_name)
+            base_name = os.path.basename(file_name)
             points_indexes = dataframe["global_id"] == pair_index
-            file_name_by_pair = os.path.join(dir_name, file_name)
+            file_name_by_pair = os.path.join(dir_name, base_name)
             save_dataframe(
                 dataframe.loc[points_indexes],
                 file_name_by_pair,

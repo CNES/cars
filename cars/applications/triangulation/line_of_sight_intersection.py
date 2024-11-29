@@ -371,6 +371,41 @@ class LineOfSightIntersection(
             index[cst.INDEX_DEPTH_MAP_EPSG] = 4326
             self.orchestrator.update_index({"depth_map": {pair_key: index}})
 
+    def create_point_cloud_directories(
+        self, pair_dump_dir, point_cloud_dir, point_cloud
+    ):
+        """
+        Set and create directories for point cloud disk output (laz and csv)
+        The function return None path if the point cloud should not be saved
+
+        :param pair_dump_dir: folder used as dump directory for current pair
+        :type pair_dump_dir: str
+        :param point_cloud_dir: folder used for laz official product directory
+        :type point_cloud_dir: str
+        :param point_cloud: input point cloud (for orchestrator registration)
+        :type point_cloud: Dataset
+        """
+
+        csv_pc_dir_name = None
+        if self.save_intermediate_data:
+            csv_pc_dir_name = os.path.join(pair_dump_dir, "csv")
+            safe_makedirs(csv_pc_dir_name)
+            self.orchestrator.add_to_compute_lists(
+                point_cloud, cars_ds_name="point_cloud_csv"
+            )
+        laz_pc_dir_name = None
+        if self.save_intermediate_data or point_cloud_dir is not None:
+            if point_cloud_dir is not None:
+                laz_pc_dir_name = point_cloud_dir
+            else:
+                laz_pc_dir_name = os.path.join(pair_dump_dir, "laz")
+            safe_makedirs(laz_pc_dir_name)
+            self.orchestrator.add_to_compute_lists(
+                point_cloud, cars_ds_name="point_cloud_laz"
+            )
+
+        return csv_pc_dir_name, laz_pc_dir_name
+
     def run(  # noqa: C901
         self,
         sensor_image_left,
@@ -665,23 +700,9 @@ class LineOfSightIntersection(
         point_cloud.create_empty_copy(epipolar_point_cloud)
         point_cloud.attributes = epipolar_point_cloud.attributes
 
-        csv_pc_dir_name = None
-        if self.save_intermediate_data:
-            csv_pc_dir_name = os.path.join(pair_dump_dir, "csv")
-            safe_makedirs(csv_pc_dir_name)
-            self.orchestrator.add_to_compute_lists(
-                point_cloud, cars_ds_name="point_cloud_csv"
-            )
-        laz_pc_dir_name = None
-        if self.save_intermediate_data or point_cloud_dir is not None:
-            if point_cloud_dir is not None:
-                laz_pc_dir_name = point_cloud_dir
-            else:
-                laz_pc_dir_name = os.path.join(pair_dump_dir, "laz")
-            safe_makedirs(laz_pc_dir_name)
-            self.orchestrator.add_to_compute_lists(
-                point_cloud, cars_ds_name="point_cloud_laz"
-            )
+        csv_pc_dir_name, laz_pc_dir_name = self.create_point_cloud_directories(
+            pair_dump_dir, point_cloud_dir, point_cloud
+        )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info_epipolar] = self.orchestrator.get_saving_infos(
@@ -766,9 +787,7 @@ class LineOfSightIntersection(
 
         # update point cloud index
         if point_cloud_dir:
-            self.orchestrator.update_index(
-                {"point_cloud": {pair_key: pc_index}}
-            )
+            self.orchestrator.update_index(pc_index)
 
         return epipolar_point_cloud
 

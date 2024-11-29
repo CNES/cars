@@ -448,7 +448,8 @@ def generate_point_cloud_file_names(
     :type col: int
     :param index: product index to update with the filename
     :type index: dict
-    :param pair_key: current product key (used in index)
+    :param pair_key: current product key (used in index), if a list is given
+        a filename will be added to the index for each element of the list
     :type pair_key: str
     """
 
@@ -463,6 +464,20 @@ def generate_point_cloud_file_names(
         laz_pc_file_name = os.path.join(laz_dir, laz_name)
         # add to index if the laz is saved to output product
         if index is not None:
-            index[file_name_root] = os.path.join(pair_key, laz_name)
+            # index initialization, if it has not been done yet
+            if "point_cloud" not in index:
+                index["point_cloud"] = {}
+            # case where merging=True and save_by_pair=False
+            if pair_key is None:
+                index["point_cloud"][file_name_root] = laz_name
+            else:
+                if isinstance(pair_key, str):
+                    pair_key = [pair_key]
+                for elem in pair_key:
+                    if elem not in index["point_cloud"]:
+                        index["point_cloud"][elem] = {}
+                    index["point_cloud"][elem][file_name_root] = os.path.join(
+                        elem, laz_name
+                    )
 
     return csv_pc_file_name, laz_pc_file_name

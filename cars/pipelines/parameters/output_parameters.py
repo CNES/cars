@@ -181,9 +181,9 @@ def intialize_product_index(orchestrator, product_levels, input_pairs):
         }
 
     if "point_cloud" in product_levels:
+        # Initialize an empty index for point cloud because its content is
+        # unknown at this point (tile name, save by pair or not)
         index["point_cloud"] = {}
-        for pair in input_pairs:
-            index["point_cloud"][pair] = {}
 
     if "depth_map" in product_levels:
         index["depth_map"] = {}
