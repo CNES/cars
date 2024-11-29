@@ -25,7 +25,7 @@ Like our eyes, altitude (or depth relative to the satellite, to continue the ana
 | |b_over_h|      | |nutimages|    |                 
 +-----------------+----------------+
 
-Every raster `GDAL`_ knows how to read, can be given as CARS input. In addition to images, the photogrammetric process requires geometric models.  Rational Polynomial Coefficients (RPCs) provide a compact representation of a ground-to-image geometry giving a relationship between:
+Every raster readable by `GDAL`_ can be given as CARS input. In addition to images, the photogrammetric process requires geometric models.  Rational Polynomial Coefficients (RPCs) provide a compact representation of a ground-to-image geometry giving a relationship between:
 
     - Image coordinates + altitude and ground coordinates (direct model: image to ground)
     - Ground coordinates + altitude and image coordinates (inverse model: ground to image)

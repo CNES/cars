@@ -3,9 +3,9 @@
 Configuration
 =============
 
-This section describes main CARS configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file.
+This section describes CARS main configuration structure through a `json <http://www.json.org/json-fr.html>`_ configuration file.
 
-The structure follows this organisation:
+The structure follows this organization:
 
 .. code-block:: json
 
@@ -592,7 +592,7 @@ The structure follows this organisation:
                 whose ``save_intermediate_data`` key is set to True.
 
                 .. note::
-                    If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``terrain_a_priori`` parameter, saving computation time.
+                    If the sparse DSMs have already been created, they can then be re-entered in CARS through the ``terrain_a_priori`` parameter, saving computation time. File ``used_conf.json`` can be used directly by changing ``product_level`` and ``use_epipolar_a_priori`` parameters.
                     Very useful when trying to test multiple configurations later in the pipeline !
 
                 Applied to our current goal, this is the configuration needed to create sparse DSMs without useless applications running :
@@ -1118,13 +1118,13 @@ The structure follows this organisation:
                     * To save the confidence, the save_intermediate_data parameter should be activated.
 
             
-            .. tab:: Dense matches filling
+            .. tab:: Dense match filling
 
                 **Name**: "dense_match_filling"
 
                 **Description**
 
-                Fill holes in dense matches map. This uses the holes detected with the HolesDetection application.
+                Fill holes in dense matches map. This uses the holes detected with the HoleDetection application.
                 The holes correspond to the area masked for dense matching.
 
                 **Configuration**
@@ -1132,7 +1132,7 @@ The structure follows this organisation:
                 +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
                 | Name                                | Description                     | Type    | Available value         | Default value      | Required |
                 +=====================================+=================================+=========+=========================+====================+==========+
-                | method                              | Method for holes detection      | string  | "plane", "zero_padding" | "plane"            | No       |
+                | method                              | Method for hole detection       | string  | "plane", "zero_padding" | "plane"            | No       |
                 +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
                 | save_intermediate_data              | Save disparity map              | boolean |                         | False              | No       |
                 +-------------------------------------+---------------------------------+---------+-------------------------+--------------------+----------+
@@ -1147,7 +1147,7 @@ The structure follows this organisation:
                 +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
                 | interpolation_type                  | Interpolation type              | string      | "pandora"               | "pandora"          | No       |
                 +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
-                | interpolation_method                | Method for holes interpolation  | string      | "mc_cnn"                | "mc_cnn"           | No       |
+                | interpolation_method                | Method for hole interpolation   | string      | "mc_cnn"                | "mc_cnn"           | No       |
                 +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
                 | max_search_distance                 | Maximum search distance         | int         |                         | 100                | No       |
                 +-------------------------------------+---------------------------------+-------------+-------------------------+--------------------+----------+
@@ -1225,7 +1225,7 @@ The structure follows this organisation:
                 +========================+====================================================================================================================+=========+======================================+==============================+==========+
                 | method                 | Method for triangulation                                                                                           | string  | "line_of_sight_intersection"         | "line_of_sight_intersection" | No       |
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-                | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
+                | snap_to_img1           | If all pairs share the same left image, modify lines of sight of secondary images to cross those of the ref image  | boolean |                                      | false                        | No       |
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
                 | save_intermediate_data | Save depth map as TIF, LAZ and CSV                                                                                 | boolean |                                      | false                        | No       |
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+

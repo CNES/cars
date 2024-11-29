@@ -13,7 +13,7 @@ Masks
 
 | The masks are resampled in epipolar geometry with the resampling application.
 | The masked values are not taken into account in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
-| Further, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
+| Furthermore, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
 
 Classification
 --------------

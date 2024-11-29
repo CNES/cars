@@ -3,7 +3,7 @@
 Plugins
 =======
 
-This section describes optional plugins possibilities of CARS. 
+This section describes optional plugin possibilities of CARS. 
 
 .. note::
     
