@@ -439,12 +439,6 @@ def test_end2end_ventoux_unique():
                 < 16
             )
 
-            assert os.path.isfile(
-                out_json["applications"]["grid_correction"]["left_right"][
-                    "corrected_filtered_matches"
-                ]
-            )
-
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
 
@@ -2185,63 +2179,31 @@ def test_end2end_use_epipolar_a_priori():
                 used_conf["orchestrator"]
                 == gt_used_conf_orchestrator["orchestrator"]
             )
-            # check used_conf reentry
-            _ = default.DefaultPipeline(used_conf)
 
-        refined_config_dense_dsm_json = os.path.join(
-            out_dir, "refined_config_dense_dsm.json"
-        )
-        assert os.path.isfile(refined_config_dense_dsm_json)
-        with open(
-            refined_config_dense_dsm_json, "r", encoding="utf-8"
-        ) as json_file:
-            refined_config_dense_dsm_json = json.load(json_file)
-            # check refined_config_dense_dsm_json inputs conf exists
-            assert "inputs" in refined_config_dense_dsm_json
-            assert "sensors" in refined_config_dense_dsm_json["inputs"]
-            # check refined_config_dense_dsm_json sparse_matching configuration
-            assert "advanced" in refined_config_dense_dsm_json
-            assert (
-                "use_epipolar_a_priori"
-                in refined_config_dense_dsm_json["advanced"]
-            )
+            # check used_conf sparse_matching configuration
+            assert "advanced" in used_conf
+            assert "use_epipolar_a_priori" in used_conf["advanced"]
 
-            assert (
-                refined_config_dense_dsm_json["advanced"][
-                    "use_epipolar_a_priori"
-                ]
-                is True
-            )
-            assert (
-                "epipolar_a_priori" in refined_config_dense_dsm_json["advanced"]
-            )
+            # use_epipolar_a_priori should be false in used_conf
+            assert used_conf["advanced"]["use_epipolar_a_priori"] is False
+            assert "epipolar_a_priori" in used_conf["advanced"]
             assert (
                 "grid_correction"
-                in refined_config_dense_dsm_json["advanced"][
-                    "epipolar_a_priori"
-                ]["left_right"]
+                in used_conf["advanced"]["epipolar_a_priori"]["left_right"]
             )
-            assert (
-                "dem_median"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
-            assert (
-                "dem_min"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
-            assert (
-                "dem_max"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
+            assert "dem_median" in used_conf["advanced"]["terrain_a_priori"]
+            assert "dem_min" in used_conf["advanced"]["terrain_a_priori"]
+            assert "dem_max" in used_conf["advanced"]["terrain_a_priori"]
 
-            # check if orchestrator conf is the same as gt
-            assert (
-                refined_config_dense_dsm_json["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
-            )
+            # check used_conf reentry (without epipolar a priori activated)
+            _ = default.DefaultPipeline(used_conf)
 
         # dense dsm pipeline
-        input_config_dense_dsm = refined_config_dense_dsm_json.copy()
+        input_config_dense_dsm = used_conf.copy()
+
+        # Set use_epipolar_a_priori to True
+        input_config_dense_dsm["advanced"]["use_epipolar_a_priori"] = True
+
         # update applications
         input_config_dense_dsm["applications"] = input_config_sparse_res[
             "applications"
@@ -2365,6 +2327,8 @@ def test_end2end_use_epipolar_a_priori():
             rtol=1.0e-7,
         )
         assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
+
+        print("hello!")
 
 
 @pytest.mark.end2end_tests
