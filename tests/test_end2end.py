@@ -2802,6 +2802,56 @@ def test_end2end_ventoux_full_output_no_elevation():
             is True
         )
 
+        # Assertions on index files
+        depth_map_index_path = os.path.join(out_dir, "depth_map", "index.json")
+        dsm_index_path = os.path.join(out_dir, "dsm", "index.json")
+        point_cloud_index_path = os.path.join(
+            out_dir, "point_cloud", "index.json"
+        )
+
+        assert os.path.isfile(depth_map_index_path)
+        assert os.path.isfile(dsm_index_path)
+        assert os.path.isfile(point_cloud_index_path)
+
+        with open(depth_map_index_path, "r", encoding="utf-8") as json_file:
+            depth_map_index = json.load(json_file)
+            assert depth_map_index == {
+                "left_right": {
+                    "x": "left_right/X.tif",
+                    "y": "left_right/Y.tif",
+                    "z": "left_right/Z.tif",
+                    "color": "left_right/color.tif",
+                    "mask": "left_right/mask.tif",
+                    "classification": "left_right/classification.tif",
+                    "performance_map": None,
+                    "filling": "left_right/filling.tif",
+                    "epsg": 4326,
+                }
+            }
+
+        with open(dsm_index_path, "r", encoding="utf-8") as json_file:
+            dsm_index = json.load(json_file)
+            assert dsm_index == {
+                "dsm": "dsm.tif",
+                "color": "color.tif",
+                "mask": "mask.tif",
+                "classification": "classification.tif",
+                "performance_map": None,
+                "contributing_pair": "contributing_pair.tif",
+                "filling": "filling.tif",
+            }
+
+        with open(point_cloud_index_path, "r", encoding="utf-8") as json_file:
+            point_cloud_index = json.load(json_file)
+            assert point_cloud_index == {
+                "left_right": {
+                    "0_0": "left_right/0_0.laz",
+                    "0_1": "left_right/0_1.laz",
+                    "1_0": "left_right/1_0.laz",
+                    "1_1": "left_right/1_1.laz",
+                }
+            }
+
 
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
