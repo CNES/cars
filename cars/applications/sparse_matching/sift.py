@@ -738,8 +738,8 @@ class Sift(SparseMatching, short_name="sift"):
         # Update orchestrator out_json
         raw_matches_infos = {
             application_constants.APPLICATION_TAG: {
-                pair_key: {
-                    sm_cst.MATCHES_FILTERING_TAG: {
+                sm_cst.MATCH_FILTERING_TAG: {
+                    pair_key: {
                         sm_cst.NUMBER_MATCHES_TAG: nb_matches,
                         sm_cst.RAW_NUMBER_MATCHES_TAG: raw_nb_matches,
                         sm_cst.BEFORE_CORRECTION_EPI_ERROR_MEAN: epi_error_mean,

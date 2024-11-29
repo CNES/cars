@@ -60,7 +60,7 @@ DISPARITY_MARGIN_PARAM_TAG = "disparity_margin_param"
 
 # Matches filtering
 METHOD = "method"
-MATCHES_FILTERING_TAG = "matches_filtering"
+MATCH_FILTERING_TAG = "match_filtering"
 NUMBER_MATCHES_TAG = "number_matches"
 RAW_NUMBER_MATCHES_TAG = "raw_number_matches"
 BEFORE_CORRECTION_EPI_ERROR_MEAN = "before_correction_epi_error_mean"
