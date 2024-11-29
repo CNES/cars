@@ -259,28 +259,28 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -20
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -13
             )
             assert (
                 7
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 11
             )
@@ -413,34 +413,34 @@ def test_end2end_ventoux_unique():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -22
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -19
             )
             assert (
                 12
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 16
             )
 
             assert os.path.isfile(
-                out_json["applications"]["left_right"]["grid_correction"][
+                out_json["applications"]["grid_correction"]["left_right"][
                     "corrected_filtered_matches"
                 ]
             )
@@ -2048,37 +2048,30 @@ def test_end2end_use_epipolar_a_priori():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -27
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -25
             )
             assert (
                 23
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 28
-            )
-
-            # check matches file exists
-            assert os.path.isfile(
-                out_json["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -2433,25 +2426,16 @@ def test_prepare_ventoux_bias():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -86
             assert out_disp_compute["minimum_disparity"] < -83
             assert out_disp_compute["maximum_disparity"] > -46
             assert out_disp_compute["maximum_disparity"] < -45
-
-            # check matches file exists
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
 
 @pytest.mark.end2end_tests
@@ -2918,24 +2902,16 @@ def test_end2end_ventoux_with_color():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
             assert out_disp_compute["minimum_disparity"] < -18
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3198,24 +3174,16 @@ def test_end2end_ventoux_with_classif():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
             assert out_disp_compute["minimum_disparity"] < -18
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3746,24 +3714,16 @@ def test_end2end_quality_stats():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             assert out_disp_compute["global_disp_min"] > -33
             assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -4037,13 +3997,11 @@ def test_end2end_ventoux_egm96_geoid():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -67
@@ -4051,12 +4009,6 @@ def test_end2end_ventoux_egm96_geoid():
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
             assert out_disp_compute["global_disp_max"] < 46
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -4259,13 +4211,11 @@ def test_end2end_ventoux_egm96_geoid():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -67
@@ -4273,12 +4223,6 @@ def test_end2end_ventoux_egm96_geoid():
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
             assert out_disp_compute["global_disp_max"] < 46
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"

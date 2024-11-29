@@ -52,7 +52,7 @@ DISP_UPPER_BOUND = "disp_upper_bound"
 
 
 # disparity range computation
-DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation_run"
+DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation"
 MINIMUM_DISPARITY_TAG = "minimum_disparity"
 MAXIMUM_DISPARITY_TAG = "maximum_disparity"
 MATCHES_TAG = "matches"
