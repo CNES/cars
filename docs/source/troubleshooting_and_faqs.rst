@@ -38,10 +38,10 @@ How to create CARS compatible :term:`ROI` input data with OTB ?
 Please, see the section :ref:`make_input_roi_images` to generate the ROI input images.
 
 
-Did you find this error :"The image and the color haven't the same sizes"?
---------------------------------------------------------------------------
+Did you find this error :"The image and the color do not have the same sizes"?
+------------------------------------------------------------------------------
 
-If do you use Pleaides sensor images, the color image can't be superimposable on the CARS input image.
+If you use Pléiades sensor images, the color image can't be superimposable on the CARS input image.
 
 Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB.
 

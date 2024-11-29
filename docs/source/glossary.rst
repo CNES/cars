@@ -53,7 +53,7 @@ To update, follow `glossary sphinx documentation`_ in RST source documentation.
 
     rectification
       `Image rectification`_ is a transformation process used to project images onto a common image plane.
-      In CARS, the epipipolar geometry rectification is used.
+      In CARS, the epipolar geometry rectification is used.
 
     ROI
       `Region of Interest`_ means a subpart of the `DSM` raster in CARS.

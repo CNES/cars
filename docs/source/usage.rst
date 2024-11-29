@@ -99,18 +99,21 @@ The structure follows this organisation:
 
                 **Sensor**
 
-                For each sensor images, give a particular name (what you want):
+                For each sensor image, give a particular name (what you want):
 
                 .. code-block:: json
 
                     {
-                        "my_name_for_this_image":
-                        {
-                            "image" : "path_to_image.tif",
-                            "color" : "path_to_color.tif",
-                            "mask" : "path_to_mask.tif",
-                            "classification" : "path_to_classification.tif",
-                            "nodata": 0
+                        "inputs": {
+                            "sensors": {
+                                "my_name_for_this_image": {
+                                    "image" : "path_to_image.tif",
+                                    "color" : "path_to_color.tif",
+                                    "mask" : "path_to_mask.tif",
+                                    "classification" : "path_to_classification.tif",
+                                    "nodata": 0
+                                }
+                            }
                         }
                     }
 
@@ -188,24 +191,25 @@ The structure follows this organisation:
                 .. code-block:: json
 
                     {
-                        "depth_maps": {
-                            "my_name_for_this_depth_map":
-                            {
-                                "x" : "path_to_x.tif",
-                                "y" : "path_to_y.tif",
-                                "z" : "path_to_z.tif",
-                                "color" : "path_to_color.tif",
-                                "z_inf" : "path_to_z_inf.tif",
-                                "z_sup" : "path_to_z_sup.tif",
-                                "mask": "path_to_mask.tif",
-                                "classification": "path_to_classification.tif",
-                                "filling": "path_to_filling.tif",
-                                "confidence": {
-                                    "confidence_name1": "path_to_confidence1.tif",
-                                    "confidence_name2": "path_to_confidence2.tif",
-                                },
-                                "performance_map": "path_to_performance_map.tif",
-                                "epsg": "depth_map_epsg"
+                        "inputs": {
+                            "depth_maps": {
+                                "my_name_for_this_depth_map": {
+                                    "x" : "path_to_x.tif",
+                                    "y" : "path_to_y.tif",
+                                    "z" : "path_to_z.tif",
+                                    "color" : "path_to_color.tif",
+                                    "z_inf" : "path_to_z_inf.tif",
+                                    "z_sup" : "path_to_z_sup.tif",
+                                    "mask": "path_to_mask.tif",
+                                    "classification": "path_to_classification.tif",
+                                    "filling": "path_to_filling.tif",
+                                    "confidence": {
+                                        "confidence_name1": "path_to_confidence1.tif",
+                                        "confidence_name2": "path_to_confidence2.tif",
+                                    },
+                                    "performance_map": "path_to_performance_map.tif",
+                                    "epsg": "depth_map_epsg"
+                                }
                             }
                         }
                     }
@@ -228,7 +232,7 @@ The structure follows this organisation:
                 | *z*              | Path to the z coordinates of depth map                            | string         |               | Yes      |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *color*          | Color of depth map                                                | string         |               | Yes      |
-        	+------------------+-------------------------------------------------------------------+----------------+---------------+----------+
+                +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *z_inf*          | Path to the z_inf coordinates of depth map                        | string         |               | No       |
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | *z_sup*          | Path to the z_sup coordinates of depth map                        | string         |               | No       |
@@ -570,22 +574,16 @@ The structure follows this organisation:
 
         .. tabs::
 
-            .. tab:: N inputs to 1 DSM
+            .. tab:: N pairs to 1 DSM
 
-                This is the default behavior of CARS. With inputs that are either sensor 
-                image pairs or depth maps, CARS will automatically generate a single DSM. 
-                The smallest configuration can simply contain only those inputs.
+                This is the default behavior of CARS : a single DSM will be generated from one or several pairs of images.
 
-                .. note::
-                    The DSM will always be generated with all the inputs.
+                The smallest configuration can simply contain those inputs.
                 
                 .. code-block:: json
 
                     {
-
                         "inputs": {
-                            
-                            // sensor image pair(s) as inputs
                             "sensors" : {
                                 "one": {
                                     "image": "img1.tif",
@@ -602,11 +600,21 @@ The structure follows this organisation:
                                 }
                             },
                             "pairing": [["one", "two"],["one", "three"]]
-                        
-                            // or depth map(s)
+                        }
+                    }
+
+            .. tab:: N Depth Maps to 1 DSM
+
+                A single DSM will be generated from one or several depth_maps.
+
+                It is recommended to add the option ``"merging": true`` for this pipeline to improve performances.
+                
+                .. code-block:: json
+
+                    {
+                        "inputs": {
                             "depth_maps": {
-                                "my_name_for_this_depth_map":
-                                {
+                                "my_name_for_this_depth_map": {
                                     "x" : "path_to_x.tif",
                                     "y" : "path_to_y.tif",
                                     "z" : "path_to_z.tif",
@@ -622,13 +630,13 @@ The structure follows this organisation:
                                     "epsg": "depth_map_epsg"
                                 }
                             }
-
                         }
+                        "advanced" {
+                            "merging": true
+                        }
+                    }
 
-                    }                
-
-
-            .. tab:: Sparse DSMs
+            .. tab:: Sparse DSM
 
                 In CARS, sparse DSMs are computed during the process of creating depth maps from sensor images (specifically during the `dem_generation` application). This means they cannot be created from depth maps.
                 It also means the program should be stopped even before finishing the first part of the pipeline (sensor images to depth maps) in order not to run useless applications.
@@ -645,17 +653,27 @@ The structure follows this organisation:
                 .. code-block:: json
 
                     {
+                        "inputs": {
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
 
+                                }
+                            }
+                        }
                         "applications": {
                             "dem_generation": {
                                 "save_intermediate_data": true
                             }
-                        }
-
+                        },
                         "output": {
                             "product_level": []
                         }
-
                     }
 
             .. tab:: N pairs to N Depth Maps
@@ -670,38 +688,54 @@ The structure follows this organisation:
                 .. code-block:: json
 
                     {
+                        "inputs": {
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
 
+                                }
+                            }
+                        },
                         "output": {
                             "product_level": ["depth_map"]
                         }
-
                     }
 
-            .. tab:: N inputs to Point clouds
+            .. tab:: N pairs to N Point clouds
                 
                 Just like depth maps, the point cloud is an official product of CARS. As such, all that's needed is to add `point_cloud` to ``product_level`` in order for it to be generated.
-                
-                .. warning::
-                    CARS will only compute a point cloud when the key ``merging`` in ``advanced`` is set to `True`, which means
-                    setting ``output_level`` as containing `point_cloud` will effectively force ``merging`` to `True`. 
-                    This behavior will have the side-effect of running the point cloud denoising and outlier removal applications.
 
                 .. note::
-                    If you wish to save an individual point cloud for each input given, the key ``save_by_pair`` of ``output`` will need to be set to `True`.
+                    A point cloud will be generated for each pair. If the ``merging`` parameter is activated, a single point cloud will be generated. However, this pipeline is not recommended because it uses a deprecated application.
 
                 .. code-block:: json
 
                     {
-
+                        "inputs": {
+                            "sensors" : {
+                                "one": {
+                                    "image": "img1.tif",
+                                    "geomodel": "img1.geom"
+                                },
+                                "two": {
+                                    "image": "img2.tif",
+                                    "geomodel": "img2.geom"
+                                }
+                            }
+                        }
                         "output": {
                             "product_level": ["point_cloud"]
                         }
-
                     }
 
     .. tab:: Geometry plugin
 
-        This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on geometry plugins configuration.
+        This section describes configuration of the geometry plugins for CARS, please refer to :ref:`plugins` section for details on plugins installation.
 
         +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
         | Name              | Description           | Type   | Default value           | Available values                      | Required |
@@ -709,11 +743,58 @@ The structure follows this organisation:
         | *geometry_plugin* | The plugin to use     | str    | "SharelocGeometry"      | "SharelocGeometry"                    | False    |
         +-------------------+-----------------------+--------+-------------------------+---------------------------------------+----------+
 
+        To use Shareloc geometry library, CARS input configuration should be defined as :
+
         .. code-block:: json
 
             {
-                "geometry_plugin": "SharelocGeometry"
-            },
+              "inputs": {
+                "sensors": {
+                  "one": {
+                    "image": "img1.tif",
+                    "geomodel": {
+                      "path": "img1.geom",
+                      "model_type": "RPC"
+                    },
+                  },
+                  "two": {
+                    "image": "img2.tif",
+                    "geomodel": {
+                      "path": "img2.geom",
+                      "model_type": "RPC"
+                    },
+                  }
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": {
+                    "dem": "path/to/srtm_file.tif"
+                  },
+              },
+              "geometry_plugin": "SharelocGeometry",
+              "output": {
+                "directory": "outresults"
+              }
+            }
+
+        The particularities in the configuration file are:
+
+        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
+        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory !!)
+        * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
+
+        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
+        be changed to a dictionary before launching the pipeline. The dictionary will be :
+
+        .. code-block:: json
+
+            {
+              "path": "img1.geom",
+              "model_type": "RPC"
+            }
+
+        .. note::
+
+            Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
 
     .. tab:: Applications
 
@@ -1692,71 +1773,68 @@ This section describes optional plugins possibilities of CARS.
     
     Work in progress !
 
-.. tabs::
+Plugins can be used to create new pipelines, overload applications in CARS pipelines or overload geometry functions
 
-    .. tab:: Shareloc Geometry plugin
+Installation
+------------
 
-        By default, the geometry functions in CARS are run through Shareloc.
+To install a plugin, simply use pip inside your CARS environment :
 
-        To use Shareloc geometry library, CARS input configuration should be defined as :
+.. code-block:: console
+    
+    source venv/bin/activate
+    pip install plugin_name
 
-        .. code-block:: json
 
-            {
-              "inputs": {
-                "sensors": {
-                  "one": {
-                    "image": "img1.tif",
-                    "geomodel": {
-                      "path": "img1.geom",
-                      "model_type": "RPC"
-                    },
-                  },
-                  "two": {
-                    "image": "img2.tif",
-                    "geomodel": {
-                      "path": "img2.geom",
-                      "model_type": "RPC"
-                    },
-                  }
-                },
-                "pairing": [["one", "two"]],
-                "initial_elevation": {
-                    "dem": "path/to/srtm_file.tif"
-                  },
-              },
-              "geometry_plugin": "SharelocGeometry",
-              "output": {
-                "directory": "outresults"
-              }
+Pipeline plugin
+---------------
+
+A pipeline plugin will add a new pipeline in CARS, with existing applications or new applications brought by the plugin.
+If the plugin installed is a pipeline plugin, it can be used by specifying the "pipeline" parameter in your CARS configuration file.
+For example :
+
+.. code-block:: json
+
+    {
+        "pipeline": "name_given_by_plugin"
+    }
+
+New applications can be parametrized in "applications" section of the configuration file.
+
+Application plugin
+------------------
+
+An application plugin will overload an existing application in CARS with a new method.
+If the plugin installed is an application plugin, it can be used by adding the application in your CARS configuration file.
+For example a point cloud denoising plugin can be used as follow :
+
+.. code-block:: json
+
+    {
+        "applications": {
+            "point_cloud_denoising": {
+                "method": "name_given_by_plugin"
+                "activated": true
             }
+        }
+    }
 
-        The particularities in the configuration file are:
+Geometry plugin
+---------------
 
-        * **geomodel.model_type**: Depending on the nature of the geometric models indicated above, this field as to be defined as `RPC` or `GRID`. By default, "RPC".
-        * **initial_elevation**: Field contains the path to the **file** corresponding the srtm tiles covering the production (and **not** a directory !!)
-        * **geometry_plugin**: Parameter configured to "SharelocGeometry" to use Shareloc plugin.
+If the plugin installed is a pipeline plugin, it can be used by specifying the "geometry_plugin" parameter in your CARS configuration file.
+For example :
 
-        Parameter can also be defined as a string *path* instead of a dictionary in the configuration. In this case, geomodel parameter will
-        be changed to a dictionary before launching the pipeline. The dictionary will be :
+.. code-block:: json
 
-        .. code-block:: json
-
-            {
-              "path": "img1.geom",
-              "model_type": "RPC"
-            }
-
-
-.. note::
-
-  Be aware that geometric models must therefore be opened by Shareloc directly in this case, and supported sensors may evolve.
-
-
-.. include:: ./links_substitution.rst
+    {
+        "geometry_plugin": "name_given_by_plugin"
+    }
   
 Overview
 ========
+
+.. include:: ./links_substitution.rst
 
 To summarize, CARS pipeline is organized in sequential steps from input pairs (and metadata) to output data. Each step is performed tile-wise and distributed among workers.
 
