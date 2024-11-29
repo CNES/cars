@@ -223,9 +223,9 @@ class CensusMccnnSgm(
 
         # Get params from loader
         self.loader = pandora_loader
-        overloaded_conf["loader_conf"] = collections.OrderedDict(
-            pandora_loader.get_conf()
-        )
+        self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
+
+        overloaded_conf["loader_conf"] = self.corr_config
 
         application_schema = {
             "method": str,
@@ -409,9 +409,7 @@ class CensusMccnnSgm(
 
             # Compute margins for the correlator
             # TODO use loader correlators
-            margins = dm_tools.get_margins(
-                disp_min, disp_max, self.used_config["loader_conf"]
-            )
+            margins = dm_tools.get_margins(disp_min, disp_max, self.corr_config)
             return margins
 
         return margins_wrapper
@@ -1260,7 +1258,7 @@ class CensusMccnnSgm(
                         )(
                             epipolar_images_left[row, col],
                             epipolar_images_right[row, col],
-                            self.used_config["loader_conf"],
+                            self.corr_config,
                             broadcasted_disp_range_grid,
                             saving_info=full_saving_info,
                             compute_disparity_masks=compute_disparity_masks,
