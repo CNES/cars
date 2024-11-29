@@ -1695,6 +1695,7 @@ class DefaultPipeline(PipelineTemplate):
                 if (
                     point_cloud_dir
                     and last_depth_map_application == "triangulation"
+                    and self.merging is False
                 )
                 else None
             )
@@ -1755,6 +1756,7 @@ class DefaultPipeline(PipelineTemplate):
                     if (
                         point_cloud_dir
                         and last_depth_map_application == "pc_outlier_removal_1"
+                        and self.merging is False
                     )
                     else None
                 )
@@ -1785,6 +1787,7 @@ class DefaultPipeline(PipelineTemplate):
                     if (
                         point_cloud_dir
                         and last_depth_map_application == "pc_outlier_removal_2"
+                        and self.merging is False
                     )
                     else None
                 )

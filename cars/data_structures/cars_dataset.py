@@ -584,6 +584,7 @@ def run_save_points(
     overwrite=False,
     save_by_pair=False,
     point_cloud_format="csv",
+    overwrite_file_name=True,
 ):
     """
     Save future result when arrived
@@ -596,6 +597,9 @@ def run_save_points(
     :type overwrite: bool
     :param point_cloud_format: output point cloud format
     :type point_cloud_format: str
+    :param overwrite_filename: if True, the function will try to generate a new
+    filename based on product metadata
+    :type point_cloud_format: bool
 
     """
 
@@ -606,6 +610,7 @@ def run_save_points(
         save_by_pair=save_by_pair,
         overwrite=overwrite,
         point_cloud_format=point_cloud_format,
+        overwrite_file_name=overwrite_file_name,
     )
 
 
@@ -935,6 +940,7 @@ def save_all_dataframe(
     save_by_pair=False,
     overwrite=True,
     point_cloud_format="csv",
+    overwrite_file_name=True,
 ):
     """
     Save DataFrame to csv and laz format. The content of dataframe is merged to
@@ -947,43 +953,49 @@ def save_all_dataframe(
     :type overwrite: bool
     :param point_cloud_format: point cloud format (csv or laz)
     :type point_cloud_format: str
+    :param overwrite_filename: if True, the function will try to generate a new
+    filename based on product metadata
+    :type point_cloud_format: bool
 
     """
     # generate filename if attributes have xstart and ystart settings
-    if (
-        "attributes" in dataframe.attrs
-        and "xmin" in dataframe.attrs["attributes"]
-    ):
-        file_name = os.path.dirname(file_name)
-        file_name = os.path.join(
-            file_name,
-            (
-                str(dataframe.attrs["attributes"]["xmin"])
-                + "_"
-                + str(dataframe.attrs["attributes"]["ymax"])
-            ),
-        )
-    elif "saving_info" in dataframe.attrs:
-        file_name = os.path.dirname(file_name)
-        file_name = os.path.join(
-            file_name,
-            (
-                str(dataframe.attrs["saving_info"]["cars_ds_col"])
-                + "_"
-                + str(dataframe.attrs["saving_info"]["cars_ds_row"])
-            ),
-        )
+    if overwrite_file_name:
+        if (
+            "attributes" in dataframe.attrs
+            and "xmin" in dataframe.attrs["attributes"]
+        ):
+            file_name = os.path.dirname(file_name)
+            file_name = os.path.join(
+                file_name,
+                (
+                    str(dataframe.attrs["attributes"]["xmin"])
+                    + "_"
+                    + str(dataframe.attrs["attributes"]["ymax"])
+                ),
+            )
+        elif "saving_info" in dataframe.attrs:
+            file_name = os.path.dirname(file_name)
+            file_name = os.path.join(
+                file_name,
+                (
+                    str(dataframe.attrs["saving_info"]["cars_ds_col"])
+                    + "_"
+                    + str(dataframe.attrs["saving_info"]["cars_ds_row"])
+                ),
+            )
     if not save_by_pair:
         save_dataframe(dataframe, file_name, overwrite, point_cloud_format)
     else:
         pairing_indexes = set(np.array(dataframe["global_id"]).flat)
         source_pc_names = dataframe.attrs["attributes"]["source_pc_names"]
-
         for pair_index in pairing_indexes:
-            points_indexes = dataframe["global_id"] == pair_index
-            file_name_by_pair = (
-                file_name + "_" + source_pc_names[int(pair_index)]
+            dir_name = os.path.join(
+                os.path.dirname(file_name), source_pc_names[int(pair_index)]
             )
+            safe_makedirs(dir_name)
+            file_name = os.path.basename(file_name)
+            points_indexes = dataframe["global_id"] == pair_index
+            file_name_by_pair = os.path.join(dir_name, file_name)
             save_dataframe(
                 dataframe.loc[points_indexes],
                 file_name_by_pair,
@@ -1005,8 +1017,10 @@ def save_dataframe(
     # Save point cloud to laz format
 
     if point_cloud_format == "laz":
-        las_file_name = file_name + ".laz"
-        dataframe_converter.convert_pcl_to_laz(dataframe, las_file_name)
+        _, extension = os.path.splitext(file_name)
+        if "laz" not in extension:
+            file_name = file_name + ".laz"
+        dataframe_converter.convert_pcl_to_laz(dataframe, file_name)
     elif point_cloud_format == "csv":
         _, extension = os.path.splitext(file_name)
         if "csv" not in extension:
