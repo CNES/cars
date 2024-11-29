@@ -911,7 +911,7 @@ def fill_dict(data_dict, saving_info=None, attributes=None):
     :type data_dict: Dict
     :param saving_info: created by Orchestrator.get_saving_infos
     :type saving_info: dict
-    :param attributes:
+    :param attributes: attributes associated to data
     :type attributes: dict
 
     """
@@ -944,8 +944,8 @@ def save_all_dataframe(
     """
     Save DataFrame to csv and laz format. The content of dataframe is merged to
     the content of existing saved Dataframe, if overwrite==False
-    The option save_by_pair separate the dataframe
-    by pair
+    The option save_by_pair separate the dataframe by pair (one folder by pair)
+
     :param file_name: file name to save data to
     :type file_name: str
     :param overwrite: overwrite file if exists
@@ -953,9 +953,11 @@ def save_all_dataframe(
     :param point_cloud_format: point cloud format (csv or laz)
     :type point_cloud_format: str
     :param overwrite_file_name: generate a new filename from input filename
-        matching input dataframe attributes
+        matching input dataframe attributes, using only directory from input
+        filename
     :type overwrite_file_name: bool
     """
+
     # generate filename if attributes have xstart and ystart settings
     if overwrite_file_name:
         if (
