@@ -8,10 +8,10 @@ Masks
 -----
 
 | CARS can use a mask for each image in order to ignore some image regions (for instance water mask). This mask is taken into account during the whole 3D restitution process.
-| The masks have one band with 1 nbit and the non zeros values will be considered as invalid data and theses areas will not processed during the computation.
+| The masks have one band with 1 nbit and the non zeros values will be considered as invalid data and theses areas will not be processed during the computation.
 | Please, see the section :ref:`convert_image_to_binary_image` to make a binary image.
 
-| The mask are resampled in epipolar geometry with the resampling application.
+| The masks are resampled in epipolar geometry with the resampling application.
 | The masked values are not taken into account in the matching process (sparse or dense matching method) to avoid mismatch and useless processing.
 | Further, the sparse matching estimation of the disparity range can be enhanced with mask using for the water area typicaly.
 

@@ -872,7 +872,7 @@ The structure follows this organisation:
                         }
                     },
 
-            .. tab:: dem Generation
+            .. tab:: DEM Generation
 
                 **Name**: "dem_generation"
 
@@ -909,6 +909,8 @@ The structure follows this organisation:
                 | min_dem                         | Min value that has to be reached by dem_min                | int        | should be < 0   | -500          | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
                 | max_dem                         | Max value that has to be reached by dem_max                | int        | should be > 0   | 1000          | No       |
+                +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
+                | save_intermediate_data          | Save DEM as TIF                                            | boolean    |                 | false         | No       |
                 +---------------------------------+------------------------------------------------------------+------------+-----------------+---------------+----------+
 
                 **Example**
@@ -1197,7 +1199,7 @@ The structure follows this organisation:
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
                 | snap_to_img1           | If all pairs share the same left image, modify lines of sights of secondary images to cross those of the ref image | boolean |                                      | false                        | No       |
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
-                | save_intermediate_data | Save depth map                                                                                                     | boolean |                                      | false                        | No       |
+                | save_intermediate_data | Save depth map as TIF, LAZ and CSV                                                                                 | boolean |                                      | false                        | No       |
                 +------------------------+--------------------------------------------------------------------------------------------------------------------+---------+--------------------------------------+------------------------------+----------+
 
                 **Example**
@@ -1268,8 +1270,6 @@ The structure follows this organisation:
                 +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
                 | save_intermediate_data       | Save points clouds as laz and csv format | boolean |                                   | false         | No       |
                 +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
-                | save_by_pair                 | Enable points cloud saving by pair       | boolean |                                   | false         | No       |
-                +------------------------------+------------------------------------------+---------+-----------------------------------+---------------+----------+
 
                 If method is *statistical*:
 
@@ -1322,19 +1322,20 @@ The structure follows this organisation:
 
                 .. code-block:: json
 
-                        "applications": {
-                            "point_cloud_outlier_removal.1": {
-                                "method": "small_components",
-                                "on_ground_margin": 10,
-                                "save_intermediate_data": true
-                            },
-                            "point_cloud_outlier_removal.2": {
-                                "method": "statistical",
-                                "k": 10,
-                                "save_intermediate_data": true,
-                                "save_by_pair": true,
-                            }
+                    "applications": {
+                        "point_cloud_outlier_removal.1": {
+                            "method": "small_components",
+                            "on_ground_margin": 10,
+                            "save_intermediate_data": true,
+                            "activated": true
                         },
+                        "point_cloud_outlier_removal.2": {
+                            "method": "statistical",
+                            "k": 10,
+                            "save_intermediate_data": true,
+                            "activated": true
+                        }
+                    }
 
             .. tab:: Point Cloud Rasterization
 
