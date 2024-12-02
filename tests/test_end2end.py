@@ -2328,8 +2328,6 @@ def test_end2end_use_epipolar_a_priori():
         )
         assert os.path.exists(os.path.join(out_dir, "mask.tif")) is False
 
-        print("hello!")
-
 
 @pytest.mark.end2end_tests
 def test_prepare_ventoux_bias():
