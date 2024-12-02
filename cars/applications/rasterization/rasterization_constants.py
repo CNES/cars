@@ -22,7 +22,7 @@
 file contains all the constants used in rasterization module
 """
 
-RASTERIZATION_RUN_TAG = "rasterization_run"
+RASTERIZATION_RUN_TAG = "rasterization"
 
 # Params
 METHOD = "method"
@@ -34,24 +34,5 @@ RESOLUTION = "resolution"
 
 # Run infos
 EPSG_TAG = "epsg"
-DSM_TAG = "dsm"
-DSM_INF_TAG = "dsm_inf"
-DSM_SUP_TAG = "dsm_sup"
-COLOR_TAG = "color"
-MSK_TAG = "msk"
-CONFIDENCE_TAG = "disparity_confidence"
-PERFORMANCE_MAP_TAG = "performance_map_tag"
-DSM_MEAN_TAG = "dsm_mean"
-DSM_STD_TAG = "dsm_std"
-DSM_N_PTS_TAG = "dsm_n_pts"
-DSM_POINTS_IN_CELL_TAG = "dsm_points_in_cell"
-DSM_INF_MEAN_TAG = "dsm_inf_mean"
-DSM_INF_STD_TAG = "dsm_inf_std"
-DSM_INF_N_PTS_TAG = "dsm_inf_n_pts"
-DSM_INF_POINTS_IN_CELL_TAG = "dsm_inf_points_in_cell"
-DSM_SUP_MEAN_TAG = "dsm_sup_mean"
-DSM_SUP_STD_TAG = "dsm_sup_std"
-DSM_SUP_N_PTS_TAG = "dsm_sup_n_pts"
-DSM_SUP_POINTS_IN_CELL_TAG = "dsm_sup_points_in_cell"
 DSM_NO_DATA_TAG = "dsm_no_data"
 COLOR_NO_DATA_TAG = "color_no_data"

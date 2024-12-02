@@ -144,7 +144,7 @@ class LineOfSightIntersection(
         requested or not using the parameters. A dump directory can also be
         provided to write any additionnal files that have not been written
         to the output directory (because they are not part of the depth map
-        definition, or because they have not been requested)
+        definition, or because they have not been requested).
 
         :param epipolar_point_cloud: tiled epipolar left image
         :type epipolar_point_cloud: CarsDataset
@@ -302,6 +302,109 @@ class LineOfSightIntersection(
                 cars_ds_name="depth_map_corr_msk",
                 optional_data=True,
             )
+
+    def fill_index(
+        self,
+        save_output_coordinates=True,
+        save_output_color=True,
+        save_output_classification=False,
+        save_output_mask=False,
+        save_output_filling=False,
+        save_output_performance_map=False,
+        pair_key="PAIR_0",
+    ):
+        """
+        Fill depth map index for current pair, according to which product
+        should be saved
+
+        :param save_output_coordinates: Save X, Y and Z coords in output_dir
+        :type save_output_coordinates: bool
+        :param save_output_color: Save color depth map in output_dir
+        :type save_output_color: bool
+        :param save_output_classification: Save classification depth map in
+                output_dir
+        :type save_output_classification: bool
+        :param save_output_mask: Save mask depth map in output_dir
+        :type save_output_mask: bool
+        :param save_output_filling: Save filling depth map in output_dir
+        :type save_output_filling: bool
+        :param save_output_performance_map: Save performance map in output_dir
+        :type save_output_performance_map: bool
+        :param pair_key: name of the current pair
+        :type pair_key: str
+        """
+
+        # index file for this depth map
+        index = {}
+
+        if save_output_coordinates:
+            index[cst.INDEX_DEPTH_MAP_X] = os.path.join(pair_key, "X.tif")
+            index[cst.INDEX_DEPTH_MAP_Y] = os.path.join(pair_key, "Y.tif")
+            index[cst.INDEX_DEPTH_MAP_Z] = os.path.join(pair_key, "Z.tif")
+
+        if save_output_color:
+            index[cst.INDEX_DEPTH_MAP_COLOR] = os.path.join(
+                pair_key, "color.tif"
+            )
+
+        if save_output_mask:
+            index[cst.INDEX_DEPTH_MAP_MASK] = os.path.join(pair_key, "mask.tif")
+
+        if save_output_performance_map:
+            index[cst.INDEX_DEPTH_MAP_PERFORMANCE_MAP] = os.path.join(
+                pair_key, "performance_map.tif"
+            )
+
+        if save_output_classification:
+            index[cst.INDEX_DEPTH_MAP_CLASSIFICATION] = os.path.join(
+                pair_key, "classification.tif"
+            )
+
+        if save_output_filling:
+            index[cst.INDEX_DEPTH_MAP_FILLING] = os.path.join(
+                pair_key, "filling.tif"
+            )
+
+        # update orchestrator index if it has been filled
+        if index:
+            # Add epsg code (always lon/lat in triangulation)
+            index[cst.INDEX_DEPTH_MAP_EPSG] = 4326
+            self.orchestrator.update_index({"depth_map": {pair_key: index}})
+
+    def create_point_cloud_directories(
+        self, pair_dump_dir, point_cloud_dir, point_cloud
+    ):
+        """
+        Set and create directories for point cloud disk output (laz and csv)
+        The function return None path if the point cloud should not be saved
+
+        :param pair_dump_dir: folder used as dump directory for current pair
+        :type pair_dump_dir: str
+        :param point_cloud_dir: folder used for laz official product directory
+        :type point_cloud_dir: str
+        :param point_cloud: input point cloud (for orchestrator registration)
+        :type point_cloud: Dataset
+        """
+
+        csv_pc_dir_name = None
+        if self.save_intermediate_data:
+            csv_pc_dir_name = os.path.join(pair_dump_dir, "csv")
+            safe_makedirs(csv_pc_dir_name)
+            self.orchestrator.add_to_compute_lists(
+                point_cloud, cars_ds_name="point_cloud_csv"
+            )
+        laz_pc_dir_name = None
+        if self.save_intermediate_data or point_cloud_dir is not None:
+            if point_cloud_dir is not None:
+                laz_pc_dir_name = point_cloud_dir
+            else:
+                laz_pc_dir_name = os.path.join(pair_dump_dir, "laz")
+            safe_makedirs(laz_pc_dir_name)
+            self.orchestrator.add_to_compute_lists(
+                point_cloud, cars_ds_name="point_cloud_laz"
+            )
+
+        return csv_pc_dir_name, laz_pc_dir_name
 
     def run(  # noqa: C901
         self,
@@ -477,8 +580,8 @@ class LineOfSightIntersection(
         # Add infos to orchestrator.out_json
         updating_dict = {
             application_constants.APPLICATION_TAG: {
-                pair_key: {
-                    triangulation_constants.TRIANGULATION_RUN_TAG: {
+                triangulation_constants.TRIANGULATION_RUN_TAG: {
+                    pair_key: {
                         triangulation_constants.ALT_REFERENCE_TAG: alt_reference
                     },
                 }
@@ -580,6 +683,15 @@ class LineOfSightIntersection(
             save_output_filling,
             save_output_performance_map,
         )
+        self.fill_index(
+            save_output_coordinates,
+            save_output_color,
+            save_output_classification,
+            save_output_mask,
+            save_output_filling,
+            save_output_performance_map,
+            pair_key,
+        )
         # Save as point cloud
         point_cloud = cars_dataset.CarsDataset(
             "points",
@@ -588,25 +700,9 @@ class LineOfSightIntersection(
         point_cloud.create_empty_copy(epipolar_point_cloud)
         point_cloud.attributes = epipolar_point_cloud.attributes
 
-        csv_pc_file_name = None
-        if self.save_intermediate_data:
-            csv_pc_file_name = os.path.join(pair_dump_dir, "csv")
-            safe_makedirs(csv_pc_file_name)
-            csv_pc_file_name = os.path.join(csv_pc_file_name, "pc")
-            self.orchestrator.add_to_compute_lists(
-                point_cloud, cars_ds_name="point_cloud_csv"
-            )
-        laz_pc_file_name = None
-        if self.save_intermediate_data or point_cloud_dir is not None:
-            if point_cloud_dir is not None:
-                laz_pc_file_name = point_cloud_dir
-            else:
-                laz_pc_file_name = os.path.join(pair_dump_dir, "laz")
-            safe_makedirs(laz_pc_file_name)
-            laz_pc_file_name = os.path.join(laz_pc_file_name, "pc")
-            self.orchestrator.add_to_compute_lists(
-                point_cloud, cars_ds_name="point_cloud_laz"
-            )
+        csv_pc_dir_name, laz_pc_dir_name = self.create_point_cloud_directories(
+            pair_dump_dir, point_cloud_dir, point_cloud
+        )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info_epipolar] = self.orchestrator.get_saving_infos(
@@ -633,6 +729,12 @@ class LineOfSightIntersection(
         broadcasted_grid_left = self.orchestrator.cluster.scatter(grid_left)
         broadcasted_grid_right = self.orchestrator.cluster.scatter(grid_right)
 
+        # initialize empty index file for point cloud product if official
+        # product is requested
+        pc_index = None
+        if point_cloud_dir:
+            pc_index = {}
+
         for col in range(epipolar_disparity_map.shape[1]):
             for row in range(epipolar_disparity_map.shape[0]):
                 if epipolar_disparity_map[row, col] is not None:
@@ -645,6 +747,17 @@ class LineOfSightIntersection(
                         full_saving_info_flatten = ocht.update_saving_infos(
                             saving_info_flatten, row=row, col=col
                         )
+
+                    csv_pc_file_name, laz_pc_file_name = (
+                        triangulation_tools.generate_point_cloud_file_names(
+                            csv_pc_dir_name,
+                            laz_pc_dir_name,
+                            row,
+                            col,
+                            pc_index,
+                            pair_key,
+                        )
+                    )
 
                     # Compute points
                     (
@@ -671,6 +784,10 @@ class LineOfSightIntersection(
                         saving_info_epipolar=full_saving_info_epipolar,
                         saving_info_flatten=full_saving_info_flatten,
                     )
+
+        # update point cloud index
+        if point_cloud_dir:
+            self.orchestrator.update_index(pc_index)
 
         return epipolar_point_cloud
 
@@ -873,6 +990,7 @@ def triangulation_wrapper(
             point_cloud_csv_file_name,
             overwrite=True,
             point_cloud_format="csv",
+            overwrite_file_name=False,
         )
     if point_cloud_laz_file_name:
         cars_dataset.run_save_points(
@@ -880,6 +998,7 @@ def triangulation_wrapper(
             point_cloud_laz_file_name,
             overwrite=True,
             point_cloud_format="laz",
+            overwrite_file_name=False,
         )
 
     return pc_dataset, flatten_pc_dataset

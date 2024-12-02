@@ -26,7 +26,7 @@ this module contains the constants of triangulation.
 # USED VARIABLES
 
 
-TRIANGULATION_RUN_TAG = "triangulation_run"
+TRIANGULATION_RUN_TAG = "triangulation"
 
 
 # PARAMS

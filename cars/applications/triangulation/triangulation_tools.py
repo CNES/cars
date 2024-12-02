@@ -25,6 +25,7 @@ contains functions used for triangulation
 
 # Third party imports
 import logging
+import os
 
 # Standard imports
 from typing import Dict
@@ -421,3 +422,62 @@ def geoid_offset(points, geoid_path):
     out_pc[cst.Z] -= geoid_height_array
 
     return out_pc
+
+
+def generate_point_cloud_file_names(
+    csv_dir: str,
+    laz_dir: str,
+    row: int,
+    col: int,
+    index: dict = None,
+    pair_key: str = "PAIR_0",
+):
+    """
+    generate the point cloud CSV and LAZ filenames of a given tile from its
+    corresponding row and col. Optionally update the index, if provided.
+
+    :param csv_dir: target directory for csv files, If None no csv filenames
+        will be generated
+    :type csv_dir: str
+    :param laz_dir: target directory for laz files, If None no laz filenames
+        will be generated
+    :type laz_dir: str
+    :param row: row index of the tile
+    :type row: int
+    :param col: col index of the tile
+    :type col: int
+    :param index: product index to update with the filename
+    :type index: dict
+    :param pair_key: current product key (used in index), if a list is given
+        a filename will be added to the index for each element of the list
+    :type pair_key: str
+    """
+
+    file_name_root = str(col) + "_" + str(row)
+    csv_pc_file_name = None
+    if csv_dir is not None:
+        csv_pc_file_name = os.path.join(csv_dir, file_name_root + ".csv")
+
+    laz_pc_file_name = None
+    if laz_dir is not None:
+        laz_name = file_name_root + ".laz"
+        laz_pc_file_name = os.path.join(laz_dir, laz_name)
+        # add to index if the laz is saved to output product
+        if index is not None:
+            # index initialization, if it has not been done yet
+            if "point_cloud" not in index:
+                index["point_cloud"] = {}
+            # case where merging=True and save_by_pair=False
+            if pair_key is None:
+                index["point_cloud"][file_name_root] = laz_name
+            else:
+                if isinstance(pair_key, str):
+                    pair_key = [pair_key]
+                for elem in pair_key:
+                    if elem not in index["point_cloud"]:
+                        index["point_cloud"][elem] = {}
+                    index["point_cloud"][elem][file_name_root] = os.path.join(
+                        elem, laz_name
+                    )
+
+    return csv_pc_file_name, laz_pc_file_name

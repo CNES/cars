@@ -26,6 +26,7 @@ Preprocessing contains function used in pipelines
 # Standard imports
 from __future__ import print_function
 
+import json
 import logging
 import math
 import os
@@ -166,10 +167,10 @@ def compute_terrain_bbox(  # noqa: 751
 
     # Check that the envelopes intersect one another
     logging.info("Computing images envelopes and their intersection")
-    shp1 = os.path.join(out_dir, "left_envelope.shp")
-    shp2 = os.path.join(out_dir, "right_envelope.shp")
+    geojson1 = os.path.join(out_dir, "left_envelope.geojson")
+    geojson2 = os.path.join(out_dir, "right_envelope.geojson")
     out_envelopes_intersection = os.path.join(
-        out_dir, "envelopes_intersection.gpkg"
+        out_dir, "envelopes_intersection.geojson"
     )
 
     sensor1 = sensor_image_left[sens_cst.INPUT_IMG]
@@ -188,18 +189,36 @@ def compute_terrain_bbox(  # noqa: 751
         geomodel1,
         geomodel2,
         geometry_plugin,
-        shp1,
-        shp2,
+        geojson1,
+        geojson2,
         out_envelopes_intersection,
+        envelope_file_driver="GeoJSON",
+        intersect_file_driver="GeoJSON",
     )
+
+    json_data_1 = None
+    json_data_2 = None
+    json_data_intersect = None
+
+    try:
+        with open(geojson1, "r", encoding="utf-8") as file_1:
+            json_data_1 = json.load(file_1)
+
+        with open(geojson2, "r", encoding="utf-8") as file_2:
+            json_data_2 = json.load(file_2)
+
+        with open(out_envelopes_intersection, "r", encoding="utf-8") as file_3:
+            json_data_intersect = json.load(file_3)
+    except Exception as exc:
+        raise FileNotFoundError("Unable to read bbox GeoJSON files") from exc
 
     # update out_json
     updating_dict = {
         PREPROCESSING_TAG: {
             pair_key: {
-                LEFT_ENVELOPE_TAG: shp1,
-                RIGHT_ENVELOPE_TAG: shp2,
-                ENVELOPES_INTERSECTION_TAG: out_envelopes_intersection,
+                LEFT_ENVELOPE_TAG: json_data_1,
+                RIGHT_ENVELOPE_TAG: json_data_2,
+                ENVELOPES_INTERSECTION_TAG: json_data_intersect,
                 ENVELOPES_INTERSECTION_BB_TAG: [
                     inter_xmin,
                     inter_ymin,
@@ -214,7 +233,7 @@ def compute_terrain_bbox(  # noqa: 751
 
     if check_inputs:
         logging.info("Checking DEM coverage")
-        _, epsg1 = inputs.read_vector(shp1)
+        _, epsg1 = inputs.read_vector(geojson1)
         __, dem_coverage = projection.compute_dem_intersection_with_poly(
             geometry_plugin.dem, inter_poly, epsg1
         )

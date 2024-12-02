@@ -220,11 +220,12 @@ class CensusMccnnSgm(
             use_cross_validation=overloaded_conf["use_cross_validation"],
         )
         overloaded_conf["loader"] = loader
-        overloaded_conf["loader_conf"] = loader_conf
 
         # Get params from loader
         self.loader = pandora_loader
         self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
+
+        overloaded_conf["loader_conf"] = self.corr_config
 
         application_schema = {
             "method": str,
@@ -1184,11 +1185,8 @@ class CensusMccnnSgm(
             # Add infos to orchestrator.out_json
             updating_dict = {
                 application_constants.APPLICATION_TAG: {
-                    dm_cst.DENSE_MATCHING_PARAM_TAG: {
-                        "pandora_config": self.corr_config
-                    },
-                    pair_key: {
-                        dm_cst.DENSE_MATCHING_RUN_TAG: {
+                    dm_cst.DENSE_MATCHING_RUN_TAG: {
+                        pair_key: {
                             "global_disp_min": np.nanmin(
                                 disp_range_grid[0, 0][
                                     dm_cst.DISP_MIN_GRID

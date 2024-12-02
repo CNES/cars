@@ -591,13 +591,16 @@ class AbstractGeometry(metaclass=ABCMeta):
         # True if arrangement 1, False if arrangement 2
         return fake_triangulation[0, 0, 2] < fake_triangulation[0, 1, 2]
 
-    def image_envelope(self, sensor, geomodel, shp=None):
+    def image_envelope(
+        self, sensor, geomodel, out_path=None, out_driver="ESRI Shapefile"
+    ):
         """
-        Export the image footprint to a shapefile
+        Export the image footprint to a vector file
 
         :param sensor: path to sensor image
         :param geomodel: path and attributes for geometrical model
-        :param shp: Path to the output shapefile
+        :param out_path: Path to the output vector file
+        :param out_driver: OGR driver to use to write output file
         """
         # retrieve image size
         img_size_x, img_size_y = inputs.rasterio_get_size(sensor)
@@ -636,10 +639,10 @@ class AbstractGeometry(metaclass=ABCMeta):
         l_l = (lon_bottom_left, lat_bottom_left)
         l_r = (lon_bottom_right, lat_bottom_right)
 
-        if shp is not None:
+        if out_path is not None:
             # create envelope polygon and save it as a shapefile
             poly_bb = Polygon([u_l, u_r, l_r, l_l, u_l])
-            outputs.write_vector([poly_bb], shp, 4326, driver="ESRI Shapefile")
+            outputs.write_vector([poly_bb], out_path, 4326, driver=out_driver)
 
         return u_l, u_r, l_l, l_r
 

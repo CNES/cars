@@ -110,3 +110,23 @@ RASTER_FILLING = "filling"
 # Geometry constants
 DISP_MODE = "disp"
 MATCHES_MODE = "matches"
+
+# DSM index
+INDEX_DSM_ALT = "dsm"
+INDEX_DSM_COLOR = "color"
+INDEX_DSM_MASK = "mask"
+INDEX_DSM_CLASSIFICATION = "classification"
+INDEX_DSM_PERFORMANCE_MAP = "performance_map"
+INDEX_DSM_CONTRIBUTING_PAIR = "contributing_pair"
+INDEX_DSM_FILLING = "filling"
+
+# depth map index
+INDEX_DEPTH_MAP_X = "x"
+INDEX_DEPTH_MAP_Y = "y"
+INDEX_DEPTH_MAP_Z = "z"
+INDEX_DEPTH_MAP_COLOR = "color"
+INDEX_DEPTH_MAP_MASK = "mask"
+INDEX_DEPTH_MAP_CLASSIFICATION = "classification"
+INDEX_DEPTH_MAP_PERFORMANCE_MAP = "performance_map"
+INDEX_DEPTH_MAP_FILLING = "filling"
+INDEX_DEPTH_MAP_EPSG = "epsg"

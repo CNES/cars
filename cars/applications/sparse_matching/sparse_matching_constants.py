@@ -26,7 +26,7 @@ this module contains the constants of sparse matching.
 # USED VARIABLES
 
 
-SPARSE_MATCHING_RUN_TAG = "sparse_matching_run"
+SPARSE_MATCHING_RUN_TAG = "sparse_matching"
 
 
 # INFOS
@@ -52,7 +52,7 @@ DISP_UPPER_BOUND = "disp_upper_bound"
 
 
 # disparity range computation
-DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation_run"
+DISPARITY_RANGE_COMPUTATION_TAG = "disparity_range_computation"
 MINIMUM_DISPARITY_TAG = "minimum_disparity"
 MAXIMUM_DISPARITY_TAG = "maximum_disparity"
 MATCHES_TAG = "matches"
@@ -60,9 +60,7 @@ DISPARITY_MARGIN_PARAM_TAG = "disparity_margin_param"
 
 # Matches filtering
 METHOD = "method"
-MATCHES_FILTERING_TAG = "matches_filtering"
-RAW_MATCHES_TAG = "raw_matches"
-FILTERED_MATCHES_TAG = "filtered_matches"
+MATCH_FILTERING_TAG = "match_filtering"
 NUMBER_MATCHES_TAG = "number_matches"
 RAW_NUMBER_MATCHES_TAG = "raw_number_matches"
 BEFORE_CORRECTION_EPI_ERROR_MEAN = "before_correction_epi_error_mean"

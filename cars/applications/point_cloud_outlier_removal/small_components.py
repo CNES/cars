@@ -28,6 +28,7 @@ import copy
 # Standard imports
 import logging
 import math
+import os
 import time
 
 # Third party imports
@@ -42,6 +43,9 @@ from cars.applications.point_cloud_fusion import point_cloud_tools
 from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
 from cars.applications.point_cloud_outlier_removal import (
     pc_out_removal as pc_removal,
+)
+from cars.applications.triangulation.triangulation_tools import (
+    generate_point_cloud_file_names,
 )
 from cars.core import projection
 from cars.data_structures import cars_dataset
@@ -339,6 +343,7 @@ class SmallComponents(
                         )
 
         elif merged_point_cloud.dataset_type == "arrays":
+            prefix = os.path.basename(dump_dir)
             # Save as depth map
             filtered_point_cloud, saving_info_epipolar = (
                 self.__register_epipolar_dataset__(
@@ -346,14 +351,15 @@ class SmallComponents(
                     depth_map_dir,
                     dump_dir,
                     app_name="small_components",
+                    pair_key=prefix,
                 )
             )
 
             # Save as point cloud
             (
                 flatten_filtered_point_cloud,
-                laz_pc_file_name,
-                csv_pc_file_name,
+                laz_pc_dir_name,
+                csv_pc_dir_name,
                 saving_info_flatten,
             ) = self.__register_pc_dataset__(
                 merged_point_cloud,
@@ -361,6 +367,12 @@ class SmallComponents(
                 dump_dir,
                 app_name="small_components",
             )
+
+            # initialize empty index file for point cloud product if official
+            # product is requested
+            pc_index = None
+            if point_cloud_dir:
+                pc_index = {}
 
             # Generate rasters
             for col in range(filtered_point_cloud.shape[1]):
@@ -376,7 +388,16 @@ class SmallComponents(
                             saving_info_flatten, row=row, col=col
                         )
                     if merged_point_cloud[row][col] is not None:
-
+                        csv_pc_file_name, laz_pc_file_name = (
+                            generate_point_cloud_file_names(
+                                csv_pc_dir_name,
+                                laz_pc_dir_name,
+                                row,
+                                col,
+                                pc_index,
+                                pair_key=prefix,
+                            )
+                        )
                         window = merged_point_cloud.tiling_grid[row, col]
                         overlap = merged_point_cloud.overlaps[row, col]
                         # Delayed call to cloud filtering
@@ -399,6 +420,10 @@ class SmallComponents(
                             saving_info_epipolar=full_saving_info_epipolar,
                             saving_info_flatten=full_saving_info_flatten,
                         )
+
+            # update point cloud index
+            if point_cloud_dir:
+                self.orchestrator.update_index(pc_index)
 
         else:
             logging.error(
@@ -617,6 +642,7 @@ def epipolar_small_component_removal_wrapper(
             point_cloud_csv_file_name,
             overwrite=True,
             point_cloud_format="csv",
+            overwrite_file_name=False,
         )
     if point_cloud_laz_file_name:
         cars_dataset.run_save_points(
@@ -624,6 +650,7 @@ def epipolar_small_component_removal_wrapper(
             point_cloud_laz_file_name,
             overwrite=True,
             point_cloud_format="laz",
+            overwrite_file_name=False,
         )
 
     return filtered_cloud, flatten_filtered_cloud

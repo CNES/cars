@@ -300,10 +300,15 @@ class SimpleGaussian(
         else:
             self.orchestrator = orchestrator
 
+        # Get if color, mask and stats are saved
+        save_intermediate_data = self.used_config["save_intermediate_data"]
+
         # Setup dump directory
         if dump_dir is not None:
             out_dump_dir = dump_dir
             safe_makedirs(dump_dir)
+            if not save_intermediate_data:
+                self.orchestrator.add_to_clean(dump_dir)
         else:
             out_dump_dir = self.orchestrator.out_dir
 
@@ -364,9 +369,6 @@ class SimpleGaussian(
         else:
             source_pc_names = point_clouds.attributes["source_pc_names"]
 
-        # Get if color, mask and stats are saved
-        save_intermediate_data = self.used_config["save_intermediate_data"]
-
         # Save objects
         # Initialize files names
         # TODO get from config ?
@@ -384,18 +386,23 @@ class SimpleGaussian(
         out_dsm_points_in_cell_file_name = None
         out_dsm_inf_mean_file_name = None
         out_dsm_inf_std_file_name = None
-        out_dsm_inf_n_pts_file_name = None
-        out_dsm_inf_points_in_cell_file_name = None
         out_dsm_sup_mean_file_name = None
         out_dsm_sup_std_file_name = None
-        out_dsm_sup_n_pts_file_name = None
-        out_dsm_sup_points_in_cell_file_name = None
 
         if dsm_file_name is not None:
             safe_makedirs(os.path.dirname(dsm_file_name))
 
         out_dsm_file_name = dsm_file_name
-        if dsm_file_name is None and save_intermediate_data:
+        if out_dsm_file_name is not None:
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_ALT: os.path.basename(out_dsm_file_name)
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_dsm_file_name = os.path.join(out_dump_dir, "dsm.tif")
         if out_dsm_file_name is not None:
             list_computed_layers += ["dsm"]
@@ -418,7 +425,17 @@ class SimpleGaussian(
             )
 
         out_clr_file_name = color_file_name
-        if color_file_name is None and save_intermediate_data:
+        if out_clr_file_name is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_COLOR: os.path.basename(out_clr_file_name)
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_clr_file_name = os.path.join(out_dump_dir, "color.tif")
         if out_clr_file_name is not None:
             list_computed_layers += ["color"]
@@ -434,7 +451,19 @@ class SimpleGaussian(
             )
 
         out_classif_file_name = classif_file_name
-        if classif_file_name is None and save_intermediate_data:
+        if out_classif_file_name is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_CLASSIFICATION: os.path.basename(
+                            out_classif_file_name
+                        )
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_classif_file_name = os.path.join(
                 out_dump_dir, "classification.tif"
             )
@@ -451,7 +480,17 @@ class SimpleGaussian(
             )
 
         out_msk_file_name = mask_file_name
-        if mask_file_name is None and save_intermediate_data:
+        if out_msk_file_name is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_MASK: os.path.basename(out_msk_file_name)
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_msk_file_name = os.path.join(out_dump_dir, "mask.tif")
         if out_msk_file_name is not None:
             list_computed_layers += ["mask"]
@@ -466,7 +505,19 @@ class SimpleGaussian(
             )
 
         out_performance_map = performance_map_file_name
-        if performance_map_file_name is None and save_intermediate_data:
+        if out_performance_map is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_PERFORMANCE_MAP: os.path.basename(
+                            out_performance_map
+                        )
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_performance_map = os.path.join(
                 out_dump_dir, "performance_map.tif"
             )
@@ -483,7 +534,19 @@ class SimpleGaussian(
             )
 
         out_source_pc = contributing_pair_file_name
-        if contributing_pair_file_name is None and save_intermediate_data:
+        if out_source_pc is not None:
+            # add contributing pair filename to index
+            self.orchestrator.update_index(
+                {
+                    "dsm": {
+                        cst.INDEX_DSM_CONTRIBUTING_PAIR: os.path.basename(
+                            out_source_pc
+                        )
+                    }
+                }
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_source_pc = os.path.join(out_dump_dir, "source_pc.tif")
         if out_source_pc:
             list_computed_layers += ["source_pc"]
@@ -498,7 +561,13 @@ class SimpleGaussian(
             )
 
         out_filling = filling_file_name
-        if out_filling is None and save_intermediate_data:
+        if out_filling is not None:
+            # add filling filename to index
+            self.orchestrator.update_index(
+                {"dsm": {cst.INDEX_DSM_FILLING: os.path.basename(out_filling)}}
+            )
+        elif save_intermediate_data:
+            # File is not part of the official product, write it in dump_dir
             out_filling = os.path.join(out_dump_dir, "filling.tif")
         if out_filling:
             list_computed_layers += ["filling"]
@@ -622,6 +691,7 @@ class SimpleGaussian(
             out_dsm_sup_std_file_name = os.path.join(
                 out_dump_dir, "dsm_sup_std.tif"
             )
+
             self.orchestrator.add_to_save_lists(
                 out_dsm_sup_mean_file_name,
                 cst.RASTER_HGT_SUP_MEAN,
@@ -682,33 +752,8 @@ class SimpleGaussian(
             application_constants.APPLICATION_TAG: {
                 raster_cst.RASTERIZATION_RUN_TAG: {
                     raster_cst.EPSG_TAG: epsg,
-                    raster_cst.DSM_TAG: out_dsm_file_name,
-                    raster_cst.DSM_INF_TAG: out_dsm_inf_file_name,
-                    raster_cst.DSM_SUP_TAG: out_dsm_sup_file_name,
                     raster_cst.DSM_NO_DATA_TAG: float(self.dsm_no_data),
                     raster_cst.COLOR_NO_DATA_TAG: float(self.color_no_data),
-                    raster_cst.COLOR_TAG: out_clr_file_name,
-                    raster_cst.MSK_TAG: out_msk_file_name,
-                    raster_cst.CONFIDENCE_TAG: out_confidence,
-                    raster_cst.PERFORMANCE_MAP_TAG: out_confidence,
-                    raster_cst.DSM_MEAN_TAG: out_dsm_mean_file_name,
-                    raster_cst.DSM_STD_TAG: out_dsm_std_file_name,
-                    raster_cst.DSM_N_PTS_TAG: out_dsm_n_pts_file_name,
-                    raster_cst.DSM_POINTS_IN_CELL_TAG: (
-                        out_dsm_points_in_cell_file_name
-                    ),
-                    raster_cst.DSM_INF_MEAN_TAG: out_dsm_inf_mean_file_name,
-                    raster_cst.DSM_INF_STD_TAG: out_dsm_inf_std_file_name,
-                    raster_cst.DSM_INF_N_PTS_TAG: out_dsm_inf_n_pts_file_name,
-                    raster_cst.DSM_INF_POINTS_IN_CELL_TAG: (
-                        out_dsm_inf_points_in_cell_file_name
-                    ),
-                    raster_cst.DSM_SUP_MEAN_TAG: out_dsm_sup_mean_file_name,
-                    raster_cst.DSM_SUP_STD_TAG: out_dsm_sup_std_file_name,
-                    raster_cst.DSM_SUP_N_PTS_TAG: out_dsm_sup_n_pts_file_name,
-                    raster_cst.DSM_SUP_POINTS_IN_CELL_TAG: (
-                        out_dsm_sup_points_in_cell_file_name
-                    ),
                 },
             }
         }

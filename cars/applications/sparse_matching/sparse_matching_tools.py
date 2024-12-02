@@ -472,8 +472,8 @@ def compute_disp_min_disp_max(
     # update orchestrator_out_json
     updating_infos = {
         application_constants.APPLICATION_TAG: {
-            pair_key: {
-                sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+            sm_cst.DISPARITY_RANGE_COMPUTATION_TAG: {
+                pair_key: {
                     sm_cst.DISPARITY_MARGIN_PARAM_TAG: disp_margin,
                     sm_cst.MINIMUM_DISPARITY_TAG: dmin,
                     sm_cst.MAXIMUM_DISPARITY_TAG: dmax,

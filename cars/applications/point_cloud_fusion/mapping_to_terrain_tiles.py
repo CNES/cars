@@ -43,6 +43,9 @@ from cars.applications.point_cloud_fusion import (
 from cars.applications.point_cloud_fusion.point_cloud_fusion import (
     PointCloudFusion,
 )
+from cars.applications.triangulation.triangulation_tools import (
+    generate_point_cloud_file_names,
+)
 from cars.core import inputs, projection, tiling
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
@@ -318,37 +321,35 @@ class MappingToTerrainTiles(
                     merged_point_cloud.attributes["color_type"] = color_type
 
             # Save objects
-            csv_pc_file_name = None
+            csv_pc_dir_name = None
             if save_point_cloud_as_csv:
                 # Point cloud file name
-                csv_pc_file_name = os.path.join(
+                csv_pc_dir_name = os.path.join(
                     self.orchestrator.out_dir,
                     "dump_dir",
                     "point_cloud_fusion",
                     "csv",
                 )
-                safe_makedirs(csv_pc_file_name)
-                csv_pc_file_name = os.path.join(csv_pc_file_name, "pc")
+                safe_makedirs(csv_pc_dir_name)
                 self.orchestrator.add_to_compute_lists(
                     merged_point_cloud, cars_ds_name="merged_point_cloud_csv"
                 )
 
-            laz_pc_file_name = None
+            laz_pc_dir_name = None
             if save_point_cloud_as_laz:
                 # Point cloud file name
                 if save_laz_output:
-                    laz_pc_file_name = os.path.join(
+                    laz_pc_dir_name = os.path.join(
                         self.orchestrator.out_dir, "point_cloud"
                     )
                 else:
-                    laz_pc_file_name = os.path.join(
+                    laz_pc_dir_name = os.path.join(
                         self.orchestrator.out_dir,
                         "dump_dir",
                         "point_cloud_fusion",
                         "laz",
                     )
-                safe_makedirs(laz_pc_file_name)
-                laz_pc_file_name = os.path.join(laz_pc_file_name, "pc")
+                safe_makedirs(laz_pc_dir_name)
                 self.orchestrator.add_to_compute_lists(
                     merged_point_cloud, cars_ds_name="merged_point_cloud"
                 )
@@ -357,6 +358,7 @@ class MappingToTerrainTiles(
             [saving_info] = self.orchestrator.get_saving_infos(
                 [merged_point_cloud]
             )
+            pc_index = {}
             for col in range(merged_point_cloud.shape[1]):
                 for row in range(merged_point_cloud.shape[0]):
                     # update saving infos for potential replacement
@@ -416,6 +418,19 @@ class MappingToTerrainTiles(
                             len(required_point_clouds)
                         )
 
+                        csv_pc_file_name, laz_pc_file_name = (
+                            generate_point_cloud_file_names(
+                                csv_pc_dir_name,
+                                laz_pc_dir_name,
+                                row,
+                                col,
+                                pc_index,
+                                pair_key=(
+                                    source_pc_names if save_by_pair else None
+                                ),
+                            )
+                        )
+
                         # Delayed call to rasterization operations using all
                         # required point clouds
                         merged_point_cloud[
@@ -436,6 +451,10 @@ class MappingToTerrainTiles(
                             saving_info=full_saving_info,
                             source_pc_names=source_pc_names,
                         )
+
+            # update point cloud index
+            if save_laz_output:
+                self.orchestrator.update_index(pc_index)
 
             # Sort tiles according to rank TODO remove or implement it ?
 
@@ -618,6 +637,7 @@ def compute_point_cloud_wrapper(
             save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="csv",
+            overwrite_file_name=False,
         )
     if point_cloud_laz_file_name:
         cars_dataset.run_save_points(
@@ -626,6 +646,7 @@ def compute_point_cloud_wrapper(
             save_by_pair=save_by_pair,
             overwrite=True,
             point_cloud_format="laz",
+            overwrite_file_name=False,
         )
 
     return pc_pandas

@@ -259,28 +259,28 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -20
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -13
             )
             assert (
                 7
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 11
             )
@@ -413,36 +413,30 @@ def test_end2end_ventoux_unique():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -22
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -19
             )
             assert (
                 12
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 16
-            )
-
-            assert os.path.isfile(
-                out_json["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
             )
 
         # Ref output dir dependent from geometry plugin chosen
@@ -2048,37 +2042,30 @@ def test_end2end_use_epipolar_a_priori():
         with open(out_json, "r", encoding="utf-8") as json_file:
             out_json = json.load(json_file)
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_x"
                 ]
                 == 612
             )
             assert (
-                out_json["applications"]["left_right"]["grid_generation_run"][
+                out_json["applications"]["grid_generation"]["left_right"][
                     "epipolar_size_y"
                 ]
                 == 612
             )
             assert (
                 -27
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["minimum_disparity"]
                 < -25
             )
             assert (
                 23
-                < out_json["applications"]["left_right"][
-                    "disparity_range_computation_run"
+                < out_json["applications"]["disparity_range_computation"][
+                    "left_right"
                 ]["maximum_disparity"]
                 < 28
-            )
-
-            # check matches file exists
-            assert os.path.isfile(
-                out_json["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
             )
 
             # Ref output dir dependent from geometry plugin chosen
@@ -2192,63 +2179,31 @@ def test_end2end_use_epipolar_a_priori():
                 used_conf["orchestrator"]
                 == gt_used_conf_orchestrator["orchestrator"]
             )
-            # check used_conf reentry
-            _ = default.DefaultPipeline(used_conf)
 
-        refined_config_dense_dsm_json = os.path.join(
-            out_dir, "refined_config_dense_dsm.json"
-        )
-        assert os.path.isfile(refined_config_dense_dsm_json)
-        with open(
-            refined_config_dense_dsm_json, "r", encoding="utf-8"
-        ) as json_file:
-            refined_config_dense_dsm_json = json.load(json_file)
-            # check refined_config_dense_dsm_json inputs conf exists
-            assert "inputs" in refined_config_dense_dsm_json
-            assert "sensors" in refined_config_dense_dsm_json["inputs"]
-            # check refined_config_dense_dsm_json sparse_matching configuration
-            assert "advanced" in refined_config_dense_dsm_json
-            assert (
-                "use_epipolar_a_priori"
-                in refined_config_dense_dsm_json["advanced"]
-            )
+            # check used_conf sparse_matching configuration
+            assert "advanced" in used_conf
+            assert "use_epipolar_a_priori" in used_conf["advanced"]
 
-            assert (
-                refined_config_dense_dsm_json["advanced"][
-                    "use_epipolar_a_priori"
-                ]
-                is True
-            )
-            assert (
-                "epipolar_a_priori" in refined_config_dense_dsm_json["advanced"]
-            )
+            # use_epipolar_a_priori should be false in used_conf
+            assert used_conf["advanced"]["use_epipolar_a_priori"] is False
+            assert "epipolar_a_priori" in used_conf["advanced"]
             assert (
                 "grid_correction"
-                in refined_config_dense_dsm_json["advanced"][
-                    "epipolar_a_priori"
-                ]["left_right"]
+                in used_conf["advanced"]["epipolar_a_priori"]["left_right"]
             )
-            assert (
-                "dem_median"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
-            assert (
-                "dem_min"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
-            assert (
-                "dem_max"
-                in refined_config_dense_dsm_json["advanced"]["terrain_a_priori"]
-            )
+            assert "dem_median" in used_conf["advanced"]["terrain_a_priori"]
+            assert "dem_min" in used_conf["advanced"]["terrain_a_priori"]
+            assert "dem_max" in used_conf["advanced"]["terrain_a_priori"]
 
-            # check if orchestrator conf is the same as gt
-            assert (
-                refined_config_dense_dsm_json["orchestrator"]
-                == gt_used_conf_orchestrator["orchestrator"]
-            )
+            # check used_conf reentry (without epipolar a priori activated)
+            _ = default.DefaultPipeline(used_conf)
 
         # dense dsm pipeline
-        input_config_dense_dsm = refined_config_dense_dsm_json.copy()
+        input_config_dense_dsm = used_conf.copy()
+
+        # Set use_epipolar_a_priori to True
+        input_config_dense_dsm["advanced"]["use_epipolar_a_priori"] = True
+
         # update applications
         input_config_dense_dsm["applications"] = input_config_sparse_res[
             "applications"
@@ -2433,25 +2388,16 @@ def test_prepare_ventoux_bias():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -86
             assert out_disp_compute["minimum_disparity"] < -83
             assert out_disp_compute["maximum_disparity"] > -46
             assert out_disp_compute["maximum_disparity"] < -45
-
-            # check matches file exists
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
 
 @pytest.mark.end2end_tests
@@ -2802,6 +2748,56 @@ def test_end2end_ventoux_full_output_no_elevation():
             is True
         )
 
+        # Assertions on index files
+        depth_map_index_path = os.path.join(out_dir, "depth_map", "index.json")
+        dsm_index_path = os.path.join(out_dir, "dsm", "index.json")
+        point_cloud_index_path = os.path.join(
+            out_dir, "point_cloud", "index.json"
+        )
+
+        assert os.path.isfile(depth_map_index_path)
+        assert os.path.isfile(dsm_index_path)
+        assert os.path.isfile(point_cloud_index_path)
+
+        with open(depth_map_index_path, "r", encoding="utf-8") as json_file:
+            depth_map_index = json.load(json_file)
+            assert depth_map_index == {
+                "left_right": {
+                    "x": "left_right/X.tif",
+                    "y": "left_right/Y.tif",
+                    "z": "left_right/Z.tif",
+                    "color": "left_right/color.tif",
+                    "mask": "left_right/mask.tif",
+                    "classification": "left_right/classification.tif",
+                    "performance_map": None,
+                    "filling": "left_right/filling.tif",
+                    "epsg": 4326,
+                }
+            }
+
+        with open(dsm_index_path, "r", encoding="utf-8") as json_file:
+            dsm_index = json.load(json_file)
+            assert dsm_index == {
+                "dsm": "dsm.tif",
+                "color": "color.tif",
+                "mask": "mask.tif",
+                "classification": "classification.tif",
+                "performance_map": None,
+                "contributing_pair": "contributing_pair.tif",
+                "filling": "filling.tif",
+            }
+
+        with open(point_cloud_index_path, "r", encoding="utf-8") as json_file:
+            point_cloud_index = json.load(json_file)
+            assert point_cloud_index == {
+                "left_right": {
+                    "0_0": "left_right/0_0.laz",
+                    "0_1": "left_right/0_1.laz",
+                    "1_0": "left_right/1_0.laz",
+                    "1_1": "left_right/1_1.laz",
+                }
+            }
+
 
 @pytest.mark.end2end_tests
 def test_end2end_ventoux_with_color():
@@ -2868,24 +2864,16 @@ def test_end2end_ventoux_with_color():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
             assert out_disp_compute["minimum_disparity"] < -18
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3148,24 +3136,16 @@ def test_end2end_ventoux_with_classif():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "disparity_range_computation_run"
-            ]
+            out_disp_compute = out_data["applications"][
+                "disparity_range_computation"
+            ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
             assert out_disp_compute["minimum_disparity"] < -18
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Run dense_dsm dsm pipeline
         # clean outdir
@@ -3696,24 +3676,16 @@ def test_end2end_quality_stats():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             assert out_disp_compute["global_disp_min"] > -33
             assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -3987,13 +3959,11 @@ def test_end2end_ventoux_egm96_geoid():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -67
@@ -4001,12 +3971,6 @@ def test_end2end_ventoux_egm96_geoid():
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
             assert out_disp_compute["global_disp_max"] < 46
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
@@ -4209,13 +4173,11 @@ def test_end2end_ventoux_egm96_geoid():
 
         with open(out_json, "r", encoding="utf-8") as out_json_file:
             out_data = json.load(out_json_file)
-            out_grid = out_data["applications"]["left_right"][
-                "grid_generation_run"
-            ]
+            out_grid = out_data["applications"]["grid_generation"]["left_right"]
             assert out_grid["epipolar_size_x"] == 612
             assert out_grid["epipolar_size_y"] == 612
-            out_disp_compute = out_data["applications"]["left_right"][
-                "dense_matching_run"
+            out_disp_compute = out_data["applications"]["dense_matching"][
+                "left_right"
             ]
             # global_disp_min   -21 shareloc
             assert out_disp_compute["global_disp_min"] > -67
@@ -4223,12 +4185,6 @@ def test_end2end_ventoux_egm96_geoid():
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
             assert out_disp_compute["global_disp_max"] < 46
-
-            assert os.path.isfile(
-                out_data["applications"]["left_right"]["grid_correction"][
-                    "corrected_filtered_matches"
-                ]
-            )
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"

@@ -495,9 +495,8 @@ class BicubicResampling(Resampling, short_name="bicubic"):
         # Add infos to orchestrator.out_json
         updating_dict = {
             application_constants.APPLICATION_TAG: {
-                pair_key: {
-                    resampling_constants.METHOD: self.used_method,
-                    resampling_constants.RESAMPLING_RUN_TAG: {},
+                resampling_constants.RESAMPLING_RUN_TAG: {
+                    pair_key: {resampling_constants.METHOD: self.used_method},
                 }
             }
         }

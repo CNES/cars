@@ -148,7 +148,12 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     def __register_epipolar_dataset__(
-        self, merged_point_cloud, depth_map_dir=None, dump_dir=None, app_name=""
+        self,
+        merged_point_cloud,
+        depth_map_dir=None,
+        dump_dir=None,
+        app_name="",
+        pair_key="PAIR_0",
     ):
         """
         Create dataset and registered the output in the orchestrator. the output
@@ -166,6 +171,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         :type dump_dir: str
         :param app_name: application name for file names
         :type app_name: str
+        :param pair_key: name of current pair for index registration
+        :type pair_key: str
 
         :return: Filtered point cloud
         :rtype: CarsDataset
@@ -213,6 +220,15 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
                 dtype=np.float64,
             )
 
+        # update depth map index if required
+        if depth_map_dir:
+            index = {
+                cst.INDEX_DEPTH_MAP_X: os.path.join(pair_key, "X.tif"),
+                cst.INDEX_DEPTH_MAP_Y: os.path.join(pair_key, "Y.tif"),
+                cst.INDEX_DEPTH_MAP_Z: os.path.join(pair_key, "Z.tif"),
+            }
+            self.orchestrator.update_index({"depth_map": {pair_key: index}})
+
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos(
             [filtered_point_cloud]
@@ -221,7 +237,7 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         # Add infos to orchestrator.out_json
         updating_dict = {
             application_constants.APPLICATION_TAG: {
-                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {},
+                pr_cst.CLOUD_OUTLIER_REMOVAL_RUN_TAG: {app_name: {}},
             }
         }
         self.orchestrator.update_out_info(updating_dict)
@@ -281,27 +297,21 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
         filtered_point_cloud.create_empty_copy(merged_point_cloud)
         filtered_point_cloud.attributes = merged_point_cloud.attributes.copy()
 
-        # Save objects
-        pc_laz_file_name = None
+        laz_pc_dir_name = None
         if save_point_cloud_as_laz:
-            # Points cloud file name
             if point_cloud_dir is not None:
-                pc_laz_file_name = point_cloud_dir
+                laz_pc_dir_name = point_cloud_dir
             else:
-                pc_laz_file_name = os.path.join(dump_dir, "laz")
-            safe_makedirs(pc_laz_file_name)
-            pc_laz_file_name = os.path.join(pc_laz_file_name, "pc")
+                laz_pc_dir_name = os.path.join(dump_dir, "laz")
+            safe_makedirs(laz_pc_dir_name)
             self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
                 cars_ds_name="filtered_point_cloud_laz_" + app_name,
             )
-
-        pc_csv_file_name = None
+        csv_pc_dir_name = None
         if save_point_cloud_as_csv:
-            # Points cloud file name
-            pc_csv_file_name = os.path.join(dump_dir, "csv")
-            safe_makedirs(pc_csv_file_name)
-            pc_csv_file_name = os.path.join(pc_csv_file_name, "pc")
+            csv_pc_dir_name = os.path.join(dump_dir, "csv")
+            safe_makedirs(csv_pc_dir_name)
             self.orchestrator.add_to_compute_lists(
                 filtered_point_cloud,
                 cars_ds_name="filtered_point_cloud_csv_" + app_name,
@@ -322,8 +332,8 @@ class PointCloudOutlierRemoval(ApplicationTemplate, metaclass=ABCMeta):
 
         return (
             filtered_point_cloud,
-            pc_laz_file_name,
-            pc_csv_file_name,
+            laz_pc_dir_name,
+            csv_pc_dir_name,
             saving_info,
         )
 

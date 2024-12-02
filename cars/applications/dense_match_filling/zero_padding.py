@@ -186,8 +186,8 @@ class ZerosPadding(
                 # Add infos to orchestrator.out_json
                 updating_dict = {
                     application_constants.APPLICATION_TAG: {
-                        pair_key: {
-                            fd_cst.FILL_DISP_WITH_ZEROS_RUN_TAG: {},
+                        fd_cst.FILL_DISP_WITH_ZEROS_RUN_TAG: {
+                            pair_key: {},
                         }
                     }
                 }
