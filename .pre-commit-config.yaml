@@ -3,35 +3,35 @@ repos:
   hooks:
   - id: isort
     name: isort
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: isort
     types: [python]
 
   - id: black
     name: black
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: black
     types: [python]
 
   - id: flake8
     name: flake8
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: flake8
     types: [python]
 
   - id: pylint
     name: PyLint
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: pylint --rcfile=.pylintrc
     files: \.py$
 
   - id: sphinx-build
     name: Build Sphinx Doc
-    stages: [push]
+    stages: [pre-push]
     entry: make docs
     language: system
     files: ^(docs/.*|cars/.*)$
@@ -40,6 +40,6 @@ repos:
   - id: jupyter-nb-clear-output
     name: jupyter-nb-clear-output
     files: \.ipynb$
-    stages: [commit]
+    stages: [pre-commit]
     language: system
     entry: jupyter nbconvert --ClearOutputPreprocessor.enabled=True --inplace

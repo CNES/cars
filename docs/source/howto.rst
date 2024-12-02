@@ -13,7 +13,7 @@ Get full stereo products
 Dinamis
 -------
 
-| DINAMIS is a platform that acquires and distributes satellite Earth imagery for French and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
+| DINAMIS is a platform that acquires and distributes satellite Earth imagery for french and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
 | Please visit the dinamis website for more information: https://dinamis.data-terra.org/.
 
 
@@ -165,10 +165,10 @@ To translate single image or multiband image with several nbits per band to 1bit
 
 .. _add_band_description_in_image:
 
-Add band name / description in tiff files metadata
+Add band name / description in TIF files metadata
 --------------------------------------------------
 
-To add a band name /description in tiff files, for classification or color files in order to be used:
+To add a band name / description in TIF files, for classification or color files in order to be used:
 
 
 .. code-block:: python

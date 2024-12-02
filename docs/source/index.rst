@@ -24,12 +24,8 @@ CARS is designed for massive production and scalability |cars_isprs|. It aims to
 | |img1|             | |img2|                                      |
 +--------------------+---------------------------------------------+
 
-.. warning::
-  
-   CARS maturity is tightly linked to CO3D image processing chain development. 
-   As so, version ``1.0.0`` of CARS would be the last upgraded version of CARS for CO3D and every version released before that shall be considered experimental.
    
-**Contact:** cars AT cnes.fr
+**Contact:** cars@cnes.fr
 
 .. toctree::
    :caption: Content
