@@ -1,5 +1,40 @@
 # Changelog
 
+## 0.10.0 Unique pipeline (December 2024)
+
+### Added
+
+- Added `bulldozer-dtm` dependency to cars with a new bulldozer base DSM filling application [#901]
+- Added `cars-filter` dependency with outlier filtering functionalities in epipolar geometry [#867]
+- New parameter `use_cross_validation` in dense matching to manage Pandora cross validation [#900]
+- New parameters `altitude_delta_min` and `altitude_delta_max` in initial_elevation [#902]
+
+### Changed
+
+- Cars pipelines have been replaced by a "default" pipeline [#895]
+- Support for Python version superior than 3.10 with libsgm 0.5.0 [#912]
+- The `no merging` mode is now the operational mode in cars, outlier filtering is done in epipolar geometry and laz are now saved in triangulation application [#895]
+- Add an index.json file in cars official product [#893]
+- Improve formatting of cars output products, improve cleaning of the output directory [#874]
+- Improve SIFT default configuration [#928]
+- Optimize SIFT filtering and grid correction [#869]
+- Optimize classification resampling [#835]
+- Simplify the check input function [#920]
+- Support `z_inf`  and `z_sup` in depth map inputs [#897]
+- User and developer documentation updates [#935] and [#885]
+
+### Fixed
+
+- Typo fixes (with API changes) [#934]
+  - `dense_matches_filling` application renamed into `dense_match_filling`
+  - `holes_detection` application renamed into `hole_detection`
+  - `point_cloud_outliers_removing` renamed into `point_cloud_outlier_removal`
+  - `points_cloud` renamed into `point_cloud` in the code
+- Fix crashes during report generation [#916]
+- Fix cars when using image with negative y axis [#924]
+- Fix no-data handling in elevation data [#922]
+- Make cars robust to different classification geotransforms [#923]
+
 ## 0.9.0 Output interfaces (September 2024)
 
 ### Added
