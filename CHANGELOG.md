@@ -22,6 +22,7 @@
 - Simplify the check input function [#920]
 - Support `z_inf`  and `z_sup` in depth map inputs [#897]
 - User and developer documentation updates [#935] and [#885]
+- Use shareloc 0.2.4
 
 ### Fixed
 
