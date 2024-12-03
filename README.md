@@ -15,7 +15,7 @@
 
 <h4>CARS, a satellite multi view stereo framework </h4>
 
-[![Python](https://img.shields.io/badge/python-v3.8+-blue.svg)](https://www.python.org/downloads/release/python-380/)
+[![Python](https://img.shields.io/badge/python-v3.9+-blue.svg)](https://www.python.org/downloads/release/python-390/)
 [![Contributions welcome](https://img.shields.io/badge/contributions-welcome-orange.svg)](CONTRIBUTING.md)
 [![License](https://img.shields.io/badge/License-Apache%202.0-blue.svg)](https://opensource.org/licenses/Apache-2.0/)
 [![Documentation](https://readthedocs.org/projects/cars/badge/?version=latest)](https://cars.readthedocs.io/?badge=latest)

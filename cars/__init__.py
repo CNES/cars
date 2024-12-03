@@ -24,11 +24,11 @@ Cars module init file
 
 import os
 import sys
-from importlib import metadata
 
-# VERSION through setuptools_scm when python3 > 3.8
+from setuptools_scm import get_version
+
 try:
-    __version__ = metadata.version("cars")
+    __version__ = get_version()
 except Exception:  # pylint: disable=broad-except
     __version__ = "unknown"
 
