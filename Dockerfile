@@ -3,13 +3,15 @@ FROM orfeotoolbox/otb:latest
 LABEL maintainer="CNES"
 
 # Dependencies packages
+RUN  apt-get update && apt install software-properties-common -y && add-apt-repository ppa:deadsnakes/ppa
+
 # hadolint ignore=DL3008
 RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
     git \
-    libpython3.8 \
-    python3.8-dev \
-    python3.8-venv \
-    python3.8 \
+    libpython3.10 \
+    python3.10-dev \
+    python3.10-venv \
+    python3.10 \
     python3-pip \
     python3-numpy \
     python3-virtualenv \
@@ -18,7 +20,7 @@ RUN apt-get update && apt-get install --no-install-recommends -y --quiet \
 # copy and install cars with mccnn plugin capabilities installed (but not configured by default)
 WORKDIR /app
 
-
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 # Create a virtual environment
 RUN python3 -m venv /app/venv
 
