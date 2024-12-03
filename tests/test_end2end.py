@@ -3663,6 +3663,7 @@ def test_end2end_quality_stats():
         # Save all intermediate data and add merging
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
+            "merging": True,
         }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
@@ -3775,7 +3776,7 @@ def test_end2end_quality_stats():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "" "dsm_pts_in_cell_end2end_ventoux_quality_stats.tif",
+        #             "dsm_pts_in_cell_end2end_ventoux_quality_stats.tif",
         #         )
         #     ),
         # )
