@@ -27,10 +27,11 @@ copyright = "2022, CNES"
 author = "CARS Team"
 
 # The full version, including alpha/beta/rc tags
-from importlib import metadata
+from importlib.metadata import version as get_version
 
 try:
-    release = metadata.version("cars")
+    release = get_version("cars")
+    version = release
 except Exception as error:
     print("WARNING: cannot find cars version")
     version = "Unknown"
@@ -55,7 +56,7 @@ extensions = [
     "autoapi.extension",  # apidoc automatic generation
     "sphinx.ext.viewcode",  # viewcode in automatic apidoc
     "sphinx_tabs.tabs",
-    "sphinx_copybutton"
+    "sphinx_copybutton",
 ]
 
 # Autoapi apidoc configuration

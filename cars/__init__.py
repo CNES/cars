@@ -24,12 +24,12 @@ Cars module init file
 
 import os
 import sys
-
-from setuptools_scm import get_version
+from importlib.metadata import PackageNotFoundError, version
 
 try:
-    __version__ = get_version()
-except Exception:  # pylint: disable=broad-except
+    __version__ = version("cars")
+except PackageNotFoundError:
+    # package is not installed
     __version__ = "unknown"
 
 # Standard imports
