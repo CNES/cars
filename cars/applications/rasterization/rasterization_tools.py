@@ -855,7 +855,7 @@ def update_data(
                 np.expand_dims(old_weights, axis=0), old_data.shape[0], axis=0
             )
 
-        current_data = np.squeeze(current_data)
+        current_data = np.squeeze(current_data).astype(old_data.dtype)
         weights = np.squeeze(weights)
         if len(current_data.shape) == 3:
             weights = np.repeat(
