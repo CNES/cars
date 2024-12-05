@@ -25,6 +25,15 @@ Generate a DSM step by step
    :target: index.html#rasterization
 
 .. |rasterization_circled| image:: ../images/dense.rasterization.circled.drawio.png
+
+.. |matching_spa| image:: ../images/sparse.matching.drawio.png
+   :target: index.html#matching_sparse
+
+.. |triangulation_spa| image:: ../images/sparse.triangulation.drawio.png
+   :target: index.html#triangulation_sparse
+
+.. |rasterization_spa| image:: ../images/sparse.rasterization.drawio.png
+   :target: index.html#rasterization_sparse
 	    
 .. |resampling_image| image:: ../images/crop_image10.gif
 

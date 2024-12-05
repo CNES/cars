@@ -13,7 +13,7 @@ Get full stereo products
 Pléiades / SPOT 6-7 products (DINAMIS)
 -------
 
-| _`DINAMIS <https://dinamis.data-terra.org/catalogue/>`_ is a platform that acquires and distributes satellite Earth imagery (Pléaides and Spot 6-7)  for french and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
+| `DINAMIS <https://dinamis.data-terra.org/catalogue/>`_ is a platform that acquires and distributes satellite Earth imagery (Pléaides and Spot 6-7) for french and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
 
 
 AIRBUS Pleiades NEO example files

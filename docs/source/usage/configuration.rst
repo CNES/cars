@@ -37,9 +37,9 @@ The structure follows this organization:
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
                 | Name                       | Description                                                         | Type                  | Default value        | Required |
                 +============================+=====================================================================+=======================+======================+==========+
-                | *sensors*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
+                | *sensors*                  | Stereo sensor images                                                | See next section      | No                   | Yes      |
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
+                | *pairing*                  | Association of image to create pairs                                | list of *sensors*     | No                   | Yes (*)  |
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
                 (*) `pairing` is required if there are more than two sensors (see pairing section below)
@@ -67,23 +67,23 @@ The structure follows this organization:
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
                 | Name              | Description                                                                                | Type           | Default value | Required |
                 +===================+============================================================================================+================+===============+==========+
-                | *image*           | Path to the image                                                                           | string         |               | Yes      |
+                | *image*           | Path to the image                                                                          | string         |               | Yes      |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *color*           | Path to the color image (color image stackable to image used to create an ortho-image corresponding to the produced dsm)   | string         |               | No       |
+                | *color*           | Path to the color image                                                                    | string         |               | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
                 | *no_data*         | No data value of the image                                                                 | int            | 0             | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *geomodel*        | Path to the geomodel and plugin-specific attributes (see Geometry plugin section for details)  | string, dict   |               | No       |
+                | *geomodel*        | Path to the geomodel and plugin-specific attributes                                        | string, dict   |               | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *mask*            | Path to the binary mask (binary mask stackable to image : 0 values are considered as valid data)           | string         | None          | No       |
+                | *mask*            | Path to the binary mask                                                                    | string         | None          | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *classification*  | Path to the multiband binary classification image (1 value = pixel belongs to the specified class)        | string         | None          | No       |
+                | *classification*  | Path to the multiband binary classification image                                          | string         | None          | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
                 .. note::
 
                     - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
-                    - *mask*: This image is a binary file. By using this file, the 1 values are not processed.   
+                    - *mask*: This image is a binary file. By using this file, the 1 values are not processed, only 0 values are considered as valid data.
                     - *classification*: This image is a multiband binary file. Each band should have a specific name (Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications). By using this file, a different process for each band is applied for the 1 values (Please, see the Applications section for details).
                     - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
                     - *geomodel*: If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*.
@@ -194,7 +194,7 @@ The structure follows this organization:
 
             .. tab:: ROI
 
-                 +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
                 | Name                    | Description                                                         | Type                  | Default value        | Required |
                 +=========================+=====================================================================+=======================+======================+==========+
                 | *roi*                   | Region Of Interest: Vector file path or GeoJson dictionary          | string, dict          | None                 | No       |
@@ -314,11 +314,10 @@ The structure follows this organization:
 
             .. tab:: Initial Elevation
 
-
-                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
                 | Name                       | Description                                                         | Type                  | Default value        | Required |
                 +============================+=====================================================================+=======================+======================+==========+
-                | *initial_elevation*        | Low resolution DEM                                                  | See next section      | No                   | No      |
+                | *initial_elevation*        | Low resolution DEM                                                  | See next section      | No                   | No       |
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
                 **Initial elevation**
@@ -1623,16 +1622,17 @@ The structure follows this organization:
         | *save_by_pair*   | Save output point clouds by pair                            | bool               | False                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
 
-        **Output contents**
-
         .. code-block:: json
 
             {
                 "output": {
                     "directory": "outresults",
+                    "product_level": ["dsm", "depth_map"],
+                    "geoid": true
                 }
             }
 
+        **Output contents**
 
         The output directory, defined on the configuration file contains at the end of the computation:
 
@@ -1646,27 +1646,7 @@ The structure follows this organization:
 
         The `product_level` attribute defines which product should be produced by CARS. There are three available product type: `depth_map`, `point_cloud` and `dsm`.
 
-        A single product can be requested by setting the parameter as string:
-
-        .. code-block:: json
-
-            {
-                "output": {
-                    "directory": "outresults",
-                    "product_level": "dsm",
-                }
-            }
-
-        Several products can be requested by providing a list:
-
-        .. code-block:: json
-
-            {
-                "output": {
-                    "directory": "outresults",
-                    "product_level": {"dsm", "depth_map"},
-                }
-            }
+        A single product can be requested by setting the parameter as string or several products can be requested by providing a list.
 
         For `depth_map` and `dsm`, additional auxiliary files can be produced by setting the `auxiliary` dictionary attribute, it contains the following attributes:
 
@@ -1691,7 +1671,7 @@ The structure follows this organization:
             {
                 "output": {
                     "directory": "outresults",
-                    "product_level": {"dsm", "depth_map"},
+                    "product_level": "dsm",
                     "auxiliary": {"mask": true, "classification": true}
                 }
             }
@@ -1704,14 +1684,6 @@ The structure follows this organization:
         It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` CARS default geoid is used,
         if set to `False` no vertical offset is applied (ellipsoid reference).
 
-        .. code-block:: json
-
-            {
-                "output": {
-                    "directory": "outresults",
-                    "geoid": true
-                }
-            }
 
         **DSM output**
 
