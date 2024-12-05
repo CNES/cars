@@ -29,12 +29,18 @@ Generate a DSM step by step
 .. |matching_spa| image:: ../images/sparse.matching.drawio.png
    :target: index.html#matching_sparse
 
+.. |matching_spa_circled| image:: ../images/sparse.matching.circled.drawio.png
+
 .. |triangulation_spa| image:: ../images/sparse.triangulation.drawio.png
    :target: index.html#triangulation_sparse
 
+.. |triangulation_spa_circled| image:: ../images/sparse.triangulation.circled.drawio.png
+
 .. |rasterization_spa| image:: ../images/sparse.rasterization.drawio.png
    :target: index.html#rasterization_sparse
-	    
+
+.. |rasterization_spa_circled| image:: ../images/sparse.rasterization.circled.drawio.png
+
 .. |resampling_image| image:: ../images/crop_image10.gif
 
 .. |matching_image| image:: ../images/disparity_map.png
@@ -137,40 +143,40 @@ Matching can be performed with keypoints like `SIFT <https://www.cs.ubc.ca/~lowe
 
 .. _matching_sparse:
 
-+--------------------------+---------------------------------------------+
-| Pipeline                 | Matching (sparse)                           |
-+--------------------------+---------------------------------------------+
-| |images_models|     |br| | |matching_spa_image|                        |
-| |resampling|        |br| |                                             |
-| |matching_spa|      |br| |                                             |
-| |triangulation_spa| |br| |                                             |
-| |rasterization_spa| |br| |                                             |
-+--------------------------+---------------------------------------------+
++-----------------------------+---------------------------------------------+
+| Pipeline                    | Matching (sparse)                           |
++-----------------------------+---------------------------------------------+
+| |images_models|     |br|    | |matching_spa_image|                        |
+| |resampling|        |br|    |                                             |
+| |matching_spa_circled| |br| |                                             |
+| |triangulation_spa| |br|    |                                             |
+| |rasterization_spa| |br|    |                                             |
++-----------------------------+---------------------------------------------+
 
 The result is a sparse point cloud...
 
 .. _triangulation_sparse:
 
-+--------------------------+---------------------------------------------+
-| Pipeline                 | Triangulation (sparse)                      |
-+--------------------------+---------------------------------------------+
-| |images_models|     |br| | |triangulation_spa_image|                   |
-| |resampling|        |br| |                                             |
-| |matching_spa|      |br| |                                             |
-| |triangulation_spa| |br| |                                             |
-| |rasterization_spa| |br| |                                             |
-+--------------------------+---------------------------------------------+
++----------------------------------+---------------------------------------------+
+| Pipeline                         | Triangulation (sparse)                      |
++----------------------------------+---------------------------------------------+
+| |images_models|     |br|         | |triangulation_spa_image|                   |
+| |resampling|        |br|         |                                             |
+| |matching_spa|      |br|         |                                             |
+| |triangulation_spa_circled| |br| |                                             |
+| |rasterization_spa| |br|         |                                             |
++----------------------------------+---------------------------------------------+
 
 and a sparse digital surface model.
 
 .. _rasterization_sparse:
 
-+--------------------------+---------------------------------------------+
-| Pipeline                 | Rasterization (sparse)                      |
-+--------------------------+---------------------------------------------+
-| |images_models|     |br| | |rasterization_spa_image|                   |
-| |resampling|        |br| |                                             |
-| |matching_spa|      |br| |                                             |
-| |triangulation_spa| |br| |                                             |
-| |rasterization_spa| |br| |                                             |
-+--------------------------+---------------------------------------------+
++----------------------------------+---------------------------------------------+
+| Pipeline                         | Rasterization (sparse)                      |
++----------------------------------+---------------------------------------------+
+| |images_models|     |br|         | |rasterization_spa_image|                   |
+| |resampling|        |br|         |                                             |
+| |matching_spa|      |br|         |                                             |
+| |triangulation_spa| |br|         |                                             |
+| |rasterization_spa_circled| |br| |                                             |
++----------------------------------+---------------------------------------------+
