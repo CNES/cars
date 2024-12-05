@@ -27,27 +27,27 @@ Generate a DSM step by step
 .. |rasterization_circled| image:: ../images/dense.rasterization.circled.drawio.png
 
 .. |matching_spa| image:: ../images/sparse.matching.drawio.png
-   :target: index.html#matching_sparse
+   :target: index.html#matchingsparse
 
 .. |matching_spa_circled| image:: ../images/sparse.matching.circled.drawio.png
 
 .. |triangulation_spa| image:: ../images/sparse.triangulation.drawio.png
-   :target: index.html#triangulation_sparse
+   :target: index.html#triangulationsparse
 
 .. |triangulation_spa_circled| image:: ../images/sparse.triangulation.circled.drawio.png
 
 .. |rasterization_spa| image:: ../images/sparse.rasterization.drawio.png
-   :target: index.html#rasterization_sparse
+   :target: index.html#rasterizationsparse
 
 .. |rasterization_spa_circled| image:: ../images/sparse.rasterization.circled.drawio.png
 
 .. |resampling_image| image:: ../images/crop_image10.gif
 
-.. |matching_image| image:: ../images/disparity_map.png
+.. |matching_image| image:: ../images/crop_image13.drawio.png
 
 .. |matching_spa_image| image:: ../images/sift.png
 
-.. |triangulation_image| image:: ../images/point_cloud.png
+.. |triangulation_image| image:: ../images/point_cloud_as_image.drawio.png
 
 .. |triangulation_spa_image| image:: ../images/image27.png
     
@@ -141,7 +141,7 @@ To reduce the search interval (i.e. altimetric exploration) in the matching step
 
 Matching can be performed with keypoints like `SIFT <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_.
 
-.. _matching_sparse:
+.. _matchingsparse:
 
 +-----------------------------+---------------------------------------------+
 | Pipeline                    | Matching (sparse)                           |
@@ -155,7 +155,7 @@ Matching can be performed with keypoints like `SIFT <https://www.cs.ubc.ca/~lowe
 
 The result is a sparse point cloud...
 
-.. _triangulation_sparse:
+.. _triangulationsparse:
 
 +----------------------------------+---------------------------------------------+
 | Pipeline                         | Triangulation (sparse)                      |
@@ -169,7 +169,7 @@ The result is a sparse point cloud...
 
 and a sparse digital surface model.
 
-.. _rasterization_sparse:
+.. _rasterizationsparse:
 
 +----------------------------------+---------------------------------------------+
 | Pipeline                         | Rasterization (sparse)                      |
