@@ -13,7 +13,7 @@ This file keeps track of authors contributions.
 ## Development Lead
 
 * David Youssefi <david.youssefi@cnes.fr>
-* Emmanuel Dubois <emmanuel.dubois@cnes.fr>
+* Valentine Bellet <valentine.bellet@cnes.fr>
 * Yoann Steux <yoann.steux@csgroup.eu>
 * Mathis Roux <mathis.roux@csgroup.eu>
 * Cedric Traizet <cedric.traizet@csgroup.eu>
@@ -22,6 +22,7 @@ This file keeps track of authors contributions.
 
 * Julien Michel <julien.michel@cnes.fr>
 * Emmanuelle Sarrazin <emmanuelle.sarrazin@cnes.fr>
+* Emmanuel Dubois <emmanuel.dubois@cnes.fr>
 * Aurélie Emilien <aurelie.emilien@csgroup.eu>
 * Florian Douziech <florian.douziech@csgroup.eu>
 * Loïc Dumas <loic.dumas@csgroup.eu>

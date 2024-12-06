@@ -25,14 +25,29 @@ Generate a DSM step by step
    :target: index.html#rasterization
 
 .. |rasterization_circled| image:: ../images/dense.rasterization.circled.drawio.png
-	    
+
+.. |matching_spa| image:: ../images/sparse.matching.drawio.png
+   :target: index.html#matchingsparse
+
+.. |matching_spa_circled| image:: ../images/sparse.matching.circled.drawio.png
+
+.. |triangulation_spa| image:: ../images/sparse.triangulation.drawio.png
+   :target: index.html#triangulationsparse
+
+.. |triangulation_spa_circled| image:: ../images/sparse.triangulation.circled.drawio.png
+
+.. |rasterization_spa| image:: ../images/sparse.rasterization.drawio.png
+   :target: index.html#rasterizationsparse
+
+.. |rasterization_spa_circled| image:: ../images/sparse.rasterization.circled.drawio.png
+
 .. |resampling_image| image:: ../images/crop_image10.gif
 
-.. |matching_image| image:: ../images/crop_image13.png
+.. |matching_image| image:: ../images/crop_image13.drawio.png
 
 .. |matching_spa_image| image:: ../images/sift.png
 
-.. |triangulation_image| image:: ../images/point_cloud_as_image.png
+.. |triangulation_image| image:: ../images/point_cloud_as_image.drawio.png
 
 .. |triangulation_spa_image| image:: ../images/image27.png
     
@@ -109,12 +124,14 @@ To obtain a raster image, the final process projects each point into a 2D grid: 
 +------------------------------+---------------------------------------------+
 
 Initial Input Digital Elevation Model
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------
 
-For now, CARS can use an initial input Digital Elevation Model (:term:`DEM`) which is integrated in the stereo-rectification to minimize the disparity intervals to explore.
-Any geotiff file can be used.
+The user can provide as input a low resolution Digital Elevation Model (:term:`DEM`). It helps to minimize the disparity intervals to explore. Any geotiff file can be used.
+If the DEM is not specified by the user, an internal DEM is generated with sparse matches.
 
-The parameter is ``initial_elevation`` as seen in :ref:`configuration`.
+To download the low resolution DEM corresponding to your area, see section :ref:`download_srtm_tiles`.
+
+The parameter is ``dem`` in ``initial_elevation`` as seen in :ref:`configuration`.
 
 
 Altimetric exploration and geometric inaccuracies
@@ -123,3 +140,43 @@ Altimetric exploration and geometric inaccuracies
 To reduce the search interval (i.e. altimetric exploration) in the matching step and thus save computing time, a faster sparse matching step is typically used. This matching step also enables geometric errors to be corrected, thus ensuring that the epipolar geometry (based on these models) is correct.
 
 Matching can be performed with keypoints like `SIFT <https://www.cs.ubc.ca/~lowe/papers/ijcv04.pdf>`_.
+
+.. _matchingsparse:
+
++-----------------------------+---------------------------------------------+
+| Pipeline                    | Matching (sparse)                           |
++-----------------------------+---------------------------------------------+
+| |images_models|     |br|    | |matching_spa_image|                        |
+| |resampling|        |br|    |                                             |
+| |matching_spa_circled| |br| |                                             |
+| |triangulation_spa| |br|    |                                             |
+| |rasterization_spa| |br|    |                                             |
++-----------------------------+---------------------------------------------+
+
+The result is a sparse point cloud...
+
+.. _triangulationsparse:
+
++----------------------------------+---------------------------------------------+
+| Pipeline                         | Triangulation (sparse)                      |
++----------------------------------+---------------------------------------------+
+| |images_models|     |br|         | |triangulation_spa_image|                   |
+| |resampling|        |br|         |                                             |
+| |matching_spa|      |br|         |                                             |
+| |triangulation_spa_circled| |br| |                                             |
+| |rasterization_spa| |br|         |                                             |
++----------------------------------+---------------------------------------------+
+
+and a sparse digital surface model.
+
+.. _rasterizationsparse:
+
++----------------------------------+---------------------------------------------+
+| Pipeline                         | Rasterization (sparse)                      |
++----------------------------------+---------------------------------------------+
+| |images_models|     |br|         | |rasterization_spa_image|                   |
+| |resampling|        |br|         |                                             |
+| |matching_spa|      |br|         |                                             |
+| |triangulation_spa| |br|         |                                             |
+| |rasterization_spa_circled| |br| |                                             |
++----------------------------------+---------------------------------------------+

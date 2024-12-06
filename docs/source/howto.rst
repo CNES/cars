@@ -10,11 +10,10 @@ Get full stereo products
 ========================
 
 
-Dinamis
--------
+Pléiades / SPOT 6-7 products (DINAMIS)
+--------------------------------------
 
-| DINAMIS is a platform that acquires and distributes satellite Earth imagery for french and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
-| Please visit the dinamis website for more information: https://dinamis.data-terra.org/.
+| `DINAMIS <https://dinamis.data-terra.org/catalogue/>`_ is a platform that acquires and distributes satellite Earth imagery (Pléaides and Spot 6-7) for french and foreign institutional users under `specific subscription conditions <https://dinamis.data-terra.org/en/eligible-users/>`_.
 
 
 AIRBUS Pleiades NEO example files
@@ -68,17 +67,35 @@ Make input ROI images
      -bbx x1 y1 x2 y2   Bounding box from two points (x1, y1) and (x2, y2)
 
 		
+        
+How to find the coordinates of the bounding box ?
+.................................................
 
-For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you can choose a region of interest with `geojson.io <https://geojson.io/#map=16.43/-34.490433/-58.586864>`_.
+For example, if you have downloaded the maxar example data :ref:`maxar_example_files`, you are working in an area near to San Fernando in Argentina. Go to the website `geojson.io <https://geojson.io/>`_ in order to select your ROI:
 
-And then extract region, create config file and launch cars:
+.. |roisanfernando| image:: images/roi_san_fernando_argentina.jpg
+   :width: 60%
+
+|roisanfernando|
+
+You can either select the upper left corner with the lower right corner (in red in the previous image): 
 
 .. code-block:: console
 
-   cars-extractroi -il *.NTF -out ext_dir -bbx -58.5896 -34.4872 -58.5818 -34.4943
+   cars-extractroi -il *.NTF -out ext_dir -bbx -58.5809 -34.4934 -58.5942 -34.4869
    cars-starter -il ext_dir/*.tif -out out_dir > config.json
    cars config.json
 
+or the lower left corner with the upper right corner (in purple in the previous image):
+
+.. code-block:: console
+
+   cars-extractroi -il *.NTF -out ext_dir -bbx -58.5809 -34.4869 -58.5942 -34.4934
+   cars-starter -il ext_dir/*.tif -out out_dir > config.json
+   cars config.json
+
+
+N.B.: Instead of using ``cars-extractroi``, you can directly give the GeoJson dictionnary in the configuration file (Please, see :ref:`configuration` for details). In this case, the sparse steps (geometric corrections) are processed on the entire image and not only on the ROI. 
 
 Monitor tiles progression
 -------------------------
@@ -149,6 +166,8 @@ The low NDWI values can be considered as water area.
 .. code-block:: console
 
     gdal_calc.py -G input.tif --G_band=2 -N input.tif --N_band=4 --outfile=mask.tif --calc="((1.0*G-1.0*N)/(1.0*G+1.0*N))>0.3" --NoDataValue=0
+    
+It is also possible to produce a water mask with `SLURP <https://github.com/CNES/slurp>`_.   
 
 See next section to apply a gdal_translate to convert the mask with 1bit image struture.
 
@@ -168,7 +187,7 @@ To translate single image or multiband image with several nbits per band to 1bit
 Add band name / description in TIF files metadata
 --------------------------------------------------
 
-To add a band name / description in TIF files, for classification or color files in order to be used:
+To add a band name / description ("water", "cloud", etc.) in TIF files, for classification or color files in order to be used:
 
 
 .. code-block:: python
@@ -178,6 +197,49 @@ To add a band name / description in TIF files, for classification or color files
     band_in.SetDescription(band_description)
     data_in = None
 
+.. _download_srtm_tiles:
+
+Get low resolution DEM
+========================
+
+SRTM 90m DEM
+---------------
+
+It is possible to download a low resolution DEM (90-m SRTM) corresponding to your area. To get a SRTM tile, you need to run the following python script knowing the latitude and the longitude of your area:
+
+.. code-block:: python
+
+    import numpy as np
+
+    def get_srtm_tif_name(lat, lon):
+        """Download srtm tiles"""
+        # longitude: [1, 72] == [-180, +180]
+        tlon = (1+np.floor((lon+180)/5)) % 72
+        tlon = 72 if tlon == 0 else tlon
+
+        # latitude: [1, 24] == [60, -60]
+        tlat = 1+np.floor((60-lat)/5)
+        tlat = 24 if tlat == 25 else tlat
+
+        srtm = "https://srtm.csi.cgiar.org/wp-content/uploads/files/srtm_5x5/TIFF/srtm_%02d_%02d.zip" % (tlon, tlat)
+        return srtm
+
+    if __name__ == "__main__":
+        print("Get SRTM tile corresponding to latitude and longitude couple")
+        while 1:
+            print(">> Latitude? ", end="")
+            lat = input()
+            print(">> Longitude? ", end="")
+            lon = input()
+            print(">> SRTM filename:", get_srtm_tif_name(int(lat), int(lon)))
+            input()
+
+
+If your area intersects multiple latitudes and longitudes, get all the SRTM tiles and create a VRT from them:
+
+.. code-block:: console
+
+    gdalbuildvrt srtm.vrt srtm_tile1.tif srtm_tile2.tif
 
 Post process output
 ===================
