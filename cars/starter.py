@@ -57,28 +57,6 @@ def inputfilename_to_sensor(inputfilename):
     return sensor
 
 
-def pairdirname_to_pc(pairdirname):
-    """
-    Fill sensor dictionary according to an pair directory
-    """
-    sensor = {}
-
-    abspairdirname = os.path.abspath(pairdirname)
-
-    for coord in ["X", "Y", "Z"]:
-        bandname = os.path.join(abspairdirname, "epi_pc_" + coord + ".tif")
-        if os.path.isfile(bandname) is False:
-            raise FileNotFoundError(bandname + " does not exist")
-        sensor[coord.lower()] = bandname
-
-    for extra in ["color"]:
-        bandname = os.path.join(abspairdirname, "epi_pc_" + extra + ".tif")
-        if os.path.isfile(bandname):
-            sensor[extra] = bandname
-
-    return sensor
-
-
 def cars_starter(cli_params: dict = None, **kwargs) -> None:
     """
     Main fonction. Expects a dictionary from the CLI (cli_params)
@@ -98,36 +76,24 @@ def cars_starter(cli_params: dict = None, **kwargs) -> None:
             )
         config = kwargs
 
-    # check first input in list to determine pipeline
-    if os.path.isfile(config["il"][0]):
-        cars_config = {"inputs": {"sensors": {}}, "output": {}}
-        pipeline_name = "sensors_to_dense_dsm"
+    cars_config = {"inputs": {"sensors": {}}, "output": {}}
+    pipeline_name = "default"
 
-        for idx, inputfilename in enumerate(config["il"]):
-            cars_config["inputs"]["sensors"][str(idx)] = (
-                inputfilename_to_sensor(inputfilename)
-            )
-
-        # pairing with first image as reference
-        pairing = list(
-            zip(  # noqa: B905
-                ["0"] * (len(config["il"]) - 1),
-                map(str, range(1, len(config["il"]))),
-            )
+    for idx, inputfilename in enumerate(config["il"]):
+        cars_config["inputs"]["sensors"][str(idx)] = inputfilename_to_sensor(
+            inputfilename
         )
 
-        cars_config["inputs"]["pairing"] = pairing
+    # pairing with first image as reference
+    pairing = list(
+        zip(  # noqa: B905
+            ["0"] * (len(config["il"]) - 1),
+            map(str, range(1, len(config["il"]))),
+        )
+    )
 
-    else:
-        cars_config = {"inputs": {"point_clouds": {}}, "output": {}}
-        pipeline_name = "dense_point_clouds_to_dense_dsm"
-
-        for idx, pairdirname in enumerate(config["il"]):
-            cars_config["inputs"]["point_clouds"][str(idx)] = pairdirname_to_pc(
-                pairdirname
-            )
-
-    cars_config["output"]["out_dir"] = config["out"]
+    cars_config["inputs"]["pairing"] = pairing
+    cars_config["output"]["directory"] = config["out"]
 
     check = config["check"] if "check" in config.keys() else False
     full = config["full"] if "full" in config.keys() else False
@@ -140,7 +106,7 @@ def cars_starter(cli_params: dict = None, **kwargs) -> None:
         if full:
             cars_config = used_pipeline.used_conf
 
-    print(json.dumps(cars_config, indent=4))
+    print(json.dumps(cars_config, indent=2))
 
 
 def cli():
@@ -154,8 +120,8 @@ def cli():
         "-il",
         type=str,
         nargs="*",
-        metavar="input.{tif,XML} or pair_dir",
-        help="Inputs list or Pairs directory list",
+        metavar="input.{tif,XML}",
+        help="Input sensor list",
         required=True,
     )
 
