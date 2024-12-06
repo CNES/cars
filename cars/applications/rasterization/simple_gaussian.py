@@ -1082,14 +1082,15 @@ def raster_final_function(orchestrator, future_object):
                 cst.RASTER_SOURCE_PC,
             ]:
                 method = "bool"
-
             else:
                 method = "basic"
 
             old_data, nodata_raster = orchestrator.get_data(tag, future_object)
             current_data = future_object[tag].values
-            if tag == "img":
-                current_data = current_data.astype(color_type)
+            if tag == cst.RASTER_COLOR_IMG and np.issubdtype(
+                color_type, np.integer
+            ):
+                current_data = np.round(current_data).astype(color_type)
             future_object[tag].values = np.reshape(
                 rasterization_step.update_data(
                     old_data,
