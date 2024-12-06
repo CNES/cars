@@ -86,7 +86,9 @@ class AuxiliaryFilling(ApplicationTemplate, metaclass=ABCMeta):
         cls.available_applications[short_name] = cls
 
     @abstractmethod
-    def run(self):
+    def run(
+        self, dsm_file, color_file, classif_file, out_dir, orchestrator=None
+    ):
         """
         Run Auxiliary filling
         """
