@@ -812,6 +812,7 @@ class SimpleGaussian(
                             sigma=self.sigma,
                             dsm_no_data=self.dsm_no_data,
                             color_no_data=self.color_no_data,
+                            color_dtype=color_dtype,
                             msk_no_data=self.msk_no_data,
                             source_pc_names=source_pc_names,
                         )
@@ -848,6 +849,7 @@ class SimpleGaussian(
                                 sigma=self.sigma,
                                 dsm_no_data=self.dsm_no_data,
                                 color_no_data=self.color_no_data,
+                                color_dtype=color_dtype,
                                 msk_no_data=self.msk_no_data,
                                 source_pc_names=source_pc_names,
                             )
@@ -872,6 +874,7 @@ def rasterization_wrapper(
     radius: int = 1,
     dsm_no_data: int = np.nan,
     color_no_data: int = np.nan,
+    color_dtype: str = "float32",
     msk_no_data: int = 255,
     source_pc_names=None,
 ):
@@ -1030,13 +1033,14 @@ def rasterization_wrapper(
     )
 
     # Fill raster
+    attributes = {"color_type": color_dtype}
     if raster is not None:
         cars_dataset.fill_dataset(
             raster,
             saving_info=saving_info,
             window=window,
             profile=profile,
-            attributes=None,
+            attributes=attributes,
             overlaps=None,
         )
 
@@ -1062,8 +1066,10 @@ def raster_final_function(orchestrator, future_object):
         rasterization_step.update_weights(old_weights, weights), weights.shape
     )
 
-    # Get data dsm
+    # Get color type
+    color_type = future_object.attrs["attributes"]["color_type"]
 
+    # Get data dsm
     for tag in future_object.keys():
 
         if tag != cst.RASTER_WEIGHTS_SUM:
@@ -1082,6 +1088,8 @@ def raster_final_function(orchestrator, future_object):
 
             old_data, nodata_raster = orchestrator.get_data(tag, future_object)
             current_data = future_object[tag].values
+            if tag == "img":
+                current_data = current_data.astype(color_type)
             future_object[tag].values = np.reshape(
                 rasterization_step.update_data(
                     old_data,
