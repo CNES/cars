@@ -2926,8 +2926,6 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["pipeline"] = "sensors_to_dense_dsm"
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
 
-        print(json.dumps(input_config_dense_dsm, indent=4))
-
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
         dense_dsm_pipeline.run()
 
@@ -3663,7 +3661,6 @@ def test_end2end_quality_stats():
         # Save all intermediate data and add merging
         input_config_dense_dsm["advanced"] = {
             "save_intermediate_data": True,
-            "merging": True,
         }
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
@@ -4293,8 +4290,6 @@ def test_end2end_paca_with_mask():
         input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
-
-        print(json.dumps(input_config_dense_dsm, indent=4))
 
         dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
             input_config_dense_dsm
