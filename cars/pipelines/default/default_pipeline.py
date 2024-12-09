@@ -18,11 +18,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+# pylint: disable=too-many-lines
 # attribute-defined-outside-init is disabled so that we can create and use
 # attributes however we need, to stick to the "everything is attribute" logic
 # introduced in issue#895
-# pylint: disable=too-many-lines,attribute-defined-outside-init
+# pylint: disable=attribute-defined-outside-init
 """
 CARS default pipeline class file
 """
