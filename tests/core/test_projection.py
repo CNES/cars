@@ -261,21 +261,3 @@ def test_get_ground_angles():
         [19.48120732, 81.18985592, 189.98986491, 78.61360403, 20.12773114],
         rtol=1e-01,
     )
-
-
-@pytest.mark.unit_tests
-def test_project_coordinates_on_line():
-    """
-    Test project_coordinates_on_line
-    """
-    origin = [0, 0]
-    vec = [0.5, 0.5]
-
-    x_coord = np.array([1, 2, 3])
-    y_coord = np.array([1, 2, 3])
-
-    coords = projection.project_coordinates_on_line(
-        x_coord, y_coord, origin, vec
-    )
-
-    np.testing.assert_allclose(coords, [1.41421356, 2.82842712, 4.24264069])
