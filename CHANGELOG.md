@@ -1,6 +1,6 @@
 # Changelog
 
-## 0.10.1 Patch (December 2024)
+## 0.10.1 Using importlib instead of setuptools_scm (December 2024)
 
 ### Fixed
 
