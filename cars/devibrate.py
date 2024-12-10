@@ -376,7 +376,9 @@ def compute_splines(
     Compute a spline dict containing estimated splines, origin
     and time_direction_vector
     """
-    geometry_plugin = AbstractGeometry("SharelocGeometry")
+    geometry_plugin = AbstractGeometry(  # pylint: disable=E0110
+        "SharelocGeometry"
+    )
 
     # retrieve time direction from models
     time_direction_vector, _, _ = acquisition_direction(
