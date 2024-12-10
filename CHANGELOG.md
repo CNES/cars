@@ -1,5 +1,14 @@
 # Changelog
 
+## 0.10.1 Using importlib instead of setuptools_scm (December 2024)
+
+### Fixed
+
+- Fix wheel by using importlib instead of setuptools_scm 
+- Cast color before fusion to avoid asymetrical behavior [#954]
+- Adapt cars-starter to the new CARS interface
+- Documentation corrections 
+
 ## 0.10.0 Unique pipeline (December 2024)
 
 ### Added
@@ -13,6 +22,7 @@
 
 - Cars pipelines have been replaced by a "default" pipeline [#895]
 - Support for Python version superior than 3.10 with libsgm 0.5.0 [#912]
+- Support for Python 3.8 is over [#930]
 - The `no merging` mode is now the operational mode in cars, outlier filtering is done in epipolar geometry and laz are now saved in triangulation application [#895]
 - Add an index.json file in cars official product [#893]
 - Improve formatting of cars output products, improve cleaning of the output directory [#874]
