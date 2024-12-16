@@ -35,7 +35,6 @@ from vlsift.sift.sift import sift
 # CARS imports
 import cars.applications.sparse_matching.sparse_matching_constants as sm_cst
 from cars.applications import application_constants
-from cars.applications.point_cloud_outlier_removal import outlier_removal_tools
 
 
 def euclidean_matrix_distance(descr1: np.array, descr2: np.array):
@@ -70,6 +69,7 @@ def compute_matches(
     backmatching: bool = True,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    decimation_factor=1,
 ):
     """
     Compute matches between left and right
@@ -103,8 +103,12 @@ def compute_matches(
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
+    :param decimation_factor: factor for the decimation of the sifts
+    :type decimation_factor: int
+
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
+
     """
     left_origin = [0, 0] if left_origin is None else left_origin
     right_origin = [0, 0] if right_origin is None else right_origin
@@ -175,6 +179,11 @@ def compute_matches(
     order = np.argsort(right_frames[:, 1])
     right_frames = right_frames[order]
     right_descr = right_descr[order]
+
+    left_frames = left_frames[::decimation_factor]
+    right_frames = right_frames[::decimation_factor]
+    left_descr = left_descr[::decimation_factor]
+    right_descr = right_descr[::decimation_factor]
 
     # compute best matches by blocks
     splits = np.arange(500, len(left_frames), 500)
@@ -280,6 +289,7 @@ def dataset_matching(
     backmatching=True,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    decimation_factor=1,
 ):
     """
     Compute sift matches between two datasets
@@ -304,12 +314,16 @@ def dataset_matching(
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
+    :param decimation_factor: factor for the decimation of the sifts
+    :type decimation_factor: int
+
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
     """
     # get input data from dataset
     origin1 = [float(ds1.attrs["region"][0]), float(ds1.attrs["region"][1])]
     origin2 = [float(ds2.attrs["region"][0]), float(ds2.attrs["region"][1])]
+
     left = ds1.im.values
     right = ds2.im.values
     left_mask = ds1.msk.values == 0
@@ -332,6 +346,7 @@ def dataset_matching(
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,
+        decimation_factor=decimation_factor,
     )
 
     return matches
@@ -386,40 +401,6 @@ def compute_disparity_range(matches, percent=0.1):
     maxdisp = np.percentile(disparity, 100 - percent)
 
     return mindisp, maxdisp
-
-
-def filter_point_cloud_matches(
-    pd_cloud,
-    matches_filter_knn=25,
-    matches_filter_dev_factor=3,
-):
-    """
-    Filter triangulated  matches
-
-    :param pd_cloud: triangulated_matches
-    :type pd_cloud: pandas Dataframe
-    :param matches_filter_knn: number of neighboors used to measure
-                               isolation of matches
-    :type matches_filter_knn: int
-    :param matches_filter_dev_factor: factor of deviation in the
-                                      formula to compute threshold of outliers
-    :type matches_filter_dev_factor: float
-
-    :return: disp min and disp max
-    :rtype: float, float
-    """
-
-    # Statistical filtering
-    filter_cloud, _ = outlier_removal_tools.statistical_outlier_filtering(
-        pd_cloud,
-        k=matches_filter_knn,
-        dev_factor=matches_filter_dev_factor,
-    )
-
-    # filter nans
-    filter_cloud.dropna(axis=0, inplace=True)
-
-    return filter_cloud
 
 
 def compute_disp_min_disp_max(

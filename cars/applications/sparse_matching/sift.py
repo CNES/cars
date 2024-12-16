@@ -105,11 +105,7 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_window_size = self.used_config["sift_window_size"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
 
-        # sifts filter
-        self.matches_filter_knn = self.used_config["matches_filter_knn"]
-        self.matches_filter_dev_factor = self.used_config[
-            "matches_filter_dev_factor"
-        ]
+        self.decimation_factor = self.used_config["decimation_factor"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -157,6 +153,9 @@ class Sift(SparseMatching, short_name="sift"):
             "disparity_outliers_rejection_percent", 0.1
         )
 
+        # Number of sifts that we want to keep
+        overloaded_conf["decimation_factor"] = conf.get("decimation_factor", 1)
+
         # minimum number of matches to continue with
         overloaded_conf["minimum_nb_matches"] = conf.get(
             "minimum_nb_matches", 100
@@ -182,14 +181,6 @@ class Sift(SparseMatching, short_name="sift"):
         overloaded_conf["sift_window_size"] = conf.get("sift_window_size", 2)
         overloaded_conf["sift_back_matching"] = conf.get(
             "sift_back_matching", True
-        )
-
-        # sifts filter params
-        overloaded_conf["matches_filter_knn"] = conf.get(
-            "matches_filter_knn", 25
-        )
-        overloaded_conf["matches_filter_dev_factor"] = conf.get(
-            "matches_filter_dev_factor", 3.0
         )
 
         # Saving files
@@ -218,8 +209,7 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_window_size": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
-            "matches_filter_knn": int,
-            "matches_filter_dev_factor": Or(int, float),
+            "decimation_factor": And(int, lambda x: x > 0),
             "save_intermediate_data": bool,
         }
 
@@ -264,27 +254,6 @@ class Sift(SparseMatching, short_name="sift"):
 
         """
         return self.disparity_margin
-
-    def get_matches_filter_knn(self):
-        """
-        Get matches_filter_knn :
-        number of neighboors used to measure isolation of matches
-
-        :return: matches_filter_knn
-
-        """
-        return self.matches_filter_knn
-
-    def get_matches_filter_dev_factor(self):
-        """
-        Get matches_filter_dev_factor :
-        factor of deviation in the formula
-        to compute threshold of outliers
-
-        :return: matches_filter_dev_factor
-
-        """
-        return self.matches_filter_dev_factor
 
     def get_margins_fun(self, disp_min=None, disp_max=None):
         """
@@ -525,7 +494,6 @@ class Sift(SparseMatching, short_name="sift"):
             self.orchestrator.add_to_replace_lists(
                 epipolar_disparity_map_left, cars_ds_name="epi_matches_left"
             )
-
             # Generate disparity maps
             for row in range(epipolar_disparity_map_left.shape[0]):
                 # initialize list of matches
@@ -554,6 +522,7 @@ class Sift(SparseMatching, short_name="sift"):
                         backmatching=self.sift_back_matching,
                         disp_lower_bound=disp_lower_bound,
                         disp_upper_bound=disp_upper_bound,
+                        decimation_factor=self.decimation_factor,
                         saving_info_left=full_saving_info_left,
                     )
 
@@ -628,6 +597,7 @@ class Sift(SparseMatching, short_name="sift"):
                     epipolar_matches = epipolar_matches_left[
                         row, col
                     ].to_numpy()
+
                     sensor_matches = AbstractGeometry.matches_to_sensor_coords(
                         grid_left,
                         grid_right,
@@ -767,6 +737,7 @@ def compute_matches_wrapper(
     backmatching=None,
     disp_lower_bound=None,
     disp_upper_bound=None,
+    decimation_factor=None,
     saving_info_left=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
@@ -816,6 +787,7 @@ def compute_matches_wrapper(
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,
+        decimation_factor=decimation_factor,
     )
 
     # Filter matches outside disparity range

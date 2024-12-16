@@ -18,11 +18,11 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
+# pylint: disable=too-many-lines
 # attribute-defined-outside-init is disabled so that we can create and use
 # attributes however we need, to stick to the "everything is attribute" logic
 # introduced in issue#895
-# pylint: disable=too-many-lines,attribute-defined-outside-init
+# pylint: disable=attribute-defined-outside-init
 """
 CARS default pipeline class file
 """
@@ -43,6 +43,9 @@ from cars.applications.dem_generation import (
 )
 from cars.applications.dem_generation import dem_generation_tools
 from cars.applications.grid_generation import grid_correction
+from cars.applications.pandora_sparse_matching import (
+    pandora_sparse_matching_tools as pandora_sparse_mtch_tools,
+)
 from cars.applications.point_cloud_fusion import pc_tif_tools
 from cars.applications.sparse_matching import (
     sparse_matching_tools as sparse_mtch_tools,
@@ -243,27 +246,28 @@ class DefaultPipeline(PipelineTemplate):
         self.last_application_to_run = 0
 
         sensor_to_depth_apps = {
-            "grid_generation": 1,  # and 6
-            "resampling": 2,  # and 7
+            "grid_generation": 1,  # and 5
+            "resampling": 2,  # and 8
             "hole_detection": 3,
             "sparse_matching": 4,
-            "dem_generation": 5,
-            "dense_matching": 8,
-            "dense_match_filling.1": 9,
-            "dense_match_filling.2": 10,
-            "triangulation": 11,
-            "point_cloud_outlier_removal.1": 12,
-            "point_cloud_outlier_removal.2": 13,
+            "pandora_sparse_matching": 6,
+            "dem_generation": 7,
+            "dense_matching": 9,
+            "dense_match_filling.1": 10,
+            "dense_match_filling.2": 11,
+            "triangulation": 12,
+            "point_cloud_outlier_removal.1": 13,
+            "point_cloud_outlier_removal.2": 14,
         }
 
         depth_merge_apps = {
-            "point_cloud_fusion": 14,
+            "point_cloud_fusion": 15,
         }
 
         depth_to_dsm_apps = {
-            "pc_denoising": 15,
-            "point_cloud_rasterization": 16,
-            "dsm_filling": 17,
+            "pc_denoising": 16,
+            "point_cloud_rasterization": 17,
+            "dsm_filling": 18,
         }
 
         self.app_values = {}
@@ -433,6 +437,7 @@ class DefaultPipeline(PipelineTemplate):
                 "dense_match_filling.1",
                 "dense_match_filling.2",
                 "sparse_matching",
+                "pandora_sparse_matching",
                 "dense_matching",
                 "triangulation",
                 "dem_generation",
@@ -492,6 +497,7 @@ class DefaultPipeline(PipelineTemplate):
         self.dense_match_filling_1 = None
         self.dense_match_filling_2 = None
         self.sparse_mtch_app = None
+        self.pandora_sparse_mtch = None
         self.dense_matching_app = None
         self.triangulation_application = None
         self.dem_generation_application = None
@@ -552,6 +558,15 @@ class DefaultPipeline(PipelineTemplate):
                 "sparse_matching", cfg=used_conf.get("sparse_matching", {})
             )
             used_conf["sparse_matching"] = self.sparse_mtch_app.get_conf()
+
+            # Pandora Sparse Matching
+            self.pandora_sparse_mtch = Application(
+                "pandora_sparse_matching",
+                cfg=used_conf.get("pandora_sparse_matching", {}),
+            )
+            used_conf["pandora_sparse_matching"] = (
+                self.pandora_sparse_mtch.get_conf()
+            )
 
             # Matching
             generate_performance_map = (
@@ -714,6 +729,7 @@ class DefaultPipeline(PipelineTemplate):
                                 )
         for key1, key2 in inputs_conf["pairing"]:
             corr_cfg = self.dense_matching_app.loader.get_conf()
+            corr_cfg_sparse = self.pandora_sparse_mtch.loader.get_conf()
             img_left = inputs_conf["sensors"][key1]["image"]
             img_right = inputs_conf["sensors"][key2]["image"]
             classif_left = None
@@ -725,6 +741,15 @@ class DefaultPipeline(PipelineTemplate):
             self.dense_matching_app.corr_config = (
                 self.dense_matching_app.loader.check_conf(
                     corr_cfg,
+                    img_left,
+                    img_right,
+                    classif_left,
+                    classif_right,
+                )
+            )
+            self.pandora_sparse_mtch.corr_config = (
+                self.pandora_sparse_mtch.loader.check_conf(
+                    corr_cfg_sparse,
                     img_left,
                     img_right,
                     classif_left,
@@ -788,6 +813,7 @@ class DefaultPipeline(PipelineTemplate):
         self.triangulated_matches_list = []
 
         save_matches = self.sparse_mtch_app.get_save_matches()
+
         save_corrected_grid = (
             self.epipolar_grid_generation_application.get_save_grids()
         )
@@ -966,6 +992,7 @@ class DefaultPipeline(PipelineTemplate):
                         save_matches=(self.sparse_mtch_app.get_save_matches()),
                     )
                 )
+
                 # Compute grid correction
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
@@ -1005,6 +1032,76 @@ class DefaultPipeline(PipelineTemplate):
                     pair_key
                 ]["grid_left"]
 
+                # Run epipolar resampling
+                (
+                    self.pairs[pair_key]["new_epipolar_image_left"],
+                    self.pairs[pair_key]["new_epipolar_image_right"],
+                ) = self.resampling_application.run(
+                    self.pairs[pair_key]["sensor_image_left"],
+                    self.pairs[pair_key]["sensor_image_right"],
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    self.pairs[pair_key]["corrected_grid_right"],
+                    orchestrator=self.cars_orchestrator,
+                    pair_folder=os.path.join(
+                        self.dump_dir,
+                        "resampling",
+                        "corrected_for_pandora",
+                        pair_key,
+                    ),
+                    pair_key=pair_key,
+                    margins_fun=self.pandora_sparse_mtch.get_margins_fun(),
+                    tile_width=None,
+                    tile_height=None,
+                    add_color=False,
+                    add_classif=add_classif,
+                )
+
+                if self.quit_on_app("resampling"):
+                    continue  # keep iterating over pairs, but don't go further
+
+                pandora_sparse_matching_pair_folder = os.path.join(
+                    self.dump_dir, "pandora_sparse_matching", pair_key
+                )
+
+                (
+                    self.pairs[pair_key]["pandora_epipolar_matches_left"],
+                    _,
+                ) = self.pandora_sparse_mtch.run(
+                    self.pairs[pair_key]["new_epipolar_image_left"],
+                    self.pairs[pair_key]["new_epipolar_image_right"],
+                    orchestrator=self.cars_orchestrator,
+                    pair_folder=pandora_sparse_matching_pair_folder,
+                    pair_key=pair_key,
+                    disp_to_alt_ratio=self.pairs[pair_key][
+                        "grid_left"
+                    ].attributes["disp_to_alt_ratio"],
+                )
+
+                self.cars_orchestrator.breakpoint()
+
+                self.pairs[pair_key]["pandora_matches_array"] = (
+                    self.sparse_mtch_app.filter_matches(
+                        self.pairs[pair_key]["pandora_epipolar_matches_left"],
+                        self.pairs[pair_key]["corrected_grid_left"],
+                        self.pairs[pair_key]["corrected_grid_right"],
+                        orchestrator=self.cars_orchestrator,
+                        pair_key=pair_key,
+                        pair_folder=os.path.join(
+                            self.dump_dir, "pandora_sparse_matching", pair_key
+                        ),
+                        save_matches=(
+                            self.pandora_sparse_mtch.get_save_matches()
+                        ),
+                    )
+                )
+
+                matches = np.row_stack(
+                    (
+                        self.pairs[pair_key]["pandora_matches_array"],
+                        self.pairs[pair_key]["corrected_matches_array"],
+                    )
+                )
+
                 # Triangulate matches
                 self.pairs[pair_key]["triangulated_matches"] = (
                     dem_generation_tools.triangulate_sparse_matches(
@@ -1012,31 +1109,44 @@ class DefaultPipeline(PipelineTemplate):
                         self.pairs[pair_key]["sensor_image_right"],
                         self.pairs[pair_key]["grid_left"],
                         self.pairs[pair_key]["corrected_grid_right"],
-                        self.pairs[pair_key]["corrected_matches_array"],
+                        matches,
                         geom_plugin,
                     )
                 )
 
                 # filter triangulated_matches
+                connection_val = self.pandora_sparse_mtch.get_connection_val()
+                nb_pts_threshold = (
+                    self.pandora_sparse_mtch.get_nb_pts_threshold()
+                )
+                filtered_pandora_matches = (
+                    pandora_sparse_mtch_tools.clustering_pandora_matches(
+                        self.pairs[pair_key]["triangulated_matches"],
+                        connection_val=connection_val,
+                        nb_pts_threshold=nb_pts_threshold,
+                    )
+                )
+
                 matches_filter_knn = (
-                    self.sparse_mtch_app.get_matches_filter_knn()
+                    self.pandora_sparse_mtch.get_matches_filter_knn()
                 )
                 matches_filter_dev_factor = (
-                    self.sparse_mtch_app.get_matches_filter_dev_factor()
+                    self.pandora_sparse_mtch.get_matches_filter_dev_factor()
                 )
                 self.pairs[pair_key]["filtered_triangulated_matches"] = (
-                    sparse_mtch_tools.filter_point_cloud_matches(
-                        self.pairs[pair_key]["triangulated_matches"],
+                    pandora_sparse_mtch_tools.filter_point_cloud_matches(
+                        filtered_pandora_matches,
                         matches_filter_knn=matches_filter_knn,
                         matches_filter_dev_factor=matches_filter_dev_factor,
                     )
                 )
-
                 self.triangulated_matches_list.append(
                     self.pairs[pair_key]["filtered_triangulated_matches"]
                 )
 
-                if self.quit_on_app("sparse_matching"):
+                if self.quit_on_app("sparse_matching") or self.quit_on_app(
+                    "pandora_sparse_matching"
+                ):
                     continue  # keep iterating over pairs, but don't go further
 
         # Clean grids at the end of processing if required. Note that this will
@@ -1059,6 +1169,7 @@ class DefaultPipeline(PipelineTemplate):
             or self.quit_on_app("resampling")
             or self.quit_on_app("hole_detection")
             or self.quit_on_app("sparse_matching")
+            or self.quit_on_app("pandora_sparse_matching")
         ):
             return True
 
@@ -1195,7 +1306,7 @@ class DefaultPipeline(PipelineTemplate):
 
                     new_grid_matches_array = (
                         AbstractGeometry.transform_matches_from_grids(
-                            self.pairs[pair_key]["corrected_matches_array"],
+                            matches,
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],
                             self.pairs[pair_key]["new_grid_left"],
@@ -1206,7 +1317,7 @@ class DefaultPipeline(PipelineTemplate):
                     # Estimate grid_correction
                     (
                         self.pairs[pair_key]["grid_correction_coef"],
-                        self.pairs[pair_key]["corrected_matches_array"],
+                        matches,
                         self.pairs[pair_key]["corrected_matches_cars_ds"],
                         _,
                         _,
@@ -1251,10 +1362,14 @@ class DefaultPipeline(PipelineTemplate):
 
                 # matches filter params
                 matches_filter_knn = (
-                    self.sparse_mtch_app.get_matches_filter_knn()
+                    self.pandora_sparse_mtch.get_matches_filter_knn()
                 )
                 matches_filter_dev_factor = (
-                    self.sparse_mtch_app.get_matches_filter_dev_factor()
+                    self.pandora_sparse_mtch.get_matches_filter_dev_factor()
+                )
+                connection_val = self.pandora_sparse_mtch.get_connection_val()
+                nb_pts_threshold = (
+                    self.pandora_sparse_mtch.get_nb_pts_threshold()
                 )
                 if use_global_disp_range:
                     # Triangulate new matches
@@ -1264,15 +1379,23 @@ class DefaultPipeline(PipelineTemplate):
                             self.pairs[pair_key]["sensor_image_right"],
                             self.pairs[pair_key]["corrected_grid_left"],
                             self.pairs[pair_key]["corrected_grid_right"],
-                            self.pairs[pair_key]["corrected_matches_array"],
+                            matches,
                             geometry_plugin=geom_plugin,
                         )
                     )
                     # filter triangulated_matches
                     # Filter outliers
-                    self.pairs[pair_key]["filtered_triangulated_matches"] = (
-                        sparse_mtch_tools.filter_point_cloud_matches(
+                    filtered_pandora_matches = (
+                        pandora_sparse_mtch_tools.clustering_pandora_matches(
                             self.pairs[pair_key]["triangulated_matches"],
+                            connection_val=connection_val,
+                            nb_pts_threshold=nb_pts_threshold,
+                        )
+                    )
+
+                    self.pairs[pair_key]["filtered_triangulated_matches"] = (
+                        pandora_sparse_mtch_tools.filter_point_cloud_matches(
+                            filtered_pandora_matches,
                             matches_filter_knn=matches_filter_knn,
                             matches_filter_dev_factor=matches_filter_dev_factor,
                         )

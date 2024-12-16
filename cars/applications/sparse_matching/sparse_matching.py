@@ -103,27 +103,6 @@ class SparseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_matches_filter_knn(self):
-        """
-        Get matches_filter_knn :
-        number of neighboors used to measure isolation of matches
-
-        :return: matches_filter_knn
-
-        """
-
-    @abstractmethod
-    def get_matches_filter_dev_factor(self):
-        """
-        Get matches_filter_dev_factor :
-        factor ofdeviation in the formula
-        to compute threshold of outliers
-
-        :return: matches_filter_dev_factor
-
-        """
-
-    @abstractmethod
     def get_margins_fun(self):
         """
         Get margins function to use in resampling
