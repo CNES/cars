@@ -38,7 +38,7 @@ from cars.applications.auxiliary_filling.auxiliary_filling import (
 )
 from cars.core import constants as cst
 from cars.core import inputs, projection, tiling
-from cars.data_structures import cars_dataset, format_transformation
+from cars.data_structures import cars_dataset
 
 
 class AuxiliaryFillingFromSensors(
@@ -84,6 +84,8 @@ class AuxiliaryFillingFromSensors(
             "method", "auxiliary_filling_from_sensors"
         )
 
+        overloaded_conf["mode"] = conf.get("mode", "fill_nan")
+
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -91,6 +93,7 @@ class AuxiliaryFillingFromSensors(
 
         auxiliary_filling_schema = {
             "method": str,
+            "mode": str,
             "save_intermediate_data": bool,
         }
 
@@ -125,10 +128,6 @@ class AuxiliaryFillingFromSensors(
         else:
             self.orchestrator = orchestrator
 
-        print(f"bounds {inputs.rasterio_get_bounds(dsm_file)}")
-
-        print(f"bounds {inputs.rasterio_get_size(dsm_file)}")
-
         # Create CarsDataset
         # output color
         aux_filled_image = cars_dataset.CarsDataset(
@@ -142,16 +141,13 @@ class AuxiliaryFillingFromSensors(
         reference_transform = inputs.rasterio_get_transform(dsm_file)
         reference_epsg = inputs.rasterio_get_epsg(dsm_file)
 
-        print(f"reference_transform {reference_transform}")
-        print(f"reference_epsg {reference_epsg}")
-
         region_grid = tiling.generate_tiling_grid(
             0,
             0,
             ground_image_height,
             ground_image_width,
-            300,  # TODO tiling
-            300,  # TODO tiling
+            1000,  # TODO tiling
+            1000,  # TODO tiling
         )
 
         # Compute tiling grid
@@ -165,36 +161,28 @@ class AuxiliaryFillingFromSensors(
         )
 
         self.orchestrator.add_to_save_lists(
-            os.path.join(out_dir, "ground_row_values.tif"),
-            "row_values_2d",
+            os.path.join(out_dir, "filled_classification.tif"),
+            cst.RASTER_CLASSIF,
             aux_filled_image,
-            cars_ds_name="ground_row_values",
+            cars_ds_name="filled_classif",
         )
-        self.orchestrator.add_to_save_lists(
-            os.path.join(out_dir, "ground_col_values.tif"),
-            "col_values_2d",
-            aux_filled_image,
-            cars_ds_name="ground_col_values",
-        )
+
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
 
         for row in range(aux_filled_image.shape[0]):
             for col in range(aux_filled_image.shape[1]):
-                print(f"colrow {col} {row}")
 
                 # TODO?
-                (
-                    pc_row,
-                    pc_col,
-                ) = format_transformation.get_corresponding_indexes(row, col)
-                print(f"pc_row pc_col {pc_row} {pc_col}")
+                # (
+                #     pc_row,
+                #     pc_col,
+                # ) = format_transformation.get_corresponding_indexes(row, col)
 
                 # Get window
                 window = cars_dataset.window_array_to_dict(
                     aux_filled_image.tiling_grid[row, col]
                 )
-                print(f"window {window}")
 
                 full_saving_info = ocht.update_saving_infos(
                     saving_info, row=row, col=col
@@ -204,33 +192,36 @@ class AuxiliaryFillingFromSensors(
                 ] = self.orchestrator.cluster.create_task(
                     filling_from_sensor_wrapper, nout=1
                 )(
-                    row,
-                    col,
                     dsm_file,
                     color_file,
+                    classif_file,
                     sensor_inputs,
                     window,
                     reference_transform,
                     reference_epsg,
                     full_saving_info,
                     geom_plugin,
+                    self.used_config["mode"],
                 )
 
-        self.orchestrator.breakpoint()
+        #
+        if orchestrator is None:
+            self.orchestrator.breakpoint()
+
         return aux_filled_image
 
 
 def filling_from_sensor_wrapper(
-    row,
-    col,
     dsm_file,
     color_file,
+    classification_file,
     sensor_inputs,
     window,
     transform,
     epsg,
     saving_info,
     geom_plugin,
+    mode,
 ):
     """
     filling from sensor for a terrain tile
@@ -266,84 +257,85 @@ def filling_from_sensor_wrapper(
         ),
     )
 
-    mode = "fill_nan"
-
     with rio.open(dsm_file) as dsm_image:
         alt_values = dsm_image.read(1, window=rio_window)
         target_mask = dsm_image.read_masks(1, window=rio_window)
 
     with rio.open(color_file) as color_image:
-        img_crs = color_image.profile["crs"]
-        img_transform = color_image.profile["transform"]
         profile = color_image.profile
+
+        number_of_color_bands = color_image.count
 
         color_values = color_image.read(window=rio_window)
 
         if mode == "fill_nan":
-            # TODO different no data in bands ??
             target_mask = target_mask & ~color_image.read_masks(
                 1, window=rio_window
             )
 
+    with rio.open(classification_file) as classification_image:
+
+        number_of_classification_bands = classification_image.count
+
+        classification_values = classification_image.read(window=rio_window)
+        classification_band_names = list(classification_image.descriptions)
+
     index_1d = target_mask.flatten().nonzero()[0]
 
-    color_values_filled = auxiliary_filling_tools.fill_auxiliary(
-        sensor_inputs,
-        lon_lat[:, 0],
-        lon_lat[:, 1],
-        alt_values.ravel(),
-        geom_plugin,
+    if len(index_1d) > 0:
+        color_values_filled, classification_values_filled = (
+            auxiliary_filling_tools.fill_auxiliary(
+                sensor_inputs,
+                lon_lat[index_1d, 0],
+                lon_lat[index_1d, 1],
+                alt_values.ravel()[index_1d],
+                geom_plugin,
+                number_of_color_bands,
+                number_of_classification_bands,
+            )
+        )
+
+        for band_index in range(number_of_color_bands):
+            np.put(
+                color_values[band_index, :, :],
+                index_1d,
+                color_values_filled[band_index, :],
+            )
+
+        for band_index in range(number_of_classification_bands):
+            np.put(
+                classification_values[band_index, :, :],
+                index_1d,
+                classification_values_filled[band_index, :],
+            )
+
+    values = {}
+
+    values[cst.RASTER_COLOR_IMG] = (
+        [cst.BAND_IM, cst.ROW, cst.COL],
+        color_values,
     )
-
-    color_values_filled_v2 = auxiliary_filling_tools.fill_auxiliary(
-        sensor_inputs,
-        lon_lat[index_1d, 0],
-        lon_lat[index_1d, 1],
-        alt_values.ravel()[index_1d],
-        geom_plugin,
+    values[cst.RASTER_CLASSIF] = (
+        [cst.BAND_CLASSIF, cst.ROW, cst.COL],
+        classification_values,
     )
-
-    color_values_filled = color_values_filled.reshape(color_values.shape)
-
-    np.put(color_values[0, :, :], index_1d, color_values_filled_v2[0, :])
-    np.put(color_values[1, :, :], index_1d, color_values_filled_v2[1, :])
-    np.put(color_values[2, :, :], index_1d, color_values_filled_v2[2, :])
-    np.put(color_values[3, :, :], index_1d, color_values_filled_v2[3, :])
-
-    values = {
-        cst.RASTER_COLOR_IMG: ([cst.BAND_IM, cst.ROW, cst.COL], color_values)
-    }
-
-    values["row_values_2d"] = ([cst.ROW, cst.COL], rows_values_2d)
-    values["col_values_2d"] = ([cst.ROW, cst.COL], cols_values_2d)
 
     row_arr = np.array(range(window["row_min"], window["row_max"]))
     col_arr = np.array(range(window["col_min"], window["col_max"]))
 
-    print(f"inside filling_from_sensor_wrapper {row} {col} ")
-
-    print(f"window {window} ")
-
-    print(f"rio_window {rio_window}")
-    print(f"color_values.shape {color_values.shape}")
-
     attributes = {}
+
+    band_names = ["R", "G", "B", "NIR"]
 
     dataset = xr.Dataset(
         values,
         coords={
-            cst.BAND_IM: ["R", "G", "B", "NIR"],
+            cst.BAND_CLASSIF: classification_band_names,
+            cst.BAND_IM: band_names[:number_of_color_bands],
             cst.ROW: row_arr,
             cst.COL: col_arr,
         },
     )
-
-    attributes[cst.EPI_CRS] = img_crs
-    attributes[cst.EPI_TRANSFORM] = img_transform
-
-    print(f"attributes {attributes}")
-
-    print(f"profile {profile}")
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,

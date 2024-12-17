@@ -264,6 +264,7 @@ class DefaultPipeline(PipelineTemplate):
             "pc_denoising": 15,
             "point_cloud_rasterization": 16,
             "dsm_filling": 17,
+            "auxiliary_filling": 18,
         }
 
         self.app_values = {}
@@ -448,6 +449,7 @@ class DefaultPipeline(PipelineTemplate):
                 needed_applications += [
                     "point_cloud_rasterization",
                     "dsm_filling",
+                    "auxiliary_filling",
                 ]
 
             if self.merging:  # we have to merge point clouds, add merging apps
@@ -632,6 +634,13 @@ class DefaultPipeline(PipelineTemplate):
                 )
                 used_conf["dsm_filling"] = (
                     self.dsm_filling_application.get_conf()
+                )
+                # Auxiliary filling
+                self.auxiliary_filling_application = Application(
+                    "auxiliary_filling", cfg=conf.get("auxiliary_filling", {})
+                )
+                used_conf["auxiliary_filling"] = (
+                    self.auxiliary_filling_application.get_conf()
                 )
 
             if self.merging:
@@ -2019,7 +2028,20 @@ class DefaultPipeline(PipelineTemplate):
             dump_dir=self.dump_dir,
         )
 
-        return self.quit_on_app("dsm_filling")
+        if self.quit_on_app("dsm_filling"):
+            return True
+
+        _ = self.auxiliary_filling_application.run(
+            dsm_file=dsm_file_name,
+            color_file=color_file_name,
+            classif_file=classif_file_name,
+            out_dir=self.dump_dir,
+            sensor_inputs=self.used_conf[INPUTS]["sensors"],
+            geom_plugin=self.geom_plugin_with_dem_and_geoid,
+            orchestrator=self.cars_orchestrator,
+        )
+
+        return self.quit_on_app("auxiliary_filling")
 
     def preprocess_depth_maps(self):
         """
