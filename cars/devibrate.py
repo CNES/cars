@@ -51,6 +51,10 @@ from cars.applications.rasterization import rasterization_tools as rasterization
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.geometry.shareloc_geometry import SharelocGeometry
 
+# Get full path geoid
+package_path = os.path.dirname(__file__)
+GEOID_DEFAULT = os.path.join(package_path, "conf", "geoid/egm96.grd")
+
 
 def acquisition_direction(
     sensor1, geomodel1, sensor2, geomodel2, geometry_plugin
@@ -248,12 +252,11 @@ def lowres_initial_dem_splines_fit(
     ).dropna(dim="l")
 
     if len(median_linear_diff_array) < 100:
-        logging.warning(
-            "Insufficient amount of points along time direction "
+        raise RuntimeError(
+            "Insufficient amount of points ({} < 100)along time direction "
             "after measurements filtering to estimate correction "
-            "to fit initial DEM"
+            "to fit initial DEM".format(len(median_linear_diff_array))
         )
-        return None
 
     # Apply butterworth lowpass filter to retrieve only the low frequency
     # (from example of doc: https://docs.scipy.org/doc/scipy/reference/
@@ -504,8 +507,15 @@ def cars_devibrate(used_conf, srtm_path, geoid_path):
         "_".join(pairing[0]),
         "filtered_matches.npy",
     )
+    if not os.path.isfile(matches):
+        raise RuntimeError(
+            "Matches must be saved : \n Add in CARS configuration file : \n"
+            " Set applications.sparse_matching.save_intermediate_data to true"
+        )
 
     dsm_path = os.path.join(out_dir, "dsm", "dsm.tif")
+    if not os.path.isfile(dsm_path):
+        raise RuntimeError("DSM must be generated: set product level to `dsm`")
     splines_path = os.path.join(out_dir, "splines.pck")
 
     if os.path.exists(splines_path) is False:
@@ -591,17 +601,16 @@ def cli():
     )
 
     parser.add_argument(
-        "--srtm_path",
+        "srtm_path",
         type=str,
         help="SRTM path",
-        default="/softs/projets/3d/elevations/SRTM_30m.vrt",
     )
 
     parser.add_argument(
         "--geoid_path",
         type=str,
         help="Geoid path",
-        default="/softs/projets/3d/geoids/egm96.grd",
+        default=GEOID_DEFAULT,
     )
 
     args = parser.parse_args()
