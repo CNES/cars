@@ -187,6 +187,10 @@ def lowres_initial_dem_splines_fit(
     time_direction_vector: np.ndarray,
     ext: int = 3,
     order: int = 3,
+    min_nb_points_for_mesurement: int = 100,
+    min_nb_points_time_drection: int = 100,
+    butterworth_filter_order: int = 3,
+    butterworth_critical_frequency: float = 0.05,
 ):
     """
     This function takes 2 datasets containing DSM and models the
@@ -205,6 +209,14 @@ def lowres_initial_dem_splines_fit(
     :type time_direction_vector: list(float) or np.array(float) of size 2
     :param ext: behavior outside of interpolation domain
     :param order: spline order
+    :param min_nb_points_for_mesurement: minimum number of points for
+        each measurement
+    :param min_nb_points_time_drection:  minimum number of points for
+        time direction
+    :param butterworth_filter_order: Order of the filter.
+        See scipy.signal.butter
+    :param butterworth_critical_frequency: The filter critical frequency
+        or frequencies. See scipy.signal.butter
     """
     # Initial DSM difference
     dsm_diff = lowres_initial_dem.hgt - lowres_dsm_from_matches.hgt
@@ -248,12 +260,12 @@ def lowres_initial_dem_splines_fit(
 
     # Filter measurements with insufficient amount of points
     median_linear_diff_array = median_linear_diff_array.where(
-        count_linear_diff_array > 100
+        count_linear_diff_array > min_nb_points_for_mesurement
     ).dropna(dim="l")
 
-    if len(median_linear_diff_array) < 100:
+    if len(median_linear_diff_array) < min_nb_points_time_drection:
         raise RuntimeError(
-            "Insufficient amount of points ({} < 100)along time direction "
+            "Insufficient amount of points ({} < 100) along time direction "
             "after measurements filtering to estimate correction "
             "to fit initial DEM".format(len(median_linear_diff_array))
         )
@@ -261,7 +273,7 @@ def lowres_initial_dem_splines_fit(
     # Apply butterworth lowpass filter to retrieve only the low frequency
     # (from example of doc: https://docs.scipy.org/doc/scipy/reference/
     # generated/scipy.signal.butter.html#scipy.signal.butter )
-    b, a = butter(3, 0.05)
+    b, a = butter(butterworth_filter_order, butterworth_critical_frequency)
     zi_filter = lfilter_zi(b, a)
     z_filter, _ = lfilter(
         b,
@@ -374,6 +386,10 @@ def compute_splines(
     srtm_path,
     geoid_path,
     out_dir,
+    min_nb_points_for_mesurement: int = 100,
+    min_nb_points_time_drection: int = 100,
+    butterworth_filter_order: int = 3,
+    butterworth_critical_frequency: float = 0.05,
 ):
     """
     Compute a spline dict containing estimated splines, origin
@@ -444,7 +460,14 @@ def compute_splines(
 
     # fit initial dem and low res dsm from sift and deduce splines correction
     splines = lowres_initial_dem_splines_fit(
-        lowres_dsm, lowres_initial_dem, origin, time_direction_vector
+        lowres_dsm,
+        lowres_initial_dem,
+        origin,
+        time_direction_vector,
+        min_nb_points_for_mesurement=min_nb_points_for_mesurement,
+        min_nb_points_time_drection=min_nb_points_time_drection,
+        butterworth_filter_order=butterworth_filter_order,
+        butterworth_critical_frequency=butterworth_critical_frequency,
     )
 
     # save intermediate data
@@ -482,7 +505,15 @@ def compute_splines(
     }
 
 
-def cars_devibrate(used_conf, srtm_path, geoid_path):
+def cars_devibrate(
+    used_conf,
+    srtm_path,
+    geoid_path,
+    min_nb_points_for_mesurement: int = 100,
+    min_nb_points_time_drection: int = 100,
+    butterworth_filter_order: int = 3,
+    butterworth_critical_frequency: float = 0.05,
+):
     """
     Main fonction. Expects a dictionary from the CLI
     or directly the input parameters.
@@ -528,6 +559,10 @@ def cars_devibrate(used_conf, srtm_path, geoid_path):
             srtm_path,
             geoid_path,
             out_dir,
+            min_nb_points_for_mesurement=min_nb_points_for_mesurement,
+            min_nb_points_time_drection=min_nb_points_time_drection,
+            butterworth_filter_order=butterworth_filter_order,
+            butterworth_critical_frequency=butterworth_critical_frequency,
         )
 
         with open(splines_path, "wb") as writer:
@@ -611,6 +646,34 @@ def cli():
         type=str,
         help="Geoid path",
         default=GEOID_DEFAULT,
+    )
+
+    parser.add_argument(
+        "--min_nb_points_for_mesurement",
+        type=int,
+        help="minimum number of points for" "each measurement",
+        default=100,
+    )
+
+    parser.add_argument(
+        "--min_nb_points_time_drection",
+        type=int,
+        help="minimum number of points for" "time direction",
+        default=100,
+    )
+
+    parser.add_argument(
+        "--butterworth_filter_order",
+        type=int,
+        help="Order of the butterworth filter",
+        default=3,
+    )
+
+    parser.add_argument(
+        "--butterworth_critical_frequency",
+        type=float,
+        help=" The butterworth filter critical frequency",
+        default=0.05,
     )
 
     args = parser.parse_args()
