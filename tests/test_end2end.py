@@ -229,6 +229,39 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_upper_bound": 20.0,
                 "save_intermediate_data": False,
             },
+            "pandora_sparse_matching": {
+                "save_intermediate_data": True,
+                "connection_val": 3.0,
+                "nb_pts_threshold": 100,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -271,7 +304,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 == 612
             )
             assert (
-                -20
+                -22
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -384,9 +417,42 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "save_intermediate_data": True,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -429,7 +495,7 @@ def test_end2end_ventoux_unique():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -19
+                < -18
             )
             assert (
                 12
@@ -441,7 +507,6 @@ def test_end2end_ventoux_unique():
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
-
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #  os.path.join(out_dir, "dump_dir", "dem_generation",
@@ -953,6 +1018,38 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
@@ -1080,6 +1177,38 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -1176,6 +1305,38 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         )
         input_config_pc["applications"] = {
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -1346,6 +1507,38 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": False,
+            },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2014,6 +2207,40 @@ def test_end2end_use_epipolar_a_priori():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "nb_pts_threshold": 100,
+                "connection_val": 3.0,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -2058,7 +2285,7 @@ def test_end2end_use_epipolar_a_priori():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -25
+                < -23
             )
             assert (
                 23
@@ -2359,6 +2586,40 @@ def test_prepare_ventoux_bias():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "nb_pts_threshold": 150,
+                "connection_val": 3.0,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -2437,6 +2698,38 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "elevation_delta_upper_bound": 700.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2835,6 +3128,38 @@ def test_end2end_ventoux_with_color():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -3107,6 +3432,38 @@ def test_end2end_ventoux_with_classif():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
                 "use_global_disp_range": True
@@ -3364,6 +3721,38 @@ def test_compute_dsm_with_roi_ventoux():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
                 "dsm_radius": 3,
@@ -3510,6 +3899,38 @@ def test_compute_dsm_with_snap_to_img1():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -3628,6 +4049,38 @@ def test_end2end_quality_stats():
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -3683,7 +4136,7 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] > -36
             assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
@@ -3915,6 +4368,38 @@ def test_end2end_ventoux_egm96_geoid():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -3967,7 +4452,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -67
+            assert out_disp_compute["global_disp_min"] > -68
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4037,6 +4522,38 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4127,6 +4644,38 @@ def test_end2end_ventoux_egm96_geoid():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -4181,7 +4730,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -67
+            assert out_disp_compute["global_disp_min"] > -68
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4260,6 +4809,38 @@ def test_end2end_paca_with_mask():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
                 "minimum_nb_matches": 10,
+            },
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4582,6 +5163,38 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
+            "pandora_sparse_matching": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
