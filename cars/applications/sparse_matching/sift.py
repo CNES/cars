@@ -26,7 +26,6 @@ this module contains the dense_matching application class.
 
 # Standard imports
 import logging
-import math
 import os
 from typing import Dict, Tuple
 
@@ -49,7 +48,7 @@ from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 
 
-class Sift(SparseMatching, short_name="sift"):
+class Sift(SparseMatching, short_name=["sift"]):
     """
     SparseMatching
     """
@@ -104,6 +103,10 @@ class Sift(SparseMatching, short_name="sift"):
         self.sift_magnification = self.used_config["sift_magnification"]
         self.sift_window_size = self.used_config["sift_window_size"]
         self.sift_back_matching = self.used_config["sift_back_matching"]
+        self.matches_filter_knn = self.used_config["matches_filter_knn"]
+        self.matches_filter_dev_factor = self.used_config[
+            "matches_filter_dev_factor"
+        ]
 
         self.decimation_factor = self.used_config["decimation_factor"]
 
@@ -183,6 +186,13 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_back_matching", True
         )
 
+        overloaded_conf["matches_filter_knn"] = conf.get(
+            "matches_filter_knn", 25
+        )
+        overloaded_conf["matches_filter_dev_factor"] = conf.get(
+            "matches_filter_dev_factor", 3.0
+        )
+
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
             "save_intermediate_data", False
@@ -210,6 +220,8 @@ class Sift(SparseMatching, short_name="sift"):
             "sift_window_size": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
             "decimation_factor": And(int, lambda x: x > 0),
+            "matches_filter_knn": int,
+            "matches_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
         }
 
@@ -255,81 +267,60 @@ class Sift(SparseMatching, short_name="sift"):
         """
         return self.disparity_margin
 
-    def get_margins_fun(self, disp_min=None, disp_max=None):
+    def get_strip_margin(self):
         """
-        Get margins function to use in resampling
+        Get strip margin corresponding to sparse matches
 
-        :param disp_min: disp min for info
-        :param disp_max: disp max for info
-
-        :return: margins function
-        :rtype: function generating  xr.Dataset
+        :return: margin in percent
 
         """
+        return self.strip_margin
 
-        # Compute margins
-        corner = ["left", "up", "right", "down"]
-        data = np.zeros(len(corner))
-        col = np.arange(len(corner))
-        margins = xr.Dataset(
-            {"left_margin": (["col"], data)}, coords={"col": col}
-        )
-        margins["right_margin"] = xr.DataArray(data, dims=["col"])
+    def get_epipolar_error_upper_bound(self):
+        """
+        Get epipolar error upper bound corresponding to sparse matches
 
-        left_margin = self.strip_margin
-        right_margin = left_margin + int(
-            math.floor(
-                self.epipolar_error_upper_bound
-                + self.epipolar_error_maximum_bias
-            )
-        )
+        :return: margin
 
-        # Compute margins for left region
-        margins["left_margin"].data = [0, left_margin, 0, left_margin]
+        """
 
-        # Compute margins for right region
-        margins["right_margin"].data = [0, right_margin, 0, right_margin]
+        return self.epipolar_error_upper_bound
 
-        # add disp range info
-        margins.attrs["disp_min"] = disp_min
-        margins.attrs["disp_max"] = disp_max
+    def get_epipolar_error_maximum_bias(self):
+        """
+        Get epipolar error maximum bias corresponding to sparse matches
 
-        logging.info(
-            "Margins added to left region for matching: {}".format(
-                margins["left_margin"].data
-            )
-        )
+        :return: margin
 
-        logging.info(
-            "Margins added to right region for matching: {}".format(
-                margins["right_margin"].data
-            )
-        )
+        """
 
-        def margins_wrapper(  # pylint: disable=unused-argument
-            row_min, row_max, col_min, col_max
-        ):
-            """
-            Generates margins Dataset used in resampling
+        return self.epipolar_error_maximum_bias
 
-            :param row_min: row min
-            :param row_max: row max
-            :param col_min: col min
-            :param col_max: col max
+    def get_matches_filter_knn(self):
+        """
+        Get matches_filter_knn :
+        number of neighboors used to measure isolation of matches
 
-            :return: margins
-            :rtype: xr.Dataset
-            """
+        :return: matches_filter_knn
 
-            # Constant margins for all tiles
-            return margins
+        """
+        return self.matches_filter_knn
 
-        return margins_wrapper
+    def get_matches_filter_dev_factor(self):
+        """
+        Get matches_filter_dev_factor :
+        factor of deviation in the formula
+        to compute threshold of outliers
+
+        :return: matches_filter_dev_factor
+
+        """
+        return self.matches_filter_dev_factor
 
     def run(
         self,
-        epipolar_images_left,
-        epipolar_images_right,
+        epipolar_image_left,
+        epipolar_image_right,
         disp_to_alt_ratio,
         orchestrator=None,
         pair_folder=None,
@@ -340,9 +331,9 @@ class Sift(SparseMatching, short_name="sift"):
 
         Create left and right CarsDataset filled with pandas.DataFrame ,
         corresponding to epipolar 2D disparities, on the same geometry
-        that epipolar_images_left and epipolar_images_right.
+        that epipolar_image_left and epipolar_image_right.
 
-        :param epipolar_images_left: tiled left epipolar. CarsDataset contains:
+        :param epipolar_image_left: tiled left epipolar. CarsDataset contains:
 
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
@@ -353,8 +344,8 @@ class Sift(SparseMatching, short_name="sift"):
                         "no_data_img"
                 - attributes containing:
                     "largest_epipolar_region","opt_epipolar_tile_size"
-        :type epipolar_images_left: CarsDataset
-        :param epipolar_images_right: tiled right epipolar.CarsDataset contains:
+        :type epipolar_image_left: CarsDataset
+        :param epipolar_image_right: tiled right epipolar.CarsDataset contains:
 
                 - N x M Delayed tiles \
                     Each tile will be a future xarray Dataset containing:
@@ -365,7 +356,7 @@ class Sift(SparseMatching, short_name="sift"):
                         "no_data_img"
                 - attributes containing:"largest_epipolar_region", \
                   "opt_epipolar_tile_size"
-        :type epipolar_images_right: CarsDataset
+        :type epipolar_image_right: CarsDataset
         :param disp_to_alt_ratio: disp to alti ratio
         :type disp_to_alt_ratio: float
         :param orchestrator: orchestrator used
@@ -384,7 +375,6 @@ class Sift(SparseMatching, short_name="sift"):
 
         :rtype: Tuple(CarsDataset, CarsDataset)
         """
-
         # Default orchestrator
         if orchestrator is None:
             # Create default sequential orchestrator for current application
@@ -399,17 +389,17 @@ class Sift(SparseMatching, short_name="sift"):
         if pair_folder is None:
             pair_folder = os.path.join(self.orchestrator.out_dir, "tmp")
 
-        if epipolar_images_left.dataset_type == "arrays":
+        if epipolar_image_left.dataset_type == "arrays":
             # Create CarsDataset
             # Epipolar_disparity
             epipolar_disparity_map_left = cars_dataset.CarsDataset(
                 "points", name="sparse_matching_" + pair_key
             )
-            epipolar_disparity_map_left.create_empty_copy(epipolar_images_left)
+            epipolar_disparity_map_left.create_empty_copy(epipolar_image_left)
 
             # Update attributes to get epipolar info
             epipolar_disparity_map_left.attributes.update(
-                epipolar_images_left.attributes
+                epipolar_image_left.attributes
             )
             # check sift_peak_threshold with image type
             # only if sift_peak_threshold is None
@@ -502,16 +492,16 @@ class Sift(SparseMatching, short_name="sift"):
                 )
                 # Compute matches
                 if type(None) not in (
-                    type(epipolar_images_left[row, 0]),
-                    type(epipolar_images_right[row, 0]),
+                    type(epipolar_image_left[row, 0]),
+                    type(epipolar_image_right[row, 0]),
                 ):
                     (
                         epipolar_disparity_map_left[row, 0]
                     ) = self.orchestrator.cluster.create_task(
                         compute_matches_wrapper, nout=1
                     )(
-                        epipolar_images_left[row, 0],
-                        epipolar_images_right[row, 0],
+                        epipolar_image_left[row, 0],
+                        epipolar_image_right[row, 0],
                         matching_threshold=self.sift_matching_threshold,
                         n_octave=self.sift_n_octave,
                         n_scale_per_octave=self.sift_n_scale_per_octave,
