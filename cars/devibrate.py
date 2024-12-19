@@ -187,8 +187,8 @@ def lowres_initial_dem_splines_fit(
     time_direction_vector: np.ndarray,
     ext: int = 3,
     order: int = 3,
-    min_nb_points_for_mesurement: int = 100,
-    min_nb_points_time_drection: int = 100,
+    min_pts_per_time: int = 100,
+    min_pts_along_time_direction: int = 100,
     butterworth_filter_order: int = 3,
     butterworth_critical_frequency: float = 0.05,
 ):
@@ -209,9 +209,9 @@ def lowres_initial_dem_splines_fit(
     :type time_direction_vector: list(float) or np.array(float) of size 2
     :param ext: behavior outside of interpolation domain
     :param order: spline order
-    :param min_nb_points_for_mesurement: minimum number of points for
+    :param min_pts_per_time: minimum number of points for
         each measurement
-    :param min_nb_points_time_drection:  minimum number of points for
+    :param min_pts_along_time_direction:  minimum number of points for
         time direction
     :param butterworth_filter_order: Order of the filter.
         See scipy.signal.butter
@@ -260,14 +260,16 @@ def lowres_initial_dem_splines_fit(
 
     # Filter measurements with insufficient amount of points
     median_linear_diff_array = median_linear_diff_array.where(
-        count_linear_diff_array > min_nb_points_for_mesurement
+        count_linear_diff_array > min_pts_per_time
     ).dropna(dim="l")
 
-    if len(median_linear_diff_array) < min_nb_points_time_drection:
+    if len(median_linear_diff_array) < min_pts_along_time_direction:
         raise RuntimeError(
-            "Insufficient amount of points ({} < 100) along time direction "
+            "Insufficient amount of points ({} < {}) along time direction "
             "after measurements filtering to estimate correction "
-            "to fit initial DEM".format(len(median_linear_diff_array))
+            "to fit initial DEM".format(
+                len(median_linear_diff_array), min_pts_along_time_direction
+            )
         )
 
     # Apply butterworth lowpass filter to retrieve only the low frequency
@@ -386,8 +388,8 @@ def compute_splines(
     srtm_path,
     geoid_path,
     out_dir,
-    min_nb_points_for_mesurement: int = 100,
-    min_nb_points_time_drection: int = 100,
+    min_pts_per_time: int = 100,
+    min_pts_along_time_direction: int = 100,
     butterworth_filter_order: int = 3,
     butterworth_critical_frequency: float = 0.05,
 ):
@@ -464,8 +466,8 @@ def compute_splines(
         lowres_initial_dem,
         origin,
         time_direction_vector,
-        min_nb_points_for_mesurement=min_nb_points_for_mesurement,
-        min_nb_points_time_drection=min_nb_points_time_drection,
+        min_pts_per_time=min_pts_per_time,
+        min_pts_along_time_direction=min_pts_along_time_direction,
         butterworth_filter_order=butterworth_filter_order,
         butterworth_critical_frequency=butterworth_critical_frequency,
     )
@@ -509,8 +511,8 @@ def cars_devibrate(
     used_conf,
     srtm_path,
     geoid_path,
-    min_nb_points_for_mesurement: int = 100,
-    min_nb_points_time_drection: int = 100,
+    min_pts_per_time: int = 100,
+    min_pts_along_time_direction: int = 100,
     butterworth_filter_order: int = 3,
     butterworth_critical_frequency: float = 0.05,
 ):
@@ -559,8 +561,8 @@ def cars_devibrate(
             srtm_path,
             geoid_path,
             out_dir,
-            min_nb_points_for_mesurement=min_nb_points_for_mesurement,
-            min_nb_points_time_drection=min_nb_points_time_drection,
+            min_pts_per_time=min_pts_per_time,
+            min_pts_along_time_direction=min_pts_along_time_direction,
             butterworth_filter_order=butterworth_filter_order,
             butterworth_critical_frequency=butterworth_critical_frequency,
         )
@@ -649,14 +651,14 @@ def cli():
     )
 
     parser.add_argument(
-        "--min_nb_points_for_mesurement",
+        "--min_pts_per_time",
         type=int,
         help="minimum number of points for" "each measurement",
         default=100,
     )
 
     parser.add_argument(
-        "--min_nb_points_time_drection",
+        "--min_pts_along_time_direction",
         type=int,
         help="minimum number of points for" "time direction",
         default=100,
