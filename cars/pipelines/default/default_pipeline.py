@@ -2035,8 +2035,9 @@ class DefaultPipeline(PipelineTemplate):
             dsm_file=dsm_file_name,
             color_file=color_file_name,
             classif_file=classif_file_name,
-            out_dir=self.dump_dir,
+            dump_dir=self.dump_dir,
             sensor_inputs=self.used_conf[INPUTS]["sensors"],
+            pairing=self.used_conf[INPUTS]["pairing"],
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
             orchestrator=self.cars_orchestrator,
         )

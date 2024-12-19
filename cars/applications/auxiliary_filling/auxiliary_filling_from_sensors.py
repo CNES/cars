@@ -23,6 +23,7 @@ this module contains the AuxiliaryFillingFromSensors application class.
 """
 
 import os
+import shutil
 
 import numpy as np
 import rasterio as rio
@@ -85,6 +86,11 @@ class AuxiliaryFillingFromSensors(
         )
 
         overloaded_conf["mode"] = conf.get("mode", "fill_nan")
+        overloaded_conf["color_interpolator"] = conf.get(
+            "color_interpolator", "linear"
+        )
+        overloaded_conf["activated"] = conf.get("activated", False)
+        overloaded_conf["use_mask"] = conf.get("use_mask", True)
 
         # Saving files
         overloaded_conf["save_intermediate_data"] = conf.get(
@@ -93,7 +99,10 @@ class AuxiliaryFillingFromSensors(
 
         auxiliary_filling_schema = {
             "method": str,
+            "activated": bool,
             "mode": str,
+            "use_mask": bool,
+            "color_interpolator": str,
             "save_intermediate_data": bool,
         }
 
@@ -108,14 +117,18 @@ class AuxiliaryFillingFromSensors(
         dsm_file,
         color_file,
         classif_file,
-        out_dir,
+        dump_dir,
         sensor_inputs,
+        pairing,
         geom_plugin,
         orchestrator=None,
     ):
         """
         run AuxiliaryFillingFromSensors
         """
+
+        if not self.used_config["activated"]:
+            return None
 
         # Default orchestrator
         if orchestrator is None:
@@ -127,6 +140,23 @@ class AuxiliaryFillingFromSensors(
             )
         else:
             self.orchestrator = orchestrator
+
+        dump_dir = os.path.join(dump_dir, "auxiliary_filling")
+
+        if not os.path.exists(dump_dir):
+            os.makedirs(dump_dir)
+
+        color_not_filled_file = os.path.join(dump_dir, "color_not_filled.tif")
+        classification_not_filled_file = os.path.join(
+            dump_dir, "classification_not_filled.tif"
+        )
+
+        shutil.move(color_file, color_not_filled_file)
+        shutil.move(classif_file, classification_not_filled_file)
+
+        # Clean dump_dir at the end of processing if required
+        if not self.used_config["save_intermediate_data"]:
+            self.orchestrator.add_to_clean(dump_dir)
 
         # Create CarsDataset
         # output color
@@ -154,17 +184,17 @@ class AuxiliaryFillingFromSensors(
         aux_filled_image.tiling_grid = region_grid
 
         self.orchestrator.add_to_save_lists(
-            os.path.join(out_dir, "filled_color.tif"),
+            os.path.join(dump_dir, color_file),
             cst.RASTER_COLOR_IMG,
             aux_filled_image,
             cars_ds_name="filled_color",
         )
 
         self.orchestrator.add_to_save_lists(
-            os.path.join(out_dir, "filled_classification.tif"),
+            os.path.join(dump_dir, classif_file),
             cst.RASTER_CLASSIF,
             aux_filled_image,
-            cars_ds_name="filled_classif",
+            cars_ds_name="filled_classification",
         )
 
         # Get saving infos in order to save tiles when they are computed
@@ -193,15 +223,18 @@ class AuxiliaryFillingFromSensors(
                     filling_from_sensor_wrapper, nout=1
                 )(
                     dsm_file,
-                    color_file,
-                    classif_file,
+                    color_not_filled_file,
+                    classification_not_filled_file,
                     sensor_inputs,
+                    pairing,
                     window,
                     reference_transform,
                     reference_epsg,
                     full_saving_info,
                     geom_plugin,
-                    self.used_config["mode"],
+                    mode=self.used_config["mode"],
+                    color_interpolator=self.used_config["color_interpolator"],
+                    use_mask=self.used_config["use_mask"],
                 )
 
         #
@@ -216,15 +249,47 @@ def filling_from_sensor_wrapper(
     color_file,
     classification_file,
     sensor_inputs,
+    pairing,
     window,
     transform,
     epsg,
     saving_info,
     geom_plugin,
     mode,
+    color_interpolator,
+    use_mask,
 ):
     """
-    filling from sensor for a terrain tile
+    fill color and classifcation from sensor information for a terrain tile
+
+    :param dsm_file: path to the filled dsm file
+    :type dsm_file: str
+    :param color_file: path to the color file
+    :type color_file: str
+    :param classification_file: path to the classification file
+    :type classification_file: str
+    :param sensor_inputs: dictionary containing paths to input images and models
+    :type sensor_inputs: dict
+    :param pairing: pairing between input images
+    :type pairing: list
+    :param window: window of the current tile
+    :type window: dict
+    :param transform: input geo transform
+    :type transform: tuple
+    :param epsg: input epsg
+    :type epsg: int
+    :param saving_info: saving info for cars orchestrator
+    :type saving_info: dict
+    :param geom_plugin: geometry plugin used for inverse locations
+    :type geom_plugin: AbstractGeometry
+    :param mode: geometry plugin used for inverse locations
+    :type mode: str
+    :param color_interpolator: scipy interpolator use to interpolate color
+        values
+    :type color_interpolator: str
+    :param use_mask: use mask information from sensors in color computation
+    :type use_mask: bool
+
     """
 
     cols = np.arange(
@@ -286,12 +351,15 @@ def filling_from_sensor_wrapper(
         color_values_filled, classification_values_filled = (
             auxiliary_filling_tools.fill_auxiliary(
                 sensor_inputs,
+                pairing,
                 lon_lat[index_1d, 0],
                 lon_lat[index_1d, 1],
                 alt_values.ravel()[index_1d],
                 geom_plugin,
                 number_of_color_bands,
                 number_of_classification_bands,
+                color_interpolator=color_interpolator,
+                use_mask=use_mask,
             )
         )
 
