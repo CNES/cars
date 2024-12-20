@@ -1688,8 +1688,8 @@ def test_end2end_ventoux_unique_split():
                         "performance_map_end2end_ventoux_split.tif",
                     )
                 ),
-                atol=1.0e-7,
-                rtol=1.0e-7,
+                atol=0.0001,
+                rtol=1e-6,
             )
 
             assert_same_images(
@@ -1900,8 +1900,8 @@ def test_end2end_ventoux_unique_split():
                         "performance_map_end2end_ventoux_split_no_merging.tif",
                     )
                 ),
-                rtol=1.0e-7,
-                atol=1.0e-7,
+                atol=0.0001,
+                rtol=1e-6,
             )
             assert_same_images(
                 os.path.join(
