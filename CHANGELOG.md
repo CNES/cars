@@ -1,5 +1,15 @@
 # Changelog
 
+## 0.10.2 New console script cars-devibrate (December 2024)
+
+### Added
+
+- Add cars-devibrate script (based on the work of Julien Michel)
+
+### Fixed
+
+- Fix classification holes in epipolar geometry [#949]
+
 ## 0.10.1 Using importlib instead of setuptools_scm (December 2024)
 
 ### Fixed
@@ -13,8 +23,8 @@
 
 ### Added
 
-- Added `bulldozer-dtm` dependency to cars with a new bulldozer base DSM filling application [#901]
-- Added `cars-filter` dependency with outlier filtering functionalities in epipolar geometry [#867]
+- Add `bulldozer-dtm` dependency to cars with a new bulldozer base DSM filling application [#901]
+- Add `cars-filter` dependency with outlier filtering functionalities in epipolar geometry [#867]
 - New parameter `use_cross_validation` in dense matching to manage Pandora cross validation [#900]
 - New parameters `altitude_delta_min` and `altitude_delta_max` in initial_elevation [#902]
 
