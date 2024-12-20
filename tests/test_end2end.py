@@ -82,6 +82,39 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "pandora_sparse_matching": {
+                "save_intermediate_data": True,
+                "connection_val": 3.0,
+                "nb_pts_threshold": 100,
+                "loader_conf": {
+                    "input": {},
+                    "pipeline": {
+                        "matching_cost": {
+                            "matching_cost_method": "census",
+                            "window_size": 5,
+                            "subpix": 1,
+                        },
+                        "optimization": {
+                            "optimization_method": "sgm",
+                            "penalty": {
+                                "P1": 8,
+                                "P2": 32,
+                                "penalty_method": "sgm_penalty",
+                            },
+                        },
+                        "disparity": {
+                            "disparity_method": "wta",
+                            "invalid_disparity": "NaN",
+                        },
+                        "refinement": {"refinement_method": "vfit"},
+                        "filter": {"filter_method": "median", "filter_size": 3},
+                        "validation": {
+                            "validation_method": "cross_checking_accurate",
+                            "cross_checking_threshold": 1.0,
+                        },
+                    },
+                },
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
