@@ -477,7 +477,9 @@ class DefaultPipeline(PipelineTemplate):
             "point_cloud_outlier_removal.2",
         ]:
             if conf.get(app_key) is not None:
-                conf[app_key]["activated"] = True
+                config_app = conf.get(app_key)
+                if config_app["activated"] is None:
+                    conf[app_key]["activated"] = True
 
         for app_key in needed_applications:
             used_conf[app_key] = conf.get(app_key, {})
