@@ -867,21 +867,23 @@ def update_data(
         old_valid = old_weights != 0
 
         both_valid = np.logical_and(current_valid, old_valid)
-        total_weight = np.zeros(shape)
-        total_weight[both_valid] = weights[both_valid] + old_weights[both_valid]
+        total_weights = np.zeros(shape)
+        total_weights[both_valid] = (
+            weights[both_valid] + old_weights[both_valid]
+        )
 
         # current factor
         current_factor = np.zeros(shape)
         current_factor[current_valid] = 1
         current_factor[both_valid] = (
-            weights[both_valid] / total_weight[both_valid]
+            weights[both_valid] / total_weights[both_valid]
         )
 
         # old factor
         old_factor = np.zeros(shape)
         old_factor[old_valid] = 1
         old_factor[both_valid] = (
-            old_weights[both_valid] / total_weight[both_valid]
+            old_weights[both_valid] / total_weights[both_valid]
         )
 
         # assign old weights
@@ -899,6 +901,10 @@ def update_data(
         elif method == "sum":
             new_data[old_valid] = old_data[old_valid]
             new_data[current_valid] += current_data[current_valid]
+
+        # round result if saved as integer
+        if np.issubdtype(current_data.dtype, np.integer):
+            new_data = np.round(new_data).astype(current_data.dtype)
 
         # set nodata
         all_nodata = (current_valid + old_valid) == 0

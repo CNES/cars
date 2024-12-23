@@ -495,7 +495,7 @@ def estimate_right_classif_on_left(
                 ):
                     for col_classif in prange(  # pylint: disable=E1133
                         max(0, col + disp_min),
-                        min(data_shape[1], col + disp_max),
+                        min(data_shape[2], col + disp_max),
                     ):
                         if right_classif[classif_c, row, col_classif]:
                             classif_in_range[classif_c] = True
@@ -532,7 +532,7 @@ def mask_left_classif_from_right_mask(
             all_masked = True
             for col_classif in prange(  # pylint: disable=E1133
                 max(0, col + disp_min[row, col]),
-                min(data_shape[1], col + disp_max[row, col]),
+                min(data_shape[2], col + disp_max[row, col]),
             ):
                 if not right_mask[row, col_classif]:
                     all_masked = False

@@ -37,12 +37,12 @@ The structure follows this organization:
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
                 | Name                       | Description                                                         | Type                  | Default value        | Required |
                 +============================+=====================================================================+=======================+======================+==========+
-                | *sensor*                   | Stereo sensor images                                                | See next section      | No                   | Yes      |
+                | *sensors*                  | Stereo sensor images                                                | See next section      | No                   | Yes      |
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | *pairing*                  | Association of image to create pairs                                | list of *sensor*      | No                   | Yes (*)  |
+                | *pairing*                  | Association of image to create pairs                                | list of *sensors*     | No                   | Yes (*)  |
                 +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
-                (*) `pairing` is required If there are more than two sensors (see pairing section below)
+                (*) `pairing` is required if there are more than two sensors (see pairing section below)
 
                 **Sensor**
 
@@ -69,29 +69,28 @@ The structure follows this organization:
                 +===================+============================================================================================+================+===============+==========+
                 | *image*           | Path to the image                                                                          | string         |               | Yes      |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *color*           | Image stackable to image used to create an ortho-image corresponding to the produced dsm   | string         |               | No       |
+                | *color*           | Path to the color image                                                                    | string         |               | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
                 | *no_data*         | No data value of the image                                                                 | int            | 0             | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *geomodel*        | Path of geomodel and plugin-specific attributes (see Geometry plugin section for details)  | string, dict   |               | No       |
+                | *geomodel*        | Path to the geomodel and plugin-specific attributes                                        | string, dict   |               | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *mask*            | Binary mask stackable to image : 0 values are considered valid data                        | string         | None          | No       |
+                | *mask*            | Path to the binary mask                                                                    | string         | None          | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
-                | *classification*  | Multiband classification image : 1 values = pixel belogs to the specified class            | string         | None          | No       |
+                | *classification*  | Path to the multiband binary classification image                                          | string         | None          | No       |
                 +-------------------+--------------------------------------------------------------------------------------------+----------------+---------------+----------+
 
                 .. note::
 
                     - *color*: This image can be composed of XS bands in which case a PAN+XS fusion has been be performed. Please, see the section :ref:`make_a_simple_pan_sharpening` to make a simple pan sharpening with OTB if necessary.
-                    - If the *classification* configuration file is indicated, all non-zeros values of the classification image will be considered as invalid data.
-                    - Please, see the section :ref:`convert_image_to_binary_image` to make binary mask image or binary classification with 1 bit per band.
-                    - The classification of second input is not necessary. In this case, the applications use only the available classification.
-                    - Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications
-                    - *geomodel*: If no geomodel is provide, CARS will try to use the rpc loaded with rasterio opening *image*.
+                    - *mask*: This image is a binary file. By using this file, the 1 values are not processed, only 0 values are considered as valid data.
+                    - *classification*: This image is a multiband binary file. Each band should have a specific name (Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications). By using this file, a different process for each band is applied for the 1 values (Please, see the Applications section for details).
+                    - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
+                    - *geomodel*: If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*.
 
                 **Pairing**
 
-                The pairing attribute defines the pairs to use, using sensors keys used to define sensor images.
+                The `pairing` attribute defines the pairs to use, using sensors keys used to define sensor images.
 
                 .. code-block:: json
 
@@ -125,8 +124,6 @@ The structure follows this organization:
                 | Name                    | Description                                                         | Type                  | Default value        | Required |
                 +=========================+=====================================================================+=======================+======================+==========+
                 | *depth_maps*            | Depth maps to rasterize                                             | dict                  | No                   | Yes      |
-                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
-                | *roi*                   | Region Of Interest: Vector file path or GeoJson                     | string, dict          | None                 | No       |
                 +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
 
 
@@ -196,11 +193,23 @@ The structure follows this organization:
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
 
             .. tab:: ROI
+
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | Name                    | Description                                                         | Type                  | Default value        | Required |
+                +=========================+=====================================================================+=======================+======================+==========+
+                | *roi*                   | Region Of Interest: Vector file path or GeoJson dictionary          | string, dict          | None                 | No       |
+                +-------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
+                **ROI**
+
                 A terrain ROI can be provided by the user. It can be either a vector file (Shapefile for instance) path,
                 or a GeoJson dictionary. These structures must contain a single Polygon or MultiPolygon. Multi-features are 
-                not supported.
+                not supported. Instead of cropping the input images, the whole images will be used to compute grid correction
+                and terrain + epipolar a priori. Then the rest of the pipeline will use the given roi. T
+                his allow better correction of epipolar rectification grids.
 
-                Example of the "roi" parameter with a GeoJson dictionnary containing a Polygon as feature :
+
+                Example of the "roi" parameter with a GeoJson dictionary containing a Polygon as feature :
 
                 .. code-block:: json
 
@@ -305,34 +314,43 @@ The structure follows this organization:
 
             .. tab:: Initial Elevation
 
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+                | Name                       | Description                                                         | Type                  | Default value        | Required |
+                +============================+=====================================================================+=======================+======================+==========+
+                | *initial_elevation*        | Low resolution DEM                                                  | See next section      | No                   | No       |
+                +----------------------------+---------------------------------------------------------------------+-----------------------+----------------------+----------+
+
                 **Initial elevation**
 
-                The attribute contains all informations about initial elevation: dem path, geoid and default altitude
+                The attribute contains all informations about initial elevation: dem path, geoid path and default altitudes.
                 
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
                 | Name                  | Description                                                                | Type   | Available value      | Default value        | Required |
                 +=======================+============================================================================+========+======================+======================+==========+
-                | *dem*                 | Path to DEM tiles                                                          | string |                      | None                 | No       |
+                | *dem*                 | Path to DEM file (one tile or VRT with concatenated tiles)                 | string |                      | None                 | No       |
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
-                | *geoid*               | Geoid path                                                                 | string |                      | CARS internal geoid  | No       |
+                | *geoid*               | Path to geoid file                                                         | string |                      | CARS internal geoid  | No       |
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
-                | *altitude_delta_min*  | constant delta in altitude (meters) between dem median and dem min         | int    | should be > 0        | None                 | No       |
+                | *altitude_delta_min*  | Constant delta in altitude (meters) between *dem_median* and *dem_min*     | int    | should be > 0        | None                 | No       |
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
-                | *altitude_delta_max*  | constant delta in altitude (meters) between dem max and dem median         | int    | should be > 0        | None                 | No       |
+                | *altitude_delta_max*  | Constant delta in altitude (meters) between *dem_max* and *dem_median*     | int    | should be > 0        | None                 | No       |
                 +-----------------------+----------------------------------------------------------------------------+--------+----------------------+----------------------+----------+
 
-                If no DEM path is provided, an internal dem is generated with sparse matches. If no geoid is provided, the default cars geoid is used (egm96). If no delta is provided, the dem_min and max generated with sparse matches will be used.
+                See section :ref:`download_srtm_tiles` to download 90-m SRTM DEM. If no DEM path is provided, an internal DEM is generated with sparse matches. Moreover, when there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles).
                 
-                The Deltas are used following this formula :
+                If no geoid is provided, the default cars geoid is used (egm96).
+
+                If no altitude delta is provided, the `dem_min` and `dem_max` generated with sparse matches will be used.
+                
+                The altitude deltas are used following this formula:
 
                 .. code-block:: python
 
                     dem_min = initial_elevation - altitude_delta_min
                     dem_max = initial_elevation + altitude_delta_max
 
-                .. warning::  Dem path is mandatory for the use of the altitude deltas.
+                .. warning::  DEM path is mandatory for the use of the altitude deltas.
 
-                When there is no DEM data available, a default height above ellipsoid of 0 is used (no coverage for some points or pixels with no_data in the DEM tiles)
 
                 Initial elevation can be provided as a dictionary with a field for each parameter, for example:
 
@@ -360,7 +378,7 @@ The structure follows this organization:
                         }
                     }
 
-                Note that the geoid parameter in initial_elevation is not the geoid used for output products generated after the triangulation step
+                Note that the `geoid` parameter in `initial_elevation` is not the geoid used for output products generated after the triangulation step
                 (see output parameters).
 
                 Elevation management is tightly linked to the geometry plugin used. See :ref:`plugins` section for details
@@ -1548,7 +1566,9 @@ The structure follows this organization:
         +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
         | *terrain_a_priori*         | Provide terrain a priori information (see section below)                | dict                  |                      | No       |
         +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
-        | *debug_with_roi*           | Use input ROI with the tiling of the entire image (see Inputs section)  | Boolean               | False                | No       |
+        | *debug_with_roi*           | Use input ROI with the tiling of the entire image (see Inputs section)  | bool                  | False                | No       |
+        +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
+        | *merging*                  | Merge point clouds before rasterization (soon to be deprecated)         | bool                  | False                | No       |
         +----------------------------+-------------------------------------------------------------------------+-----------------------+----------------------+----------+
 
 
@@ -1562,12 +1582,18 @@ The structure follows this organization:
 
         Intermediate data refers to all files that are not part of an output product. Files that compose an output product will not be found in the application dump directory. For exemple if `dsm` is requested as output product, the `dsm.tif` files and all activated dsm auxiliary files will not be found in `rasterization` dump directory. This directory will still contain the files generated by the `rasterization` application that are not part of the `dsm` product.
 
+        .. code-block:: json
+
+              "advanced": {
+                  "save_intermediate_data": true
+                  }
+              }
 
         **Epipolar a priori**
 
-        The CARS pipeline produces a used_conf.json in the outdir that contains the epipolar_a_priori
-        information for each sensor image pairs. If you wish to re-run CARS, this time by skipping the
-        sparse matching, you can use the ``used_conf.json`` as the new input configuration, with
+        The CARS pipeline produces a ``used_conf.json`` in the `outdir` that contains the `epipolar_a_priori`
+        information for each sensor image pairs. If you wish to re-run CARS, this time by skipping the 
+        sparse matching, you can use the ``used_conf.json`` as the new input configuration, with 
         its `use_epipolar_a_priori` parameter set to `True`.
 
         For each sensor images, the epipolar a priori are filled as following:
@@ -1585,11 +1611,17 @@ The structure follows this organization:
             The grid correction coefficients are based on bilinear model with 6 parameters [x1,x2,x3,y1,y2,y3].
             The None value produces no grid correction (equivalent to parameters [0,0,0,0,0,0]).
 
+        .. code-block:: json
+
+              "advanced": {
+                  "save_intermediate_data": true
+                  }
+              }
 
         **Terrain a priori**
 
-        The terrain a priori is used at the same time that epipolar a priori.
-        If use_epipolar_a_priori is activated, epipolar_a_priori and terrain_a_priori must be provided.
+        The `terrain_a_priori` is used at the same time that `epipolar_a_priori`.
+        If `use_epipolar_a_priori` is activated, `epipolar_a_priori` and `terrain_a_priori` must be provided.
         The terrain_a_priori data dict is produced during low or full resolution dsm pipeline.
 
         The terrain a priori is initially populated with DEM information.
@@ -1605,14 +1637,6 @@ The structure follows this organization:
         +----------------+-------------------------------------------------------------+--------+----------------+----------------------------------+
 
 
-          **Example**
-
-          .. code-block:: json
-
-              "advanced": {
-                  "save_intermediate_data": true
-                  }
-              },
 
     .. tab:: Output
 
@@ -1620,11 +1644,11 @@ The structure follows this organization:
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | Name             | Description                                                 | Type               | Default value        | Required |
         +==================+=============================================================+====================+======================+==========+
-        | *directory*      | Output folder where results are stored                      | string             | No                   | No       |
+        | *directory*      | Output folder where results are stored                      | string             | No                   | Yes      |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | *product_level*  | Output requested products (dsm, point_cloud, depth_map)     | list or string     | "dsm"                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *resolution*     | Output DSM grid strp (only for dsm product level)           | float              | 0.5                  | No       |
+        | *resolution*     | Output DSM grid step (only for dsm product level)           | float              | 0.5                  | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | *auxiliary*      | Selection of additional files in products                   | dict               | See below            | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
@@ -1632,41 +1656,71 @@ The structure follows this organization:
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
         | *geoid*          | Output geoid                                                | bool or string     | False                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
-        | *save_by_pair*   | save output point clouds by pair                            | bool               | False                | No       |
+        | *save_by_pair*   | Save output point clouds by pair                            | bool               | False                | No       |
         +------------------+-------------------------------------------------------------+--------------------+----------------------+----------+
 
+        .. code-block:: json
+
+            {
+                "output": {
+                    "directory": "outresults",
+                    "product_level": ["dsm", "depth_map"],
+                    "geoid": true
+                }
+            }
 
         **Output contents**
 
-        The output directory, defined on the configuration file (see previous section) contains at the end of the computation:
+        The output directory, defined on the configuration file contains at the end of the computation:
 
         * the required product levels (`depth_map`, `dsm` and/or `point_cloud`)
         * the dump directory (`dump_dir`) containing intermediate data for all applications
-        * metadata json file containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
-        * logs folder containing CARS log and profiling information
+        * metadata json file (`metadata.json`) containing: used parameters, information and numerical results related to computation, step by step and pair by pair.
+        * logs folder (`logs`) containing CARS log and profiling information
 
 
         **Output products**
 
-        The `product_level` attribute defines which product should be produced by CARS. There are three available product type: `depth_map`, `point_cloud` and `dsm`. A single product can be requested by setting the parameter as string, several products can be requested by providing a list. For `depth_map` and `dsm`, additional auxiliary files can be produced by setting the `auxiliary` dictionary attribute, it contains the following attributes:
+        The `product_level` attribute defines which product should be produced by CARS. There are three available product type: `depth_map`, `point_cloud` and `dsm`.
+
+        A single product can be requested by setting the parameter as string or several products can be requested by providing a list.
+
+        For `depth_map` and `dsm`, additional auxiliary files can be produced by setting the `auxiliary` dictionary attribute, it contains the following attributes:
 
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
         | Name                  | Description                                                 | Type   | Default value  | Required  |
         +=======================+=============================================================+========+================+===========+
-        | *color*               | Save output color (dsm/depth_map)                           | bool   | True           | No        |
+        | *color*               | Save output color (dsm or depth_map)                        | bool   | True           | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *mask*                | Save output mask (dsm/depth map)                            | bool   | False          | No        |
+        | *mask*                | Save output mask (dsm or depth map)                         | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *classification*      | Save output classification (dsm/depth_map)                  | bool   | False          | No        |
+        | *classification*      | Save output classification (dsm or depth_map)               | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *performance_map*     | Save output performance map (dsm/depth_map)                 | bool   | False          | No        |
+        | *performance_map*     | Save output performance map (dsm or depth_map)              | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
         | *contributing_pair*   | Save output contributing pair (dsm)                         | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
-        | *filling*             | Save output filling (dsm/depth_map)                         | bool   | False          | No        |
+        | *filling*             | Save output filling (dsm or depth_map)                      | bool   | False          | No        |
         +-----------------------+-------------------------------------------------------------+--------+----------------+-----------+
 
-        Note that not all rasters associated to the DSM that CARS can produce are available in the output product auxiliary data. For exemple, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `generate_confidence_intervals` is activated in the `dense_matching` application (to compute the confidence) and `save_intermediate_data` is activated in the `rasterization` application configuration (to write it on disk).
+        .. code-block:: json
+
+            {
+                "output": {
+                    "directory": "outresults",
+                    "product_level": "dsm",
+                    "auxiliary": {"mask": true, "classification": true}
+                }
+            }
+
+        Note that not all rasters associated to the DSM that CARS can produce are available in the output product auxiliary data. For example, confidence intervals are not part of the output product but can be found in the rasterization `dump_dir` if `generate_confidence_intervals` is activated in the `dense_matching` application (to compute the confidence) and `save_intermediate_data` is activated in the `rasterization` application configuration (to write it on disk).
+
+        **Geoid**
+
+        This parameter refers to the vertical reference of the output product, used as an altitude offset during triangulation.
+        It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` CARS default geoid is used,
+        if set to `False` no vertical offset is applied (ellipsoid reference).
+
 
         **DSM output**
 
@@ -1738,8 +1792,3 @@ The structure follows this organization:
                 }
             }
 
-        **Geoid**
-
-        This parameter refers to the vertical reference of the output product, used as an altitude offset during triangulation.
-        It can be set as a string to provide the path to a geoid file on disk, or as a boolean: if set to `True` CARS default geoid is used,
-        if set to `False` no vertical offset is applied (ellipsoid reference).

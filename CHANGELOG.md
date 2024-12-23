@@ -1,11 +1,30 @@
 # Changelog
 
+## 0.10.2 New console script cars-devibrate (December 2024)
+
+### Added
+
+- Add cars-devibrate script (based on the work of Julien Michel)
+
+### Fixed
+
+- Fix classification holes in epipolar geometry [#949]
+
+## 0.10.1 Using importlib instead of setuptools_scm (December 2024)
+
+### Fixed
+
+- Fix wheel by using importlib instead of setuptools_scm 
+- Cast color before fusion to avoid asymetrical behavior [#954]
+- Adapt cars-starter to the new CARS interface
+- Documentation corrections 
+
 ## 0.10.0 Unique pipeline (December 2024)
 
 ### Added
 
-- Added `bulldozer-dtm` dependency to cars with a new bulldozer base DSM filling application [#901]
-- Added `cars-filter` dependency with outlier filtering functionalities in epipolar geometry [#867]
+- Add `bulldozer-dtm` dependency to cars with a new bulldozer base DSM filling application [#901]
+- Add `cars-filter` dependency with outlier filtering functionalities in epipolar geometry [#867]
 - New parameter `use_cross_validation` in dense matching to manage Pandora cross validation [#900]
 - New parameters `altitude_delta_min` and `altitude_delta_max` in initial_elevation [#902]
 
@@ -13,6 +32,7 @@
 
 - Cars pipelines have been replaced by a "default" pipeline [#895]
 - Support for Python version superior than 3.10 with libsgm 0.5.0 [#912]
+- Support for Python 3.8 is over [#930]
 - The `no merging` mode is now the operational mode in cars, outlier filtering is done in epipolar geometry and laz are now saved in triangulation application [#895]
 - Add an index.json file in cars official product [#893]
 - Improve formatting of cars output products, improve cleaning of the output directory [#874]
