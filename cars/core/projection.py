@@ -88,14 +88,17 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                 if ref_epsg != file_epsg:
                     file_bb = polygon_projection(file_bb, file_epsg, ref_epsg)
 
-                poly_pixels = []
-                for lon, lat in ref_poly.exterior.coords:
-                    row, col = data.index(lon, lat)
-                    poly_pixels.append((row, col))
+                min_lon, min_lat, max_lon, max_lat = ref_poly.bounds
 
-                poly_pixels = np.array(poly_pixels)
-                min_row, min_col = np.min(poly_pixels, axis=0)
-                max_row, max_col = np.max(poly_pixels, axis=0)
+                margin = 0.001
+
+                min_lon = min_lon - margin
+                max_lon = max_lon + margin
+                min_lat = min_lat - margin
+                max_lat = max_lat + margin
+
+                min_row, min_col = data.index(min_lon, max_lat)
+                max_row, max_col = data.index(max_lon, min_lat)
 
                 window = rasterio.windows.Window(
                     col_off=int(min_col),
