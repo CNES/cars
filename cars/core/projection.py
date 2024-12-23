@@ -26,13 +26,15 @@ contains some general purpose functions using polygons and data projections
 
 # Standard imports
 import logging
+import math
 import os
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 # Third party imports
 import numpy as np
 import pandas
 import pyproj
+import rasterio
 import rasterio as rio
 import xarray as xr
 from rasterio.features import shapes
@@ -86,14 +88,31 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                 if ref_epsg != file_epsg:
                     file_bb = polygon_projection(file_bb, file_epsg, ref_epsg)
 
+                poly_pixels = []
+                for lon, lat in ref_poly.exterior.coords:
+                    row, col = data.index(lon, lat)
+                    poly_pixels.append((row, col))
+
+                poly_pixels = np.array(poly_pixels)
+                min_row, min_col = np.min(poly_pixels, axis=0)
+                max_row, max_col = np.max(poly_pixels, axis=0)
+
+                window = rasterio.windows.Window(
+                    col_off=int(min_col),
+                    row_off=int(min_row),
+                    width=int(max_col - min_col),
+                    height=int(max_row - min_row),
+                )
+
                 # if the srtm tile intersects the reference polygon
                 if file_bb.intersects(ref_poly):
                     local_dem_poly = None
 
                     # retrieve valid polygons
                     for poly, val in shapes(
-                        data.dataset_mask(),
-                        transform=data.transform,
+                        data.read(1, window=window),
+                        data.dataset_mask(window=window),
+                        transform=data.window_transform(window),
                     ):
                         if val != 0:
                             poly = shape(poly)
@@ -526,6 +545,37 @@ def ground_intersection_envelopes(
     )
 
     return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)
+
+
+def project_coordinates_on_line(
+    x_coord: Union[float, np.ndarray],
+    y_coord: Union[float, np.ndarray],
+    origin: Union[List[float], np.ndarray],
+    vec: Union[List[float], np.ndarray],
+) -> Union[float, np.ndarray]:
+    """
+    Project coordinates (x,y) on a line starting from origin with a
+    direction vector vec, and return the euclidean distances between
+    projected points and origin.
+
+    :param x_coord: scalar or vector of coordinates x
+    :param y_coord: scalar or vector of coordinates x
+    :param origin: coordinates of origin point for line
+    :param vec: direction vector of line
+    :return: vector of distances of projected points to origin
+    """
+    assert len(x_coord) == len(y_coord)
+    assert len(origin) == 2
+    assert len(vec) == 2
+
+    vec_angle = math.atan2(vec[1], vec[0])
+    point_angle = np.arctan2(y_coord - origin[1], x_coord - origin[0])
+    proj_angle = point_angle - vec_angle
+    dist_to_origin = np.sqrt(
+        np.square(x_coord - origin[0]) + np.square(y_coord - origin[1])
+    )
+
+    return dist_to_origin * np.cos(proj_angle)
 
 
 def get_ground_direction(
