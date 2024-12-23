@@ -34,7 +34,6 @@ from typing import List, Tuple, Union
 import numpy as np
 import pandas
 import pyproj
-import rasterio
 import rasterio as rio
 import xarray as xr
 from rasterio.features import shapes
@@ -100,7 +99,7 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                 min_row, min_col = data.index(min_lon, max_lat)
                 max_row, max_col = data.index(max_lon, min_lat)
 
-                window = rasterio.windows.Window(
+                window = rio.windows.Window(
                     col_off=int(min_col),
                     row_off=int(min_row),
                     width=int(max_col - min_col),
