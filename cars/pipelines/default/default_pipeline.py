@@ -478,7 +478,7 @@ class DefaultPipeline(PipelineTemplate):
         ]:
             if conf.get(app_key) is not None:
                 config_app = conf.get(app_key)
-                if config_app["activated"] is None:
+                if "activated" not in config_app:
                     conf[app_key]["activated"] = True
 
         for app_key in needed_applications:
