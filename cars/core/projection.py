@@ -36,6 +36,7 @@ import pandas
 import pyproj
 import rasterio as rio
 import xarray as xr
+from pyproj import CRS
 from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
@@ -87,17 +88,25 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                 if ref_epsg != file_epsg:
                     file_bb = polygon_projection(file_bb, file_epsg, ref_epsg)
 
-                min_lon, min_lat, max_lon, max_lat = ref_poly.bounds
+                left, bottom, right, top = ref_poly.bounds
 
-                margin = 0.001
+                # To ensure that the window used for extracting the SRTM
+                # polygons completely contains the ref_poly,
+                # a margin must be applied. Using the exact bounds of
+                # ref_poly could potentially lead to issues.
+                spatial_ref = CRS.from_epsg(ref_epsg)
+                if spatial_ref.is_geographic:
+                    margin = 0.001
+                else:
+                    margin = 50
 
-                min_lon = min_lon - margin
-                max_lon = max_lon + margin
-                min_lat = min_lat - margin
-                max_lat = max_lat + margin
+                left = left - margin
+                right = right + margin
+                bottom = bottom - margin
+                top = top + margin
 
-                min_row, min_col = data.index(min_lon, max_lat)
-                max_row, max_col = data.index(max_lon, min_lat)
+                min_row, min_col = data.index(left, top)
+                max_row, max_col = data.index(right, bottom)
 
                 window = rio.windows.Window(
                     col_off=int(min_col),
