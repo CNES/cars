@@ -26,6 +26,9 @@ this module contains the AuxiliaryFillingFromSensors application class.
 import numpy as np
 import rasterio as rio
 from scipy import interpolate
+from shapely.geometry import Polygon
+
+from cars.core.projection import polygon_projection
 
 
 def fill_auxiliary(
@@ -83,45 +86,53 @@ def fill_auxiliary(
 
     for pair in pairing:
 
-        # process left sensor
-        sensor = sensor_inputs.get(pair[0])
-        not_interpolated_mask, all_values_sensor = fill_from_one_sensor(
-            sensor,
-            filled_color,
-            filled_classif,
-            weights,
-            longitudes,
-            latitudes,
-            altitudes,
-            geom_plugin,
-            number_of_color_bands,
-            number_of_classification_bands,
-            color_interpolator,
-            use_mask=use_mask,
-            return_all_points=True,
-        )
-        if all_values_sensor is not None:
-            all_values += all_values_sensor
-            full_weights += 1
+        first_sensor = sensor_inputs.get(pair[0])
+        second_sensor = sensor_inputs.get(pair[1])
 
-        # process left sensor
-        sensor = sensor_inputs.get(pair[1])
-        fill_from_one_sensor(
-            sensor,
-            filled_color,
-            filled_classif,
-            weights,
-            longitudes,
-            latitudes,
-            altitudes,
-            geom_plugin,
-            number_of_color_bands,
-            number_of_classification_bands,
-            color_interpolator,
-            not_interpolated_mask,
-            use_mask=use_mask,
-            return_all_points=False,
-        )
+        # if first sensor has been filtered, use the second sensor instead
+        if first_sensor is None:
+            first_sensor = second_sensor
+            second_sensor = None
+
+        # process first sensor
+        if first_sensor is not None:
+            not_interpolated_mask, all_values_sensor = fill_from_one_sensor(
+                first_sensor,
+                filled_color,
+                filled_classif,
+                weights,
+                longitudes,
+                latitudes,
+                altitudes,
+                geom_plugin,
+                number_of_color_bands,
+                number_of_classification_bands,
+                color_interpolator,
+                use_mask=use_mask,
+                return_all_points=True,
+            )
+            if all_values_sensor is not None:
+                all_values += all_values_sensor
+                full_weights += 1
+
+            # process second sensor
+            if second_sensor is not None:
+                fill_from_one_sensor(
+                    second_sensor,
+                    filled_color,
+                    filled_classif,
+                    weights,
+                    longitudes,
+                    latitudes,
+                    altitudes,
+                    geom_plugin,
+                    number_of_color_bands,
+                    number_of_classification_bands,
+                    color_interpolator,
+                    not_interpolated_mask,
+                    use_mask=use_mask,
+                    return_all_points=False,
+                )
 
     interpolated_pixels = filled_color != 0
 
@@ -436,3 +447,67 @@ def fill_from_one_sensor(
                     )
 
     return output_not_interpolated_mask, all_values
+
+
+def compute_sensor_bounds(sensor_inputs, geom_plugin, output_epsg):
+    """
+    Compute bounds of each input sensor that have an associated color or
+    classification image
+
+    :param sensor_inputs: dictionary containing paths to input images and models
+    :type sensor_inputs: dict
+    :param geom_plugin: geometry plugin used for inverse locations
+    :type geom_plugin: AbstractGeometry
+    :param geom_plugin: geometry plugin used for inverse locations
+    :type geom_plugin: AbstractGeometry
+    :param output_epsg: epsg of the output polygons
+    :type output_epsg: int
+
+    :return: a dictionary containing a Polygon in output geometry for each
+        valid input sensor
+    """
+
+    sensor_bounds = {}
+
+    for sensor_name, sensor in sensor_inputs.items():
+        reference_sensor_image = sensor.get(
+            "color", sensor.get("classification", None)
+        )
+        # no data for this sensor, no need to compute its bounds
+        if reference_sensor_image is None:
+            continue
+
+        u_l, u_r, l_r, l_l = geom_plugin.image_envelope(
+            reference_sensor_image, sensor["geomodel"]
+        )
+
+        poly_geo = Polygon([u_l, u_r, l_r, l_l, u_l])
+
+        sensor_bounds[sensor_name] = polygon_projection(
+            poly_geo, 4326, output_epsg
+        )
+
+    return sensor_bounds
+
+
+def filter_sensor_inputs(sensor_inputs, sensor_bounds, ground_polygon):
+    """
+    Filter input sensors by comparing their bounds to a reference Polygon
+
+    :param sensor_inputs: dictionary containing paths to input images and models
+    :type sensor_inputs: dict
+    :param sensor_bounds: dictionary containing bounds of input sensors
+    :type sensor_bounds: dict
+    :param ground_polygon: reference polygon, in ground geometry
+    :type ground_polygon: Polygon
+
+    :return: a fitlered version of sensor_inputs
+    """
+
+    filtered_sensor_inputs = sensor_inputs.copy()
+
+    for sensor_name, bound in sensor_bounds.items():
+        if not bound.intersects(ground_polygon):
+            del filtered_sensor_inputs[sensor_name]
+
+    return filtered_sensor_inputs

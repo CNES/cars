@@ -193,8 +193,6 @@ class DefaultPipeline(PipelineTemplate):
             and not self.output_level_none
         )
 
-        print(f"self.compute_depth_map {self.compute_depth_map}")
-
         if self.output_level_none:
             self.infer_conditions_from_applications(conf)
 

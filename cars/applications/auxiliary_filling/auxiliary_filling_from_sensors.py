@@ -30,6 +30,7 @@ import numpy as np
 import rasterio as rio
 import xarray as xr
 from json_checker import Checker
+from shapely.geometry import Polygon
 
 import cars.orchestrator.orchestrator as ocht
 from cars.applications.auxiliary_filling import auxiliary_filling_tools
@@ -228,6 +229,10 @@ class AuxiliaryFillingFromSensors(
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
 
+        sensor_bounds = auxiliary_filling_tools.compute_sensor_bounds(
+            sensor_inputs, geom_plugin, reference_epsg
+        )
+
         for row in range(aux_filled_image.shape[0]):
             for col in range(aux_filled_image.shape[1]):
 
@@ -254,6 +259,7 @@ class AuxiliaryFillingFromSensors(
                     color_not_filled_file,
                     classification_not_filled_file,
                     sensor_inputs,
+                    sensor_bounds,
                     pairing,
                     window,
                     reference_transform,
@@ -278,6 +284,7 @@ def filling_from_sensor_wrapper(
     color_file,
     classification_file,
     sensor_inputs,
+    sensor_bounds,
     pairing,
     window,
     transform,
@@ -299,6 +306,8 @@ def filling_from_sensor_wrapper(
     :type classification_file: str
     :param sensor_inputs: dictionary containing paths to input images and models
     :type sensor_inputs: dict
+    :param sensor_bounds: dictionary containing bounds of input sensors
+    :type sensor_bounds: dict
     :param pairing: pairing between input images
     :type pairing: list
     :param window: window of the current tile
@@ -321,14 +330,29 @@ def filling_from_sensor_wrapper(
 
     """
 
+    col_min_ground = window["col_min"] * transform[0] + transform[2]
+    col_max_ground = window["col_max"] * transform[0] + transform[2]
+    row_min_ground = window["row_min"] * transform[4] + transform[5]
+    row_max_ground = window["row_max"] * transform[4] + transform[5]
+
+    ground_polygon = Polygon(
+        [
+            (col_min_ground, row_min_ground),
+            (col_min_ground, row_max_ground),
+            (col_max_ground, row_max_ground),
+            (col_max_ground, row_min_ground),
+            (col_min_ground, row_min_ground),
+        ]
+    )
+
     cols = np.arange(
-        window["col_min"] * transform[0] + transform[2],
-        window["col_max"] * transform[0] + transform[2],
+        col_min_ground,
+        col_max_ground,
         transform[0],
     )
     rows = np.arange(
-        window["row_min"] * transform[4] + transform[5],
-        window["row_max"] * transform[4] + transform[5],
+        row_min_ground,
+        row_max_ground,
         transform[4],
     )
 
@@ -380,10 +404,15 @@ def filling_from_sensor_wrapper(
 
     index_1d = target_mask.flatten().nonzero()[0]
 
+    # Remove sensor that don't intesects with current tile
+    filtered_sensor_inputs = auxiliary_filling_tools.filter_sensor_inputs(
+        sensor_inputs, sensor_bounds, ground_polygon
+    )
+
     if len(index_1d) > 0:
         color_values_filled, classification_values_filled = (
             auxiliary_filling_tools.fill_auxiliary(
-                sensor_inputs,
+                filtered_sensor_inputs,
                 pairing,
                 lon_lat[index_1d, 0],
                 lon_lat[index_1d, 1],
