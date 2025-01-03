@@ -215,15 +215,15 @@ docker-deps: ## Check and build docker image cnes/cars-deps
 	@docker pull hadolint/hadolint
 	@echo "Check Dockerfile with hadolint"
 	@docker run --rm -i hadolint/hadolint < Dockerfile
+	@echo "Hadolint ok"
 
 .PHONY: docker
-docker: docker-deps ## Check and build docker image cnes/cars 
-	@echo "Build Docker main image CARS ${CARS_VERSION_MIN}"
+docker: docker-deps ## Check and build docker image cnes/cars
 # Set docker options like --build-arg
 ifndef DOCKER_OPTIONS
-	@docker build -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
+	@docker build -t cnes/cars -t cnes/cars:latest . -f Dockerfile
 else
-	@docker build ${DOCKER_OPTIONS} -t cnes/cars:${CARS_VERSION_MIN} -t cnes/cars:latest . -f Dockerfile
+	@docker build ${DOCKER_OPTIONS} -t cnes/cars -t cnes/cars:latest . -f Dockerfile
 endif
 
 
