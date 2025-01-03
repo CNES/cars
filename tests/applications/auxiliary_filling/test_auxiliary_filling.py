@@ -24,6 +24,8 @@ cars/applications/auxiliary_filling/auxiliary_filling_from_sensors.py
 """
 
 import os
+import shutil
+import tempfile
 
 # Third party imports
 import pytest
@@ -35,31 +37,20 @@ from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors import (
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 # CARS Tests imports
-# from ...helpers import get_geoid_path
+from ...helpers import absolute_data_path, generate_input_json, temporary_dir
 
 
 @pytest.mark.unit_tests
-def test_auxiliary_filling():
+def test_auxiliary_filling_paca():
     """
     Test for AuxiliaryFillingFromSensors application
     """
 
     conf = {
         "save_intermediate_data": False,
+        "mode": "fill_nan",
+        "activated": True,
     }
-
-    auxiliary_filling_application = AuxiliaryFillingFromSensors(conf)
-
-    # TODO: local paths, use test data instead
-    input_dir = "/mnt/datas/cars/data_gizeh_small/input_aux_filling"
-    dsm_dir = os.path.join(input_dir, "dsm")
-    dsm_file = os.path.join(dsm_dir, "dsm.tif")
-    color_file = os.path.join(dsm_dir, "color.tif")
-    classif_file = os.path.join(dsm_dir, "classification.tif")
-    out_dir = "/mnt/datas/cars/data_gizeh_small/output_aux_filling"
-
-    # dem = "/mnt/datas/cars/data_gizeh_small/srtm_dir/N29E031_KHEOPS.tif"
-    # geoid = get_geoid_path()
 
     geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
@@ -67,19 +58,40 @@ def test_auxiliary_filling():
         )
     )
 
-    sensor_inputs = {
-        "input_1": {
-            "color": "/mnt/datas/cars/data_gizeh_small/color1.tif",
-            "geomodel": {
-                "path": "/mnt/datas/cars/data_gizeh_small/img1.geom",
-                "model_type": "RPC",
-            },
-        }
-    }
+    input_json = absolute_data_path("input/phr_paca/input.json")
 
-    res = auxiliary_filling_application.run(
-        dsm_file, color_file, classif_file, out_dir, sensor_inputs, geo_plugin
+    dsm_input = absolute_data_path("ref_output/dsm_end2end_paca_bulldozer.tif")
+    color_input = absolute_data_path(
+        "ref_output/color_end2end_paca_bulldozer.tif"
+    )
+    classification_input = absolute_data_path(
+        "ref_output/classification_end2end_paca_bulldozer.tif"
     )
 
-    # Dummy assert for now
-    assert res is not None
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        directory = "/tmp/bbb"
+        print("hello !")
+
+        _, input_data = generate_input_json(input_json, directory, "sequential")
+
+        sensor_inputs = input_data["inputs"]["sensors"]
+        pairing = input_data["inputs"]["pairing"]
+
+        local_image_color = os.path.join(directory, "color.tif")
+        local_classification_input = os.path.join(
+            directory, "classification.tif"
+        )
+        shutil.copyfile(color_input, local_image_color)
+        shutil.copyfile(classification_input, local_classification_input)
+
+        auxiliary_filling_application = AuxiliaryFillingFromSensors(conf)
+
+        auxiliary_filling_application.run(
+            dsm_file=dsm_input,
+            color_file=local_image_color,
+            classif_file=local_classification_input,
+            dump_dir=os.path.join(directory, "dump_dir"),
+            sensor_inputs=sensor_inputs,
+            pairing=pairing,
+            geom_plugin=geo_plugin,
+        )

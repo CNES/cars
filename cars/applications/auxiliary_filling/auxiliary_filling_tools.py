@@ -392,7 +392,7 @@ def fill_from_one_sensor(
 
                 weights[validity_mask] += 1
 
-    if filled_classif and sensor.get("classification"):
+    if filled_classif is not None and sensor.get("classification"):
         with rio.open(sensor["classification"]) as sensor_classif_image:
 
             if sensor_classif_image.count == number_of_classification_bands:
