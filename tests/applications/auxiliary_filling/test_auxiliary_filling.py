@@ -69,8 +69,6 @@ def test_auxiliary_filling_paca():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-        directory = "/tmp/bbb"
-        print("hello !")
 
         _, input_data = generate_input_json(input_json, directory, "sequential")
 
