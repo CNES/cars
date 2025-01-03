@@ -69,16 +69,23 @@ def fill_auxiliary(
     """
 
     filled_color = np.zeros((number_of_color_bands, len(altitudes)))
-    filled_classif = np.zeros(
-        (number_of_classification_bands, len(altitudes)), dtype=bool
-    )
+
+    filled_classif = None
+    if number_of_classification_bands:
+        filled_classif = np.zeros(
+            (number_of_classification_bands, len(altitudes)), dtype=bool
+        )
+
     weights = np.zeros(len(altitudes))
+    full_weights = np.zeros(len(altitudes))
+
+    all_values = np.zeros((number_of_color_bands, len(altitudes)))
 
     for pair in pairing:
 
         # process left sensor
         sensor = sensor_inputs.get(pair[0])
-        not_interpolated_mask, all_values = fill_from_one_sensor(
+        not_interpolated_mask, all_values_sensor = fill_from_one_sensor(
             sensor,
             filled_color,
             filled_classif,
@@ -93,6 +100,9 @@ def fill_auxiliary(
             use_mask=use_mask,
             return_all_points=True,
         )
+        if all_values_sensor is not None:
+            all_values += all_values_sensor
+            full_weights += 1
 
         # process left sensor
         sensor = sensor_inputs.get(pair[1])
@@ -118,7 +128,10 @@ def fill_auxiliary(
     filled_color[:, interpolated_pixels[0, :]] /= weights[
         interpolated_pixels[0, :]
     ]
-    filled_color[~interpolated_pixels] = all_values[~interpolated_pixels]
+    filled_color[:, ~interpolated_pixels[0, :]] = (
+        all_values[:, ~interpolated_pixels[0, :]]
+        / full_weights[~interpolated_pixels[0, :]]
+    )
 
     return filled_color, filled_classif
 
@@ -175,17 +188,22 @@ def fill_from_one_sensor(
 
     """
     use_mask = True
+
+    # Check if the sensor has color or classification
     reference_sensor_image = sensor.get(
         "color", sensor.get("classification", None)
     )
 
-    output_not_interpolated_mask = np.ones(
-        (number_of_color_bands, len(altitudes)), dtype=bool
-    )
+    output_not_interpolated_mask = np.ones(len(altitudes), dtype=bool)
     all_values = np.zeros((number_of_color_bands, len(altitudes)))
 
+    # No filling information for this sensor, return
     if reference_sensor_image is None:
         return output_not_interpolated_mask, all_values
+    # read metadata
+    with rio.open(reference_sensor_image) as reference_image:
+        sensor_height = reference_image.height
+        sensor_width = reference_image.width
 
     # sensors physical positions
     (
@@ -200,6 +218,22 @@ def fill_from_one_sensor(
         altitudes,
     )
 
+    # Compute col and row bounds
+    min_rows = np.min(ind_rows_sensor)
+    max_rows = np.max(ind_rows_sensor)
+
+    min_cols = np.min(ind_cols_sensor)
+    max_cols = np.max(ind_cols_sensor)
+
+    # Check for out of bound coordinates
+    if (
+        min_rows > sensor_height
+        or max_rows < 0
+        or min_cols > sensor_width
+        or max_cols < 0
+    ):
+        return output_not_interpolated_mask, all_values
+
     if color_interpolator in ("linear", "nearest"):
         color_interpolator_margin = 1
     # TODO check parameter outside of thread
@@ -213,21 +247,17 @@ def fill_from_one_sensor(
     validity_mask = not_interpolated_mask
     if use_mask and sensor.get("mask"):
         with rio.open(sensor["mask"]) as sensor_mask_image:
-            first_row = np.floor(
-                max(np.min(ind_rows_sensor) - classif_interpolator_margin, 0)
-            )
+            first_row = np.floor(max(min_rows - classif_interpolator_margin, 0))
             last_row = np.ceil(
                 min(
-                    np.max(ind_rows_sensor) + classif_interpolator_margin,
+                    max_rows + classif_interpolator_margin,
                     sensor_mask_image.height,
                 )
             )
-            first_col = np.floor(
-                max(np.min(ind_cols_sensor) - classif_interpolator_margin, 0)
-            )
+            first_col = np.floor(max(min_cols - classif_interpolator_margin, 0))
             last_col = np.ceil(
                 min(
-                    np.max(ind_cols_sensor) + classif_interpolator_margin,
+                    max_cols + classif_interpolator_margin,
                     sensor_mask_image.width,
                 )
             )
@@ -243,6 +273,7 @@ def fill_from_one_sensor(
             )
 
             sensor_data = sensor_mask_image.read(1, window=rio_window)
+
             validity_mask = np.logical_not(
                 interpolate.interpn(
                     sensor_points,
@@ -294,6 +325,7 @@ def fill_from_one_sensor(
                     np.arange(first_col, last_col),
                 )
 
+                nan_mask = np.zeros(len(altitudes), dtype=bool)
                 for band in range(sensor_color_image.count):
                     # rio band convention
                     sensor_data = sensor_color_image.read(
@@ -322,12 +354,10 @@ def fill_from_one_sensor(
                                 bounds_error=False,
                                 method=color_interpolator,
                             )
+                        nan_values = np.isnan(band_values)
                         filled_color[band, validity_mask] += band_values
-                        output_not_interpolated_mask = np.ones(
-                            len(altitudes), dtype=bool
-                        )
-                        output_not_interpolated_mask[validity_mask] = np.isnan(
-                            band_values
+                        nan_mask[validity_mask] = np.logical_or(
+                            nan_mask[validity_mask], nan_values
                         )
                     else:
                         band_values = interpolate.interpn(
@@ -338,11 +368,20 @@ def fill_from_one_sensor(
                             method=color_interpolator,
                         )
                         filled_color[band, :] += band_values
-                        output_not_interpolated_mask = np.isnan(band_values)
+                        nan_mask = np.logical_or(
+                            nan_mask, np.isnan(band_values)
+                        )
 
-                weights[~output_not_interpolated_mask] += 1
+                if validity_mask is not None:
+                    output_not_interpolated_mask = np.logical_and(
+                        ~validity_mask, nan_mask
+                    )
+                else:
+                    output_not_interpolated_mask = nan_mask
 
-    if sensor.get("classification"):
+                weights[validity_mask] += 1
+
+    if filled_classif and sensor.get("classification"):
         with rio.open(sensor["classification"]) as sensor_classif_image:
 
             if sensor_classif_image.count == number_of_classification_bands:

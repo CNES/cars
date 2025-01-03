@@ -187,9 +187,13 @@ class DefaultPipeline(PipelineTemplate):
         )
         self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
 
-        self.compute_depth_map = self.sensors_in_inputs and (
-            not self.output_level_none
+        self.compute_depth_map = (
+            self.sensors_in_inputs
+            and not self.depth_maps_in_inputs
+            and not self.output_level_none
         )
+
+        print(f"self.compute_depth_map {self.compute_depth_map}")
 
         if self.output_level_none:
             self.infer_conditions_from_applications(conf)
@@ -387,14 +391,22 @@ class DefaultPipeline(PipelineTemplate):
         :return: overloaded inputs
         :rtype: dict
         """
+
+        output_config = {}
         if sens_cst.SENSORS in conf:
-            return sensor_inputs.sensors_check_inputs(
+            output_config = sensor_inputs.sensors_check_inputs(
                 conf, config_json_dir=config_json_dir
             )
 
-        return depth_map_inputs.check_depth_maps_inputs(
-            conf, config_json_dir=config_json_dir
-        )
+        if depth_cst.DEPTH_MAPS in conf:
+            output_config = {
+                **output_config,
+                **depth_map_inputs.check_depth_maps_inputs(
+                    conf, config_json_dir=config_json_dir
+                ),
+            }
+
+        return output_config
 
     @staticmethod
     def check_output(conf):
@@ -2036,8 +2048,8 @@ class DefaultPipeline(PipelineTemplate):
             color_file=color_file_name,
             classif_file=classif_file_name,
             dump_dir=self.dump_dir,
-            sensor_inputs=self.used_conf[INPUTS]["sensors"],
-            pairing=self.used_conf[INPUTS]["pairing"],
+            sensor_inputs=self.used_conf[INPUTS].get("sensors"),
+            pairing=self.used_conf[INPUTS].get("pairing"),
             geom_plugin=self.geom_plugin_with_dem_and_geoid,
             orchestrator=self.cars_orchestrator,
         )

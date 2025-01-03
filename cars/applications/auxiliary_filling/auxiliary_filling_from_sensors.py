@@ -22,6 +22,7 @@
 this module contains the AuxiliaryFillingFromSensors application class.
 """
 
+import logging
 import os
 import shutil
 
@@ -125,9 +126,33 @@ class AuxiliaryFillingFromSensors(
     ):
         """
         run AuxiliaryFillingFromSensors
+
+        :param dsm_file: path to the filled dsm file
+        :type dsm_file: str
+        :param color_file: path to the color file
+        :type color_file: str
+        :param classification_file: path to the classification file
+        :type classification_file: str
+        :param dump_dir: output dump directory
+        :type dump_dir: str
+        :param sensor_inputs: dictionary containing paths to input images and
+            models
+        :type sensor_inputs: dict
+        :param pairing: pairing between input images
+        :type pairing: list
+        :param geom_plugin: geometry plugin used for inverse locations
+        :type geom_plugin: AbstractGeometry
+        :param orchestrator: orchestrator used
+        :type orchestrator: Orchestrator
         """
 
         if not self.used_config["activated"]:
+            return None
+        if sensor_inputs is None:
+            logging.error(
+                "No sensor inputs were provided, "
+                "auxiliary_filling will not run."
+            )
             return None
 
         # Default orchestrator
@@ -147,12 +172,14 @@ class AuxiliaryFillingFromSensors(
             os.makedirs(dump_dir)
 
         color_not_filled_file = os.path.join(dump_dir, "color_not_filled.tif")
-        classification_not_filled_file = os.path.join(
-            dump_dir, "classification_not_filled.tif"
-        )
-
         shutil.move(color_file, color_not_filled_file)
-        shutil.move(classif_file, classification_not_filled_file)
+
+        classification_not_filled_file = None
+        if classif_file is not None:
+            classification_not_filled_file = os.path.join(
+                dump_dir, "classification_not_filled.tif"
+            )
+            shutil.move(classif_file, classification_not_filled_file)
 
         # Clean dump_dir at the end of processing if required
         if not self.used_config["save_intermediate_data"]:
@@ -190,12 +217,13 @@ class AuxiliaryFillingFromSensors(
             cars_ds_name="filled_color",
         )
 
-        self.orchestrator.add_to_save_lists(
-            os.path.join(dump_dir, classif_file),
-            cst.RASTER_CLASSIF,
-            aux_filled_image,
-            cars_ds_name="filled_classification",
-        )
+        if classif_file is not None:
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, classif_file),
+                cst.RASTER_CLASSIF,
+                aux_filled_image,
+                cars_ds_name="filled_classification",
+            )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
@@ -237,7 +265,8 @@ class AuxiliaryFillingFromSensors(
                     use_mask=self.used_config["use_mask"],
                 )
 
-        #
+        # Run tasks if an internal orchestrator is used, in order to save output
+        # files
         if orchestrator is None:
             self.orchestrator.breakpoint()
 
@@ -338,12 +367,16 @@ def filling_from_sensor_wrapper(
                 1, window=rio_window
             )
 
-    with rio.open(classification_file) as classification_image:
+    number_of_classification_bands = 0
+    classification_values = None
+    classification_band_names = None
+    if classification_file is not None:
+        with rio.open(classification_file) as classification_image:
 
-        number_of_classification_bands = classification_image.count
+            number_of_classification_bands = classification_image.count
 
-        classification_values = classification_image.read(window=rio_window)
-        classification_band_names = list(classification_image.descriptions)
+            classification_values = classification_image.read(window=rio_window)
+            classification_band_names = list(classification_image.descriptions)
 
     index_1d = target_mask.flatten().nonzero()[0]
 
@@ -377,32 +410,31 @@ def filling_from_sensor_wrapper(
                 classification_values_filled[band_index, :],
             )
 
-    values = {}
+    row_arr = np.array(range(window["row_min"], window["row_max"]))
+    col_arr = np.array(range(window["col_min"], window["col_max"]))
 
+    values = {}
+    coords = {cst.ROW: row_arr, cst.COL: col_arr}
+
+    band_names = ["R", "G", "B", "NIR"]
     values[cst.RASTER_COLOR_IMG] = (
         [cst.BAND_IM, cst.ROW, cst.COL],
         color_values,
     )
-    values[cst.RASTER_CLASSIF] = (
-        [cst.BAND_CLASSIF, cst.ROW, cst.COL],
-        classification_values,
-    )
+    coords[cst.BAND_IM] = band_names[:number_of_color_bands]
 
-    row_arr = np.array(range(window["row_min"], window["row_max"]))
-    col_arr = np.array(range(window["col_min"], window["col_max"]))
+    if classification_values is not None:
+        values[cst.RASTER_CLASSIF] = (
+            [cst.BAND_CLASSIF, cst.ROW, cst.COL],
+            classification_values,
+        )
+        coords[cst.BAND_CLASSIF] = classification_band_names
 
     attributes = {}
 
-    band_names = ["R", "G", "B", "NIR"]
-
     dataset = xr.Dataset(
         values,
-        coords={
-            cst.BAND_CLASSIF: classification_band_names,
-            cst.BAND_IM: band_names[:number_of_color_bands],
-            cst.ROW: row_arr,
-            cst.COL: col_arr,
-        },
+        coords=coords,
     )
     cars_dataset.fill_dataset(
         dataset,
