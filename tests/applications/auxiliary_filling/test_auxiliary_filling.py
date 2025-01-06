@@ -37,20 +37,65 @@ from cars.applications.auxiliary_filling.auxiliary_filling_from_sensors import (
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 
 # CARS Tests imports
-from ...helpers import absolute_data_path, generate_input_json, temporary_dir
+from ...helpers import (
+    absolute_data_path,
+    assert_same_images,
+    generate_input_json,
+    temporary_dir,
+)
+
+conf_0 = {
+    "save_intermediate_data": False,
+    "mode": "fill_nan",
+    "activated": True,
+    "use_mask": False,
+    "color_interpolator": "cubic",
+}
+
+conf_1 = {
+    "save_intermediate_data": True,
+    "mode": "full",
+    "activated": True,
+    "use_mask": True,
+    "color_interpolator": "linear",
+}
+
+conf_2 = {
+    "save_intermediate_data": False,
+    "mode": "fill_nan",
+    "activated": True,
+    "use_mask": True,
+    "color_interpolator": "nearest",
+}
 
 
 @pytest.mark.unit_tests
-def test_auxiliary_filling_paca():
+@pytest.mark.parametrize(
+    "conf, color_reference, classification_reference",
+    [
+        (
+            conf_0,
+            "ref_output/color_end2end_paca_aux_filling_0.tif",
+            "ref_output/classification_end2end_paca_aux_filling_0.tif",
+        ),
+        (
+            conf_1,
+            "ref_output/color_end2end_paca_aux_filling_1.tif",
+            "ref_output/classification_end2end_paca_aux_filling_1.tif",
+        ),
+        (
+            conf_2,
+            "ref_output/color_end2end_paca_aux_filling_2.tif",
+            "ref_output/classification_end2end_paca_aux_filling_2.tif",
+        ),
+    ],
+)
+def test_auxiliary_filling_paca(
+    conf, color_reference, classification_reference
+):
     """
     Test for AuxiliaryFillingFromSensors application
     """
-
-    conf = {
-        "save_intermediate_data": False,
-        "mode": "fill_nan",
-        "activated": True,
-    }
 
     geo_plugin = (
         AbstractGeometry(  # pylint: disable=abstract-class-instantiated
@@ -69,7 +114,6 @@ def test_auxiliary_filling_paca():
     )
 
     with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
-
         _, input_data = generate_input_json(input_json, directory, "sequential")
 
         sensor_inputs = input_data["inputs"]["sensors"]
@@ -92,4 +136,24 @@ def test_auxiliary_filling_paca():
             sensor_inputs=sensor_inputs,
             pairing=pairing,
             geom_plugin=geo_plugin,
+        )
+        # Uncomment the 2 following instructions to update reference data
+        # shutil.copy2(
+        #     os.path.join(local_image_color),
+        #     absolute_data_path(
+        #             color_reference
+        #     ),
+        # )
+        # shutil.copy2(
+        #     os.path.join(local_classification_input),
+        #     absolute_data_path(
+        #             classification_reference
+        #     ),
+        # )
+        assert_same_images(
+            local_image_color, absolute_data_path(color_reference)
+        )
+        assert_same_images(
+            local_classification_input,
+            absolute_data_path(classification_reference),
         )

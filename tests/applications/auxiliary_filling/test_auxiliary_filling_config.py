@@ -39,5 +39,9 @@ def test_check_full_conf():
     """
     conf = {
         "save_intermediate_data": False,
+        "mode": "full",
+        "activated": True,
+        "use_mask": True,
+        "color_interpolator": "linear",
     }
     _ = AuxiliaryFillingFromSensors(conf)

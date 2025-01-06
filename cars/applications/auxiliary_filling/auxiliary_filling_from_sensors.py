@@ -88,6 +88,14 @@ class AuxiliaryFillingFromSensors(
         )
 
         overloaded_conf["mode"] = conf.get("mode", "fill_nan")
+
+        if overloaded_conf["mode"] not in ["fill_nan", "full"]:
+            raise RuntimeError(
+                f"Invalid mode {overloaded_conf['mode']} for "
+                "AuxiliaryFilling, supported modes are fill_nan "
+                "and full"
+            )
+
         overloaded_conf["color_interpolator"] = conf.get(
             "color_interpolator", "linear"
         )
@@ -186,61 +194,70 @@ class AuxiliaryFillingFromSensors(
         if not self.used_config["save_intermediate_data"]:
             self.orchestrator.add_to_clean(dump_dir)
 
-        # Create CarsDataset
-        # output color
+        # Create output CarsDataset
         aux_filled_image = cars_dataset.CarsDataset(
             "arrays", name="aux_filled_image"
         )
 
+        # Create tiling grid
         ground_image_width, ground_image_height = inputs.rasterio_get_size(
             dsm_file
         )
-
-        reference_transform = inputs.rasterio_get_transform(dsm_file)
-        reference_epsg = inputs.rasterio_get_epsg(dsm_file)
 
         region_grid = tiling.generate_tiling_grid(
             0,
             0,
             ground_image_height,
             ground_image_width,
-            1000,  # TODO tiling
-            1000,  # TODO tiling
+            1000,
+            1000,
         )
 
-        # Compute tiling grid
         aux_filled_image.tiling_grid = region_grid
 
-        self.orchestrator.add_to_save_lists(
-            os.path.join(dump_dir, color_file),
-            cst.RASTER_COLOR_IMG,
-            aux_filled_image,
-            cars_ds_name="filled_color",
-        )
+        # Initialize no data value
+        classification_no_data_value = 0
+        color_no_data_value = 0
+
+        with rio.open(color_not_filled_file, "r") as descriptor:
+            color_no_data_value = descriptor.nodata
+
+            self.orchestrator.add_to_save_lists(
+                os.path.join(dump_dir, color_file),
+                cst.RASTER_COLOR_IMG,
+                aux_filled_image,
+                nodata=color_no_data_value,
+                dtype=descriptor.profile.get("dtype", np.float32),
+                cars_ds_name="filled_color",
+            )
 
         if classif_file is not None:
-            self.orchestrator.add_to_save_lists(
-                os.path.join(dump_dir, classif_file),
-                cst.RASTER_CLASSIF,
-                aux_filled_image,
-                cars_ds_name="filled_classification",
-            )
+            with rio.open(classification_not_filled_file, "r") as descriptor:
+                classification_no_data_value = descriptor.nodata
+
+                self.orchestrator.add_to_save_lists(
+                    os.path.join(dump_dir, classif_file),
+                    cst.RASTER_CLASSIF,
+                    aux_filled_image,
+                    dtype=descriptor.profile.get("dtype", np.uint8),
+                    nodata=classification_no_data_value,
+                    cars_ds_name="filled_classification",
+                )
 
         # Get saving infos in order to save tiles when they are computed
         [saving_info] = self.orchestrator.get_saving_infos([aux_filled_image])
 
+        reference_transform = inputs.rasterio_get_transform(dsm_file)
+        reference_epsg = inputs.rasterio_get_epsg(dsm_file)
+
+        # Pre-compute sensor bounds of all sensors to filter sensors that do
+        # not intersect with tile in tasks
         sensor_bounds = auxiliary_filling_tools.compute_sensor_bounds(
             sensor_inputs, geom_plugin, reference_epsg
         )
 
         for row in range(aux_filled_image.shape[0]):
             for col in range(aux_filled_image.shape[1]):
-
-                # TODO?
-                # (
-                #     pc_row,
-                #     pc_col,
-                # ) = format_transformation.get_corresponding_indexes(row, col)
 
                 # Get window
                 window = cars_dataset.window_array_to_dict(
@@ -375,6 +392,11 @@ def filling_from_sensor_wrapper(
         ),
     )
 
+    # From input DSM read altitudes for localisation and no-data mask.
+    # if fill_nan mode is chosed, all values valid in dsm and invalid in color
+    # will be filled
+    # if not, all values valid in dsm will be filled
+    # Note that the same pixels are filled for color and classification
     with rio.open(dsm_file) as dsm_image:
         alt_values = dsm_image.read(1, window=rio_window)
         target_mask = dsm_image.read_masks(1, window=rio_window)
@@ -402,6 +424,7 @@ def filling_from_sensor_wrapper(
             classification_values = classification_image.read(window=rio_window)
             classification_band_names = list(classification_image.descriptions)
 
+    # 1D index list from target mask
     index_1d = target_mask.flatten().nonzero()[0]
 
     # Remove sensor that don't intesects with current tile
@@ -410,6 +433,7 @@ def filling_from_sensor_wrapper(
     )
 
     if len(index_1d) > 0:
+        # Fill required pixels
         color_values_filled, classification_values_filled = (
             auxiliary_filling_tools.fill_auxiliary(
                 filtered_sensor_inputs,
@@ -425,6 +449,7 @@ def filling_from_sensor_wrapper(
             )
         )
 
+        # forward filled values in the output buffer
         for band_index in range(number_of_color_bands):
             np.put(
                 color_values[band_index, :, :],

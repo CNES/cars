@@ -108,12 +108,16 @@ def fill_auxiliary(
                 number_of_color_bands,
                 number_of_classification_bands,
                 color_interpolator,
+                not_interpolated_mask=None,
                 use_mask=use_mask,
                 return_all_points=True,
             )
             if all_values_sensor is not None:
-                all_values += all_values_sensor
-                full_weights += 1
+                all_values_sensor_mask = ~np.isnan(all_values_sensor)
+                all_values[all_values_sensor_mask] += all_values_sensor[
+                    all_values_sensor_mask
+                ]
+                full_weights[np.any(all_values_sensor_mask[0, :], axis=0)] += 1
 
             # process second sensor
             if second_sensor is not None:
@@ -134,20 +138,23 @@ def fill_auxiliary(
                     return_all_points=False,
                 )
 
-    interpolated_pixels = filled_color != 0
+    interpolated_pixels = np.any(filled_color != 0, axis=0)
 
-    filled_color[:, interpolated_pixels[0, :]] /= weights[
-        interpolated_pixels[0, :]
-    ]
-    filled_color[:, ~interpolated_pixels[0, :]] = (
-        all_values[:, ~interpolated_pixels[0, :]]
-        / full_weights[~interpolated_pixels[0, :]]
-    )
+    filled_color[:, interpolated_pixels] /= weights[interpolated_pixels]
+
+    if use_mask is True:
+        full_interpolated_pixels = ~np.logical_or(
+            np.any(np.isnan(all_values), axis=0), interpolated_pixels
+        )
+        filled_color[:, full_interpolated_pixels] = (
+            all_values[:, full_interpolated_pixels]
+            / full_weights[full_interpolated_pixels]
+        )
 
     return filled_color, filled_classif
 
 
-def fill_from_one_sensor(
+def fill_from_one_sensor(  # noqa C901
     sensor,
     filled_color,
     filled_classif,
@@ -198,7 +205,6 @@ def fill_from_one_sensor(
     :type return_all_points: bool
 
     """
-    use_mask = True
 
     # Check if the sensor has color or classification
     reference_sensor_image = sensor.get(
@@ -247,7 +253,8 @@ def fill_from_one_sensor(
 
     if color_interpolator in ("linear", "nearest"):
         color_interpolator_margin = 1
-    # TODO check parameter outside of thread
+    elif color_interpolator == "cubic":
+        color_interpolator_margin = 3
     else:
         raise RuntimeError(f"Invalid interpolator {color_interpolator}")
 
@@ -336,7 +343,11 @@ def fill_from_one_sensor(
                     np.arange(first_col, last_col),
                 )
 
-                nan_mask = np.zeros(len(altitudes), dtype=bool)
+                if validity_mask is not None:
+                    interpolated_mask = validity_mask
+                else:
+                    interpolated_mask = np.ones(len(altitudes), dtype=bool)
+
                 for band in range(sensor_color_image.count):
                     # rio band convention
                     sensor_data = sensor_color_image.read(
@@ -366,10 +377,11 @@ def fill_from_one_sensor(
                                 method=color_interpolator,
                             )
                         nan_values = np.isnan(band_values)
-                        filled_color[band, validity_mask] += band_values
-                        nan_mask[validity_mask] = np.logical_or(
-                            nan_mask[validity_mask], nan_values
+                        interpolated_mask[validity_mask] = np.logical_or(
+                            interpolated_mask[validity_mask], ~nan_values
                         )
+                        filled_color[band, interpolated_mask] += band_values
+
                     else:
                         band_values = interpolate.interpn(
                             sensor_points,
@@ -378,19 +390,13 @@ def fill_from_one_sensor(
                             bounds_error=False,
                             method=color_interpolator,
                         )
-                        filled_color[band, :] += band_values
-                        nan_mask = np.logical_or(
-                            nan_mask, np.isnan(band_values)
+                        interpolated_mask = np.logical_or(
+                            interpolated_mask, ~np.isnan(band_values)
                         )
+                        filled_color[band, interpolated_mask] += band_values
+                output_not_interpolated_mask = ~interpolated_mask
 
-                if validity_mask is not None:
-                    output_not_interpolated_mask = np.logical_and(
-                        ~validity_mask, nan_mask
-                    )
-                else:
-                    output_not_interpolated_mask = nan_mask
-
-                weights[validity_mask] += 1
+                weights[interpolated_mask] += 1
 
     if filled_classif is not None and sensor.get("classification"):
         with rio.open(sensor["classification"]) as sensor_classif_image:
