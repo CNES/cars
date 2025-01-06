@@ -82,38 +82,10 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "save_intermediate_data": True,
                 "connection_val": 3.0,
                 "nb_pts_threshold": 100,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -253,7 +225,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic"},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 # Uncomment the following line to update dsm reference data
                 # "sift_peak_threshold":1,
@@ -262,38 +234,12 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_upper_bound": 20.0,
                 "save_intermediate_data": False,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "save_intermediate_data": True,
                 "connection_val": 3.0,
                 "nb_pts_threshold": 100,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -442,7 +388,7 @@ def test_end2end_ventoux_unique():
                 "epi_step": 30,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -450,37 +396,11 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -620,7 +540,9 @@ def test_end2end_ventoux_unique():
             assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
             assert (
-                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                used_conf["applications"]["sparse_matching.sift"][
+                    "disparity_margin"
+                ]
                 == 0.25
             )
             # check used_conf orchestrator conf is the same as gt
@@ -1019,7 +941,7 @@ def test_end2end_ventoux_unique():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -1051,37 +973,11 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1202,7 +1098,7 @@ def test_end2end_ventoux_unique():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -1210,37 +1106,11 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -1338,37 +1208,9 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         )
         input_config_pc["applications"] = {
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -1533,7 +1375,7 @@ def test_end2end_ventoux_unique_split():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -1541,37 +1383,11 @@ def test_end2end_ventoux_unique_split():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": False,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2234,45 +2050,17 @@ def test_end2end_use_epipolar_a_priori():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
                 "nb_pts_threshold": 100,
                 "connection_val": 3.0,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -2431,7 +2219,9 @@ def test_end2end_use_epipolar_a_priori():
             assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
             assert (
-                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                used_conf["applications"]["sparse_matching.sift"][
+                    "disparity_margin"
+                ]
                 == 0.25
             )
             # check used_conf orchestrator conf is the same as gt
@@ -2610,7 +2400,7 @@ def test_prepare_ventoux_bias():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 100},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "epipolar_error_maximum_bias": 50.0,
@@ -2619,39 +2409,13 @@ def test_prepare_ventoux_bias():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "nb_pts_threshold": 150,
                 "connection_val": 3.0,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 120.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -2724,7 +2488,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": 400.0,
@@ -2732,37 +2496,11 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": 400.0,
+                "elevation_delta_upper_bound": 700.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3153,7 +2891,7 @@ def test_end2end_ventoux_with_color():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -3161,37 +2899,11 @@ def test_end2end_ventoux_with_color():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3455,7 +3167,7 @@ def test_end2end_ventoux_with_classif():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -3463,37 +3175,11 @@ def test_end2end_ventoux_with_classif():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3744,7 +3430,7 @@ def test_compute_dsm_with_roi_ventoux():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -1000,  # -20.0,
@@ -3752,37 +3438,11 @@ def test_compute_dsm_with_roi_ventoux():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -1000,  # -20.0,
+                "elevation_delta_upper_bound": 1000,  # 20.0,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -3922,7 +3582,7 @@ def test_compute_dsm_with_snap_to_img1():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -3930,37 +3590,11 @@ def test_compute_dsm_with_snap_to_img1():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4075,42 +3709,14 @@ def test_end2end_quality_stats():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4390,7 +3996,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -4398,37 +4004,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4545,7 +4125,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -4553,37 +4133,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4666,7 +4220,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -4674,37 +4228,11 @@ def test_end2end_ventoux_egm96_geoid():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4831,7 +4359,7 @@ def test_end2end_paca_with_mask():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -4839,38 +4367,6 @@ def test_end2end_paca_with_mask():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
                 "minimum_nb_matches": 10,
-            },
-            "pandora_sparse_matching": {
-                "resolution": 4,
-                "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -5191,37 +4687,9 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
-            "pandora_sparse_matching": {
+            "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
-                "loader_conf": {
-                    "input": {},
-                    "pipeline": {
-                        "matching_cost": {
-                            "matching_cost_method": "census",
-                            "window_size": 5,
-                            "subpix": 1,
-                        },
-                        "optimization": {
-                            "optimization_method": "sgm",
-                            "penalty": {
-                                "P1": 8,
-                                "P2": 32,
-                                "penalty_method": "sgm_penalty",
-                            },
-                        },
-                        "disparity": {
-                            "disparity_method": "wta",
-                            "invalid_disparity": "NaN",
-                        },
-                        "refinement": {"refinement_method": "vfit"},
-                        "filter": {"filter_method": "median", "filter_size": 3},
-                        "validation": {
-                            "validation_method": "cross_checking_accurate",
-                            "cross_checking_threshold": 1.0,
-                        },
-                    },
-                },
             },
             "dense_matching": {
                 "method": "census_sgm",
