@@ -32,7 +32,6 @@ import logging
 import numpy as np
 import pandas
 import xarray as xr
-from pandora.img_tools import add_global_disparity
 from scipy.ndimage import zoom
 from vlsift.sift.sift import sift
 
@@ -647,6 +646,8 @@ def pandora_matches(
     left_image_object,
     right_image_object,
     corr_conf,
+    disp_upper_bound,
+    disp_lower_bound,
     resolution,
     disp_to_alt_ratio=None,
 ):
@@ -684,8 +685,8 @@ def pandora_matches(
     roi_bottom = epipolar_image_left_low_res.roi_with_margins[3]
 
     # dmin & dmax
-    dmin = -1000 / resolution
-    dmax = 9000 / resolution
+    dmin = disp_lower_bound / resolution
+    dmax = disp_upper_bound / resolution
 
     # Create CarsDataset
     disp_range_grid = cars_dataset.CarsDataset(
@@ -729,18 +730,6 @@ def pandora_matches(
         disp_max_grid,
     ) = dm_tools.compute_disparity_grid(
         disp_range_grid, epipolar_image_left_low_res
-    )
-
-    global_disp_min = np.floor(
-        np.nanmin(disp_range_grid[0, 0]["disp_min_grid"].data)
-    )
-    global_disp_max = np.ceil(
-        np.nanmax(disp_range_grid[0, 0]["disp_max_grid"].data)
-    )
-
-    # add global disparity in case of ambiguity normalization
-    epipolar_image_left_low_res = add_global_disparity(
-        epipolar_image_left_low_res, global_disp_min, global_disp_max
     )
 
     # Compute the disparity map

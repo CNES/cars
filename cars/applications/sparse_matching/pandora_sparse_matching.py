@@ -78,6 +78,16 @@ class PandoraSparseMatching(
             "epipolar_error_maximum_bias"
         ]
 
+        self.elevation_delta_lower_bound = self.used_config[
+            "elevation_delta_lower_bound"
+        ]
+        self.elevation_delta_upper_bound = self.used_config[
+            "elevation_delta_upper_bound"
+        ]
+
+        # minimum number of matches to continue with
+        self.minimum_nb_matches = self.used_config["minimum_nb_matches"]
+
         # filter
         self.connection_val = self.used_config["connection_val"]
         self.nb_pts_threshold = self.used_config["nb_pts_threshold"]
@@ -130,6 +140,18 @@ class PandoraSparseMatching(
             "epipolar_error_maximum_bias", 0.0
         )
 
+        # minimum number of matches to continue with
+        overloaded_conf["minimum_nb_matches"] = conf.get(
+            "minimum_nb_matches", 100
+        )
+
+        overloaded_conf["elevation_delta_lower_bound"] = conf.get(
+            "elevation_delta_lower_bound", None
+        )
+        overloaded_conf["elevation_delta_upper_bound"] = conf.get(
+            "elevation_delta_upper_bound", None
+        )
+
         # filter params
         overloaded_conf["clusters_distance_threshold"] = conf.get(
             "clusters_distance_threshold", None
@@ -152,6 +174,7 @@ class PandoraSparseMatching(
         # TODO modify, use loader directly
         pandora_loader = PandoraLoader(
             conf=loader_conf,
+            use_cross_validation=True,
         )
 
         # Get params from loader
@@ -169,6 +192,9 @@ class PandoraSparseMatching(
             "disparity_margin": float,
             "epipolar_error_upper_bound": And(float, lambda x: x > 0),
             "epipolar_error_maximum_bias": And(float, lambda x: x >= 0),
+            "minimum_nb_matches": And(int, lambda x: x > 0),
+            "elevation_delta_lower_bound": Or(int, float, None),
+            "elevation_delta_upper_bound": Or(int, float, None),
             "resolution": Or(int, list),
             "loader_conf": Or(dict, collections.OrderedDict, str, None),
             "strip_margin": And(int, lambda x: x > 0),
@@ -185,6 +211,23 @@ class PandoraSparseMatching(
         # Check conf
         checker = Checker(application_schema)
         checker.validate(overloaded_conf)
+
+        # Check consistency between bounds for elevation delta
+        elevation_delta_lower_bound = overloaded_conf[
+            "elevation_delta_lower_bound"
+        ]
+        elevation_delta_upper_bound = overloaded_conf[
+            "elevation_delta_upper_bound"
+        ]
+        if None not in (
+            elevation_delta_lower_bound,
+            elevation_delta_upper_bound,
+        ):
+            if elevation_delta_lower_bound > elevation_delta_upper_bound:
+                raise ValueError(
+                    "Upper bound must be bigger than "
+                    "lower bound for expected elevation delta"
+                )
 
         return overloaded_conf
 
@@ -229,6 +272,17 @@ class PandoraSparseMatching(
         """
         return self.nb_pts_threshold
 
+    def get_minimum_nb_matches(self):
+        """
+        Get minimum_nb_matches :
+        get the minimum number of matches
+
+        :return: minimum_nb_matches
+
+        """
+
+        return self.minimum_nb_matches
+
     def get_matches_filter_knn(self):
         """
         Get matches_filter_knn :
@@ -262,7 +316,7 @@ class PandoraSparseMatching(
         """
         return self.filtered_elt_pos
 
-    def get_clusters_distance_thresh(self):
+    def get_clusters_dist_thresh(self):
         """
         Get clusters_distance_threshold :
         distance to use to consider if two points clusters \
@@ -432,6 +486,20 @@ class PandoraSparseMatching(
                 cars_ds_name="epi_pandora_matches_left",
             )
 
+            # Compute disparity range
+            if self.elevation_delta_lower_bound is None:
+                disp_upper_bound = np.inf
+            else:
+                disp_upper_bound = (
+                    -self.elevation_delta_lower_bound / disp_to_alt_ratio
+                )
+            if self.elevation_delta_upper_bound is None:
+                disp_lower_bound = -np.inf
+            else:
+                disp_lower_bound = (
+                    -self.elevation_delta_upper_bound / disp_to_alt_ratio
+                )
+
             # Generate disparity maps
             for col in range(pandora_epipolar_matches.shape[1]):
                 for row in range(pandora_epipolar_matches.shape[0]):
@@ -456,6 +524,8 @@ class PandoraSparseMatching(
                             epipolar_image_left[row, col],
                             epipolar_image_right[row, col],
                             self.corr_config,
+                            disp_upper_bound=disp_upper_bound,
+                            disp_lower_bound=disp_lower_bound,
                             resolution=self.resolution,
                             disp_to_alt_ratio=disp_to_alt_ratio,
                             saving_info_matches=full_saving_info_matches,
@@ -475,6 +545,8 @@ def compute_pandora_matches_wrapper(
     left_image_object: xr.Dataset,
     right_image_object: xr.Dataset,
     corr_conf,
+    disp_upper_bound,
+    disp_lower_bound,
     resolution,
     disp_to_alt_ratio=None,
     saving_info_matches=None,
@@ -498,15 +570,17 @@ def compute_pandora_matches_wrapper(
            - cst.EPI_COLOR (for left, if given)
     :param right_image_object: tiled Right image
     :type right_image_object: xr.Dataset
-    :param sensor_image_right: sensor image right
-    :type sensor_image_right: dict
-    :param orchestrator: orchestrator used
-    :param pair_folder: folder used for current pair
-    :type pair_folder: str
-    :param pair_key: pair id
-    :type pair_key: str
+    :param disp_upper_bound: upper bound of disparity range
+    :type disp_upper_bound: float
+    :param disp_lower_bound: lower bound of disparity range
+    :type disp_lower_bound: float
+    :param corr_conf: pandora conf
+    :type corr_conf: dict
+    :param resolution: resolution for downsampling
+    :type resolution: int or list
     :param disp_to_alt_ratio: disp to alti ratio used for performance map
     :type disp_to_alt_ratio: float
+
 
     :return: Left pandora matches object,\
     Right pandora matches object (if exists)
@@ -520,6 +594,8 @@ def compute_pandora_matches_wrapper(
                     left_image_object,
                     right_image_object,
                     corr_conf,
+                    disp_upper_bound,
+                    disp_lower_bound,
                     res,
                     disp_to_alt_ratio,
                 )
@@ -528,6 +604,8 @@ def compute_pandora_matches_wrapper(
                     left_image_object,
                     right_image_object,
                     corr_conf,
+                    disp_upper_bound,
+                    disp_lower_bound,
                     res,
                     disp_to_alt_ratio,
                 )
@@ -541,6 +619,8 @@ def compute_pandora_matches_wrapper(
             left_image_object,
             right_image_object,
             corr_conf,
+            disp_upper_bound,
+            disp_lower_bound,
             resolution,
             disp_to_alt_ratio,
         )
