@@ -26,9 +26,8 @@ contains some general purpose functions using polygons and data projections
 
 # Standard imports
 import logging
-import math
 import os
-from typing import List, Tuple, Union
+from typing import List, Tuple
 
 # Third party imports
 import numpy as np
@@ -556,37 +555,6 @@ def ground_intersection_envelopes(
     )
 
     return inter_poly, (inter_xmin, inter_ymin, inter_xmax, inter_ymax)
-
-
-def project_coordinates_on_line(
-    x_coord: Union[float, np.ndarray],
-    y_coord: Union[float, np.ndarray],
-    origin: Union[List[float], np.ndarray],
-    vec: Union[List[float], np.ndarray],
-) -> Union[float, np.ndarray]:
-    """
-    Project coordinates (x,y) on a line starting from origin with a
-    direction vector vec, and return the euclidean distances between
-    projected points and origin.
-
-    :param x_coord: scalar or vector of coordinates x
-    :param y_coord: scalar or vector of coordinates x
-    :param origin: coordinates of origin point for line
-    :param vec: direction vector of line
-    :return: vector of distances of projected points to origin
-    """
-    assert len(x_coord) == len(y_coord)
-    assert len(origin) == 2
-    assert len(vec) == 2
-
-    vec_angle = math.atan2(vec[1], vec[0])
-    point_angle = np.arctan2(y_coord - origin[1], x_coord - origin[0])
-    proj_angle = point_angle - vec_angle
-    dist_to_origin = np.sqrt(
-        np.square(x_coord - origin[0]) + np.square(y_coord - origin[1])
-    )
-
-    return dist_to_origin * np.cos(proj_angle)
 
 
 def get_ground_direction(
