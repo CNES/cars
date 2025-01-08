@@ -933,6 +933,20 @@ The structure follows this organization:
                 | clusters_distance_threshold          | distance to use to consider if two points clusters are far from each other or not              | float       |                        | None                  | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
 
+                .. warning::
+
+                    There is a particular case with the *sparse_matching* application because it can be called twice.
+                    So you can configure the application twice , once for the *sift*, the other for *pandora* method.
+                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    those two applications with :
+
+                    *sparse_matching.sift*
+                    *sparse_matching.pandora*
+
+                    Each one is associated to a particular *sparse_matching* method*
+                    Therefore, is it not possible to use the key *sparse_matching* and to select the method.
+
+
                 **Example**
 
                 .. code-block:: json
@@ -1244,6 +1258,7 @@ The structure follows this organization:
                     * *dense_match_filling.2*
 
                     Each one is associated to a particular *dense_match_filling* method*
+                    Therefore, is it not possible to use the key *dense_match_filling* and to select the method.
 
                 **Example**
 
@@ -1398,6 +1413,8 @@ The structure follows this organization:
                     * *point_cloud_outlier_removal.2*
 
                     Each one is associated to a particular *point_cloud_outlier_removal* method*
+                    Therefore, is it not possible to use the key *point_cloud_outlier_removal* and to select the method.
+
 
                 **Example**
 
@@ -1791,4 +1808,5 @@ The structure follows this organization:
                     "0_1": "one_three/0_1.laz"
                 }
             }
+
 
