@@ -107,8 +107,6 @@ class Sift(SparseMatching, short_name=["sift"]):
             "matches_filter_dev_factor"
         ]
 
-        self.decimation_factor = self.used_config["decimation_factor"]
-
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
 
@@ -154,9 +152,6 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["disparity_outliers_rejection_percent"] = conf.get(
             "disparity_outliers_rejection_percent", 0.1
         )
-
-        # Number of sifts that we want to keep
-        overloaded_conf["decimation_factor"] = conf.get("decimation_factor", 1)
 
         # minimum number of matches to continue with
         overloaded_conf["minimum_nb_matches"] = conf.get(
@@ -218,7 +213,6 @@ class Sift(SparseMatching, short_name=["sift"]):
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_window_size": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
-            "decimation_factor": And(int, lambda x: x > 0),
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
             "save_intermediate_data": bool,
@@ -522,7 +516,6 @@ class Sift(SparseMatching, short_name=["sift"]):
                         backmatching=self.sift_back_matching,
                         disp_lower_bound=disp_lower_bound,
                         disp_upper_bound=disp_upper_bound,
-                        decimation_factor=self.decimation_factor,
                         saving_info_left=full_saving_info_left,
                     )
 
@@ -548,7 +541,6 @@ def compute_matches_wrapper(
     backmatching=None,
     disp_lower_bound=None,
     disp_upper_bound=None,
-    decimation_factor=None,
     saving_info_left=None,
 ) -> Dict[str, Tuple[xr.Dataset, xr.Dataset]]:
     """
@@ -598,7 +590,6 @@ def compute_matches_wrapper(
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,
-        decimation_factor=decimation_factor,
     )
 
     # Filter matches outside disparity range

@@ -78,7 +78,6 @@ def compute_matches(
     backmatching: bool = True,
     disp_lower_bound=None,
     disp_upper_bound=None,
-    decimation_factor=1,
 ):
     """
     Compute matches between left and right
@@ -112,8 +111,6 @@ def compute_matches(
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
-    :param decimation_factor: factor for the decimation of the sifts
-    :type decimation_factor: int
 
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
@@ -188,11 +185,6 @@ def compute_matches(
     order = np.argsort(right_frames[:, 1])
     right_frames = right_frames[order]
     right_descr = right_descr[order]
-
-    left_frames = left_frames[::decimation_factor]
-    right_frames = right_frames[::decimation_factor]
-    left_descr = left_descr[::decimation_factor]
-    right_descr = right_descr[::decimation_factor]
 
     # compute best matches by blocks
     splits = np.arange(500, len(left_frames), 500)
@@ -298,7 +290,6 @@ def dataset_matching(
     backmatching=True,
     disp_lower_bound=None,
     disp_upper_bound=None,
-    decimation_factor=1,
 ):
     """
     Compute sift matches between two datasets
@@ -323,8 +314,6 @@ def dataset_matching(
     :type window_size: int
     :param backmatching: also check that right vs. left gives same match
     :type backmatching: bool
-    :param decimation_factor: factor for the decimation of the sifts
-    :type decimation_factor: int
 
     :return: matches
     :rtype: numpy buffer of shape (nb_matches,4)
@@ -355,7 +344,6 @@ def dataset_matching(
         backmatching=backmatching,
         disp_lower_bound=disp_lower_bound,
         disp_upper_bound=disp_upper_bound,
-        decimation_factor=decimation_factor,
     )
 
     return matches
