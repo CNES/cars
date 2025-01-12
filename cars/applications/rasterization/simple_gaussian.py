@@ -217,6 +217,7 @@ class SimpleGaussian(
         filling_file_name=None,
         color_dtype=None,
         dump_dir=None,
+        phasing=None,
     ):
         """
         Run PointCloudRasterisation application.
@@ -271,6 +272,8 @@ class SimpleGaussian(
         :type color_dtype: str (numpy type)
         :param dump_dir: directory used for outputs with no associated filename
         :type dump_dir: str
+        :param phasing: if activated, we phase the dsm on this point
+        :type phasing: dict
 
         :return: raster DSM. CarsDataset contains:
 
@@ -359,6 +362,21 @@ class SimpleGaussian(
             )
 
         terrain_raster.generate_none_tiles()
+
+        if phasing is not None:
+            res = resolution
+            x_phase = phasing["point"][0]
+            y_phase = phasing["point"][1]
+
+            for index, value in enumerate(bounds):
+                if index == 0 or index == 2:
+                    bounds[index] = rasterization_step.phased_dsm(
+                        value, x_phase, res
+                    )
+                else:
+                    bounds[index] = rasterization_step.phased_dsm(
+                        value, y_phase, res
+                    )
 
         # Derive output image files parameters to pass to rasterio
         xsize, ysize = tiling.roi_to_start_and_size(bounds, resolution)[2:]
@@ -1000,6 +1018,7 @@ def rasterization_wrapper(
     xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
         terrain_region, resolution
     )
+
     if window is None:
         transform = rio.Affine(*profile["transform"][0:6])
         row_pix_pos, col_pix_pos = rio.transform.AffineTransformer(

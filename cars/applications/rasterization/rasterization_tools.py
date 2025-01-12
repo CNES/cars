@@ -65,7 +65,6 @@ def compute_xy_starts_and_sizes(
 
     # Clamp to a regular grid
     x_start = np.floor(xmin / resolution) * resolution
-    x_size = int(1 + np.floor((xmax - x_start) / resolution))
 
     # Derive ystart
     ymin = np.nanmin(cloud[cst.Y].values)
@@ -74,6 +73,8 @@ def compute_xy_starts_and_sizes(
 
     # Clamp to a regular grid
     y_start = np.ceil(ymax / resolution) * resolution
+
+    x_size = int(1 + np.floor((xmax - x_start) / resolution))
     y_size = int(1 + np.floor((y_start - ymin) / resolution))
 
     return x_start, y_start, x_size, y_size
@@ -200,6 +201,25 @@ def substring_in_list(src_list, substring):
     """
     res = list(filter(lambda x: substring in x, src_list))
     return len(res) > 0
+
+
+def phased_dsm(start: float, phase: float, resolution: float):
+    """
+    Phased the dsm
+
+    :param start: start of the roi
+    :param phase: the point for phasing
+    :param resolution: resolution of the dsm
+    """
+
+    div = np.abs(start - phase) / resolution
+
+    if phase > start:
+        start = phase - resolution * np.floor(div)
+    else:
+        start = resolution * np.floor(div) + phase
+
+    return start
 
 
 def find_indexes_in_point_cloud(
@@ -845,6 +865,7 @@ def update_data(
 
     :return: updated current data
     """
+
     new_data = current_data
     if old_data is not None:
         old_data = np.squeeze(old_data)

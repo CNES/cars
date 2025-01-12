@@ -18,28 +18,8 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 #
-
 """
-This module contains the advanced parameter definitions
+CARS phased dsms to full resolution dsm pipeline constants file
 """
 
-SAVE_INTERMEDIATE_DATA = "save_intermediate_data"
-PHASING = "phasing"
-DEBUG_WITH_ROI = "debug_with_roi"
-
-USE_EPIPOLAR_A_PRIORI = "use_epipolar_a_priori"
-EPIPOLAR_A_PRIORI = "epipolar_a_priori"
-
-MERGING = "merging"
-
-# inner epipolar a priori constants
-GRID_CORRECTION = "grid_correction"
-DISPARITY_RANGE = "disparity_range"
-
-TERRAIN_A_PRIORI = "terrain_a_priori"
-
-DEM_MEDIAN = "dem_median"
-DEM_MIN = "dem_min"
-DEM_MAX = "dem_max"
-ALTITUDE_DELTA_MAX = "altitude_delta_max"
-ALTITUDE_DELTA_MIN = "altitude_delta_min"
+DSMS = "dsms"
