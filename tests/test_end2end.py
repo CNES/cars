@@ -82,6 +82,11 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "sparse_matching.pandora": {
+                "save_intermediate_data": True,
+                "connection_val": 3.0,
+                "nb_pts_threshold": 100,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -220,7 +225,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic"},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 # Uncomment the following line to update dsm reference data
                 # "sift_peak_threshold":1,
@@ -228,6 +233,13 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "save_intermediate_data": False,
+            },
+            "sparse_matching.pandora": {
+                "save_intermediate_data": True,
+                "connection_val": 3.0,
+                "nb_pts_threshold": 100,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -271,7 +283,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 == 612
             )
             assert (
-                -20
+                -22
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
@@ -376,7 +388,7 @@ def test_end2end_ventoux_unique():
                 "epi_step": 30,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -384,9 +396,16 @@ def test_end2end_ventoux_unique():
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
             },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+            },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
-                "use_global_disp_range": True
+                "use_global_disp_range": True,
+                "save_intermediate_data": True,
             },
             "dem_generation": {
                 # save the dems in the global pipeline
@@ -429,7 +448,7 @@ def test_end2end_ventoux_unique():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -19
+                < -18
             )
             assert (
                 12
@@ -441,7 +460,6 @@ def test_end2end_ventoux_unique():
 
         # Ref output dir dependent from geometry plugin chosen
         ref_output_dir = "ref_output"
-
         # Uncomment the 2 following instructions to update reference data
         # copy2(
         #  os.path.join(out_dir, "dump_dir", "dem_generation",
@@ -522,7 +540,9 @@ def test_end2end_ventoux_unique():
             assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
             assert (
-                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                used_conf["applications"]["sparse_matching.sift"][
+                    "disparity_margin"
+                ]
                 == 0.25
             )
             # check used_conf orchestrator conf is the same as gt
@@ -921,7 +941,7 @@ def test_end2end_ventoux_unique():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -953,6 +973,12 @@ def test_end2end_ventoux_unique():
         input_config_dense_dsm = input_config_sparse_dsm.copy()
         # update applications
         dense_dsm_applications = {
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_global_disp_range": False,
@@ -1072,13 +1098,19 @@ def test_end2end_ventoux_unique():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -1176,6 +1208,10 @@ def test_end2end_ventoux_unique_split_epsg_4326():
             },
         )
         input_config_pc["applications"] = {
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,
@@ -1339,13 +1375,19 @@ def test_end2end_ventoux_unique_split():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": False,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2008,11 +2050,17 @@ def test_end2end_use_epipolar_a_priori():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 200},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "nb_pts_threshold": 100,
+                "connection_val": 3.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -2058,7 +2106,7 @@ def test_end2end_use_epipolar_a_priori():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -25
+                < -23
             )
             assert (
                 23
@@ -2171,7 +2219,9 @@ def test_end2end_use_epipolar_a_priori():
             assert "sensors" in used_conf["inputs"]
             # check used_conf sparse_matching configuration
             assert (
-                used_conf["applications"]["sparse_matching"]["disparity_margin"]
+                used_conf["applications"]["sparse_matching.sift"][
+                    "disparity_margin"
+                ]
                 == 0.25
             )
             # check used_conf orchestrator conf is the same as gt
@@ -2350,7 +2400,7 @@ def test_prepare_ventoux_bias():
         application_config = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 100},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "epipolar_error_maximum_bias": 50.0,
@@ -2358,6 +2408,14 @@ def test_prepare_ventoux_bias():
                 "elevation_delta_upper_bound": 120.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "nb_pts_threshold": 150,
+                "connection_val": 3.0,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 120.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -2430,13 +2488,19 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": 400.0,
                 "elevation_delta_upper_bound": 700.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": 400.0,
+                "elevation_delta_upper_bound": 700.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -2827,13 +2891,19 @@ def test_end2end_ventoux_with_color():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3097,13 +3167,19 @@ def test_end2end_ventoux_with_classif():
                 "strip_height": 80,
                 "save_intermediate_data": True,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -3354,13 +3430,19 @@ def test_compute_dsm_with_roi_ventoux():
                 "use_cross_validation": True,
                 "use_global_disp_range": False,
             },
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -1000,  # -20.0,
                 "elevation_delta_upper_bound": 1000,  # 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -1000,  # -20.0,
+                "elevation_delta_upper_bound": 1000,  # 20.0,
             },
             "point_cloud_rasterization": {
                 "method": "simple_gaussian",
@@ -3500,13 +3582,19 @@ def test_compute_dsm_with_snap_to_img1():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3621,10 +3709,14 @@ def test_end2end_quality_stats():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3680,7 +3772,7 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -33
+            assert out_disp_compute["global_disp_min"] > -36
             assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
@@ -3904,13 +3996,19 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -3964,7 +4062,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -67
+            assert out_disp_compute["global_disp_min"] > -68
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4027,13 +4125,19 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4116,13 +4220,19 @@ def test_end2end_ventoux_egm96_geoid():
                 "save_intermediate_data": True,
             },
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+            },
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+                "elevation_delta_lower_bound": -20.0,
+                "elevation_delta_upper_bound": 20.0,
             },
             "dense_matching": {
                 "method": "census_sgm",
@@ -4178,7 +4288,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "left_right"
             ]
             # global_disp_min   -21 shareloc
-            assert out_disp_compute["global_disp_min"] > -67
+            assert out_disp_compute["global_disp_min"] > -68
             assert out_disp_compute["global_disp_min"] < -66
             # global max: 86 shareloc
             assert out_disp_compute["global_disp_max"] > 45
@@ -4249,7 +4359,7 @@ def test_end2end_paca_with_mask():
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
             "resampling": {"method": "bicubic", "strip_height": 80},
-            "sparse_matching": {
+            "sparse_matching.sift": {
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "elevation_delta_lower_bound": -20.0,
@@ -4577,6 +4687,10 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
+            "sparse_matching.pandora": {
+                "resolution": 4,
+                "save_intermediate_data": True,
+            },
             "dense_matching": {
                 "method": "census_sgm",
                 "use_cross_validation": True,

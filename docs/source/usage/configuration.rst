@@ -863,21 +863,38 @@ The structure follows this organization:
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
                 +======================================+================================================================================================+=============+========================+===============+==========+
-                | method                               | Method for sparse matching                                                                     | string      | "sift"                 | "sift"        | No       |
+                | method                               | Method for sparse matching                                                                     | string      | "sift", "pandora"      | "sift"        | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | disparity_margin                     | Add a margin to min and max disparity as percent of the disparity range.                       | float       |                        | 0.02          | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | epipolar_error_upper_bound           | Expected upper bound for epipolar error in pixels                                              | float       | should be > 0          | 10.0          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | epipolar_error_maximum_bias          | Maximum bias for epipolar error in pixels                                                      | float       | should be >= 0         | 0.0           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                               | float       | between 0 and 1        | 0.1           | No       |
+                | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | elevation_delta_lower_bound          | Expected lower bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | -9000         | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | elevation_delta_upper_bound          | Expected upper bound for elevation delta with respect to input low resolution dem in meters    | int, float  |                        | 9000          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | minimum_nb_matches                   | Minimum number of matches that must be computed to continue pipeline                           | int         | should be > 0          | 100           | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+
+
+                **Sift:**
+
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
+                | Name                                 | Description                                                                                    | Type        | Available value        | Default value | Required |
+                +======================================+================================================================================================+=============+========================+===============+==========+
+                | disparity_outliers_rejection_percent | Percentage of outliers to reject                                                               | float       | between 0 and 1        | 0.1           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | sift_matching_threshold              | Threshold for the ratio to nearest second match                                                | float       | should be > 0          | 0.7           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
@@ -892,31 +909,63 @@ The structure follows this organization:
                 | sift_magnification                   | The descriptor magnification factor                                                            | float       | should be > 0          | 7.0           | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
                 | sift_window_size                     | smaller values let the center of the descriptor count more                                     | int         | should be > 0          | 2             | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+                                
-                | sift_back_matching                   | Also check that right vs. left gives same match                                                | boolean     |                        | true          | No       |
                 +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | matches_filter_knn                   | Number of neighbors used to measure isolation of matches and detect isolated matches           | int         | should be > 0          | 25            | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | matches_filter_dev_factor            | Factor of deviation of isolation of matches to compute threshold of outliers                   | int, float  | should be > 0          | 3.0           | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | save_intermediate_data               | Save matches in epipolar geometry (4 first columns) and sensor geometry (4 last columns)       | boolean     |                        | false         | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-                | strip_margin                         | Margin to use on strip                                                                         | int         | should be > 0          | 10            | No       |
-                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+---------------+----------+
-
 
                 For more information about these parameters, please refer to the `VLFEAT SIFT documentation <https://www.vlfeat.org/api/sift.html>`_.
+
+
+                **Pandora:**
+
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | Name                                 | Description                                                                                    | Type        | Available value        | Default value         | Required |
+                +======================================+================================================================================================+=============+========================+=======================+==========+
+                | resolution                           | Resolution at which the image will be downsampled for the use of pandora                       | int, list   |    should be > 0       | 4                     | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | loader_conf                          | Pandora configuration that will be used                                                        | dict        |                        | Pandora default conf  | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | connection_val                       | distance to use to consider that two points are connected                                      | float       | should be > 0          | 3.0                   | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | nb_pts_threshold                     |number of points to use to identify small clusters to filter                                    | int         | should be > 0          | 80                    | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | filtered_elt_pos                     | if filtered_elt_pos is set to True, the removed points positions in their original \           |             |                        |                       |          |
+                |                                      | epipolar images are returned, otherwise it is set to None                                      | bool        |                        | False                 | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+                | clusters_distance_threshold          | distance to use to consider if two points clusters are far from each other or not              | float       |                        | None                  | No       |
+                +--------------------------------------+------------------------------------------------------------------------------------------------+-------------+------------------------+-----------------------+----------+
+
+                .. warning::
+
+                    There is a particular case with the *sparse_matching* application because it can be called twice.
+                    So you can configure the application twice , once for the *sift*, the other for *pandora* method.
+                    Because it is not possible to define twice the *application_name* on your json configuration file, we have decided to configure
+                    those two applications with :
+
+                    *sparse_matching.sift*
+                    *sparse_matching.pandora*
+
+                    Each one is associated to a particular *sparse_matching* method*
+                    Therefore, is it not possible to use the key *sparse_matching* and to select the method.
+
 
                 **Example**
 
                 .. code-block:: json
 
                     "applications": {
-                        "sparse_matching": {
+                        "sparse_matching.sift": {
                             "method": "sift",
                             "disparity_margin": 0.01
+                        },
+                        "sparse_matching.pandora":{
+                            "method": "pandora",
+                            "resolution": [4, 2]
                         }
                     },
+
+                .. note::
+                    * Sift will always be used during the cars execution
+                    * Pandora is optionnal, by default this one is not activated
+                    * You can use both sift and pandora during your execution, the combined matches will be used
 
             .. tab:: DEM Generation
 
@@ -924,7 +973,7 @@ The structure follows this organization:
 
                 **Description**
 
-                Generates dem from sparse matches. 
+                Generates dem from sparse matches.
 
                 3 dems are generated, with different methods:
                 * median
@@ -977,11 +1026,11 @@ The structure follows this organization:
                 **Description**
 
                 Compute the disparity map from stereo-rectified pair images
-                
+
                 .. list-table:: Configuration
                     :widths: 19 19 19 19 19 19
                     :header-rows: 1
-                    
+
                     * - Name
                       - Description
                       - Type
@@ -1003,13 +1052,13 @@ The structure follows this organization:
                     * - loader_conf
                       - Configuration associated with loader, dictionary or path to config
                       - dict or str
-                      - 
-                      - 
+                      -
+                      -
                       - No
                     * - min_elevation_offset
                       - Override minimum disparity from prepare step with this offset in meters
                       - int
-                      - 
+                      -
                       - None
                       - No
                     * - max_elevation_offset
@@ -1021,7 +1070,7 @@ The structure follows this organization:
                     * - disp_min_threshold
                       - Override minimum disparity when less than lower bound
                       - int
-                      - 
+                      -
                       - None
                       - No
                     * - disp_max_threshold
@@ -1045,61 +1094,61 @@ The structure follows this organization:
                     * - epipolar_tile_margin_in_percent
                       - Size of the margin used for dense matching (percent of tile size)
                       - int
-                      - 
+                      -
                       - 60
                       - No
                     * - generate_performance_map
                       - Generate a performance map from disparity map
                       - boolean
-                      - 
+                      -
                       - False
                       - No
                     * - generate_confidence_intervals
-                      - Compute confidence intervals from disparity map. 
+                      - Compute confidence intervals from disparity map.
                       - boolean
-                      - 
+                      -
                       - False
                       - No
                     * - perf_eta_max_ambiguity
                       - Ambiguity confidence eta max used for performance map
                       - float
-                      - 
+                      -
                       - 0.99
                       - No
                     * - perf_eta_max_risk
                       - Risk confidence eta max used for performance map
                       - float
-                      - 
+                      -
                       - 0.25
                       - No
                     * - perf_eta_step
                       - Risk and Ambiguity confidence eta step used for performance map
                       - float
-                      - 
+                      -
                       - 0.04
                       - No
                     * - perf_ambiguity_threshold
                       - Maximal ambiguity considered for performance map
                       - float
-                      - 
+                      -
                       - 0.6
                       - No
                     * - save_intermediate_data
                       - Save disparity map and disparity confidence
                       - boolean
-                      - 
+                      -
                       - false
                       - No
                     * - use_global_disp_range
                       - If true, use global disparity range, otherwise local range estimation
                       - boolean
-                      - 
+                      -
                       - false
                       - No
                     * - local_disp_grid_step
                       - Step of disparity min/ max grid used to resample dense disparity range
                       - int
-                      - 
+                      -
                       - 30
                       - No
                     * - disp_range_propagation_filter_size
@@ -1135,7 +1184,7 @@ The structure follows this organization:
                     * When user activate the generation of performance map, this map transits until being rasterized. Performance map is managed as a confidence map.
                     * To save the confidence, the save_intermediate_data parameter should be activated.
 
-            
+
             .. tab:: Dense match filling
 
                 **Name**: "dense_match_filling"
@@ -1209,6 +1258,7 @@ The structure follows this organization:
                     * *dense_match_filling.2*
 
                     Each one is associated to a particular *dense_match_filling* method*
+                    Therefore, is it not possible to use the key *dense_match_filling* and to select the method.
 
                 **Example**
 
@@ -1363,6 +1413,8 @@ The structure follows this organization:
                     * *point_cloud_outlier_removal.2*
 
                     Each one is associated to a particular *point_cloud_outlier_removal* method*
+                    Therefore, is it not possible to use the key *point_cloud_outlier_removal* and to select the method.
+
 
                 **Example**
 
@@ -1392,11 +1444,11 @@ The structure follows this organization:
                 Project altitudes on regular grid.
 
                 Only one simple gaussian method is available for now.
-                
+
                 .. list-table:: Configuration
                     :widths: 19 19 19 19 19 19
                     :header-rows: 1
-                
+
                     * - Name
                       - Description
                       - Type
@@ -1404,41 +1456,41 @@ The structure follows this organization:
                       - Default value
                       - Required
                     * - method
-                      - 
+                      -
                       - string
                       - "simple_gaussian"
                       - simple_gaussian
                       - No
                     * - dsm_radius
-                      - 
+                      -
                       - float, int
-                      - 
+                      -
                       - 1.0
                       - No
                     * - sigma
-                      - 
+                      -
                       - float
-                      - 
+                      -
                       - None
                       - No
                     * - grid_points_division_factor
-                      - 
+                      -
                       - int
-                      - 
+                      -
                       - None
                       - No
                     * - dsm_no_data
-                      - 
+                      -
                       - int
-                      - 
+                      -
                       - -32768
-                      - 
+                      -
                     * - color_no_data
-                      - 
+                      -
                       - int
-                      - 
+                      -
                       - 0
-                      - 
+                      -
                     * - color_dtype
                       - | By default, it's retrieved from the input color
                         | Otherwise, specify an image type
@@ -1450,13 +1502,13 @@ The structure follows this organization:
                     * - msk_no_data
                       - No data value for mask  and classif
                       - int
-                      - 
+                      -
                       - 255
-                      - 
+                      -
                     * - save_intermediate_data
                       - Save all layers from input point cloud in application `dump_dir`
                       - boolean
-                      - 
+                      -
                       - false
                       - No
 
@@ -1478,20 +1530,20 @@ The structure follows this organization:
 
                 **Description**
 
-                Fill in the missing values of the DSM by using the DEM's elevation. 
-                This application replaces the existing dsm.tif. 
-                
+                Fill in the missing values of the DSM by using the DEM's elevation.
+                This application replaces the existing dsm.tif.
+
                 Only one method is available for now: "bulldozer".
 
                 .. note::
 
                     When ``save_intermediate_data`` is activated, the folder ``dump_dir/dsm_filling`` will contain :
-                    
+
                     * The replaced dsm.tif, saved under ``dump_dir/dsm_filling/dsm_not_filled.tif``
                     * The dsm given to Bulldozer as input, saved under ``dump_dir/dsm_filling/dsm_filled_with_dem_not_smoothed.tif``
                     * The configuration given to Bulldozer, saved under ``dump_dir/dsm_filling/bulldozer_config.yaml``
                     * All the outputs generated by Bulldozer, saved under ``dump_dir/dsm_filling/bulldozer/``
-                    
+
 
                 **Configuration**
 
@@ -1736,7 +1788,7 @@ The structure follows this organization:
 
         **Point cloud output**
 
-        If product type `point_cloud` is selected, a directory named `point_cloud` will be created with a subfolder for every pair. 
+        If product type `point_cloud` is selected, a directory named `point_cloud` will be created with a subfolder for every pair.
 
         The point cloud output product consists of a collection of laz files, each containing a tile of the point cloud.
 
@@ -1756,4 +1808,5 @@ The structure follows this organization:
                     "0_1": "one_three/0_1.laz"
                 }
             }
+
 
