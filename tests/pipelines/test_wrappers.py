@@ -29,6 +29,7 @@ import pickle
 # Third party imports
 import pytest
 from pandora.img_tools import get_metadata
+from pandora.margins import Margins
 
 # CARS imports
 import cars.applications.dense_matching.dense_matching_tools as dense_match
@@ -111,8 +112,11 @@ def test_epipolar_pipeline(
     global_disp_min = -19
     global_disp_max = 15
 
+    # cumulative margins between sgm (40) and matching_cost (ws/2)
+    margins = Margins(42, 42, 42, 42)
+
     initial_margins = dense_match.get_margins(
-        global_disp_min, global_disp_max, corr_cfg
+        margins, global_disp_min, global_disp_max
     )
     pandora_margins = initial_margins["left_margin"].values
 
