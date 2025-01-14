@@ -17,7 +17,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-#
+# pylint: disable=too-many-lines
 """
 CARS dsm inputs
 """
@@ -69,10 +69,17 @@ def check_dsm_inputs(conf, config_json_dir=None):
 
     overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
+    overloaded_conf[sens_cst.INITIAL_ELEVATION] = (
+        sens_inp.get_initial_elevation(
+            conf.get(sens_cst.INITIAL_ELEVATION, None)
+        )
+    )
+
     # Validate inputs
     inputs_schema = {
         dsm_cst.DSMS: dict,
         sens_cst.ROI: Or(str, dict, None),
+        sens_cst.INITIAL_ELEVATION: Or(dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -262,6 +269,45 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
             )
 
 
+def get_optimal_tile_size(
+    max_ram_per_worker,
+    global_bounds,
+    resolution=0.5,
+):
+    """
+    Get the optimal tile size to use, depending on memory available
+
+    :param max_ram_per_worker: maximum ram available
+    :type max_ram_per_worker: int
+    :param global_bounds: bounds of the final dsm
+    :type global_bounds: list
+    :param resolution: resolution
+    :type resolution: float
+
+    :return: optimal tile size in meter
+    :rtype: float
+
+    """
+
+    tot_height = 7000 * (global_bounds[3] - global_bounds[1]) / resolution
+    tot_width = 7000 * (global_bounds[2] - global_bounds[0]) / resolution
+
+    import_ = 200  # MiB
+    tile_size_height = int(
+        np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot_height)
+    )
+    tile_size_width = int(
+        np.sqrt(float(((max_ram_per_worker - import_) * 2**23)) / tot_width)
+    )
+
+    logging.info(
+        "Estimated optimal tile size for dsms_merging: {} meters".format(
+            (tile_size_height, tile_size_width)
+        )
+    )
+    return tile_size_height, tile_size_width
+
+
 def check_phasing(dsm_dict):
     """
     Check if the dsm are phased, and if resolution and epsg code are equivalent
@@ -388,16 +434,19 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
 
     # Tiling of the dataset
     [xmin, ymin, xmax, ymax] = global_bounds
-    optimal_terrain_tile_width = 500
-    optimal_terrain_tile_height = 500
+    terrain_tile_height, terrain_tile_width = get_optimal_tile_size(
+        orchestrator.cluster.checked_conf_cluster["max_ram_per_worker"],
+        global_bounds,
+        resolution[1],
+    )
 
     terrain_raster.tiling_grid = tiling.generate_tiling_grid(
         xmin,
         ymin,
         xmax,
         ymax,
-        optimal_terrain_tile_height,
-        optimal_terrain_tile_width,
+        terrain_tile_height,
+        terrain_tile_width,
     )
 
     xsize, ysize = tiling.roi_to_start_and_size(global_bounds, resolution[1])[

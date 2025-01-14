@@ -161,9 +161,6 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
 
-        if dsm_cst.DSMS in self.used_conf[INPUTS]:
-            self.used_conf[INPUTS][sens_cst.ROI] = None
-
         # Get ROI
         (
             self.input_roi_poly,
@@ -2284,11 +2281,6 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         if self.dsms_in_inputs:
-            # Compute roi polygon, in input EPSG
-            self.roi_poly = preprocessing.compute_roi_poly(
-                self.input_roi_poly, self.input_roi_epsg, self.epsg
-            )
-
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 
             dsm_dict = self.used_conf[INPUTS][dsm_cst.DSMS]
@@ -2363,6 +2355,13 @@ class DefaultPipeline(PipelineTemplate):
                 else None
             )
 
+            self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
+
+            # Compute roi polygon, in input EPSG
+            self.roi_poly = preprocessing.compute_roi_poly(
+                self.input_roi_poly, self.input_roi_epsg, self.epsg
+            )
+
             dsm_inputs.merge_dsm_infos(
                 dict_path,
                 self.cars_orchestrator,
@@ -2376,8 +2375,6 @@ class DefaultPipeline(PipelineTemplate):
                 mask_file_name,
                 contributing_all_pair_file_name,
             )
-
-            self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
 
             # dsm needs to be saved before filling
             self.cars_orchestrator.breakpoint()
