@@ -41,7 +41,7 @@ from cars.applications.rasterization.rasterization_tools import (
     update_weights,
 )
 from cars.core import constants as cst
-from cars.core import inputs, tiling
+from cars.core import inputs, preprocessing, tiling
 from cars.core.utils import make_relative_path_absolute, safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.pipelines.parameters import sensor_inputs as sens_inp
@@ -67,16 +67,12 @@ def check_dsm_inputs(conf, config_json_dir=None):
     # Overload some optional parameters
     overloaded_conf[dsm_cst.DSMS] = {}
 
-    overloaded_conf[sens_cst.INITIAL_ELEVATION] = (
-        sens_inp.get_initial_elevation(
-            conf.get(sens_cst.INITIAL_ELEVATION, None)
-        )
-    )
+    overloaded_conf[sens_cst.ROI] = conf.get(sens_cst.ROI, None)
 
     # Validate inputs
     inputs_schema = {
         dsm_cst.DSMS: dict,
-        sens_cst.INITIAL_ELEVATION: Or(dict, None),
+        sens_cst.ROI: Or(str, dict, None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -247,17 +243,23 @@ def modify_to_absolute_path(config_json_dir, overloaded_conf):
     :dict overloaded_conf: dict
     """
     for dsm_key in overloaded_conf[dsm_cst.DSMS]:
-        depth_map = overloaded_conf[dsm_cst.DSMS][dsm_key]
+        dsms = overloaded_conf[dsm_cst.DSMS][dsm_key]
         for tag in [
             cst.INDEX_DSM_ALT,
             cst.INDEX_DSM_CLASSIFICATION,
             cst.INDEX_DSM_COLOR,
             cst.INDEX_DSM_MASK,
         ]:
-            if depth_map[tag] is not None:
-                depth_map[tag] = make_relative_path_absolute(
-                    depth_map[tag], config_json_dir
+            if dsms[tag] is not None:
+                dsms[tag] = make_relative_path_absolute(
+                    dsms[tag], config_json_dir
                 )
+
+    if overloaded_conf[sens_cst.ROI] is not None:
+        if isinstance(overloaded_conf[sens_cst.ROI], str):
+            overloaded_conf[sens_cst.ROI] = make_relative_path_absolute(
+                overloaded_conf[sens_cst.ROI], config_json_dir
+            )
 
 
 def check_phasing(dsm_dict):
@@ -313,6 +315,7 @@ def check_phasing(dsm_dict):
 def merge_dsm_infos(  # noqa: C901 function is too complex
     dict_path,
     orchestrator,
+    roi_poly,
     dump_dir=None,
     dsm_file_name=None,
     color_file_name=None,
@@ -373,6 +376,15 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
                     max(bounds[2], global_bounds[2]),  # xmax
                     max(bounds[3], global_bounds[3]),  # ymax
                 )
+
+    if roi_poly is not None:
+        global_bounds = preprocessing.crop_terrain_bounds_with_roi(
+            roi_poly,
+            global_bounds[0],
+            global_bounds[1],
+            global_bounds[2],
+            global_bounds[3],
+        )
 
     # Tiling of the dataset
     [xmin, ymin, xmax, ymax] = global_bounds

@@ -2284,6 +2284,11 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         if self.dsms_in_inputs:
+            # Compute roi polygon, in input EPSG
+            self.roi_poly = preprocessing.compute_roi_poly(
+                self.input_roi_poly, self.input_roi_epsg, self.epsg
+            )
+
             dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
 
             dsm_dict = self.used_conf[INPUTS][dsm_cst.DSMS]
@@ -2361,6 +2366,7 @@ class DefaultPipeline(PipelineTemplate):
             dsm_inputs.merge_dsm_infos(
                 dict_path,
                 self.cars_orchestrator,
+                self.roi_poly,
                 dsms_merging_dump_dir,
                 dsm_file_name,
                 color_file_name,
