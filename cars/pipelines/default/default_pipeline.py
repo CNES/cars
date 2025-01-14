@@ -1639,7 +1639,8 @@ class DefaultPipeline(PipelineTemplate):
             # Get margins used in dense matching,
             dense_matching_margins_fun = (
                 self.dense_matching_app.get_margins_fun(
-                    self.pairs[pair_key]["corrected_grid_left"], disp_range_grid
+                    self.pairs[pair_key]["corrected_grid_left"],
+                    disp_range_grid,
                 )
             )
 

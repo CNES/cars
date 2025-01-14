@@ -106,14 +106,13 @@ class DenseMatching(ApplicationTemplate, metaclass=ABCMeta):
         """
 
     @abstractmethod
-    def get_margins_fun(self, grid_left, disp_min_grid, disp_max_grid):
+    def get_margins_fun(self, grid_left, disp_range_grid):
         """
         Get Margins function  that generates margins needed by
         matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min_grid: minimum disparity grid
-        :param disp_max_grid: maximum disparity grid
+        :param disp_range_grid: minimum and maximum disparity grid
         :return: function that generates margin for given roi
 
         """

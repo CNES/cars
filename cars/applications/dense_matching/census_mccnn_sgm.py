@@ -33,11 +33,14 @@ from typing import Dict, Tuple
 # Third party imports
 import affine
 import numpy as np
+import pandora
 import rasterio
 import xarray as xr
 from affine import Affine
 from json_checker import And, Checker, Or
+from pandora.check_configuration import check_pipeline_section
 from pandora.img_tools import add_global_disparity
+from pandora.state_machine import PandoraMachine
 from scipy.ndimage import generic_filter
 
 import cars.applications.dense_matching.dense_matching_constants as dm_cst
@@ -225,6 +228,27 @@ class CensusMccnnSgm(
         self.loader = pandora_loader
         self.corr_config = collections.OrderedDict(pandora_loader.get_conf())
 
+        # Instantiate margins from pandora check conf
+        # create the dataset
+        fake_dataset = xr.Dataset(
+            data_vars={},
+            coords={
+                "band_im": [(None)],
+                "row": np.arange(10),
+                "col": np.arange(10),
+            },
+            attrs={"disparity_source": [-1, 1]},
+        )
+        # Import plugins before checking configuration
+        pandora.import_plugin()
+        pandora_machine = PandoraMachine()
+        corr_config_pipeline = {"pipeline": dict(self.corr_config["pipeline"])}
+
+        _ = check_pipeline_section(
+            corr_config_pipeline, fake_dataset, fake_dataset, pandora_machine
+        )
+        self.margins = pandora_machine.margins.global_margins
+
         overloaded_conf["loader_conf"] = self.corr_config
 
         application_schema = {
@@ -299,7 +323,7 @@ class CensusMccnnSgm(
         matching method, to use during resampling
 
         :param grid_left: left epipolar grid
-        :param disp_min_grid: minimum and maximum disparity grid
+        :param disp_range_grid: minimum and maximum disparity grid
         :return: function that generates margin for given roi
 
         """
@@ -408,8 +432,8 @@ class CensusMccnnSgm(
             disp_max = int(math.ceil(disp_max))
 
             # Compute margins for the correlator
-            # TODO use loader correlators
-            margins = dm_tools.get_margins(disp_min, disp_max, self.corr_config)
+            margins = dm_tools.get_margins(self.margins, disp_min, disp_max)
+
             return margins
 
         return margins_wrapper
