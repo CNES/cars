@@ -99,7 +99,9 @@ def check_dsm_inputs(conf, config_json_dir=None):
         cst.DSM_INF_STD: Or(str, None),
         cst.DSM_SUP_MEAN: Or(str, None),
         cst.DSM_SUP_STD: Or(str, None),
-        cst.DSM_CONFIDENCE: Or(str, None),
+        cst.DSM_CONFIDENCE_AMBIGUITY: Or(str, None),
+        cst.DSM_CONFIDENCE_RISK_MIN: Or(str, None),
+        cst.DSM_CONFIDENCE_RISK_MAX: Or(str, None),
         cst.DSM_PERFORMANCE_MAP: Or(str, None),
         cst.DSM_SOURCE_PC: Or(str, None),
         cst.DSM_FILLING: Or(str, None),
@@ -133,10 +135,10 @@ def check_dsm_inputs(conf, config_json_dir=None):
         ][dsm_key].get("weights", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_NB_PTS] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("dsm_nb_pts", None)
+        ][dsm_key].get("dsm_n_pts", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_NB_PTS_IN_CELL] = conf[
             dsm_cst.DSMS
-        ][dsm_key].get("dsm_nb_pts_in_cell", None)
+        ][dsm_key].get("dsm_pts_in_cell", None)
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_MEAN] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("dsm_mean", None)
@@ -155,9 +157,15 @@ def check_dsm_inputs(conf, config_json_dir=None):
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_SUP_STD] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("dsm_sup_std", None)
-        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE] = conf[
-            dsm_cst.DSMS
-        ][dsm_key].get("confidence_from_ambiguity", None)
+        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE_AMBIGUITY] = (
+            conf[dsm_cst.DSMS][dsm_key].get("confidence_from_ambiguity", None)
+        )
+        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE_RISK_MIN] = (
+            conf[dsm_cst.DSMS][dsm_key].get("confidence_from_risk_min", None)
+        )
+        overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_CONFIDENCE_RISK_MAX] = (
+            conf[dsm_cst.DSMS][dsm_key].get("confidence_from_risk_max", None)
+        )
         overloaded_conf[dsm_cst.DSMS][dsm_key][cst.DSM_PERFORMANCE_MAP] = conf[
             dsm_cst.DSMS
         ][dsm_key].get("performance_map", None)
@@ -302,21 +310,47 @@ def check_phasing(dsm_dict):
             raise RuntimeError(f"DSM {dsm_key} and {ref_key} are not phased")
 
 
-def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
+def merge_dsm_infos(  # noqa: C901 function is too complex
+    dict_path,
+    orchestrator,
+    dump_dir=None,
+    dsm_file_name=None,
+    color_file_name=None,
+    classif_file_name=None,
+    filling_file_name=None,
+    performance_map_file_name=None,
+    mask_file_name=None,
+    contributing_pair_file_name=None,
+):
     """
     Merge all the dsms
 
     :param dict_path: path of all variables from all dsms
     :type dict_path: dict
     :param orchestrator: orchestrator used
+    :param dump_dir: output path
+    :type dump_dir: str
     :param dsm_file_name: name of the dsm output file
     :type dsm_file_name: str
+    :param color_file_name: name of the color output file
+    :type color_file_name: str
+    :param classif_file_name: name of the classif output file
+    :type classif_file_name: str
+    :param filling_file_name: name of the filling output file
+    :type filling_file_name: str
+    :param performance_map_file_name: name of the performance_map output file
+    :type performance_map_file_name: str
+    :param mask_file_name: name of the mask output file
+    :type mask_file_name: str
+    :param contributing_pair_file_name: name of contributing_pair output file
+    :type contributing_pair_file_name: str
 
     """
 
     # Create CarsDataset
     terrain_raster = cars_dataset.CarsDataset("arrays", name="rasterization")
 
+    # find the global bounds of the dataset
     for index, path in enumerate(dict_path["dsm"]):
         with rasterio.open(path) as src:
             if index == 0:
@@ -340,6 +374,7 @@ def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
                     max(bounds[3], global_bounds[3]),  # ymax
                 )
 
+    # Tiling of the dataset
     [xmin, ymin, xmax, ymax] = global_bounds
     optimal_terrain_tile_width = 500
     optimal_terrain_tile_height = 500
@@ -357,6 +392,7 @@ def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
         2:
     ]
 
+    # build the tranform of the dataset
     # Generate profile
     geotransform = (
         global_bounds[0],
@@ -381,22 +417,54 @@ def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
         }
     )
 
+    # Setup dump directory
+    if dump_dir is not None:
+        out_dump_dir = dump_dir
+        safe_makedirs(out_dump_dir)
+    else:
+        out_dump_dir = orchestrator.out_dir
+
     if dsm_file_name is not None:
         safe_makedirs(os.path.dirname(dsm_file_name))
 
-    out_dsm_file_name = dsm_file_name
+    # Save all file that are in inputs
+    for key in dict_path.keys():
+        if key in (cst.DSM_ALT, cst.DSM_COLOR, cst.DSM_WEIGHTS_SUM):
+            option = False
+        else:
+            option = True
 
-    if out_dsm_file_name is not None:
+        if key == cst.DSM_ALT and dsm_file_name is not None:
+            out_file_name = dsm_file_name
+        elif key == cst.DSM_COLOR and color_file_name is not None:
+            out_file_name = color_file_name
+        elif key == cst.DSM_CLASSIF and classif_file_name is not None:
+            out_file_name = classif_file_name
+        elif key == cst.DSM_FILLING and filling_file_name is not None:
+            out_file_name = filling_file_name
+        elif (
+            key == cst.DSM_PERFORMANCE_MAP
+            and performance_map_file_name is not None
+        ):
+            out_file_name = performance_map_file_name
+        elif (
+            key == cst.DSM_SOURCE_PC and contributing_pair_file_name is not None
+        ):
+            out_file_name = contributing_pair_file_name
+        elif key == cst.DSM_MSK and mask_file_name is not None:
+            out_file_name = mask_file_name
+        else:
+            out_file_name = os.path.join(out_dump_dir, key + ".tif")
+
         orchestrator.add_to_save_lists(
-            out_dsm_file_name,
-            cst.DSM_ALT,
+            out_file_name,
+            key,
             terrain_raster,
-            dtype=np.float32,
-            nodata=dsm_nodata,
-            cars_ds_name="dsm",
+            dtype=inputs.rasterio_get_dtype(dict_path[key][0]),
+            nodata=inputs.rasterio_get_nodata(dict_path[key][0]),
+            cars_ds_name=key,
+            optional_data=option,
         )
-
-    orchestrator.add_to_replace_lists(terrain_raster, cars_ds_name="dsm")
 
     [saving_info] = orchestrator.get_saving_infos([terrain_raster])
     for col in range(terrain_raster.shape[1]):
@@ -407,7 +475,6 @@ def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
             )
 
             # Delayed call to dsm merging operations using all
-            # required dsms
             terrain_raster[row, col] = orchestrator.cluster.create_task(
                 dsm_merging_wrapper, nout=1
             )(
@@ -415,7 +482,6 @@ def merge_dsm_infos(dict_path, orchestrator, dsm_file_name=None):
                 terrain_raster.tiling_grid[row, col],
                 resolution,
                 raster_profile,
-                dsm_nodata,
                 full_saving_info,
             )
 
@@ -425,11 +491,10 @@ def dsm_merging_wrapper(
     tile_bounds,
     resolution,
     profile,
-    dsm_nodata,
     saving_info=None,
 ):
     """
-    Merge the dsms
+    Merge all the variables
 
     :param dict_path: path of all variables from all dsms
     :type dict_path: dict
@@ -439,25 +504,24 @@ def dsm_merging_wrapper(
     :type resolution: list
     :param profile: profile of the global dsm
     :type profile: OrderedDict
-    :param dsm_nodata: the nodata of the dsms
-    :type dsm_nodata: float
     :saving_info: the saving infos
     """
 
-    x = np.arange(tile_bounds[0], tile_bounds[1], resolution[1])
-    y = np.arange(tile_bounds[2], tile_bounds[3], resolution[1])
-    height = len(y)
-    width = len(x)
+    # create the tile dataset
+    x_value = np.arange(tile_bounds[0], tile_bounds[1], resolution[1])
+    y_value = np.arange(tile_bounds[2], tile_bounds[3], resolution[1])
+    height = len(y_value)
+    width = len(x_value)
 
     dataset = xr.Dataset(
         data_vars={},
         coords={
-            "y": y,
-            "x": x,
-            "band_im": ["r", "g", "b"],
+            "y": y_value,
+            "x": x_value,
         },
     )
 
+    # calculate the bounds intersection between each path
     list_intersection = []
 
     for path in dict_path["dsm"]:
@@ -475,22 +539,87 @@ def dsm_merging_wrapper(
             ):
                 list_intersection.append(intersect_bounds)
 
+    # Update the data
     for key in dict_path.keys():
-        if key == "dsm":
-            dataset[key] = (
-                [cst.Y, cst.X],
-                assemblage(
-                    dict_path[key],
-                    dict_path["weights"],
-                    "basic",
-                    list_intersection,
-                    tile_bounds,
-                    height,
-                    width,
-                    dsm_nodata,
-                ),
+        # Choose the method regarding the variable
+        if key in [cst.DSM_NB_PTS, cst.DSM_NB_PTS_IN_CELL]:
+            method = "sum"
+        elif key in [
+            cst.DSM_FILLING,
+            cst.DSM_CLASSIF,
+            cst.DSM_SOURCE_PC,
+        ]:
+            method = "bool"
+        else:
+            method = "basic"
+
+        # take band description information
+        band_description = inputs.get_descriptions_bands(dict_path[key][0])
+
+        if band_description[0] is not None:
+            if len(band_description) == 1:
+                band_description = np.array([band_description[0]])
+            else:
+                band_description = np.array([band_description])
+
+        # Define the dimension of the data in the dataset
+        if key == cst.DSM_COLOR:
+            band_description = ["r", "g", "b"]
+            dataset.coords[cst.BAND_IM] = (cst.BAND_IM, band_description)
+            dim = [cst.BAND_IM, cst.Y, cst.X]
+        elif key == cst.DSM_SOURCE_PC:
+            dataset.coords[cst.BAND_SOURCE_PC] = (
+                cst.BAND_SOURCE_PC,
+                band_description,
+            )
+            dim = [cst.BAND_SOURCE_PC, cst.Y, cst.X]
+        elif key == cst.DSM_CLASSIF:
+            dataset.coords[cst.BAND_CLASSIF] = (
+                cst.BAND_CLASSIF,
+                band_description,
+            )
+            dim = [cst.BAND_CLASSIF, cst.Y, cst.X]
+        elif key == cst.DSM_FILLING:
+            dataset.coords[cst.BAND_FILLING] = (
+                cst.BAND_FILLING,
+                band_description,
+            )
+            dim = [cst.BAND_FILLING, cst.Y, cst.X]
+        else:
+            dim = [cst.Y, cst.X]
+
+        # Update data
+        if key == cst.DSM_ALT:
+            # Update dsm_value et weights once
+            value, weights = assemblage(
+                dict_path[key],
+                dict_path[cst.DSM_WEIGHTS_SUM],
+                method,
+                list_intersection,
+                tile_bounds,
+                height,
+                width,
+                band_description,
             )
 
+            dataset[key] = (dim, value)
+            dataset[cst.DSM_WEIGHTS_SUM] = (dim, weights)
+        elif key != cst.DSM_WEIGHTS_SUM:
+            # Update other variables
+            value, _ = assemblage(
+                dict_path[key],
+                dict_path[cst.DSM_WEIGHTS_SUM],
+                method,
+                list_intersection,
+                tile_bounds,
+                height,
+                width,
+                band_description,
+            )
+
+            dataset[key] = (dim, value)
+
+    # Define the tile transform
     bounds = [tile_bounds[0], tile_bounds[2], tile_bounds[1], tile_bounds[3]]
     xstart, ystart, xsize, ysize = tiling.roi_to_start_and_size(
         bounds, resolution[1]
@@ -509,6 +638,7 @@ def dsm_merging_wrapper(
 
     window = cars_dataset.window_array_to_dict(window)
 
+    # Fill dataset
     cars_dataset.fill_dataset(
         dataset,
         saving_info=saving_info,
@@ -522,26 +652,67 @@ def dsm_merging_wrapper(
 
 def assemblage(
     out,
-    weights,
+    current_weights,
     method,
     intersect_bounds,
     tile_bounds,
     height,
     width,
-    dsm_nodata,
+    band_description=None,
 ):
-    tile = np.full((height, width), dsm_nodata, dtype="float32")
-    old_weights = np.full((height, width), 0, dtype="float32")
+    """
+    Update data
+
+    :param out: the data to update
+    :type out: list of path
+    :param current_weights: the current weights of the data
+    :type current_weights: list of path
+    :param method: the method used to update the data
+    :type method: str
+    :param intersect_bounds: the bounds intersection
+    :type intersect_bounds: list of bounds
+    :param height: the height of the tile
+    :type height: int
+    :param width: the width of the tile
+    :type width: int
+    :param band_description: the band description of the data
+    :type band_description: str of list
+
+    """
+    # Initialize the tile
+    nb_bands = inputs.rasterio_get_nb_bands(out[0])
+    dtype = inputs.rasterio_get_dtype(out[0])
+    nodata = inputs.rasterio_get_nodata(out[0])
+
+    if band_description[0] is not None:
+        tile = np.full((nb_bands, height, width), nodata, dtype=dtype)
+    else:
+        tile = np.full((height, width), nodata, dtype=dtype)
+
+    # Initialize the weights
+    weights = np.full((height, width), 0, dtype=dtype)
 
     for idx, path in enumerate(out):
-        with rasterio.open(path) as src, rasterio.open(weights[idx]) as drt:
+        with rasterio.open(path) as src, rasterio.open(
+            current_weights[idx]
+        ) as drt:
+            # Build the window
             window = from_bounds(
                 *intersect_bounds[idx], transform=src.transform
             )
 
-            data = src.read(1, window=window)
-            weights_window = drt.read(1, window=window)
+            # Extract the data
+            if band_description[0] is not None:
+                data = src.read(window=window)
+                _, rows, cols = data.shape
+            else:
+                data = src.read(1, window=window)
+                rows, cols = data.shape
 
+            current_weights_window = drt.read(1, window=window)
+
+            # Calculate the x and y offset because the current_data
+            # doesn't equal to the entire tile
             x_offset = int(
                 (intersect_bounds[idx][0] - tile_bounds[0]) * np.abs(src.res[0])
             )
@@ -549,22 +720,34 @@ def assemblage(
                 (tile_bounds[3] - intersect_bounds[idx][3]) * np.abs(src.res[1])
             )
 
-            rows, cols = data.shape
+            if cols > 0 and rows > 0:
+                tab_x = np.arange(x_offset, x_offset + cols)
+                tab_y = np.arange(y_offset, y_offset + rows)
+                ind_y, ind_x = np.ix_(tab_y, tab_x)  # pylint: disable=W0632
 
-            ind_x = np.arange(x_offset, x_offset + cols)
-            ind_y = np.arange(y_offset, y_offset + rows)
+                # Update data
+                if band_description[0] is not None:
+                    tile[:, ind_y, ind_x] = update_data(
+                        tile[:, ind_y, ind_x],
+                        data,
+                        current_weights_window,
+                        weights[ind_y, ind_x],
+                        nodata,
+                        method=method,
+                    )
+                else:
+                    tile[ind_y, ind_x] = update_data(
+                        tile[ind_y, ind_x],
+                        data,
+                        current_weights_window,
+                        weights[ind_y, ind_x],
+                        nodata,
+                        method=method,
+                    )
 
-            tile[np.ix_(ind_y, ind_x)] = update_data(
-                tile[np.ix_(ind_y, ind_x)],
-                data,
-                weights_window,
-                old_weights[np.ix_(ind_y, ind_x)],
-                dsm_nodata,
-                method=method,
-            )
+                # Update weights
+                weights[ind_y, ind_x] = update_weights(
+                    weights[ind_y, ind_x], current_weights_window
+                )
 
-            old_weights[np.ix_(ind_y, ind_x)] = update_weights(
-                old_weights[np.ix_(ind_y, ind_x)], weights_window
-            )
-
-    return tile
+    return tile, weights

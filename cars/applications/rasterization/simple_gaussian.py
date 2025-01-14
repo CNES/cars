@@ -369,7 +369,7 @@ class SimpleGaussian(
             y_phase = phasing["point"][1]
 
             for index, value in enumerate(bounds):
-                if index == 0 or index == 2:
+                if index in (0, 2):
                     bounds[index] = rasterization_step.phased_dsm(
                         value, x_phase, res
                     )

@@ -2284,6 +2284,8 @@ class DefaultPipeline(PipelineTemplate):
         )
 
         if self.dsms_in_inputs:
+            dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
+
             dsm_dict = self.used_conf[INPUTS][dsm_cst.DSMS]
             dict_path = {}
             for key in dsm_dict.keys():
@@ -2295,8 +2297,78 @@ class DefaultPipeline(PipelineTemplate):
                             dict_path[path_name].append(
                                 dsm_dict[key][path_name]
                             )
+
+            color_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "color.tif",
+                )
+                if "color" in dict_path
+                else None
+            )
+
+            mask_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "mask.tif",
+                )
+                if "mask" in dict_path
+                else None
+            )
+
+            performance_map_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "performance_map.tif",
+                )
+                if "performance_map" in dict_path
+                else None
+            )
+
+            classif_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "classification.tif",
+                )
+                if "classification" in dict_path
+                else None
+            )
+
+            contributing_all_pair_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "contributing_pair.tif",
+                )
+                if "source_pc" in dict_path
+                else None
+            )
+
+            filling_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "filling.tif",
+                )
+                if "filling" in dict_path
+                else None
+            )
+
             dsm_inputs.merge_dsm_infos(
-                dict_path, self.cars_orchestrator, dsm_file_name
+                dict_path,
+                self.cars_orchestrator,
+                dsms_merging_dump_dir,
+                dsm_file_name,
+                color_file_name,
+                classif_file_name,
+                filling_file_name,
+                performance_map_file_name,
+                mask_file_name,
+                contributing_all_pair_file_name,
             )
 
             self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
@@ -2516,9 +2588,12 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             # Remove dump_dir if no intermediate data should be written
-            if not any(
-                app.get("save_intermediate_data", False) is True
-                for app in self.used_conf[APPLICATIONS].values()
+            if (
+                not any(
+                    app.get("save_intermediate_data", False) is True
+                    for app in self.used_conf[APPLICATIONS].values()
+                )
+                and not self.dsms_in_inputs
             ):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
