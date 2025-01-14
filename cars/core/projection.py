@@ -35,6 +35,7 @@ import pandas
 import pyproj
 import rasterio as rio
 import xarray as xr
+from pyproj import CRS
 from rasterio.features import shapes
 from shapely.geometry import Polygon, shape
 from shapely.ops import transform
@@ -86,14 +87,42 @@ def compute_dem_intersection_with_poly(  # noqa: C901
                 if ref_epsg != file_epsg:
                     file_bb = polygon_projection(file_bb, file_epsg, ref_epsg)
 
+                left, bottom, right, top = ref_poly.bounds
+
+                # To ensure that the window used for extracting the SRTM
+                # polygons completely contains the ref_poly,
+                # a margin must be applied. Using the exact bounds of
+                # ref_poly could potentially lead to issues.
+                spatial_ref = CRS.from_epsg(ref_epsg)
+                if spatial_ref.is_geographic:
+                    margin = 0.001
+                else:
+                    margin = 50
+
+                left = left - margin
+                right = right + margin
+                bottom = bottom - margin
+                top = top + margin
+
+                min_row, min_col = data.index(left, top)
+                max_row, max_col = data.index(right, bottom)
+
+                window = rio.windows.Window(
+                    col_off=int(min_col),
+                    row_off=int(min_row),
+                    width=int(max_col - min_col),
+                    height=int(max_row - min_row),
+                )
+
                 # if the srtm tile intersects the reference polygon
                 if file_bb.intersects(ref_poly):
                     local_dem_poly = None
 
                     # retrieve valid polygons
                     for poly, val in shapes(
-                        data.dataset_mask(),
-                        transform=data.transform,
+                        data.read(1, window=window),
+                        data.dataset_mask(window=window),
+                        transform=data.window_transform(window),
                     ):
                         if val != 0:
                             poly = shape(poly)

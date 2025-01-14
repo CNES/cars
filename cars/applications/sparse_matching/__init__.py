@@ -25,4 +25,4 @@ CARS core matching module init file
 
 from cars.applications.sparse_matching.sparse_matching import SparseMatching
 
-from . import sift
+from . import pandora_sparse_matching, sift
