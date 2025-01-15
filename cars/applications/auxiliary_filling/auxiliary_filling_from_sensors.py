@@ -401,8 +401,12 @@ def filling_from_sensor_wrapper(
         alt_values = dsm_image.read(1, window=rio_window)
         target_mask = dsm_image.read_masks(1, window=rio_window)
 
+    nodata_color = None
+    nodata_classif = None
+
     with rio.open(color_file) as color_image:
         profile = color_image.profile
+        nodata_color = color_image.nodata
 
         number_of_color_bands = color_image.count
 
@@ -418,6 +422,7 @@ def filling_from_sensor_wrapper(
     classification_band_names = None
     if classification_file is not None:
         with rio.open(classification_file) as classification_image:
+            nodata_classif = None
 
             number_of_classification_bands = classification_image.count
 
@@ -448,6 +453,14 @@ def filling_from_sensor_wrapper(
                 use_mask=use_mask,
             )
         )
+
+        # Change nan to nodata
+        if nodata_color is not None:
+            color_values_filled[np.isnan(color_values_filled)] = nodata_color
+        if nodata_classif is not None:
+            classification_values_filled[
+                np.isnan(classification_values_filled)
+            ] = nodata_classif
 
         # forward filled values in the output buffer
         for band_index in range(number_of_color_bands):
