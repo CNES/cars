@@ -27,13 +27,16 @@ import logging
 import os
 
 import rasterio as rio
-from json_checker import Checker, Or
+from json_checker import Checker, OptionalKey, Or
 
 # CARS imports
 from cars.core import inputs, preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
 from cars.core.utils import make_relative_path_absolute
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
+from cars.pipelines.parameters import (
+    depth_map_inputs_constants as depth_map_cst,
+)
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
 
 CARS_GEOID_PATH = "geoid/egm96.grd"  # Path in cars package (pkg)
@@ -65,6 +68,7 @@ def sensors_check_inputs(conf, config_json_dir=None):  # noqa: C901
         sens_cst.PAIRING: Or([[str]], None),
         sens_cst.INITIAL_ELEVATION: Or(str, dict, None),
         sens_cst.ROI: Or(str, dict, None),
+        OptionalKey(depth_map_cst.DEPTH_MAPS): dict,
     }
 
     checker_inputs = Checker(inputs_schema)

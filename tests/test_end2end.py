@@ -4391,13 +4391,23 @@ def test_end2end_paca_with_mask():
                 "msk_no_data": 254,
             },
             "dsm_filling": {"method": "bulldozer", "activated": True},
+            "auxiliary_filling": {
+                "save_intermediate_data": True,
+                "mode": "full",
+                "activated": True,
+                "use_mask": True,
+                "color_interpolator": "linear",
+            },
         }
         input_config_dense_dsm["applications"].update(dense_dsm_applications)
 
         # update epsg
         final_epsg = 32631
         input_config_dense_dsm["output"]["epsg"] = final_epsg
-        input_config_dense_dsm["output"]["auxiliary"] = {"mask": True}
+        input_config_dense_dsm["output"]["auxiliary"] = {
+            "mask": True,
+            "classification": True,
+        }
         resolution = 0.5
         input_config_dense_dsm["output"]["resolution"] = resolution
 
@@ -4423,7 +4433,16 @@ def test_end2end_paca_with_mask():
         #     absolute_data_path(
         #         os.path.join(
         #             ref_output_dir,
-        #             "color_end2end_paca_bulldozer.tif"
+        #             "color_end2end_paca_aux_filling.tif"
+        #         )
+        #     ),
+        # ),
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "classification.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "classification_end2end_paca_aux_filling.tif"
         #         )
         #     ),
         # )
@@ -4446,9 +4465,22 @@ def test_end2end_paca_with_mask():
             atol=2.0e-7,
         )
         assert_same_images(
+            os.path.join(out_dir, "dsm", "classification.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir,
+                    "classification_end2end_paca_aux_filling.tif",
+                )
+            ),
+            rtol=0.0002,
+            atol=1.0e-6,
+        )
+        assert_same_images(
             os.path.join(out_dir, "dsm", "color.tif"),
             absolute_data_path(
-                os.path.join(ref_output_dir, "color_end2end_paca_bulldozer.tif")
+                os.path.join(
+                    ref_output_dir, "color_end2end_paca_aux_filling.tif"
+                )
             ),
             rtol=0.0002,
             atol=1.0e-6,

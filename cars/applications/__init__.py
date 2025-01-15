@@ -23,6 +23,7 @@ CARS application module init file
 """
 
 # Imports needed in order to register application for Application factory
+from . import auxiliary_filling  # noqa: F401
 from . import dem_generation  # noqa: F401
 from . import dense_match_filling  # noqa: F401
 from . import dense_matching  # noqa: F401
