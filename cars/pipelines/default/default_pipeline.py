@@ -977,6 +977,7 @@ class DefaultPipeline(PipelineTemplate):
                     self.pairs[pair_key]["sensor_image_right"],
                     self.pairs[pair_key]["grid_left"],
                     self.pairs[pair_key]["grid_right"],
+                    orchestrator=self.cars_orchestrator,
                     pair_folder=os.path.join(
                         self.dump_dir, "resampling", "initial", pair_key
                     ),
@@ -1107,16 +1108,18 @@ class DefaultPipeline(PipelineTemplate):
                         self.pairs[pair_key]["sensor_image_right"],
                         self.pairs[pair_key]["corrected_grid_left"],
                         self.pairs[pair_key]["corrected_grid_right"],
-                        self.cars_orchestrator,
-                        os.path.join(
+                        orchestrator=self.cars_orchestrator,
+                        pair_folder=os.path.join(
                             self.dump_dir,
                             "resampling",
                             "corrected_for_pandora",
                             pair_key,
                         ),
-                        pair_key,
-                        self.sparse_mtch_pandora_app.get_margins_fun(
-                            method="pandora"
+                        pair_key="pair_key",
+                        margins_fun=(
+                            self.sparse_mtch_pandora_app.get_margins_fun(
+                                method="pandora"
+                            )
                         ),
                         tile_width=None,
                         tile_height=None,
