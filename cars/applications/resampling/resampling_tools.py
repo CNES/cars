@@ -310,13 +310,26 @@ def resample_image(
             oversampling = int(res_x)
             assert res_x == oversampling
 
+            grid_origin_x = grid_reader.transform[2]
+            grid_origin_y = grid_reader.transform[5]
+            assert grid_origin_x == grid_origin_y
+            grid_margin = -grid_origin_x / oversampling - 0.5
+            assert grid_margin == int(grid_margin)
+            grid_margin = int(grid_margin)
+
             # Convert resampled region to grid region with oversampling
-            grid_region = [
-                math.floor(xmin / oversampling),
-                math.floor(ymin / oversampling),
-                math.ceil(xmax / oversampling),
-                math.ceil(ymax / oversampling),
-            ]
+            grid_region = np.array(
+                [
+                    math.floor(xmin / oversampling),
+                    math.floor(ymin / oversampling),
+                    math.ceil(xmax / oversampling),
+                    math.ceil(ymax / oversampling),
+                ]
+            )
+            # Out region of epipolar image
+            out_region = oversampling * grid_region
+            # Grid region
+            grid_region += grid_margin
 
             grid_window = Window.from_slices(
                 (grid_region[1], grid_region[3] + 1),
@@ -399,7 +412,6 @@ def resample_image(
                     ).astype(int)
 
                 # extract exact region
-                out_region = oversampling * np.array(grid_region)
                 ext_region = block_region - out_region
                 block_resamp = block_resamp[
                     ...,

@@ -63,6 +63,7 @@ class SharelocGeometry(AbstractGeometry):
         geoid=None,
         default_alt=None,
         pairs_for_roi=None,
+        rectification_grid_margin=0,
     ):
         super().__init__(
             geometry_plugin,
@@ -75,6 +76,7 @@ class SharelocGeometry(AbstractGeometry):
         self.dem_roi = None
         self.roi_shareloc = None
         self.elevation = None
+        self.rectification_grid_margin = rectification_grid_margin
 
         # compute roi only when generating geometry object with dem
         # even if dem is None
@@ -380,6 +382,7 @@ class SharelocGeometry(AbstractGeometry):
             shareloc_model2,
             self.elevation,
             epi_step=epipolar_step,
+            margin=self.rectification_grid_margin,
         )
 
         # rearrange output to match the expected structure of CARS
@@ -390,7 +393,10 @@ class SharelocGeometry(AbstractGeometry):
         epipolar_size_x = int(np.floor(epipolar_size_x))
         epipolar_size_y = int(np.floor(epipolar_size_y))
 
-        origin = [0.0, 0.0]
+        origin = [
+            float(-self.rectification_grid_margin * epipolar_step),
+            float(-self.rectification_grid_margin * epipolar_step),
+        ]
         spacing = [float(epipolar_step), float(epipolar_step)]
 
         # alt_to_disp_ratio does not consider image resolution
