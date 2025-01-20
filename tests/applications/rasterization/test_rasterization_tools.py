@@ -39,6 +39,8 @@ from cars.applications.rasterization import rasterization_tools
 
 # CARS imports
 from cars.core import constants as cst
+from cars.core import inputs
+from cars.pipelines.parameters import dsm_inputs
 
 # CARS Tests imports
 from tests.helpers import absolute_data_path, add_color, assert_same_datasets
@@ -129,6 +131,69 @@ def test_simple_rasterization_synthetic_case():
         rtol=0.0000001,
         atol=0.0000001,  # 10e-8 errors due to convertion
     )
+
+
+@pytest.mark.unit_tests
+def test_phased_dsm():
+    """
+    Test phased_dsm function
+    """
+
+    dsm_one = absolute_data_path("ref_output/dsm_end2end_ventoux_split.tif")
+
+    dsm_two = absolute_data_path("ref_output/dsm_end2end_paca_bulldozer.tif")
+
+    input_test = {
+        "one": {
+            "dsm": dsm_one,
+        },
+        "two": {
+            "dsm": dsm_two,
+        },
+    }
+
+    with pytest.raises(RuntimeError) as exception:
+        dsm_inputs.check_phasing(input_test)
+
+    assert str(exception.value) == "DSM two and one are not phased"
+
+    bounds_one = inputs.rasterio_get_bounds(dsm_one)
+    bounds_two = inputs.rasterio_get_bounds(dsm_two)
+    profile = inputs.rasterio_get_profile(dsm_one)
+    transform = list(profile["transform"])
+    resolution = transform[4]
+
+    x_phase = 675292.31105432
+    y_phase = 4897082.95714968
+
+    for index, value in enumerate(bounds_one):
+        if index in (0, 2):
+            bounds_one[index] = rasterization_tools.phased_dsm(
+                value, x_phase, resolution
+            )
+        else:
+            bounds_one[index] = rasterization_tools.phased_dsm(
+                value, y_phase, resolution
+            )
+
+    for index, value in enumerate(bounds_two):
+        if index in (0, 2):
+            bounds_two[index] = rasterization_tools.phased_dsm(
+                value, x_phase, resolution
+            )
+        else:
+            bounds_two[index] = rasterization_tools.phased_dsm(
+                value, y_phase, resolution
+            )
+
+    diff = bounds_one[0:2] - bounds_two[0:2]
+    resolution = np.array([resolution, resolution])
+    res_ratio = diff / resolution
+
+    if ~np.all(np.equal(res_ratio, res_ratio.astype(int))) and ~np.all(
+        np.equal(1 / res_ratio, (1 / res_ratio).astype(int))
+    ):
+        raise RuntimeError("DSM are not phased")
 
 
 @pytest.mark.unit_tests

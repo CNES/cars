@@ -867,18 +867,19 @@ def update_data(
     """
 
     new_data = current_data
+    data = old_data
     if old_data is not None:
         old_data = np.squeeze(old_data)
         old_weights = np.squeeze(old_weights)
         shape = old_data.shape
-        if len(old_data.shape) == 3:
+        if len(data.shape) == 3 and data.shape[0] > 1:
             old_weights = np.repeat(
                 np.expand_dims(old_weights, axis=0), old_data.shape[0], axis=0
             )
 
         current_data = np.squeeze(current_data)
         weights = np.squeeze(weights)
-        if len(current_data.shape) == 3:
+        if len(new_data.shape) == 3 and new_data.shape[0] > 1:
             weights = np.repeat(
                 np.expand_dims(weights, axis=0), current_data.shape[0], axis=0
             )
@@ -888,7 +889,9 @@ def update_data(
         old_valid = old_weights != 0
 
         both_valid = np.logical_and(current_valid, old_valid)
+
         total_weights = np.zeros(shape)
+
         total_weights[both_valid] = (
             weights[both_valid] + old_weights[both_valid]
         )

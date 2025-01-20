@@ -75,11 +75,17 @@ def check_dsm_inputs(conf, config_json_dir=None):
         )
     )
 
+    overloaded_conf[sens_cst.SENSORS] = conf.get(sens_cst.SENSORS, None)
+
+    overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
+
     # Validate inputs
     inputs_schema = {
         dsm_cst.DSMS: dict,
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.INITIAL_ELEVATION: Or(dict, None),
+        sens_cst.SENSORS: Or(dict, None),
+        sens_cst.PAIRING: Or([[str]], None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -87,7 +93,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
 
     # Validate depth maps
 
-    pc_schema = {
+    dsm_schema = {
         cst.DSM_CLASSIF: Or(str, None),
         cst.DSM_ALT: Or(str, None),
         cst.DSM_ALT_INF: Or(str, None),
@@ -111,7 +117,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
         cst.DSM_COLOR: Or(str, None),
     }
 
-    checker_pc = Checker(pc_schema)
+    checker_pc = Checker(dsm_schema)
     for dsm_key in conf[dsm_cst.DSMS]:
         # Get depth maps with default
         overloaded_conf[dsm_cst.DSMS][dsm_key] = {}
@@ -208,6 +214,9 @@ def check_dsm_inputs(conf, config_json_dir=None):
     )
 
     check_phasing(conf[dsm_cst.DSMS])
+
+    if sens_cst.SENSORS in conf:
+        sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
 
     return overloaded_conf
 
@@ -394,6 +403,18 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
     :param contributing_pair_file_name: name of contributing_pair output file
     :type contributing_pair_file_name: str
 
+     :return: raster DSM. CarsDataset contains:
+
+            - Z x W Delayed tiles. \
+                Each tile will be a future xarray Dataset containing:
+
+                - data : with keys : "hgt", "img", "raster_msk",optional : \
+                  "n_pts", "pts_in_cell", "hgt_mean", "hgt_stdev",\
+                  "hgt_inf", "hgt_sup"
+                - attrs with keys: "epsg"
+            - attributes containing: None
+
+    :rtype : CarsDataset filled with xr.Dataset
     """
 
     # Create CarsDataset
@@ -546,8 +567,10 @@ def merge_dsm_infos(  # noqa: C901 function is too complex
                 full_saving_info,
             )
 
+    return terrain_raster
 
-def dsm_merging_wrapper(
+
+def dsm_merging_wrapper(  # noqa C901
     dict_path,
     tile_bounds,
     resolution,
@@ -599,6 +622,8 @@ def dsm_merging_wrapper(
                 and intersect_bounds[1] < intersect_bounds[3]
             ):
                 list_intersection.append(intersect_bounds)
+            else:
+                list_intersection.append("no intersection")
 
     # Update the data
     for key in dict_path.keys():
@@ -620,12 +645,17 @@ def dsm_merging_wrapper(
         if band_description[0] is not None:
             if len(band_description) == 1:
                 band_description = np.array([band_description[0]])
-            else:
+            elif key != cst.DSM_CLASSIF:
                 band_description = np.array([band_description])
+            else:
+                band_description = list(band_description)
 
         # Define the dimension of the data in the dataset
         if key == cst.DSM_COLOR:
-            band_description = ["r", "g", "b"]
+            if len(band_description) == 3:
+                band_description = ["R", "G", "B"]
+            else:
+                band_description = ["R", "G", "B", "N"]
             dataset.coords[cst.BAND_IM] = (cst.BAND_IM, band_description)
             dim = [cst.BAND_IM, cst.Y, cst.X]
         elif key == cst.DSM_SOURCE_PC:
@@ -742,6 +772,7 @@ def assemblage(
     """
     # Initialize the tile
     nb_bands = inputs.rasterio_get_nb_bands(out[0])
+
     dtype = inputs.rasterio_get_dtype(out[0])
     nodata = inputs.rasterio_get_nodata(out[0])
 
@@ -757,58 +788,75 @@ def assemblage(
         with rasterio.open(path) as src, rasterio.open(
             current_weights[idx]
         ) as drt:
-            # Build the window
-            window = from_bounds(
-                *intersect_bounds[idx], transform=src.transform
-            )
-
-            # Extract the data
-            if band_description[0] is not None:
-                data = src.read(window=window)
-                _, rows, cols = data.shape
-            else:
-                data = src.read(1, window=window)
-                rows, cols = data.shape
-
-            current_weights_window = drt.read(1, window=window)
-
-            # Calculate the x and y offset because the current_data
-            # doesn't equal to the entire tile
-            x_offset = int(
-                (intersect_bounds[idx][0] - tile_bounds[0]) * np.abs(src.res[0])
-            )
-            y_offset = int(
-                (tile_bounds[3] - intersect_bounds[idx][3]) * np.abs(src.res[1])
-            )
-
-            if cols > 0 and rows > 0:
-                tab_x = np.arange(x_offset, x_offset + cols)
-                tab_y = np.arange(y_offset, y_offset + rows)
-                ind_y, ind_x = np.ix_(tab_y, tab_x)  # pylint: disable=W0632
-
-                # Update data
-                if band_description[0] is not None:
-                    tile[:, ind_y, ind_x] = update_data(
-                        tile[:, ind_y, ind_x],
-                        data,
-                        current_weights_window,
-                        weights[ind_y, ind_x],
-                        nodata,
-                        method=method,
-                    )
-                else:
-                    tile[ind_y, ind_x] = update_data(
-                        tile[ind_y, ind_x],
-                        data,
-                        current_weights_window,
-                        weights[ind_y, ind_x],
-                        nodata,
-                        method=method,
-                    )
-
-                # Update weights
-                weights[ind_y, ind_x] = update_weights(
-                    weights[ind_y, ind_x], current_weights_window
+            if intersect_bounds[idx] != "no intersection":
+                # Build the window
+                window = from_bounds(
+                    *intersect_bounds[idx], transform=src.transform
                 )
+
+                # Extract the data
+                if band_description[0] is not None:
+                    data = src.read(window=window)
+                    _, rows, cols = data.shape
+                else:
+                    data = src.read(1, window=window)
+                    rows, cols = data.shape
+
+                current_weights_window = drt.read(1, window=window)
+
+                # Calculate the x and y offset because the current_data
+                # doesn't equal to the entire tile
+                x_offset = int(
+                    (intersect_bounds[idx][0] - tile_bounds[0])
+                    * np.abs(src.res[0])
+                )
+                y_offset = int(
+                    (tile_bounds[3] - intersect_bounds[idx][3])
+                    * np.abs(src.res[1])
+                )
+
+                if cols > 0 and rows > 0:
+                    tab_x = np.arange(x_offset, x_offset + cols)
+
+                    tab_y = np.arange(y_offset, y_offset + rows)
+
+                    if rows == 1:
+                        ind_y, ind_x = np.ix_(tab_y, tab_x)
+                        ind_y = np.full_like(ind_x, tab_y[0])
+                    else:
+                        ind_y, ind_x = np.ix_(
+                            tab_y, tab_x
+                        )  # pylint: disable=W0632
+
+                    # Update data
+                    if band_description[0] is not None:
+                        tile[:, ind_y, ind_x] = np.reshape(
+                            update_data(
+                                tile[:, ind_y, ind_x],
+                                data,
+                                current_weights_window,
+                                weights[ind_y, ind_x],
+                                nodata,
+                                method=method,
+                            ),
+                            tile[:, ind_y, ind_x].shape,
+                        )
+                    else:
+                        tile[ind_y, ind_x] = np.reshape(
+                            update_data(
+                                tile[ind_y, ind_x],
+                                data,
+                                current_weights_window,
+                                weights[ind_y, ind_x],
+                                nodata,
+                                method=method,
+                            ),
+                            tile[ind_y, ind_x].shape,
+                        )
+
+                    # Update weights
+                    weights[ind_y, ind_x] = update_weights(
+                        weights[ind_y, ind_x], current_weights_window
+                    )
 
     return tile, weights
