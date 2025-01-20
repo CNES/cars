@@ -143,7 +143,10 @@ class SharelocGeometry(AbstractGeometry):
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
             epipolar_extent = rectif.get_epipolar_extent(
-                image1, geomodel1, geomodel2
+                image1,
+                geomodel1,
+                geomodel2,
+                grid_margin=self.rectification_grid_margin,
             )
             lat_min, lon_min, lat_max, lon_max = list(epipolar_extent)
             coords_list.extend([(lon_min, lat_min), (lon_max, lat_max)])
