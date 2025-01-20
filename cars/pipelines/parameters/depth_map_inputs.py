@@ -222,7 +222,7 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
     )
 
-    if sens_cst.SENSORS in conf:
+    if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
         sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
 
     return overloaded_conf

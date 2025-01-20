@@ -215,7 +215,7 @@ def check_dsm_inputs(conf, config_json_dir=None):
 
     check_phasing(conf[dsm_cst.DSMS])
 
-    if sens_cst.SENSORS in conf:
+    if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
         sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
 
     return overloaded_conf
