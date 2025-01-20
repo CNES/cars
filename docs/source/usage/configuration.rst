@@ -87,6 +87,7 @@ The structure follows this organization:
                     - *classification*: This image is a multiband binary file. Each band should have a specific name (Please, see the section :ref:`add_band_description_in_image` to add band name / description in order to be used in Applications). By using this file, a different process for each band is applied for the 1 values (Please, see the Applications section for details).
                     - Please, see the section :ref:`convert_image_to_binary_image` to make binary *mask* image or binary *classification* image with 1 bit per band.
                     - *geomodel*: If the geomodel file is not provided, CARS will try to use the RPC loaded with rasterio opening *image*.
+                    - It is possible to add sensors inputs while using depth_maps or dsm inputs
 
                 **Pairing**
 
@@ -164,7 +165,9 @@ The structure follows this organization:
 
                     To generate confidence maps, `z_inf` and `z_sup`, the parameter `save_intermediate_data` of `triangulation` should be activated.
 
-                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated. 
+                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated.
+
+                    It is possible to add sensors inputs while using depth_maps inputs
                     
                 +------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | Name             | Description                                                       | Type           | Default value | Required |
@@ -232,7 +235,9 @@ The structure follows this organization:
 
                     To generate confidence maps, `z_inf` and `z_sup`, the parameter `save_intermediate_data` of `triangulation` should be activated.
 
-                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated. 
+                    To generate the performance map, the parameters `generate_performance_map` and `save_intermediate_data` of the `dense_matching` application must be activated.
+
+                    It is possible to add sensors inputs while using dsm inputs
                     
                 +----------------------------+-------------------------------------------------------------------+----------------+---------------+----------+
                 | Name                       | Description                                                       | Type           | Default value | Required |
