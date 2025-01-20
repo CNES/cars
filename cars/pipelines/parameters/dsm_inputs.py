@@ -820,13 +820,10 @@ def assemblage(
 
                     tab_y = np.arange(y_offset, y_offset + rows)
 
+                    ind_y, ind_x = np.ix_(tab_y, tab_x)  # pylint: disable=W0632
+
                     if rows == 1:
-                        ind_y, ind_x = np.ix_(tab_y, tab_x)
                         ind_y = np.full_like(ind_x, tab_y[0])
-                    else:
-                        ind_y, ind_x = np.ix_(
-                            tab_y, tab_x
-                        )  # pylint: disable=W0632
 
                     # Update data
                     if band_description[0] is not None:
