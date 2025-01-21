@@ -520,7 +520,7 @@ def multi_res_rec(
     """
 
     if pd_pc.shape[0] < min_number_matches:
-        logging.warning("Not enough matches")
+        raise RuntimeError("Not enough matches")
 
     if len(list_fun) != len(list_z_grid):
         raise RuntimeError(
