@@ -106,6 +106,7 @@ class Sift(SparseMatching, short_name=["sift"]):
         self.matches_filter_dev_factor = self.used_config[
             "matches_filter_dev_factor"
         ]
+        self.decimation_factor = self.used_config["decimation_factor"]
 
         # Saving files
         self.save_intermediate_data = self.used_config["save_intermediate_data"]
@@ -137,6 +138,9 @@ class Sift(SparseMatching, short_name=["sift"]):
         overloaded_conf["disparity_margin"] = conf.get("disparity_margin", 0.02)
         overloaded_conf["elevation_delta_lower_bound"] = conf.get(
             "elevation_delta_lower_bound", None
+        )
+        overloaded_conf["decimation_factor"] = conf.get(
+            "decimation_factor", 100
         )
         overloaded_conf["elevation_delta_upper_bound"] = conf.get(
             "elevation_delta_upper_bound", None
@@ -212,6 +216,7 @@ class Sift(SparseMatching, short_name=["sift"]):
             "sift_edge_threshold": float,
             "sift_magnification": And(float, lambda x: x > 0),
             "sift_window_size": And(int, lambda x: x > 0),
+            "decimation_factor": And(int, lambda x: x > 0),
             "sift_back_matching": bool,
             "matches_filter_knn": int,
             "matches_filter_dev_factor": Or(int, float),
@@ -320,6 +325,22 @@ class Sift(SparseMatching, short_name=["sift"]):
 
         """
         return self.matches_filter_dev_factor
+
+    def get_decimation_factor(self):
+        """
+        Get decimation_factor
+
+        :return: decimation_factor
+
+        """
+        return self.decimation_factor
+
+    def set_decimation_factor(self, value):
+        """
+        set decimation_factor
+
+        """
+        self.decimation_factor = value
 
     def run(
         self,
@@ -489,7 +510,16 @@ class Sift(SparseMatching, short_name=["sift"]):
                 epipolar_disparity_map_left, cars_ds_name="epi_matches_left"
             )
             # Generate disparity maps
-            for row in range(epipolar_disparity_map_left.shape[0]):
+            total_nb_band_sift = epipolar_disparity_map_left.shape[0]
+
+            step = int(np.round(100 / self.decimation_factor))
+
+            if total_nb_band_sift in (1, 2):
+                step = 1
+            elif total_nb_band_sift == 3:
+                step = 2
+
+            for row in range(0, total_nb_band_sift, step):
                 # initialize list of matches
                 full_saving_info_left = ocht.update_saving_infos(
                     saving_info_left, row=row, col=0

@@ -858,6 +858,13 @@ class DefaultPipeline(PipelineTemplate):
                 )
             )
 
+        if (
+            self.sparse_mtch_pandora_app.used_config.get("activated", False)
+            is True
+            and self.sparse_mtch_sift_app.get_decimation_factor() == 100
+        ):
+            self.sparse_mtch_sift_app.set_decimation_factor(20)
+
         return application_conf
 
     def sensor_to_depth_maps(self):  # noqa: C901
