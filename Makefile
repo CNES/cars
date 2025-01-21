@@ -33,7 +33,7 @@ CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
 CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
 CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
-TBB_VERSION_SETUP = $(shell cat setup.cfg | grep tbb |cut -d = -f 3 | cut -d ' ' -f 1)
+TBB_VERSION_SETUP = $(shell cat pyproject.toml | grep tbb | cut -d = -f 3 | cut -d ' ' -f 1 | cut -c -10)
 
 # Check Docker
 CHECK_DOCKER = $(shell docker -v)
@@ -54,7 +54,7 @@ help: ## this help
 .PHONY: venv
 venv: ## create virtualenv in CARS_VENV directory if not exists
 	@test -d ${CARS_VENV} || python3 -m venv ${CARS_VENV}
-	@${CARS_VENV}/bin/python -m pip install --upgrade pip setuptools # no check to upgrade each time
+	@${CARS_VENV}/bin/python -m pip install --upgrade pip meson-python meson ninja setuptools_scm setuptools wheel pybind11 # no check to upgrade each time
 	@touch ${CARS_VENV}/bin/activate
 
 .PHONY: install-deps
@@ -70,7 +70,7 @@ install-deps-gdal: install-deps ## create an healthy python environment for GDAL
 
 .PHONY: install
 install: install-deps ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook]
+	@test -f ${CARS_VENV}/bin/cars || source ${CARS_VENV}/bin/activate; python -m pip install --no-build-isolation --editable .[dev,docs,notebook]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
