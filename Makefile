@@ -31,9 +31,6 @@ endif
 CHECK_NUMPY = $(shell ${CARS_VENV}/bin/python -m pip list|grep numpy)
 CHECK_FIONA = $(shell ${CARS_VENV}/bin/python -m pip list|grep Fiona)
 CHECK_RASTERIO = $(shell ${CARS_VENV}/bin/python -m pip list|grep rasterio)
-CHECK_TBB = $(shell ${CARS_VENV}/bin/python -m pip list|grep tbb)
-CHECK_NUMBA = $(shell ${CARS_VENV}/bin/python -m pip list|grep numba)
-TBB_VERSION_SETUP = $(shell cat pyproject.toml | grep tbb | cut -d = -f 3 | cut -d ' ' -f 1 | cut -c -10)
 
 # Check Docker
 CHECK_DOCKER = $(shell docker -v)
@@ -60,8 +57,6 @@ venv: ## create virtualenv in CARS_VENV directory if not exists
 .PHONY: install-deps
 install-deps: venv ## install python libs
 	@[ "${CHECK_NUMPY}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numpy
-	@[ "${CHECK_TBB}" ] ||${CARS_VENV}/bin/python -m pip install tbb==$(TBB_VERSION_SETUP)
-	@[ "${CHECK_NUMBA}" ] ||${CARS_VENV}/bin/python -m pip install --upgrade numba
 
 .PHONY: install-deps-gdal
 install-deps-gdal: install-deps ## create an healthy python environment for GDAL/ proj

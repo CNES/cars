@@ -33,7 +33,6 @@ import pandora
 import xarray as xr
 
 # Third party imports
-from numba import njit, prange
 from pandora import constants as p_cst
 from pandora.check_configuration import check_datasets
 from pandora.state_machine import PandoraMachine

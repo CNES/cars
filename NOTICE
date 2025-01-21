@@ -27,11 +27,6 @@ Copyright (c) 1997-2018 OpenMP ARB Corporation
 Website: https://www.openmp.org/
 License: "GNU GPL v3.0 + GNU GCC Runtime Library Exception" (GCC) and "NCSA Open Source License" (Clang)
 
-TBB: flexible C++ library for parallelism applications
-Copyright (c) 2016-2021 Intel Corporation
-Website: https://github.com/oneapi-src/oneTBB
-Licence: Apache v2.0.
-
 PANDORA: Stereo pipeline which produces disparity map from a pair of images. 
 Copyright (c) 2020, Centre National d'Etudes Spatiales (CNES).
 Website: https://github.com/CNES/Pandora
@@ -83,11 +78,6 @@ Setuptools: build system
 Copyright (C) 2016 Jason R Coombs <jaraco@jaraco.com>
 Website: https://setuptools.readthedocs.io/
 License: MIT.
-
-Numba: NumPy aware dynamic Python compiler using LLVM
-Copyright (c) 2012, Anaconda, Inc.
-Website: https://numba.pydata.org/
-License: BSD 2 Clause.
 
 Xarray: N-D labeled arrays and datasets in Python
 Copyright 2014-2019, xarray Developers
