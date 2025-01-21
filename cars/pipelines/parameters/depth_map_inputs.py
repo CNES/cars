@@ -63,11 +63,17 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
         )
     )
 
+    overloaded_conf[sens_cst.SENSORS] = conf.get(sens_cst.SENSORS, None)
+
+    overloaded_conf[sens_cst.PAIRING] = conf.get(sens_cst.PAIRING, None)
+
     # Validate inputs
     inputs_schema = {
         depth_map_cst.DEPTH_MAPS: dict,
         sens_cst.ROI: Or(str, dict, None),
         sens_cst.INITIAL_ELEVATION: Or(dict, None),
+        sens_cst.SENSORS: Or(dict, None),
+        sens_cst.PAIRING: Or([[str]], None),
     }
 
     checker_inputs = Checker(inputs_schema)
@@ -215,6 +221,9 @@ def check_depth_maps_inputs(conf, config_json_dir=None):
     sens_inp.check_srtm(
         overloaded_conf[sens_cst.INITIAL_ELEVATION][sens_cst.DEM_PATH]
     )
+
+    if sens_cst.SENSORS in conf and conf[sens_cst.SENSORS] is not None:
+        sens_inp.check_sensors(conf, overloaded_conf, config_json_dir)
 
     return overloaded_conf
 

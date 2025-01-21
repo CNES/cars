@@ -182,6 +182,28 @@ def rasterio_get_size(raster_file: str) -> Tuple[int, int]:
         return (descriptor.width, descriptor.height)
 
 
+def rasterio_get_nodata(raster_file: str) -> Tuple[int, int]:
+    """
+    Get the no data value
+
+    :param raster_file: Image file
+    :return: the no data value
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.nodata
+
+
+def rasterio_get_dtype(raster_file: str) -> Tuple[int, int]:
+    """
+    Get the dtype of an image (file)
+
+    :param raster_file: Image file
+    :return: The dtype
+    """
+    with rio.open(raster_file, "r") as descriptor:
+        return descriptor.dtypes[0]
+
+
 def rasterio_get_pixel_points(raster_file: str, terrain_points) -> list:
     """
     Get pixel point coordinates of terrain points

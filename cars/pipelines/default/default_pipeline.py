@@ -50,7 +50,7 @@ from cars.applications.sparse_matching import (
 from cars.core import constants_disparity as cst_disp
 from cars.core import preprocessing, roi_tools
 from cars.core.geometry.abstract_geometry import AbstractGeometry
-from cars.core.inputs import get_descriptions_bands
+from cars.core.inputs import get_descriptions_bands, rasterio_get_epsg
 from cars.core.utils import safe_makedirs
 from cars.data_structures import cars_dataset
 from cars.orchestrator import orchestrator
@@ -59,6 +59,8 @@ from cars.pipelines.parameters import advanced_parameters
 from cars.pipelines.parameters import advanced_parameters_constants as adv_cst
 from cars.pipelines.parameters import depth_map_inputs
 from cars.pipelines.parameters import depth_map_inputs_constants as depth_cst
+from cars.pipelines.parameters import dsm_inputs
+from cars.pipelines.parameters import dsm_inputs_constants as dsm_cst
 from cars.pipelines.parameters import output_constants as out_cst
 from cars.pipelines.parameters import output_parameters, sensor_inputs
 from cars.pipelines.parameters import sensor_inputs_constants as sens_cst
@@ -132,7 +134,7 @@ class DefaultPipeline(PipelineTemplate):
         )
         self.used_conf[ADVANCED] = advanced
 
-        if sens_cst.SENSORS in self.used_conf[INPUTS]:
+        if self.used_conf[INPUTS][sens_cst.SENSORS] is not None:
             # Check geometry plugin and overwrite geomodel in conf inputs
             (
                 inputs,
@@ -144,8 +146,10 @@ class DefaultPipeline(PipelineTemplate):
                 inputs, advanced, conf.get(GEOMETRY_PLUGIN, None)
             )
             self.used_conf[INPUTS] = inputs
-
-        elif depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]:
+        elif (
+            depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]
+            or dsm_cst.DSMS in self.used_conf[INPUTS]
+        ):
 
             # if there's an initial elevation with
             # point clouds as inputs, generate a plugin (used in dsm_filling)
@@ -185,12 +189,16 @@ class DefaultPipeline(PipelineTemplate):
         self.depth_maps_in_inputs = (
             depth_cst.DEPTH_MAPS in self.used_conf[INPUTS]
         )
+        self.dsms_in_inputs = dsm_cst.DSMS in self.used_conf[INPUTS]
         self.merging = self.used_conf[ADVANCED][adv_cst.MERGING]
+
+        self.phasing = self.used_conf[ADVANCED][adv_cst.PHASING]
 
         self.compute_depth_map = (
             self.sensors_in_inputs
+            and (not self.output_level_none)
+            and not self.dsms_in_inputs
             and not self.depth_maps_in_inputs
-            and not self.output_level_none
         )
 
         if self.output_level_none:
@@ -206,7 +214,11 @@ class DefaultPipeline(PipelineTemplate):
         # Check conf application
         application_conf = self.check_applications(conf.get(APPLICATIONS, {}))
 
-        if self.sensors_in_inputs:
+        if (
+            self.sensors_in_inputs
+            and not self.depth_maps_in_inputs
+            and not self.dsms_in_inputs
+        ):
             # Check conf application vs inputs application
             application_conf = self.check_applications_with_inputs(
                 self.used_conf[INPUTS], application_conf
@@ -294,7 +306,11 @@ class DefaultPipeline(PipelineTemplate):
                     ).format(key)
                     logging.warning(warn_msg)
 
-                else:
+                elif (
+                    self.sensors_in_inputs
+                    and not self.depth_maps_in_inputs
+                    and not self.dsms_in_inputs
+                ):
                     self.compute_depth_map = True
                     self.last_application_to_run = max(
                         self.last_application_to_run, self.app_values[key]
@@ -302,7 +318,11 @@ class DefaultPipeline(PipelineTemplate):
 
             elif key in depth_to_dsm_apps:
 
-                if not (self.sensors_in_inputs or self.depth_maps_in_inputs):
+                if not (
+                    self.sensors_in_inputs
+                    or self.depth_maps_in_inputs
+                    or self.dsms_in_inputs
+                ):
                     warn_msg = (
                         "The application {} can only be used when sensor "
                         "images or depth maps are given as an input. "
@@ -311,7 +331,11 @@ class DefaultPipeline(PipelineTemplate):
                     logging.warning(warn_msg)
 
                 else:
-                    if self.sensors_in_inputs:
+                    if (
+                        self.sensors_in_inputs
+                        and not self.depth_maps_in_inputs
+                        and not self.dsms_in_inputs
+                    ):
                         self.compute_depth_map = True
 
                     # enabled to start the depth map to dsm process
@@ -332,7 +356,11 @@ class DefaultPipeline(PipelineTemplate):
                     ).format(key)
                     logging.warning(warn_msg)
 
-                elif not (self.sensors_in_inputs or self.depth_maps_in_inputs):
+                elif not (
+                    self.sensors_in_inputs
+                    or self.depth_maps_in_inputs
+                    or self.dsms_in_inputs
+                ):
                     warn_msg = (
                         "The application {} can only be used when sensor "
                         "images or depth maps are given as an input. "
@@ -341,7 +369,11 @@ class DefaultPipeline(PipelineTemplate):
                     logging.warning(warn_msg)
 
                 else:
-                    if self.sensors_in_inputs:
+                    if (
+                        self.sensors_in_inputs
+                        and not self.depth_maps_in_inputs
+                        and not self.dsms_in_inputs
+                    ):
                         self.compute_depth_map = True
 
                     # enabled to start the depth map to dsm process
@@ -392,19 +424,28 @@ class DefaultPipeline(PipelineTemplate):
         """
 
         output_config = {}
-        if sens_cst.SENSORS in conf:
+        if (
+            sens_cst.SENSORS in conf
+            and depth_cst.DEPTH_MAPS not in conf
+            and dsm_cst.DSMS not in conf
+        ):
             output_config = sensor_inputs.sensors_check_inputs(
                 conf, config_json_dir=config_json_dir
             )
-
-        if depth_cst.DEPTH_MAPS in conf:
+        elif depth_cst.DEPTH_MAPS in conf:
             output_config = {
                 **output_config,
                 **depth_map_inputs.check_depth_maps_inputs(
                     conf, config_json_dir=config_json_dir
                 ),
             }
-
+        else:
+            output_config = {
+                **output_config,
+                **dsm_inputs.check_dsm_inputs(
+                    conf, config_json_dir=config_json_dir
+                ),
+            }
         return output_config
 
     @staticmethod
@@ -487,6 +528,7 @@ class DefaultPipeline(PipelineTemplate):
             "sparse_matching.pandora",
             "point_cloud_outlier_removal.1",
             "point_cloud_outlier_removal.2",
+            "auxiliary_filling",
         ]:
             if conf.get(app_key) is not None:
                 config_app = conf.get(app_key)
@@ -829,7 +871,13 @@ class DefaultPipeline(PipelineTemplate):
         output = self.used_conf[OUTPUT]
 
         # Initialize epsg for terrain tiles
-        self.epsg = output[out_cst.EPSG]
+        self.phasing = self.used_conf[ADVANCED][adv_cst.PHASING]
+
+        if self.phasing is not None:
+            self.epsg = self.phasing["epsg"]
+        else:
+            self.epsg = output[out_cst.EPSG]
+
         if self.epsg is not None:
             # Compute roi polygon, in output EPSG
             self.roi_poly = preprocessing.compute_roi_poly(
@@ -2219,6 +2267,7 @@ class DefaultPipeline(PipelineTemplate):
             filling_file_name=filling_file_name,
             color_dtype=self.color_type,
             dump_dir=rasterization_dump_dir,
+            phasing=self.phasing,
         )
 
         # Cleaning: don't keep terrain bbox if save_intermediate_data
@@ -2233,6 +2282,159 @@ class DefaultPipeline(PipelineTemplate):
 
         # dsm needs to be saved before filling
         self.cars_orchestrator.breakpoint()
+
+        return False
+
+    def filling(self):
+        """
+        Fill the dsm
+        """
+
+        dsm_file_name = (
+            os.path.join(
+                self.out_dir,
+                out_cst.DSM_DIRECTORY,
+                "dsm.tif",
+            )
+            if self.save_output_dsm
+            else None
+        )
+
+        if self.dsms_in_inputs:
+            dsms_merging_dump_dir = os.path.join(self.dump_dir, "dsms_merging")
+
+            dsm_dict = self.used_conf[INPUTS][dsm_cst.DSMS]
+            dict_path = {}
+            for key in dsm_dict.keys():
+                for path_name in dsm_dict[key].keys():
+                    if dsm_dict[key][path_name] is not None:
+                        if path_name not in dict_path:
+                            dict_path[path_name] = [dsm_dict[key][path_name]]
+                        else:
+                            dict_path[path_name].append(
+                                dsm_dict[key][path_name]
+                            )
+
+            color_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "color.tif",
+                )
+                if "color" in dict_path
+                else None
+            )
+
+            mask_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "mask.tif",
+                )
+                if "mask" in dict_path
+                else None
+            )
+
+            performance_map_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "performance_map.tif",
+                )
+                if "performance_map" in dict_path
+                else None
+            )
+
+            classif_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "classification.tif",
+                )
+                if "classification" in dict_path
+                else None
+            )
+
+            contributing_all_pair_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "contributing_pair.tif",
+                )
+                if "source_pc" in dict_path
+                else None
+            )
+
+            filling_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "filling.tif",
+                )
+                if "filling" in dict_path
+                else None
+            )
+
+            self.epsg = rasterio_get_epsg(dict_path["dsm"][0])
+
+            # Compute roi polygon, in input EPSG
+            self.roi_poly = preprocessing.compute_roi_poly(
+                self.input_roi_poly, self.input_roi_epsg, self.epsg
+            )
+
+            _ = dsm_inputs.merge_dsm_infos(
+                dict_path,
+                self.cars_orchestrator,
+                self.roi_poly,
+                dsms_merging_dump_dir,
+                dsm_file_name,
+                color_file_name,
+                classif_file_name,
+                filling_file_name,
+                performance_map_file_name,
+                mask_file_name,
+                contributing_all_pair_file_name,
+            )
+
+            # dsm needs to be saved before filling
+            self.cars_orchestrator.breakpoint()
+        else:
+            filling_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "filling.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_FILLING
+                ]
+                else None
+            )
+
+            color_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "color.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][out_cst.AUX_COLOR]
+                else None
+            )
+
+            classif_file_name = (
+                os.path.join(
+                    self.out_dir,
+                    out_cst.DSM_DIRECTORY,
+                    "classification.tif",
+                )
+                if self.save_output_dsm
+                and self.used_conf[OUTPUT][out_cst.AUXILIARY][
+                    out_cst.AUX_CLASSIFICATION
+                ]
+                else None
+            )
 
         _ = self.dsm_filling_application.run(
             orchestrator=self.cars_orchestrator,
@@ -2446,9 +2648,12 @@ class DefaultPipeline(PipelineTemplate):
             )
 
             # Remove dump_dir if no intermediate data should be written
-            if not any(
-                app.get("save_intermediate_data", False) is True
-                for app in self.used_conf[APPLICATIONS].values()
+            if (
+                not any(
+                    app.get("save_intermediate_data", False) is True
+                    for app in self.used_conf[APPLICATIONS].values()
+                )
+                and not self.dsms_in_inputs
             ):
                 self.cars_orchestrator.add_to_clean(self.dump_dir)
 
@@ -2483,15 +2688,19 @@ class DefaultPipeline(PipelineTemplate):
             # initialize out_json
             self.cars_orchestrator.update_out_info({"version": __version__})
 
-            if self.compute_depth_map:
-                self.sensor_to_depth_maps()
+            if not self.dsms_in_inputs:
+                if self.compute_depth_map:
+                    self.sensor_to_depth_maps()
+                else:
+                    self.load_input_depth_maps()
+
+                if self.save_output_dsm or self.save_output_point_cloud:
+                    end_pipeline = self.preprocess_depth_maps()
+
+                    if self.save_output_dsm and not end_pipeline:
+                        self.rasterize_point_cloud()
+                        self.filling()
             else:
-                self.load_input_depth_maps()
-
-            if self.save_output_dsm or self.save_output_point_cloud:
-                end_pipeline = self.preprocess_depth_maps()
-
-                if self.save_output_dsm and not end_pipeline:
-                    self.rasterize_point_cloud()
+                self.filling()
 
             self.final_cleanup()

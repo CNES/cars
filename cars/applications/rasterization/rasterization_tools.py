@@ -65,7 +65,6 @@ def compute_xy_starts_and_sizes(
 
     # Clamp to a regular grid
     x_start = np.floor(xmin / resolution) * resolution
-    x_size = int(1 + np.floor((xmax - x_start) / resolution))
 
     # Derive ystart
     ymin = np.nanmin(cloud[cst.Y].values)
@@ -74,6 +73,8 @@ def compute_xy_starts_and_sizes(
 
     # Clamp to a regular grid
     y_start = np.ceil(ymax / resolution) * resolution
+
+    x_size = int(1 + np.floor((xmax - x_start) / resolution))
     y_size = int(1 + np.floor((y_start - ymin) / resolution))
 
     return x_start, y_start, x_size, y_size
@@ -200,6 +201,25 @@ def substring_in_list(src_list, substring):
     """
     res = list(filter(lambda x: substring in x, src_list))
     return len(res) > 0
+
+
+def phased_dsm(start: float, phase: float, resolution: float):
+    """
+    Phased the dsm
+
+    :param start: start of the roi
+    :param phase: the point for phasing
+    :param resolution: resolution of the dsm
+    """
+
+    div = np.abs(start - phase) / resolution
+
+    if phase > start:
+        start = phase - resolution * np.floor(div)
+    else:
+        start = resolution * np.floor(div) + phase
+
+    return start
 
 
 def find_indexes_in_point_cloud(
@@ -845,19 +865,21 @@ def update_data(
 
     :return: updated current data
     """
+
     new_data = current_data
+    data = old_data
     if old_data is not None:
         old_data = np.squeeze(old_data)
         old_weights = np.squeeze(old_weights)
         shape = old_data.shape
-        if len(old_data.shape) == 3:
+        if len(data.shape) == 3 and data.shape[0] > 1:
             old_weights = np.repeat(
                 np.expand_dims(old_weights, axis=0), old_data.shape[0], axis=0
             )
 
         current_data = np.squeeze(current_data)
         weights = np.squeeze(weights)
-        if len(current_data.shape) == 3:
+        if len(new_data.shape) == 3 and new_data.shape[0] > 1:
             weights = np.repeat(
                 np.expand_dims(weights, axis=0), current_data.shape[0], axis=0
             )
@@ -867,7 +889,9 @@ def update_data(
         old_valid = old_weights != 0
 
         both_valid = np.logical_and(current_valid, old_valid)
+
         total_weights = np.zeros(shape)
+
         total_weights[both_valid] = (
             weights[both_valid] + old_weights[both_valid]
         )

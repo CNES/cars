@@ -28,6 +28,7 @@ TODO: Refactor in several files and remove too-many-lines
 # Standard imports
 from __future__ import absolute_import
 
+import copy
 import json
 import math
 import os
@@ -54,6 +55,316 @@ from .helpers import (
 )
 
 NB_WORKERS = 2
+
+
+@pytest.mark.end2end_tests
+def test_end2end_dsm_fusion():
+    """
+    End to end processing
+
+    test the phased dsm re-entrance
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_json = absolute_data_path(
+            "input/phr_ventoux/input_with_color_and_classif.json"
+        )
+
+        # Run dense dsm pipeline
+        _, input_dense_dsm_lr = generate_input_json(
+            input_json,
+            directory,
+            "multiprocessing",
+            orchestrator_parameters={
+                "nb_workers": NB_WORKERS,
+                "max_ram_per_worker": 500,
+            },
+        )
+        dense_dsm_applications = {
+            "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "dense_matching": {
+                "method": "census_sgm",
+                "use_cross_validation": True,
+                "use_global_disp_range": True,
+            },
+            "point_cloud_rasterization": {
+                "method": "simple_gaussian",
+                "dsm_radius": 3,
+                "sigma": 0.3,
+                "dsm_no_data": -999,
+                "color_no_data": 0,
+                "msk_no_data": 254,
+                "save_intermediate_data": True,
+            },
+        }
+        input_dense_dsm_lr["applications"].update(dense_dsm_applications)
+
+        # update epsg
+        final_epsg = 32631
+        input_dense_dsm_lr["output"]["epsg"] = final_epsg
+        resolution = 0.5
+        input_dense_dsm_lr["output"]["resolution"] = resolution
+        input_dense_dsm_lr["output"]["auxiliary"] = {
+            "mask": True,
+            "performance_map": True,
+        }
+
+        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_lr)
+        dense_dsm_pipeline.run()
+
+        out_dir = input_dense_dsm_lr["output"]["directory"]
+
+        # Ref output dir dependent from geometry plugin chosen
+        ref_output_dir = "ref_output"
+
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "phased_dsm_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "color_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir", "rasterization",
+        #     "classification.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "classif_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+        #
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "weights_end2end_ventoux_lr.tif"
+        #         )
+        #     ),
+        # )
+
+        input_dense_dsm_rl = copy.deepcopy(input_dense_dsm_lr)
+        input_dense_dsm_rl["inputs"]["sensors"]["left"] = input_dense_dsm_lr[
+            "inputs"
+        ]["sensors"]["right"]
+        input_dense_dsm_rl["inputs"]["sensors"]["right"] = input_dense_dsm_lr[
+            "inputs"
+        ]["sensors"]["left"]
+
+        dense_dsm_pipeline = default.DefaultPipeline(input_dense_dsm_rl)
+        dense_dsm_pipeline.run()
+
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "phased_dsm_end2end_ventoux_rl.tif"
+        #         )
+        #     ),
+        # )
+        #
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir", "rasterization",
+        #     "classification.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "classif_end2end_ventoux_rl.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dump_dir/rasterization/", "weights.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "weights_end2end_ventoux_rl.tif"
+        #         )
+        #     ),
+        # )
+
+        input_dsm_config = {
+            "inputs": {
+                "dsms": {
+                    "one": {
+                        "dsm": absolute_data_path(
+                            "ref_output/phased_dsm_end2end_ventoux_lr.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "ref_output/weights_end2end_ventoux_lr.tif"
+                        ),
+                        "color": absolute_data_path(
+                            "ref_output/color_end2end_ventoux_lr.tif"
+                        ),
+                        "classification": absolute_data_path(
+                            "ref_output/classif_end2end_ventoux_lr.tif"
+                        ),
+                    },
+                    "two": {
+                        "dsm": absolute_data_path(
+                            "ref_output/phased_dsm_end2end_ventoux_rl.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "ref_output/weights_end2end_ventoux_rl.tif"
+                        ),
+                        "color": absolute_data_path(
+                            "ref_output/color_end2end_ventoux_lr.tif"
+                        ),
+                        "classification": absolute_data_path(
+                            "ref_output/classif_end2end_ventoux_rl.tif"
+                        ),
+                    },
+                }
+            }
+        }
+
+        input_dsm_config["output"] = {}
+        input_dsm_config["output"]["directory"] = directory
+
+        dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config)
+        dsm_merging_pipeline.run()
+
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "dsm.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "phased_dsm_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir, "color_end2end_ventoux_fusion.tif"
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "dsm.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "phased_dsm_end2end_ventoux_fusion.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(ref_output_dir, "color_end2end_ventoux_fusion.tif")
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
+
+
+@pytest.mark.end2end_tests
+def test_end2end_color_after_dsm_reentrance():
+    """
+    End to end processing
+
+    test the colorisation after depth_map re entrance
+    """
+
+    with tempfile.TemporaryDirectory(dir=temporary_dir()) as directory:
+        input_dsm_config = {
+            "inputs": {
+                "dsms": {
+                    "one": {
+                        "dsm": absolute_data_path(
+                            "ref_output/phased_dsm_end2end_ventoux_lr.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "ref_output/weights_end2end_ventoux_lr.tif"
+                        ),
+                        "color": absolute_data_path(
+                            "ref_output/color_end2end_ventoux_lr.tif"
+                        ),
+                    },
+                    "two": {
+                        "dsm": absolute_data_path(
+                            "ref_output/phased_dsm_end2end_ventoux_rl.tif"
+                        ),
+                        "weights": absolute_data_path(
+                            "ref_output/weights_end2end_ventoux_rl.tif"
+                        ),
+                        "color": absolute_data_path(
+                            "ref_output/color_end2end_ventoux_lr.tif"
+                        ),
+                    },
+                },
+                "sensors": {
+                    "one": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/left_image.tif"
+                        ),
+                        "geomodel": {
+                            "path": absolute_data_path(
+                                "input/phr_ventoux/left_image.geom"
+                            ),
+                        },
+                    },
+                    "two": {
+                        "image": absolute_data_path(
+                            "input/phr_ventoux/right_image.tif"
+                        ),
+                        "geomodel": {
+                            "path": absolute_data_path(
+                                "input/phr_ventoux/right_image.geom"
+                            ),
+                        },
+                    },
+                },
+                "pairing": [["one", "two"]],
+                "initial_elevation": absolute_data_path(
+                    "input/phr_ventoux/srtm/N44E005.hgt"
+                ),
+            },
+            "applications": {
+                "auxiliary_filling": {"save_intermediate_data": True}
+            },
+        }
+
+        input_dsm_config["output"] = {}
+        input_dsm_config["output"]["directory"] = directory
+
+        out_dir = input_dsm_config["output"]["directory"]
+
+        ref_output_dir = "ref_output"
+
+        dsm_merging_pipeline = default.DefaultPipeline(input_dsm_config)
+        dsm_merging_pipeline.run()
+
+        # copy2(
+        #     os.path.join(out_dir, "dsm", "color.tif"),
+        #     absolute_data_path(
+        #         os.path.join(
+        #             ref_output_dir,
+        #             "colorisation_end2end_gizeh_reentrance.tif"
+        #         )
+        #     ),
+        # )
+
+        assert_same_images(
+            os.path.join(out_dir, "dsm", "color.tif"),
+            absolute_data_path(
+                os.path.join(
+                    ref_output_dir, "colorisation_end2end_gizeh_reentrance.tif"
+                )
+            ),
+            atol=0.0001,
+            rtol=1e-6,
+        )
 
 
 @pytest.mark.end2end_tests
@@ -1263,6 +1574,35 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                             }
                         ],
                     },
+                    "sensors": {
+                        "left": {
+                            "image": absolute_data_path(
+                                "input/phr_ventoux/left_image.tif"
+                            ),
+                            "color": absolute_data_path(
+                                "input/phr_ventoux/left_image.tif"
+                            ),
+                            "geomodel": {
+                                "path": absolute_data_path(
+                                    "input/phr_ventoux/left_image.geom"
+                                )
+                            },
+                        },
+                        "right": {
+                            "image": absolute_data_path(
+                                "input/phr_ventoux/right_image.tif"
+                            ),
+                            "geomodel": {
+                                "path": absolute_data_path(
+                                    "input/phr_ventoux/left_image.geom"
+                                ),
+                            },
+                        },
+                    },
+                    "pairing": [["left", "right"]],
+                    "initial_elevation": absolute_data_path(
+                        "input/phr_ventoux/srtm/N44E005.hgt"
+                    ),
                 },
                 "geometry_plugin": geometry_plugin_name,
                 "output": {
@@ -1275,7 +1615,8 @@ def test_end2end_ventoux_unique_split_epsg_4326():
                     "point_cloud_rasterization": {
                         "method": "simple_gaussian",
                         "save_intermediate_data": True,
-                    }
+                    },
+                    "auxiliary_filling": {"activated": True},
                 },
             }
 

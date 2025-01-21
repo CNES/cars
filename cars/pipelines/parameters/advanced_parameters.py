@@ -53,6 +53,8 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.DEBUG_WITH_ROI, False
     )
 
+    overloaded_conf[adv_cst.PHASING] = conf.get(adv_cst.PHASING, None)
+
     overloaded_conf[adv_cst.MERGING] = conf.get(adv_cst.MERGING, False)
 
     if check_epipolar_a_priori:
@@ -74,6 +76,7 @@ def check_advanced_parameters(conf, check_epipolar_a_priori=True):
         adv_cst.DEBUG_WITH_ROI: bool,
         adv_cst.MERGING: bool,
         adv_cst.SAVE_INTERMEDIATE_DATA: bool,
+        adv_cst.PHASING: Or(dict, None),
     }
     if check_epipolar_a_priori:
         schema[adv_cst.USE_EPIPOLAR_A_PRIORI] = bool
