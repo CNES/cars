@@ -399,10 +399,9 @@ def test_estimate_right_classif_on_left():
     np.testing.assert_allclose(left_from_right_classif, ref_array)
 
     # Test 2: 2 bands
-    expanded_right_classif = np.expand_dims(right_classif, axis=0)
     left_from_right_classif = (
         dense_matching_tools.estimate_right_classif_on_left(
-            np.stack([expanded_right_classif, expanded_right_classif], axis=0),
+            np.stack([right_classif, right_classif], axis=0),
             disp_map,
             None,
             -10,
