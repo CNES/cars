@@ -53,6 +53,7 @@ from cars.conf import mask_cst as msk_cst
 from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 
+from .cpp import dense_matching_cpp
 
 def get_margins(margin, disp_min, disp_max):
     """
@@ -314,12 +315,16 @@ def create_disp_dataset(  # noqa: C901
 
         # mask left classif outside right sensor
         if epi_msk_right is not None:
-            left_classif = mask_left_classif_from_right_mask(
+            #print("going in mask_left_classif_from_right_mask")
+            #print(left_classif.dtype)
+            #print((epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION).dtype)
+            left_classif = mask_left_classif_from_right_mask( # here
                 left_classif,
                 epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 np.floor(disp_min_grid).astype(np.int16),
                 np.ceil(disp_max_grid).astype(np.int16),
             )
+        #print(f"-> {left_classif.dtype}")
 
     left_from_right_classif = None
     right_band_classif = None
@@ -480,102 +485,20 @@ def add_crop_info(disp_ds, cropped_range):
     return disp_ds
 
 
-@njit
 def estimate_right_classif_on_left(
     right_classif, disp_map, disp_mask, disp_min, disp_max
 ):
-    """
-    Estimate right classif on left image
-
-    :param right_classif: right classification
-    :type right_classif: np ndarray
-    :param disp_map: disparity map
-    :type disp_map: np ndarray
-    :param disp_mask: disparity mask
-    :type disp_mask: np ndarray
-    :param disp_min: disparity min
-    :type disp_min: int
-    :param disp_max: disparity max
-    :type disp_max: int
-
-    :return: right classif on left image
-    :rtype: np nadarray
-    """
-
-    left_from_right_classif = np.empty(right_classif.shape)
-
-    data_shape = left_from_right_classif.shape
-    for row in prange(data_shape[1]):  # pylint: disable=E1133
-        for col in prange(data_shape[2]):  # pylint: disable=E1133
-            # find classif
-            disp = disp_map[row, col]
-            valid = not np.isnan(disp)
-            if disp_mask is not None:
-                valid = disp_mask[row, col]
-            if valid:
-                # direct value
-                disp = int(math.floor(disp))
-                left_from_right_classif[:, row, col] = right_classif[
-                    :, row, col + disp
-                ]
-            else:
-                # estimate with global range
-                classif_in_range = np.full(
-                    (left_from_right_classif.shape[0]), False
-                )
-
-                for classif_c in prange(  # pylint: disable=E1133
-                    classif_in_range.shape[0]
-                ):
-                    for col_classif in prange(  # pylint: disable=E1133
-                        max(0, col + disp_min),
-                        min(data_shape[2], col + disp_max),
-                    ):
-                        if right_classif[classif_c, row, col_classif]:
-                            classif_in_range[classif_c] = True
-
-                left_from_right_classif[:, row, col] = classif_in_range
-
-    return left_from_right_classif
+    return dense_matching_cpp.estimate_right_classif_on_left(
+        right_classif, disp_map, disp_mask, disp_min, disp_max
+    )
 
 
-@njit
 def mask_left_classif_from_right_mask(
     left_classif, right_mask, disp_min, disp_max
 ):
-    """
-    Mask left classif with right mask.
-
-    :param left_classif: right classification
-    :type right_left_classifclassif: np ndarray
-    :param right_mask: right mask
-    :type right_mask: np ndarray
-    :param disp_min: disparity min
-    :type disp_min: np.array type int
-    :param disp_max: disparity max
-    :type disp_max: np.array type int
-
-    :return: masked left classif
-    :rtype: np nadarray
-    """
-
-    data_shape = left_classif.shape
-    for row in prange(data_shape[1]):  # pylint: disable=E1133
-        for col in prange(data_shape[2]):  # pylint: disable=E1133
-            # estimate with global range
-            all_masked = True
-            for col_classif in prange(  # pylint: disable=E1133
-                max(0, col + disp_min[row, col]),
-                min(data_shape[2], col + disp_max[row, col]),
-            ):
-                if not right_mask[row, col_classif]:
-                    all_masked = False
-
-            if all_masked:
-                # Remove classif
-                left_classif[:, row, col] = False
-
-    return left_classif
+    return dense_matching_cpp.mask_left_classif_from_right_mask(
+        left_classif, right_mask, disp_min, disp_max
+    )
 
 
 def merge_classif_left_right(
