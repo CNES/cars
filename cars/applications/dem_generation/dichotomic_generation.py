@@ -520,7 +520,7 @@ def multi_res_rec(
     """
 
     if pd_pc.shape[0] < min_number_matches:
-        raise RuntimeError("Not enough matches")
+        logging.warning("Not enough matches")
 
     if len(list_fun) != len(list_z_grid):
         raise RuntimeError(
@@ -544,13 +544,7 @@ def multi_res_rec(
         & (pd_pc["y"] < ymax + overlap)
     ]
 
-    nb_matches = tile_pc.shape[0]
-
-    if (
-        nb_matches > min_number_matches
-        and (row_max - row_min > 0)
-        and (col_max - col_min > 0)
-    ):
+    if (row_max - row_min > 0) and (col_max - col_min > 0):
         # apply global value
         for fun, z_grid in zip(list_fun, list_z_grid):  # noqa: B905
             if (

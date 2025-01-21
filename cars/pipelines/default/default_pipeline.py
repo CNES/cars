@@ -863,7 +863,7 @@ class DefaultPipeline(PipelineTemplate):
             is True
             and self.sparse_mtch_sift_app.get_decimation_factor() == 100
         ):
-            self.sparse_mtch_sift_app.set_decimation_factor(20)
+            self.sparse_mtch_sift_app.set_decimation_factor(30)
 
         return application_conf
 
@@ -1109,6 +1109,10 @@ class DefaultPipeline(PipelineTemplate):
                     )
                 )
 
+                minimum_nb_matches = (
+                    self.sparse_mtch_sift_app.get_minimum_nb_matches()
+                )
+
                 # Compute grid correction
                 (
                     self.pairs[pair_key]["grid_correction_coef"],
@@ -1123,6 +1127,7 @@ class DefaultPipeline(PipelineTemplate):
                         "epipolar_matches_left"
                     ],
                     save_matches=save_matches,
+                    minimum_nb_matches=minimum_nb_matches,
                     pair_folder=os.path.join(
                         self.dump_dir, "grid_correction", "initial", pair_key
                     ),

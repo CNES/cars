@@ -393,6 +393,9 @@ def test_end2end_gizeh_rectangle_epi_image_performance_map():
         )
         dense_dsm_applications = {
             "grid_generation": {"method": "epipolar", "epi_step": 30},
+            "sparse_matching.sift": {
+                "decimation_factor": 80,
+            },
             "sparse_matching.pandora": {
                 "save_intermediate_data": True,
                 "connection_val": 3.0,
@@ -544,6 +547,7 @@ def test_end2end_ventoux_sparse_dsm_8bits():
                 "elevation_delta_lower_bound": -20.0,
                 "elevation_delta_upper_bound": 20.0,
                 "save_intermediate_data": False,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "save_intermediate_data": True,
@@ -706,6 +710,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -759,7 +764,7 @@ def test_end2end_ventoux_unique():
                 < out_json["applications"]["disparity_range_computation"][
                     "left_right"
                 ]["minimum_disparity"]
-                < -18
+                < -17
             )
             assert (
                 12
@@ -1259,6 +1264,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "dense_matching": {
                 # run disp min disp max in the global pipeline
@@ -1416,6 +1422,7 @@ def test_end2end_ventoux_unique():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -1723,6 +1730,7 @@ def test_end2end_ventoux_unique_split():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": False,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -2396,6 +2404,7 @@ def test_end2end_use_epipolar_a_priori():
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -2749,6 +2758,7 @@ def test_prepare_ventoux_bias():
                 "elevation_delta_upper_bound": 120.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -2836,6 +2846,7 @@ def test_end2end_ventoux_full_output_no_elevation():
                 "elevation_delta_upper_bound": 700.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -3239,6 +3250,7 @@ def test_end2end_ventoux_with_color():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -3291,7 +3303,7 @@ def test_end2end_ventoux_with_color():
                 "disparity_range_computation"
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
 
@@ -3533,6 +3545,7 @@ def test_end2end_ventoux_with_classif():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -3576,7 +3589,7 @@ def test_end2end_ventoux_with_classif():
                 "disparity_range_computation"
             ]["left_right"]
             assert out_disp_compute["minimum_disparity"] > -20
-            assert out_disp_compute["minimum_disparity"] < -18
+            assert out_disp_compute["minimum_disparity"] < -17
             assert out_disp_compute["maximum_disparity"] > 13
             assert out_disp_compute["maximum_disparity"] < 15
 
@@ -3796,6 +3809,7 @@ def test_compute_dsm_with_roi_ventoux():
                 "elevation_delta_upper_bound": 1000,  # 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -3948,6 +3962,7 @@ def test_compute_dsm_with_snap_to_img1():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -4072,6 +4087,7 @@ def test_end2end_quality_stats():
                 "method": "sift",
                 "epipolar_error_upper_bound": 43.0,
                 "disparity_margin": 0.25,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -4131,7 +4147,7 @@ def test_end2end_quality_stats():
             out_disp_compute = out_data["applications"]["dense_matching"][
                 "left_right"
             ]
-            assert out_disp_compute["global_disp_min"] > -36
+            assert out_disp_compute["global_disp_min"] > -37
             assert out_disp_compute["global_disp_min"] < -32
             assert out_disp_compute["global_disp_max"] > 25
             assert out_disp_compute["global_disp_max"] < 32
@@ -4362,6 +4378,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -4491,6 +4508,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -4586,6 +4604,7 @@ def test_end2end_ventoux_egm96_geoid():
                 "elevation_delta_upper_bound": 20.0,
                 "disparity_margin": 0.25,
                 "save_intermediate_data": True,
+                "decimation_factor": 80,
             },
             "sparse_matching.pandora": {
                 "resolution": 4,
@@ -5104,6 +5123,9 @@ def test_end2end_disparity_filling_with_zeros():
             "multiprocessing",
         )
         dense_dsm_applications = {
+            "sparse_matching.sift": {
+                "decimation_factor": 80,
+            },
             "sparse_matching.pandora": {
                 "resolution": 4,
                 "save_intermediate_data": True,
