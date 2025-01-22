@@ -138,7 +138,7 @@ class SharelocGeometry(AbstractGeometry):
             coords_list.extend(self.image_envelope(image1, geomodel1))
             # Footprint of right image
             coords_list.extend(self.image_envelope(image2, geomodel2))
-            # Epipolar extent
+            # Footprint of rectification grid (with margins)
             image1 = SharelocGeometry.load_image(image1)
             geomodel1 = self.load_geom_model(geomodel1)
             geomodel2 = self.load_geom_model(geomodel2)
