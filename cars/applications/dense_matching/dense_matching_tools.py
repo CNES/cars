@@ -84,7 +84,7 @@ def get_margins(margin, disp_min, disp_max):
     ]
     same_margins = [
         max(left, right)
-        for left, right in zip(left_margins, right_margins, strict=True)
+        for left, right in zip(left_margins, right_margins)  # noqa: B905
     ]
 
     margins = xr.Dataset(
