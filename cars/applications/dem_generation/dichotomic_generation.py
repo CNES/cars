@@ -544,7 +544,13 @@ def multi_res_rec(
         & (pd_pc["y"] < ymax + overlap)
     ]
 
-    if (row_max - row_min > 0) and (col_max - col_min > 0):
+    nb_matches = tile_pc.shape[0]
+
+    if (
+        nb_matches > min_number_matches
+        and (row_max - row_min > 0)
+        and (col_max - col_min > 0)
+    ):
         # apply global value
         for fun, z_grid in zip(list_fun, list_z_grid):  # noqa: B905
             if (
