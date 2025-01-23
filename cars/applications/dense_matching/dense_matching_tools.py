@@ -25,7 +25,6 @@ This module is responsible for the dense matching algorithms:
 
 # Standard imports
 import logging
-import math
 from typing import Dict, List
 
 import numpy as np
@@ -53,6 +52,7 @@ from cars.core import constants as cst
 from cars.core import constants_disparity as cst_disp
 
 from .cpp import dense_matching_cpp
+
 
 def get_margins(margin, disp_min, disp_max):
     """
@@ -314,16 +314,12 @@ def create_disp_dataset(  # noqa: C901
 
         # mask left classif outside right sensor
         if epi_msk_right is not None:
-            #print("going in mask_left_classif_from_right_mask")
-            #print(left_classif.dtype)
-            #print((epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION).dtype)
-            left_classif = mask_left_classif_from_right_mask( # here
+            left_classif = mask_left_classif_from_right_mask(  # here
                 left_classif,
                 epi_msk_right == msk_cst.NO_DATA_IN_EPIPOLAR_RECTIFICATION,
                 np.floor(disp_min_grid).astype(np.int16),
                 np.ceil(disp_max_grid).astype(np.int16),
             )
-        #print(f"-> {left_classif.dtype}")
 
     left_from_right_classif = None
     right_band_classif = None
@@ -348,6 +344,7 @@ def create_disp_dataset(  # noqa: C901
             left_from_right_classif.shape[0],
             axis=0,
         )
+        # pylint: disable=unsupported-assignment-operation
         left_from_right_classif[left_mask_stacked] = 0
 
     # Merge right classif
@@ -867,7 +864,6 @@ def compute_disparity(
     return disp_dataset
 
 
-@njit()
 def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     """
     Estimate right grid min and max.
@@ -883,37 +879,9 @@ def estimate_right_grid_disp(disp_min_grid, disp_max_grid):
     :return: disp_min_right_grid, disp_max_right_grid
     :rtype: numpy ndarray, numpy ndarray
     """
-
-    global_left_min = np.min(disp_min_grid)
-    global_left_max = np.max(disp_max_grid)
-
-    d_shp = disp_min_grid.shape
-
-    disp_min_right_grid = np.empty(d_shp)
-    disp_max_right_grid = np.empty(d_shp)
-
-    for row in prange(d_shp[0]):  # pylint: disable=not-an-iterable
-        for col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
-            min_right = d_shp[1]
-            max_right = 0
-            is_correlated_left = False
-            for left_col in prange(d_shp[1]):  # pylint: disable=not-an-iterable
-                left_min = disp_min_grid[row, left_col] + left_col
-                left_max = disp_max_grid[row, left_col] + left_col
-                if left_min <= col <= left_max:
-                    is_correlated_left = True
-                    # can be found, is candidate to min and max
-                    min_right = min(min_right, left_col - col)
-                    max_right = max(max_right, left_col - col)
-
-            if is_correlated_left:
-                disp_min_right_grid[row, col] = min_right
-                disp_max_right_grid[row, col] = max_right
-            else:
-                disp_min_right_grid[row, col] = -global_left_max
-                disp_max_right_grid[row, col] = -global_left_min
-
-    return disp_min_right_grid, disp_max_right_grid
+    return dense_matching_cpp.estimate_right_grid_disp(
+        disp_min_grid, disp_max_grid
+    )
 
 
 def optimal_tile_size_pandora_plugin_libsgm(

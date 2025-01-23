@@ -25,3 +25,7 @@ install_subdir(
 subdir(
   'cars/applications/dense_matching/cpp'
 )
+
+subdir(
+  'cars/applications/dense_match_filling/cpp'
+)

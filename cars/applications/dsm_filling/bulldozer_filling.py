@@ -277,9 +277,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
             try:
                 # suppress prints in bulldozer by redirecting stdout&stderr
                 with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with contextlib.redirect_stdout(
-                        devnull
-                    ), contextlib.redirect_stderr(devnull):
+                    with (
+                        contextlib.redirect_stdout(devnull),
+                        contextlib.redirect_stderr(devnull),
+                    ):
                         dsm_to_dtm(bull_conf_path)
             except Exception:
                 logging.info(
@@ -287,9 +288,10 @@ class BulldozerFilling(DsmFilling, short_name="bulldozer"):
                 )
                 # suppress prints in bulldozer by redirecting stdout&stderr
                 with open(os.devnull, "w", encoding="utf8") as devnull:
-                    with contextlib.redirect_stdout(
-                        devnull
-                    ), contextlib.redirect_stderr(devnull):
+                    with (
+                        contextlib.redirect_stdout(devnull),
+                        contextlib.redirect_stderr(devnull),
+                    ):
                         dsm_to_dtm(bull_conf_path)
         except Exception:
             logging.error(

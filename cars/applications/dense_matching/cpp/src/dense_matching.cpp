@@ -113,3 +113,58 @@ py::array_t<bool> mask_left_classif_from_right_mask(
 
     return left_classif;
 }
+
+std::pair<py::array_t<int>, py::array_t<int>> estimate_right_grid_disp(
+    py::array_t<int> disp_min_grid,
+    py::array_t<int> disp_max_grid
+) {
+
+    auto r_disp_min_grid = disp_min_grid.unchecked<2>();
+    auto r_disp_max_grid = disp_max_grid.unchecked<2>();
+
+    size_t n_row = r_disp_min_grid.shape(0);
+    size_t n_col = r_disp_min_grid.shape(1);
+
+    int global_left_min = std::numeric_limits<int>::max();
+    int global_left_max = std::numeric_limits<int>::min();
+    for (size_t row = 0; row < n_row; row++) {
+        for (size_t col = 0; col < n_col; col++) {
+            global_left_min = std::min(global_left_min, r_disp_min_grid(row, col));
+            global_left_max = std::max(global_left_max, r_disp_max_grid(row, col));
+        }
+    }
+
+    py::array_t<int> disp_min_right_grid({n_row, n_col});
+    py::array_t<int> disp_max_right_grid({n_row, n_col});
+    auto rw_disp_min_right_grid = disp_min_right_grid.mutable_unchecked<2>();
+    auto rw_disp_max_right_grid = disp_max_right_grid.mutable_unchecked<2>();
+
+    for (size_t row = 0; row < n_row; row++) {
+        for (size_t col = 0; col < n_col; col++) {
+            int min_right = static_cast<int>(n_col);
+            int max_right = 0;
+            bool is_correlated_left = false;
+
+            for (size_t left_col = 0; left_col < n_col; left_col++) {
+                int left_min = r_disp_min_grid(row, left_col) + static_cast<int>(left_col);
+                int left_max = r_disp_max_grid(row, left_col) + static_cast<int>(left_col);
+
+                if (left_min <= static_cast<int>(col) && static_cast<int>(col) <= left_max) {
+                    is_correlated_left = true;
+                    min_right = std::min(min_right, static_cast<int>(left_col) - static_cast<int>(col));
+                    max_right = std::max(max_right, static_cast<int>(left_col) - static_cast<int>(col));
+                }
+            }
+
+            if (is_correlated_left) {
+                rw_disp_min_right_grid(row, col) = min_right;
+                rw_disp_max_right_grid(row, col) = max_right;
+            } else {
+                rw_disp_min_right_grid(row, col) = -global_left_max;
+                rw_disp_max_right_grid(row, col) = -global_left_min;
+            }
+        }
+    }
+
+    return std::make_pair(disp_min_right_grid, disp_max_right_grid);
+}

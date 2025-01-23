@@ -30,12 +30,12 @@ import copy
 # Standard imports
 import logging
 import math
+from typing import Tuple
 
 # Third party imports
 import matplotlib.pyplot as plt
 import numpy as np
 import xarray as xr
-from numba import njit
 from rasterio.fill import fillnodata
 from scipy.linalg import lstsq
 from scipy.ndimage import (
@@ -54,6 +54,8 @@ from skimage.segmentation import find_boundaries
 from cars.applications.hole_detection import hole_detection_tools
 from cars.conf import mask_cst
 from cars.core import constants as cst
+
+from .cpp import dense_match_filling_cpp
 
 
 def fill_central_area_using_plane(  # noqa: C901
@@ -480,10 +482,9 @@ def make_raster_interpolation(
     return interpol_raster
 
 
-@njit()
 def fill_disp_pandora(
     disp: np.ndarray, msk_fill_disp: np.ndarray, nb_directions: int
-):
+) -> Tuple[np.ndarray, np.ndarray]:
     """
     Interpolation of the left disparity map to fill holes.
     Interpolate invalid pixel by finding the nearest correct pixels in
@@ -509,116 +510,9 @@ def fill_disp_pandora(
         with the validity mask update :
     :rtype: tuple(2D np.array (row, col), 2D np.array (row, col))
     """
-    # Output disparity map and validity mask
-    out_disp = np.copy(disp)
-    out_msk = np.copy(msk_fill_disp)
-    ncol, nrow = disp.shape
-    if nb_directions == 8:
-        # 8 directions : [row, col]
-        dirs = np.array(
-            [
-                [0.0, 1.0],
-                [-1.0, 1.0],
-                [-1.0, 0.0],
-                [-1.0, -1.0],
-                [0.0, -1.0],
-                [1.0, -1.0],
-                [1.0, 0.0],
-                [1.0, 1.0],
-            ]
-        )
-    elif nb_directions == 16:
-        # 16 directions : [row, col]
-        dirs = np.array(
-            [
-                [0.0, 1.0],
-                [-0.5, 1.0],
-                [-1.0, 1.0],
-                [-1.0, 0.5],
-                [-1.0, 0.0],
-                [-1.0, -0.5],
-                [-1.0, -1.0],
-                [-0.5, -1.0],
-                [0.0, -1.0],
-                [0.5, -1.0],
-                [1.0, -1.0],
-                [1.0, -0.5],
-                [1.0, 0.0],
-                [1.0, 0.5],
-                [1.0, 1.0],
-                [0.5, 1.0],
-            ]
-        )
-    for col in range(ncol):
-        for row in range(nrow):
-            if msk_fill_disp[col, row]:
-                valid_neighbors = find_valid_neighbors(
-                    dirs, disp, msk_fill_disp, row, col, nb_directions
-                )
-                # Median of the 8/16 pixels
-                out_disp[col, row] = np.nanmedian(valid_neighbors)
-                # Update the validity mask : Information : filled disp
-                out_msk[col, row] = False
-    return out_disp, out_msk
-
-
-@njit()
-def find_valid_neighbors(
-    dirs: np.ndarray,
-    disp: np.ndarray,
-    valid: np.ndarray,
-    row: int,
-    col: int,
-    nb_directions: int,
-):
-    """
-    Find valid neighbors along directions
-
-    Copied/adapted fct from pandora/validation/interpolated_disparity.py
-
-    :param dirs: directions
-    :type dirs: 2D np.array (row, col)
-    :param disp: disparity map
-    :type disp: 2D np.array (row, col)
-    :param valid: validity mask
-    :type valid: 2D np.array (row, col)
-    :param row: row current value
-    :type row: int
-    :param col: col current value
-    :type col: int
-    :param nb_directions: nb directions to explore
-    :type nb_directions: int
-
-    :return: valid neighbors
-    :rtype: 2D np.array
-    """
-    ncol, nrow = disp.shape
-    # Maximum path length
-    max_path_length = max(nrow, ncol)
-    # For each directions
-    valid_neighbors = np.zeros(nb_directions, dtype=np.float32)
-    for direction in range(nb_directions):
-        # Find the first valid pixel in the current path
-        for i in range(1, max_path_length):
-            tmp_row = row + int(dirs[direction][0] * i)
-            tmp_col = col + int(dirs[direction][1] * i)
-            tmp_row = math.floor(tmp_row)
-            tmp_col = math.floor(tmp_col)
-            # Edge of the image reached:
-            # there is no valid pixel in the current path
-            if (
-                (tmp_col < 0)
-                | (tmp_col >= ncol)
-                | (tmp_row < 0)
-                | (tmp_row >= nrow)
-            ):
-                valid_neighbors[direction] = np.nan
-                break
-                # First valid pixel
-            if not valid[tmp_col, tmp_row] and disp[tmp_col, tmp_row] != 0:
-                valid_neighbors[direction] = disp[tmp_col, tmp_row]
-                break
-    return valid_neighbors
+    return dense_match_filling_cpp.fill_disp_pandora(
+        disp, msk_fill_disp, nb_directions
+    )
 
 
 def estimate_poly_with_disp(poly, dmin=0, dmax=0):

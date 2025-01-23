@@ -80,6 +80,7 @@ dev = [
     "isort>=5.8.0",                   # Check imports
     "black>=24.1a1",                  # PEP8 format code
     "flake8>=3.9.1",                  # General linter
+    "flake8-pyproject",               # Support configuration in pyproject.toml
     "flake8-comprehensions>=3.4.0",   # Check list/dict/set
     "flake8-bugbear>=21.4.3,<24.0.0", # Add some rules to flake8
     "jupyter_contrib_nbextensions",   # Clean notebooks
