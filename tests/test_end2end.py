@@ -3265,6 +3265,15 @@ def test_end2end_ventoux_with_color():
         input_config_sparse_res["output"].update(output_config)
 
         sparse_res_pipeline = default.DefaultPipeline(input_config_sparse_res)
+
+        # Add a margin on recitification grid
+        # TODO change this when the new API with
+        # bicubic interpolator is implemented
+        geom_plugin_1 = sparse_res_pipeline.geom_plugin_with_dem_and_geoid
+        geom_plugin_2 = sparse_res_pipeline.geom_plugin_without_dem_and_geoid
+        geom_plugin_1.rectification_grid_margin = 5
+        geom_plugin_2.rectification_grid_margin = 5
+
         sparse_res_pipeline.run()
 
         out_dir = input_config_sparse_res["output"]["directory"]
@@ -3338,6 +3347,15 @@ def test_end2end_ventoux_with_color():
         input_config_dense_dsm["output"]["product_level"] = ["dsm"]
 
         dense_dsm_pipeline = default.DefaultPipeline(input_config_dense_dsm)
+
+        # Add a margin on recitification grid
+        # TODO change this when the new API with
+        # bicubic interpolator is implemented
+        geom_plugin_1 = dense_dsm_pipeline.geom_plugin_with_dem_and_geoid
+        geom_plugin_2 = dense_dsm_pipeline.geom_plugin_without_dem_and_geoid
+        geom_plugin_1.rectification_grid_margin = 5
+        geom_plugin_2.rectification_grid_margin = 5
+
         dense_dsm_pipeline.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4755,6 +4773,19 @@ def test_end2end_paca_with_mask():
         dense_dsm_pipeline_bulldozer = default.DefaultPipeline(
             input_config_dense_dsm
         )
+
+        # Add a margin on recitification grid
+        # TODO change this when the new API with
+        # bicubic interpolator is implemented
+        geom_plugin_1 = (
+            dense_dsm_pipeline_bulldozer.geom_plugin_with_dem_and_geoid
+        )
+        geom_plugin_2 = (
+            dense_dsm_pipeline_bulldozer.geom_plugin_without_dem_and_geoid
+        )
+        geom_plugin_1.rectification_grid_margin = 5
+        geom_plugin_2.rectification_grid_margin = 5
+
         dense_dsm_pipeline_bulldozer.run()
 
         out_dir = input_config_dense_dsm["output"]["directory"]
@@ -4851,6 +4882,19 @@ def test_end2end_paca_with_mask():
         dense_dsm_pipeline_matches = default.DefaultPipeline(
             input_config_dense_dsm
         )
+
+        # Add a margin on recitification grid
+        # TODO change this when the new API with
+        # bicubic interpolator is implemented
+        geom_plugin_1 = (
+            dense_dsm_pipeline_matches.geom_plugin_with_dem_and_geoid
+        )
+        geom_plugin_2 = (
+            dense_dsm_pipeline_matches.geom_plugin_without_dem_and_geoid
+        )
+        geom_plugin_1.rectification_grid_margin = 5
+        geom_plugin_2.rectification_grid_margin = 5
+
         dense_dsm_pipeline_matches.run()
 
         # copy2(

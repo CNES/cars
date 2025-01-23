@@ -135,6 +135,29 @@ def test_get_roi():
     ]
     np.testing.assert_allclose(roi, ref_roi)
 
+    # Add a 5 pixel margin on rectification grid
+    geo_plugin_with_margin_on_grid = (
+        AbstractGeometry(  # pylint: disable=abstract-class-instantiated
+            "SharelocGeometry",
+            dem=dem,
+            geoid=geoid,
+            rectification_grid_margin=5,
+        )
+    )
+    pairs_for_roi = [(sensor1, geomodel1, sensor2, geomodel2)]
+    roi = geo_plugin_with_margin_on_grid.get_roi(
+        pairs_for_roi, 4326, margin=0.005
+    )
+    ref_roi = [
+        44.198651,
+        5.185954,
+        44.21382,
+        5.203201,
+    ]
+    # Returned ROI is the footprint of the rectification
+    # It takes into account the 5 pixels margin
+    np.testing.assert_allclose(roi, ref_roi)
+
 
 @pytest.mark.unit_tests
 def test_sensors_arrangement_left_right():
