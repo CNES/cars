@@ -133,12 +133,14 @@ def init_cluster_variables(
         "OTB_APPLICATION_PATH",
         "OTB_MAX_RAM_HINT",
         "OMP_NUM_THREADS",
+        "NUMBA_NUM_THREADS",
         "OPJ_NUM_THREADS",
         "GDAL_NUM_THREADS",
         "VIRTUAL_ENV",
         "ITK_GLOBAL_DEFAULT_NUMBER_OF_THREADS",
         "GDAL_CACHEMAX",
         "DASK_CONFIG",
+        "NUMBA_THREADING_LAYER",
     ]
     names = [name for name in names if os.environ.get(name)]
     envs = ["export {}={}".format(name, os.environ[name]) for name in names]
