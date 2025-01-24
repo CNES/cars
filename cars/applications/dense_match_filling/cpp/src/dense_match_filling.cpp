@@ -61,7 +61,9 @@ std::pair<py::array_t<float>, py::array_t<bool>> fill_disp_pandora(
         for (size_t col = 0; col < ncol; ++col) {
             if (r_msk_fill_disp(row, col)) {
                 auto valid_neighbors = find_valid_neighbors(
-                    dirs, disp, msk_fill_disp, static_cast<int>(row), static_cast<int>(col), nb_directions
+                    dirs, disp, msk_fill_disp,
+                    static_cast<int>(row), static_cast<int>(col),
+                    nb_directions
                 ).unchecked<1>();
 
                 std::vector<float> valid_values;
@@ -80,7 +82,8 @@ std::pair<py::array_t<float>, py::array_t<bool>> fill_disp_pandora(
                     if (valid_values.size()%2==1) {
                         rw_out_disp(row, col) = valid_values[valid_values.size()/2];
                     } else {
-                        rw_out_disp(row, col) = valid_values[valid_values.size()/2-1] + valid_values[valid_values.size()/2];
+                        rw_out_disp(row, col) = valid_values[valid_values.size()/2-1] 
+                                              + valid_values[valid_values.size()/2];
                         rw_out_disp(row, col) /= 2.f;
                     }
                 }

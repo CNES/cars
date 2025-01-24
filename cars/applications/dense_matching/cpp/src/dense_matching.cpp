@@ -43,7 +43,9 @@ py::array_t<bool> estimate_right_classif_on_left(
                 int disp = static_cast<int>(std::floor(fdisp));
                 
                 for (size_t band = 0; band < n_bands; band++) {
-                    rw_left_from_right_classif(band, row, col) = r_right_classif(band, row, col+disp);
+                    rw_left_from_right_classif(
+                        band, row, col
+                    ) = r_right_classif(band, row, col+disp);
                 }
 
                 continue;
@@ -94,7 +96,10 @@ py::array_t<bool> mask_left_classif_from_right_mask(
             // estimate with global range
             bool all_masked = true;
             size_t lower_bound = std::max(0, static_cast<int>(col)+r_disp_min(row, col));
-            size_t upper_bound = std::min(static_cast<int>(n_col), static_cast<int>(col)+r_disp_max(row, col));
+            size_t upper_bound = std::min(
+                static_cast<int>(n_col),
+                static_cast<int>(col)+r_disp_max(row, col)
+            );
             for (size_t col_classif = lower_bound; col_classif < upper_bound; col_classif++) {
                 if (!r_right_mask(row, col_classif)) {
                     all_masked = false;
@@ -151,8 +156,14 @@ std::pair<py::array_t<int>, py::array_t<int>> estimate_right_grid_disp(
 
                 if (left_min <= static_cast<int>(col) && static_cast<int>(col) <= left_max) {
                     is_correlated_left = true;
-                    min_right = std::min(min_right, static_cast<int>(left_col) - static_cast<int>(col));
-                    max_right = std::max(max_right, static_cast<int>(left_col) - static_cast<int>(col));
+                    min_right = std::min(
+                        min_right,
+                        static_cast<int>(left_col) - static_cast<int>(col)
+                    );
+                    max_right = std::max(
+                        max_right,
+                        static_cast<int>(left_col) - static_cast<int>(col)
+                    );
                 }
             }
 
