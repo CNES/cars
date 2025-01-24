@@ -92,7 +92,7 @@ install-gdal-dev: install-deps-gdal ## install cars dev (editable) with dev, doc
 
 .PHONY: install-pandora-mccnn
 install-pandora-mccnn: install-deps  ## install cars (not editable) with dev, docs, notebook dependencies
-	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install .[dev,docs,notebook,pandora_mccnn]
+	@test -f ${CARS_VENV}/bin/cars || ${CARS_VENV}/bin/pip install --no-build-isolation --editable .[dev,docs,notebook,pandora_mccnn]
 	@test -f .git/hooks/pre-commit || echo "  Install pre-commit hook"
 	@test -f .git/hooks/pre-commit || ${CARS_VENV}/bin/pre-commit install -t pre-commit
 	@test -f .git/hooks/pre-push || ${CARS_VENV}/bin/pre-commit install -t pre-push
