@@ -1,3 +1,7 @@
+"""
+this module contains the headers of the dense_match_filling_cpp module.
+"""
+
 # pylint: skip-file
 
 from typing import Tuple

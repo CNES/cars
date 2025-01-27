@@ -484,6 +484,23 @@ def add_crop_info(disp_ds, cropped_range):
 def estimate_right_classif_on_left(
     right_classif, disp_map, disp_mask, disp_min, disp_max
 ):
+    """
+    Estimate right classif on left image
+
+    :param right_classif: right classification
+    :type right_classif: np ndarray
+    :param disp_map: disparity map
+    :type disp_map: np ndarray
+    :param disp_mask: disparity mask
+    :type disp_mask: np ndarray
+    :param disp_min: disparity min
+    :type disp_min: int
+    :param disp_max: disparity max
+    :type disp_max: int
+
+    :return: right classif on left image
+    :rtype: np nadarray
+    """
     return dense_matching_cpp.estimate_right_classif_on_left(
         right_classif, disp_map, disp_mask, disp_min, disp_max
     )
@@ -492,6 +509,21 @@ def estimate_right_classif_on_left(
 def mask_left_classif_from_right_mask(
     left_classif, right_mask, disp_min, disp_max
 ):
+    """
+    Mask left classif with right mask.
+
+    :param left_classif: right classification
+    :type left_classif: np ndarray
+    :param right_mask: right mask
+    :type right_mask: np ndarray
+    :param disp_min: disparity min
+    :type disp_min: np.array type int
+    :param disp_max: disparity max
+    :type disp_max: np.array type int
+
+    :return: masked left classif
+    :rtype: np nadarray
+    """
     return dense_matching_cpp.mask_left_classif_from_right_mask(
         left_classif, right_mask, disp_min, disp_max
     )

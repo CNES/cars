@@ -1,3 +1,7 @@
+"""
+this module contains the headers of the dense_matching_cpp module.
+"""
+
 # pylint: skip-file
 
 
@@ -31,7 +35,7 @@ def mask_left_classif_from_right_mask(
     Mask left classif with right mask.
 
     :param left_classif: right classification
-    :type right_left_classifclassif: np ndarray
+    :type left_classif: np ndarray
     :param right_mask: right mask
     :type right_mask: np ndarray
     :param disp_min: disparity min
