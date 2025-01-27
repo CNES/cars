@@ -133,7 +133,6 @@ def init_cluster_variables(
         "OTB_APPLICATION_PATH",
         "OTB_MAX_RAM_HINT",
         "OMP_NUM_THREADS",
-        "NUMBA_NUM_THREADS",
         "OPJ_NUM_THREADS",
         "GDAL_NUM_THREADS",
         "VIRTUAL_ENV",
