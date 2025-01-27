@@ -217,6 +217,7 @@ class SimpleGaussian(
         filling_file_name=None,
         color_dtype=None,
         dump_dir=None,
+        performance_map_classes=None,
         phasing=None,
     ):
         """
@@ -272,6 +273,8 @@ class SimpleGaussian(
         :type color_dtype: str (numpy type)
         :param dump_dir: directory used for outputs with no associated filename
         :type dump_dir: str
+        :param performance_map_classes: list for step defining border of class
+        :type performance_map_classes: list or None
         :param phasing: if activated, we phase the dsm on this point
         :type phasing: dict
 
@@ -388,24 +391,6 @@ class SimpleGaussian(
             source_pc_names = point_clouds.attributes["source_pc_names"]
 
         # Save objects
-        # Initialize files names
-        # TODO get from config ?
-        out_dsm_file_name = None
-        out_dsm_inf_file_name = None
-        out_dsm_sup_file_name = None
-        out_weights_file_name = None
-        out_clr_file_name = None
-        out_msk_file_name = None
-        out_confidence = None
-        out_performance_map = None
-        out_dsm_mean_file_name = None
-        out_dsm_std_file_name = None
-        out_dsm_n_pts_file_name = None
-        out_dsm_points_in_cell_file_name = None
-        out_dsm_inf_mean_file_name = None
-        out_dsm_inf_std_file_name = None
-        out_dsm_sup_mean_file_name = None
-        out_dsm_sup_std_file_name = None
 
         if dsm_file_name is not None:
             safe_makedirs(os.path.dirname(dsm_file_name))
@@ -523,6 +508,10 @@ class SimpleGaussian(
             )
 
         out_performance_map = performance_map_file_name
+
+        # save raw as performance map if performance_map_classes is None
+        # save classified performance map if performance_map_classes is not None
+        out_performance_map_raw = None
         if out_performance_map is not None:
             # add contributing pair filename to index
             self.orchestrator.update_index(
@@ -534,18 +523,41 @@ class SimpleGaussian(
                     }
                 }
             )
+            if performance_map_classes is None:
+                # No classes, we return raw data
+                out_performance_map_raw = out_performance_map
+                out_performance_map = None
         elif save_intermediate_data:
             # File is not part of the official product, write it in dump_dir
             out_performance_map = os.path.join(
                 out_dump_dir, "performance_map.tif"
             )
-        if out_performance_map:
+            out_performance_map_raw = os.path.join(
+                out_dump_dir, "performance_map_raw.tif"
+            )
+
+        if out_performance_map_raw is not None:
+            list_computed_layers += ["performance_map_raw"]
+            self.orchestrator.add_to_save_lists(
+                out_performance_map_raw,
+                cst.RASTER_PERFORMANCE_MAP_RAW,
+                terrain_raster,
+                dtype=np.float32,
+                nodata=self.msk_no_data,
+                cars_ds_name="performance_map_raw",
+                optional_data=True,
+            )
+        if (
+            out_performance_map is not None
+            and performance_map_classes is not None
+        ):
+            # classified performance map exists
             list_computed_layers += ["performance_map"]
             self.orchestrator.add_to_save_lists(
                 out_performance_map,
                 cst.RASTER_PERFORMANCE_MAP,
                 terrain_raster,
-                dtype=np.float32,
+                dtype=np.uint8,
                 nodata=self.msk_no_data,
                 cars_ds_name="performance_map",
                 optional_data=True,
@@ -833,6 +845,7 @@ class SimpleGaussian(
                             color_dtype=color_dtype,
                             msk_no_data=self.msk_no_data,
                             source_pc_names=source_pc_names,
+                            performance_map_classes=performance_map_classes,
                         )
         else:
 
@@ -870,6 +883,7 @@ class SimpleGaussian(
                                 color_dtype=color_dtype,
                                 msk_no_data=self.msk_no_data,
                                 source_pc_names=source_pc_names,
+                                performance_map_classes=performance_map_classes,
                             )
                         ind_tile += 1
 
@@ -895,6 +909,7 @@ def rasterization_wrapper(
     color_dtype: str = "float32",
     msk_no_data: int = 255,
     source_pc_names=None,
+    performance_map_classes=None,
 ):
     """
     Wrapper for rasterization step :
@@ -928,6 +943,9 @@ def rasterization_wrapper(
     :param msk_no_data: no data value to use in the final mask image
     :param source_pc_names: list of names of point cloud before merging :
         name of sensors pair or name of point cloud file
+    :param performance_map_classes: list for step defining border of class
+    :type performance_map_classes: list or None
+
     :return: digital surface model + projected colors
     :rtype: xr.Dataset
     """
@@ -1049,6 +1067,7 @@ def rasterization_wrapper(
         msk_no_data=msk_no_data,
         list_computed_layers=list_computed_layers,
         source_pc_names=source_pc_names,
+        performance_map_classes=performance_map_classes,
     )
 
     # Fill raster

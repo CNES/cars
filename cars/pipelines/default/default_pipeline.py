@@ -2267,6 +2267,9 @@ class DefaultPipeline(PipelineTemplate):
             filling_file_name=filling_file_name,
             color_dtype=self.color_type,
             dump_dir=rasterization_dump_dir,
+            performance_map_classes=self.used_conf[ADVANCED][
+                adv_cst.PERFORMANCE_MAP_CLASSES
+            ],
             phasing=self.phasing,
         )
 

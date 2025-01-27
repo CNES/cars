@@ -117,6 +117,7 @@ def rasterio_write_georaster(
     window: rio.windows.Window = None,
     descriptor=None,
     bands_description=None,
+    classes_info_tag=None,
 ):
     """
     Write a raster file from array
@@ -124,6 +125,10 @@ def rasterio_write_georaster(
     :param raster_file: Image file
     :param data: image data
     :param profile: rasterio profile
+    :param window: window to write in
+    :param descriptor: rasterio descriptor
+    :param bands_description: description of bands
+    :param classes_info_tag: tag to add to descriptor
     """
 
     def write_data(data, window=None, descriptor=None):
@@ -141,6 +146,11 @@ def rasterio_write_georaster(
             descriptor.write(data, window=window)
 
     if descriptor is not None:
+        # write tag
+        if classes_info_tag is not None:
+            descriptor.update_tags(CLASSES=classes_info_tag)
+
+        # write data
         if bands_description is not None:
             for idx, description in enumerate(bands_description):
                 # Band indexing starts at 1
